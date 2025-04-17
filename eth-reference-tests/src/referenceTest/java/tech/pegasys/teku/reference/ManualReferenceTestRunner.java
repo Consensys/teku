@@ -49,14 +49,14 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    *
    * <p>May be overridden by the ENV_SPEC environment variable.
    */
-  private static final String SPEC = "minimal";
+  private static final String SPEC = "";
 
   /**
    * Filter test to run only those for a specific milestone. Use values from TestFork.
    *
    * <p>May be overridden by the ENV_MILESTONE environment variable.
    */
-  private static final String MILESTONE = "fulu";
+  private static final String MILESTONE = "";
 
   /**
    * Filter tests to run only those where the display name contains this string.

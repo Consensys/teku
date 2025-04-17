@@ -27,6 +27,7 @@ import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLo
 public interface ProposerConfigProvider {
   ProposerConfigProvider NOOP = () -> SafeFuture.completedFuture(Optional.empty());
 
+  @SuppressWarnings("deprecation")
   static ProposerConfigProvider create(
       final AsyncRunner asyncRunner,
       final boolean refresh,
