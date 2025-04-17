@@ -67,7 +67,7 @@ public class GetInclusionListCommitteeDutiesTest extends AbstractMigratedBeaconH
   @Test
   public void shouldGetInclusionListCommitteeDuties() throws Exception {
     request.setPathParameter(EPOCH, "100");
-    request.setRequestBody(List.of(1));
+    request.setRequestBody(List.of(UInt64.ONE));
 
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
