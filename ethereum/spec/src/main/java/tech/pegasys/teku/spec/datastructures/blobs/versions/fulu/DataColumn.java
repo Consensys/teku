@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethtests;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.fulu;
 
-public class TestFork {
-  public static final String PHASE0 = "phase0";
-  public static final String ALTAIR = "altair";
-  public static final String BELLATRIX = "bellatrix";
-  public static final String CAPELLA = "capella";
-  public static final String DENEB = "deneb";
-  public static final String ELECTRA = "electra";
-  public static final String FULU = "fulu";
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+
+public class DataColumn extends SszListImpl<Cell> implements SszList<Cell> {
+
+  DataColumn(final DataColumnSchema schema, final TreeNode node) {
+    super(schema, node);
+  }
+
+  public String toBriefString() {
+    return isEmpty() ? "" : get(0).toBriefString();
+  }
 }

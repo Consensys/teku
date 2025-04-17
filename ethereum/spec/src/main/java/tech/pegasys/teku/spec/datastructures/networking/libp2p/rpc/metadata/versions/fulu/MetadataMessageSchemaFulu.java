@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,52 +11,63 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 
-public class MetadataMessageSchemaPhase0
-    extends ContainerSchema2<MetadataMessagePhase0, SszUInt64, SszBitvector>
-    implements MetadataMessageSchema<MetadataMessagePhase0> {
-
-  public MetadataMessageSchemaPhase0(final NetworkingSpecConfig networkingSpecConfig) {
+public class MetadataMessageSchemaFulu
+    extends ContainerSchema4<MetadataMessageFulu, SszUInt64, SszBitvector, SszBitvector, SszUInt64>
+    implements MetadataMessageSchema<MetadataMessageFulu> {
+  public MetadataMessageSchemaFulu(final NetworkingSpecConfig networkingSpecConfig) {
     super(
         "MetadataMessage",
         namedSchema("seq_number", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(
-            "attnets",
-            SszBitvectorSchema.create(networkingSpecConfig.getAttestationSubnetCount())));
+            "attnets", SszBitvectorSchema.create(networkingSpecConfig.getAttestationSubnetCount())),
+        namedSchema(
+            "syncnets", SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)),
+        namedSchema("custody_group_count", SszPrimitiveSchemas.UINT64_SCHEMA));
   }
 
   @Override
-  public MetadataMessagePhase0 createFromBackingNode(final TreeNode node) {
-    return new MetadataMessagePhase0(this, node);
-  }
-
-  @Override
-  public MetadataMessagePhase0 create(
+  public MetadataMessageFulu create(
       final UInt64 seqNumber,
       final Iterable<Integer> attnets,
       final Iterable<Integer> syncnets,
-      final Optional<UInt64> custodySubnetCount) {
-    return new MetadataMessagePhase0(this, seqNumber, getAttnestSchema().ofBits(attnets));
+      final Optional<UInt64> custodyGroupCount) {
+    return new MetadataMessageFulu(
+        this,
+        seqNumber,
+        getAttnestSchema().ofBits(attnets),
+        getSyncnetsSchema().ofBits(syncnets),
+        custodyGroupCount.orElse(UInt64.ZERO));
   }
 
   @Override
-  public MetadataMessagePhase0 createDefault() {
-    return new MetadataMessagePhase0(this);
+  public MetadataMessageFulu createDefault() {
+    return new MetadataMessageFulu(this);
+  }
+
+  @Override
+  public MetadataMessageFulu createFromBackingNode(final TreeNode node) {
+    return new MetadataMessageFulu(this, node);
   }
 
   private SszBitvectorSchema<SszBitvector> getAttnestSchema() {
     return (SszBitvectorSchema<SszBitvector>) getFieldSchema1();
+  }
+
+  private SszBitvectorSchema<SszBitvector> getSyncnetsSchema() {
+    return (SszBitvectorSchema<SszBitvector>) getFieldSchema2();
   }
 }
