@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import com.google.common.base.Strings;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -131,7 +132,7 @@ public class ValidatorKeysOptions {
       return null;
     }
     try {
-      return new URL(validatorExternalSignerUrl);
+      return URI.create(validatorExternalSignerUrl).toURL();
     } catch (MalformedURLException e) {
       throw new InvalidConfigurationException(
           "Invalid configuration. Signer URL has invalid syntax", e);
