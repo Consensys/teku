@@ -56,7 +56,7 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     final MetadataMessage metadataMessage =
         spec.getGenesisSchemaDefinitions()
             .getMetadataMessageSchema()
-            .create(seqnr, List.of(1, 11, 15), Collections.emptyList());
+            .create(seqnr, List.of(1, 11, 15), Collections.emptyList(), Optional.empty());
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
@@ -73,7 +73,25 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     final MetadataMessage metadataMessage =
         spec.getGenesisSchemaDefinitions()
             .getMetadataMessageSchema()
-            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3));
+            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3), Optional.empty());
+
+    when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
+
+    final Response response = getResponse(GetIdentity.ROUTE);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    checkResponseData(
+        response,
+        "{\"seq_number\":\"4666673844721362956\",\"attnets\":\"0x0288000000000000\",\"syncnets\":\"0x0f\"}");
+  }
+
+  @Test
+  public void shouldReturnNetworkIdentityFulu() throws Exception {
+    startRestAPIAtGenesis(SpecMilestone.FULU);
+
+    final MetadataMessage metadataMessage =
+        spec.getGenesisSchemaDefinitions()
+            .getMetadataMessageSchema()
+            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3), Optional.of(UInt64.valueOf(4)));
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
