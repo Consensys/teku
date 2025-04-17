@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.proposerconfig;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -36,7 +37,7 @@ public interface ProposerConfigProvider {
     if (source.isPresent()) {
       URL sourceUrl;
       try {
-        sourceUrl = new URL(source.get());
+        sourceUrl = URI.create(source.get()).toURL();
         return new UrlProposerConfigProvider(
             asyncRunner, refresh, proposerConfigLoader, timeProvider, sourceUrl);
       } catch (MalformedURLException e1) {
