@@ -111,7 +111,6 @@ public class RewardsTestExecutorAltair implements TestExecutor {
     };
   }
 
-  @SuppressWarnings("deprecation")
   private void assertDeltas(
       final TestDefinition testDefinition,
       final String expectedResultsFileName,

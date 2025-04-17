@@ -48,7 +48,6 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
 
-@SuppressWarnings("deprecation")
 public class ValidatorTypes {
 
   public static final SerializableTypeDefinition<PostKeyResult> POST_KEY_RESULT =

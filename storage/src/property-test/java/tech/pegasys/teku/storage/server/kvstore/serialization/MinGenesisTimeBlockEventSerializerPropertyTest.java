@@ -23,7 +23,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-@SuppressWarnings("deprecation")
 public class MinGenesisTimeBlockEventSerializerPropertyTest {
   @Property
   void roundTrip(
