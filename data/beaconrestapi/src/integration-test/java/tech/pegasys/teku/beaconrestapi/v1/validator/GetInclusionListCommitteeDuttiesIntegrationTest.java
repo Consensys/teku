@@ -88,10 +88,12 @@ public class GetInclusionListCommitteeDuttiesIntegrationTest extends AbstractDat
   }
 
   @Test
-  void shouldHandleEmptyRequest() throws IOException {
-    when(validatorApiChannel.prepareBeaconProposer(any())).thenReturn(SafeFuture.COMPLETE);
-    try (Response response = post(PostPrepareBeaconProposer.ROUTE, "[]")) {
-      assertThat(response.code()).isEqualTo(SC_OK);
+  void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws IOException {
+    InclusionListDuties inclusionListDuties = dataStructureUtil.randomInclusionListDuties();
+    when(validatorApiChannel.getInclusionListDuties(any(),any())).thenReturn(SafeFuture.completedFuture(Optional.of(inclusionListDuties)));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    try (Response response = post(GetInclusionListCommitteeDuties.ROUTE.replace("{epoch}", "1"), "[]")) {
+      assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     }
   }
 }
