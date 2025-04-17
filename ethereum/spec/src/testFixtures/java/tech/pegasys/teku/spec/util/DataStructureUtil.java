@@ -48,6 +48,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.InclusionListDuty;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -3069,6 +3071,15 @@ public final class DataStructureUtil {
       }
     }
     return transactions;
+  }
+
+  public InclusionListDuties randomInclusionListDuties() {
+    return new InclusionListDuties(false, randomBytes32(), List.of(randomInclusionListDuty()));
+  }
+
+  public InclusionListDuty randomInclusionListDuty() {
+    return new InclusionListDuty(
+        randomSlot(), randomValidatorIndex(), randomPublicKey(), randomBytes32());
   }
 
   private int randomInt(final int origin, final int bound) {
