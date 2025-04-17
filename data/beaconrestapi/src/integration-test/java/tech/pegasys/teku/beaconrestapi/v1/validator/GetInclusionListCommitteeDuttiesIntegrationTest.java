@@ -56,7 +56,7 @@ public class GetInclusionListCommitteeDuttiesIntegrationTest extends AbstractDat
 
   @Test
   void shouldReturnOk() throws IOException {
-    InclusionListDuties inclusionListDuties = dataStructureUtil.randomInclusionListDuties();
+    final InclusionListDuties inclusionListDuties = dataStructureUtil.randomInclusionListDuties();
     when(validatorApiChannel.getInclusionListDuties(any(),any())).thenReturn(SafeFuture.completedFuture(Optional.of(inclusionListDuties)));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     final List<UInt64> request = List.of(dataStructureUtil.randomValidatorIndex());
@@ -89,7 +89,7 @@ public class GetInclusionListCommitteeDuttiesIntegrationTest extends AbstractDat
 
   @Test
   void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws IOException {
-    InclusionListDuties inclusionListDuties = dataStructureUtil.randomInclusionListDuties();
+    final InclusionListDuties inclusionListDuties = dataStructureUtil.randomInclusionListDuties();
     when(validatorApiChannel.getInclusionListDuties(any(),any())).thenReturn(SafeFuture.completedFuture(Optional.of(inclusionListDuties)));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     try (Response response = post(GetInclusionListCommitteeDuties.ROUTE.replace("{epoch}", "1"), "[]")) {

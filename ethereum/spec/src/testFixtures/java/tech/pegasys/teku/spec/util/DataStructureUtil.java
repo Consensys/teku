@@ -2749,11 +2749,12 @@ public final class DataStructureUtil {
   }
 
   public InclusionListDuties randomInclusionListDuties() {
-    return new InclusionListDuties(false,randomBytes32(),List.of(randomInclusionListDuty()));
+    return new InclusionListDuties(false, randomBytes32(), List.of(randomInclusionListDuty()));
   }
 
   public InclusionListDuty randomInclusionListDuty() {
-    return new InclusionListDuty(randomSlot(),randomValidatorIndex(),randomPublicKey(),randomBytes32());
+    return new InclusionListDuty(
+        randomSlot(), randomValidatorIndex(), randomPublicKey(), randomBytes32());
   }
 
   private int randomInt(final int origin, final int bound) {
