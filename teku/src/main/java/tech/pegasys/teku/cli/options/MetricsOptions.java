@@ -227,7 +227,7 @@ public class MetricsOptions {
     }
     try {
       return URI.create(metricsEndpoint).toURL();
-    } catch (MalformedURLException e) {
+    } catch (IllegalArgumentException | MalformedURLException e) {
       throw new InvalidConfigurationException(
           "Invalid configuration. Metrics Endpoint has invalid syntax", e);
     }

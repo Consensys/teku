@@ -133,7 +133,7 @@ public class ValidatorKeysOptions {
     }
     try {
       return URI.create(validatorExternalSignerUrl).toURL();
-    } catch (MalformedURLException e) {
+    } catch (IllegalArgumentException | MalformedURLException e) {
       throw new InvalidConfigurationException(
           "Invalid configuration. Signer URL has invalid syntax", e);
     }

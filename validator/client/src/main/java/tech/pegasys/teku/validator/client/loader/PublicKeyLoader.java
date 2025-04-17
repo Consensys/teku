@@ -99,7 +99,7 @@ public class PublicKeyLoader {
     try {
       final String[] keys = objectMapper.readValue(URI.create(url).toURL(), String[].class);
       return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
-    } catch (IOException ex) {
+    } catch (IllegalArgumentException | IOException ex) {
       throw new InvalidConfigurationException("Failed to load public keys from URL " + url, ex);
     }
   }
