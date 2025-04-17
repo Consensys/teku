@@ -209,8 +209,7 @@ class ValidatorTypesTest {
                 parse(
                     "{ \"pubkey\": \"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\", \"url\": \"/\", \"readonly\": true}",
                     ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE))
-        .hasCauseInstanceOf(IllegalArgumentException.class)
-        .hasRootCauseInstanceOf(MalformedURLException.class);
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
