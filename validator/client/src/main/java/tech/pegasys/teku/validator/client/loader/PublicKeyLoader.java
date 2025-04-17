@@ -95,7 +95,6 @@ public class PublicKeyLoader {
     }
   }
 
-  @SuppressWarnings("deprecation")
   private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
     try {
       final String[] keys = objectMapper.readValue(new URL(url), String[].class);

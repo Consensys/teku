@@ -71,7 +71,6 @@ public class UpnpClientTest {
             null,
             null);
 
-    @SuppressWarnings("deprecation")
     RemoteDevice device =
         new RemoteDevice(
             new RemoteDeviceIdentity(
