@@ -11,14 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethtests;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.fulu;
 
-public class TestFork {
-  public static final String PHASE0 = "phase0";
-  public static final String ALTAIR = "altair";
-  public static final String BELLATRIX = "bellatrix";
-  public static final String CAPELLA = "capella";
-  public static final String DENEB = "deneb";
-  public static final String ELECTRA = "electra";
-  public static final String FULU = "fulu";
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+
+public class Cell extends SszByteVectorImpl {
+
+  Cell(final CellSchema schema, final TreeNode backingNode) {
+    super(schema, backingNode);
+  }
+
+  Cell(final CellSchema cellSchema, final Bytes bytes) {
+    super(cellSchema, bytes);
+  }
+
+  public String toBriefString() {
+    return getBytes().slice(0, 7).toUnprefixedHexString();
+  }
 }
