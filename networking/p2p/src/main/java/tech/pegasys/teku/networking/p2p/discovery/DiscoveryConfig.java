@@ -14,8 +14,6 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
-import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT_IPV6;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +31,8 @@ public class DiscoveryConfig {
   public static final int DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS = 60;
   public static final int DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS = 80;
   public static final boolean DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED = false;
+  public static final int DEFAULT_P2P_PORT = 9000;
+  public static final int DEFAULT_P2P_PORT_IPV6 = 9090;
 
   private final boolean isDiscoveryEnabled;
   private final int listenUdpPort;
@@ -138,6 +138,28 @@ public class DiscoveryConfig {
 
     public DiscoveryConfig build() {
       initMissingDefaults();
+
+      // Make sure bounds are valid before building
+      final int resolvedMinPeers = minPeers.orElse(DEFAULT_P2P_PEERS_LOWER_BOUND);
+      final int resolvedMaxPeers = maxPeers.orElse(DEFAULT_P2P_PEERS_UPPER_BOUND);
+
+      // Make final adjustment to ensure min <= max
+      if (resolvedMinPeers > resolvedMaxPeers && resolvedMaxPeers > 0) {
+        LOG.warn(
+            "Target number of peers lower bound {} is greater than upper bound {}. Adjusting lower bound to match upper bound.",
+            resolvedMinPeers,
+            resolvedMaxPeers);
+        minPeers = OptionalInt.of(resolvedMaxPeers);
+      } else if (resolvedMaxPeers > 0
+          && resolvedMaxPeers < DEFAULT_P2P_PEERS_LOWER_BOUND
+          && (minPeers.isEmpty() || minPeers.getAsInt() > resolvedMaxPeers)) {
+        // If max is specified but less than default minimum and min wasn't specified or is too high
+        LOG.warn(
+            "Target number of peers upper bound {} is less than default lower bound {}. Adjusting lower bound to match upper bound.",
+            resolvedMaxPeers,
+            DEFAULT_P2P_PEERS_LOWER_BOUND);
+        minPeers = OptionalInt.of(resolvedMaxPeers);
+      }
 
       return new DiscoveryConfig(
           isDiscoveryEnabled,
@@ -276,7 +298,18 @@ public class DiscoveryConfig {
       if (minPeers < 0) {
         throw new InvalidConfigurationException(String.format("Invalid minPeers: %d", minPeers));
       }
-      this.minPeers = OptionalInt.of(minPeers);
+
+      // Handle case where maxPeers is already set and minPeers > maxPeers
+      if (this.maxPeers.isPresent()
+          && minPeers > this.maxPeers.getAsInt()
+          && this.maxPeers.getAsInt() > 0) {
+        LOG.warn(
+            "Target number of peers lower bound cannot be set above the upper bound. Reducing lower target to {}.",
+            this.maxPeers.getAsInt());
+        this.minPeers = OptionalInt.of(this.maxPeers.getAsInt());
+      } else {
+        this.minPeers = OptionalInt.of(minPeers);
+      }
       return this;
     }
 
@@ -292,7 +325,18 @@ public class DiscoveryConfig {
       if (maxPeers < 0) {
         throw new InvalidConfigurationException(String.format("Invalid maxPeers: %d", maxPeers));
       }
-      this.maxPeers = OptionalInt.of(maxPeers);
+
+      final int defaultLowerBound = DEFAULT_P2P_PEERS_LOWER_BOUND;
+
+      if (maxPeers > 0 && maxPeers < defaultLowerBound) {
+        LOG.warn(
+            "Target number of peers upper bound cannot be set below the default lower bound {}. Increasing target to {}.",
+            defaultLowerBound,
+            defaultLowerBound);
+        this.maxPeers = OptionalInt.of(defaultLowerBound);
+      } else {
+        this.maxPeers = OptionalInt.of(maxPeers);
+      }
       return this;
     }
 
