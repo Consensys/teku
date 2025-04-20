@@ -14,8 +14,11 @@
 package tech.pegasys.teku.networking.p2p.connection;
 
 import com.google.common.base.Preconditions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TargetPeerRange {
+  private static final Logger LOG = LogManager.getLogger();
   private final int lowerBound;
   private final int upperBound;
   private final int minimumRandomlySelectedPeerCount;
@@ -26,6 +29,12 @@ public class TargetPeerRange {
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
     this.minimumRandomlySelectedPeerCount = minimumRandomlySelectedPeerCount;
+
+    // Log info about the configured peer limits
+    LOG.info(
+        "Adjusting target number of peers lower bound to equal {} and upper bound to equal {}",
+        lowerBound,
+        upperBound);
   }
 
   public int getPeersToAdd(final int currentPeerCount) {
