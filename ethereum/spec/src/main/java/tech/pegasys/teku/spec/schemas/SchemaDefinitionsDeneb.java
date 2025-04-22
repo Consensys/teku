@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyBuilderDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
@@ -53,7 +53,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobSidecarSchema blobSidecarSchema;
   private final BlockContentsWithBlobsSchema<?> blockContentsSchema;
   private final SignedBlockContentsWithBlobsSchema<?> signedBlockContentsSchema;
-  private final BlobsBundleSchema blobsBundleSchema;
+  private final BlobsBundleSchema<?> blobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
   private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
 
@@ -128,7 +128,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return signedBlockContentsSchema;
   }
 
-  public BlobsBundleSchema getBlobsBundleSchema() {
+  public BlobsBundleSchema<?> getBlobsBundleSchema() {
     return blobsBundleSchema;
   }
 

@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.builder;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BlobsBundleSupplier extends DataStructureUtilSupplier<BlobsBundle> {
+public class BlobsBundleSupplier extends DataStructureUtilSupplier<BlobsBundleDeneb> {
   public BlobsBundleSupplier() {
     super(DataStructureUtil::randomBuilderBlobsBundle, SpecMilestone.DENEB);
   }

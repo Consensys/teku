@@ -42,8 +42,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -158,7 +159,7 @@ public class SchemaTypes {
       create("BLOCK_CONTENTS_SCHEMA");
   public static final SchemaId<SignedBlockContentsWithBlobsSchema<?>> SIGNED_BLOCK_CONTENTS_SCHEMA =
       create("SIGNED_BLOCK_CONTENTS_SCHEMA");
-  public static final SchemaId<BlobsBundleSchema> BLOBS_BUNDLE_SCHEMA =
+  public static final SchemaId<BlobsBundleSchema<?>> BLOBS_BUNDLE_SCHEMA =
       create("BLOBS_BUNDLE_SCHEMA");
 
   // Electra
@@ -173,6 +174,9 @@ public class SchemaTypes {
   public static final SchemaId<ExecutionPayloadAndBlobsBundleSchema>
       EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA =
           create("EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA");
+  public static final SchemaId<ExecutionPayloadAndBlobsCellBundleSchema>
+      EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA =
+          create("EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA");
   public static final SchemaId<DepositRequestSchema> DEPOSIT_REQUEST_SCHEMA =
       create("DEPOSIT_REQUEST_SCHEMA");
   public static final SchemaId<WithdrawalRequestSchema> WITHDRAWAL_REQUEST_SCHEMA =

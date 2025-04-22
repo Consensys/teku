@@ -11,15 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder;
+package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public class ExecutionPayloadAndBlobsBundle
-    extends Container2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle>
+    extends Container2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundleDeneb>
     implements BuilderPayload {
 
   ExecutionPayloadAndBlobsBundle(
@@ -30,7 +32,7 @@ public class ExecutionPayloadAndBlobsBundle
   public ExecutionPayloadAndBlobsBundle(
       final ExecutionPayloadAndBlobsBundleSchema schema,
       final ExecutionPayload executionPayload,
-      final BlobsBundle blobsBundle) {
+      final BlobsBundleDeneb blobsBundle) {
     super(schema, executionPayload, blobsBundle);
   }
 
@@ -39,12 +41,17 @@ public class ExecutionPayloadAndBlobsBundle
     return getField0();
   }
 
-  public BlobsBundle getBlobsBundle() {
+  public BlobsBundleDeneb getBlobsBundle() {
     return getField1();
   }
 
   @Override
-  public Optional<BlobsBundle> getOptionalBlobsBundle() {
+  public Optional<BlobsBundleDeneb> getOptionalBlobsBundle() {
     return Optional.of(getBlobsBundle());
+  }
+
+  @Override
+  public Optional<BlobsBundleFulu> getOptionalBlobsCellBundle() {
+    return Optional.empty();
   }
 }

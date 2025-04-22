@@ -19,18 +19,19 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.propertytest.suppliers.builder.BlobsBundleSupplier;
 
 public class BlobsBundlePropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = BlobsBundleSupplier.class) final BlobsBundle blobsBundle)
+  void roundTrip(@ForAll(supplier = BlobsBundleSupplier.class) final BlobsBundleDeneb blobsBundle)
       throws JsonProcessingException {
     assertRoundTrip(blobsBundle);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlobsBundleSupplier.class) final BlobsBundle blobsBundle,
+      @ForAll(supplier = BlobsBundleSupplier.class) final BlobsBundleDeneb blobsBundle,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(blobsBundle, seed);
   }

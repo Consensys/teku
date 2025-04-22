@@ -39,7 +39,7 @@ public class BlobsCellBundle {
     checkArgument(
         proofs.size() == blobs.size() * CELLS_PER_EXT_BLOB,
         "Expected %s proofs but got %s",
-        blobs.size(),
+        blobs.size() * CELLS_PER_EXT_BLOB,
         proofs.size());
     this.commitments = commitments;
     this.proofs = proofs;
