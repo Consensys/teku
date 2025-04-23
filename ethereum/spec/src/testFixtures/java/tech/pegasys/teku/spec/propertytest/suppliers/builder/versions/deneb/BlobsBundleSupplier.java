@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.builder;
+package tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.deneb;
 
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
