@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
@@ -42,8 +41,7 @@ public class SchemaDefinitionsEip7805 extends SchemaDefinitionsElectra {
     this.inclusionListByCommitteeRequestMessageSchema =
         schemaRegistry.get(SchemaTypes.INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA);
     this.inclusionListCommitteeRootSchema =
-        SszVectorSchema.create(
-            SszPrimitiveSchemas.UINT64_SCHEMA, specConfigEip7805.getInclusionListCommitteeSize());
+        schemaRegistry.get(SchemaTypes.INCLUSION_LIST_COMMITTEE_ROOT_SCHEMA);
   }
 
   public static SchemaDefinitionsEip7805 required(final SchemaDefinitions schemaDefinitions) {

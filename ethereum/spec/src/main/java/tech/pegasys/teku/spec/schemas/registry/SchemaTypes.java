@@ -20,7 +20,9 @@ import com.google.common.base.MoreObjects;
 import java.util.Locale;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -184,6 +186,8 @@ public class SchemaTypes {
   public static final SchemaId<InclusionListByCommitteeRequestMessageSchema>
       INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA =
           create("INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<SszVectorSchema<SszUInt64, ?>> INCLUSION_LIST_COMMITTEE_ROOT_SCHEMA =
+      create("INCLUSION_LIST_COMMITTEE_ROOT_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation
