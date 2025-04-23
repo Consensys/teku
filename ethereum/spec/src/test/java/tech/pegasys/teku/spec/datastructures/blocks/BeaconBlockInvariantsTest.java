@@ -66,7 +66,7 @@ class BeaconBlockInvariantsTest {
   @MethodSource("slotNumbers")
   void shouldExtractSlotFromSignedBlockContents(final UInt64 slot) {
     final SignedBlockContentsDeneb blockContents =
-        dataStructureUtil.randomSignedBlockContents(slot);
+        dataStructureUtil.randomSignedBlockContentsDeneb(slot);
     assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(blockContents.sszSerialize()))
         .isEqualTo(slot);
   }

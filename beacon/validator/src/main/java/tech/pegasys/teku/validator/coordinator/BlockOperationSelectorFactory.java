@@ -714,9 +714,9 @@ public class BlockOperationSelectorFactory {
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
     checkState(
         blobsCellBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
-        "Commitments in the builder BlobsBundle don't match the commitments in the block");
+        "Commitments in the builder BlobsCellBundle don't match the commitments in the block");
     checkState(
         blockCommitments.size() == blobsCellBundle.getBlobs().size(),
-        "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
+        "The number of blobs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
   }
 }

@@ -57,7 +57,8 @@ public class PostBlockTest extends AbstractPostBlockTest {
   @Test
   void shouldAcceptBlockContentsAsSsz() throws Exception {
     setupDeneb();
-    final SignedBlockContentsDeneb data = dataStructureUtil.randomSignedBlockContents(UInt64.ONE);
+    final SignedBlockContentsDeneb data =
+        dataStructureUtil.randomSignedBlockContentsDeneb(UInt64.ONE);
     final SignedBlockContentsDeneb result =
         handler
             .getMetadata()

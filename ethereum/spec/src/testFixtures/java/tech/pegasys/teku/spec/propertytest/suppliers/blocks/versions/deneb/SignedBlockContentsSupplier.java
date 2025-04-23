@@ -22,6 +22,6 @@ public class SignedBlockContentsSupplier
     extends DataStructureUtilSupplier<SignedBlockContentsDeneb> {
 
   public SignedBlockContentsSupplier() {
-    super(DataStructureUtil::randomSignedBlockContents, SpecMilestone.DENEB);
+    super(DataStructureUtil::randomSignedBlockContentsDeneb, SpecMilestone.DENEB);
   }
 }

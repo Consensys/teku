@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -334,11 +335,20 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (extendedMatrix.isEmpty()) {
       return Collections.emptyList();
     }
-    final BeaconBlockBodyDeneb beaconBlockBody =
-        BeaconBlockBodyDeneb.required(beaconBlock.getBody());
-    final SszList<SszKZGCommitment> sszKZGCommitments = beaconBlockBody.getBlobKzgCommitments();
-    final List<Bytes32> kzgCommitmentsInclusionProof =
-        computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
+
+    final SszList<SszKZGCommitment> sszKZGCommitments;
+    final List<Bytes32> kzgCommitmentsInclusionProof;
+    if (beaconBlock.isBlinded()) {
+      final BlindedBeaconBlockBodyDeneb beaconBlockBody =
+          BlindedBeaconBlockBodyDeneb.required(beaconBlock.getBody());
+      sszKZGCommitments = beaconBlockBody.getBlobKzgCommitments();
+      kzgCommitmentsInclusionProof = computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
+    } else {
+      final BeaconBlockBodyDeneb beaconBlockBody =
+          BeaconBlockBodyDeneb.required(beaconBlock.getBody());
+      sszKZGCommitments = beaconBlockBody.getBlobKzgCommitments();
+      kzgCommitmentsInclusionProof = computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
+    }
 
     return constructDataColumnSidecars(
         signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);

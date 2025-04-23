@@ -67,7 +67,7 @@ public class AbstractBlockPublisherTest {
               false));
 
   final SignedBlockContentsDeneb signedBlockContents =
-      dataStructureUtil.randomSignedBlockContents();
+      dataStructureUtil.randomSignedBlockContentsDeneb();
   final SignedBeaconBlock signedBlock = signedBlockContents.getSignedBlock();
   final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(signedBlock);
 
