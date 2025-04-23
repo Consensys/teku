@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,8 +46,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final CustodyGroupCountChannel custodyGroupCountChannel;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt256 nodeId;
-  private final Optional<SettableGauge> custodyGroupCountGauge;
-  private final Optional<SettableGauge> custodyGroupSyncedCountGauge;
+  private final SettableGauge custodyGroupCountGauge;
+  private final SettableGauge custodyGroupSyncedCountGauge;
 
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
 
@@ -73,20 +72,18 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     this.custodyGroupSyncedCount = new AtomicInteger(0);
     this.nodeId = nodeId;
     this.custodyGroupCountGauge =
-        Optional.of(
-            SettableGauge.create(
-                metricsSystem,
-                TekuMetricCategory.BEACON,
-                "custody_groups",
-                "Total number of custody groups within a node"));
-
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "custody_groups",
+            "Total number of custody groups within a node");
+    this.custodyGroupCountGauge.set(initCustodyGroupCount);
     this.custodyGroupSyncedCountGauge =
-        Optional.of(
-            SettableGauge.create(
-                metricsSystem,
-                TekuMetricCategory.BEACON,
-                "custody_groups_backfilled",
-                "Total number of custody groups backfilled by a node"));
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "custody_groups_backfilled",
+            "Total number of custody groups backfilled by a node");
   }
 
   @Override
@@ -148,7 +145,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     }
     LOG.info("Synced custody group count updated to {}.", custodyGroupSyncedCount);
     custodyGroupCountChannel.onCustodyGroupCountSynced(custodyGroupSyncedCount);
-    custodyGroupSyncedCountGauge.ifPresent(gauge -> gauge.set(custodyGroupSyncedCount));
+    custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
   }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
@@ -165,7 +162,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       LOG.info(
           "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
       custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount);
-      custodyGroupCountGauge.ifPresent(gauge -> gauge.set(newCustodyGroupCount));
+      custodyGroupCountGauge.set(newCustodyGroupCount);
     }
   }
 }
