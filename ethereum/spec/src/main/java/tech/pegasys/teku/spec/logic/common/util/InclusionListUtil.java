@@ -20,16 +20,15 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -38,23 +37,23 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 
 public class InclusionListUtil {
 
-  protected final SchemaDefinitions schemaDefinitions;
-  protected final BeaconStateAccessorsEip7805 beaconStateAccessors;
+  protected final SchemaDefinitionsEip7805 schemaDefinitionsEip7805;
+  protected final BeaconStateAccessorsEip7805 beaconStateAccessorsEip7805;
   protected final MiscHelpers miscHelpers;
-  protected final SpecConfigEip7805 specConfig;
+  protected final SpecConfigEip7805 specConfigEip7805;
 
   public InclusionListUtil(
-      final SpecConfigEip7805 specConfig,
-      final SchemaDefinitions schemaDefinitions,
-      final BeaconStateAccessorsEip7805 beaconStateAccessors,
+      final SpecConfigEip7805 specConfigEip7805,
+      final SchemaDefinitionsEip7805 schemaDefinitionsEip7805,
+      final BeaconStateAccessorsEip7805 beaconStateAccessorsEip7805,
       final MiscHelpers miscHelpers) {
-    this.specConfig = specConfig;
-    this.schemaDefinitions = schemaDefinitions;
-    this.beaconStateAccessors = beaconStateAccessors;
+    this.specConfigEip7805 = specConfigEip7805;
+    this.schemaDefinitionsEip7805 = schemaDefinitionsEip7805;
+    this.beaconStateAccessorsEip7805 = beaconStateAccessorsEip7805;
     this.miscHelpers = miscHelpers;
   }
 
@@ -74,7 +73,7 @@ public class InclusionListUtil {
     return inclusionListSlot.equals(currentSlot)
         || (inclusionListSlot.equals(currentSlot.minus(1))
             && millisToSeconds(millisInCurrentSlot)
-                .isLessThanOrEqualTo(specConfig.getAttestationDeadLine()));
+                .isLessThanOrEqualTo(specConfigEip7805.getAttestationDeadLine()));
   }
 
   /** Check if ``signed_inclusion_list`` has a valid signature. */
@@ -88,7 +87,7 @@ public class InclusionListUtil {
     final UInt64 index = inclusionList.getValidatorIndex();
     final BLSPublicKey pubkey = state.getValidators().get(index.intValue()).getPublicKey();
     final Bytes32 domain =
-        beaconStateAccessors.getDomain(
+        beaconStateAccessorsEip7805.getDomain(
             Domain.DOMAIN_INCLUSION_LIST_COMMITTEE,
             miscHelpers.computeEpochAtSlot(inclusionList.getSlot()),
             fork,
@@ -98,7 +97,7 @@ public class InclusionListUtil {
   }
 
   public IntList getInclusionListCommittee(final BeaconState state, final UInt64 slot) {
-    return beaconStateAccessors.getInclusionListCommittee(state, slot);
+    return beaconStateAccessorsEip7805.getInclusionListCommittee(state, slot);
   }
 
   public boolean hasCorrectCommitteeRoot(
@@ -107,21 +106,14 @@ public class InclusionListUtil {
     return committeeRoot.equals(inclusionCommitteeRoot);
   }
 
-  // TODO EIP7805 this IntList to SszList conversion to get the HTR could be improved
   public Bytes32 getInclusionListCommitteeRoot(final BeaconState state, final UInt64 slot) {
-    final IntList inclusionListCommittee =
-        beaconStateAccessors.getInclusionListCommittee(state, slot);
-    final int committeeSize = inclusionListCommittee.size();
-    final SszUInt64[] inclusionListCommitteeConverted =
-        inclusionListCommittee
-            .intStream()
-            .mapToObj(index -> SszUInt64.of(UInt64.valueOf(index)))
-            .toArray(SszUInt64[]::new);
-    final SszList<SszUInt64> inclusionCommitteeSszList =
-        SszListSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA, committeeSize)
-            .of(inclusionListCommitteeConverted);
-    final Bytes32 inclusionCommitteeRoot = inclusionCommitteeSszList.hashTreeRoot();
-    return inclusionCommitteeRoot;
+    final List<UInt64> inclusionListCommittee =
+        getInclusionListCommittee(state, slot).intStream().mapToObj(UInt64::valueOf).toList();
+    final SszVector<SszUInt64> sszInclusionListCommittee =
+        schemaDefinitionsEip7805
+            .getInclusionListCommitteeRootSchema()
+            .createFromElements(inclusionListCommittee.stream().map(SszUInt64::of).toList());
+    return sszInclusionListCommittee.hashTreeRoot();
   }
 
   // TODO EIP7805 should we make sure the committee didn't change after checking the root
@@ -129,19 +121,19 @@ public class InclusionListUtil {
   public boolean validatorIndexWithinCommittee(
       final BeaconState state, final UInt64 slot, final UInt64 validatorIndex) {
     final IntList inclusionListCommittee =
-        beaconStateAccessors.getInclusionListCommittee(state, slot);
+        beaconStateAccessorsEip7805.getInclusionListCommittee(state, slot);
     return inclusionListCommittee.contains(validatorIndex.intValue());
   }
 
   public Int2ObjectMap<UInt64> getValidatorIndexToSlotAssignmentMap(
       final BeaconState state, final UInt64 epoch) {
     final Int2ObjectMap<UInt64> assignmentMap = new Int2ObjectOpenHashMap<>();
-    final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
+    final int slotsPerEpoch = specConfigEip7805.getSlotsPerEpoch();
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
 
     for (int slotOffset = 0; slotOffset < slotsPerEpoch; slotOffset++) {
       final UInt64 slot = startSlot.plus(slotOffset);
-      final IntList committee = beaconStateAccessors.getInclusionListCommittee(state, slot);
+      final IntList committee = beaconStateAccessorsEip7805.getInclusionListCommittee(state, slot);
       committee.forEach(validatorIndex -> assignmentMap.put(validatorIndex, slot));
     }
     return assignmentMap;
@@ -158,15 +150,15 @@ public class InclusionListUtil {
    */
   public Optional<UInt64> getInclusionListCommitteeAssignment(
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
-    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+    final UInt64 nextEpoch = beaconStateAccessorsEip7805.getCurrentEpoch(state).plus(UInt64.ONE);
     checkArgument(
         epoch.compareTo(nextEpoch) <= 0,
         "get_inclusion_committee_assignment: Epoch number too high");
     final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     for (UInt64 slot = startSlot;
-        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
+        slot.isLessThan(startSlot.plus(specConfigEip7805.getSlotsPerEpoch()));
         slot = slot.plus(UInt64.ONE)) {
-      final IntList committee = beaconStateAccessors.getInclusionListCommittee(state, slot);
+      final IntList committee = beaconStateAccessorsEip7805.getInclusionListCommittee(state, slot);
       if (committee.contains(validatorIndex)) {
         return Optional.of(slot);
       }

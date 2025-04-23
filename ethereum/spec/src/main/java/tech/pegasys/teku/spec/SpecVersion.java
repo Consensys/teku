@@ -177,7 +177,8 @@ public class SpecVersion extends DelegatingSpecLogic {
       final SpecConfigEip7805 specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
     final SchemaRegistry schemaRegistry =
         schemaRegistryBuilder.build(SpecMilestone.EIP7805, specConfig);
-    final SchemaDefinitionsEip7805 schemaDefinitions = new SchemaDefinitionsEip7805(schemaRegistry);
+    final SchemaDefinitionsEip7805 schemaDefinitions =
+        new SchemaDefinitionsEip7805(schemaRegistry, specConfig);
     final SpecLogicEip7805 specLogic =
         SpecLogicEip7805.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.EIP7805, specConfig, schemaDefinitions, specLogic);
