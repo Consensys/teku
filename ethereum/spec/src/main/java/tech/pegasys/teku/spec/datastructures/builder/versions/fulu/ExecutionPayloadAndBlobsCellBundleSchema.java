@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder;
+package tech.pegasys.teku.spec.datastructures.builder.versions.fulu;
 
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOBS_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
@@ -19,29 +19,32 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class ExecutionPayloadAndBlobsBundleSchema
-    extends ContainerSchema2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle>
-    implements BuilderPayloadSchema<ExecutionPayloadAndBlobsBundle> {
+public class ExecutionPayloadAndBlobsCellBundleSchema
+    extends ContainerSchema2<ExecutionPayloadAndBlobsCellBundle, ExecutionPayload, BlobsBundleFulu>
+    implements BuilderPayloadSchema<ExecutionPayloadAndBlobsCellBundle> {
 
-  public ExecutionPayloadAndBlobsBundleSchema(final SchemaRegistry schemaRegistry) {
+  @SuppressWarnings("unchecked")
+  public ExecutionPayloadAndBlobsCellBundleSchema(final SchemaRegistry schemaRegistry) {
     super(
         "ExecutionPayloadAndBlobsBundle",
         namedSchema(
             "execution_payload",
             SszSchema.as(ExecutionPayload.class, schemaRegistry.get(EXECUTION_PAYLOAD_SCHEMA))),
-        namedSchema("blobs_bundle", schemaRegistry.get(BLOBS_BUNDLE_SCHEMA)));
+        namedSchema(
+            "blobs_bundle", (SszSchema<BlobsBundleFulu>) schemaRegistry.get(BLOBS_BUNDLE_SCHEMA)));
   }
 
   @Override
-  public ExecutionPayloadAndBlobsBundle createFromBackingNode(final TreeNode node) {
-    return new ExecutionPayloadAndBlobsBundle(this, node);
+  public ExecutionPayloadAndBlobsCellBundle createFromBackingNode(final TreeNode node) {
+    return new ExecutionPayloadAndBlobsCellBundle(this, node);
   }
 
-  public ExecutionPayloadAndBlobsBundle create(
-      final ExecutionPayload executionPayload, final BlobsBundle blobsBundle) {
-    return new ExecutionPayloadAndBlobsBundle(this, executionPayload, blobsBundle);
+  public ExecutionPayloadAndBlobsCellBundle create(
+      final ExecutionPayload executionPayload, final BlobsBundleFulu blobsCellBundle) {
+    return new ExecutionPayloadAndBlobsCellBundle(this, executionPayload, blobsCellBundle);
   }
 }

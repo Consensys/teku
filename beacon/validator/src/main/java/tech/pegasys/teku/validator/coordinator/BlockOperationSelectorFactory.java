@@ -46,6 +46,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
+import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
@@ -575,7 +577,7 @@ public class BlockOperationSelectorFactory {
 
         if (maybeBuilderPayload.isPresent()) {
           // from the builder payload
-          final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+          final BlobsBundleDeneb blobsBundle =
               maybeBuilderPayload.get().getOptionalBlobsBundle().orElseThrow();
           // consistency checks because the BlobsBundle comes from an external source (a builder)
           verifyBuilderBlobsBundle(blobsBundle, block);
@@ -638,13 +640,12 @@ public class BlockOperationSelectorFactory {
 
         if (maybeBuilderPayload.isPresent()) {
           // from the builder payload
-          // TODO
-          final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-              maybeBuilderPayload.get().getOptionalBlobsBundle().orElseThrow();
+          final BlobsBundleFulu blobsCellBundle =
+              maybeBuilderPayload.get().getOptionalBlobsCellBundle().orElseThrow();
           // consistency checks because the BlobsBundle comes from an external source (a builder)
-          verifyBuilderBlobsBundle(blobsBundle, block);
-          blobs = blobsBundle.getBlobs();
-          proofs = blobsBundle.getProofs();
+          verifyBuilderBlobsCellBundle(blobsCellBundle, block);
+          blobs = blobsCellBundle.getBlobs();
+          proofs = blobsCellBundle.getProofs();
         } else {
           // from the local fallback
           final BlobsCellBundle blobsCellBundle =
@@ -693,8 +694,7 @@ public class BlockOperationSelectorFactory {
   }
 
   private void verifyBuilderBlobsBundle(
-      final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle,
-      final SignedBeaconBlock block) {
+      final BlobsBundleDeneb blobsBundle, final SignedBeaconBlock block) {
     final SszList<SszKZGCommitment> blockCommitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
     checkState(
@@ -706,5 +706,17 @@ public class BlockOperationSelectorFactory {
     checkState(
         blockCommitments.size() == blobsBundle.getBlobs().size(),
         "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
+  }
+
+  private void verifyBuilderBlobsCellBundle(
+      final BlobsBundleFulu blobsCellBundle, final SignedBeaconBlock block) {
+    final SszList<SszKZGCommitment> blockCommitments =
+        block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
+    checkState(
+        blobsCellBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
+        "Commitments in the builder BlobsCellBundle don't match the commitments in the block");
+    checkState(
+        blockCommitments.size() == blobsCellBundle.getBlobs().size(),
+        "The number of blobs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
   }
 }

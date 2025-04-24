@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder;
+package tech.pegasys.teku.spec.datastructures.builder.versions.fulu;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
@@ -22,17 +23,16 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-// TODO: FULU with cell proofs
-public class BlobsBundle
+public class BlobsBundleFulu
     extends Container3<
-        BlobsBundle, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
+        BlobsBundleFulu, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
 
-  BlobsBundle(final BlobsBundleSchema type, final TreeNode backingTreeNode) {
+  BlobsBundleFulu(final BlobsBundleSchemaFulu type, final TreeNode backingTreeNode) {
     super(type, backingTreeNode);
   }
 
-  public BlobsBundle(
-      final BlobsBundleSchema schema,
+  public BlobsBundleFulu(
+      final BlobsBundleSchemaFulu schema,
       final SszList<SszKZGCommitment> commitments,
       final SszList<SszKZGProof> proofs,
       final SszList<Blob> blobs) {
@@ -43,9 +43,9 @@ public class BlobsBundle
         blobs.size(),
         commitments.size());
     checkArgument(
-        proofs.size() == blobs.size(),
+        proofs.size() == blobs.size() * CELLS_PER_EXT_BLOB,
         "Expected %s proofs but got %s",
-        blobs.size(),
+        blobs.size() * CELLS_PER_EXT_BLOB,
         proofs.size());
   }
 

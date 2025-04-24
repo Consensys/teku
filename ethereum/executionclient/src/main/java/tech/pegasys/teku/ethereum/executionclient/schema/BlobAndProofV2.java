@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -45,7 +44,8 @@ public class BlobAndProofV2 {
   public BlobAndProofV2(
       @JsonProperty("blob") final Bytes blob, @JsonProperty("proofs") final List<Bytes48> proofs) {
     checkNotNull(blob, "blob");
-    this.proofs = proofs == null ? Collections.emptyList() : proofs;
+    checkNotNull(proofs, "proofs");
+    this.proofs = proofs;
     this.blob = blob;
   }
 

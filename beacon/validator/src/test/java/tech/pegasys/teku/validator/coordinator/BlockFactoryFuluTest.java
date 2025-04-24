@@ -14,8 +14,12 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -23,43 +27,44 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsFulu;
+import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
+public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   void shouldCreateBlockContents() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
+    final BlobsCellBundle blobsCellBundle = prepareBlobsCellBundle(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
             .blockContainer();
 
-    assertThat(blockContainer).isInstanceOf(BlockContentsDeneb.class);
+    assertThat(blockContainer).isInstanceOf(BlockContentsFulu.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
     assertThat(blockContainer.getBlobs())
         .map(SszCollection::asList)
-        .hasValue(blobsBundle.getBlobs());
+        .hasValue(blobsCellBundle.getBlobs());
     assertThat(blockContainer.getKzgProofs())
         .map(proofs -> proofs.stream().map(SszKZGProof::getKZGProof).toList())
-        .hasValue(blobsBundle.getProofs());
+        .hasValue(blobsCellBundle.getProofs());
   }
 
   @Test
@@ -106,19 +111,20 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void shouldCreateValidBlobSidecarsForBlockContents() {
-    final Spec spec = TestSpecFactory.createMinimalDeneb();
+  void shouldCreateValidDataColumnSidecarsForBlockContents() {
     final int blobsCount = 3;
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, blobsCount);
+    final BlobsCellBundle blobsCellBundle = prepareBlobsCellBundle(spec, blobsCount);
 
-    final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(false, spec);
+    final BlockAndDataColumnSidecars blockAndDataColumnSidecars =
+        createBlockAndDataColumnSidecars(false, spec);
 
-    final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
+    final List<DataColumnSidecar> dataColumnSidecars =
+        blockAndDataColumnSidecars.dataColumnSidecars();
 
     verifyNoInteractions(executionLayer);
 
     final SszList<SszKZGCommitment> expectedCommitments =
-        blockAndBlobSidecars
+        blockAndDataColumnSidecars
             .block()
             .getSignedBlock()
             .getMessage()
@@ -126,60 +132,79 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             .getOptionalBlobKzgCommitments()
             .orElseThrow();
 
-    assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
+    assertThat(dataColumnSidecars).hasSize(CELLS_PER_EXT_BLOB);
 
-    IntStream.range(0, blobSidecars.size())
+    IntStream.range(0, dataColumnSidecars.size())
         .forEach(
             index -> {
-              final BlobSidecar blobSidecar = blobSidecars.get(index);
-              // check sidecar is created using the prepared BlobsBundle
-              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
-              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
-              assertThat(blobSidecar.getSszKZGCommitment())
-                  .isEqualTo(expectedCommitments.get(index));
+              final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
+              // check sidecar is created using the prepared BlobsCellBundle
+              assertThat(
+                      dataColumnSidecar.getSszKZGProofs().stream()
+                          .map(SszKZGProof::getKZGProof)
+                          .toList())
+                  .isEqualTo(
+                      IntStream.range(0, expectedCommitments.size())
+                          .mapToObj(
+                              blobIndex ->
+                                  blobsCellBundle
+                                      .getProofs()
+                                      .get(blobIndex * CELLS_PER_EXT_BLOB + index))
+                          .toList());
+              assertThat(dataColumnSidecar.getSszKZGCommitments()).isEqualTo(expectedCommitments);
             });
   }
 
   @Test
-  void shouldCreateValidBlobSidecarsForBlindedBlock() {
-    final Spec spec = TestSpecFactory.createMinimalDeneb();
+  void shouldCreateValidDataColumnSidecarsForBlindedBlock() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     // random payload required to construct a valid BuilderPayload
     executionPayload = dataStructureUtil.randomExecutionPayload();
 
     final int blobsCount = 3;
-    final BlobsBundleDeneb blobsBundle =
-        prepareBuilderPayload(spec, blobsCount).getOptionalBlobsBundle().orElseThrow();
+    final BlobsBundleFulu blobsBundleFulu =
+        prepareBuilderPayload(spec, blobsCount).getOptionalBlobsCellBundle().orElseThrow();
 
-    final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(true, spec);
+    final BlockAndDataColumnSidecars blockAndDataColumnSidecars =
+        createBlockAndDataColumnSidecars(true, spec);
 
-    final SignedBlockContainer block = blockAndBlobSidecars.block();
-    final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
+    final SignedBlockContainer block = blockAndDataColumnSidecars.block();
+    final List<DataColumnSidecar> dataColumnSidecars =
+        blockAndDataColumnSidecars.dataColumnSidecars();
 
     verify(executionLayer).getCachedUnblindedPayload(block.getSlot());
 
     final SszList<SszKZGCommitment> expectedCommitments =
         block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
 
-    assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
+    assertThat(dataColumnSidecars).hasSize(CELLS_PER_EXT_BLOB);
 
-    IntStream.range(0, blobSidecars.size())
+    IntStream.range(0, dataColumnSidecars.size())
         .forEach(
             index -> {
-              final BlobSidecar blobSidecar = blobSidecars.get(index);
-              // check sidecar is created using the cached BuilderPayload
-              assertThat(blobSidecar.getSszKZGProof())
-                  .isEqualTo(blobsBundle.getProofs().get(index));
-              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
-              assertThat(blobSidecar.getSszKZGCommitment())
-                  .isEqualTo(expectedCommitments.get(index));
+              final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
+              // check sidecar is created using the prepared BlobsCellBundle
+              assertThat(dataColumnSidecar.getSszKZGProofs().asList())
+                  .isEqualTo(
+                      IntStream.range(0, expectedCommitments.size())
+                          .mapToObj(
+                              blobIndex ->
+                                  blobsBundleFulu
+                                      .getProofs()
+                                      .get(blobIndex * CELLS_PER_EXT_BLOB + index))
+                          .toList());
+              assertThat(dataColumnSidecar.getSszKZGCommitments()).isEqualTo(expectedCommitments);
             });
   }
 
   @Override
   public BlockFactory createBlockFactory(final Spec spec) {
-    return new BlockFactoryDeneb(
+    final KZG kzg = mock(KZG.class);
+    when(kzg.computeCells(any()))
+        .thenReturn(
+            IntStream.range(0, 128).mapToObj(__ -> dataStructureUtil.randomKZGCell()).toList());
+    return new BlockFactoryFulu(
         spec,
         new BlockOperationSelectorFactory(
             spec,
@@ -193,6 +218,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
-            executionLayer));
+            executionLayer),
+        kzg);
   }
 }
