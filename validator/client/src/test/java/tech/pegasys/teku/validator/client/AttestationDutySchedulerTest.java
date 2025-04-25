@@ -947,7 +947,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validatorIndexProvider,
             beaconCommitteeSubscriptions,
             spec,
-            false);
+            false,
+            asyncRunner);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem,
@@ -965,7 +966,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validatorIndexProvider,
             beaconCommitteeSubscriptions,
             spec,
-            false);
+            false,
+            asyncRunner);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem2,

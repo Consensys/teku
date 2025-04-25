@@ -30,6 +30,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -67,6 +68,7 @@ class AttestationDutyLoaderTest {
       new Validator(validatorKey, signer, new FileBackedGraffitiProvider());
   private final Map<BLSPublicKey, Validator> validators = Map.of(validatorKey, validator);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final AttestationDutyLoader dutyLoader =
       new AttestationDutyLoader(
@@ -77,7 +79,8 @@ class AttestationDutyLoaderTest {
           validatorIndexProvider,
           beaconCommitteeSubscriptions,
           spec,
-          false);
+          false,
+          asyncRunner);
 
   @BeforeEach
   void setUp() {
