@@ -58,7 +58,7 @@ public abstract class AbstractDutyLoader<D, S extends ScheduledDuties> implement
   }
 
   protected abstract SafeFuture<Optional<D>> requestDuties(
-      final UInt64 epoch, final IntCollection validatorIndices);
+      UInt64 epoch, IntCollection validatorIndices);
 
   protected abstract SafeFuture<S> scheduleAllDuties(UInt64 epoch, D duties);
 }
