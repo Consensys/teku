@@ -244,7 +244,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
       final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
-    LOG.trace(
+    LOG.info(
         "calling engineUpdatePayloadWithInclusionList(payloadId={}, inclusionList={}, slot={})",
         payloadId,
         inclusionList,

@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.duties;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE_TOTAL;
 
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -168,6 +169,15 @@ public class InclusionListProductionDuty implements Duty {
         "Unsigned inclusion list slot (%s) does not match expected slot %s",
         inclusionList.getSlot(),
         slot);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("validators", validators)
+        .add("slot", slot)
+        .add("forkProvider", forkProvider)
+        .toString();
   }
 
   private record ValidatorWithIndex(Validator validator, int index) {}
