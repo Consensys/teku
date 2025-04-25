@@ -50,7 +50,8 @@
                 "bellatrix",
                 "capella",
                 "deneb",
-                "electra"
+                "electra",
+                "fulu"
               ],
               "example": "phase0"
             }

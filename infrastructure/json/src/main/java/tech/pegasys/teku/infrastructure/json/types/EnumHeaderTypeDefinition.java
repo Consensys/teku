@@ -211,6 +211,12 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
       return this;
     }
 
+    public EnumTypeHeaderDefinitionBuilder<T> excludedEnumerations(
+        final Set<T> excludedEnumerations) {
+      this.excludedEnumerations.addAll(excludedEnumerations);
+      return this;
+    }
+
     public EnumHeaderTypeDefinition<T> build() {
       return new EnumHeaderTypeDefinition<>(
           itemType, serializer, name, title, required, description, example, excludedEnumerations);
