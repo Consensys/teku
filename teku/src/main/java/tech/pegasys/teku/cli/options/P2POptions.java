@@ -462,6 +462,9 @@ public class P2POptions {
   }
 
   private OptionalInt getP2pUpperBound() {
+    if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
+      return p2pLowerBound.getAsInt() > p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
+    }
     return p2pUpperBound;
   }
 

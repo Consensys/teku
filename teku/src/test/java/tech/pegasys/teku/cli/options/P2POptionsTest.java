@@ -33,9 +33,13 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -511,6 +515,44 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(tekuConfiguration.discovery().getStaticPeers())
         .containsExactlyInAnyOrder("peer1", "peer2", "peer3", "peer4");
+  }
+
+  @ParameterizedTest
+  @MethodSource("peerBoundsTestParameters")
+  public void shouldSmartDefaultPeerBounds(
+      final String lowerIn,
+      final String upperIn,
+      final int lowerExpected,
+      final int upperExpected) {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-upper-bound", upperIn, "--p2p-peer-lower-bound", lowerIn);
+
+    assertThat(tekuConfiguration.discovery().getMinPeers()).isEqualTo(lowerExpected);
+    assertThat(tekuConfiguration.discovery().getMaxPeers()).isEqualTo(upperExpected);
+  }
+
+  private static Stream<Arguments> peerBoundsTestParameters() {
+    return Stream.of(
+        Arguments.of("100", "200", 100, 200),
+        Arguments.of("100", "100", 100, 100),
+        Arguments.of("0", "0", 0, 0),
+        Arguments.of("1024000", "1024000", 1024000, 1024000),
+        Arguments.of("200", "100", 100, 200));
+  }
+
+  @Test
+  public void peersLowerBound_mustNotBeNegative() {
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments("--p2p-peer-lower-bound", "-1"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid minPeers: -1");
+  }
+
+  @Test
+  public void peersUpperBound_mustNotBeNegative() {
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments("--p2p-peer-upper-bound", "-1"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid maxPeers: -1");
   }
 
   @Test
