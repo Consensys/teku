@@ -30,11 +30,11 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_M
 import com.google.common.base.Supplier;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,7 +54,6 @@ import tech.pegasys.teku.networking.p2p.network.config.TypedFilePrivateKeySource
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
-  @Disabled("Temporarily disabled due to config file path issues in CI")
   public void shouldReadFromConfigurationFile() {
     final TekuConfiguration tekuConfig = getTekuConfigurationFromFile("P2POptions_config.yaml");
 
@@ -89,6 +88,23 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(syncConfig.getForwardSyncMaxPendingBatches()).isEqualTo(8);
     assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(100);
     assertThat(syncConfig.getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(400);
+  }
+
+  @Test
+  public void shouldReadUrlFromConfigurationFile(@TempDir final Path tempDir) throws Exception {
+    final Path peersFile = tempDir.resolve("peers.txt");
+    final Path configPath = tempDir.resolve("config.yaml");
+    Files.writeString(peersFile, "\n\n127.0.1.1\n127.1.1.1\n", StandardCharsets.UTF_8);
+    Files.writeString(
+        configPath,
+        String.format("p2p-static-peers-url: \"%s\"", peersFile.toAbsolutePath()),
+        StandardCharsets.UTF_8);
+
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());
+
+    final DiscoveryConfig discoConfig = tekuConfig.discovery();
+    assertThat(discoConfig.getStaticPeers()).isEqualTo(List.of("127.0.1.1", "127.1.1.1"));
   }
 
   @Test
