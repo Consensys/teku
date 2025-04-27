@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public class OkHttpRestClient implements RestClient {
 
-  static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+  static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json");
   static final MediaType OCTET_STREAM_MEDIA_TYPE = MediaType.parse("application/octet-stream");
 
   private final OkHttpClient httpClient;
