@@ -1,6 +1,7 @@
 dependencies {
   implementation project(":infrastructure:metrics")
   implementation project(":infrastructure:time")
+  implementation project(":infrastructure:exceptions")
   implementation 'com.google.guava:guava'
 
   testImplementation testFixtures(project(":infrastructure:metrics"))
