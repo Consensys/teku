@@ -16,7 +16,6 @@ package tech.pegasys.teku.kzg;
 import java.math.BigInteger;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 
 /**
  * This interface specifies all the KZG functions needed for the Deneb specification and is the
@@ -35,7 +34,7 @@ public interface KZG {
     return rustKzgEnabled ? RustWithCKZG.getInstance() : CKZG4844.getInstance();
   }
 
-  KZG NOOP =
+  KZG DISABLED =
       new KZG() {
 
         @Override
@@ -48,7 +47,7 @@ public interface KZG {
         public boolean verifyBlobKzgProof(
             final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
             throws KZGException {
-          return true;
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
@@ -57,28 +56,28 @@ public interface KZG {
             final List<KZGCommitment> kzgCommitments,
             final List<KZGProof> kzgProofs)
             throws KZGException {
-          return true;
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
         public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-          return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
         public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
             throws KZGException {
-          return KZGProof.fromBytesCompressed(Bytes48.ZERO);
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
         public List<KZGCell> computeCells(Bytes blob) {
-          return List.of();
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
         public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
-          return List.of();
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
@@ -86,12 +85,12 @@ public interface KZG {
             List<KZGCommitment> commitments,
             List<KZGCellWithColumnId> cellWithIDs,
             List<KZGProof> proofs) {
-          return true;
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
         public List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells) {
-          return List.of();
+          throw new UnsupportedOperationException("KZG is disabled");
         }
       };
 
