@@ -45,8 +45,7 @@ public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIn
 
   @Test
   public void shouldReturnAllEth1BlocksFromCache() throws IOException {
-    final List<Eth1Data> eth1DataCacheList =
-        new ArrayList<>();
+    final List<Eth1Data> eth1DataCacheList = new ArrayList<>();
     for (int i = 0; i < 5; i++) {
       eth1DataCacheList.add(dataStructureUtil.randomEth1Data());
     }
