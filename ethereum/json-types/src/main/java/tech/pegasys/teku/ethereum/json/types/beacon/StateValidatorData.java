@@ -15,8 +15,8 @@ package tech.pegasys.teku.ethereum.json.types.beacon;
 
 import java.util.Objects;
 import java.util.Optional;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;

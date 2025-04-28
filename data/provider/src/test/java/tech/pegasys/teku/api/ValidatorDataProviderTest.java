@@ -17,7 +17,6 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -31,26 +30,21 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -65,16 +59,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -278,78 +269,6 @@ public class ValidatorDataProviderTest {
     verify(validatorApiChannel).sendSignedAttestations(args.capture());
     assertThat(args.getValue()).hasSize(1);
     assertThatSszData(args.getValue().get(0)).isEqualByAllMeansTo(attestation);
-  }
-
-  @TestTemplate
-  public void submitSignedBlock_shouldReturn200ForSuccess()
-      throws ExecutionException, InterruptedException {
-    final SignedBeaconBlock internalSignedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
-        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(internalSignedBeaconBlock);
-
-    final SafeFuture<SendSignedBlockResult> successImportResult =
-        completedFuture(SendSignedBlockResult.success(internalSignedBeaconBlock.getRoot()));
-
-    when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(successImportResult);
-
-    final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
-
-    assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(200);
-  }
-
-  @TestTemplate
-  public void submitSignedBlock_shouldReturn202ForInvalidBlock() {
-    final SignedBeaconBlock internalSignedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
-        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(internalSignedBeaconBlock);
-    final AtomicInteger failReasonCount = new AtomicInteger();
-
-    Stream.of(FailureReason.values())
-        .filter(failureReason -> !failureReason.equals(FailureReason.INTERNAL_ERROR))
-        .forEach(
-            failureReason -> {
-              failReasonCount.getAndIncrement();
-
-              final SafeFuture<SendSignedBlockResult> failImportResult =
-                  completedFuture(SendSignedBlockResult.notImported(failureReason.name()));
-
-              when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(failImportResult);
-
-              final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-                  provider.submitSignedBlock(
-                      signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
-
-              try {
-                assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(202);
-              } catch (final Exception e) {
-                fail("Exception while executing test.");
-              }
-            });
-
-    // Assert that the check has run over each FailureReason except the 500.
-    assertThat(failReasonCount.get()).isEqualTo(FailureReason.values().length - 1);
-  }
-
-  @TestTemplate
-  public void submitSignedBlock_shouldReturn500ForInternalError()
-      throws ExecutionException, InterruptedException {
-    final SignedBeaconBlock internalSignedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
-        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(internalSignedBeaconBlock);
-
-    final SafeFuture<SendSignedBlockResult> failImportResult =
-        completedFuture(SendSignedBlockResult.rejected(FailureReason.INTERNAL_ERROR.name()));
-
-    when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(failImportResult);
-
-    final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
-
-    assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
   }
 
   @TestTemplate

@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -100,7 +99,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
                         blobSidecarsAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(blobSidecarsAndMetaData.getMilestone()).name());
+                              blobSidecarsAndMetaData.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(blobSidecarsAndMetaData);
                         })
                     .orElse(AsyncApiResponse.respondNotFound())));

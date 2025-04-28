@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestBodyType;
 import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
