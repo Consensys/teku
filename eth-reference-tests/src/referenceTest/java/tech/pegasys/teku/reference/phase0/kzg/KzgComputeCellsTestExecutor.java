@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
-import tech.pegasys.teku.kzg.KZGCellAndProof;
 
 public class KzgComputeCellsTestExecutor extends KzgTestExecutor {
 
@@ -32,7 +31,7 @@ public class KzgComputeCellsTestExecutor extends KzgTestExecutor {
     List<KZGCell> actualKzgCells;
     try {
       final Bytes blob = data.getInput().getBlob();
-      actualKzgCells = kzg.computeCellsAndProofs(blob).stream().map(KZGCellAndProof::cell).toList();
+      actualKzgCells = kzg.computeCells(blob);
     } catch (final RuntimeException ex) {
       actualKzgCells = null;
     }
