@@ -15,6 +15,7 @@ package tech.pegasys.teku.kzg;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 
 public class NoOpKZG implements KZG {
 
@@ -44,6 +45,7 @@ public class NoOpKZG implements KZG {
   }
 
   @Override
+  @Deprecated(since = "Use computeCells instead, computeCellsAndProof is not for production")
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     return List.of();
   }
@@ -56,12 +58,12 @@ public class NoOpKZG implements KZG {
   @Override
   public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
       throws KZGException {
-    return null;
+    return KZGProof.fromBytesCompressed(Bytes48.ZERO);
   }
 
   @Override
   public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-    return null;
+    return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
   }
 
   @Override
