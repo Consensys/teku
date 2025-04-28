@@ -14,6 +14,7 @@
 package tech.pegasys.teku.kzg;
 
 import com.google.common.collect.Streams;
+import ethereum.cryptography.Cells;
 import ethereum.cryptography.CellsAndProofs;
 import ethereum.cryptography.LibEthKZG;
 import java.util.Arrays;
@@ -100,6 +101,12 @@ final class RustKZG implements KZG {
   public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
       throws KZGException {
     throw new RuntimeException("LibPeerDASKZG library doesn't support computeBlobKzgProof");
+  }
+
+  @Override
+  public List<KZGCell> computeCells(final Bytes blob) {
+    final Cells cells = library.computeCells(blob.toArrayUnsafe());
+    return KZGCell.splitBytes(Bytes.wrap(cells.toBytes()));
   }
 
   @Override

@@ -156,6 +156,16 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
+  public List<KZGCell> computeCells(final Bytes blob) throws KZGException {
+    try {
+      final byte[] cells = CKZG4844JNI.computeCells(blob.toArrayUnsafe());
+      return KZGCell.splitBytes(Bytes.wrap(cells));
+    } catch (final Exception ex) {
+      throw new KZGException("Failed to compute KZG cells for blob " + blob.toShortHexString(), ex);
+    }
+  }
+
+  @Override
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     final CellsAndProofs cellsAndProofs =
         CKZG4844JNI.computeCellsAndKzgProofs(blob.toArrayUnsafe());
