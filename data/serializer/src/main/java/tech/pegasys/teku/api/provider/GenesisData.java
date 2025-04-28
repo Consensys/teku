@@ -11,10 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.beacon;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_BYTES32;
-import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES32;
+package tech.pegasys.teku.api.provider;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,7 +32,10 @@ public class GenesisData {
   public final UInt64 genesisTime;
 
   @JsonProperty("genesis_validators_root")
-  @Schema(type = "string", example = EXAMPLE_BYTES32, pattern = PATTERN_BYTES32)
+  @Schema(
+      type = "string",
+      example = "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+      pattern = "^0x[a-fA-F0-9]{64}$")
   public final Bytes32 genesisValidatorsRoot;
 
   @JsonProperty("genesis_fork_version")

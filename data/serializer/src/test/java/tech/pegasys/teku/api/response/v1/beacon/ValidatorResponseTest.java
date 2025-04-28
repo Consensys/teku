@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatusUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -39,45 +40,45 @@ public class ValidatorResponseTest {
   @Test
   void status_shouldBePendingInitialised() {
     final Validator validator = pendingValidator(TWO_HUNDRED, FAR_FUTURE_EPOCH);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.pending_initialized);
   }
 
   @Test
   void status_shouldBePendingQueued() {
     final Validator validator = pendingValidator(TWO_HUNDRED, TWO_HUNDRED);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.pending_queued);
   }
 
   @Test
   void status_shouldBeActiveOngoing() {
     final Validator validator = activeValidator(FAR_FUTURE_EPOCH, false);
-    assertThat(ValidatorResponse.getValidatorStatus(ZERO, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ZERO, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.active_ongoing);
   }
 
   @Test
   void status_shouldBeActiveExiting() {
     final Validator validator = activeValidator(TWO_HUNDRED, false);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.active_exiting);
   }
 
   @Test
   void status_shouldBeActiveSlashed() {
     final Validator validator = activeValidator(TWO_HUNDRED, true);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.active_slashed);
   }
 
   @Test
   void status_shouldBeExitedUnslashed() {
     final Validator validator = exitedValidator(ONE_HUNDRED, TWO_HUNDRED, false);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.exited_unslashed);
     assertThat(
-            ValidatorResponse.getValidatorStatus(
+            ValidatorStatusUtil.getValidatorStatus(
                 ONE_HUNDRED.plus(ONE), validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.exited_unslashed);
   }
@@ -85,21 +86,21 @@ public class ValidatorResponseTest {
   @Test
   void status_shouldBeExitedSlashed() {
     final Validator validator = exitedValidator(ONE_HUNDRED, TWO_HUNDRED, true);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.exited_slashed);
   }
 
   @Test
   void status_shouldBeWithdrawalPossible() {
     final Validator validator = withdrawalValidator(UInt64.valueOf("32000000000"), ONE_HUNDRED);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.withdrawal_possible);
   }
 
   @Test
   void status_shouldBeWithdrawalDone() {
     final Validator validator = withdrawalValidator(ZERO, ONE_HUNDRED);
-    assertThat(ValidatorResponse.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
+    assertThat(ValidatorStatusUtil.getValidatorStatus(ONE_HUNDRED, validator, FAR_FUTURE_EPOCH))
         .isEqualTo(ValidatorStatus.withdrawal_done);
   }
 

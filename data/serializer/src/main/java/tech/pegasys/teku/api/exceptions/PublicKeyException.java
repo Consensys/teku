@@ -18,8 +18,4 @@ public class PublicKeyException extends RuntimeException {
   public PublicKeyException(final String message, final Throwable cause) {
     super(message, cause);
   }
-
-  public PublicKeyException(final String err) {
-    super(err);
-  }
 }

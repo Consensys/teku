@@ -11,18 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.validator;
+package tech.pegasys.teku.api.provider;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
-
-public class PostValidatorLivenessResponse {
-
-  public final List<ValidatorLiveness> data;
-
-  @JsonCreator
-  public PostValidatorLivenessResponse(@JsonProperty("data") final List<ValidatorLiveness> data) {
-    this.data = data;
-  }
+@SuppressWarnings("JavaCase")
+public enum State {
+  disconnected,
+  connecting,
+  connected,
+  disconnecting
 }

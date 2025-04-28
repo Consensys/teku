@@ -11,19 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.beacon;
+package tech.pegasys.teku.api.provider;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import tech.pegasys.teku.api.schema.Root;
-
-public class GetHashTreeRootResponse {
-
-  @JsonProperty("data")
-  public final Root data;
-
-  @JsonCreator
-  public GetHashTreeRootResponse(@JsonProperty("data") final Root data) {
-    this.data = data;
-  }
+@SuppressWarnings("JavaCase")
+public enum Direction {
+  inbound,
+  outbound
 }
