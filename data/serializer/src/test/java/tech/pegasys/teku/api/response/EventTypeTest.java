@@ -11,14 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1;
+package tech.pegasys.teku.api.response;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.EventType;
 
 public class EventTypeTest {
   @Test

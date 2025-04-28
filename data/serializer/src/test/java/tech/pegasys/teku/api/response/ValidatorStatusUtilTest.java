@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.beacon;
+package tech.pegasys.teku.api.response;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -21,15 +21,13 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.ValidatorStatus;
-import tech.pegasys.teku.api.response.ValidatorStatusUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class ValidatorResponseTest {
+public class ValidatorStatusUtilTest {
   private static final UInt64 ONE_HUNDRED = UInt64.valueOf(100);
   private static final UInt64 TWO_HUNDRED = UInt64.valueOf(200);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
