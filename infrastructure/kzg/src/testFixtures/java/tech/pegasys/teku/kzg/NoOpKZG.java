@@ -72,13 +72,13 @@ public class NoOpKZG implements KZG {
       final List<KZGCommitment> kzgCommitments,
       final List<KZGProof> kzgProofs)
       throws KZGException {
-    return false;
+    return true;
   }
 
   @Override
   public boolean verifyBlobKzgProof(
       final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
       throws KZGException {
-    return false;
+    return true;
   }
 }
