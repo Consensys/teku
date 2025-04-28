@@ -14,6 +14,7 @@
 package tech.pegasys.teku.kzg;
 
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 
 public class NoOpKZG implements KZG {
 
@@ -43,31 +44,31 @@ public class NoOpKZG implements KZG {
   }
 
   @Override
-  public List<KZGCellAndProof> computeCellsAndProofs(final org.apache.tuweni.bytes.Bytes blob) {
+  public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     return List.of();
   }
 
   @Override
-  public List<KZGCell> computeCells(final org.apache.tuweni.bytes.Bytes blob) {
+  public List<KZGCell> computeCells(final Bytes blob) {
     return List.of();
   }
 
   @Override
   public KZGProof computeBlobKzgProof(
-      final org.apache.tuweni.bytes.Bytes blob, final KZGCommitment kzgCommitment)
+      final Bytes blob, final KZGCommitment kzgCommitment)
       throws KZGException {
     return null;
   }
 
   @Override
-  public KZGCommitment blobToKzgCommitment(final org.apache.tuweni.bytes.Bytes blob)
+  public KZGCommitment blobToKzgCommitment(final Bytes blob)
       throws KZGException {
     return null;
   }
 
   @Override
   public boolean verifyBlobKzgProofBatch(
-      final List<org.apache.tuweni.bytes.Bytes> blobs,
+      final List<Bytes> blobs,
       final List<KZGCommitment> kzgCommitments,
       final List<KZGProof> kzgProofs)
       throws KZGException {
@@ -76,7 +77,7 @@ public class NoOpKZG implements KZG {
 
   @Override
   public boolean verifyBlobKzgProof(
-      final org.apache.tuweni.bytes.Bytes blob,
+      final Bytes blob,
       final KZGCommitment kzgCommitment,
       final KZGProof kzgProof)
       throws KZGException {
