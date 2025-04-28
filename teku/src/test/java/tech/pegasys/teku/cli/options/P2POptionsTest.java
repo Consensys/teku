@@ -36,6 +36,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -91,17 +93,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadUrlFromConfigurationFile(@TempDir final Path tempDir) throws Exception {
     final Path peersFile = tempDir.resolve("peers.txt");
     final Path configPath = tempDir.resolve("config.yaml");
     Files.writeString(peersFile, "\n\n127.0.1.1\n127.1.1.1\n", StandardCharsets.UTF_8);
     Files.writeString(
         configPath,
-        String.format("p2p-static-peers-url: \"%s\"", peersFile),
+        String.format("p2p-static-peers-url: \"%s\"", peersFile.toAbsolutePath()),
         StandardCharsets.UTF_8);
 
     final TekuConfiguration tekuConfig =
-        getTekuConfigurationFromArguments("--config-file", configPath.toString());
+        getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();
     assertThat(discoConfig.getStaticPeers()).isEqualTo(List.of("127.0.1.1", "127.1.1.1"));
