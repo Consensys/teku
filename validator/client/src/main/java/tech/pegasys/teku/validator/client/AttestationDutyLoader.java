@@ -13,16 +13,20 @@
 
 package tech.pegasys.teku.validator.client;
 
-import com.google.common.collect.Lists;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -31,8 +35,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
@@ -40,14 +47,20 @@ import tech.pegasys.teku.validator.client.duties.attestations.AttestationProduct
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class AttestationDutyLoader
-    extends AbstractDutyLoader<AttesterDuties, SlotBasedScheduledDuties<?, ?>> {
+    extends AbstractDutyLoader<AttesterDuties, SlotBasedScheduledDuties<?, ?>>
+    implements ValidatorTimingChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  // Attestation duty scheduling is batched in order to avoid expensive aggregation slot signing in
-  // beginning of the epoch when a node is running a large number of validators
-  private static final int BATCH_SIZE = 2500;
-  private static final Duration BATCH_DELAY = Duration.ofSeconds(3);
+  // Attestation duty scheduling is batched by slots in order to avoid expensive aggregation slot
+  // signing in beginning of the epoch when a node is running a large number of validators
+  private static final int MIN_SIZE_TO_BATCH_BY_SLOT = 1000;
+  private static final int CURRENT_EPOCH_SLOTS_BEFORE_DELAY = 4;
+  private static final Duration CURRENT_EPOCH_BATCH_DELAY = Duration.ofMillis(500);
+  private static final int FUTURE_EPOCH_SLOTS_BEFORE_DELAY = 1;
+  private static final Duration FUTURE_EPOCH_BATCH_DELAY = Duration.ofSeconds(1);
+
+  private final AtomicReference<UInt64> currentSlot = new AtomicReference<>(UInt64.ZERO);
 
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
@@ -95,32 +108,50 @@ public class AttestationDutyLoader
     final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
 
-    final Optional<DvtAttestationAggregations> dvtAttestationAggregationsForEpoch =
+    final Optional<DvtAttestationAggregations> dvtAttestationAggregations =
         useDvtEndpoint
             ? Optional.of(
                 new DvtAttestationAggregations(validatorApiChannel, duties.getDuties().size()))
             : Optional.empty();
 
-    final List<List<AttesterDuty>> batchedDuties = Lists.partition(duties.getDuties(), BATCH_SIZE);
-
-    final List<SafeFuture<?>> dutiesScheduling = new ArrayList<>();
-
-    for (int i = 0; i < batchedDuties.size(); i++) {
-      final List<AttesterDuty> batch = batchedDuties.get(i);
-      if (i == 0) {
-        // first batch has no delay
-        dutiesScheduling.add(
-            scheduleDuties(scheduledDuties, batch, dvtAttestationAggregationsForEpoch));
-      } else {
-        // consecutive batches are delayed by BATCH_DELAY * index of the batch
-        dutiesScheduling.add(
-            asyncRunner.runAfterDelay(
-                () -> scheduleDuties(scheduledDuties, batch, dvtAttestationAggregationsForEpoch),
-                BATCH_DELAY.multipliedBy(i)));
-      }
+    if (duties.getDuties().size() < MIN_SIZE_TO_BATCH_BY_SLOT) {
+      return scheduleDuties(scheduledDuties, duties.getDuties(), dvtAttestationAggregations)
+          .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
+          .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
     }
 
-    return SafeFuture.allOf(dutiesScheduling.stream())
+    final boolean isCurrentEpoch =
+        spec.computeEpochAtSlot(currentSlot.get()).isLessThanOrEqualTo(epoch);
+
+    final Map<UInt64, List<AttesterDuty>> dutiesBySlot =
+        duties.getDuties().stream()
+            .collect(
+                Collectors.groupingBy(AttesterDuty::getSlot, TreeMap::new, Collectors.toList()));
+
+    SafeFuture<Void> dutiesScheduling = SafeFuture.COMPLETE;
+
+    int i = 0;
+    for (final List<AttesterDuty> dutiesForSlot : dutiesBySlot.values()) {
+      // every X amount of slots, we add a delay to the scheduling
+      if (i % (isCurrentEpoch ? CURRENT_EPOCH_SLOTS_BEFORE_DELAY : FUTURE_EPOCH_SLOTS_BEFORE_DELAY)
+          == 0) {
+        dutiesScheduling =
+            dutiesScheduling.thenCompose(
+                __ ->
+                    asyncRunner.runAfterDelay(
+                        () ->
+                            scheduleDuties(
+                                scheduledDuties, dutiesForSlot, dvtAttestationAggregations),
+                        isCurrentEpoch ? CURRENT_EPOCH_BATCH_DELAY : FUTURE_EPOCH_BATCH_DELAY));
+      } else {
+        dutiesScheduling =
+            dutiesScheduling.thenCompose(
+                __ -> scheduleDuties(scheduledDuties, dutiesForSlot, dvtAttestationAggregations));
+      }
+      i++;
+    }
+
+    return dutiesScheduling
         .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
   }
@@ -128,17 +159,17 @@ public class AttestationDutyLoader
   private SafeFuture<Void> scheduleDuties(
       final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
       final List<AttesterDuty> duties,
-      final Optional<DvtAttestationAggregations> dvtAttestationAggregationLoader) {
+      final Optional<DvtAttestationAggregations> dvtAttestationAggregations) {
     return SafeFuture.allOf(
         duties.stream()
-            .map(duty -> scheduleDuty(scheduledDuties, duty, dvtAttestationAggregationLoader))
+            .map(duty -> scheduleDuty(scheduledDuties, duty, dvtAttestationAggregations))
             .toArray(SafeFuture[]::new));
   }
 
   private SafeFuture<Void> scheduleDuty(
       final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
       final AttesterDuty duty,
-      final Optional<DvtAttestationAggregations> dvtAttestationAggregationLoader) {
+      final Optional<DvtAttestationAggregations> dvtAttestationAggregations) {
     final Optional<Validator> maybeValidator = validators.getValidator(duty.getPublicKey());
     if (maybeValidator.isEmpty()) {
       return SafeFuture.COMPLETE;
@@ -168,7 +199,7 @@ public class AttestationDutyLoader
         duty.getSlot(),
         aggregatorModulo,
         unsignedAttestationFuture,
-        dvtAttestationAggregationLoader);
+        dvtAttestationAggregations);
   }
 
   private SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
@@ -200,13 +231,13 @@ public class AttestationDutyLoader
       final UInt64 slot,
       final int aggregatorModulo,
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture,
-      final Optional<DvtAttestationAggregations> dvtAttestationAggregation) {
+      final Optional<DvtAttestationAggregations> dvtAttestationAggregations) {
     return forkProvider
         .getForkInfo(slot)
         .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
         .thenCompose(
             slotSignature ->
-                dvtAttestationAggregation
+                dvtAttestationAggregations
                     .map(
                         dvt ->
                             dvt.getCombinedSelectionProofFuture(
@@ -243,4 +274,42 @@ public class AttestationDutyLoader
               return null;
             });
   }
+
+  @Override
+  public void onSlot(final UInt64 slot) {
+    currentSlot.set(slot);
+  }
+
+  @Override
+  public void onHeadUpdate(
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
+
+  @Override
+  public void onPossibleMissedEvents() {}
+
+  @Override
+  public void onValidatorsAdded() {}
+
+  @Override
+  public void onBlockProductionDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttestationCreationDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttestationAggregationDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
+
+  @Override
+  public void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {}
 }
