@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.exceptions;
+package tech.pegasys.teku.api.provider;
 
-public class PublicKeyException extends RuntimeException {
-
-  public PublicKeyException(final String message, final Throwable cause) {
-    super(message, cause);
-  }
+@SuppressWarnings("JavaCase")
+public enum State {
+  disconnected,
+  connecting,
+  connected,
+  disconnecting
 }
