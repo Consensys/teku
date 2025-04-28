@@ -220,7 +220,7 @@ public class P2POptions {
       names = {"--p2p-static-peers-url"},
       paramLabel = "<URL>",
       description =
-          "Specifies a URL or file containing a list of 'static' peers (one per line) with which to establish and maintain connections",
+          "Specifies a URL or file containing a list of 'static' peers (one per line) with which to establish and maintain connections. Accepts multiaddr format.",
       arity = "1")
   private String p2pStaticPeersUrl;
 
@@ -228,7 +228,7 @@ public class P2POptions {
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description =
-          "Specifies a comma-separated list of 'static' peers with which to establish and maintain connections",
+          "Specifies a comma-separated list of 'static' peers with which to establish and maintain connections. Accepts multiaddr format.",
       split = ",",
       arity = "1")
   private final List<String> p2pStaticPeers = new ArrayList<>();
