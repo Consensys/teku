@@ -11,22 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.fulu;
 
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface MetadataMessageSchema<T extends MetadataMessage> extends SszContainerSchema<T> {
-  @Override
-  T createFromBackingNode(TreeNode node);
+public class DataColumn extends SszListImpl<Cell> implements SszList<Cell> {
 
-  T create(
-      UInt64 seqNumber,
-      Iterable<Integer> attnets,
-      final Iterable<Integer> syncnets,
-      final Optional<UInt64> custodyGroupCount);
+  DataColumn(final DataColumnSchema schema, final TreeNode node) {
+    super(schema, node);
+  }
 
-  T createDefault();
+  public String toBriefString() {
+    return isEmpty() ? "" : get(0).toBriefString();
+  }
 }

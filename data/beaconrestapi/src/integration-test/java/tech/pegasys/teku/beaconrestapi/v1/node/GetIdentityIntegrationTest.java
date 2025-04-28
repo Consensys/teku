@@ -56,7 +56,7 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     final MetadataMessage metadataMessage =
         spec.getGenesisSchemaDefinitions()
             .getMetadataMessageSchema()
-            .create(seqnr, List.of(1, 11, 15), Collections.emptyList());
+            .create(seqnr, List.of(1, 11, 15), Collections.emptyList(), Optional.empty());
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
@@ -73,7 +73,7 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     final MetadataMessage metadataMessage =
         spec.getGenesisSchemaDefinitions()
             .getMetadataMessageSchema()
-            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3));
+            .create(seqnr, List.of(1, 11, 15), List.of(0, 1, 2, 3), Optional.empty());
 
     when(eth2P2PNetwork.getMetadata()).thenReturn(metadataMessage);
 
