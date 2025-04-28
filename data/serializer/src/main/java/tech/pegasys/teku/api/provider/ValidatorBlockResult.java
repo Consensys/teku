@@ -11,9 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+package tech.pegasys.teku.api.provider;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
@@ -26,7 +24,7 @@ public class ValidatorBlockResult {
   @Schema(type = "string")
   private final Optional<String> failureReason;
 
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
+  @Schema(type = "string", format = "byte", description = "Bytes32 hexadecimal")
   private final Optional<Bytes32> hash_tree_root;
 
   public ValidatorBlockResult(

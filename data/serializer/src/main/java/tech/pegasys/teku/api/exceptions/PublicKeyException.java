@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema;
+package tech.pegasys.teku.api.exceptions;
 
 public class PublicKeyException extends RuntimeException {
 

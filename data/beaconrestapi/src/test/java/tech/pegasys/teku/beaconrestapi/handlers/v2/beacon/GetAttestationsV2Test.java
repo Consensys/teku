@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -72,7 +71,7 @@ public class GetAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(attestationsAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(specMilestone).name());
+        .isEqualTo(specMilestone.lowerCaseName());
   }
 
   @TestTemplate
@@ -87,7 +86,7 @@ public class GetAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(attestationsAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(specMilestone).name());
+        .isEqualTo(specMilestone.lowerCaseName());
   }
 
   @TestTemplate
