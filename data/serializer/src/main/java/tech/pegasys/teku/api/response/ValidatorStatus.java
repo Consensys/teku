@@ -11,29 +11,30 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1;
+package tech.pegasys.teku.api.response;
 
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @SuppressWarnings("JavaCase")
-public enum EventType {
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg,
-  sync_state,
-  contribution_and_proof,
-  bls_to_execution_change,
-  blob_sidecar,
-  attester_slashing,
-  proposer_slashing,
-  payload_attributes,
-  block_gossip,
-  single_attestation;
+@Schema(description = "[Validator status specification](https://hackmd.io/ofFJ5gOmQpu1jjHilHbdQQ)")
+public enum ValidatorStatus {
+  pending_initialized(false),
+  pending_queued(false),
+  active_ongoing(false),
+  active_exiting(false),
+  active_slashed(false),
+  exited_unslashed(true),
+  exited_slashed(true),
+  withdrawal_possible(true),
+  withdrawal_done(true);
 
-  public static List<EventType> getTopics(final List<String> topics) {
-    return topics.stream().map(EventType::valueOf).toList();
+  private final boolean hasExited;
+
+  ValidatorStatus(final boolean hasExited) {
+    this.hasExited = hasExited;
+  }
+
+  public boolean hasExited() {
+    return hasExited;
   }
 }

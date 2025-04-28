@@ -11,17 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.debug;
+package tech.pegasys.teku.api.response;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
-public class GetChainHeadsResponse {
-  public final List<ChainHead> data;
+@SuppressWarnings("JavaCase")
+public enum EventType {
+  head,
+  block,
+  attestation,
+  voluntary_exit,
+  finalized_checkpoint,
+  chain_reorg,
+  sync_state,
+  contribution_and_proof,
+  bls_to_execution_change,
+  blob_sidecar,
+  attester_slashing,
+  proposer_slashing,
+  payload_attributes,
+  block_gossip,
+  single_attestation;
 
-  @JsonCreator
-  public GetChainHeadsResponse(@JsonProperty("data") final List<ChainHead> data) {
-    this.data = data;
+  public static List<EventType> getTopics(final List<String> topics) {
+    return topics.stream().map(EventType::valueOf).toList();
   }
 }

@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.EventType;
 
 public class EventTypeTest {
   @Test

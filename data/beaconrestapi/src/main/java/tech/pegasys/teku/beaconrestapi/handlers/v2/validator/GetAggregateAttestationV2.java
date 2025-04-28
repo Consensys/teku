@@ -28,7 +28,6 @@ import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
@@ -101,7 +100,7 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                         attestationAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(attestationAndMetaData.getMilestone()).name());
+                              attestationAndMetaData.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(attestationAndMetaData);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));

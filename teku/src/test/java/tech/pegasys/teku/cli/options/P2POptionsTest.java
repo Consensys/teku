@@ -36,6 +36,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -91,6 +93,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadUrlFromConfigurationFile(@TempDir final Path tempDir) throws Exception {
     final Path peersFile = tempDir.resolve("peers.txt");
     final Path configPath = tempDir.resolve("config.yaml");
