@@ -97,11 +97,11 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     Files.writeString(peersFile, "\n\n127.0.1.1\n127.1.1.1\n", StandardCharsets.UTF_8);
     Files.writeString(
         configPath,
-        String.format("p2p-static-peers-url: \"%s\"", peersFile.toAbsolutePath()),
+        String.format("p2p-static-peers-url: \"%s\"", peersFile),
         StandardCharsets.UTF_8);
 
     final TekuConfiguration tekuConfig =
-        getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());
+        getTekuConfigurationFromArguments("--config-file", configPath.toString());
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();
     assertThat(discoConfig.getStaticPeers()).isEqualTo(List.of("127.0.1.1", "127.1.1.1"));
