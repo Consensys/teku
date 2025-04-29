@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
@@ -52,13 +53,19 @@ public class AttestationDutyLoader
 
   private static final Logger LOG = LogManager.getLogger();
 
-  // Attestation duty scheduling is batched by slots in order to avoid expensive aggregation slot
-  // signing in beginning of the epoch when a node is running a large number of validators
-  private static final int MIN_SIZE_TO_BATCH_BY_SLOT = 1000;
-  private static final int CURRENT_EPOCH_SLOTS_BEFORE_DELAY = 4;
-  private static final Duration CURRENT_EPOCH_BATCH_DELAY = Duration.ofMillis(500);
-  private static final int FUTURE_EPOCH_SLOTS_BEFORE_DELAY = 1;
-  private static final Duration FUTURE_EPOCH_BATCH_DELAY = Duration.ofSeconds(1);
+  // Attestation duty scheduling is batched by slots and delays are added in order to avoid
+  // expensive aggregation slot signing in beginning of the epoch when a node is running a large
+  // number of validators
+  @VisibleForTesting
+  record SlotBatchingOptions(
+      int minSizeToBatchBySlot,
+      int currentEpochSlotsToScheduleBeforeDelay,
+      Duration currentEpochSchedulingDelay,
+      int futureEpochSlotsToScheduleBeforeDelay,
+      Duration futureEpochSchedulingDelay) {}
+
+  private static final SlotBatchingOptions DEFAULT_BATCHING_OPTIONS =
+      new SlotBatchingOptions(1000, 4, Duration.ofMillis(500), 1, Duration.ofSeconds(1));
 
   private final AtomicReference<UInt64> currentSlot = new AtomicReference<>(UInt64.ZERO);
 
@@ -71,6 +78,7 @@ public class AttestationDutyLoader
   private final Spec spec;
   private final boolean useDvtEndpoint;
   private final AsyncRunner asyncRunner;
+  private final SlotBatchingOptions slotBatchingOptions;
 
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
@@ -83,6 +91,32 @@ public class AttestationDutyLoader
       final Spec spec,
       final boolean useDvtEndpoint,
       final AsyncRunner asyncRunner) {
+    this(
+        validatorApiChannel,
+        forkProvider,
+        scheduledDutiesFactory,
+        validators,
+        validatorIndexProvider,
+        beaconCommitteeSubscriptions,
+        spec,
+        useDvtEndpoint,
+        asyncRunner,
+        DEFAULT_BATCHING_OPTIONS);
+  }
+
+  @VisibleForTesting
+  AttestationDutyLoader(
+      final ValidatorApiChannel validatorApiChannel,
+      final ForkProvider forkProvider,
+      final Function<Bytes32, SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>>
+          scheduledDutiesFactory,
+      final OwnedValidators validators,
+      final ValidatorIndexProvider validatorIndexProvider,
+      final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions,
+      final Spec spec,
+      final boolean useDvtEndpoint,
+      final AsyncRunner asyncRunner,
+      final SlotBatchingOptions slotBatchingOptions) {
     super(validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
@@ -91,6 +125,7 @@ public class AttestationDutyLoader
     this.spec = spec;
     this.useDvtEndpoint = useDvtEndpoint;
     this.asyncRunner = asyncRunner;
+    this.slotBatchingOptions = slotBatchingOptions;
   }
 
   @Override
@@ -114,14 +149,24 @@ public class AttestationDutyLoader
                 new DvtAttestationAggregations(validatorApiChannel, duties.getDuties().size()))
             : Optional.empty();
 
-    if (duties.getDuties().size() < MIN_SIZE_TO_BATCH_BY_SLOT) {
+    if (duties.getDuties().size() < slotBatchingOptions.minSizeToBatchBySlot) {
       return scheduleDuties(scheduledDuties, duties.getDuties(), dvtAttestationAggregations)
           .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
           .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
     }
 
+    // every X amount of slots a delay is added to the scheduling (values are based on if current or
+    // future epoch)
     final boolean isCurrentEpoch =
-        spec.computeEpochAtSlot(currentSlot.get()).isLessThanOrEqualTo(epoch);
+        epoch.isLessThanOrEqualTo(spec.computeEpochAtSlot(currentSlot.get()));
+    final int slotsBeforeDelay =
+        isCurrentEpoch
+            ? slotBatchingOptions.currentEpochSlotsToScheduleBeforeDelay
+            : slotBatchingOptions.futureEpochSlotsToScheduleBeforeDelay;
+    final Duration schedulingDelay =
+        isCurrentEpoch
+            ? slotBatchingOptions.currentEpochSchedulingDelay
+            : slotBatchingOptions.futureEpochSchedulingDelay;
 
     final Map<UInt64, List<AttesterDuty>> dutiesBySlot =
         duties.getDuties().stream()
@@ -132,9 +177,8 @@ public class AttestationDutyLoader
 
     int i = 0;
     for (final List<AttesterDuty> dutiesForSlot : dutiesBySlot.values()) {
-      // every X amount of slots, we add a delay to the scheduling
-      if (i % (isCurrentEpoch ? CURRENT_EPOCH_SLOTS_BEFORE_DELAY : FUTURE_EPOCH_SLOTS_BEFORE_DELAY)
-          == 0) {
+      // no delay at start
+      if (i != 0 && i % slotsBeforeDelay == 0) {
         dutiesScheduling =
             dutiesScheduling.thenCompose(
                 __ ->
@@ -142,7 +186,7 @@ public class AttestationDutyLoader
                         () ->
                             scheduleDuties(
                                 scheduledDuties, dutiesForSlot, dvtAttestationAggregations),
-                        isCurrentEpoch ? CURRENT_EPOCH_BATCH_DELAY : FUTURE_EPOCH_BATCH_DELAY));
+                        schedulingDelay));
       } else {
         dutiesScheduling =
             dutiesScheduling.thenCompose(
