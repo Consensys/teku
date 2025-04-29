@@ -20,16 +20,16 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
-class DasByRootResponseLogger extends AbstractDasResponseLogger<List<DataColumnIdentifier>> {
+class DasByRootResponseLogger extends AbstractDasResponseLogger<List<DataColumnsByRootIdentifier>> {
 
   public DasByRootResponseLogger(
       final TimeProvider timeProvider,
       final Direction direction,
       final LoggingPeerId peerId,
-      final List<DataColumnIdentifier> dataColumnIdentifiers) {
+      final List<DataColumnsByRootIdentifier> dataColumnIdentifiers) {
     super(timeProvider, direction, peerId, dataColumnIdentifiers);
   }
 
@@ -71,12 +71,15 @@ class DasByRootResponseLogger extends AbstractDasResponseLogger<List<DataColumnI
                     (s1, s2) -> s1));
     final List<DataColumnSlotAndIdentifier> idsWithMaybeSlot =
         request.stream()
-            .map(
+            .flatMap(
                 it ->
-                    new DataColumnSlotAndIdentifier(
-                        blockRootToSlot.getOrDefault(it.getBlockRoot(), UNKNOWN_SLOT),
-                        it.getBlockRoot(),
-                        it.getIndex()))
+                    it.getColumns().stream()
+                        .map(
+                            column ->
+                                new DataColumnSlotAndIdentifier(
+                                    blockRootToSlot.getOrDefault(it.getBlockRoot(), UNKNOWN_SLOT),
+                                    it.getBlockRoot(),
+                                    column)))
             .toList();
 
     return columnIdsToString(idsWithMaybeSlot);

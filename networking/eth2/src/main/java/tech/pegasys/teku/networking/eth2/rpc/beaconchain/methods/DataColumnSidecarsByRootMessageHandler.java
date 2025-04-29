@@ -17,8 +17,10 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,9 +39,10 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
@@ -60,6 +63,7 @@ public class DataColumnSidecarsByRootMessageHandler
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final DataColumnSidecarByRootCustody dataColumnSidecarCustody;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
@@ -70,22 +74,24 @@ public class DataColumnSidecarsByRootMessageHandler
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final DasReqRespLogger dasLogger) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
-    requestCounter =
+    this.custodyGroupCountManager = custodyGroupCountManager;
+    this.dataColumnSidecarCustody = dataColumnSidecarCustody;
+    this.dasLogger = dasLogger;
+    this.requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_root_requests_total",
             "Total number of data column sidecars by root requests received",
             "status");
-    totalDataColumnSidecarsRequestedCounter =
+    this.totalDataColumnSidecarsRequestedCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.NETWORK,
             "rpc_data_column_sidecars_by_root_requested_blob_sidecars_total",
             "Total number of data column sidecars requested in accepted data column sidecars by root requests from peers");
-    this.dataColumnSidecarCustody = dataColumnSidecarCustody;
-    this.dasLogger = dasLogger;
   }
 
   private SafeFuture<Boolean> validateAndSendMaybeRespond(
@@ -132,15 +138,24 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
+    final Set<UInt64> myCustodyColumns =
+        new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
     Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
+            .flatMap(
+                byRootIdentifier ->
+                    byRootIdentifier.getColumns().stream()
+                        .filter(myCustodyColumns::contains)
+                        .map(
+                            column ->
+                                new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .map(
-                identifier ->
-                    retrieveDataColumnSidecar(identifier)
+                dataColumnIdentifier ->
+                    retrieveDataColumnSidecar(dataColumnIdentifier)
                         .thenCompose(
                             maybeSidecar ->
                                 validateAndSendMaybeRespond(
-                                    identifier,
+                                    dataColumnIdentifier,
                                     maybeSidecar,
                                     finalizedEpoch,
                                     responseCallbackWithLogging)));
@@ -167,14 +182,14 @@ public class DataColumnSidecarsByRootMessageHandler
   private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
       final DataColumnIdentifier identifier) {
     return combinedChainDataClient
-        .getBlockByBlockRoot(identifier.getBlockRoot())
+        .getBlockByBlockRoot(identifier.blockRoot())
         .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot))
         .thenCompose(
             maybeSlot -> {
               if (maybeSlot.isPresent()) {
                 return combinedChainDataClient.getNonCanonicalSidecar(
                     new DataColumnSlotAndIdentifier(
-                        maybeSlot.get(), identifier.getBlockRoot(), identifier.getIndex()));
+                        maybeSlot.get(), identifier.blockRoot(), identifier.columnId()));
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }
@@ -205,7 +220,7 @@ public class DataColumnSidecarsByRootMessageHandler
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
         .orElse(
             combinedChainDataClient
-                .getBlockByBlockRoot(identifier.getBlockRoot())
+                .getBlockByBlockRoot(identifier.blockRoot())
                 .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
@@ -221,7 +236,7 @@ public class DataColumnSidecarsByRootMessageHandler
                     INVALID_REQUEST_CODE,
                     String.format(
                         "Block root (%s) references a block earlier than the minimum_request_epoch",
-                        identifier.getBlockRoot()));
+                        identifier.blockRoot()));
               }
             });
   }

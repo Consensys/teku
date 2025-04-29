@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -132,6 +133,7 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
       final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
@@ -173,6 +175,7 @@ public class BeaconChainMethods {
             asyncRunner,
             combinedChainDataClient,
             dataColumnSidecarCustody,
+            custodyGroupCountManager,
             peerLookup,
             rpcEncoding,
             recentChainData,
@@ -382,6 +385,7 @@ public class BeaconChainMethods {
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
           final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
+          final CustodyGroupCountManager custodyGroupCountManager,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData,
@@ -396,7 +400,12 @@ public class BeaconChainMethods {
 
     final DataColumnSidecarsByRootMessageHandler dataColumnSidecarsByRootMessageHandler =
         new DataColumnSidecarsByRootMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, dataColumnSidecarCustody, dasLogger);
+            spec,
+            metricsSystem,
+            combinedChainDataClient,
+            dataColumnSidecarCustody,
+            custodyGroupCountManager,
+            dasLogger);
     final DataColumnSidecarsByRootRequestMessageSchema
         dataColumnSidecarsByRootRequestMessageSchema =
             SchemaDefinitionsFulu.required(

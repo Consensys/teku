@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -99,7 +99,7 @@ public class DataColumnSidecarByRootCustodyImpl
 
     public synchronized Optional<DataColumnSlotAndIdentifier> get(
         final DataColumnIdentifier dataColumnIdentifier) {
-      return Optional.ofNullable(blockRootToSlot.get(dataColumnIdentifier.getBlockRoot()))
+      return Optional.ofNullable(blockRootToSlot.get(dataColumnIdentifier.blockRoot()))
           .map(slot -> new DataColumnSlotAndIdentifier(slot, dataColumnIdentifier));
     }
 
@@ -111,13 +111,12 @@ public class DataColumnSidecarByRootCustodyImpl
           .orElseGet(
               () ->
                   asyncRootToSlotSupplier
-                      .apply(dataColumnIdentifier.getBlockRoot())
+                      .apply(dataColumnIdentifier.blockRoot())
                       .thenPeek(
                           maybeSlot ->
                               maybeSlot.ifPresent(
                                   slot ->
-                                      addBlockRootToSlot(
-                                          dataColumnIdentifier.getBlockRoot(), slot)))
+                                      addBlockRootToSlot(dataColumnIdentifier.blockRoot(), slot)))
                       .thenApply(
                           maybeSlot ->
                               maybeSlot.map(

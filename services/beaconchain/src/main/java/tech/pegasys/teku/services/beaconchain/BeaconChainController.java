@@ -105,6 +105,7 @@ import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFacto
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -129,6 +130,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
@@ -604,8 +606,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationManager();
     initBlockManager();
     initSyncCommitteePools();
-    initP2PNetwork();
     initCustodyGroupCountManager();
+    initP2PNetwork();
     initDasCustody();
     initDataColumnSidecarELRecoveryManager();
     initDasSyncPreSampler();
@@ -719,8 +721,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return;
     }
     LOG.info("Activating DAS Custody for FULU");
-    final SpecConfigFulu specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specVersionFulu.getConfig());
     final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
         MinCustodyPeriodSlotCalculator.createFromSpec(spec);
     final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
@@ -746,13 +748,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .getBlockAtSlotExact(slot)
                 .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock));
 
-    MiscHelpersFulu miscHelpersFulu =
-        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(specVersionFulu.miscHelpers());
 
     final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
     final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
     final int totalMyCustodyGroups =
-        beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
+        beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
     eventChannels
         .getPublisher(CustodyGroupCountChannel.class)
         .onCustodyGroupCountUpdate(totalMyCustodyGroups);
@@ -825,7 +826,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     BatchDataColumnsByRootReqResp loggingByRootReqResp =
         new LoggingBatchDataColumnsByRootReqResp(dasPeerManager, dasReqRespLogger);
-    DataColumnReqResp dasRpc = new DataColumnReqRespBatchingImpl(loggingByRootReqResp);
+    DataColumnReqResp dasRpc =
+        new DataColumnReqRespBatchingImpl(
+            loggingByRootReqResp,
+            SchemaDefinitionsFulu.required(specVersionFulu.getSchemaDefinitions()));
 
     MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);
@@ -1513,6 +1517,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .dataColumnSidecarCustody(dataColumnSidecarCustody)
+            .custodyGroupCountManager(custodyGroupCountManager)
             .metadataMessagesFactory(metadataMessagesFactory)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)

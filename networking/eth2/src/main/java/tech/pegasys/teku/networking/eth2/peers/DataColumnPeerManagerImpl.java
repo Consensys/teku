@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerManager;
@@ -68,7 +68,7 @@ public class DataColumnPeerManagerImpl
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      final UInt256 nodeId, final List<DataColumnIdentifier> columnIdentifiers) {
+      final UInt256 nodeId, final List<DataColumnsByRootIdentifier> byRootIdentifiers) {
     final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
     final AsyncStreamPublisher<DataColumnSidecar> ret =
         AsyncStream.createPublisher(Integer.MAX_VALUE);
@@ -76,7 +76,7 @@ public class DataColumnPeerManagerImpl
       ret.onError(new DataColumnReqResp.DasPeerDisconnectedException());
     } else {
       eth2Peer
-          .requestDataColumnSidecarsByRoot(columnIdentifiers, ret::onNext)
+          .requestDataColumnSidecarsByRoot(byRootIdentifiers, ret::onNext)
           .finish(__ -> ret.onComplete(), ret::onError);
     }
     return ret;

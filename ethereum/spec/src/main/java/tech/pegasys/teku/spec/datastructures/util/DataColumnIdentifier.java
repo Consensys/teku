@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns.retriever;
+package tech.pegasys.teku.spec.datastructures.util;
 
-import java.util.List;
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 
-public interface BatchDataColumnsByRootReqResp {
-
-  AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      UInt256 nodeId, List<DataColumnsByRootIdentifier> byRootIdentifiers);
-
-  int getCurrentRequestLimit(UInt256 nodeId);
+public record DataColumnIdentifier(Bytes32 blockRoot, UInt64 columnId) {
+  public static DataColumnIdentifier createFromSidecar(final DataColumnSidecar sidecar) {
+    return new DataColumnIdentifier(sidecar.getBlockRoot(), sidecar.getIndex());
+  }
 }

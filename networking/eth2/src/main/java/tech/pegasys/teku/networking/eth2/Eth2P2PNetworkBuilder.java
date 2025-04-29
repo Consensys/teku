@@ -89,6 +89,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -110,6 +111,7 @@ public class Eth2P2PNetworkBuilder {
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
   protected DataColumnSidecarByRootCustody dataColumnSidecarCustody;
+  protected CustodyGroupCountManager custodyGroupCountManager;
   protected MetadataMessagesFactory metadataMessagesFactory;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
@@ -177,6 +179,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             combinedChainDataClient,
             dataColumnSidecarCustody,
+            custodyGroupCountManager,
             metadataMessagesFactory,
             metricsSystem,
             attestationSubnetService,
@@ -489,6 +492,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
     assertNotNull("dataColumnSidecarCustody", dataColumnSidecarCustody);
+    assertNotNull("custodyGroupCountManager", custodyGroupCountManager);
     assertNotNull("metadataMessagesFactory", metadataMessagesFactory);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
@@ -533,6 +537,13 @@ public class Eth2P2PNetworkBuilder {
       final DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
     checkNotNull(dataColumnSidecarCustody);
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder custodyGroupCountManager(
+      final CustodyGroupCountManager custodyGroupCountManager) {
+    checkNotNull(custodyGroupCountManager);
+    this.custodyGroupCountManager = custodyGroupCountManager;
     return this;
   }
 
