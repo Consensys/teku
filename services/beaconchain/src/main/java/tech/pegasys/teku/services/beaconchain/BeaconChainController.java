@@ -153,8 +153,8 @@ import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
-import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerLateInit;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasLongPollCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
@@ -341,7 +341,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
-  protected volatile CustodyGroupCountManager custodyGroupCountManager;
+  protected volatile CustodyGroupCountManagerLateInit custodyGroupCountManagerLateInit;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile LateInitDataColumnSidecarCustody dataColumnSidecarCustody =
       new LateInitDataColumnSidecarCustody();
@@ -606,8 +606,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationManager();
     initBlockManager();
     initSyncCommitteePools();
-    initCustodyGroupCountManager();
+    preInitCustodyGroupCountManager();
     initP2PNetwork();
+    initCustodyGroupCountManager();
     initDasCustody();
     initDataColumnSidecarELRecoveryManager();
     initDasSyncPreSampler();
@@ -766,7 +767,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               canonicalBlockResolver,
               dbAccessor,
               minCustodyPeriodSlotCalculator,
-              custodyGroupCountManager,
+              custodyGroupCountManagerLateInit,
               totalMyCustodyGroups);
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
@@ -800,7 +801,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   eventChannels
                       .getPublisher(DataColumnSidecarGossipChannel.class)
                       .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
-              custodyGroupCountManager,
+              custodyGroupCountManagerLateInit,
               specConfigFulu.getNumberOfColumns(),
               specConfigFulu.getNumberOfCustodyGroups(),
               slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
@@ -874,7 +875,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dbAccessor,
             custody,
             recoveringSidecarRetriever,
-            custodyGroupCountManager);
+            custodyGroupCountManagerLateInit);
     LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
     this.dataAvailabilitySampler = dasSampler;
@@ -883,6 +884,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initDasSyncPreSampler() {
     DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
     eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
+  }
+
+  protected void preInitCustodyGroupCountManager() {
+    this.custodyGroupCountManagerLateInit = new CustodyGroupCountManagerLateInit();
   }
 
   protected void initCustodyGroupCountManager() {
@@ -904,7 +909,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             nodeId,
             metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, custodyGroupCountManager);
-    this.custodyGroupCountManager = custodyGroupCountManager;
+    custodyGroupCountManagerLateInit.setCustodyGroupCountManager(custodyGroupCountManager);
   }
 
   protected void initMergeMonitors() {
@@ -971,7 +976,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionLayer,
               kzg,
               recoveredDataColumnSidecarPublisher,
-              custodyGroupCountManager);
+              custodyGroupCountManagerLateInit);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
       dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
           recoveryManager::onNewDataColumnSidecar);
@@ -1517,7 +1522,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .dataColumnSidecarCustody(dataColumnSidecarCustody)
-            .custodyGroupCountManager(custodyGroupCountManager)
+            .custodyGroupCountManager(custodyGroupCountManagerLateInit)
             .metadataMessagesFactory(metadataMessagesFactory)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
