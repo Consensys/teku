@@ -148,6 +148,10 @@ public class ChainDataProvider {
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
   }
 
+  public Optional<UInt64> getNetworkCurrentSlot() {
+    return recentChainData.getCurrentSlot();
+  }
+
   public tech.pegasys.teku.spec.datastructures.genesis.GenesisData getGenesisStateData() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
