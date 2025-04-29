@@ -440,9 +440,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
+  public SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
       final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
-    return SafeFuture.completedFuture(payloadId);
+    return SafeFuture.completedFuture(
+        new UpdatePayloadWithInclusionListResponse(Optional.of(payloadId)));
   }
 
   @Override

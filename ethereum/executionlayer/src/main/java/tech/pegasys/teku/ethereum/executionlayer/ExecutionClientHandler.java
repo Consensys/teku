@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.UpdatePayloadWithInclusionListResponse;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface ExecutionClientHandler {
@@ -58,6 +59,6 @@ public interface ExecutionClientHandler {
 
   SafeFuture<List<Transaction>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
 
-  SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
-      Bytes8 payloadId, List<Transaction> inclusionList, UInt64 slot);
+  SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
+      Bytes8 payloadId, List<Transaction> inclusionListsTransactions, UInt64 slot);
 }

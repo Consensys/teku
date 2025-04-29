@@ -250,9 +250,10 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
-      updatePayloadWithInclusionListV1(final Bytes8 payloadId, final List<Bytes> inclusionList) {
+      updatePayloadWithInclusionListV1(
+          final Bytes8 payloadId, final List<Bytes> inclusionListsTransactions) {
     return countRequest(
-        () -> delegate.updatePayloadWithInclusionListV1(payloadId, inclusionList),
+        () -> delegate.updatePayloadWithInclusionListV1(payloadId, inclusionListsTransactions),
         UPDATE_PAYLOAD_WITH_INCLUSION_LIST_V1_METHOD);
   }
 }

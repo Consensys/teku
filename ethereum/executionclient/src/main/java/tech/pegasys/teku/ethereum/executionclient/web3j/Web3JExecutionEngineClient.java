@@ -343,11 +343,14 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
-      updatePayloadWithInclusionListV1(final Bytes8 payloadId, final List<Bytes> inclusionList) {
+      updatePayloadWithInclusionListV1(
+          final Bytes8 payloadId, final List<Bytes> inclusionListsTransactions) {
     final Request<?, UpdatePayloadWithInclusionListV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_updatePayloadWithInclusionListV1",
-            list(payloadId, inclusionList),
+            list(
+                payloadId.toHexString(),
+                inclusionListsTransactions.stream().map(Bytes::toHexString).toList()),
             web3JClient.getWeb3jService(),
             UpdatePayloadWithInclusionListV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, UPDATE_PAYLOAD_WITH_INCLUSION_LIST_TIMEOUT);

@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.UpdatePayloadWithInclusionListResponse;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -212,8 +213,10 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
-      final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
+  public SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
+      final Bytes8 payloadId,
+      final List<Transaction> inclusionListsTransactions,
+      final UInt64 slot) {
     final TransactionSchema transactionSchema =
         spec.atSlot(slot)
             .getSchemaDefinitions()
@@ -223,8 +226,11 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .getTransactionSchema();
     return executionEngineClient
         .updatePayloadWithInclusionListV1(
-            payloadId, inclusionList.stream().map(transactionSchema::sszSerialize).toList())
+            payloadId,
+            inclusionListsTransactions.stream().map(transactionSchema::sszSerialize).toList())
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(UpdatePayloadWithInclusionListV1Response::getPayloadId);
+        .thenApply(
+            UpdatePayloadWithInclusionListV1Response
+                ::asInternalUpdatePayloadWithInclusionListResponse);
   }
 }

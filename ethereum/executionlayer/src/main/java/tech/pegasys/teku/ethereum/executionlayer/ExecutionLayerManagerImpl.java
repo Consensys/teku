@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.executionlayer.UpdatePayloadWithInclusionListResponse;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
@@ -260,7 +261,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
+  public SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
       final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
     LOG.trace(
         "calling engineUpdatePayloadWithInclusionList(payloadId={}, inclusionList={}, slot={})",

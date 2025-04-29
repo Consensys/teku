@@ -22,7 +22,7 @@ import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.UpdatePayloadWithInclusionListV1Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip7805.UpdatePayloadWithInclusionListResponse;
+import tech.pegasys.teku.spec.executionlayer.UpdatePayloadWithInclusionListResponse;
 
 public class EngineUpdatePayloadWithInclusionListV1
     extends AbstractEngineJsonRpcMethod<UpdatePayloadWithInclusionListResponse> {
