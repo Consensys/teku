@@ -19,10 +19,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -50,72 +53,87 @@ public class InclusionListsBlockUpdater {
     this.spec = spec;
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  public void onUpdateBlockWithInclusionListsDue(final UInt64 slot) {
-    combinedChainDataClient
-        .getBestState()
-        .orElseGet(
-            () ->
-                SafeFuture.failedFuture(
-                    new IllegalStateException("Head state is not yet available")))
-        .thenAccept(
-            state -> {
-              if (proposersDataManager.isProposerForSlot(slot.increment(), state)) {
-                LOG.info(
-                    "onUpdateBlockWithInclusionListsDue, updating block with inclusion lists from slot {}",
+  @SuppressWarnings({"FutureReturnValueIgnored", "UnusedReturnValue"})
+  public SafeFuture<Optional<Bytes8>> onUpdateBlockWithInclusionListsDue(final UInt64 slot) {
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot.increment())
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isEmpty()) {
+                LOG.warn(
+                    "Ignoring block update with inclusion lists because state at slot {} is not available",
                     slot);
-                final Optional<List<InclusionList>> maybeInclusionLists =
-                    combinedChainDataClient.getStore().getInclusionLists(slot);
-                if (maybeInclusionLists.isPresent()) {
-                  final List<InclusionList> inclusionLists = maybeInclusionLists.get();
-                  final List<Transaction> transactions =
-                      getInclusionListTransactions(inclusionLists);
-                  LOG.info(
-                      "onUpdateBlockWithInclusionListsDue, found {} ILs and {} txs from slot {}",
-                      inclusionLists.size(),
-                      transactions.size(),
-                      slot);
-                  final Bytes32 parentRoot = spec.getBlockRootAtSlot(state, slot);
-                  LOG.info(
-                      "onUpdateBlockWithInclusionListsDue for slot {}, parentRoot {}",
-                      slot,
-                      parentRoot);
-                  forkChoiceNotifier
-                      .getPayloadId(parentRoot, slot)
-                      .thenAccept(
-                          maybeExecutionPayloadContext -> {
-                            if (maybeExecutionPayloadContext.isEmpty()) {
-                              LOG.warn(
-                                  "No execution payload context present for slot {} and parent root {}",
-                                  slot,
-                                  parentRoot);
-                              return;
-                            }
-                            LOG.info(
-                                "onUpdateBlockWithInclusionListsDue, calling EL to update block. PayloadId: {}",
-                                maybeExecutionPayloadContext.get().getPayloadId());
-                            executionLayerChannel
-                                .engineUpdatePayloadWithInclusionList(
-                                    maybeExecutionPayloadContext.get().getPayloadId(),
-                                    transactions,
-                                    slot)
-                                .thenAccept(
-                                    payloadId ->
-                                        LOG.info(
-                                            "Updated block with Inclusion Lists from slot {}. PayloadId: {}",
-                                            slot,
-                                            payloadId.toHexString()));
-                          });
-                } else {
-                  LOG.info("onUpdateBlockWithInclusionListsDue, no inclusion lists empty");
-                }
+                return SafeFuture.failedFuture(
+                    new IllegalStateException("Head state is not yet available"));
+              }
+              final BeaconState state = maybeState.get();
+              if (proposersDataManager.isProposerForSlot(slot.increment(), state)) {
+                return updateBlockWithInclusionLists(slot, state);
               } else {
-                LOG.info(
-                    "onUpdateBlockWithInclusionListsDue slot {} not a proposer for {}",
-                    slot,
+                LOG.trace(
+                    "Not a proposer for slot {}, no block creation to update with inclusion lists",
                     slot.increment());
+                return SafeFuture.completedFuture(Optional.empty());
               }
             });
+  }
+
+  private SafeFuture<Optional<Bytes8>> updateBlockWithInclusionLists(
+      final UInt64 slot, final BeaconState state) {
+    LOG.info("Updating block with inclusion lists from slot {}", slot);
+    final Optional<List<InclusionList>> maybeInclusionLists =
+        combinedChainDataClient.getStore().getInclusionLists(slot);
+    if (maybeInclusionLists.isPresent()) {
+      final List<InclusionList> inclusionLists = maybeInclusionLists.get();
+      final List<Transaction> transactions = getInclusionListTransactions(inclusionLists);
+      LOG.trace(
+          "Updating block with inclusion lists. Found {} ILs with {} txs from slot {}",
+          inclusionLists.size(),
+          transactions.size(),
+          slot);
+      final Bytes32 parentRoot = spec.getBlockRootAtSlot(state, slot);
+      return forkChoiceNotifier
+          .getPayloadId(parentRoot, slot.increment())
+          .thenCompose(
+              maybeExecutionPayloadContext -> {
+                return updateExecutionPayloadWithInclusionLists(
+                    slot, maybeExecutionPayloadContext, parentRoot, transactions);
+              });
+    } else {
+      LOG.info("No inclusion lists found for slot {} to include in the block", slot);
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+  }
+
+  private SafeFuture<Optional<Bytes8>> updateExecutionPayloadWithInclusionLists(
+      final UInt64 slot,
+      final Optional<ExecutionPayloadContext> maybeExecutionPayloadContext,
+      final Bytes32 parentRoot,
+      final List<Transaction> transactions) {
+    if (maybeExecutionPayloadContext.isEmpty()) {
+      LOG.warn(
+          "Unable to update block wth inclusion lists. No execution payload context present for slot {} and parent root {}",
+          slot,
+          parentRoot);
+      return SafeFuture.completedFuture(Optional.empty());
+    } else {
+      LOG.trace(
+          "Updating block with inclusion lists. PayloadId: {}",
+          maybeExecutionPayloadContext.get().getPayloadId());
+      return executionLayerChannel
+          .engineUpdatePayloadWithInclusionList(
+              maybeExecutionPayloadContext.get().getPayloadId(), transactions, slot)
+          .thenApply(
+              updatePayloadWithInclusionListResponse -> {
+                final Optional<Bytes8> maybePayloadId =
+                    updatePayloadWithInclusionListResponse.payloadId();
+                LOG.info(
+                    "Updated block with Inclusion Lists from slot {}. PayloadId: {}",
+                    slot,
+                    maybePayloadId);
+                return maybePayloadId;
+              });
+    }
   }
 
   private List<Transaction> getInclusionListTransactions(final List<InclusionList> inclusionLists) {

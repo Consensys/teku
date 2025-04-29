@@ -117,6 +117,10 @@ public class SlotProcessor {
     nodeSlot.setValue(slot);
   }
 
+  // onUpdateBlockWithInclusionListsDue returns the payloadId but is ignored since it's the same as
+  // the initial one returned when starting the execution payload creation.
+  // This could change in the future
+  @SuppressWarnings({"FutureReturnValueIgnored"})
   public void onTick(
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
 
@@ -156,7 +160,6 @@ public class SlotProcessor {
     }
     if (isSlotUpdateBlockWithInclusionListsDue(
         calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
-      LOG.info("Slot Processor, isSlotUpdateBlockWithInclusionListsDue");
       inclusionListsBlockUpdater.onUpdateBlockWithInclusionListsDue(calculatedSlot);
       nodeSlot.inc();
     }

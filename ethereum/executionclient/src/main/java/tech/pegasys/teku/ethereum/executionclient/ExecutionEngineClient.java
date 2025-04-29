@@ -93,5 +93,5 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<List<String>>> getInclusionListV1(Bytes32 parentHash);
 
   SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>> updatePayloadWithInclusionListV1(
-      Bytes8 payloadId, List<Bytes> inclusionList);
+      Bytes8 payloadId, List<Bytes> inclusionListsTransactions);
 }
