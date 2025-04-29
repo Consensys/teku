@@ -139,6 +139,11 @@ public class GetIdentity extends RestApiEndpoint {
                 .withDescription(
                     "Bitvector representing the node's persistent sync committee subnet subscriptions."),
             MetadataMessage::getOptionalSyncnets)
+        .withOptionalField(
+            "custody_group_count",
+            UINT64_TYPE.withDescription(
+                "Uint64 representing the node's custody group count. The metadata is present from the Fulu fork."),
+            MetadataMessage::getOptionalCustodyGroupCount)
         .build();
   }
 
