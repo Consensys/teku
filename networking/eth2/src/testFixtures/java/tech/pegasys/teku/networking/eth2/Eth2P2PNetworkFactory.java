@@ -107,6 +107,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -240,6 +241,7 @@ public class Eth2P2PNetworkFactory {
                 asyncRunner,
                 combinedChainDataClient,
                 DataColumnSidecarByRootCustody.NOOP,
+                CustodyGroupCountManager.NOOP,
                 new MetadataMessagesFactory(),
                 METRICS_SYSTEM,
                 attestationSubnetService,
