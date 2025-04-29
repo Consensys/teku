@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
@@ -109,15 +109,11 @@ public class InclusionListUtil {
   public Bytes32 getInclusionListCommitteeRoot(final BeaconState state, final UInt64 slot) {
     final List<UInt64> inclusionListCommittee =
         getInclusionListCommittee(state, slot).intStream().mapToObj(UInt64::valueOf).toList();
-    final SszVector<SszUInt64> sszInclusionListCommittee =
-        schemaDefinitionsEip7805
-            .getInclusionListCommitteeRootSchema()
-            .createFromElements(inclusionListCommittee.stream().map(SszUInt64::of).toList());
+    final SszPrimitiveVector<UInt64, SszUInt64> sszInclusionListCommittee =
+        schemaDefinitionsEip7805.getInclusionListCommitteeSchema().of(inclusionListCommittee);
     return sszInclusionListCommittee.hashTreeRoot();
   }
 
-  // TODO EIP7805 should we make sure the committee didn't change after checking the root
-  // previously?
   public boolean validatorIndexWithinCommittee(
       final BeaconState state, final UInt64 slot, final UInt64 validatorIndex) {
     final IntList inclusionListCommittee =
