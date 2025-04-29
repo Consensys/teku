@@ -75,6 +75,11 @@ public class InclusionListsBlockUpdater {
                     slot.increment());
                 return SafeFuture.completedFuture(Optional.empty());
               }
+            })
+        .exceptionally(
+            error -> {
+              LOG.error("Unable to get state at slot {}.", slot, error);
+              return Optional.empty();
             });
   }
 
@@ -92,12 +97,21 @@ public class InclusionListsBlockUpdater {
           transactions.size(),
           slot);
       final Bytes32 parentRoot = spec.getBlockRootAtSlot(state, slot);
+      final UInt64 proposerSlot = slot.increment();
       return forkChoiceNotifier
-          .getPayloadId(parentRoot, slot.increment())
+          .getPayloadId(parentRoot, proposerSlot)
           .thenCompose(
-              maybeExecutionPayloadContext -> {
-                return updateExecutionPayloadWithInclusionLists(
-                    slot, maybeExecutionPayloadContext, parentRoot, transactions);
+              maybeExecutionPayloadContext ->
+                  updateExecutionPayloadWithInclusionLists(
+                      proposerSlot, slot, maybeExecutionPayloadContext, parentRoot, transactions))
+          .exceptionally(
+              error -> {
+                LOG.error(
+                    "Unable to get payloadId to update block with inclusion lists (parentRoot: {}, slot {})",
+                    parentRoot,
+                    proposerSlot,
+                    error);
+                return Optional.empty();
               });
     } else {
       LOG.info("No inclusion lists found for slot {} to include in the block", slot);
@@ -106,14 +120,15 @@ public class InclusionListsBlockUpdater {
   }
 
   private SafeFuture<Optional<Bytes8>> updateExecutionPayloadWithInclusionLists(
-      final UInt64 slot,
+      final UInt64 proposerSlot,
+      final UInt64 inclusionListsSlot,
       final Optional<ExecutionPayloadContext> maybeExecutionPayloadContext,
       final Bytes32 parentRoot,
       final List<Transaction> transactions) {
     if (maybeExecutionPayloadContext.isEmpty()) {
       LOG.warn(
           "Unable to update block wth inclusion lists. No execution payload context present for slot {} and parent root {}",
-          slot,
+          proposerSlot,
           parentRoot);
       return SafeFuture.completedFuture(Optional.empty());
     } else {
@@ -122,16 +137,24 @@ public class InclusionListsBlockUpdater {
           maybeExecutionPayloadContext.get().getPayloadId());
       return executionLayerChannel
           .engineUpdatePayloadWithInclusionList(
-              maybeExecutionPayloadContext.get().getPayloadId(), transactions, slot)
+              maybeExecutionPayloadContext.get().getPayloadId(), transactions, inclusionListsSlot)
           .thenApply(
               updatePayloadWithInclusionListResponse -> {
                 final Optional<Bytes8> maybePayloadId =
                     updatePayloadWithInclusionListResponse.payloadId();
                 LOG.info(
                     "Updated block with Inclusion Lists from slot {}. PayloadId: {}",
-                    slot,
+                    inclusionListsSlot,
                     maybePayloadId);
                 return maybePayloadId;
+              })
+          .exceptionally(
+              error -> {
+                LOG.error(
+                    "Unable to update block with Inclusion Lists from slot {}",
+                    inclusionListsSlot,
+                    error);
+                return Optional.empty();
               });
     }
   }
