@@ -22,8 +22,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -186,8 +187,8 @@ public class SchemaTypes {
   public static final SchemaId<InclusionListByCommitteeRequestMessageSchema>
       INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA =
           create("INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA");
-  public static final SchemaId<SszVectorSchema<SszUInt64, ?>> INCLUSION_LIST_COMMITTEE_ROOT_SCHEMA =
-      create("INCLUSION_LIST_COMMITTEE_ROOT_SCHEMA");
+  public static final SchemaId<SszPrimitiveVectorSchema<UInt64, SszUInt64, ?>>
+      INCLUSION_LIST_COMMITTEE_SCHEMA = create("INCLUSION_LIST_COMMITTEE_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation
