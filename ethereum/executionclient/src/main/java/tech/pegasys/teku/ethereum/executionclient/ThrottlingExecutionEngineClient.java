@@ -186,8 +186,9 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<UpdatePayloadWithInclusionListV1Response>>
-      updatePayloadWithInclusionListV1(final Bytes8 payloadId, final List<Bytes> inclusionList) {
+      updatePayloadWithInclusionListV1(
+          final Bytes8 payloadId, final List<Bytes> inclusionListsTransactions) {
     return taskQueue.queueTask(
-        () -> delegate.updatePayloadWithInclusionListV1(payloadId, inclusionList));
+        () -> delegate.updatePayloadWithInclusionListV1(payloadId, inclusionListsTransactions));
   }
 }

@@ -50,6 +50,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQU
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_BY_COMMITTEE_INDICES_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_COMMITTEE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INCLUSION_LIST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
@@ -71,7 +72,9 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -204,7 +207,8 @@ public class SchemaRegistryBuilder {
         // EIP7805
         .addProvider(createInclusionListSchemaProvider())
         .addProvider(createSignedInclusionListSchemaProvider())
-        .addProvider(createInclusionListByCommitteeIndicesRequestMessageSchemaProvider());
+        .addProvider(createInclusionListByCommitteeIndicesRequestMessageSchemaProvider())
+        .addProvider(createInclusionListCommitteeSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -703,6 +707,17 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new InclusionListByCommitteeRequestMessageSchema(
                     SpecConfigEip7805.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createInclusionListCommitteeSchemaProvider() {
+    return providerBuilder(INCLUSION_LIST_COMMITTEE_SCHEMA)
+        .withCreator(
+            EIP7805,
+            (registry, specConfig, schemaName) ->
+                SszPrimitiveVectorSchema.create(
+                    SszPrimitiveSchemas.UINT64_SCHEMA,
+                    SpecConfigEip7805.required(specConfig).getInclusionListCommitteeSize()))
         .build();
   }
 

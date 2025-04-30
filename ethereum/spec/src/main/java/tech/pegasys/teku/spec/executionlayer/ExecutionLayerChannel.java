@@ -95,8 +95,9 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
-            final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
+        public SafeFuture<UpdatePayloadWithInclusionListResponse>
+            engineUpdatePayloadWithInclusionList(
+                final Bytes8 payloadId, final List<Transaction> inclusionList, final UInt64 slot) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -144,7 +145,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   SafeFuture<List<Transaction>> engineGetInclusionList(Bytes32 parentHash, UInt64 slot);
 
-  SafeFuture<Bytes8> engineUpdatePayloadWithInclusionList(
+  SafeFuture<UpdatePayloadWithInclusionListResponse> engineUpdatePayloadWithInclusionList(
       Bytes8 payloadId, List<Transaction> inclusionList, UInt64 slot);
 
   /**

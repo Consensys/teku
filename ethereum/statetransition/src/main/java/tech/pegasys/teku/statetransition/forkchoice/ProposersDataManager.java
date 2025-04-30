@@ -289,4 +289,9 @@ public class ProposersDataManager implements SlotEventsChannel {
   public boolean isProposerDefaultFeeRecipientDefined() {
     return proposerDefaultFeeRecipient.isPresent();
   }
+
+  public boolean isProposerForSlot(final UInt64 slot, final BeaconState state) {
+    final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, slot));
+    return preparedProposerInfoByValidatorIndex.containsKey(proposerIndex);
+  }
 }

@@ -11,8 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.eip7805;
+package tech.pegasys.teku.spec.executionlayer;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 
-public record UpdatePayloadWithInclusionListResponse(Bytes8 payloadId) {}
+public record UpdatePayloadWithInclusionListResponse(Optional<Bytes8> payloadId) {}
