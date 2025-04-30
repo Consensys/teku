@@ -51,7 +51,7 @@ public class PostInclusionList extends RestApiEndpoint {
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.post(ROUTE)
-            .operationId("postInclusionList")
+            .operationId("publishInclusionList")
             .summary("Publish an inclusion list")
             .description(
                 "Verifies given inclusion list and publishes it on appropriate gossipsub topic.")
