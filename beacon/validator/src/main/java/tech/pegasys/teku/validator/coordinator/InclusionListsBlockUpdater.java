@@ -127,7 +127,7 @@ public class InclusionListsBlockUpdater {
       final List<Transaction> transactions) {
     if (maybeExecutionPayloadContext.isEmpty()) {
       LOG.warn(
-          "Unable to update block wth inclusion lists. No execution payload context present for slot {} and parent root {}",
+          "Unable to update block with inclusion lists. No execution payload context present for slot {} and parent root {}",
           proposerSlot,
           parentRoot);
       return SafeFuture.completedFuture(Optional.empty());
