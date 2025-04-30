@@ -1,5 +1,5 @@
 {
-  "get" : {
+  "post" : {
     "tags" : [ "Validator", "Validator Required Api" ],
     "operationId" : "publishInclusionList",
     "summary" : "Publish an inclusion list",
