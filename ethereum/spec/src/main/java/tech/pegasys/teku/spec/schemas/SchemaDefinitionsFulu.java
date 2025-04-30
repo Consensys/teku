@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
@@ -29,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
@@ -43,7 +41,6 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
   private final DataColumnSidecarsByRangeRequestMessage
           .DataColumnSidecarsByRangeRequestMessageSchema
       dataColumnSidecarsByRangeRequestMessageSchema;
-  private final MetadataMessageSchema<?> metadataMessageSchema;
 
   public SchemaDefinitionsFulu(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
@@ -55,7 +52,6 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
     this.dataColumnSidecarsByRangeRequestMessageSchema =
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA);
-    this.metadataMessageSchema = schemaRegistry.get(METADATA_MESSAGE_SCHEMA);
   }
 
   public static SchemaDefinitionsFulu required(final SchemaDefinitions schemaDefinitions) {
@@ -91,11 +87,6 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
   public DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema
       getDataColumnSidecarsByRangeRequestMessageSchema() {
     return dataColumnSidecarsByRangeRequestMessageSchema;
-  }
-
-  @Override
-  public MetadataMessageSchema<?> getMetadataMessageSchema() {
-    return metadataMessageSchema;
   }
 
   @Override
