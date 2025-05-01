@@ -14,25 +14,28 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_EXECUTION_TRANSACTION_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 
 public class GetInclusionList extends RestApiEndpoint {
@@ -41,12 +44,14 @@ public class GetInclusionList extends RestApiEndpoint {
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
-  public GetInclusionList(final DataProvider provider) {
-    this(provider.getSyncDataProvider(), provider.getValidatorDataProvider());
+  public GetInclusionList(final DataProvider provider, final Spec spec) {
+    this(provider.getSyncDataProvider(), provider.getValidatorDataProvider(), spec);
   }
 
   public GetInclusionList(
-      final SyncDataProvider syncDataProvider, final ValidatorDataProvider validatorDataProvider) {
+      final SyncDataProvider syncDataProvider,
+      final ValidatorDataProvider validatorDataProvider,
+      final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("produceInclusionList")
@@ -56,7 +61,7 @@ public class GetInclusionList extends RestApiEndpoint {
             .pathParam(
                 SLOT_PARAMETER.withDescription(
                     "The slot for which an inclusion list should be created."))
-            .response(SC_OK, "Request successful", ETH_EXECUTION_TRANSACTION_TYPE)
+            .response(SC_OK, "Request successful", getResponseType(spec))
             .withChainDataResponses()
             .build());
     this.syncDataProvider = syncDataProvider;
@@ -81,5 +86,21 @@ public class GetInclusionList extends RestApiEndpoint {
                 maybeTransactions
                     .map(AsyncApiResponse::respondOk)
                     .orElseGet(AsyncApiResponse::respondNotFound)));
+  }
+
+  private static SerializableTypeDefinition<List<Transaction>> getResponseType(final Spec spec) {
+    return SerializableTypeDefinition.<List<Transaction>>object()
+        .name("GetInclusionListResponse")
+        .withField(
+            "data",
+            listOf(
+                spec.getGenesisSchemaDefinitions()
+                    .toVersionEip7805()
+                    .orElseThrow()
+                    .getInclusionListSchema()
+                    .getTransactionSchema()
+                    .getJsonTypeDefinition()),
+            Function.identity())
+        .build();
   }
 }
