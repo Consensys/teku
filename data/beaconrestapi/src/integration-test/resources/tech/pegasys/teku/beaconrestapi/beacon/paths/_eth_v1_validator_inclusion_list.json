@@ -1,0 +1,53 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "operationId" : "publishInclusionList",
+    "summary" : "Publish an inclusion list",
+    "description" : "Verifies given inclusion list and publishes it on appropriate gossipsub topic.",
+    "parameters" : [ {
+      "name" : "Eth-Consensus-Version",
+      "required" : true,
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "eip7805" ],
+        "description" : "The active consensus version to which the inclusion list being submitted belongs."
+        }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/SignedInclusionListEip7805"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Invalid inclusion list",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
