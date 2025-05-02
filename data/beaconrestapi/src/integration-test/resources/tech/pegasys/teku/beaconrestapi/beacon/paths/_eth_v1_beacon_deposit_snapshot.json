@@ -1,53 +1,53 @@
 {
-  "get" : {
-    "tags" : [ "Beacon" ],
-    "operationId" : "getDepositSnapshot",
-    "summary" : "Get finalized DepositTreeSnapshot",
-    "description" : "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. See EIP-4881 for details.",
-    "deprecated" : true,
-    "responses" : {
-      "200" : {
-        "description" : "Request successful",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/GetDepositSnapshotResponse"
+  "get": {
+    "tags": [ "Beacon" ],
+    "operationId": "getDepositSnapshot",
+    "summary": "Get finalized DepositTreeSnapshot",
+    "description": "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. See [EIP-4881](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4881.md) for details.",
+    "deprecated": true,
+    "responses": {
+      "200": {
+        "description": "Request successful",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GetDepositSnapshotResponse"
             }
           },
-          "application/octet-stream" : {
-            "schema" : {
-              "type" : "string",
-              "format" : "binary"
+          "application/octet-stream": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
             }
           }
         }
       },
-      "404" : {
-        "description" : "Not found",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
+      "404": {
+        "description": "Not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "400" : {
-        "description" : "The request could not be processed, check the response for more information.",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
+      "400": {
+        "description": "The request could not be processed, check the response for more information.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
             }
           }
         }
       },
-      "500" : {
-        "description" : "Internal server error",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
             }
           }
         }
