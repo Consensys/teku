@@ -83,7 +83,7 @@ public class InclusionListDutyLoader
                     duty.slot(),
                     validator,
                     d -> {
-                      d.addValidator(validator, duty.validatorIndex());
+                      d.addValidator(validator, duty.validatorIndex().intValue());
                       return null;
                     }));
   }

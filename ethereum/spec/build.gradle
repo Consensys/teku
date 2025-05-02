@@ -46,6 +46,7 @@ dependencies {
     testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
     testFixturesImplementation project(':ethereum:performance-trackers')
     testFixturesImplementation project(':ethereum:execution-types')
+    testFixturesImplementation project(':ethereum:json-types')
     testFixturesImplementation project(':infrastructure:async')
     testFixturesImplementation project(':infrastructure:bls')
     testFixturesImplementation project(':infrastructure:bytes')

@@ -69,19 +69,51 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     final UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
     final UInt64 twoThirdsSlot = millisPerSlot.times(2).dividedBy(INTERVALS_PER_SLOT);
 
-    taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartTimeMillis.plus(oneThirdSlot), millisPerSlot, this::onAttestationCreationDue);
-    taskScheduler.scheduleRepeatingEventInMillis(
-        nextSlotStartTimeMillis.plus(twoThirdsSlot), millisPerSlot, this::onAggregationDue);
+    final SpecMilestone currentMilestone = spec.atSlot(currentSlot).getMilestone();
 
-    if (spec.getForkSchedule()
-        .getHighestSupportedMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
+    // EIP7805 is the current milestone
+    if (currentMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(oneThirdSlot),
+          millisPerSlot,
+          this::onAttestationCreationDue);
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(twoThirdsSlot), millisPerSlot, this::onAggregationDue);
       taskScheduler.scheduleRepeatingEventInMillis(
           nextSlotStartTimeMillis.plus(oneThirdSlot),
           millisPerSlot,
           this::onInclusionListCreationDue);
+      return;
     }
+
+    // EIP7805 schedule in the future
+    if (spec.getForkSchedule()
+        .getHighestSupportedMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
+      final UInt64 eip7805StartTimeMillis =
+          secondsToMillis(
+              spec.getSlotStartTime(
+                  spec.computeStartSlotAtEpoch(
+                      spec.getForkSchedule().getFork(SpecMilestone.EIP7805).getEpoch()),
+                  genesisTime));
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(oneThirdSlot),
+          millisPerSlot,
+          this::onAttestationCreationDue);
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(twoThirdsSlot), millisPerSlot, this::onAggregationDue);
+      taskScheduler.scheduleRepeatingEventInMillis(
+          eip7805StartTimeMillis.plus(oneThirdSlot),
+          millisPerSlot,
+          this::onInclusionListCreationDue);
+      return;
+    }
+
+    // No EIP7805
+    taskScheduler.scheduleRepeatingEventInMillis(
+        nextSlotStartTimeMillis.plus(oneThirdSlot), millisPerSlot, this::onAttestationCreationDue);
+    taskScheduler.scheduleRepeatingEventInMillis(
+        nextSlotStartTimeMillis.plus(twoThirdsSlot), millisPerSlot, this::onAggregationDue);
   }
 
   private UInt64 getCurrentSlot() {
@@ -128,7 +160,8 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     final UInt64 slot = getCurrentSlotForMillis(scheduledTimeInMillis);
     if (isTooLateInMillis(scheduledTimeInMillis, actualTimeInMillis)) {
       LOG.warn(
-          "Skipping inclusion list for slot {} due to unexpected delay in slot processing", slot);
+          "Skipping inclusion list creation for slot {} due to unexpected delay in slot processing",
+          slot);
       return;
     }
     validatorTimingChannel.onInclusionListDue(slot);

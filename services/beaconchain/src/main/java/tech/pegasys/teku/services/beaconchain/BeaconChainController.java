@@ -205,6 +205,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.InclusionListFactory;
+import tech.pegasys.teku.validator.coordinator.InclusionListsBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
@@ -285,6 +286,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ActiveValidatorTracker activeValidatorTracker;
   protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
+  protected volatile InclusionListsBlockUpdater inclusionListsBlockUpdater;
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
@@ -531,6 +533,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initSignatureVerificationService();
     initAttestationPool();
     initInclusionListManager();
+    initInclusionListsBlockUpdater();
     initAttesterSlashingPool();
     initProposerSlashingPool();
     initVoluntaryExitPool();
@@ -1221,6 +1224,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncService,
             forkChoiceTrigger,
             forkChoiceNotifier,
+            inclusionListsBlockUpdater,
             p2pNetwork,
             slotEventsChannelPublisher,
             new EpochCachePrimer(spec, recentChainData, beaconAsyncRunner));
@@ -1242,6 +1246,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new SignedInclusionListValidator(spec, recentChainData, signatureVerificationService);
     inclusionListManager = new InclusionListManager(signedInclusionListValidator, forkChoice);
     eventChannels.subscribe(SlotEventsChannel.class, inclusionListManager);
+  }
+
+  protected void initInclusionListsBlockUpdater() {
+    LOG.debug("BeaconChainController.initInclusionListsBlockUpdater()");
+    inclusionListsBlockUpdater =
+        new InclusionListsBlockUpdater(
+            forkChoiceNotifier,
+            proposersDataManager,
+            combinedChainDataClient,
+            executionLayer,
+            spec);
   }
 
   public void initRestAPI() {
