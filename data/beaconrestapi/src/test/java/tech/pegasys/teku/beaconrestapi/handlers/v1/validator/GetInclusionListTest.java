@@ -48,8 +48,7 @@ class GetInclusionListTest extends AbstractMigratedBeaconHandlerWithChainDataPro
 
   @Test
   void shouldRespondSyncing() throws JsonProcessingException {
-    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SYNCING);
+    when(validatorDataProvider.isStoreAvailable()).thenReturn(false);
     handler.handleRequest(request);
 
     Assertions.assertThat(request.getResponseCode())
