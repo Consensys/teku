@@ -85,7 +85,7 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
     final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV5(context.getPayloadId());
     final SchemaDefinitionsFulu schemaDefinitionFulu =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionFulu().orElseThrow();
+        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions());
     final ExecutionPayloadSchema<?> executionPayloadSchema =
         schemaDefinitionFulu.getExecutionPayloadSchema();
     final BlobSchema blobSchema = schemaDefinitionFulu.getBlobSchema();

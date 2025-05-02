@@ -48,18 +48,18 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV5Test {
 
-  private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
   private final ExecutionRequestsDataCodec executionRequestsDataCodec =
       new ExecutionRequestsDataCodec(
-          SchemaDefinitionsElectra.required(
-                  spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+          SchemaDefinitionsFulu.required(
+                  spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
               .getExecutionRequestsSchema());
   private EngineGetPayloadV5 jsonRpcMethod;
 
@@ -127,16 +127,16 @@ class EngineGetPayloadV5Test {
         dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
     final BlobsCellBundle blobsCellBundle = dataStructureUtil.randomBlobsCellBundle();
-    final ExecutionPayload executionPayloadElectra = dataStructureUtil.randomExecutionPayload();
+    final ExecutionPayload executionPayloadFulu = dataStructureUtil.randomExecutionPayload();
     final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
     final List<Bytes> encodedExecutionRequests =
         executionRequestsDataCodec.encode(executionRequests);
-    assertThat(executionPayloadElectra).isInstanceOf(ExecutionPayloadDeneb.class);
+    assertThat(executionPayloadFulu).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV5(eq(executionPayloadContext.getPayloadId())))
         .thenReturn(
             dummySuccessfulResponse(
-                executionPayloadElectra, blockValue, blobsCellBundle, encodedExecutionRequests));
+                executionPayloadFulu, blockValue, blobsCellBundle, encodedExecutionRequests));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -145,7 +145,7 @@ class EngineGetPayloadV5Test {
 
     final GetPayloadResponse expectedGetPayloadResponse =
         new GetPayloadResponse(
-            executionPayloadElectra, blockValue, blobsCellBundle, false, executionRequests);
+            executionPayloadFulu, blockValue, blobsCellBundle, false, executionRequests);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV5(eq(executionPayloadContext.getPayloadId()));
