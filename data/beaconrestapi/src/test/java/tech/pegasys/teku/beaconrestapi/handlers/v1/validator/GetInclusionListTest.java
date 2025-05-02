@@ -13,26 +13,40 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beacon.sync.events.SyncState.SYNCING;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.io.Resources;
 import jakarta.servlet.http.HttpServletResponse;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class GetInclusionListTest extends AbstractMigratedBeaconHandlerTest {
+import java.io.IOException;
+import java.util.List;
+
+class GetInclusionListTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
   void setUp() {
-    setHandler(new GetInclusionList(syncDataProvider, validatorDataProvider));
+
+    initialise(SpecMilestone.EIP7805);
+    setHandler(new GetInclusionList(syncDataProvider, validatorDataProvider, spec));
   }
 
   @Test
@@ -56,7 +70,15 @@ class GetInclusionListTest extends AbstractMigratedBeaconHandlerTest {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 
-  // missing 200
+  @Test
+  void metadata_shouldHandle200() throws IOException {
+    final List<Transaction> inclusionListTransactions = List.of(dataStructureUtil.randomExecutionPayloadTransaction());
+    final String data = getResponseStringFromMetadata(handler, SC_OK, inclusionListTransactions);
+    final String expected =
+            Resources.toString(
+                    Resources.getResource(GetInclusionListTest.class, "getInclusionList.json"), UTF_8);
+    AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
+  }
 
   @Test
   void metadata_shouldHandle503() throws JsonProcessingException {
