@@ -42,14 +42,12 @@ public class GetInclusionList extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/inclusion_list/{epoch}";
 
   private final ValidatorDataProvider validatorDataProvider;
-  private final SyncDataProvider syncDataProvider;
 
   public GetInclusionList(final DataProvider provider, final Spec spec) {
-    this(provider.getSyncDataProvider(), provider.getValidatorDataProvider(), spec);
+    this(provider.getValidatorDataProvider(), spec);
   }
 
   public GetInclusionList(
-      final SyncDataProvider syncDataProvider,
       final ValidatorDataProvider validatorDataProvider,
       final Spec spec) {
     super(
@@ -62,15 +60,14 @@ public class GetInclusionList extends RestApiEndpoint {
                 SLOT_PARAMETER.withDescription(
                     "The slot for which an inclusion list should be created."))
             .response(SC_OK, "Request successful", getResponseType(spec))
-            .withChainDataResponses()
+            .withServiceUnavailableResponse()
             .build());
-    this.syncDataProvider = syncDataProvider;
     this.validatorDataProvider = validatorDataProvider;
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
+    if (!validatorDataProvider.isStoreAvailable() ) {
       request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
       return;
     }
@@ -90,7 +87,7 @@ public class GetInclusionList extends RestApiEndpoint {
 
   private static SerializableTypeDefinition<List<Transaction>> getResponseType(final Spec spec) {
     return SerializableTypeDefinition.<List<Transaction>>object()
-        .name("GetInclusionListResponse")
+        .name("ProduceInclusionListResponse")
         .withField(
             "data",
             listOf(
