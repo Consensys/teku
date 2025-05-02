@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -47,9 +46,7 @@ public class GetInclusionList extends RestApiEndpoint {
     this(provider.getValidatorDataProvider(), spec);
   }
 
-  public GetInclusionList(
-      final ValidatorDataProvider validatorDataProvider,
-      final Spec spec) {
+  public GetInclusionList(final ValidatorDataProvider validatorDataProvider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("produceInclusionList")
@@ -67,7 +64,7 @@ public class GetInclusionList extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    if (!validatorDataProvider.isStoreAvailable() ) {
+    if (!validatorDataProvider.isStoreAvailable()) {
       request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
       return;
     }

@@ -25,20 +25,17 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
-
-import java.io.IOException;
-import java.util.List;
 
 class GetInclusionListTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
@@ -72,11 +69,12 @@ class GetInclusionListTest extends AbstractMigratedBeaconHandlerWithChainDataPro
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final List<Transaction> inclusionListTransactions = List.of(dataStructureUtil.randomExecutionPayloadTransaction());
+    final List<Transaction> inclusionListTransactions =
+        List.of(dataStructureUtil.randomExecutionPayloadTransaction());
     final String data = getResponseStringFromMetadata(handler, SC_OK, inclusionListTransactions);
     final String expected =
-            Resources.toString(
-                    Resources.getResource(GetInclusionListTest.class, "getInclusionList.json"), UTF_8);
+        Resources.toString(
+            Resources.getResource(GetInclusionListTest.class, "getInclusionList.json"), UTF_8);
     AssertionsForClassTypes.assertThat(data).isEqualTo(expected);
   }
 
