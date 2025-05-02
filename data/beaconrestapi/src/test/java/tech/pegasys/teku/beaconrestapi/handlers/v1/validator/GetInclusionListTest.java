@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beacon.sync.events.SyncState.SYNCING;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
