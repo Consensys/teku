@@ -60,7 +60,6 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
 
   public SchemaDefinitionsPhase0(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
-    final SpecConfig specConfig = schemaRegistry.getSpecConfig();
     this.indexedAttestationSchema = schemaRegistry.get(SchemaTypes.INDEXED_ATTESTATION_SCHEMA);
     this.attesterSlashingSchema = schemaRegistry.get(SchemaTypes.ATTESTER_SLASHING_SCHEMA);
 
