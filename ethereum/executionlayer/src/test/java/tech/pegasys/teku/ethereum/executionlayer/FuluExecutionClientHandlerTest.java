@@ -192,7 +192,7 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
         handler.engineGetBlobsV2(versionedHashes, slot);
     verify(executionEngineClient).getBlobsV2(versionedHashes);
     final BlobSchema blobSchema =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionFulu().orElseThrow().getBlobSchema();
+        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions()).getBlobSchema();
     assertThat(future)
         .isCompletedWithValue(
             responseData.stream()
