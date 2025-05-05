@@ -45,6 +45,12 @@ public class YamlConfigReader {
     return values;
   }
 
+  /*
+   * For the purposes of reading config, we just want strings, we don't want numeric values.
+   * This will ensure that we get hex values through as unparsed, and ensure we're getting
+   * things such as CRC checks through without them being altered.
+   * The implicit resolver below is basically saying just match numerics as string.
+   */
   public static class CustomResolver extends Resolver {
     @Override
     protected void addImplicitResolvers() {

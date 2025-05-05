@@ -44,14 +44,14 @@ public class SpecConfigLoaderTest {
     assertAllFieldsSet(config, SpecConfigElectra.class);
   }
 
-  /***
+  /**
    * For the three networks supported by Infura, go the extra mile and ensure the CONFIG_NAME key is
    * still included in the raw config which is exposed by the config/spec REST API.
    *
    * <p>Prior to Altair, Lighthouse required this field to be a known testnet name, mainnet or
    * minimal. Post-Altair we will be able to remove this as the new PRESET_BASE key will be
    * sufficient.
-   ***/
+   */
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"hoodi", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
