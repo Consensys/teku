@@ -19,9 +19,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltair
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
@@ -46,16 +44,16 @@ public class SpecConfigLoaderTest {
     assertAllFieldsSet(config, SpecConfigElectra.class);
   }
 
-  /**
+  /***
    * For the three networks supported by Infura, go the extra mile and ensure the CONFIG_NAME key is
    * still included in the raw config which is exposed by the config/spec REST API.
    *
    * <p>Prior to Altair, Lighthouse required this field to be a known testnet name, mainnet or
    * minimal. Post-Altair we will be able to remove this as the new PRESET_BASE key will be
    * sufficient.
-   */
+   ***/
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"holesky", "mainnet"})
+  @ValueSource(strings = {"hoodi", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
     final SpecConfig config = SpecConfigLoader.loadConfig(name).specConfig();
     assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
@@ -161,10 +159,8 @@ public class SpecConfigLoaderTest {
     return getClass().getResourceAsStream("invalid/" + file);
   }
 
-  private Map<String, String> readJsonConfig(final InputStream source) throws IOException {
-    final ObjectMapper mapper = new ObjectMapper();
-    return mapper
-        .readerFor(mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
-        .readValue(source);
+  private Map<String, Object> readJsonConfig(final InputStream source) {
+    YamlConfigReader reader = new YamlConfigReader();
+    return reader.readValues(source);
   }
 }

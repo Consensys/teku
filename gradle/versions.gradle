@@ -16,6 +16,8 @@ dependencyManagement {
 
     dependency 'com.google.guava:guava:33.1.0-jre'
 
+    dependency 'org.yaml:snakeyaml:2.4'
+
     dependency 'org.jsoup:jsoup:1.19.1'
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
