@@ -1,0 +1,39 @@
+# This is a sample multimode graffiti configuration file
+# It supports multiple different ways to specify graffiti messages
+
+# Specific validator configuration by public key
+specific:
+  # Replace with your actual validator public key
+  a057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a: "Validator 0xa05781 was here"
+  # You can add more validators with their specific messages
+  b057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a: "Validator 0xb05781 was here"
+
+# Ordered list of graffiti messages
+# These will be used in sequence, cycling back to the beginning when it reaches the end
+ordered:
+  - "First ordered graffiti message"
+  - "Second ordered graffiti message"
+  - "Third ordered graffiti message"
+  - "Fourth ordered graffiti message"
+
+# Random list of graffiti messages
+# A random message from this list will be chosen each time
+random:
+  - "Random message 1"
+  - "Random message 2"
+  - "Random message 3"
+  - "Random message 4"
+  - "Random message 5"
+
+# Default fallback message
+# This will be used if no specific, ordered, or random messages apply
+defaultGraffiti: "Default fallback graffiti message"
+
+# --------------------------------------------------
+# Order of precedence:
+# 1. Specific validator messages (by public key)
+# 2. Ordered messages (in sequence)
+# 3. Random messages (chosen randomly)
+# 4. Default fallback message
+# 5. CLI default message (--validators-graffiti parameter)
+# -------------------------------------------------- 
