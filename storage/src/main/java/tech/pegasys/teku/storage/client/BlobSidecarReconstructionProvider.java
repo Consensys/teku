@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -43,13 +43,11 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 public class BlobSidecarReconstructionProvider {
   private final CombinedChainDataClient combinedChainDataClient;
   private final Spec spec;
-  private final KZG kzg;
 
   public BlobSidecarReconstructionProvider(
-      final CombinedChainDataClient combinedChainDataClient, final Spec spec, final KZG kzg) {
+      final CombinedChainDataClient combinedChainDataClient, final Spec spec) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.spec = spec;
-    this.kzg = kzg;
   }
 
   public SafeFuture<List<BlobSidecar>> reconstructBlobSidecars(
@@ -165,15 +163,6 @@ public class BlobSidecarReconstructionProvider {
         signedBeaconBlock,
         UInt64.valueOf(blobIndex),
         schemaDefinitionsDeneb.getBlobSchema().create(blobBytes),
-        new SszKZGProof(
-            kzg.computeBlobKzgProof(
-                blobBytes,
-                signedBeaconBlock
-                    .getMessage()
-                    .getBody()
-                    .getOptionalBlobKzgCommitments()
-                    .orElseThrow()
-                    .get(blobIndex)
-                    .getKZGCommitment())));
+        new SszKZGProof(KZGProof.ZERO));
   }
 }

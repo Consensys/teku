@@ -39,7 +39,6 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -61,10 +60,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class BlobSidecarReconstructionProviderTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
   private final Spec spec = TestSpecFactory.createMinimalFulu();
-  private final KZG kzg = mock(KZG.class);
 
   private final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider =
-      new BlobSidecarReconstructionProvider(client, spec, kzg);
+      new BlobSidecarReconstructionProvider(client, spec);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
@@ -223,7 +221,6 @@ public class BlobSidecarReconstructionProviderTest {
             });
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(kzg.computeBlobKzgProof(any(), any())).thenReturn(dataStructureUtil.randomKZGProof());
 
     final SafeFuture<List<BlobSidecar>> result =
         blobSidecarReconstructionProvider.reconstructBlobSidecars(
@@ -233,7 +230,9 @@ public class BlobSidecarReconstructionProviderTest {
             list ->
                 list.size() == 2
                     && list.getFirst().getBlob().equals(blobsAndMatrix.blobs.getFirst())
-                    && list.get(1).getBlob().equals(blobsAndMatrix.blobs.get(1)));
+                    && list.get(1).getBlob().equals(blobsAndMatrix.blobs.get(1))
+                    && list.stream()
+                        .allMatch(blobSidecar -> blobSidecar.getKZGProof().equals(KZGProof.ZERO)));
     verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
@@ -274,7 +273,6 @@ public class BlobSidecarReconstructionProviderTest {
             });
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    when(kzg.computeBlobKzgProof(any(), any())).thenReturn(dataStructureUtil.randomKZGProof());
 
     final SafeFuture<List<BlobSidecar>> result =
         blobSidecarReconstructionProvider.reconstructBlobSidecars(
@@ -282,7 +280,9 @@ public class BlobSidecarReconstructionProviderTest {
     assertThat(result)
         .isCompletedWithValueMatching(
             list ->
-                list.size() == 1 && list.getFirst().getBlob().equals(blobsAndMatrix.blobs.get(1)));
+                list.size() == 1
+                    && list.getFirst().getBlob().equals(blobsAndMatrix.blobs.get(1))
+                    && list.getFirst().getKZGProof().equals(KZGProof.ZERO));
     verify(client, times(numberOfColumns / 2)).getSidecar(any(DataColumnSlotAndIdentifier.class));
   }
 
