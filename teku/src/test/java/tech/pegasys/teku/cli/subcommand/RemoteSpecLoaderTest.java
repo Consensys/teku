@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -70,7 +71,8 @@ class RemoteSpecLoaderTest {
     final ObjectMapper objectMapper = new ObjectMapper();
     TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
     Map<String, String> data = objectMapper.readValue(jsonConfig, typeReference);
-    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data).specConfig();
+    final SpecConfig specConfig =
+        SpecConfigLoader.loadRemoteConfig(new HashMap<>(data)).specConfig();
 
     // Check values not assigned, using default values
     assertThat(specConfig.getMaxPayloadSize()).isEqualTo(10485760);
