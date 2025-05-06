@@ -125,12 +125,9 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void testWrapBitSet(final SszBitlist bitlist1) {
-    final BitSet bits = new BitSet(bitlist1.size());
-
-    bitlist1.streamAllSetBits().forEach(bits::set);
-
-    final SszBitlist bitlist2 = bitlist1.getSchema().wrapBitSet(bitlist1.size(), bits);
+  void testBitSetRoundtrip(final SszBitlist bitlist1) {
+    final SszBitlist bitlist2 =
+        bitlist1.getSchema().wrapBitSet(bitlist1.size(), bitlist1.getAsBitSet());
 
     for (int i = 0; i < bitlist1.size(); i++) {
       assertThat(bitlist2.getBit(i)).isEqualTo(bitlist1.getBit(i));

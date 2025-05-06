@@ -15,229 +15,252 @@ package tech.pegasys.teku.statetransition.attestation.utils;
 
 import com.google.common.base.MoreObjects;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.stream.IntStream;
+import java.util.List;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
-  private SszBitlist aggregationBits;
-  private SszBitvector committeeBits;
-  private Int2IntMap committeeBitsStartingPositions;
+
+  private final SszBitlistSchema<?> aggregationBitsSchema;
+  private final SszBitvectorSchema<?> committeeBitsSchema;
   private final Int2IntMap committeesSize;
 
+  private Int2ObjectMap<BitSet> committeeAggregationBitsMap;
+  private BitSet committeeBits;
+
+  private SszBitlist cachedAggregationBits = null;
+  private SszBitvector cachedCommitteeBits = null;
+
   AttestationBitsAggregatorElectra(
-      final SszBitlist aggregationBits,
-      final SszBitvector committeeBits,
+      final SszBitlist initialAggregationBits,
+      final SszBitvector initialCommitteeBits,
       final Int2IntMap committeesSize) {
-    this.aggregationBits = aggregationBits;
-    this.committeeBits = committeeBits;
-    this.committeesSize = committeesSize;
-    this.committeeBitsStartingPositions = calculateCommitteeStartingPositions(committeeBits);
+    this.aggregationBitsSchema = initialAggregationBits.getSchema();
+    this.committeeBitsSchema = initialCommitteeBits.getSchema();
+    this.committeesSize = Objects.requireNonNull(committeesSize, "committeesSize cannot be null");
+    this.committeeBits = initialCommitteeBits.getAsBitSet();
+    this.committeeAggregationBitsMap =
+        parseAggregationBits(
+            initialAggregationBits.getAsBitSet(), this.committeeBits, this.committeesSize);
   }
 
   static AttestationBitsAggregator fromAttestationSchema(
       final AttestationSchema<?> attestationSchema, final Int2IntMap committeesSize) {
+    final SszBitlist emptyAggregationBits = attestationSchema.createEmptyAggregationBits();
+    final SszBitvector emptyCommitteeBits =
+        attestationSchema
+            .createEmptyCommitteeBits()
+            .orElseThrow(
+                () -> new IllegalStateException("Electra schema must provide committee bits"));
     return new AttestationBitsAggregatorElectra(
-        attestationSchema.createEmptyAggregationBits(),
-        attestationSchema.createEmptyCommitteeBits().orElseThrow(),
-        committeesSize);
+        emptyAggregationBits, emptyCommitteeBits, committeesSize);
+  }
+
+  private static Int2ObjectMap<BitSet> parseAggregationBits(
+      final BitSet flatAggregationBits,
+      final BitSet committeeIndices,
+      final Int2IntMap committeesSizeMap) {
+    final Int2ObjectMap<BitSet> result = new Int2ObjectOpenHashMap<>();
+
+    int currentOffset = 0;
+    for (int committeeIndex = committeeIndices.nextSetBit(0);
+        committeeIndex >= 0;
+        committeeIndex = committeeIndices.nextSetBit(committeeIndex + 1)) {
+
+      final int committeeSize = committeesSizeMap.getOrDefault(committeeIndex, 0);
+      if (committeeSize > 0) {
+        int sliceEnd = Math.min(currentOffset + committeeSize, flatAggregationBits.length());
+        BitSet committeeBits = flatAggregationBits.get(currentOffset, sliceEnd);
+        result.put(committeeIndex, committeeBits);
+      }
+      currentOffset += committeeSize; // Always advance by the declared committee size
+    }
+    return result;
   }
 
   @Override
   public void or(final AttestationBitsAggregator other) {
-    or(other.getCommitteeBits(), other.getAggregationBits(), false);
+    if (!(other instanceof AttestationBitsAggregatorElectra otherElectra)) {
+      throw new IllegalArgumentException(
+          "AttestationBitsAggregatorElectra.or requires an argument of the same type.");
+    }
+
+    performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, false);
   }
 
   @Override
   public boolean aggregateWith(final Attestation other) {
-    return or(other.getCommitteeBitsRequired(), other.getAggregationBits(), true);
+    final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
+    final BitSet otherAggregationBitsData = other.getAggregationBits().getAsBitSet();
+    final Int2ObjectMap<BitSet> otherParsedAggregationMap =
+        parseAggregationBits(otherAggregationBitsData, otherCommitteeBits, this.committeesSize);
+    return performMerge(otherCommitteeBits, otherParsedAggregationMap, true);
   }
 
   @Override
   public void or(final Attestation other) {
-    or(other.getCommitteeBitsRequired(), other.getAggregationBits(), false);
+    final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
+    final BitSet otherAggregationBitsData = other.getAggregationBits().getAsBitSet();
+    final Int2ObjectMap<BitSet> otherParsedAggregationMap =
+        parseAggregationBits(otherAggregationBitsData, otherCommitteeBits, this.committeesSize);
+    performMerge(otherCommitteeBits, otherParsedAggregationMap, false);
   }
 
-  private static class CannotAggregateException extends RuntimeException {}
-
-  private boolean or(
-      final SszBitvector otherCommitteeBits,
-      final SszBitlist otherAggregatedBits,
+  private boolean performMerge(
+      final BitSet otherCommitteeBits,
+      final Int2ObjectMap<BitSet> otherCommitteeAggregationBitsMap,
       final boolean isAggregation) {
+    final BitSet mergedCommitteeBits = (BitSet) this.committeeBits.clone();
+    mergedCommitteeBits.or(otherCommitteeBits);
 
-    if (otherCommitteeBits.equals(committeeBits)) {
-      // If the committee bits are the same, we can directly combine the aggregation bits
-      if (isAggregation && aggregationBits.intersects(otherAggregatedBits)) {
-        return false;
+    final Int2ObjectMap<BitSet> targetAggregationBitsMap;
+
+    if (isAggregation) {
+      // If aggregating, we need to work on copies
+      targetAggregationBitsMap = new Int2ObjectOpenHashMap<>();
+      for (final Int2ObjectMap.Entry<BitSet> entry :
+          this.committeeAggregationBitsMap.int2ObjectEntrySet()) {
+        targetAggregationBitsMap.put(entry.getIntKey(), (BitSet) entry.getValue().clone());
       }
-      aggregationBits = aggregationBits.or(otherAggregatedBits);
-      return true;
+    } else {
+      // if not aggregating, we can modify in place
+      targetAggregationBitsMap = this.committeeAggregationBitsMap;
     }
 
-    final SszBitvector combinedCommitteeBits = committeeBits.or(otherCommitteeBits);
+    for (int committeeIndex = mergedCommitteeBits.nextSetBit(0);
+        committeeIndex >= 0;
+        committeeIndex = mergedCommitteeBits.nextSetBit(committeeIndex + 1)) {
 
-    final Int2IntMap otherCommitteeBitsStartingPositions =
-        calculateCommitteeStartingPositions(otherCommitteeBits);
-    final Int2IntMap aggregatedCommitteeBitsStartingPositions =
-        calculateCommitteeStartingPositions(combinedCommitteeBits);
+      final boolean inThis = this.committeeBits.get(committeeIndex);
+      final boolean inOther = otherCommitteeBits.get(committeeIndex);
 
-    // create an aggregation bit big as last boundary for last committee bit
-    final int lastCommitteeIndex = combinedCommitteeBits.getLastSetBitIndex();
-    final int lastCommitteeStartingPosition =
-        aggregatedCommitteeBitsStartingPositions.get(lastCommitteeIndex);
-    final int combinedAggregationBitsSize =
-        lastCommitteeStartingPosition + committeesSize.get(lastCommitteeIndex);
+      if (inThis && inOther) {
+        final BitSet otherAggregationBitsForCommittee =
+            otherCommitteeAggregationBitsMap.get(committeeIndex);
+        final BitSet targetAggregationBitsForCommittee =
+            targetAggregationBitsMap.get(committeeIndex);
 
-    final BitSet combinedAggregationIndices = new BitSet(combinedAggregationBitsSize);
+        if (isAggregation) {
+          // For intersection check, use the original bits of 'this'
+          final BitSet thisAggregationBitsForCommittee =
+              this.committeeAggregationBitsMap.get(committeeIndex);
+          if (thisAggregationBitsForCommittee != null
+              && thisAggregationBitsForCommittee.intersects(otherAggregationBitsForCommittee)) {
+            return false;
+          }
+        }
 
-    // let's go over all aggregated committees to calculate indices for the combined aggregation
-    // bits
-    try {
-      combinedCommitteeBits
-          .streamAllSetBits()
-          .forEach(
-              committeeIndex -> {
-                int committeeSize = committeesSize.get(committeeIndex);
-                int destinationStart = aggregatedCommitteeBitsStartingPositions.get(committeeIndex);
+        targetAggregationBitsForCommittee.or(otherAggregationBitsForCommittee);
 
-                SszBitlist source1 = null, maybeSource2 = null;
-                int source1StartingPosition = 0, source2StartingPosition = 0;
+      } else if (inOther) {
+        // Committee only in 'other'.
+        final BitSet otherDataForCommittee = otherCommitteeAggregationBitsMap.get(committeeIndex);
 
-                if (committeeBitsStartingPositions.containsKey(committeeIndex)) {
-                  source1 = aggregationBits;
-                  source1StartingPosition = committeeBitsStartingPositions.get(committeeIndex);
-                }
-                if (otherCommitteeBitsStartingPositions.containsKey(committeeIndex)) {
-                  if (source1 != null) {
-                    maybeSource2 = otherAggregatedBits;
-                    source2StartingPosition =
-                        otherCommitteeBitsStartingPositions.get(committeeIndex);
-                  } else {
-                    source1 = otherAggregatedBits;
-                    source1StartingPosition =
-                        otherCommitteeBitsStartingPositions.get(committeeIndex);
-                  }
-                }
-
-                // Now that we know:
-                // 1. which aggregationBits (this or other or both) will contribute to the result
-                // 2. the offset of the committee for each contributing aggregation bits
-                // We can go over the committee and calculate the combined aggregate bits
-                for (int positionInCommittee = 0;
-                    positionInCommittee < committeeSize;
-                    positionInCommittee++) {
-                  if (orSingleBit(
-                      positionInCommittee,
-                      source1,
-                      source1StartingPosition,
-                      maybeSource2,
-                      source2StartingPosition,
-                      isAggregation)) {
-                    combinedAggregationIndices.set(destinationStart + positionInCommittee);
-                  }
-                }
-              });
-    } catch (final CannotAggregateException __) {
-      return false;
+        targetAggregationBitsMap.put(committeeIndex, (BitSet) otherDataForCommittee.clone());
+      }
+      // Committee only in 'this', do nothing.
     }
 
-    committeeBits = combinedCommitteeBits;
-    aggregationBits =
-        aggregationBits
-            .getSchema()
-            .wrapBitSet(combinedAggregationBitsSize, combinedAggregationIndices);
-    committeeBitsStartingPositions = aggregatedCommitteeBitsStartingPositions;
+    this.committeeBits = mergedCommitteeBits;
+    if (isAggregation) {
+      this.committeeAggregationBitsMap = targetAggregationBitsMap;
+    }
 
+    invalidateCache();
     return true;
-  }
-
-  private boolean orSingleBit(
-      final int positionInCommittee,
-      final SszBitlist source1,
-      final int source1StartingPosition,
-      final SszBitlist maybeSource2,
-      final int source2StartingPosition,
-      final boolean isAggregation) {
-
-    final boolean source1Bit = source1.getBit(source1StartingPosition + positionInCommittee);
-
-    if (maybeSource2 == null) {
-      return source1Bit;
-    }
-
-    final boolean source2Bit = maybeSource2.getBit(source2StartingPosition + positionInCommittee);
-
-    if (isAggregation && source1Bit && source2Bit) {
-      throw new CannotAggregateException();
-    }
-
-    return source1Bit || source2Bit;
-  }
-
-  private Int2IntMap calculateCommitteeStartingPositions(final SszBitvector committeeBits) {
-    final Int2IntMap committeeBitsStartingPositions = new Int2IntOpenHashMap();
-    final int[] currentOffset = {0};
-    committeeBits
-        .streamAllSetBits()
-        .forEach(
-            index -> {
-              committeeBitsStartingPositions.put(index, currentOffset[0]);
-              currentOffset[0] += committeesSize.get(index);
-            });
-
-    return committeeBitsStartingPositions;
   }
 
   @Override
   public boolean isSuperSetOf(final Attestation other) {
-    if (committeeBits.equals(other.getCommitteeBitsRequired())) {
-      return aggregationBits.isSuperSetOf(other.getAggregationBits());
-    }
+    final BitSet otherInternalCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
+    final BitSet otherInternalAggregationBits = other.getAggregationBits().getAsBitSet();
 
-    if (!committeeBits.isSuperSetOf(other.getCommitteeBitsRequired())) {
+    final BitSet committeeIntersection = (BitSet) this.committeeBits.clone();
+    committeeIntersection.and(otherInternalCommitteeBits);
+    if (!committeeIntersection.equals(otherInternalCommitteeBits)) {
       return false;
     }
 
-    final SszBitvector otherCommitteeBits = other.getCommitteeBitsRequired();
+    final Int2ObjectMap<BitSet> otherParsedAggregationBits =
+        parseAggregationBits(
+            otherInternalAggregationBits, otherInternalCommitteeBits, this.committeesSize);
 
-    final Int2IntMap otherCommitteeBitsStartingPositions =
-        calculateCommitteeStartingPositions(otherCommitteeBits);
+    for (int committeeIndex = otherInternalCommitteeBits.nextSetBit(0);
+        committeeIndex >= 0;
+        committeeIndex = otherInternalCommitteeBits.nextSetBit(committeeIndex + 1)) {
 
-    final SszBitvector commonCommittees = committeeBits.and(otherCommitteeBits);
+      final BitSet thisBits = this.committeeAggregationBitsMap.get(committeeIndex);
+      final BitSet otherParsedBits = otherParsedAggregationBits.get(committeeIndex);
 
-    return commonCommittees
-        .streamAllSetBits()
-        .mapToObj(
-            committeeIndex -> {
-              int committeeSize = committeesSize.get(committeeIndex);
+      if (thisBits == null) return false;
+      if (otherParsedBits == null || otherParsedBits.isEmpty()) continue;
 
-              final int startingPosition = committeeBitsStartingPositions.get(committeeIndex);
-              final int otherStartingPosition =
-                  otherCommitteeBitsStartingPositions.get(committeeIndex);
-
-              return IntStream.range(0, committeeSize)
-                  .anyMatch(
-                      positionInCommittee ->
-                          other
-                                  .getAggregationBits()
-                                  .getBit(otherStartingPosition + positionInCommittee)
-                              && !aggregationBits.getBit(startingPosition + positionInCommittee));
-            })
-        .noneMatch(aBitFoundInOtherButNotInThis -> aBitFoundInOtherButNotInThis);
+      final BitSet otherBitsNotInThis = (BitSet) otherParsedBits.clone();
+      otherBitsNotInThis.andNot(thisBits);
+      if (!otherBitsNotInThis.isEmpty()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
   public SszBitlist getAggregationBits() {
-    return aggregationBits;
+    if (cachedAggregationBits != null) {
+      return cachedAggregationBits;
+    }
+    final List<Integer> committeeIndicesInOrder = new ArrayList<>();
+    for (int i = committeeBits.nextSetBit(0); i >= 0; i = committeeBits.nextSetBit(i + 1)) {
+      committeeIndicesInOrder.add(i);
+    }
+    // No explicit sort needed as BitSet.nextSetBit() iterates in ascending order.
+
+    int totalBitlistSize = 0;
+    for (final int committeeIndex : committeeIndicesInOrder) {
+      totalBitlistSize += this.committeesSize.getOrDefault(committeeIndex, 0);
+    }
+
+    final BitSet combinedAggregationBits = new BitSet(totalBitlistSize);
+    int currentOffset = 0;
+    for (final int committeeIndex : committeeIndicesInOrder) {
+      final BitSet committeeBitsData = this.committeeAggregationBitsMap.get(committeeIndex);
+      final int committeeSize = this.committeesSize.getOrDefault(committeeIndex, 0);
+
+      if (committeeBitsData != null && committeeSize > 0) {
+        for (int bitIndex = committeeBitsData.nextSetBit(0);
+            bitIndex >= 0 && bitIndex < committeeSize;
+            bitIndex = committeeBitsData.nextSetBit(bitIndex + 1)) {
+          combinedAggregationBits.set(currentOffset + bitIndex);
+        }
+      }
+      currentOffset += committeeSize;
+    }
+    cachedAggregationBits =
+        aggregationBitsSchema.wrapBitSet(totalBitlistSize, combinedAggregationBits);
+    return cachedAggregationBits;
   }
 
   @Override
   public SszBitvector getCommitteeBits() {
-    return committeeBits;
+    if (cachedCommitteeBits == null) {
+      cachedCommitteeBits =
+          committeeBitsSchema.wrapBitSet(committeeBitsSchema.getLength(), this.committeeBits);
+    }
+    return cachedCommitteeBits;
+  }
+
+  private void invalidateCache() {
+    this.cachedAggregationBits = null;
+    this.cachedCommitteeBits = null;
   }
 
   @Override
@@ -252,11 +275,19 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public String toString() {
+    long totalSetBits = 0;
+    if (committeeAggregationBitsMap != null) {
+      for (final BitSet bs : committeeAggregationBitsMap.values()) {
+        if (bs != null) {
+          totalSetBits += bs.cardinality();
+        }
+      }
+    }
     return MoreObjects.toStringHelper(this)
-        .add("aggregationBits", aggregationBits)
-        .add("committeeBits", committeeBits)
-        .add("committeesSize", committeesSize)
-        .add("committeeBitsStartingPositions", committeeBitsStartingPositions)
+        .add("committeeBits", committeeBits.cardinality())
+        .add("committeeAggregationBitsMap", totalSetBits)
+        .add("committeesSize", committeesSize.size())
+        .add("cached", cachedAggregationBits != null || cachedCommitteeBits != null)
         .toString();
   }
 }
