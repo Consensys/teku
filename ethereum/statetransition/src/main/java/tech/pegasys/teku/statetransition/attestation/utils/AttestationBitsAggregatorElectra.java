@@ -198,8 +198,10 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         committeeIndex >= 0;
         committeeIndex = otherInternalCommitteeBits.nextSetBit(committeeIndex + 1)) {
 
-      final BitSet thisAggregationBitsForCommittee = this.committeeAggregationBitsMap.get(committeeIndex);
-      final BitSet otherAggregationBitsForCommittee = otherCommitteeAggregationBitsMap.get(committeeIndex);
+      final BitSet thisAggregationBitsForCommittee =
+          this.committeeAggregationBitsMap.get(committeeIndex);
+      final BitSet otherAggregationBitsForCommittee =
+          otherCommitteeAggregationBitsMap.get(committeeIndex);
 
       if (thisAggregationBitsForCommittee == null) {
         return false;
