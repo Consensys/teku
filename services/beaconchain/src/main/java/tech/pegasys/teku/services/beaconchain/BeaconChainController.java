@@ -1089,7 +1089,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initBlobSidecarReconstructionProvider() {
     LOG.debug("BeaconChainController.initBlobSidecarReconstructionProvider()");
     this.blobSidecarReconstructionProvider =
-        new BlobSidecarReconstructionProvider(combinedChainDataClient, spec, kzg);
+        new BlobSidecarReconstructionProvider(combinedChainDataClient, spec);
   }
 
   protected void initDataProvider() {
