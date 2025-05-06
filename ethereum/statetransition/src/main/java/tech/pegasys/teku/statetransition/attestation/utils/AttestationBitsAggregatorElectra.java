@@ -190,7 +190,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       return false;
     }
 
-    final Int2ObjectMap<BitSet> otherParsedAggregationBits =
+    final Int2ObjectMap<BitSet> otherCommitteeAggregationBitsMap =
         parseAggregationBits(
             otherInternalAggregationBits, otherInternalCommitteeBits, this.committeesSize);
 
@@ -198,14 +198,18 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         committeeIndex >= 0;
         committeeIndex = otherInternalCommitteeBits.nextSetBit(committeeIndex + 1)) {
 
-      final BitSet thisBits = this.committeeAggregationBitsMap.get(committeeIndex);
-      final BitSet otherParsedBits = otherParsedAggregationBits.get(committeeIndex);
+      final BitSet thisAggregationBitsForCommittee = this.committeeAggregationBitsMap.get(committeeIndex);
+      final BitSet otherAggregationBitsForCommittee = otherCommitteeAggregationBitsMap.get(committeeIndex);
 
-      if (thisBits == null) return false;
-      if (otherParsedBits == null || otherParsedBits.isEmpty()) continue;
+      if (thisAggregationBitsForCommittee == null) {
+        return false;
+      }
+      if (otherAggregationBitsForCommittee == null || otherAggregationBitsForCommittee.isEmpty()) {
+        continue;
+      }
 
-      final BitSet otherBitsNotInThis = (BitSet) otherParsedBits.clone();
-      otherBitsNotInThis.andNot(thisBits);
+      final BitSet otherBitsNotInThis = (BitSet) otherAggregationBitsForCommittee.clone();
+      otherBitsNotInThis.andNot(thisAggregationBitsForCommittee);
       if (!otherBitsNotInThis.isEmpty()) {
         return false;
       }
