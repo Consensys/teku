@@ -16,25 +16,25 @@ package tech.pegasys.teku.statetransition.datacolumns.log.rpc;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 
 class DasReqRespLoggerImpl implements DasReqRespLogger {
 
   private final TimeProvider timeProvider;
 
-  private final ReqRespMethodLogger<List<DataColumnIdentifier>, DataColumnSidecar>
+  private final ReqRespMethodLogger<List<DataColumnsByRootIdentifier>, DataColumnSidecar>
       byRootMethodLogger =
           new ReqRespMethodLogger<>() {
             @Override
             public ReqRespResponseLogger<DataColumnSidecar> onInboundRequest(
-                final LoggingPeerId fromPeer, final List<DataColumnIdentifier> request) {
+                final LoggingPeerId fromPeer, final List<DataColumnsByRootIdentifier> request) {
               return new DasByRootResponseLogger(
                   timeProvider, AbstractResponseLogger.Direction.INBOUND, fromPeer, request);
             }
 
             @Override
             public ReqRespResponseLogger<DataColumnSidecar> onOutboundRequest(
-                final LoggingPeerId toPeer, final List<DataColumnIdentifier> request) {
+                final LoggingPeerId toPeer, final List<DataColumnsByRootIdentifier> request) {
               return new DasByRootResponseLogger(
                   timeProvider, AbstractResponseLogger.Direction.OUTBOUND, toPeer, request);
             }
@@ -62,7 +62,7 @@ class DasReqRespLoggerImpl implements DasReqRespLogger {
   }
 
   @Override
-  public ReqRespMethodLogger<List<DataColumnIdentifier>, DataColumnSidecar>
+  public ReqRespMethodLogger<List<DataColumnsByRootIdentifier>, DataColumnSidecar>
       getDataColumnSidecarsByRootLogger() {
     return byRootMethodLogger;
   }

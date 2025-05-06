@@ -18,7 +18,7 @@ import java.util.Map;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 
 public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp {
   private final DataColumnPeerManagerStub dataColumnPeerManagerStub =

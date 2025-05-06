@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -265,7 +265,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestDataColumnSidecarsByRoot(
-      final List<DataColumnIdentifier> dataColumnIdentifiers,
+      final List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
       final RpcResponseListener<DataColumnSidecar> listener) {
     // TODO
     return SafeFuture.COMPLETE;

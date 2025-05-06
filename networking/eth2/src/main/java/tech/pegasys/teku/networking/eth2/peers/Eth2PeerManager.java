@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -76,6 +77,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
       final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
@@ -97,6 +99,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             this,
             combinedChainDataClient,
             dataColumnSidecarCustody,
+            custodyGroupCountManager,
             recentChainData,
             metricsSystem,
             statusMessageFactory,
@@ -112,6 +115,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
       final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final MetadataMessagesFactory metadataMessagesFactory,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
@@ -144,6 +148,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         asyncRunner,
         combinedChainDataClient,
         dataColumnSidecarCustody,
+        custodyGroupCountManager,
         combinedChainDataClient.getRecentChainData(),
         metricsSystem,
         new Eth2PeerFactory(

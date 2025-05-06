@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
@@ -49,9 +50,11 @@ public class SimpleSidecarRetrieverTest {
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
   final DataColumnPeerSearcherStub dataColumnPeerSearcherStub = new DataColumnPeerSearcherStub();
-  final TestPeerManager testPeerManager = new TestPeerManager();
 
   final Spec spec = TestSpecFactory.createMinimalFulu();
+  final SchemaDefinitionsFulu schemaDefinitionsFulu =
+      SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
+  final TestPeerManager testPeerManager = new TestPeerManager();
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   final MiscHelpersFulu miscHelpers =

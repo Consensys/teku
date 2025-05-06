@@ -19,14 +19,13 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 
 public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64 columnIndex)
     implements Comparable<DataColumnSlotAndIdentifier> {
 
   public DataColumnSlotAndIdentifier(
       final UInt64 slot, final DataColumnIdentifier dataColumnIdentifier) {
-    this(slot, dataColumnIdentifier.getBlockRoot(), dataColumnIdentifier.getIndex());
+    this(slot, dataColumnIdentifier.blockRoot(), dataColumnIdentifier.columnId());
   }
 
   public static DataColumnSlotAndIdentifier fromDataColumn(

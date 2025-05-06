@@ -17,7 +17,7 @@ import java.util.List;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 
 public class LoggingBatchDataColumnsByRootReqResp implements BatchDataColumnsByRootReqResp {
@@ -32,7 +32,7 @@ public class LoggingBatchDataColumnsByRootReqResp implements BatchDataColumnsByR
 
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
-      final UInt256 nodeId, final List<DataColumnIdentifier> columnIdentifiers) {
+      final UInt256 nodeId, final List<DataColumnsByRootIdentifier> columnIdentifiers) {
     final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         logger
             .getDataColumnSidecarsByRootLogger()

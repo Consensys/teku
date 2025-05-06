@@ -20,18 +20,26 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private final BatchDataColumnsByRootReqResp batchRpc;
+  private final DataColumnsByRootIdentifierSchema byRootIdentifierSchema;
 
-  public DataColumnReqRespBatchingImpl(final BatchDataColumnsByRootReqResp batchRpc) {
+  public DataColumnReqRespBatchingImpl(
+      final BatchDataColumnsByRootReqResp batchRpc,
+      final SchemaDefinitionsFulu schemaDefinitionsFulu) {
     this.batchRpc = batchRpc;
+    this.byRootIdentifierSchema = schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema();
   }
 
   private record RequestEntry(
@@ -63,9 +71,20 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   }
 
   private void flushForNode(final UInt256 nodeId, final List<RequestEntry> nodeRequests) {
-    AsyncStream<DataColumnSidecar> response =
-        batchRpc.requestDataColumnSidecarsByRoot(
-            nodeId, nodeRequests.stream().map(e -> e.columnIdentifier).toList());
+    final Map<Bytes32, List<DataColumnIdentifier>> byRootMap =
+        nodeRequests.stream()
+            .map(e -> e.columnIdentifier)
+            .collect(Collectors.groupingBy(DataColumnIdentifier::blockRoot));
+    final List<DataColumnsByRootIdentifier> dataColumnsByRootIdentifiers =
+        byRootMap.entrySet().stream()
+            .map(
+                entry ->
+                    byRootIdentifierSchema.create(
+                        entry.getKey(),
+                        entry.getValue().stream().map(DataColumnIdentifier::columnId).toList()))
+            .toList();
+    final AsyncStream<DataColumnSidecar> response =
+        batchRpc.requestDataColumnSidecarsByRoot(nodeId, dataColumnsByRootIdentifiers);
 
     response.consume(
         new AsyncStreamHandler<>() {
@@ -76,13 +95,13 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
           @Override
           public SafeFuture<Boolean> onNext(final DataColumnSidecar dataColumnSidecar) {
-            final DataColumnIdentifier colId =
+            final DataColumnIdentifier dataColumnIdentifier =
                 DataColumnIdentifier.createFromSidecar(dataColumnSidecar);
-            final RequestEntry request = requestsNyColumnId.get(colId);
+            final RequestEntry request = requestsNyColumnId.get(dataColumnIdentifier);
             if (request == null) {
               return SafeFuture.failedFuture(
                   new IllegalArgumentException(
-                      "Responded data column was not requested: " + colId));
+                      "Responded data column was not requested: " + dataColumnIdentifier));
             } else {
               request.promise().complete(dataColumnSidecar);
               count.incrementAndGet();

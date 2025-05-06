@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -109,7 +109,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       List<BlobIdentifier> blobIdentifiers, RpcResponseListener<BlobSidecar> listener);
 
   SafeFuture<Void> requestDataColumnSidecarsByRoot(
-      List<DataColumnIdentifier> dataColumnIdentifiers,
+      List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
       RpcResponseListener<DataColumnSidecar> listener);
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(UInt64 slot);

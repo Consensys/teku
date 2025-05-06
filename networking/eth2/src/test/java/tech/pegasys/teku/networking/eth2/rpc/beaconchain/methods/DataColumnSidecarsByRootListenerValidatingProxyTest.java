@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,12 +38,14 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -49,12 +53,15 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @SuppressWarnings("JavaCase")
 public class DataColumnSidecarsByRootListenerValidatingProxyTest {
   private final Spec spec = TestSpecFactory.createMainnetFulu();
+  final DataColumnsByRootIdentifierSchema schema =
+      SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+          .getDataColumnsByRootIdentifierSchema();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private DataColumnSidecarsByRootListenerValidatingProxy listenerWrapper;
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
-  private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(UInt64.ZERO);
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(ZERO);
 
   @SuppressWarnings("unchecked")
   private final RpcResponseListener<DataColumnSidecar> listener = mock(RpcResponseListener.class);
@@ -67,33 +74,31 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
 
   @Test
   void dataColumnSidecarsAreCorrect() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(2));
     final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(3));
     final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(4));
-    final List<DataColumnIdentifier> dataColumnIdentifiers =
+    final List<DataColumnsByRootIdentifier> dataColumnIdentifiers =
         List.of(
-            new DataColumnIdentifier(block1.getRoot(), UInt64.ZERO),
-            new DataColumnIdentifier(block1.getRoot(), UInt64.ONE),
-            new DataColumnIdentifier(block2.getRoot(), UInt64.ZERO),
-            new DataColumnIdentifier(
-                block2.getRoot(), UInt64.ONE), // will be missed, shouldn't be fatal
-            new DataColumnIdentifier(block3.getRoot(), UInt64.ZERO),
-            new DataColumnIdentifier(block4.getRoot(), UInt64.ZERO));
+            schema.create(block1.getRoot(), List.of(ZERO, ONE)),
+            schema.create(
+                block2.getRoot(), List.of(ZERO, ONE)), // ONE will be missed, shouldn't be fatal
+            schema.create(block3.getRoot(), ZERO),
+            schema.create(block4.getRoot(), ZERO));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
     final DataColumnSidecar dataColumnSidecar1_1 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ONE);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ONE);
     final DataColumnSidecar dataColumnSidecar2_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, ZERO);
     final DataColumnSidecar dataColumnSidecar3_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block3, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block3, ZERO);
     final DataColumnSidecar dataColumnSidecar4_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block4, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block4, ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(dataColumnSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(dataColumnSidecar1_1).join());
@@ -104,22 +109,20 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
 
   @Test
   void blobSidecarIdentifierNotRequested() {
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(2));
-    final List<DataColumnIdentifier> dataColumnIdentifiers =
-        List.of(
-            new DataColumnIdentifier(block1.getRoot(), UInt64.ZERO),
-            new DataColumnIdentifier(block1.getRoot(), UInt64.ONE));
+    final List<DataColumnsByRootIdentifier> dataColumnIdentifiers =
+        List.of(schema.create(block1.getRoot(), List.of(ZERO, ONE)));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
 
     final DataColumnSidecar datColumnSidecar1_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
     final DataColumnSidecar datColumnSidecar1_1 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, UInt64.ONE);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ONE);
     final DataColumnSidecar datColumnSidecar2_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, UInt64.ZERO);
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_1).join());
@@ -137,16 +140,15 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
   @Test
   void dataColumnSidecarFailsKzgVerification() {
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(false);
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final DataColumnIdentifier dataColumnIdentifier =
-        new DataColumnIdentifier(block1.getRoot(), UInt64.ZERO);
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
+    final DataColumnsByRootIdentifier dataColumnIdentifier = schema.create(block1.getRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
-            block1, dataColumnIdentifier.getIndex());
+            block1, dataColumnIdentifier.getColumns().getFirst());
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecar);
     assertThat(result).isCompletedExceptionally();
@@ -167,7 +169,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         SchemaDefinitionsFulu.required(schemaDefinitionsElectra)
             .getDataColumnSidecarSchema()
             .create(
-                UInt64.ZERO,
+                ZERO,
                 SchemaDefinitionsFulu.required(schemaDefinitionsElectra)
                     .getDataColumnSchema()
                     .create(List.of()),
@@ -195,8 +197,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
                         "0xdb56114e00fdd4c1f85c892bf35ac9a89289aaecb1ebd0a96cde606a748b5d71"),
                     Bytes32.fromHexString(
                         "0x9535c3eb42aaf182b13b18aacbcbc1df6593ecafd0bf7d5e94fb727b2dc1f265")));
-    final DataColumnIdentifier dataColumnIdentifier =
-        new DataColumnIdentifier(dataColumnSidecar.getBlockRoot(), UInt64.ZERO);
+    final DataColumnsByRootIdentifier dataColumnIdentifier =
+        schema.create(dataColumnSidecar.getBlockRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
