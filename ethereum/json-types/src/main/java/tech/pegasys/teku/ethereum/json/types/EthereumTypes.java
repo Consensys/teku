@@ -26,7 +26,6 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
@@ -161,7 +160,7 @@ public class EthereumTypes {
       final Function<T, SpecMilestone> milestoneSelector, final T value) {
     return Map.of(
         HEADER_CONSENSUS_VERSION,
-        Version.fromMilestone(milestoneSelector.apply(value)).name(),
+        milestoneSelector.apply(value).lowerCaseName(),
         RestApiConstants.HEADER_CONTENT_DISPOSITION,
         getSszFilename(value));
   }

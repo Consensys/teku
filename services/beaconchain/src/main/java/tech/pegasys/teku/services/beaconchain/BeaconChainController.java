@@ -571,7 +571,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                           "Trusted setup should be configured when Deneb is enabled"));
       kzg.loadTrustedSetup(trustedSetupFile);
     } else {
-      kzg = KZG.NOOP;
+      kzg = KZG.DISABLED;
     }
   }
 

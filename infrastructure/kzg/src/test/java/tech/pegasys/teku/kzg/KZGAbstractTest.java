@@ -300,6 +300,14 @@ public abstract class KZGAbstractTest {
     assertThat(recoveredCells).isEqualTo(cellAndProofs);
   }
 
+  @Test
+  public void testComputeCellsAndProofsEqualsComputeCells() {
+    Bytes blob = getSampleBlob();
+    List<KZGCellAndProof> cellAndProofs = kzg.computeCellsAndProofs(blob);
+    List<KZGCell> cells = kzg.computeCells(blob);
+    assertThat(cells).isEqualTo(cellAndProofs.stream().map(KZGCellAndProof::cell).toList());
+  }
+
   private List<Bytes> getSampleBlobs(final int count) {
     return IntStream.range(0, count).mapToObj(__ -> getSampleBlob()).collect(Collectors.toList());
   }
