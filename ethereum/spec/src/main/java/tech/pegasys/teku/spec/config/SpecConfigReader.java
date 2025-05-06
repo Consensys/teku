@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,9 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.RuntimeJsonMappingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -49,6 +47,7 @@ import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
 import tech.pegasys.teku.spec.config.builder.DenebBuilder;
 import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
+import tech.pegasys.teku.spec.config.builder.FuluBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class SpecConfigReader {
@@ -130,14 +129,14 @@ public class SpecConfigReader {
    */
   public void readAndApply(final InputStream source, final boolean ignoreUnknownConfigItems)
       throws IOException {
-    final Map<String, String> rawValues = readValues(source);
+    final Map<String, Object> rawValues = readValues(source);
     loadFromMap(rawValues, ignoreUnknownConfigItems);
   }
 
   public void loadFromMap(
-      final Map<String, String> rawValues, final boolean ignoreUnknownConfigItems) {
-    final Map<String, String> unprocessedConfig = new HashMap<>(rawValues);
-    final Map<String, String> apiSpecConfig = new HashMap<>(rawValues);
+      final Map<String, Object> rawValues, final boolean ignoreUnknownConfigItems) {
+    final Map<String, Object> unprocessedConfig = new HashMap<>(rawValues);
+    final Map<String, Object> apiSpecConfig = new HashMap<>(rawValues);
     // Remove any keys that we're ignoring
     KEYS_TO_IGNORE.forEach(
         key -> {
@@ -209,6 +208,16 @@ public class SpecConfigReader {
               unprocessedConfig.remove(constantKey);
             });
 
+    // Process fulu config
+    streamConfigSetters(FuluBuilder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessedConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::fuluBuilder, constantKey, rawValue);
+              unprocessedConfig.remove(constantKey);
+            });
+
     // Check any constants that have been configured and then ignore
     final Set<String> configuredConstants =
         Sets.intersection(CONSTANT_KEYS, unprocessedConfig.keySet());
@@ -229,16 +238,10 @@ public class SpecConfigReader {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public Map<String, String> readValues(final InputStream source) throws IOException {
-    final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+  public Map<String, Object> readValues(final InputStream source) throws IOException {
+    final YamlConfigReader reader = new YamlConfigReader();
     try {
-      return (Map<String, String>)
-          mapper
-              .readerFor(
-                  mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
-              .readValues(source)
-              .next();
+      return reader.readValues(source);
     } catch (NoSuchElementException e) {
       throw new IllegalArgumentException("Supplied spec config is empty");
     } catch (RuntimeJsonMappingException e) {

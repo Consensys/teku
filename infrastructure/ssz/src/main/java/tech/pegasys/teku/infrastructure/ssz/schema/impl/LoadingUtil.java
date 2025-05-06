@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -130,19 +130,12 @@ public class LoadingUtil {
   private static boolean isZeroBranchUseful(final long rootGIndex, final long lastUsefulGIndex) {
     final NodeRelation relationRootToLastUseful =
         GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
-    switch (relationRootToLastUseful) {
-      case LEFT:
-      case PREDECESSOR:
-        return true;
-
-      case SAME:
-      case RIGHT:
-      case SUCCESSOR:
-        return false;
-
-      default:
-        throw new IllegalStateException("Unknown relation type: " + relationRootToLastUseful);
-    }
+    return switch (relationRootToLastUseful) {
+      case LEFT, PREDECESSOR -> true;
+      case SAME, RIGHT, SUCCESSOR -> false;
+      default ->
+          throw new IllegalStateException("Unknown relation type: " + relationRootToLastUseful);
+    };
   }
 
   private static BranchNode createUsefulEmptyBranch(

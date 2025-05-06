@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,16 +28,9 @@ public class RocksDbExceptionUtil {
     if (cause.getStatus() == null) {
       return true;
     }
-    switch (cause.getStatus().getCode()) {
-      case TimedOut:
-      case TryAgain:
-      case MergeInProgress:
-      case Incomplete:
-      case Busy:
-      case Expired:
-        return false;
-      default:
-        return true;
-    }
+    return switch (cause.getStatus().getCode()) {
+      case TimedOut, TryAgain, MergeInProgress, Incomplete, Busy, Expired -> false;
+      default -> true;
+    };
   }
 }

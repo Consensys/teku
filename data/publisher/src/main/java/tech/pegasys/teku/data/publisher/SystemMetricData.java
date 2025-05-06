@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -112,16 +112,12 @@ public class SystemMetricData extends BaseMetricData {
   }
 
   private long getNodeBootSeconds() {
-    switch (miscOs) {
-      case "lin":
-        return new LinuxOperatingSystem().getSystemBootTime();
-      case "win":
-        return new WindowsOperatingSystem().getSystemBootTime();
-      case "mac":
-        return new MacOperatingSystem().getSystemBootTime();
-      default:
-        return 0L;
-    }
+    return switch (miscOs) {
+      case "lin" -> new LinuxOperatingSystem().getSystemBootTime();
+      case "win" -> new WindowsOperatingSystem().getSystemBootTime();
+      case "mac" -> new MacOperatingSystem().getSystemBootTime();
+      default -> 0L;
+    };
   }
 
   private long[] calculateProcessLoadTicks(final long[][] processorCpuLoadTicks) {

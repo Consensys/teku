@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -392,7 +392,6 @@ public class EndpointMetadata {
         gen.writeObjectField("type", "array");
         gen.writeFieldName("items");
         entry.getValue().serializeOpenApiTypeOrReference(gen);
-        gen.writeObjectField("minItems", "1");
         gen.writeEndObject();
       } else { // Handle regular parameter
         entry.getValue().serializeOpenApiTypeOrReference(gen);

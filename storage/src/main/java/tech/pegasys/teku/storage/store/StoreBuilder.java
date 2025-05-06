@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -43,6 +43,7 @@ public class StoreBuilder {
   private BlockProvider blockProvider;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
+  private Optional<Bytes32> latestCanonicalBlockRoot;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
   private final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot = new HashMap<>();
@@ -90,19 +91,21 @@ public class StoreBuilder {
         anchor.getCheckpoint(),
         anchor.getCheckpoint(),
         blockInfo,
-        new HashMap<>());
+        new HashMap<>(),
+        Optional.empty());
   }
 
   public StoreBuilder onDiskStoreData(final OnDiskStoreData data) {
-    return time(data.getTime())
-        .anchor(data.getAnchor())
-        .genesisTime(data.getGenesisTime())
-        .latestFinalized(data.getLatestFinalized())
-        .finalizedOptimisticTransitionPayload(data.getFinalizedOptimisticTransitionPayload())
-        .justifiedCheckpoint(data.getJustifiedCheckpoint())
-        .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
-        .blockInformation(data.getBlockInformation())
-        .votes(data.getVotes());
+    return time(data.time())
+        .anchor(data.anchor())
+        .genesisTime(data.genesisTime())
+        .latestFinalized(data.latestFinalized())
+        .finalizedOptimisticTransitionPayload(data.finalizedOptimisticTransitionPayload())
+        .justifiedCheckpoint(data.justifiedCheckpoint())
+        .bestJustifiedCheckpoint(data.bestJustifiedCheckpoint())
+        .blockInformation(data.blockInformation())
+        .votes(data.votes())
+        .latestCanonicalBlockRoot(data.latestCanonicalBlockRoot());
   }
 
   public UpdatableStore build() {
@@ -143,6 +146,7 @@ public class StoreBuilder {
         justifiedCheckpoint,
         bestJustifiedCheckpoint,
         blockInfoByRoot,
+        latestCanonicalBlockRoot,
         votes,
         storeConfig);
   }
@@ -201,6 +205,12 @@ public class StoreBuilder {
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
     checkNotNull(earliestBlobSidecarSlotProvider);
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
+    return this;
+  }
+
+  public StoreBuilder latestCanonicalBlockRoot(final Optional<Bytes32> latestCanonicalBlockRoot) {
+    checkNotNull(latestCanonicalBlockRoot);
+    this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
     return this;
   }
 

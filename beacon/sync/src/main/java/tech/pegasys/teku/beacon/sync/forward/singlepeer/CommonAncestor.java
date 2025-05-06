@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,15 +39,21 @@ public class CommonAncestor {
 
   private final RecentChainData recentChainData;
   private final int maxAttempts;
+  private final OptionalInt maxDistanceFromHead;
 
-  public CommonAncestor(final RecentChainData recentChainData) {
-    this(recentChainData, DEFAULT_MAX_ATTEMPTS);
+  public CommonAncestor(
+      final RecentChainData recentChainData, final OptionalInt maxDistanceFromHead) {
+    this(recentChainData, DEFAULT_MAX_ATTEMPTS, maxDistanceFromHead);
   }
 
   @VisibleForTesting
-  CommonAncestor(final RecentChainData recentChainData, final int maxAttempts) {
+  CommonAncestor(
+      final RecentChainData recentChainData,
+      final int maxAttempts,
+      final OptionalInt maxDistanceFromHead) {
     this.recentChainData = recentChainData;
     this.maxAttempts = maxAttempts;
+    this.maxDistanceFromHead = maxDistanceFromHead;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
@@ -74,11 +81,14 @@ public class CommonAncestor {
       final UInt64 firstRequestedSlot,
       final UInt64 firstNonFinalSlot,
       final int attempt) {
+    final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
+
+    if (maxDistanceFromHeadReached(lastSlot)) {
+      return SafeFuture.failedFuture(new RuntimeException("Max distance from head reached"));
+    }
     if (attempt >= maxAttempts || firstRequestedSlot.isLessThanOrEqualTo(firstNonFinalSlot)) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
     }
-
-    final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT_PER_ATTEMPT);
 
     LOG.debug("Sampling ahead from {} to {}.", firstRequestedSlot, lastSlot);
 
@@ -95,7 +105,15 @@ public class CommonAncestor {
             __ ->
                 blockResponseListener
                     .getBestSlot()
-                    .map(SafeFuture::completedFuture)
+                    .<SafeFuture<UInt64>>map(
+                        bestSlot -> {
+                          if (maxDistanceFromHeadReached(bestSlot)) {
+                            return SafeFuture.failedFuture(
+                                new RuntimeException("Max distance from head reached"));
+                          } else {
+                            return SafeFuture.completedFuture(bestSlot);
+                          }
+                        })
                     .orElseGet(
                         () ->
                             getCommonAncestor(
@@ -104,6 +122,15 @@ public class CommonAncestor {
                                     SLOTS_TO_JUMP_BACK_EXPONENTIAL_BASE.times(1L << attempt)),
                                 firstNonFinalSlot,
                                 attempt + 1)));
+  }
+
+  private boolean maxDistanceFromHeadReached(final UInt64 slot) {
+    if (maxDistanceFromHead.isEmpty()) {
+      return false;
+    }
+    final UInt64 oldestAcceptedSlotFromHead =
+        recentChainData.getHeadSlot().minusMinZero(maxDistanceFromHead.getAsInt());
+    return slot.isLessThan(oldestAcceptedSlotFromHead);
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {

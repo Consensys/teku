@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -133,6 +133,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Map<UInt64, VoteTracker> getVotes() {
     return hotDao.getVotes();
+  }
+
+  @Override
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return hotDao.getLatestCanonicalBlockRoot();
   }
 
   @Override
@@ -433,6 +438,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       hotUpdater.setFinalizedCheckpoint(checkpoint);
+    }
+
+    @Override
+    public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
+      hotUpdater.setLatestCanonicalBlockRoot(canonicalBlockRoot);
     }
 
     @Override

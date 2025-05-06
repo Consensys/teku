@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -88,6 +88,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
 
   public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
     return delegate.getColumnSlotsByFinalizedStateRoot();
+  }
+
+  public KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot() {
+    return delegate.getVariableLatestCanonicalBlockRoot();
   }
 
   public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot() {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,6 +30,8 @@ public @interface TestSpecContext {
   Eth2Network[] network() default Eth2Network.MINIMAL;
 
   boolean allMilestones() default false;
+
+  SpecMilestone[] ignoredMilestones() default {};
 
   boolean allNetworks() default false;
 

@@ -25,7 +25,7 @@ dependencies {
   implementation project(':storage')
   implementation project(':storage:api')
 
-  implementation 'io.tmio:tuweni-units'
+  implementation 'io.consensys.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
@@ -52,4 +52,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:logging'))
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
+  jmhImplementation testFixtures(project(':ethereum:spec'))
+  jmhImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  jmhImplementation 'org.mockito:mockito-core'
 }

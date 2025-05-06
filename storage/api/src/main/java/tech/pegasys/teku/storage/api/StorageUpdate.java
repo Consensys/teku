@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,6 +46,7 @@ public class StorageUpdate {
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final Optional<Bytes32> latestCanonicalBlockRoot;
   private final boolean blobSidecarsEnabled;
   private final boolean isEmpty;
 
@@ -62,6 +63,7 @@ public class StorageUpdate {
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final Optional<Bytes32> latestCanonicalBlockRoot,
       @NonUpdating final boolean blobSidecarsEnabled) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
@@ -75,6 +77,7 @@ public class StorageUpdate {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     checkArgument(
         optimisticTransitionBlockRootSet || optimisticTransitionBlockRoot.isEmpty(),
@@ -91,6 +94,7 @@ public class StorageUpdate {
             && stateRoots.isEmpty()
             && blobSidecars.isEmpty()
             && maybeEarliestBlobSidecarSlot.isEmpty()
+            && latestCanonicalBlockRoot.isEmpty()
             && !optimisticTransitionBlockRootSet;
   }
 
@@ -158,6 +162,10 @@ public class StorageUpdate {
 
   public Optional<Bytes32> getOptimisticTransitionBlockRoot() {
     return optimisticTransitionBlockRoot;
+  }
+
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return latestCanonicalBlockRoot;
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {

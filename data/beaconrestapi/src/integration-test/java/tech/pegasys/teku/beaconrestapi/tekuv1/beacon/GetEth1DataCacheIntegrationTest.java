@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,11 +26,11 @@ import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1DataCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -45,15 +45,11 @@ public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIn
 
   @Test
   public void shouldReturnAllEth1BlocksFromCache() throws IOException {
-    List<tech.pegasys.teku.spec.datastructures.blocks.Eth1Data> eth1DataCacheList =
-        new ArrayList<>();
+    final List<Eth1Data> eth1DataCacheList = new ArrayList<>();
     for (int i = 0; i < 5; i++) {
       eth1DataCacheList.add(dataStructureUtil.randomEth1Data());
     }
-    List<Eth1Data> eth1DataCacheBlocks = new ArrayList<>();
-    eth1DataCacheList.stream()
-        .map(Eth1Data::new)
-        .forEach(eth1Block -> eth1DataCacheBlocks.add(eth1Block));
+    final List<Eth1Data> eth1DataCacheBlocks = new ArrayList<>(eth1DataCacheList);
     when(eth1DataProvider.getEth1CachedBlocks()).thenReturn(eth1DataCacheList);
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -63,11 +59,11 @@ public class GetEth1DataCacheIntegrationTest extends AbstractDataBackedRestAPIIn
       final JsonNode block = data.get(i);
       final Eth1Data eth1Data = eth1DataCacheBlocks.get(i);
       assertThat(Bytes32.fromHexString(block.get("deposit_root").asText()))
-          .isEqualTo(eth1Data.deposit_root);
+          .isEqualTo(eth1Data.getDepositRoot());
       assertThat(UInt64.valueOf(block.get("deposit_count").asText()))
-          .isEqualTo(eth1Data.deposit_count);
+          .isEqualTo(eth1Data.getDepositCount());
       assertThat(Bytes32.fromHexString(block.get("block_hash").asText()))
-          .isEqualTo(eth1Data.block_hash);
+          .isEqualTo(eth1Data.getBlockHash());
     }
   }
 

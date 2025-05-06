@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -77,7 +77,8 @@ public class PostValidatorLiveness extends RestApiEndpoint {
                     + " and based upon a subjective view of the network.")
             .tags(TAG_VALIDATOR)
             .pathParam(EPOCH_PARAMETER)
-            .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE, 1))
+            .requestBodyType(
+                DeserializableTypeDefinition.listOf(UINT64_TYPE, Optional.of(1), Optional.empty()))
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)
             .response(
                 SC_NO_CONTENT, "Data is unavailable because the chain has not yet reached genesis")

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.validator.client.duties.attestations;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -38,14 +36,14 @@ import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
+import tech.pegasys.teku.validator.client.duties.attestations.AggregationDutyAggregators.CommitteeAggregator;
 
 public class AggregationDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
-  private final ConcurrentMap<Integer, CommitteeAggregator> aggregatorsByCommitteeIndex =
-      new ConcurrentHashMap<>();
   private final Spec spec;
   private final UInt64 slot;
   private final ValidatorApiChannel validatorApiChannel;
+  private final AggregationDutyAggregators aggregators;
   private final ForkProvider forkProvider;
   private final ValidatorLogger validatorLogger;
   private final SendingStrategy<SignedAggregateAndProof> sendingStrategy;
@@ -55,6 +53,7 @@ public class AggregationDuty implements Duty {
       final Spec spec,
       final UInt64 slot,
       final ValidatorApiChannel validatorApiChannel,
+      final AggregationDutyAggregators aggregators,
       final ForkProvider forkProvider,
       final ValidatorLogger validatorLogger,
       final SendingStrategy<SignedAggregateAndProof> sendingStrategy,
@@ -62,6 +61,7 @@ public class AggregationDuty implements Duty {
     this.spec = spec;
     this.slot = slot;
     this.validatorApiChannel = validatorApiChannel;
+    this.aggregators = aggregators;
     this.forkProvider = forkProvider;
     this.validatorLogger = validatorLogger;
     this.sendingStrategy = sendingStrategy;
@@ -91,42 +91,34 @@ public class AggregationDuty implements Duty {
       final BLSSignature proof,
       final int attestationCommitteeIndex,
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
-    aggregatorsByCommitteeIndex.computeIfAbsent(
-        attestationCommitteeIndex,
-        committeeIndex ->
-            new CommitteeAggregator(
-                validator,
-                UInt64.valueOf(validatorIndex),
-                UInt64.valueOf(attestationCommitteeIndex),
-                proof,
-                unsignedAttestationFuture));
+    aggregators.addValidator(
+        validator, validatorIndex, proof, attestationCommitteeIndex, unsignedAttestationFuture);
   }
 
   @Override
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Aggregating attestations at slot {}", slot);
-    if (aggregatorsByCommitteeIndex.isEmpty()) {
+    if (!aggregators.hasAggregators()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    return sendingStrategy.send(
-        aggregatorsByCommitteeIndex.values().stream().map(this::aggregateCommittee));
+    return sendingStrategy.send(aggregators.streamAggregators().map(this::aggregateCommittee));
   }
 
-  public SafeFuture<ProductionResult<SignedAggregateAndProof>> aggregateCommittee(
+  private SafeFuture<ProductionResult<SignedAggregateAndProof>> aggregateCommittee(
       final CommitteeAggregator aggregator) {
     return aggregator
-        .unsignedAttestationFuture
+        .unsignedAttestationFuture()
         .thenCompose(maybeAttestation -> createAggregate(aggregator, maybeAttestation))
         .exceptionally(
-            error -> ProductionResult.failure(aggregator.validator.getPublicKey(), error));
+            error -> ProductionResult.failure(aggregator.validator().getPublicKey(), error));
   }
 
-  public SafeFuture<ProductionResult<SignedAggregateAndProof>> createAggregate(
+  private SafeFuture<ProductionResult<SignedAggregateAndProof>> createAggregate(
       final CommitteeAggregator aggregator, final Optional<AttestationData> maybeAttestation) {
     if (maybeAttestation.isEmpty()) {
       return SafeFuture.completedFuture(
           ProductionResult.failure(
-              aggregator.validator.getPublicKey(),
+              aggregator.validator().getPublicKey(),
               new IllegalStateException(
                   "Unable to perform aggregation for committee because no attestation was produced")));
     }
@@ -139,16 +131,16 @@ public class AggregationDuty implements Duty {
                 validatorApiChannel.createAggregate(
                     slot,
                     attestationData.hashTreeRoot(),
-                    Optional.of(aggregator.attestationCommitteeIndex)),
+                    Optional.of(aggregator.attestationCommitteeIndex())),
             this,
             ValidatorDutyMetricsSteps.CREATE);
 
     return createAggregationFuture.thenCompose(
         maybeAggregate -> {
           if (maybeAggregate.isEmpty()) {
-            validatorLogger.aggregationSkipped(slot, aggregator.attestationCommitteeIndex);
+            validatorLogger.aggregationSkipped(slot, aggregator.attestationCommitteeIndex());
             return SafeFuture.completedFuture(
-                ProductionResult.noop(aggregator.validator.getPublicKey()));
+                ProductionResult.noop(aggregator.validator().getPublicKey()));
           }
           final Attestation aggregate = maybeAggregate.get();
           return validatorDutyMetrics.record(
@@ -165,55 +157,27 @@ public class AggregationDuty implements Duty {
     final AggregateAndProof aggregateAndProof =
         schemaDefinitions
             .getAggregateAndProofSchema()
-            .create(aggregator.validatorIndex, aggregate, aggregator.proof);
+            .create(aggregator.validatorIndex(), aggregate, aggregator.proof());
     return forkProvider
         .getForkInfo(slot)
         .thenCompose(
             forkInfo ->
                 aggregator
-                    .validator
+                    .validator()
                     .getSigner()
                     .signAggregateAndProof(aggregateAndProof, forkInfo)
                     .thenApply(
                         signature ->
                             ProductionResult.success(
-                                aggregator.validator.getPublicKey(),
+                                aggregator.validator().getPublicKey(),
                                 aggregateAndProof.getAggregate().getData().getBeaconBlockRoot(),
                                 schemaDefinitions
                                     .getSignedAggregateAndProofSchema()
                                     .create(aggregateAndProof, signature))));
   }
 
-  private static class CommitteeAggregator {
-
-    private final Validator validator;
-    private final UInt64 validatorIndex;
-    private final UInt64 attestationCommitteeIndex;
-    private final BLSSignature proof;
-    private final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture;
-
-    private CommitteeAggregator(
-        final Validator validator,
-        final UInt64 validatorIndex,
-        final UInt64 attestationCommitteeIndex,
-        final BLSSignature proof,
-        final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
-      this.validator = validator;
-      this.validatorIndex = validatorIndex;
-      this.attestationCommitteeIndex = attestationCommitteeIndex;
-      this.proof = proof;
-      this.unsignedAttestationFuture = unsignedAttestationFuture;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("validator", validator)
-          .add("validatorIndex", validatorIndex)
-          .add("attestationCommitteeIndex", attestationCommitteeIndex)
-          .add("proof", proof)
-          .add("unsignedAttestationFuture", unsignedAttestationFuture)
-          .toString();
-    }
+  @VisibleForTesting
+  AggregationDutyAggregators getAggregators() {
+    return aggregators;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -95,6 +95,17 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
+      names = {"--Xrust-kzg-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Use Rust KZG library LibPeerDASKZG with fallback to CKZG4844 for EIP-4844 methods",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean rustKzgEnabled = Eth2NetworkConfiguration.DEFAULT_RUST_KZG_ENABLED;
+
+  @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allow late blocks to be reorged out if they meet the requirements.",
@@ -159,6 +170,14 @@ public class Eth2NetworkOptions {
   private UInt64 electraForkEpoch;
 
   @Option(
+      names = {"--Xnetwork-fulu-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Fulu fork activation epoch.",
+      arity = "1")
+  private UInt64 fuluForkEpoch;
+
+  @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
@@ -214,6 +233,15 @@ public class Eth2NetworkOptions {
       converter = OptionalIntConverter.class,
       arity = "1")
   private OptionalInt asyncP2pMaxQueue = OptionalInt.empty();
+
+  @Option(
+      names = {"--Xnetwork-pending-attestations-max-queue"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the queue size for pending attestations",
+      converter = OptionalIntConverter.class,
+      arity = "1")
+  private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
 
   @Option(
       names = {"--Xnetwork-async-beaconchain-max-threads"},
@@ -297,6 +325,11 @@ public class Eth2NetworkOptions {
               + ".io/get-started/connect).");
     }
 
+    if (initialState != null && checkpointSyncUrl != null) {
+      throw new InvalidConfigurationException(
+          "Both --initial-state and --checkpoint-sync-url are provided. Please specify only one.");
+    }
+
     builder.applyNetworkDefaults(network);
     if (startupTargetPeerCount != null) {
       builder.startupTargetPeerCount(startupTargetPeerCount);
@@ -331,6 +364,9 @@ public class Eth2NetworkOptions {
     if (electraForkEpoch != null) {
       builder.electraForkEpoch(electraForkEpoch);
     }
+    if (fuluForkEpoch != null) {
+      builder.fuluForkEpoch(fuluForkEpoch);
+    }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
     }
@@ -353,8 +389,10 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .epochsStoreBlobs(epochsStoreBlobs)
-        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
+        .rustKzgEnabled(rustKzgEnabled);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
+    pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -38,6 +38,8 @@ import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -53,6 +55,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private BlockDutyScheduler dutyScheduler;
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
 
   private final BlockDutyFactory blockDutyFactory = mock(BlockDutyFactory.class);
 
@@ -329,6 +332,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
             metricsSystem,
             new RetryingDutyLoader<>(
                 asyncRunner,
+                timeProvider,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot ->
@@ -348,6 +352,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
             metricsSystem2,
             new RetryingDutyLoader<>(
                 asyncRunner,
+                timeProvider,
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot -> scheduledDuties,

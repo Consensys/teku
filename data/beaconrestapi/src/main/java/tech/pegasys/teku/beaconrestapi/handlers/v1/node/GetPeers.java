@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,8 +27,8 @@ import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
-import tech.pegasys.teku.api.response.v1.node.Direction;
-import tech.pegasys.teku.api.response.v1.node.State;
+import tech.pegasys.teku.api.provider.Direction;
+import tech.pegasys.teku.api.provider.State;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;

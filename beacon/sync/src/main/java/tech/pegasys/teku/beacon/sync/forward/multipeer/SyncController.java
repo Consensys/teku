@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,9 +21,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -120,6 +122,10 @@ public class SyncController {
     return currentSync.map(InProgressSync::asSyncingStatus).orElseGet(this::notSyncingStatus);
   }
 
+  public SafeFuture<Optional<SyncProgress>> getSyncProgress() {
+    return sync.getSyncProgress();
+  }
+
   private SyncingStatus notSyncingStatus() {
     return new SyncingStatus(false, recentChainData.getHeadSlot());
   }
@@ -156,7 +162,9 @@ public class SyncController {
     syncResult.finishAsync(
         this::onSyncComplete,
         error -> {
-          LOG.error("Error encountered during sync", error);
+          LOG.error(
+              "Sync process failed to complete: {}", ExceptionUtil.getMessageOrSimpleName(error));
+          LOG.debug("Error encountered during sync", error);
           onSyncComplete(SyncResult.FAILED);
         },
         eventThread);

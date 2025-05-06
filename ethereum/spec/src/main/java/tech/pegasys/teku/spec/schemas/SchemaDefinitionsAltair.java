@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_BODY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 
@@ -37,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSch
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -69,7 +70,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final SyncCommitteeContributionSchema syncCommitteeContributionSchema;
   private final ContributionAndProofSchema contributionAndProofSchema;
   private final SignedContributionAndProofSchema signedContributionAndProofSchema;
-  private final MetadataMessageSchemaAltair metadataMessageSchema;
+  private final MetadataMessageSchema<?> metadataMessageSchema;
   private final LightClientHeaderSchema lightClientHeaderSchema;
   private final LightClientBootstrapSchema lightClientBootstrapSchema;
   private final LightClientUpdateSchema lightClientUpdateSchema;
@@ -92,7 +93,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);
     this.signedContributionAndProofSchema =
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
-    this.metadataMessageSchema = new MetadataMessageSchemaAltair(specConfig.getNetworkingConfig());
+    this.metadataMessageSchema = schemaRegistry.get(METADATA_MESSAGE_SCHEMA);
     this.lightClientHeaderSchema = new LightClientHeaderSchema();
     this.lightClientBootstrapSchema = new LightClientBootstrapSchema(specConfig);
     this.lightClientUpdateSchema = new LightClientUpdateSchema(specConfig);
@@ -195,7 +196,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   }
 
   @Override
-  public MetadataMessageSchemaAltair getMetadataMessageSchema() {
+  public MetadataMessageSchema<?> getMetadataMessageSchema() {
     return metadataMessageSchema;
   }
 

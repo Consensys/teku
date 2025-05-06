@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder.SWAGGER_INITIALIZER_JS;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -79,18 +79,18 @@ public class SwaggerUiTest extends AbstractDataBackedRestAPIIntegrationTest {
     Document doc =
         Jsoup.connect(url).data("query", "Java").userAgent("Mozilla").timeout(3000).get();
 
-    final URL baseUrl = new URL(url);
+    final URI baseUrl = URI.create(url);
 
     // Resources
     Elements resources = doc.select("link[href]");
     for (Element element : resources) {
-      links.add(new URL(baseUrl, element.attr("href")).getPath());
+      links.add(baseUrl.resolve(element.attr("href")).getPath());
     }
 
     // Scripts
     Elements scripts = doc.select("script");
     for (Element element : scripts) {
-      links.add(new URL(baseUrl, element.attr("src")).getPath());
+      links.add(baseUrl.resolve(element.attr("src")).getPath());
     }
 
     return links;

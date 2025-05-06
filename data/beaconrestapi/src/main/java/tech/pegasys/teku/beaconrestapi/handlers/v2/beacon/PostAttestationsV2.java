@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -116,9 +116,11 @@ public class PostAttestationsV2 extends RestApiEndpoint {
         .operationId("submitPoolAttestationsV2")
         .summary("Submit Attestation objects to node")
         .description(
-            "Submits Attestation objects to the node. Each attestation in the request body is processed individually.\n"
-                + "If an attestation is validated successfully, the node MUST publish that attestation on the appropriate subnet.\n"
-                + "If one or more attestations fail validation, the node MUST return a 400 error with details of which attestations have failed, and why.")
+            """
+                  Submits Attestation objects to the node. Each attestation in the request body is processed individually.
+                  If an attestation is validated successfully, the node MUST publish that attestation on the appropriate subnet.
+                  If one or more attestations fail validation, the node MUST return a 400 error with details of which attestations have failed, and why.
+                  """)
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
         .requestBodyType(
             SerializableTypeDefinition.listOf(attestationSchemaDefinition), attestationBodySelector)

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -82,12 +82,12 @@ public class BeaconStateInvariants {
       return true;
     }
 
-    if (!(obj instanceof BeaconState)) {
+    if (obj instanceof final BeaconState other) {
+
+      return state.hashTreeRoot().equals(other.hashTreeRoot());
+    } else {
       return false;
     }
-
-    BeaconState other = (BeaconState) obj;
-    return state.hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   static int hashCode(final BeaconState state) {

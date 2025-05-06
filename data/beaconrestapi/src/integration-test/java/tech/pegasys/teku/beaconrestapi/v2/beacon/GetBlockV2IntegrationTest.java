@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
@@ -46,12 +45,13 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     final Response response = get("head");
     final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
 
-    assertThat(body.get("version").asText()).isEqualTo(Version.phase0.name());
+    assertThat(body.get("version").asText()).isEqualTo(SpecMilestone.PHASE0.lowerCaseName());
     assertThat(body.get("data").get("message").get("parent_root").asText())
         .isEqualTo(created.get(0).getBlock().getMessage().getParentRoot().toHexString());
     assertThat(body.get("data").get("message").get("state_root").asText())
         .isEqualTo(created.get(0).getBlock().getMessage().getStateRoot().toHexString());
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.PHASE0.lowerCaseName());
 
     // this is the most practical way to compare the block to that created, but its secondary to
     // comparing state root and parent root.
@@ -67,12 +67,13 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     final Response response = get("head");
     final JsonNode body = OBJECT_MAPPER.readTree(response.body().string());
 
-    assertThat(body.get("version").asText()).isEqualTo(Version.altair.name());
+    assertThat(body.get("version").asText()).isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
     assertThat(body.get("data").get("message").get("parent_root").asText())
         .isEqualTo(created.get(0).getBlock().getMessage().getParentRoot().toHexString());
     assertThat(body.get("data").get("message").get("state_root").asText())
         .isEqualTo(created.get(0).getBlock().getMessage().getStateRoot().toHexString());
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
 
     // this is the most practical way to compare the block to that created, but its secondary to
     // comparing state root and parent root.
@@ -97,7 +98,8 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     createBlocksAtSlots(10);
     final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
   }
 
   @Test
@@ -106,7 +108,8 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     createBlocksAtSlots(10);
     final Response response = getGzip("head", ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
     assertThat(response.header(HEADER_CONTENT_ENCODING)).isEqualTo("gzip");
 
     // Decompress response

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.cli.NodeMode;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
@@ -35,7 +36,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
   @BeforeEach
   void setUp() {
-    expectValidatorClient = true;
+    expectedNodeMode = NodeMode.VC_ONLY;
   }
 
   @Test

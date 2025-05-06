@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.function.Function;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
@@ -53,7 +52,8 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     assertThat(stateResponse).isNotNull();
     assertThat(stateResponse.getVersion()).isEqualTo(SpecMilestone.PHASE0);
     assertThat(stateResponse.getData()).isInstanceOf(BeaconStatePhase0.class);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.PHASE0.lowerCaseName());
   }
 
   @Test
@@ -71,7 +71,8 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     assertThat(stateResponse).isNotNull();
     assertThat(stateResponse.getVersion()).isEqualTo(SpecMilestone.ALTAIR);
     assertThat(stateResponse.getData()).isInstanceOf(BeaconStateAltair.class);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
   }
 
   @Test
@@ -79,7 +80,8 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ALTAIR.lowerCaseName());
   }
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {

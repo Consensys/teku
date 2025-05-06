@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -77,7 +76,7 @@ public class GetFinalizedCheckpointState extends RestApiEndpoint {
                         stateAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(stateAndMetaData.getMilestone()).name());
+                              stateAndMetaData.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(stateAndMetaData.getData());
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));

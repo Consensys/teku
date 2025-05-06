@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -274,9 +275,13 @@ class OwnedKeyManagerTest {
     List<ExternalValidator> externalValidators =
         Arrays.asList(
             new ExternalValidator(
-                keyPair1.getPublicKey(), Optional.of(new URL("http://example.com/")), true),
+                keyPair1.getPublicKey(),
+                Optional.of(URI.create("http://example.com/").toURL()),
+                true),
             new ExternalValidator(
-                keyPair2.getPublicKey(), Optional.of(new URL("http://example.com/")), false));
+                keyPair2.getPublicKey(),
+                Optional.of(URI.create("http://example.com/").toURL()),
+                false));
     assertThat(result).isEqualTo(externalValidators);
   }
 
@@ -404,7 +409,8 @@ class OwnedKeyManagerTest {
   @Test
   void shouldDetectDoppelgangerAndIgnoreExternalKey() throws MalformedURLException {
 
-    when(signer.getSigningServiceUrl()).thenReturn(Optional.of(new URL("https://url.test")));
+    when(signer.getSigningServiceUrl())
+        .thenReturn(Optional.of(URI.create("https://url.test").toURL()));
 
     ExternalValidatorImportResult externalDoppelgangerImportResult =
         new ExternalValidatorImportResult.Builder(
@@ -456,7 +462,8 @@ class OwnedKeyManagerTest {
 
   @Test
   void shouldAddExternalKeysWhenDoppelgangerDetectionException() throws MalformedURLException {
-    when(signer.getSigningServiceUrl()).thenReturn(Optional.of(new URL("https://url.test")));
+    when(signer.getSigningServiceUrl())
+        .thenReturn(Optional.of(URI.create("https://url.test").toURL()));
 
     ExternalValidatorImportResult doppelgangerImportResult =
         new ExternalValidatorImportResult.Builder(

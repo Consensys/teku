@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -95,7 +94,7 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(phase0responseData.getData().size()).isGreaterThan(0);
     assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(phase0responseData.getMilestone()).name());
+        .isEqualTo(phase0responseData.getMilestone().lowerCaseName());
   }
 
   @Test
@@ -111,7 +110,7 @@ class GetBlockAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(electraResponseData.getData().size()).isGreaterThan(0);
     assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(electraResponseData.getMilestone()).name());
+        .isEqualTo(electraResponseData.getMilestone().lowerCaseName());
   }
 
   @Test

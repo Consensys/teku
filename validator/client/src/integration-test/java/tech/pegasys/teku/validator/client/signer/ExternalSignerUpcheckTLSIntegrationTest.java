@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 
 public class ExternalSignerUpcheckTLSIntegrationTest
@@ -48,7 +48,7 @@ public class ExternalSignerUpcheckTLSIntegrationTest
         new ExternalSignerUpcheck(
             externalSignerHttpClientFactory.get(),
             // an unused port
-            new URL("https://127.0.0.1:79"),
+            URI.create("https://127.0.0.1:79").toURL(),
             validatorConfig.getValidatorExternalSignerTimeout());
     assertThat(externalSignerUpcheck.upcheck()).isFalse();
   }

@@ -9,7 +9,8 @@
 ### Breaking Changes
 
 ### Additions and Improvements
- - Added beacon-api `/eth/v1/beacon/states/{state_id}/pending_partial_withdrawals` endpoint for use post-electra.
- - Added beacon-api `/eth/v1/beacon/states/{state_id}/pending_deposits` endpoint for use post-electra.
+- Added `--p2p-static-peers-url` option to read static peers from a URL or file
+- Added node epoch and computed slot to the sync committee duties failure message for more context about the failure condition.
+- Updated third party libraries.
 
 ### Bug Fixes

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -75,7 +75,7 @@ class AttestationManagerTest {
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PendingPool<ValidatableAttestation> pendingAttestations =
-      new PoolFactory(metricsSystem).createPendingPoolForAttestations(spec);
+      new PoolFactory(metricsSystem).createPendingPoolForAttestations(spec, 10000);
   private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
           ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,

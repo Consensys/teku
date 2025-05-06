@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
@@ -76,9 +78,17 @@ public class SpecFactory {
             .toVersionElectra()
             .map(SpecConfigElectra::getElectraForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 fuluForkEpoch =
+        config
+            .specConfig()
+            .toVersionFulu()
+            .map(SpecConfigFulu::getFuluForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
     final SpecMilestone highestMilestoneSupported;
 
-    if (!electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    if (!fuluForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = FULU;
+    } else if (!electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = ELECTRA;
     } else if (!denebForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = DENEB;

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -173,12 +173,12 @@ public final class BLSPublicKey {
       return true;
     }
 
-    if (!(obj instanceof BLSPublicKey)) {
+    if (obj instanceof final BLSPublicKey other) {
+
+      return Objects.equals(this.toBytesCompressed(), other.toBytesCompressed());
+    } else {
       return false;
     }
-
-    BLSPublicKey other = (BLSPublicKey) obj;
-    return Objects.equals(this.toBytesCompressed(), other.toBytesCompressed());
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import java.util.List;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlindedBlock;
 import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
@@ -46,7 +45,8 @@ public class GetBlindedBlockIntegrationTest extends AbstractDataBackedRestAPIInt
     assertThat(result.isBlinded()).isFalse();
     assertThat(result).isEqualTo(created.get(0).getBlock());
     assertThat(result.hashTreeRoot()).isEqualTo(created.get(0).getBlock().hashTreeRoot());
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.PHASE0.lowerCaseName());
   }
 
   @Test
@@ -59,7 +59,8 @@ public class GetBlindedBlockIntegrationTest extends AbstractDataBackedRestAPIInt
 
     assertThat(result.isBlinded()).isTrue();
     assertThat(result.hashTreeRoot()).isEqualTo(created.get(0).getBlock().hashTreeRoot());
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.bellatrix.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.BELLATRIX.lowerCaseName());
   }
 
   @Test
@@ -75,7 +76,8 @@ public class GetBlindedBlockIntegrationTest extends AbstractDataBackedRestAPIInt
             .sszDeserialize(Bytes.of(response.body().bytes()));
     assertThat(result.isBlinded()).isTrue();
     assertThat(result.hashTreeRoot()).isEqualTo(created.get(0).getBlock().hashTreeRoot());
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.bellatrix.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.BELLATRIX.lowerCaseName());
   }
 
   public Response get(final String blockIdString, final String contentType) throws IOException {

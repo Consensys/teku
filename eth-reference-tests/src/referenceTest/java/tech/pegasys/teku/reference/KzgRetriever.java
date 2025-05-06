@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package tech.pegasys.teku.reference;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -25,10 +26,11 @@ public class KzgRetriever {
   private static final Map<String, String> TRUSTED_SETUP_FILES_BY_NETWORK = Maps.newHashMap();
 
   public static KZG getKzgWithLoadedTrustedSetup(final Spec spec, final String network) {
-    if (!spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      return KZG.NOOP;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)
+        || spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
+      return getKzgWithLoadedTrustedSetup(network);
     }
-    return getKzgWithLoadedTrustedSetup(network);
+    return NoOpKZG.INSTANCE;
   }
 
   public static KZG getKzgWithLoadedTrustedSetup(final String network) {
@@ -43,7 +45,7 @@ public class KzgRetriever {
                         () ->
                             new IllegalArgumentException(
                                 "No trusted setup configured for " + network)));
-    final KZG kzg = KZG.getInstance();
+    final KZG kzg = KZG.getInstance(false);
     kzg.loadTrustedSetup(trustedSetupFile);
     return kzg;
   }

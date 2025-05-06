@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.util;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -30,6 +31,7 @@ public class BeaconBlockBuilder {
   private final SpecVersion spec;
   private final DataStructureUtil dataStructureUtil;
 
+  private UInt64 slot;
   private SszList<ProposerSlashing> proposerSlashings;
   private SyncAggregate syncAggregate;
   private ExecutionPayload executionPayload;
@@ -43,6 +45,11 @@ public class BeaconBlockBuilder {
     this.spec = spec;
     this.dataStructureUtil = dataStructureUtil;
     this.syncAggregate = dataStructureUtil.randomSyncAggregate();
+  }
+
+  public BeaconBlockBuilder slot(final UInt64 slot) {
+    this.slot = slot;
+    return this;
   }
 
   public BeaconBlockBuilder syncAggregate(final SyncAggregate syncAggregate) {
@@ -127,6 +134,12 @@ public class BeaconBlockBuilder {
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(blsToExecutionChanges);
               }
+              if (builder.supportsKzgCommitments()) {
+                builder.blobKzgCommitments(dataStructureUtil.randomBlobKzgCommitments());
+              }
+              if (builder.supportsExecutionRequests()) {
+                builder.executionRequests(dataStructureUtil.randomExecutionRequests());
+              }
               return SafeFuture.COMPLETE;
             })
         .thenApply(
@@ -134,7 +147,7 @@ public class BeaconBlockBuilder {
                 spec.getSchemaDefinitions()
                     .getBeaconBlockSchema()
                     .create(
-                        dataStructureUtil.randomUInt64(),
+                        slot != null ? slot : dataStructureUtil.randomUInt64(),
                         dataStructureUtil.randomUInt64(),
                         dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32(),

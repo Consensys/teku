@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,6 +39,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -307,6 +308,26 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper);
       case ELECTRA ->
           new GossipForkSubscriptionsElectra(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              debugDataDumper);
+      case FULU ->
+          new GossipForkSubscriptionsFulu(
               forkAndSpecMilestone.getFork(),
               spec,
               asyncRunner,

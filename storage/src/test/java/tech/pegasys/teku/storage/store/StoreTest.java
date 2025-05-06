@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
-import tech.pegasys.teku.storage.archive.nooparchive.DataArchiveNoopWriter;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -80,6 +80,7 @@ class StoreTest extends AbstractStoreTest {
                     genesisCheckpoint,
                     genesisCheckpoint,
                     Collections.emptyMap(),
+                    Optional.empty(),
                     Collections.emptyMap(),
                     defaultStoreConfig))
         .isInstanceOf(IllegalArgumentException.class)
@@ -395,7 +396,7 @@ class StoreTest extends AbstractStoreTest {
 
     storageSystem
         .database()
-        .pruneOldestBlobSidecars(UInt64.valueOf(5), 3, new DataArchiveNoopWriter<>());
+        .pruneOldestBlobSidecars(UInt64.valueOf(5), 3, BlobSidecarsArchiver.NOOP);
 
     assertThat(store.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(

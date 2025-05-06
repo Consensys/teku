@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -443,6 +443,37 @@ public class DebugDbCommand implements Runnable {
       }
     }
     System.out.println("Wrote " + index + " blocks to " + outputFile.toAbsolutePath());
+    return 0;
+  }
+
+  @Command(
+      name = "get-hot-block-slot-to-root",
+      description = "Writes all the slots and roots of stored hot blocks, will be in hash order.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getHotBlockSlotToRoot(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions);
+        final Stream<Map.Entry<Bytes, Bytes>> hotBlockStream = database.streamHotBlocksAsSsz()) {
+      for (final Iterator<Map.Entry<Bytes, Bytes>> hotBlockIterator = hotBlockStream.iterator();
+          hotBlockIterator.hasNext(); ) {
+        final Map.Entry<Bytes, Bytes> rootAndHotBlock = hotBlockIterator.next();
+        final Bytes32 hotBlockRoot = Bytes32.wrap(rootAndHotBlock.getKey());
+        final Optional<SignedBeaconBlock> hotBlock = database.getHotBlock(hotBlockRoot);
+        System.out.println(
+            String.format(
+                "%s, %s", hotBlock.orElseThrow().getSlot().toString(), hotBlockRoot.toHexString()));
+      }
+    }
     return 0;
   }
 

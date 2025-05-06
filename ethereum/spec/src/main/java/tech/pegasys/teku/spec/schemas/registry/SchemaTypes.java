@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,6 +27,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -51,6 +55,9 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -103,6 +110,8 @@ public class SchemaTypes {
   public static final SchemaId<
           BeaconStateSchema<? extends BeaconState, ? extends MutableBeaconState>>
       BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
+  public static final SchemaId<MetadataMessageSchema<?>> METADATA_MESSAGE_SCHEMA =
+      create("METADATA_MESSAGE_SCHEMA");
 
   // Altair
 
@@ -172,6 +181,21 @@ public class SchemaTypes {
       create("CONSOLIDATION_REQUEST_SCHEMA");
   public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
       create("SINGLE_ATTESTATION_SCHEMA");
+
+  // Fulu
+  public static final SchemaId<CellSchema> CELL_SCHEMA = create("CELL_SCHEMA");
+  public static final SchemaId<DataColumnSchema> DATA_COLUMN_SCHEMA = create("DATA_COLUMN_SCHEMA");
+  public static final SchemaId<DataColumnSidecarSchema> DATA_COLUMN_SIDECAR_SCHEMA =
+      create("DATA_COLUMN_SIDECAR_SCHEMA");
+  public static final SchemaId<MatrixEntrySchema> MATRIX_ENTRY_SCHEMA =
+      create("MATRIX_ENTRY_SCHEMA");
+  public static final SchemaId<DataColumnSidecarsByRootRequestMessageSchema>
+      DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
+          create("DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<
+          DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema>
+      DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA =
+          create("DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

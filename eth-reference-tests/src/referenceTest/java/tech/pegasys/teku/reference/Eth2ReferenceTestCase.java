@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -98,6 +98,18 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
           .build();
 
+  private static final ImmutableMap<String, TestExecutor> FULU_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .put("merkle_proof/single_merkle_proof", TestExecutor.IGNORE_TESTS)
+          // TODO-fulu enable merkle proof tests
+          // .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
+          // TODO-fulu networking test types (networking/compute_columns_for_custody_group)
+          .put("networking/get_custody_groups", TestExecutor.IGNORE_TESTS)
+          .put("networking/compute_columns_for_custody_group", TestExecutor.IGNORE_TESTS)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
@@ -112,6 +124,7 @@ public abstract class Eth2ReferenceTestCase {
           case TestFork.CAPELLA -> CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.DENEB -> DENEB_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.ELECTRA -> ELECTRA_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.FULU -> FULU_TEST_TYPES.get(testDefinition.getTestType());
           default -> null;
         };
 

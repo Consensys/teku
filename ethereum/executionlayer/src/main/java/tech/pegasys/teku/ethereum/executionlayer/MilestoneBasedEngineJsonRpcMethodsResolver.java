@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -76,6 +76,9 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                 case ELECTRA:
                   methodsByMilestone.put(milestone, electraSupportedMethods());
                   break;
+                case FULU:
+                  methodsByMilestone.put(milestone, fuluSupportedMethods());
+                  break;
               }
             });
   }
@@ -111,6 +114,16 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   }
 
   private Map<EngineApiMethod, EngineJsonRpcMethod<?>> electraSupportedMethods() {
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
+
+    methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV4(executionEngineClient));
+    methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV4(executionEngineClient, spec));
+    methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV3(executionEngineClient));
+
+    return methods;
+  }
+
+  private Map<EngineApiMethod, EngineJsonRpcMethod<?>> fuluSupportedMethods() {
     final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV4(executionEngineClient));

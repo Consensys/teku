@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -81,11 +81,11 @@ class SimpleLeafNode implements LeafNode, TreeNode {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof LeafNode)) {
+    if (o instanceof final LeafNode otherLeaf) {
+      return Objects.equals(getData(), otherLeaf.getData());
+    } else {
       return false;
     }
-    LeafNode otherLeaf = (LeafNode) o;
-    return Objects.equals(getData(), otherLeaf.getData());
   }
 
   @Override

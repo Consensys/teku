@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -182,13 +182,10 @@ public class UpnpClient {
   }
 
   private PortMapping.Protocol toJupnpProtocol(final NetworkProtocol protocol) {
-    switch (protocol) {
-      case UDP:
-        return PortMapping.Protocol.UDP;
-      case TCP:
-        return PortMapping.Protocol.TCP;
-    }
-    return null;
+    return switch (protocol) {
+      case UDP -> PortMapping.Protocol.UDP;
+      case TCP -> PortMapping.Protocol.TCP;
+    };
   }
 
   private PortMapping toJupnpPortMapping(final NatPortMapping natPortMapping) {

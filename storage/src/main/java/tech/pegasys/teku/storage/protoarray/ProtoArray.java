@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -159,6 +159,34 @@ public class ProtoArray {
     nodes.add(node);
 
     updateBestDescendantOfParent(node, nodeIndex);
+  }
+
+  public void setInitialCanonicalBlockRoot(final Bytes32 initialCanonicalBlockRoot) {
+    final Optional<ProtoNode> initialCanonicalProtoNode = getProtoNode(initialCanonicalBlockRoot);
+    if (initialCanonicalProtoNode.isEmpty()) {
+      LOG.warn("Initial canonical block root not found: {}", initialCanonicalBlockRoot);
+      return;
+    }
+
+    applyToNodes(this::updateBestDescendantOfParent);
+
+    // let's peak the best descendant of the initial canonical block root
+    ProtoNode node =
+        initialCanonicalProtoNode
+            .get()
+            .getBestDescendantIndex()
+            .map(this::getNodeByIndex)
+            .orElse(initialCanonicalProtoNode.get());
+
+    // add a single weight to from the best descendant up to the root
+    node.adjustWeight(1);
+    while (node.getParentIndex().isPresent()) {
+      final ProtoNode parent = getNodeByIndex(node.getParentIndex().get());
+      parent.adjustWeight(1);
+      node = parent;
+    }
+
+    applyToNodes(this::updateBestDescendantOfParent);
   }
 
   /**
@@ -396,6 +424,10 @@ public class ProtoArray {
   /**
    * Iterate backwards through the array, touching all nodes and their parents and potentially the
    * bestChildIndex of each parent.
+   *
+   * <p>NOTE: this function should only throw exceptions when validating the parameters. Once we
+   * start updating the protoarray we should not throw exceptions because we are currently not able
+   * to rollback the changes. See {@link ForkChoiceStrategy#applyPendingVotes}.
    *
    * <p>The structure of the `nodes` array ensures that the child of each node is always touched
    * before its parent.

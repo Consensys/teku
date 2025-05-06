@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -54,6 +54,7 @@ public class PostRegisterValidator extends RestApiEndpoint {
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition(),
                 SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA::sszDeserialize)
             .response(SC_OK, "Registration information has been received.")
+            .withUnsupportedMediaTypeResponse()
             .withBadRequestResponse(
                 Optional.of(
                     "The request could not be processed, check the response for more information."))

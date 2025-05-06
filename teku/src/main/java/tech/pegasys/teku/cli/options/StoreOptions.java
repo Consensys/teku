@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -72,6 +72,14 @@ public class StoreOptions {
   private int earliestAvailableBlockSlotQueryFrequency =
       DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 
+  @Option(
+      names = {"--Xstore-initial-canonical-block-root"},
+      hidden = true,
+      paramLabel = "<BlockRoot>",
+      description = "Overrides the initial canonical block root",
+      arity = "1")
+  private String initialCanonicalBlockRoot;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(
         b ->
@@ -80,6 +88,7 @@ public class StoreOptions {
                 .stateCacheSize(stateCacheSize)
                 .epochStateCacheSize(epochStateCacheSize)
                 .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
-                .checkpointStateCacheSize(checkpointStateCacheSize));
+                .checkpointStateCacheSize(checkpointStateCacheSize)
+                .initialCanonicalBlockRoot(initialCanonicalBlockRoot));
   }
 }

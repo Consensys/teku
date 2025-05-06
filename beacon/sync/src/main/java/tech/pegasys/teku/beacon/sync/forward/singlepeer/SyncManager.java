@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -94,6 +95,7 @@ public class SyncManager extends Service {
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final MetricsSystem metricsSystem,
       final int batchSize,
+      final OptionalInt maxDistanceFromHeadReached,
       final Spec spec) {
     final PeerSync peerSync =
         new PeerSync(
@@ -103,6 +105,7 @@ public class SyncManager extends Service {
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
             batchSize,
+            maxDistanceFromHeadReached,
             metricsSystem);
     return new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);
   }
@@ -182,9 +185,9 @@ public class SyncManager extends Service {
   public SyncingStatus getSyncStatus() {
     final boolean isSyncActive = isSyncActive();
     if (isSyncActive) {
-      Optional<Eth2Peer> bestPeer = findBestSyncPeer();
+      final Optional<Eth2Peer> bestPeer = findBestSyncPeer();
       if (bestPeer.isPresent()) {
-        UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
+        final UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
         return new SyncingStatus(
             true, recentChainData.getHeadSlot(), peerSync.getStartingSlot(), highestSlot);
       }

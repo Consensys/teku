@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import static tech.pegasys.teku.validator.client.loader.PublicKeyLoader.EXTERNAL
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.net.http.HttpClient;
@@ -53,7 +54,7 @@ public class PublicKeyLoaderTest {
   private final BLSPublicKey secondKey =
       BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(secondKeyStr));
 
-  private final URL externalSignerUrl = new URL("http://external.sigener");
+  private final URL externalSignerUrl = URI.create("http://external.sigener").toURL();
   private final ObjectMapper mapper = mock(ObjectMapper.class);
   private final HttpClient httpClient = mock(HttpClient.class);
 
@@ -71,7 +72,7 @@ public class PublicKeyLoaderTest {
   void setUp() throws IOException, InterruptedException {
     // URL response
     final String[] values = {firstKeyStr, secondKeyStr};
-    when(mapper.readValue(new URL(urlSource), String[].class)).thenReturn(values);
+    when(mapper.readValue(URI.create(urlSource).toURL(), String[].class)).thenReturn(values);
 
     // external signer response
     final String jsonValues = String.format("[%s, %s]", firstKeyStr, secondKeyStr);
@@ -116,14 +117,14 @@ public class PublicKeyLoaderTest {
   @Test
   void shouldHandleEmptyResponseFromUrl() throws IOException {
     final String[] values = {};
-    when(mapper.readValue(new URL(urlSource), String[].class)).thenReturn(values);
+    when(mapper.readValue(URI.create(urlSource).toURL(), String[].class)).thenReturn(values);
     assertThat(loader.getPublicKeys(List.of(urlSource, secondKeyStr))).containsExactly(secondKey);
   }
 
   @Test
   void shouldThrowInvalidConfigurationExceptionWhenUrlFailsToLoad() throws Exception {
     final UnknownHostException exception = new UnknownHostException("Unknown host");
-    when(mapper.readValue(new URL(urlSource), String[].class)).thenThrow(exception);
+    when(mapper.readValue(URI.create(urlSource).toURL(), String[].class)).thenThrow(exception);
     assertThatThrownBy(() -> loader.getPublicKeys(List.of(urlSource)))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasRootCause(exception);

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,9 +16,12 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -36,7 +39,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public class OkHttpRestClient implements RestClient {
 
-  static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+  static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json");
   static final MediaType OCTET_STREAM_MEDIA_TYPE = MediaType.parse("application/octet-stream");
 
   private final OkHttpClient httpClient;
@@ -48,29 +51,33 @@ public class OkHttpRestClient implements RestClient {
   }
 
   @Override
-  public SafeFuture<Response<Void>> getAsync(final String apiPath) {
+  public SafeFuture<Response<Void>> getAsync(final String apiPath, final Duration timeout) {
     final Request request = createGetRequest(apiPath, NO_HEADERS);
-    return makeAsyncVoidRequest(request);
+    return makeAsyncVoidRequest(request, timeout);
   }
 
   @Override
   public <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> getAsync(
       final String apiPath,
       final Map<String, String> headers,
-      final ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema) {
+      final ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema,
+      final Duration timeout) {
     final Request request = createGetRequest(apiPath, headers);
-    return makeAsyncRequest(request, Optional.of(responseSchema));
+    return makeAsyncRequest(request, Optional.of(responseSchema), timeout);
   }
 
   @Override
   public <TReq extends SszData> SafeFuture<Response<Void>> postAsync(
-      final String apiPath, final TReq requestBodyObject, final boolean postAsSsz) {
+      final String apiPath,
+      final TReq requestBodyObject,
+      final boolean postAsSsz,
+      final Duration timeout) {
     final RequestBody requestBody =
         postAsSsz
             ? createOctetStreamRequestBody(requestBodyObject)
             : createJsonRequestBody(requestBodyObject);
     final Request request = createPostRequest(apiPath, requestBody, NO_HEADERS);
-    return makeAsyncVoidRequest(request);
+    return makeAsyncVoidRequest(request, timeout);
   }
 
   @Override
@@ -80,13 +87,14 @@ public class OkHttpRestClient implements RestClient {
           final Map<String, String> headers,
           final TReq requestBodyObject,
           final boolean postAsSsz,
-          final ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema) {
+          final ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema,
+          final Duration timeout) {
     final RequestBody requestBody =
         postAsSsz
             ? createOctetStreamRequestBody(requestBodyObject)
             : createJsonRequestBody(requestBodyObject);
     final Request request = createPostRequest(apiPath, requestBody, headers);
-    return makeAsyncRequest(request, Optional.of(responseSchema));
+    return makeAsyncRequest(request, Optional.of(responseSchema), timeout);
   }
 
   private Request createGetRequest(final String apiPath, final Map<String, String> headers) {
@@ -120,8 +128,12 @@ public class OkHttpRestClient implements RestClient {
     return new RequestBody() {
 
       @Override
-      public void writeTo(final BufferedSink bufferedSink) {
-        requestBodyObject.sszSerialize(bufferedSink.outputStream());
+      public void writeTo(final BufferedSink bufferedSink) throws IOException {
+        try {
+          requestBodyObject.sszSerialize(bufferedSink.outputStream());
+        } catch (final UncheckedIOException e) {
+          throw e.getCause();
+        }
       }
 
       @Override
@@ -146,16 +158,20 @@ public class OkHttpRestClient implements RestClient {
 
   private <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> makeAsyncRequest(
       final Request request,
-      final Optional<ResponseSchemaAndDeserializableTypeDefinition<TResp>> responseSchemaMaybe) {
+      final Optional<ResponseSchemaAndDeserializableTypeDefinition<TResp>> responseSchemaMaybe,
+      final Duration timeout) {
     final Call call = httpClient.newCall(request);
+    call.timeout().timeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
     final ResponseHandler<TResp> responseHandler = new ResponseHandler<>(responseSchemaMaybe);
     final Callback responseCallback = createResponseCallback(request, responseHandler);
     call.enqueue(responseCallback);
     return responseHandler.getFutureResponse();
   }
 
-  private SafeFuture<Response<Void>> makeAsyncVoidRequest(final Request request) {
+  private SafeFuture<Response<Void>> makeAsyncVoidRequest(
+      final Request request, final Duration timeout) {
     final Call call = httpClient.newCall(request);
+    call.timeout().timeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
     final ResponseHandlerVoid responseHandler = new ResponseHandlerVoid();
     final Callback responseCallback = createResponseCallback(request, responseHandler);
     call.enqueue(responseCallback);

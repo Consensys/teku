@@ -18,7 +18,7 @@ dependencies {
 
   api 'org.web3j:core'
 
-  implementation 'io.tmio:tuweni-units'
+  implementation 'io.consensys.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))

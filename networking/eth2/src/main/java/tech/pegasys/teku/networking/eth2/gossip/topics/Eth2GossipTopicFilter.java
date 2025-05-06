@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,8 +31,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
   private static final Logger LOG = LogManager.getLogger();
-  private final Supplier<Set<String>> relevantTopics;
+
   private final Spec spec;
+  private final Supplier<Set<String>> relevantTopics;
 
   public Eth2GossipTopicFilter(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding, final Spec spec) {

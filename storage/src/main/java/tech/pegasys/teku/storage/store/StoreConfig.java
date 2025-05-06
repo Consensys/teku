@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class StoreConfig {
@@ -37,6 +39,7 @@ public class StoreConfig {
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
   private final int earliestAvailableBlockSlotFrequency;
+  private final Optional<Bytes32> initialCanonicalBlockRoot;
 
   private StoreConfig(
       final int stateCacheSize,
@@ -44,13 +47,15 @@ public class StoreConfig {
       final int checkpointStateCacheSize,
       final int hotStatePersistenceFrequencyInEpochs,
       final int earliestAvailableBlockSlotFrequency,
-      final int epochStateCacheSize) {
+      final int epochStateCacheSize,
+      final Optional<Bytes32> initialCanonicalBlockRoot) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
     this.epochStateCacheSize = epochStateCacheSize;
+    this.initialCanonicalBlockRoot = initialCanonicalBlockRoot;
   }
 
   public static Builder builder() {
@@ -85,6 +90,10 @@ public class StoreConfig {
     return hotStatePersistenceFrequencyInEpochs;
   }
 
+  public Optional<Bytes32> getInitialCanonicalBlockRoot() {
+    return initialCanonicalBlockRoot;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -98,7 +107,8 @@ public class StoreConfig {
         && epochStateCacheSize == that.epochStateCacheSize
         && blockCacheSize == that.blockCacheSize
         && checkpointStateCacheSize == that.checkpointStateCacheSize
-        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs;
+        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs
+        && Objects.equals(initialCanonicalBlockRoot, that.initialCanonicalBlockRoot);
   }
 
   @Override
@@ -108,7 +118,8 @@ public class StoreConfig {
         epochStateCacheSize,
         blockCacheSize,
         checkpointStateCacheSize,
-        hotStatePersistenceFrequencyInEpochs);
+        hotStatePersistenceFrequencyInEpochs,
+        initialCanonicalBlockRoot);
   }
 
   public static class Builder {
@@ -120,6 +131,7 @@ public class StoreConfig {
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
     private int earliestAvailableBlockSlotFrequency = 0;
+    private Optional<Bytes32> initialCanonicalBlockRoot = Optional.empty();
 
     private Builder() {}
 
@@ -130,7 +142,8 @@ public class StoreConfig {
           checkpointStateCacheSize,
           hotStatePersistenceFrequencyInEpochs,
           earliestAvailableBlockSlotFrequency,
-          epochStateCacheSize);
+          epochStateCacheSize,
+          initialCanonicalBlockRoot);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
@@ -154,6 +167,14 @@ public class StoreConfig {
     public Builder checkpointStateCacheSize(final int checkpointStateCacheSize) {
       validateCacheSize(checkpointStateCacheSize);
       this.checkpointStateCacheSize = checkpointStateCacheSize;
+      return this;
+    }
+
+    public Builder initialCanonicalBlockRoot(final String initialCanonicalBlockRoot) {
+      if (initialCanonicalBlockRoot != null) {
+        this.initialCanonicalBlockRoot =
+            Optional.of(Bytes32.fromHexString(initialCanonicalBlockRoot));
+      }
       return this;
     }
 

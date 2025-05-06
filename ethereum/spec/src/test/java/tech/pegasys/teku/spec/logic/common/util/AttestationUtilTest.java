@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -90,34 +90,28 @@ class AttestationUtilTest {
         .thenReturn(SafeFuture.completedFuture(true));
     attestationUtil = spec.getGenesisSpec().getAttestationUtil();
 
-    switch (specContext.getSpecMilestone()) {
-      case PHASE0:
-        attestationUtil =
-            new AttestationUtilPhase0(
-                spec.getGenesisSpecConfig(),
-                specVersion.getSchemaDefinitions(),
-                beaconStateAccessors,
-                miscHelpers);
-        break;
-      case DENEB:
-        attestationUtil =
-            new AttestationUtilDeneb(
-                spec.getGenesisSpecConfig(),
-                specVersion.getSchemaDefinitions(),
-                beaconStateAccessors,
-                miscHelpers);
-        break;
-      case ELECTRA:
-        attestationUtil =
-            new AttestationUtilElectra(
-                spec.getGenesisSpecConfig(),
-                specVersion.getSchemaDefinitions(),
-                beaconStateAccessors,
-                miscHelpers);
-        break;
-      default:
-        throw new UnsupportedOperationException("unsupported milestone");
-    }
+    attestationUtil =
+        switch (specContext.getSpecMilestone()) {
+          case PHASE0 ->
+              new AttestationUtilPhase0(
+                  spec.getGenesisSpecConfig(),
+                  specVersion.getSchemaDefinitions(),
+                  beaconStateAccessors,
+                  miscHelpers);
+          case DENEB ->
+              new AttestationUtilDeneb(
+                  spec.getGenesisSpecConfig(),
+                  specVersion.getSchemaDefinitions(),
+                  beaconStateAccessors,
+                  miscHelpers);
+          case ELECTRA ->
+              new AttestationUtilElectra(
+                  spec.getGenesisSpecConfig(),
+                  specVersion.getSchemaDefinitions(),
+                  beaconStateAccessors,
+                  miscHelpers);
+          default -> throw new UnsupportedOperationException("unsupported milestone");
+        };
   }
 
   @TestTemplate

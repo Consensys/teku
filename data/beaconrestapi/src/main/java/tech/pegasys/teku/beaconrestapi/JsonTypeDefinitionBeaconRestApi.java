@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -54,6 +54,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingConsolidations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingPartialWithdrawals;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRandao;
@@ -253,6 +254,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostVoluntaryExit(dataProvider))
             .endpoint(new PostSyncCommittees(dataProvider))
             .endpoint(new PostValidatorLiveness(dataProvider))
+            .endpoint(new GetStatePendingConsolidations(dataProvider, schemaCache))
             .endpoint(new GetStatePendingDeposits(dataProvider, schemaCache))
             .endpoint(new GetStatePendingPartialWithdrawals(dataProvider, schemaCache))
             .endpoint(new GetDepositSnapshot(eth1DataProvider))

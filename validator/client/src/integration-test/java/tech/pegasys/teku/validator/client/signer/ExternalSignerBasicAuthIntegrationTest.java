@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import static org.mockserver.model.HttpResponse.response;
 
 import com.google.common.base.Splitter;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -37,8 +38,9 @@ public class ExternalSignerBasicAuthIntegrationTest
 
   @Override
   protected URL getUrl() throws MalformedURLException {
-    return new URL(
-        String.format("https://%s:%s@127.0.0.1:%s", username, password, client.getLocalPort()));
+    return URI.create(
+            String.format("https://%s:%s@127.0.0.1:%s", username, password, client.getLocalPort()))
+        .toURL();
   }
 
   @Test

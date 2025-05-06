@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2020
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -328,6 +328,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return db.get(schema.getVariableLatestCanonicalBlockRoot());
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
@@ -446,6 +451,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     variables.put(
         "FINALIZED_DEPOSIT_SNAPSHOT",
         getFinalizedDepositSnapshot().map(DepositTreeSnapshot::toString));
+    variables.put(
+        "LATEST_CANONICAL_BLOCK_ROOT", getLatestCanonicalBlockRoot().map(Bytes32::toString));
     try {
       variables.put(
           "LATEST_FINALIZED_STATE",
@@ -590,6 +597,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableFinalizedCheckpoint(), checkpoint);
+    }
+
+    @Override
+    public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
+      transaction.put(schema.getVariableLatestCanonicalBlockRoot(), canonicalBlockRoot);
     }
 
     @Override

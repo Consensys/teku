@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -68,6 +68,15 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       final SszBitvector otherCommitteeBits,
       final SszBitlist otherAggregatedBits,
       final boolean isAggregation) {
+
+    if (otherCommitteeBits.equals(committeeBits)) {
+      // If the committee bits are the same, we can directly combine the aggregation bits
+      if (isAggregation && aggregationBits.intersects(otherAggregatedBits)) {
+        return false;
+      }
+      aggregationBits = aggregationBits.or(otherAggregatedBits);
+      return true;
+    }
 
     final SszBitvector combinedCommitteeBits = committeeBits.or(otherCommitteeBits);
 
@@ -185,14 +194,12 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public boolean isSuperSetOf(final Attestation other) {
-    if (!committeeBits.isSuperSetOf(other.getCommitteeBitsRequired())) {
-      return false;
+    if (committeeBits.equals(other.getCommitteeBitsRequired())) {
+      return aggregationBits.isSuperSetOf(other.getAggregationBits());
     }
 
-    if (committeeBits.getBitCount() == other.getCommitteeBitsRequired().getBitCount()) {
-      // this committeeBits is a superset of the other, and bit count is the same, so they are the
-      // same set and we can directly compare aggregation bits.
-      return aggregationBits.isSuperSetOf(other.getAggregationBits());
+    if (!committeeBits.isSuperSetOf(other.getCommitteeBitsRequired())) {
+      return false;
     }
 
     final SszBitvector otherCommitteeBits = other.getCommitteeBitsRequired();

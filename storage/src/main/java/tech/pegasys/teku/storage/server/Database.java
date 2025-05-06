@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -40,7 +40,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 
 public interface Database extends AutoCloseable {
 
@@ -74,16 +74,14 @@ public interface Database extends AutoCloseable {
    *
    * @param lastSlotToPrune inclusive, not reached if limit happens first
    * @param pruneLimit maximum number of slots to prune.
-   * @param archiveWriter write BlobSidecars to archive when pruning.
+   * @param blobSidecarsArchiver write BlobSidecars to archive when pruning.
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
   boolean pruneOldestBlobSidecars(
-      UInt64 lastSlotToPrune,
-      int pruneLimit,
-      final DataArchiveWriter<List<BlobSidecar>> archiveWriter);
+      UInt64 lastSlotToPrune, int pruneLimit, BlobSidecarsArchiver blobSidecarsArchiver);
 
   boolean pruneOldestNonCanonicalBlobSidecars(
-      UInt64 lastSlotToPrune, int pruneLimit, DataArchiveWriter<List<BlobSidecar>> archiveWriter);
+      UInt64 lastSlotToPrune, int pruneLimit, BlobSidecarsArchiver blobSidecarsArchiver);
 
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
@@ -119,6 +117,8 @@ public interface Database extends AutoCloseable {
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+
+  Optional<Bytes32> getLatestCanonicalBlockRoot();
 
   /**
    * Return the finalized block at this slot if such a block exists.

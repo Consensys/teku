@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator.performance;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -63,6 +65,7 @@ public class DefaultPerformanceTrackerTest {
       mock(ValidatorPerformanceMetrics.class);
 
   private Spec spec;
+  private SpecMilestone specMilestone;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainUpdater chainUpdater;
@@ -72,6 +75,7 @@ public class DefaultPerformanceTrackerTest {
   @BeforeEach
   void beforeEach(final TestSpecInvocationContextProvider.SpecContext specContext) {
     spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
@@ -435,6 +439,14 @@ public class DefaultPerformanceTrackerTest {
       verifyNoInteractions(log);
       assertThat(logCaptor.getErrorLogs()).hasSize(1);
     }
+  }
+
+  @TestTemplate
+  void shouldIgnoreSingleAttestation() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
+    final SingleAttestation singleAttestation = dataStructureUtil.randomSingleAttestation();
+    performanceTracker.saveProducedAttestation(singleAttestation);
+    assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
   }
 
   /**

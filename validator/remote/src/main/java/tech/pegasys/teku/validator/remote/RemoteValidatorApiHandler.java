@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,7 +34,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
@@ -125,9 +124,9 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+  public SafeFuture<Optional<Map<BLSPublicKey, StateValidatorData>>> getValidatorStatuses(
       final Collection<BLSPublicKey> publicKeys) {
-    return sendRequest(() -> makeValidatorRequest(publicKeys, StateValidatorData::getStatus));
+    return sendRequest(() -> makeValidatorRequest(publicKeys, Function.identity()));
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> makeValidatorRequest(

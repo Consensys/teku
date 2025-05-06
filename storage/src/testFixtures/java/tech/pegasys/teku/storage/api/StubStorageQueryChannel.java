@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -119,6 +119,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.completedFuture(new ArrayList<>());
   }
@@ -168,6 +173,17 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.completedFuture(List.of());
+  }
+
+  @Override
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.completedFuture(List.of());
+  }
+
+  @Override
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(final UInt64 slot) {
     return SafeFuture.completedFuture(List.of());
   }
 

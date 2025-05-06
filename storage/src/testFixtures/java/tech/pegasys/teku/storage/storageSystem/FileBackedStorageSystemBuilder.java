@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -69,29 +69,17 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database buildDatabase() {
-    final Database database;
-    switch (version) {
-      case LEVELDB_TREE:
-        database = createLevelDbTrieDatabase();
-        break;
-      case LEVELDB2:
-        database = createLevelDb2Database();
-        break;
-      case LEVELDB1:
-        database = createLevelDb1Database();
-        break;
-      case V6:
-        database = createV6Database();
-        break;
-      case V5:
-        database = createV5Database();
-        break;
-      case V4:
-        database = createV4Database();
-        break;
-      default:
-        throw new UnsupportedOperationException("Unsupported database version: " + version);
-    }
+    final Database database =
+        switch (version) {
+          case LEVELDB_TREE -> createLevelDbTrieDatabase();
+          case LEVELDB2 -> createLevelDb2Database();
+          case LEVELDB1 -> createLevelDb1Database();
+          case V6 -> createV6Database();
+          case V5 -> createV5Database();
+          case V4 -> createV4Database();
+          default ->
+              throw new UnsupportedOperationException("Unsupported database version: " + version);
+        };
     return database;
   }
 

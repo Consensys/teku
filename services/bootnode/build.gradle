@@ -1,0 +1,18 @@
+dependencies {
+    implementation 'tech.pegasys.discovery:discovery'
+    // We only use libp2p dependency for key generation, we can prob remove this dependency
+    implementation 'io.libp2p:jvm-libp2p'
+
+    implementation project(':infrastructure:async')
+    implementation project(':infrastructure:metrics')
+    implementation project(':infrastructure:serviceutils')
+    implementation project(':ethereum:networks')
+    implementation project(':ethereum:spec')
+    implementation project(':networking:p2p')
+    implementation project(':networking:eth2')
+    implementation project(':storage')
+    implementation project(':storage:api')
+
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}

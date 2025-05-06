@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import com.google.common.base.Strings;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Set;
@@ -97,6 +98,16 @@ public class MetricsOptions {
       fallbackValue = "true",
       arity = "0..1")
   private boolean blockPerformanceEnabled = MetricsConfig.DEFAULT_BLOCK_PERFORMANCE_ENABLED;
+
+  @Option(
+      names = {"--metrics-block-production-performance-tracking-enabled"},
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether block production timing metrics are tracked and reported",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean blockProductionPerformanceEnabled =
+      MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
 
   @Option(
       names = {"--Xmetrics-tick-timing-tracking-enabled"},
@@ -195,6 +206,7 @@ public class MetricsOptions {
                 .metricsPublishInterval(metricsPublicationInterval)
                 .idleTimeoutSeconds(idleTimeoutSeconds)
                 .blockPerformanceEnabled(blockPerformanceEnabled)
+                .blockProductionPerformanceEnabled(blockProductionPerformanceEnabled)
                 .tickPerformanceEnabled(tickPerformanceEnabled)
                 .blobSidecarsStorageCountersEnabled(blobSidecarsStorageCountersEnabled)
                 .blockProductionAndPublishingPerformanceEnabled(
@@ -214,8 +226,8 @@ public class MetricsOptions {
       return null;
     }
     try {
-      return new URL(metricsEndpoint);
-    } catch (MalformedURLException e) {
+      return URI.create(metricsEndpoint).toURL();
+    } catch (IllegalArgumentException | MalformedURLException e) {
       throw new InvalidConfigurationException(
           "Invalid configuration. Metrics Endpoint has invalid syntax", e);
     }

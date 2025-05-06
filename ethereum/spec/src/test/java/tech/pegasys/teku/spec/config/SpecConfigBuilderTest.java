@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
 import tech.pegasys.teku.spec.config.builder.DenebBuilder;
 import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
+import tech.pegasys.teku.spec.config.builder.FuluBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -49,7 +51,8 @@ class SpecConfigBuilderTest {
           BellatrixBuilder.class,
           CapellaBuilder.class,
           DenebBuilder.class,
-          ElectraBuilder.class);
+          ElectraBuilder.class,
+          FuluBuilder.class);
 
   /**
    * Ensures Builders have actually non-primitive setters, because primitive setters are silently
@@ -110,8 +113,8 @@ class SpecConfigBuilderTest {
   }
 
   @Test
+  @Disabled("There is no non-active config at the moment, revisit this when we add FULU")
   public void shouldCreateSpecExposingNonActiveConfig() {
-    // we will need to update this when we schedule ELECTRA on mainnet
     final Spec spec = getSpec(__ -> {});
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
     assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(ELECTRA);

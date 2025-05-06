@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -61,9 +61,11 @@ public class GetGasLimit extends RestApiEndpoint {
             .tags(TAG_GAS_LIMIT)
             .pathParam(PARAM_PUBKEY_TYPE)
             .description(
-                "Get the execution gas limit for an individual validator. This gas limit is the one used by the validator when proposing blocks via an external builder. If no limit has been set explicitly for a key then the process-wide default will be returned.\n"
-                    + "The server may return a 400 status code if no external builder is configured.\n"
-                    + "WARNING: The gas_limit is not used on Phase0 or Altair networks.")
+                """
+                    Get the execution gas limit for an individual validator. This gas limit is the one used by the validator when proposing blocks via an external builder. If no limit has been set explicitly for a key then the process-wide default will be returned.
+                    The server may return a 400 status code if no external builder is configured.
+                    WARNING: The gas_limit is not used on Phase0 or Altair networks.
+                    """)
             .response(SC_OK, "Success response", RESPONSE_TYPE)
             .withAuthenticationResponses()
             .withNotFoundResponse()

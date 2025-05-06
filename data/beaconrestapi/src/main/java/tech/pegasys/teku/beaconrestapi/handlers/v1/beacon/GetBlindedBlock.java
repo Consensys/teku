@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,7 +29,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -87,7 +86,7 @@ public class GetBlindedBlock extends RestApiEndpoint {
                         blockAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(blockAndMetaData.getMilestone()).name());
+                              blockAndMetaData.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(blockAndMetaData);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -82,7 +82,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.archive.fsarchive.FileSystemArchive;
+import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseContext;
@@ -122,7 +122,7 @@ public class DatabaseTest {
   private StateStorageMode storageMode;
   private StorageSystem storageSystem;
   private Database database;
-  private FileSystemArchive fileSystemDataArchive;
+  private FileSystemBlobSidecarsArchiver blobSidecarsArchiver;
   private RecentChainData recentChainData;
   private UpdatableStore store;
   private final List<StorageSystem> storageSystems = new ArrayList<>();
@@ -139,7 +139,7 @@ public class DatabaseTest {
     this.chainProperties = new ChainProperties(spec);
     final Path blobsArchive = Files.createTempDirectory("blobs");
     tmpDirectories.add(blobsArchive.toFile());
-    this.fileSystemDataArchive = new FileSystemArchive(blobsArchive);
+    this.blobSidecarsArchiver = new FileSystemBlobSidecarsArchiver(spec, blobsArchive);
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
@@ -248,6 +248,7 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
+            Optional.empty(),
             true));
     database.update(
         new StorageUpdate(
@@ -262,6 +263,7 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             true));
     // Will not be overridden from Database interface, only initial set
@@ -298,9 +300,7 @@ public class DatabaseTest {
             List.of(blobSidecar5_0)));
 
     // let's prune with limit to 1
-    assertThat(
-            database.pruneOldestBlobSidecars(
-                UInt64.MAX_VALUE, 1, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestBlobSidecars(UInt64.MAX_VALUE, 1, blobSidecarsArchiver))
         .isTrue();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
@@ -322,9 +322,7 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
 
     // let's prune up to slot 1 (nothing will be pruned)
-    assertThat(
-            database.pruneOldestBlobSidecars(ONE, 10, fileSystemDataArchive.getBlobSidecarWriter()))
-        .isFalse();
+    assertThat(database.pruneOldestBlobSidecars(ONE, 10, blobSidecarsArchiver)).isFalse();
     assertBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
         blobSidecar5_0.getSlot(),
@@ -341,9 +339,7 @@ public class DatabaseTest {
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // let's prune all from slot 4 excluded
-    assertThat(
-            database.pruneOldestBlobSidecars(
-                UInt64.valueOf(3), 10, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(3), 10, blobSidecarsArchiver))
         .isFalse();
     assertBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
@@ -357,9 +353,7 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).doesNotExist();
 
     // let's prune all
-    assertThat(
-            database.pruneOldestBlobSidecars(
-                UInt64.valueOf(5), 1, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 1, blobSidecarsArchiver))
         .isTrue();
     // all empty now
     assertBlobSidecarKeys(ZERO, UInt64.valueOf(10));
@@ -370,8 +364,9 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar5_0)).exists();
   }
 
-  private File getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
-    return fileSystemDataArchive.resolve(blobSidecar.getSlotAndBlockRoot());
+  private Path getSlotBlobsArchiveFile(final BlobSidecar blobSidecar) {
+    return blobSidecarsArchiver.resolveArchivePath(
+        blobSidecar.getSlotAndBlockRoot().getBlockRoot());
   }
 
   @TestTemplate
@@ -419,6 +414,7 @@ public class DatabaseTest {
             Map.of(),
             false,
             Optional.empty(),
+            Optional.empty(),
             true));
     database.update(
         new StorageUpdate(
@@ -433,6 +429,7 @@ public class DatabaseTest {
             Map.of(blobSidecar3_0.getBlockRoot(), blobSidecar3_0.getSlot()),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             true));
 
@@ -469,8 +466,7 @@ public class DatabaseTest {
 
     // Pruning with a prune limit set to 1: Only blobSidecar1 will be pruned
     assertThat(
-            database.pruneOldestNonCanonicalBlobSidecars(
-                UInt64.MAX_VALUE, 1, fileSystemDataArchive.getBlobSidecarWriter()))
+            database.pruneOldestNonCanonicalBlobSidecars(UInt64.MAX_VALUE, 1, blobSidecarsArchiver))
         .isTrue();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
@@ -491,9 +487,7 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(blobSidecar2_0)).doesNotExist();
 
     // Pruning up to slot 1: No blobs pruned
-    assertThat(
-            database.pruneOldestNonCanonicalBlobSidecars(
-                ONE, 10, fileSystemDataArchive.getBlobSidecarWriter()))
+    assertThat(database.pruneOldestNonCanonicalBlobSidecars(ONE, 10, blobSidecarsArchiver))
         .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2_0.getSlot(),
@@ -516,7 +510,7 @@ public class DatabaseTest {
     // Prune blobs up to slot 3
     assertThat(
             database.pruneOldestNonCanonicalBlobSidecars(
-                UInt64.valueOf(3), 10, fileSystemDataArchive.getBlobSidecarWriter()))
+                UInt64.valueOf(3), 10, blobSidecarsArchiver))
         .isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar1_0.getSlot(), blobSidecar5_0.getSlot(), blobSidecarToKey(blobSidecar5_0));
@@ -531,7 +525,7 @@ public class DatabaseTest {
     // Pruning all blobs
     assertThat(
             database.pruneOldestNonCanonicalBlobSidecars(
-                UInt64.valueOf(5), 1, fileSystemDataArchive.getBlobSidecarWriter()))
+                UInt64.valueOf(5), 1, blobSidecarsArchiver))
         .isTrue();
     // No blobs should be left
     assertNonCanonicalBlobSidecarKeys(ZERO, UInt64.valueOf(10));
@@ -1626,18 +1620,19 @@ public class DatabaseTest {
         StoreBuilder.create()
             .metricsSystem(new NoOpMetricsSystem())
             .specProvider(spec)
-            .time(data.getTime())
-            .anchor(data.getAnchor())
-            .genesisTime(data.getGenesisTime())
-            .latestFinalized(data.getLatestFinalized())
-            .finalizedOptimisticTransitionPayload(data.getFinalizedOptimisticTransitionPayload())
-            .justifiedCheckpoint(data.getJustifiedCheckpoint())
-            .bestJustifiedCheckpoint(data.getBestJustifiedCheckpoint())
-            .blockInformation(data.getBlockInformation())
-            .votes(data.getVotes())
+            .time(data.time())
+            .anchor(data.anchor())
+            .genesisTime(data.genesisTime())
+            .latestFinalized(data.latestFinalized())
+            .finalizedOptimisticTransitionPayload(data.finalizedOptimisticTransitionPayload())
+            .justifiedCheckpoint(data.justifiedCheckpoint())
+            .bestJustifiedCheckpoint(data.bestJustifiedCheckpoint())
+            .blockInformation(data.blockInformation())
+            .votes(data.votes())
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
+            .latestCanonicalBlockRoot(Optional.empty())
             .build();
 
     assertThat(store.getTimeSeconds()).isEqualTo(genesisTime);
@@ -2299,6 +2294,23 @@ public class DatabaseTest {
         database.pruneFinalizedBlocks(UInt64.valueOf(7), 10, UInt64.valueOf(10));
     assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(7));
     assertThat(database.getEarliestAvailableBlockSlot()).isEqualTo(Optional.empty());
+  }
+
+  @TestTemplate
+  public void shouldPersistLatestCanonicalBlockRoot(final DatabaseContext context)
+      throws Exception {
+    initialize(context);
+
+    // it is initially empty
+    assertThat(database.getLatestCanonicalBlockRoot()).isEmpty();
+
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    final Bytes32 randomBlockRoot = dataStructureUtil.randomBytes32();
+    transaction.setLatestCanonicalBlockRoot(randomBlockRoot);
+
+    commit(transaction);
+
+    assertThat(database.getLatestCanonicalBlockRoot()).contains(randomBlockRoot);
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {

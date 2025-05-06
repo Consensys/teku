@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
@@ -46,9 +47,15 @@ public class MultipeerCommonAncestorFinder {
   }
 
   public static MultipeerCommonAncestorFinder create(
-      final RecentChainData recentChainData, final EventThread eventThread, final Spec spec) {
+      final RecentChainData recentChainData,
+      final EventThread eventThread,
+      final OptionalInt maxDistanceFromHeadReached,
+      final Spec spec) {
     return new MultipeerCommonAncestorFinder(
-        recentChainData, new CommonAncestor(recentChainData), eventThread, spec);
+        recentChainData,
+        new CommonAncestor(recentChainData, maxDistanceFromHeadReached),
+        eventThread,
+        spec);
   }
 
   public SafeFuture<UInt64> findCommonAncestor(final TargetChain targetChain) {
@@ -62,7 +69,7 @@ public class MultipeerCommonAncestorFinder {
     }
 
     return findCommonAncestor(latestFinalizedSlot, targetChain)
-        .thenPeek(ancestor -> LOG.trace("Found common ancestor at slot {}", ancestor));
+        .thenPeek(ancestor -> LOG.debug("Found common ancestor at slot {}", ancestor));
   }
 
   private SafeFuture<UInt64> findCommonAncestor(
@@ -70,15 +77,15 @@ public class MultipeerCommonAncestorFinder {
     eventThread.checkOnEventThread();
     final SyncSource source1 = targetChain.selectRandomPeer().orElseThrow();
     final Optional<SyncSource> source2 = targetChain.selectRandomPeer(source1);
-    // Only one peer available, just go with it's common ancestor
+    // Only one peer available, just go with its common ancestor
     final SafeFuture<UInt64> source1CommonAncestor =
         commonAncestorFinder.getCommonAncestor(
             source1, latestFinalizedSlot, targetChain.getChainHead().getSlot());
     if (source2.isEmpty()) {
-      LOG.trace("Finding common ancestor from one peer");
+      LOG.debug("Finding common ancestor from one peer");
       return source1CommonAncestor;
     }
-    LOG.trace("Finding common ancestor from two peers");
+    LOG.debug("Finding common ancestor from two peers");
     // Two peers available, so check they have the same common ancestor
     return source1CommonAncestor
         .thenCombineAsync(
@@ -90,8 +97,7 @@ public class MultipeerCommonAncestorFinder {
             eventThread)
         .exceptionally(
             error -> {
-              LOG.debug("Failed to find common ancestor. Starting sync from finalized slot", error);
-              return latestFinalizedSlot;
+              throw new RuntimeException("Failed to find common ancestor.", error);
             });
   }
 

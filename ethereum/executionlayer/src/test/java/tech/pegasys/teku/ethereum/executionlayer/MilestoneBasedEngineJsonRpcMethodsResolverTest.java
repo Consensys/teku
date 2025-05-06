@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -194,6 +194,28 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   }
 
   private static Stream<Arguments> electraMethods() {
+    return Stream.of(
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
+  }
+
+  @ParameterizedTest
+  @MethodSource("fuluMethods")
+  void shouldProvideExpectedMethodsForFulu(
+      final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+    final Spec electraSpec = TestSpecFactory.createMinimalFulu();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(electraSpec, executionEngineClient);
+
+    final EngineJsonRpcMethod<Object> providedMethod =
+        engineMethodsResolver.getMethod(method, () -> SpecMilestone.FULU, Object.class);
+
+    assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
+  private static Stream<Arguments> fuluMethods() {
     return Stream.of(
         arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
         arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),

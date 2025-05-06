@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -197,6 +197,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               syncConfig.getForwardSyncMaxPendingBatches(),
               syncConfig.getForwardSyncMaxBlocksPerMinute(),
               syncConfig.getForwardSyncMaxBlobSidecarsPerMinute(),
+              syncConfig.getForwardSyncMaxDistanceFromHead(),
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -210,6 +211,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
               syncConfig.getForwardSyncBatchSize(),
+              syncConfig.getForwardSyncMaxDistanceFromHead(),
               spec);
     }
     return forwardSync;

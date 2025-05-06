@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -88,8 +87,7 @@ public class GetAttestationsV2 extends RestApiEndpoint {
         nodeDataProvider.getAttestationsAndMetaData(slot, committeeIndex);
 
     request.header(
-        HEADER_CONSENSUS_VERSION,
-        Version.fromMilestone(attestationsAndMetaData.getMilestone()).name());
+        HEADER_CONSENSUS_VERSION, attestationsAndMetaData.getMilestone().lowerCaseName());
     request.respondOk(attestationsAndMetaData);
   }
 

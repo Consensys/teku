@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -79,6 +79,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+
+  Optional<Bytes32> getLatestCanonicalBlockRoot();
 
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
@@ -187,6 +189,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void setBestJustifiedCheckpoint(Checkpoint checkpoint);
 
     void setFinalizedCheckpoint(Checkpoint checkpoint);
+
+    void setLatestCanonicalBlockRoot(Bytes32 canonicalBlockRoot);
 
     void setWeakSubjectivityCheckpoint(Checkpoint checkpoint);
 

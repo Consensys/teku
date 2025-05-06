@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 
 public enum StatusParameter {
   PENDING_INITIALIZED("pending_initialized"),

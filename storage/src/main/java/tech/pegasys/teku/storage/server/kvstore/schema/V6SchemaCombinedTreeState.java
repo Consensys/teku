@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2020
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -164,6 +164,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
         .put("EARLIEST_BLOCK_SLOT", getVariableEarliestBlockSlot())
+        .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
         .build();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -21,7 +22,11 @@ public interface MetadataMessageSchema<T extends MetadataMessage> extends SszCon
   @Override
   T createFromBackingNode(TreeNode node);
 
-  T create(UInt64 seqNumber, Iterable<Integer> attnets, final Iterable<Integer> syncnets);
+  T create(
+      UInt64 seqNumber,
+      Iterable<Integer> attnets,
+      final Iterable<Integer> syncnets,
+      final Optional<UInt64> custodyGroupCount);
 
   T createDefault();
 }

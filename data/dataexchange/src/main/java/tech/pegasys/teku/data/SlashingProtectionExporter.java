@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.api.exceptions.PublicKeyException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;

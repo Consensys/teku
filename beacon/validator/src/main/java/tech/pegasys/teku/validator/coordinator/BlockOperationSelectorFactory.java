@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -121,11 +121,13 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
 
     return bodyBuilder -> {
+      blockProductionPerformance.beaconBlockPreparationStarted();
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
       final SszList<Attestation> attestations =
           attestationPool.getAttestationsForBlock(
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+      blockProductionPerformance.getAttestationsForBlock();
 
       // Collect slashings to include
       final Set<UInt64> exitedValidators = new HashSet<>();

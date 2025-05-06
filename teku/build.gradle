@@ -29,6 +29,7 @@ dependencies {
   implementation project(':networking:eth2')
   implementation project(':networking:nat')
   implementation project(':services:beaconchain')
+  implementation project(':services:bootnode')
   implementation project(':services:chainstorage')
   implementation project(':services:executionlayer')
   implementation project(':services:powchain')
@@ -52,8 +53,8 @@ dependencies {
   implementation 'io.vertx:vertx-core'
   implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
   implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
-  implementation 'io.tmio:tuweni-ssz'
-  implementation 'io.tmio:tuweni-units'
+  implementation 'io.consensys.tuweni:tuweni-ssz'
+  implementation 'io.consensys.tuweni:tuweni-units'
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

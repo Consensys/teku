@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,11 +16,13 @@ package tech.pegasys.teku.statetransition.block;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -312,13 +314,29 @@ public class BlockManager extends Service
                   case DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
                       FAILED_STATE_TRANSITION,
                       FAILED_WEAK_SUBJECTIVITY_CHECKS,
-                      DESCENDANT_OF_INVALID_BLOCK,
-                      INTERNAL_ERROR:
+                      DESCENDANT_OF_INVALID_BLOCK:
                     logFailedBlockImport(block, result.getFailureReason());
                     dropInvalidBlock(block, result);
+                    break;
+                  case INTERNAL_ERROR:
+                    logFailedBlockImport(block, result.getFailureReason());
+                    if (result
+                        .getFailureCause()
+                        .map(this::internalErrorToBeConsiderAsInvalidBlock)
+                        .orElse(false)) {
+                      dropInvalidBlock(block, result);
+                    }
                 }
               }
             });
+  }
+
+  private boolean internalErrorToBeConsiderAsInvalidBlock(final Throwable internalError) {
+    if (internalError instanceof RejectedExecutionException
+        || ExceptionUtil.hasCause(internalError, RejectedExecutionException.class)) {
+      return false;
+    }
+    return true;
   }
 
   private void logFailedBlockImport(

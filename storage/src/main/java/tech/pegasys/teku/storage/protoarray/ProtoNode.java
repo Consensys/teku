@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,6 +32,8 @@ public class ProtoNode {
 
   public static final UInt64 NO_EXECUTION_BLOCK_NUMBER = UInt64.ZERO;
   public static final Bytes32 NO_EXECUTION_BLOCK_HASH = Bytes32.ZERO;
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final UInt64 blockSlot;
   private final Bytes32 stateRoot;
@@ -91,21 +95,31 @@ public class ProtoNode {
 
   public void adjustWeight(final long delta) {
     if (delta < 0) {
-      UInt64 deltaAbsoluteValue = UInt64.valueOf(Math.abs(delta));
-      if (deltaAbsoluteValue.isGreaterThan(weight)) {
-        throw new RuntimeException(
-            "ProtoNode: Delta to be subtracted is greater than node weight for block "
-                + blockRoot
-                + " ("
-                + blockSlot
-                + "). Attempting to subtract "
-                + deltaAbsoluteValue
-                + " from "
-                + weight);
+      final long absoluteDelta = -delta;
+      try {
+        weight = weight.minus(absoluteDelta);
+      } catch (final ArithmeticException __) {
+        LOG.error(
+            "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be subtracted causes uint64 underflow for block {} ({}). Attempting to subtract {} from {}",
+            blockRoot,
+            blockSlot,
+            absoluteDelta,
+            weight);
+        weight = UInt64.ZERO;
       }
-      weight = weight.minus(deltaAbsoluteValue);
+
     } else {
-      weight = weight.plus(delta);
+      try {
+        weight = weight.plus(delta);
+      } catch (final ArithmeticException __) {
+        LOG.error(
+            "PLEASE FIX OR REPORT ProtoArray adjustWeight bug: Delta to be added causes uint64 overflow for block {} ({}). Attempting to add {} to {}",
+            blockRoot,
+            blockSlot,
+            delta,
+            weight);
+        weight = UInt64.MAX_VALUE;
+      }
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -48,38 +48,44 @@ import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 
 public class ChainStorage
     implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel, ChainStorageFacade {
   private static final Logger LOG = LogManager.getLogger();
+
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
-
   private final StateStorageMode dataStorageMode;
+  private final BlobSidecarsArchiver blobSidecarsArchiver;
 
   private Optional<OnDiskStoreData> cachedStoreData = Optional.empty();
 
   private ChainStorage(
       final Database database,
       final FinalizedStateCache finalizedStateCache,
-      final StateStorageMode dataStorageMode) {
+      final StateStorageMode dataStorageMode,
+      final BlobSidecarsArchiver blobSidecarsArchiver) {
     this.database = database;
     this.finalizedStateCache = finalizedStateCache;
     this.dataStorageMode = dataStorageMode;
+    this.blobSidecarsArchiver = blobSidecarsArchiver;
   }
 
   public static ChainStorage create(
       final Database database,
       final Spec spec,
       final StateStorageMode dataStorageMode,
-      final int stateRebuildTimeoutSeconds) {
+      final int stateRebuildTimeoutSeconds,
+      final BlobSidecarsArchiver blobSidecarsArchiver) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
         database,
         new FinalizedStateCache(
             spec, database, finalizedStateCacheSize, true, stateRebuildTimeoutSeconds),
-        dataStorageMode);
+        dataStorageMode,
+        blobSidecarsArchiver);
   }
 
   private synchronized Optional<OnDiskStoreData> getStore() {
@@ -274,6 +280,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot() {
+    return SafeFuture.of(database::getLatestCanonicalBlockRoot);
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
   }
@@ -357,5 +368,16 @@ public class ChainStorage
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(() -> database.getBlobSidecarKeys(slotAndBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.of(() -> blobSidecarsArchiver.retrieve(slotAndBlockRoot).orElse(List.of()));
+  }
+
+  @Override
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(final UInt64 slot) {
+    return SafeFuture.of(() -> blobSidecarsArchiver.retrieve(slot).orElse(List.of()));
   }
 }

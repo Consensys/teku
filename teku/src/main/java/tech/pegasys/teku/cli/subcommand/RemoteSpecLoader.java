@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +48,7 @@ class RemoteSpecLoader {
     try {
       return apiClient
           .getSpec()
-          .map(SpecConfigLoader::loadRemoteConfig)
+          .map(config -> SpecConfigLoader.loadRemoteConfig(new HashMap<>(config)))
           .map(SpecFactory::create)
           .orElseThrow();
     } catch (final Throwable ex) {
@@ -78,13 +79,13 @@ class RemoteSpecLoader {
     throw new InvalidConfigurationException(errMsg);
   }
 
-  private static <T> T retry(final Callable<T> f) {
+  private static <T> T retry(final Callable<T> callable) {
     try {
-      return f.call();
+      return callable.call();
     } catch (Throwable ex) {
       logError(ex);
       sleep();
-      return retry(f);
+      return retry(callable);
     }
   }
 

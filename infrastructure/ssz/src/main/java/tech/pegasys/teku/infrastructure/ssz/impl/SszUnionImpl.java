@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -69,13 +69,13 @@ public class SszUnionImpl implements SszUnion {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SszUnion)) {
+    if (o instanceof final SszUnion sszUnion) {
+      return Objects.equal(getSchema(), sszUnion.getSchema())
+          && getSelector() == sszUnion.getSelector()
+          && Objects.equal(hashTreeRoot(), sszUnion.hashTreeRoot());
+    } else {
       return false;
     }
-    SszUnion sszUnion = (SszUnion) o;
-    return Objects.equal(getSchema(), sszUnion.getSchema())
-        && getSelector() == sszUnion.getSelector()
-        && Objects.equal(hashTreeRoot(), sszUnion.hashTreeRoot());
   }
 
   @Override

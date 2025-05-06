@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -56,7 +56,7 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(Bytes32 blockRoot);
 
   SafeFuture<Optional<StateAndBlockSummary>> getHotStateAndBlockSummaryByBlockRoot(
-      final Bytes32 blockRoot);
+      Bytes32 blockRoot);
 
   /**
    * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest
@@ -81,6 +81,8 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(Bytes32 blockRoot);
 
   SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(Bytes32 stateRoot);
+
+  SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot();
 
   SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(UInt64 slot);
 
@@ -107,4 +109,9 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       SlotAndBlockRoot slotAndBlockRoot);
+
+  // Methods for retrieving archived blobs (when enabled)
+  SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+
+  SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(UInt64 slot);
 }

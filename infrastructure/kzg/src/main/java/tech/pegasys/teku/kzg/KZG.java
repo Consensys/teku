@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,24 +13,28 @@
 
 package tech.pegasys.teku.kzg;
 
+import java.math.BigInteger;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 
 /**
  * This interface specifies all the KZG functions needed for the Deneb specification and is the
  * entry-point for all KZG operations in Teku.
  */
 public interface KZG {
-
+  BigInteger BLS_MODULUS =
+      new BigInteger(
+          "52435875175126190479447740508185965837690552500527637822603658699938581184513");
   int BYTES_PER_G1 = 48;
   int BYTES_PER_G2 = 96;
+  int CELLS_PER_EXT_BLOB = 128;
+  int FIELD_ELEMENTS_PER_BLOB = 4096;
 
-  static KZG getInstance() {
-    return CKZG4844.getInstance();
+  static KZG getInstance(final boolean rustKzgEnabled) {
+    return rustKzgEnabled ? RustWithCKZG.getInstance() : CKZG4844.getInstance();
   }
 
-  KZG NOOP =
+  KZG DISABLED =
       new KZG() {
 
         @Override
@@ -43,7 +47,7 @@ public interface KZG {
         public boolean verifyBlobKzgProof(
             final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
             throws KZGException {
-          return true;
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
@@ -52,18 +56,41 @@ public interface KZG {
             final List<KZGCommitment> kzgCommitments,
             final List<KZGProof> kzgProofs)
             throws KZGException {
-          return true;
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
         public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-          return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
+          throw new UnsupportedOperationException("KZG is disabled");
         }
 
         @Override
         public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
             throws KZGException {
-          return KZGProof.fromBytesCompressed(Bytes48.ZERO);
+          throw new UnsupportedOperationException("KZG is disabled");
+        }
+
+        @Override
+        public List<KZGCell> computeCells(Bytes blob) {
+          throw new UnsupportedOperationException("KZG is disabled");
+        }
+
+        @Override
+        public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
+          throw new UnsupportedOperationException("KZG is disabled");
+        }
+
+        @Override
+        public boolean verifyCellProofBatch(
+            List<KZGCommitment> commitments,
+            List<KZGCellWithColumnId> cellWithIDs,
+            List<KZGProof> proofs) {
+          throw new UnsupportedOperationException("KZG is disabled");
+        }
+
+        @Override
+        public List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells) {
+          throw new UnsupportedOperationException("KZG is disabled");
         }
       };
 
@@ -81,4 +108,18 @@ public interface KZG {
   KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException;
 
   KZGProof computeBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment) throws KZGException;
+
+  // Fulu PeerDAS methods
+
+  List<KZGCell> computeCells(Bytes blob);
+
+  @Deprecated(since = "Use computeCells instead, computeCellsAndProof is not for production")
+  List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
+
+  boolean verifyCellProofBatch(
+      List<KZGCommitment> commitments,
+      List<KZGCellWithColumnId> cellWithIDs,
+      List<KZGProof> proofs);
+
+  List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells);
 }

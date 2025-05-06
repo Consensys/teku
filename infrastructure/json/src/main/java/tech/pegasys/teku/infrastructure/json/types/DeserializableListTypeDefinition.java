@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,7 +21,9 @@ public class DeserializableListTypeDefinition<T>
     extends DeserializableArrayTypeDefinition<T, List<T>> {
 
   public DeserializableListTypeDefinition(
-      final DeserializableTypeDefinition<T> itemType, final Optional<Integer> minItems) {
-    super(itemType, Function.identity(), minItems);
+      final DeserializableTypeDefinition<T> itemType,
+      final Optional<Integer> minItems,
+      final Optional<Integer> maxItems) {
+    super(itemType, Function.identity(), minItems, maxItems);
   }
 }

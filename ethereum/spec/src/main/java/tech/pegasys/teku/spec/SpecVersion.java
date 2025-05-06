@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.SpecLogicBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.SpecLogicCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.SpecLogicDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.SpecLogicElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.SpecLogicFulu;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
@@ -85,6 +88,10 @@ public class SpecVersion extends DelegatingSpecLogic {
           specConfig
               .toVersionElectra()
               .map(specConfigElectra -> createElectra(specConfigElectra, schemaRegistryBuilder));
+      case FULU ->
+          specConfig
+              .toVersionFulu()
+              .map(specConfigFulu -> createFulu(specConfigFulu, schemaRegistryBuilder));
     };
   }
 
@@ -147,6 +154,16 @@ public class SpecVersion extends DelegatingSpecLogic {
     final SpecLogicElectra specLogic =
         SpecLogicElectra.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.ELECTRA, specConfig, schemaDefinitions, specLogic);
+  }
+
+  static SpecVersion createFulu(
+      final SpecConfigFulu specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
+    final SchemaRegistry schemaRegistry =
+        schemaRegistryBuilder.build(SpecMilestone.FULU, specConfig);
+    final SchemaDefinitionsFulu schemaDefinitions = new SchemaDefinitionsFulu(schemaRegistry);
+    final SpecLogicFulu specLogic =
+        SpecLogicFulu.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
+    return new SpecVersion(SpecMilestone.FULU, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {

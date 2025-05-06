@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -145,10 +145,10 @@ public class BLSSignature {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof BLSSignature)) {
+    if (obj instanceof final BLSSignature signature) {
+      return Objects.equals(toBytesCompressed(), signature.toBytesCompressed());
+    } else {
       return false;
     }
-    BLSSignature other = (BLSSignature) obj;
-    return Objects.equals(toBytesCompressed(), other.toBytesCompressed());
   }
 }

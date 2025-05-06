@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,16 +20,23 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.stream.Collectors;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -154,9 +161,27 @@ public class P2POptions {
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description =
-          "This node's private key file. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
+          "This node's private key file in LibP2P format. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-secp256k1"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of Secp256k1 type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileSecp256k1 = null;
+
+  @Option(
+      names = {"--Xp2p-private-key-file-ecdsa"},
+      paramLabel = "<FILENAME>",
+      description =
+          "This node's private key file of ECDSA type. Only single private key option should be specified.",
+      hidden = true,
+      arity = "1")
+  private String p2pPrivateKeyFileEcdsa = null;
 
   @Option(
       names = {"--p2p-peer-lower-bound"},
@@ -192,13 +217,21 @@ public class P2POptions {
   private Integer minimumRandomlySelectedPeerCount;
 
   @Option(
+      names = {"--p2p-static-peers-url"},
+      paramLabel = "<URL>",
+      description =
+          "Specifies a URL or file containing a list of 'static' peers (one per line) with which to establish and maintain connections. Accepts multiaddr format.",
+      arity = "1")
+  private String p2pStaticPeersUrl;
+
+  @Option(
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description =
-          "Specifies a list of 'static' peers with which to establish and maintain connections",
+          "Specifies a comma-separated list of 'static' peers with which to establish and maintain connections. Accepts multiaddr format.",
       split = ",",
-      arity = "0..*")
-  private List<String> p2pStaticPeers = new ArrayList<>();
+      arity = "1")
+  private final List<String> p2pStaticPeers = new ArrayList<>();
 
   @Option(
       names = {"--p2p-direct-peers"},
@@ -263,6 +296,16 @@ public class P2POptions {
       arity = "1")
   private Integer forwardSyncBlocksRateLimit =
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+
+  @Option(
+      names = {"--Xp2p-sync-max-distance-from-head"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Maximum number slots to jump back when trying to find a common ancestor with target chain.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncMaxDistanceFromHead;
 
   @Option(
       names = {"--Xp2p-sync-blob-sidecars-rate-limit"},
@@ -425,6 +468,38 @@ public class P2POptions {
     return p2pUpperBound;
   }
 
+  private List<String> getStaticPeersList() {
+    final List<String> staticPeers = new ArrayList<>(p2pStaticPeers);
+
+    if (p2pStaticPeersUrl != null) {
+      try {
+        final Optional<InputStream> maybeStream =
+            ResourceLoader.urlOrFile().load(p2pStaticPeersUrl);
+        if (maybeStream.isPresent()) {
+          try (final BufferedReader reader =
+              new BufferedReader(
+                  new InputStreamReader(maybeStream.get(), StandardCharsets.UTF_8))) {
+            final List<String> peersFromUrl =
+                reader
+                    .lines()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                    .collect(Collectors.toList());
+            staticPeers.addAll(peersFromUrl);
+          }
+        } else {
+          throw new InvalidConfigurationException(
+              String.format("Static peers URL not found: %s", p2pStaticPeersUrl));
+        }
+      } catch (Exception e) {
+        throw new InvalidConfigurationException(
+            String.format("Failed to read static peers from URL: %s", p2pStaticPeersUrl), e);
+      }
+    }
+
+    return staticPeers;
+  }
+
   public void configure(final TekuConfiguration.Builder builder) {
     // From a discovery configuration perspective, direct peers are static peers
     p2pStaticPeers.addAll(p2pDirectPeers);
@@ -479,7 +554,7 @@ public class P2POptions {
                 d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
-                  .staticPeers(p2pStaticPeers)
+                  .staticPeers(getStaticPeersList())
                   .siteLocalAddressesEnabled(siteLocalAddressesEnabled);
             })
         .network(
@@ -487,6 +562,13 @@ public class P2POptions {
               if (p2pPrivateKeyFile != null) {
                 n.privateKeyFile(p2pPrivateKeyFile);
               }
+              if (p2pPrivateKeyFileSecp256k1 != null) {
+                n.privateKeyFileSecp256k1(p2pPrivateKeyFileSecp256k1);
+              }
+              if (p2pPrivateKeyFileEcdsa != null) {
+                n.privateKeyFileEcdsa(p2pPrivateKeyFileEcdsa);
+              }
+
               if (p2pAdvertisedPort != null) {
                 n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
               }
@@ -514,7 +596,8 @@ public class P2POptions {
                     .forwardSyncMaxBlocksPerMinute(forwardSyncBlocksRateLimit)
                     .forwardSyncMaxBlobSidecarsPerMinute(forwardSyncBlobSidecarsRateLimit)
                     .forwardSyncBatchSize(forwardSyncBatchSize)
-                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
+                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches)
+                    .forwardSyncMaxDistanceFromHead(forwardSyncMaxDistanceFromHead));
 
     if (subscribeAllSubnetsEnabled) {
       builder

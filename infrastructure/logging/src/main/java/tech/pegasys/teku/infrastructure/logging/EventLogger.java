@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -54,10 +55,12 @@ public class EventLogger {
 
     final String genesisEventLog =
         String.format(
-            "Genesis Event *** \n"
-                + "Genesis state root: %s \n"
-                + "Genesis block root: %s \n"
-                + "Genesis time: %s GMT",
+            """
+                Genesis Event ***
+                Genesis state root: %s
+                Genesis block root: %s
+                Genesis time: %s GMT
+                """,
             hashTreeRoot.toHexString(), genesisBlockRoot.toHexString(), formattedGenesisTime);
     info(genesisEventLog, Color.CYAN);
   }
@@ -85,21 +88,64 @@ public class EventLogger {
     info(driftEventLog, Color.WHITE);
   }
 
-  public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
+  public void syncEvent(
+      final UInt64 nodeSlot,
+      final UInt64 headSlot,
+      final int numPeers,
+      final Optional<TargetChain> maybeTargetChain) {
     final String syncEventLog =
         String.format(
-            "Syncing     *** Target slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
-            nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
+            "Syncing     *** Slot: %s, Head slot: %s, Remaining slots: %s%s, Connected peers: %s",
+            nodeSlot,
+            headSlot,
+            nodeSlot.minusMinZero(headSlot),
+            maybeTargetChain
+                .map(
+                    targetChain ->
+                        String.format(
+                            ", Target chain: %s (%s) with %s peers",
+                            LogFormatter.formatAbbreviatedHashRoot(targetChain.blockRoot),
+                            targetChain.slot,
+                            targetChain.numPeers))
+                .orElse(""),
+            numPeers);
     info(syncEventLog, Color.WHITE);
   }
+
+  public record TargetChain(Bytes32 blockRoot, UInt64 slot, int numPeers) {}
 
   public void syncEventAwaitingEL(
       final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Syncing     *** Target slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
+            "Syncing     *** Slot: %s, Head slot: %s, Waiting for execution layer sync, Connected peers: %s",
             nodeSlot, headSlot, numPeers);
     info(syncEventLog, Color.WHITE);
+  }
+
+  public void syncProgressEvent(
+      final UInt64 fromSlot,
+      final UInt64 toSlot,
+      final int batches,
+      final int downloadingSlots,
+      final int downloadingBatches,
+      final int readySlots,
+      final int readyBatches,
+      final boolean importing) {
+    final String syncProgressEventLog =
+        String.format(
+            "Sync Info   *** Range: %s, Downloading: %s, Ready: %s, Batch import: %s",
+            batches == 0
+                ? "none"
+                : String.format("%s - %s (%d batches)", fromSlot, toSlot, batches),
+            downloadingSlots == 0
+                ? "none"
+                : String.format("%d slots (%d batches)", downloadingSlots, downloadingBatches),
+            readySlots == 0
+                ? "none"
+                : String.format("%d slots (%d batches)", readySlots, readyBatches),
+            importing ? "in progress" : "waiting");
+    info(syncProgressEventLog, Color.GRAY);
   }
 
   public void syncCompleted() {

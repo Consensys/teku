@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -44,9 +44,13 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
             .operationId("prepareSyncCommitteeSubnets")
             .summary("Subscribe to sync committee subnets")
             .description(
-                "Subscribe to a number of sync committee subnets\n\n"
-                    + "Sync committees are not present in phase0, but are required for Altair networks.\n\n"
-                    + "Subscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.")
+                """
+                    Subscribe to a number of sync committee subnets
+
+                    Sync committees are not present in phase0, but are required for Altair networks.
+
+                    Subscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.
+                    """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(DeserializableTypeDefinition.listOf(SYNC_COMMITTEE_SUBSCRIPTION))
             .response(SC_OK, "Successful response")

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.EventType;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.spec.Spec;

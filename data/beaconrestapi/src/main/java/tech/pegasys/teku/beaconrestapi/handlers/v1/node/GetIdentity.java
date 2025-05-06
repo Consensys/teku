@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -139,6 +139,11 @@ public class GetIdentity extends RestApiEndpoint {
                 .withDescription(
                     "Bitvector representing the node's persistent sync committee subnet subscriptions."),
             MetadataMessage::getOptionalSyncnets)
+        .withOptionalField(
+            "custody_group_count",
+            UINT64_TYPE.withDescription(
+                "Uint64 representing the node's custody group count. The metadata is present from the Fulu fork."),
+            MetadataMessage::getOptionalCustodyGroupCount)
         .build();
   }
 

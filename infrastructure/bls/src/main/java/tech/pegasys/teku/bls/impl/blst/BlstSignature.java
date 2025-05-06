@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -47,8 +47,8 @@ public class BlstSignature implements Signature {
   }
 
   static BlstSignature fromSignature(final Signature signature) {
-    if (signature instanceof BlstSignature) {
-      return (BlstSignature) signature;
+    if (signature instanceof BlstSignature blstSignature) {
+      return blstSignature;
     } else {
       return fromBytes(signature.toBytesCompressed());
     }
@@ -158,9 +158,10 @@ public class BlstSignature implements Signature {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof Signature)) {
+    if (o instanceof final Signature signature) {
+      return Objects.equals(toBytesCompressed(), signature.toBytesCompressed());
+    } else {
       return false;
     }
-    return Objects.equals(toBytesCompressed(), ((Signature) o).toBytesCompressed());
   }
 }

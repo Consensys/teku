@@ -17,6 +17,7 @@ dependencies {
   referenceTestImplementation project(':infrastructure:async')
   referenceTestImplementation project(':infrastructure:io')
   referenceTestImplementation testFixtures(project(':infrastructure:async'))
+  referenceTestImplementation testFixtures(project(':infrastructure:kzg'))
   referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
   referenceTestImplementation project(':infrastructure:time')
   referenceTestImplementation project(':data:dataexchange')
@@ -24,8 +25,8 @@ dependencies {
   referenceTestImplementation 'org.hyperledger.besu:plugin-api'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'io.tmio:tuweni-bytes'
-  referenceTestImplementation 'io.tmio:tuweni-ssz'
+  referenceTestImplementation 'io.consensys.tuweni:tuweni-bytes'
+  referenceTestImplementation 'io.consensys.tuweni:tuweni-ssz'
   referenceTestImplementation 'org.xerial.snappy:snappy-java'
 }
 

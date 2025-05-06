@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -185,8 +185,8 @@ public class SszNodeTemplate {
 
   private static <T> T binaryTraverse(
       final long gIndex, final TreeNode node, final BinaryVisitor<T> visitor) {
-    if (node instanceof LeafNode) {
-      return visitor.visitLeaf(gIndex, (LeafNode) node);
+    if (node instanceof final LeafNode leafnode) {
+      return visitor.visitLeaf(gIndex, leafnode);
     } else if (node instanceof BranchNode branchNode) {
       return visitor.visitBranch(
           gIndex,

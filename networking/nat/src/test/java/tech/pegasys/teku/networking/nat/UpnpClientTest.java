@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.jupnp.UpnpService;
@@ -76,7 +75,7 @@ public class UpnpClientTest {
             new RemoteDeviceIdentity(
                 UDN.valueOf(NatManager.SERVICE_TYPE_WAN_IP_CONNECTION),
                 3600,
-                new URL("http://127.63.31.15/"),
+                URI.create("http://127.63.31.15/").toURL(),
                 null,
                 InetAddress.getByName("127.63.31.15")),
             new UDADeviceType("WANConnectionDevice"),

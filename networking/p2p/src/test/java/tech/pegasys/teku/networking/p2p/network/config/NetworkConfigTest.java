@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -83,7 +83,7 @@ class NetworkConfigTest {
             .privateKeyFile("file.txt")
             .build();
     final Optional<PrivateKeySource> source = config.getPrivateKeySource();
-    final PrivateKeySource expected = new FilePrivateKeySource("file.txt");
+    final PrivateKeySource expected = new GeneratingFilePrivateKeySource("file.txt");
 
     assertThat(source).isPresent();
     assertThat(source).contains(expected);

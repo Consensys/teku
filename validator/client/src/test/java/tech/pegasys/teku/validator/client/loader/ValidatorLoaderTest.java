@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,6 +26,7 @@ import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -89,7 +90,7 @@ class ValidatorLoaderTest {
 
   static {
     try {
-      SIGNER_URL = new URL("http://localhost:9000");
+      SIGNER_URL = URI.create("http://localhost:9000").toURL();
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }

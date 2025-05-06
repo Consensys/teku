@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -133,6 +133,25 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
                 HEADER_CONSENSUS_VERSION, badConsensusHeaderValue));
   }
 
+  @Test
+  void shouldPostAttestationsIfLowerCaseConsensusHeaderValueIsPassed() throws IOException {
+    final List<Attestation> attestations = getAttestationList(2);
+
+    when(validatorApiChannel.sendSignedAttestations(attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
+
+    final String postData = serializeAttestations(attestations);
+
+    final Response response =
+        post(
+            PostAttestationsV2.ROUTE,
+            postData,
+            requestBuilder -> requestBuilder.header("eth-consensus-version", specMilestone.name()));
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.body().string()).isEmpty();
+  }
+
   protected List<Attestation> getAttestationList(final int listSize) {
     final List<Attestation> attestations = new ArrayList<>(listSize);
     for (int i = 0; i < listSize; i++) {
@@ -142,22 +161,24 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
   }
 
   @SuppressWarnings("unchecked")
-  protected Response postAttestations(final List<?> attestations, final String milestone)
-      throws IOException {
+  protected String serializeAttestations(final List<?> attestations) throws IOException {
     final SerializableTypeDefinition<List<Attestation>> attestationsListTypeDef =
         SerializableTypeDefinition.listOf(
             spec.getGenesisSchemaDefinitions()
                 .getAttestationSchema()
                 .castTypeToAttestationSchema()
                 .getJsonTypeDefinition());
+    return JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef);
+  }
+
+  private Response postAttestations(final List<?> attestations, final String milestone)
+      throws IOException {
     if (milestone == null) {
-      return post(
-          PostAttestationsV2.ROUTE,
-          JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef));
+      return post(PostAttestationsV2.ROUTE, serializeAttestations(attestations));
     }
     return post(
         PostAttestationsV2.ROUTE,
-        JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef),
+        serializeAttestations(attestations),
         Collections.emptyMap(),
         Optional.of(milestone));
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -144,7 +144,7 @@ class MultipeerCommonAncestorFinderTest {
   }
 
   @Test
-  void shouldUseLatestFinalizedSlotWhenOneSourceFailsToFindCommonAncestor() {
+  void shouldFailWhenOneSourceFailsToFindCommonAncestor() {
     final TargetChain chain =
         chainWith(
             new SlotAndBlockRoot(UInt64.valueOf(10_000), dataStructureUtil.randomBytes32()),
@@ -167,7 +167,7 @@ class MultipeerCommonAncestorFinderTest {
 
     source1CommonAncestor.completeExceptionally(new RuntimeException("Doh!"));
     source2CommonAncestor.complete(UInt64.valueOf(1485));
-    assertThat(result).isCompletedWithValue(finalizedSlot);
+    assertThat(result).isCompletedExceptionally();
   }
 
   private SafeFuture<UInt64> findCommonAncestor(final TargetChain chain) {

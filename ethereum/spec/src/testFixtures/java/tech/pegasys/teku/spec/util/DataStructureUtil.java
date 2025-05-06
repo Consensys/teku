@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -1924,7 +1924,7 @@ public final class DataStructureUtil {
       case BELLATRIX -> stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
-      case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
+      case ELECTRA, FULU -> stateBuilderElectra(validatorCount, numItemsInSszLists);
     };
   }
 
@@ -2136,6 +2136,12 @@ public final class DataStructureUtil {
     return getCapellaSchemaDefinitions(randomSlot())
         .getWithdrawalSchema()
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
+  }
+
+  public Withdrawal randomWithdrawal(final UInt64 validatorIndex, final UInt64 amount) {
+    return getCapellaSchemaDefinitions(randomSlot())
+        .getWithdrawalSchema()
+        .create(randomUInt64(), validatorIndex, randomBytes20(), amount);
   }
 
   public DepositRequest randomDepositRequestWithValidSignature(final UInt64 index) {
@@ -2635,7 +2641,7 @@ public final class DataStructureUtil {
   public PendingConsolidation randomPendingConsolidation() {
     return getElectraSchemaDefinitions(randomSlot())
         .getPendingConsolidationSchema()
-        .create(SszUInt64.of(randomUInt64()), SszUInt64.of(randomUInt64()));
+        .create(SszUInt64.of(randomValidatorIndex()), SszUInt64.of(randomValidatorIndex()));
   }
 
   public PendingPartialWithdrawal randomPendingPartialWithdrawal() {

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,6 +39,7 @@ public class MetricsConfig {
   public static final int DEFAULT_IDLE_TIMEOUT_SECONDS = 60;
   public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
   public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = true;
+  public static final boolean DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED = false;
   public static final boolean DEFAULT_TICK_PERFORMANCE_ENABLED = false;
 
   public static final boolean DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED = true;
@@ -58,6 +59,7 @@ public class MetricsConfig {
   private final int publicationInterval;
   private final int idleTimeoutSeconds;
   private final boolean blockPerformanceEnabled;
+  private final boolean blockProductionPerformanceEnabled;
   private final boolean tickPerformanceEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private final boolean blockProductionAndPublishingPerformanceEnabled;
@@ -76,6 +78,7 @@ public class MetricsConfig {
       final int publicationInterval,
       final int idleTimeoutSeconds,
       final boolean blockPerformanceEnabled,
+      final boolean blockProductionPerformanceEnabled,
       final boolean tickPerformanceEnabled,
       final boolean blobSidecarsStorageCountersEnabled,
       final boolean blockProductionAndPublishingPerformanceEnabled,
@@ -92,6 +95,7 @@ public class MetricsConfig {
     this.publicationInterval = publicationInterval;
     this.idleTimeoutSeconds = idleTimeoutSeconds;
     this.blockPerformanceEnabled = blockPerformanceEnabled;
+    this.blockProductionPerformanceEnabled = blockProductionPerformanceEnabled;
     this.tickPerformanceEnabled = tickPerformanceEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
     this.blockProductionAndPublishingPerformanceEnabled =
@@ -146,6 +150,10 @@ public class MetricsConfig {
     return blockPerformanceEnabled;
   }
 
+  public boolean isBlockProductionPerformanceEnabled() {
+    return blockProductionPerformanceEnabled;
+  }
+
   public boolean isBlockProductionAndPublishingPerformanceEnabled() {
     return blockProductionAndPublishingPerformanceEnabled;
   }
@@ -185,6 +193,8 @@ public class MetricsConfig {
     private int metricsPublishInterval = DEFAULT_METRICS_PUBLICATION_INTERVAL;
     private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
     private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
+    private boolean blockProductionPerformanceEnabled =
+        DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
     private boolean blockProductionAndPublishingPerformanceEnabled =
         DEFAULT_BLOCK_PRODUCTION_AND_PUBLISHING_PERFORMANCE_ENABLED;
     private int blockProductionPerformanceWarningLocalThreshold =
@@ -258,6 +268,12 @@ public class MetricsConfig {
       return this;
     }
 
+    public MetricsConfigBuilder blockProductionPerformanceEnabled(
+        final boolean blockProductionPerformanceEnabled) {
+      this.blockProductionPerformanceEnabled = blockProductionPerformanceEnabled;
+      return this;
+    }
+
     public MetricsConfigBuilder blockProductionAndPublishingPerformanceEnabled(
         final boolean blockProductionAndPublishingPerformanceEnabled) {
       this.blockProductionAndPublishingPerformanceEnabled =
@@ -315,6 +331,7 @@ public class MetricsConfig {
           metricsPublishInterval,
           idleTimeoutSeconds,
           blockPerformanceEnabled,
+          blockProductionPerformanceEnabled,
           tickPerformanceEnabled,
           blobSidecarsStorageCountersEnabled,
           blockProductionAndPublishingPerformanceEnabled,

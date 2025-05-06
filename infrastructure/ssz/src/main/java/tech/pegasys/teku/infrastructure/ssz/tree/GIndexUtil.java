@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,20 +39,14 @@ public class GIndexUtil {
 
     /** <code>gIdxCompare(idx1, idx2) == gIdxCompare(idx2, idx1).inverse()</code> */
     public NodeRelation inverse() {
-      switch (this) {
-        case LEFT:
-          return RIGHT;
-        case RIGHT:
-          return LEFT;
-        case PREDECESSOR:
-          return SUCCESSOR;
-        case SUCCESSOR:
-          return PREDECESSOR;
-        case SAME:
-          return SAME;
-        default:
-          throw new IllegalArgumentException("Unknown: " + this);
-      }
+      return switch (this) {
+        case LEFT -> RIGHT;
+        case RIGHT -> LEFT;
+        case PREDECESSOR -> SUCCESSOR;
+        case SUCCESSOR -> PREDECESSOR;
+        case SAME -> SAME;
+        default -> throw new IllegalArgumentException("Unknown: " + this);
+      };
     }
   }
 

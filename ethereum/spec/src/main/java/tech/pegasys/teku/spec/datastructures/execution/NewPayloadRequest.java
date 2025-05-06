@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -77,14 +77,15 @@ public class NewPayloadRequest {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof NewPayloadRequest)) {
+    if (o instanceof final NewPayloadRequest that) {
+
+      return Objects.equals(executionPayload, that.executionPayload)
+          && Objects.equals(versionedHashes, that.versionedHashes)
+          && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
+          && Objects.equals(executionRequests, that.executionRequests);
+    } else {
       return false;
     }
-    final NewPayloadRequest that = (NewPayloadRequest) o;
-    return Objects.equals(executionPayload, that.executionPayload)
-        && Objects.equals(versionedHashes, that.versionedHashes)
-        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot)
-        && Objects.equals(executionRequests, that.executionRequests);
   }
 
   @Override

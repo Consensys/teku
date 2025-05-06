@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -124,9 +124,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final KZG kzg;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       // trusted setup loading will be handled by the BeaconChainController
-      kzg = KZG.getInstance();
+      kzg = KZG.getInstance(false);
     } else {
-      kzg = KZG.NOOP;
+      kzg = KZG.DISABLED;
     }
     this.blobsUtil = new BlobsUtil(spec, kzg);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -84,13 +84,13 @@ public class CheckpointState {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof CheckpointState)) {
+    if (o instanceof final CheckpointState that) {
+      return Objects.equals(checkpoint, that.checkpoint)
+          && Objects.equals(block, that.block)
+          && Objects.equals(state, that.state);
+    } else {
       return false;
     }
-    final CheckpointState that = (CheckpointState) o;
-    return Objects.equals(checkpoint, that.checkpoint)
-        && Objects.equals(block, that.block)
-        && Objects.equals(state, that.state);
   }
 
   @Override

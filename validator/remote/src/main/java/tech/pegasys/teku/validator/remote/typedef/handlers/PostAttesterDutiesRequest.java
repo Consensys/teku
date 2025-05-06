@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,7 +39,7 @@ public class PostAttesterDutiesRequest extends AbstractTypeDefRequest {
         GET_ATTESTATION_DUTIES,
         Map.of(RestApiConstants.EPOCH, epoch.toString()),
         validatorIndices.stream().toList(),
-        DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1),
+        DeserializableTypeDefinition.listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()),
         new ResponseHandler<>(ATTESTER_DUTIES_RESPONSE_TYPE));
   }
 }

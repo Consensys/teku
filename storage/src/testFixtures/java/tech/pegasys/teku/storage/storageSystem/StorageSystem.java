@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
@@ -97,7 +98,8 @@ public class StorageSystem implements AutoCloseable {
 
     // Create and start storage server
     final ChainStorage chainStorageServer =
-        ChainStorage.create(database, spec, storageMode, stateRebuildTimeoutSeconds);
+        ChainStorage.create(
+            database, spec, storageMode, stateRebuildTimeoutSeconds, BlobSidecarsArchiver.NOOP);
 
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =

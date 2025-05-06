@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
@@ -25,15 +26,16 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 public interface RestClient {
   Map<String, String> NO_HEADERS = Collections.emptyMap();
 
-  SafeFuture<Response<Void>> getAsync(String apiPath);
+  SafeFuture<Response<Void>> getAsync(String apiPath, Duration timeout);
 
   <TResp extends SszData> SafeFuture<Response<BuilderApiResponse<TResp>>> getAsync(
       String apiPath,
       Map<String, String> headers,
-      ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema);
+      ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema,
+      Duration timeout);
 
   <TReq extends SszData> SafeFuture<Response<Void>> postAsync(
-      String apiPath, TReq requestBodyObject, boolean postAsSsz);
+      String apiPath, TReq requestBodyObject, boolean postAsSsz, Duration timeout);
 
   <TResp extends SszData, TReq extends SszData>
       SafeFuture<Response<BuilderApiResponse<TResp>>> postAsync(
@@ -41,7 +43,8 @@ public interface RestClient {
           Map<String, String> headers,
           TReq requestBodyObject,
           boolean postAsSsz,
-          ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema);
+          ResponseSchemaAndDeserializableTypeDefinition<TResp> responseSchema,
+          Duration timeout);
 
   record ResponseSchemaAndDeserializableTypeDefinition<TResp extends SszData>(
       SszSchema<TResp> responseSchema,

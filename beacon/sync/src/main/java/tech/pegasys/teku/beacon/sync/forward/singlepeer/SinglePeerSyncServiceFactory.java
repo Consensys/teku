@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
+import java.util.OptionalInt;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -34,6 +35,7 @@ public class SinglePeerSyncServiceFactory {
       final BlobSidecarManager blobSidecarManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int batchSize,
+      final OptionalInt maxDistanceFromHeadReached,
       final Spec spec) {
     final SyncManager syncManager =
         SyncManager.create(
@@ -45,6 +47,7 @@ public class SinglePeerSyncServiceFactory {
             blockBlobSidecarsTrackersPool,
             metricsSystem,
             batchSize,
+            maxDistanceFromHeadReached,
             spec);
     return new SinglePeerSyncService(syncManager, recentChainData);
   }

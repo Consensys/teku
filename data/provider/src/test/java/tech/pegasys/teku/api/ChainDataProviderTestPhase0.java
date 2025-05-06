@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -47,8 +47,8 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
-import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.provider.GenesisData;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

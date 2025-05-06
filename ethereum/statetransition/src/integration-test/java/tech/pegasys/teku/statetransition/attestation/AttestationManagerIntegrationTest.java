@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -88,7 +88,8 @@ class AttestationManagerIntegrationTest {
           storageSystem.getMetricsSystem());
 
   private final PendingPool<ValidatableAttestation> pendingAttestations =
-      new PoolFactory(storageSystem.getMetricsSystem()).createPendingPoolForAttestations(spec);
+      new PoolFactory(storageSystem.getMetricsSystem())
+          .createPendingPoolForAttestations(spec, 10000);
   private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
           ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -146,11 +146,12 @@ class BitvectorImpl {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BitvectorImpl)) {
+    if (o instanceof final BitvectorImpl bitvector) {
+
+      return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
+    } else {
       return false;
     }
-    BitvectorImpl bitvector = (BitvectorImpl) o;
-    return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
   }
 
   @Override

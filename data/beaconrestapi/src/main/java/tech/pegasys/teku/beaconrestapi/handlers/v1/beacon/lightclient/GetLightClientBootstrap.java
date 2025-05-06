@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,7 +26,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -86,7 +85,7 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
                         bootstrapAndMetadata -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(bootstrapAndMetadata.getMilestone()).name());
+                              bootstrapAndMetadata.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(bootstrapAndMetadata);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));

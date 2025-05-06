@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,9 +27,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,7 +54,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
       throw new RuntimeException(
           "Optional request body configured, use getOptionalRequestBody() instead");
     }
-    return metadata.getRequestBody(context.bodyInputStream(), context.headerMap());
+    return metadata.getRequestBody(context.bodyInputStream(), headerMap);
   }
 
   @Override
@@ -65,7 +67,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
         return Optional.empty();
       } else {
         pushbackInputStream.unread(firstByte);
-        return Optional.of(metadata.getRequestBody(pushbackInputStream, context.headerMap()));
+        return Optional.of(metadata.getRequestBody(pushbackInputStream, headerMap));
       }
     } catch (final JsonProcessingException e) {
       throw e;
@@ -83,7 +85,10 @@ public class JavalinRestApiRequest implements RestApiRequest {
     this.context.minSizeForCompression(0);
     this.pathParamMap = context.pathParamMap();
     this.queryParamMap = context.queryParamMap();
-    this.headerMap = context.headerMap();
+    // https://datatracker.ietf.org/doc/html/rfc7230#section-3.2
+    final Map<String, String> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    headerMap.putAll(context.headerMap());
+    this.headerMap = Collections.unmodifiableMap(headerMap);
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -67,10 +66,12 @@ public class GetBlobSidecars extends RestApiEndpoint {
         .operationId("getBlobSidecars")
         .summary("Get blob sidecars")
         .description(
-            "Retrieves blob sidecars for a given block id.\n"
-                + "    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\n"
-                + "    If the `indices` parameter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees\n"
-                + "    for the returned blob sidecars in terms of ordering.")
+            """
+                Retrieves blob sidecars for a given block id.
+                    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.
+                    If the `indices` parameter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees
+                    for the returned blob sidecars in terms of ordering.
+                """)
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
         .queryListParam(BLOB_INDICES_PARAMETER)
@@ -98,7 +99,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
                         blobSidecarsAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(blobSidecarsAndMetaData.getMilestone()).name());
+                              blobSidecarsAndMetaData.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(blobSidecarsAndMetaData);
                         })
                     .orElse(AsyncApiResponse.respondNotFound())));

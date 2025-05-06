@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -97,9 +97,10 @@ class BlstSecretKey implements SecretKey {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SecretKey)) {
+    if (o instanceof final SecretKey secretKey) {
+      return Objects.equals(toBytes(), secretKey.toBytes());
+    } else {
       return false;
     }
-    return Objects.equals(toBytes(), ((SecretKey) o).toBytes());
   }
 }

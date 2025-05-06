@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,7 +48,8 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getValidatorExternalSignerPublicKeySources())
         .containsExactly(
             "0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009");
-    assertThat(config.getValidatorExternalSignerUrl()).isEqualTo(new URL("https://signer.url/"));
+    assertThat(config.getValidatorExternalSignerUrl())
+        .isEqualTo(URI.create("https://signer.url/").toURL());
     assertThat(config.getValidatorExternalSignerTimeout()).isEqualTo(Duration.ofMillis(1234));
     assertThat(config.getGraffitiProvider().get()).isEqualTo(Optional.of(graffiti));
   }

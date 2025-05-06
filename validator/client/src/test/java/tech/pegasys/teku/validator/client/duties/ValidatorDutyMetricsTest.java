@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -61,22 +62,43 @@ class ValidatorDutyMetricsTest {
 
   @Test
   public void shouldRecordDutyTimeWhenDutySucceeds() {
-    when(duty.performDuty()).thenReturn(SafeFuture.completedFuture(DutyResult.NO_OP));
+    final SafeFuture<DutyResult> dutyFuture = new SafeFuture<>();
+    when(duty.performDuty()).thenReturn(dutyFuture);
 
-    assertThatSafeFuture(validatorDutyMetrics.performDutyWithMetrics(duty)).isCompleted();
+    final SafeFuture<DutyResult> dutyResultSafeFuture =
+        validatorDutyMetrics.performDutyWithMetrics(duty);
 
     verify(operationTimer).startTimer();
+    verify(timingContext, never()).stopTimer();
+
+    assertThatSafeFuture(dutyResultSafeFuture).isNotDone();
+
+    dutyFuture.complete(DutyResult.NO_OP);
+
+    assertThatSafeFuture(dutyResultSafeFuture).isCompleted();
+
     verify(timingContext).stopTimer();
+    verify(timingContext, never()).close();
   }
 
   @Test
   public void shouldRecordDutyTimeEvenWhenDutyFails() {
-    when(duty.performDuty()).thenReturn(SafeFuture.failedFuture(new RuntimeException("Error")));
+    final SafeFuture<DutyResult> dutyFuture = new SafeFuture<>();
+    when(duty.performDuty()).thenReturn(dutyFuture);
 
-    assertThatSafeFuture(validatorDutyMetrics.performDutyWithMetrics(duty))
-        .isCompletedExceptionallyWith(RuntimeException.class);
+    final SafeFuture<DutyResult> dutyResultSafeFuture =
+        validatorDutyMetrics.performDutyWithMetrics(duty);
 
     verify(operationTimer).startTimer();
+    verify(timingContext, never()).stopTimer();
+
+    assertThatSafeFuture(dutyResultSafeFuture).isNotDone();
+
+    dutyFuture.completeExceptionally(new RuntimeException("Error"));
+
+    assertThatSafeFuture(dutyResultSafeFuture).isCompletedExceptionallyWith(RuntimeException.class);
+
     verify(timingContext).stopTimer();
+    verify(timingContext, never()).close();
   }
 }

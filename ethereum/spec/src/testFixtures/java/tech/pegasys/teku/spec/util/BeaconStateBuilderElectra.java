@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -133,6 +133,33 @@ public class BeaconStateBuilderElectra
     return this;
   }
 
+  public BeaconStateBuilderElectra pendingDeposits(final List<PendingDeposit> pendingDeposits) {
+    checkNotNull(pendingDeposits);
+    this.pendingDeposits =
+        getBeaconStateSchema().getPendingDepositsSchema().createFromElements(pendingDeposits);
+    return this;
+  }
+
+  public BeaconStateBuilderElectra pendingPartialWithdrawals(
+      final List<PendingPartialWithdrawal> pendingPartialWithdrawals) {
+    checkNotNull(pendingPartialWithdrawals);
+    this.pendingPartialWithdrawals =
+        getBeaconStateSchema()
+            .getPendingPartialWithdrawalsSchema()
+            .createFromElements(pendingPartialWithdrawals);
+    return this;
+  }
+
+  public BeaconStateBuilderElectra pendingConsolidations(
+      final List<PendingConsolidation> pendingConsolidations) {
+    checkNotNull(pendingConsolidations);
+    this.pendingConsolidations =
+        getBeaconStateSchema()
+            .getPendingConsolidationsSchema()
+            .createFromElements(pendingConsolidations);
+    return this;
+  }
+
   private BeaconStateSchemaElectra getBeaconStateSchema() {
     return (BeaconStateSchemaElectra) spec.getSchemaDefinitions().getBeaconStateSchema();
   }
@@ -173,6 +200,18 @@ public class BeaconStateBuilderElectra
     this.exitBalanceToConsume = UInt64.ZERO;
     this.earliestExitEpoch = UInt64.ZERO;
     this.consolidationBalanceToConsume = UInt64.ZERO;
+    this.pendingDeposits =
+        schema
+            .getPendingDepositsSchema()
+            .createFromElements(List.of(dataStructureUtil.randomPendingDeposit()));
+    this.pendingPartialWithdrawals =
+        schema
+            .getPendingPartialWithdrawalsSchema()
+            .createFromElements(List.of(dataStructureUtil.randomPendingPartialWithdrawal()));
+    this.pendingConsolidations =
+        schema
+            .getPendingConsolidationsSchema()
+            .createFromElements(List.of(dataStructureUtil.randomPendingConsolidation()));
     this.earliestConsolidationEpoch = UInt64.ZERO;
     this.pendingDeposits = schema.getPendingDepositsSchema().createFromElements(List.of());
     this.pendingPartialWithdrawals =

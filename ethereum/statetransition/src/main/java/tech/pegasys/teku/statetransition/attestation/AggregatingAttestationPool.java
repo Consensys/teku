@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -67,23 +68,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   /**
    * Default maximum number of attestations to store in the pool.
    *
-   * <p>With 1.2 million active validators, we'd expect around 37_500 attestations per slot; so 3
-   * slots worth of attestations is almost 120_000.
-   *
-   * <p>128 attestations perfectly packed at a 1.2 million validator set would be 1_200_000 / 32 /
-   * 64 bits, about 584 bits per aggregate. 128 of those is 74752 attestations if perfectly packed.
-   * Technically if we did have to cache 2 full slots of information, that would be roughly 150k
-   * cache size.
-   *
-   * <p>Because the real world exists, it's fair to expect that it's not all perfect, and 120k
-   * should be an adequately large cache to store current attestations plus some old ones that may
-   * not have been included so that we have plenty to choose if block building based on an expected
-   * 1.2 million validators.
+   * <p>With 2 million active validators, we'd expect around 62_500 attestations per slot; so 3
+   * slots worth of attestations is almost 187_500.
    *
    * <p>Strictly to cache all attestations for a full 2 epochs is significantly larger than this
    * cache.
    */
-  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 120_000;
+  public static final int DEFAULT_MAXIMUM_ATTESTATION_COUNT = 187_500;
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
@@ -150,7 +141,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     // if an attestation has committee bits, committees size should have been computed. If this is
     // not the case, we should ignore this attestation and not add it to the pool
     if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
-      LOG.warn(
+      LOG.debug(
           "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
           attestationData.getSlot(),
           attestationData.getBeaconBlockRoot(),
@@ -167,14 +158,56 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return Optional.of(attestationGroup);
   }
 
-  // We only have the committees size already available via attestations received in the gossip
-  // flow and have been successfully validated, so querying the state is required for other cases
   private Optional<Int2IntMap> getCommitteesSizeUsingTheState(
       final AttestationData attestationData) {
-    return recentChainData
-        .getStore()
-        .getBlockStateIfAvailable(attestationData.getTarget().getRoot())
-        .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
+    // we can use the first state of the epoch to get committees for an attestation
+    final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
+    final Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();
+    // the only reason this can happen is we don't have a store yet.
+    if (maybeEpoch.isEmpty()) {
+      return Optional.empty();
+    }
+    final UInt64 currentEpoch = maybeEpoch.get();
+    final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
+
+    LOG.debug("currentEpoch {}, attestationEpoch {}", currentEpoch, attestationEpoch);
+    if (attestationEpoch.equals(currentEpoch)
+        || attestationEpoch.equals(currentEpoch.minusMinZero(1))) {
+
+      return recentChainData
+          .getBestState()
+          .flatMap(
+              state -> {
+                try {
+                  return Optional.of(
+                      spec.getBeaconCommitteesSize(
+                          state.getImmediately(), attestationData.getSlot()));
+                } catch (IllegalStateException e) {
+                  LOG.debug(
+                      "Couldn't retrieve state for committee calculation of slot {}",
+                      attestationData.getSlot());
+                  return Optional.empty();
+                }
+              });
+    }
+
+    // attestation is not from the current or previous epoch
+    // this is really an edge case because the current or previous epoch is at least 31 slots
+    // and the attestation is only valid for 64 slots, so it may be epoch-2 but not beyond.
+    final UInt64 attestationEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(attestationEpoch);
+    LOG.debug("State at slot {} needed", attestationEpochStartSlot);
+    try {
+      return recentChainData
+          .retrieveStateInEffectAtSlot(attestationEpochStartSlot)
+          .getImmediately()
+          .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
+    } catch (final IllegalStateException e) {
+      LOG.debug(
+          "Couldn't retrieve state in effect at slot {} for committee calculation of slot {}",
+          attestationEpochStartSlot,
+          attestationData.getSlot());
+      return Optional.empty();
+    }
   }
 
   @Override

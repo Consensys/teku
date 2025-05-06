@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

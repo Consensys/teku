@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -66,7 +66,7 @@ import java.util.Locale;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.EventType;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;

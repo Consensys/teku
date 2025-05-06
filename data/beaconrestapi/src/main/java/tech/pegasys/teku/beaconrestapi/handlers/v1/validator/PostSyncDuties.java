@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -58,7 +58,8 @@ public class PostSyncDuties extends RestApiEndpoint {
             .description("Requests the beacon node to provide a set of sync committee duties")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .pathParam(EPOCH_PARAMETER)
-            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
+            .requestBodyType(
+                DeserializableTypeDefinition.listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()))
             .response(SC_OK, "Request successful", SYNC_COMMITTEE_DUTIES_TYPE)
             .withServiceUnavailableResponse()
             .response(

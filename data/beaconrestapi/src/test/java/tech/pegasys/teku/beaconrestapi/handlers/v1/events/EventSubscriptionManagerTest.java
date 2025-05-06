@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,7 +33,6 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.Data;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributes;
@@ -50,6 +49,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -104,8 +104,7 @@ public class EventSubscriptionManagerTest {
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch, false);
 
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
-  private final SignedBeaconBlock sampleBlock =
-      SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
+  private final SignedBeaconBlock sampleBlock = data.randomSignedBeaconBlock(0);
   private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
   private final Attestation sampleAttestation = data.randomAttestation(0);
   private final SingleAttestation singleAttestation = data.randomSingleAttestation();
@@ -257,7 +256,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerBlockEvent();
-    checkEvent("block", new BlockEvent(sampleBlock.asInternalSignedBeaconBlock(spec), false));
+    checkEvent("block", new BlockEvent(sampleBlock, false));
   }
 
   @Test
@@ -266,7 +265,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerBlockGossipEvent();
-    checkEvent("block_gossip", new BlockGossipEvent(sampleBlock.asInternalSignedBeaconBlock(spec)));
+    checkEvent("block_gossip", new BlockGossipEvent(sampleBlock));
   }
 
   @Test
@@ -465,12 +464,12 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerBlockEvent() {
-    manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec), false);
+    manager.onNewBlock(sampleBlock, false);
     asyncRunner.executeQueuedActions();
   }
 
   private void triggerBlockGossipEvent() {
-    manager.onNewBlockGossip(sampleBlock.asInternalSignedBeaconBlock(spec));
+    manager.onNewBlockGossip(sampleBlock);
     asyncRunner.executeQueuedActions();
   }
 

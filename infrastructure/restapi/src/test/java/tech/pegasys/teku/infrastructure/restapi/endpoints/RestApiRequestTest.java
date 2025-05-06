@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -285,6 +285,14 @@ public class RestApiRequestTest {
     assertThat(request.getRequestHeader(INT_PARAM)).isEqualTo(1234);
     assertThat(request.getOptionalRequestHeader(BOOL_PARAM)).isEqualTo(Optional.of(true));
     assertThat(request.getRequestHeader(STR_PARAM)).isEqualTo("helloWorld");
+  }
+
+  @Test
+  void shouldRetrieveCaseInsensitiveHeader() {
+    final ParameterMetadata<String> abcParam = new ParameterMetadata<>("ABC", STRING_TYPE);
+    when(context.headerMap()).thenReturn(Map.of("abc", "helloWorld"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(abcParam)).isEqualTo("helloWorld");
   }
 
   @Test

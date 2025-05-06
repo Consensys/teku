@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -67,6 +67,10 @@ public class ProductionResult<T> {
 
   public static <T> ProductionResult<T> noop(final BLSPublicKey validatorPublicKey) {
     return new ProductionResult<>(Set.of(validatorPublicKey), DutyResult.NO_OP);
+  }
+
+  public static <T> ProductionResult<T> noop(final Set<BLSPublicKey> validatorPublicKeys) {
+    return new ProductionResult<>(validatorPublicKeys, DutyResult.NO_OP);
   }
 
   public static <T> SafeFuture<DutyResult> send(

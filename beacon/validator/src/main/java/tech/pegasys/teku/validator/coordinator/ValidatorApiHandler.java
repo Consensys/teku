@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,7 +45,6 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -292,7 +292,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+  public SafeFuture<Optional<Map<BLSPublicKey, StateValidatorData>>> getValidatorStatuses(
       final Collection<BLSPublicKey> validatorIdentifiers) {
     return isSyncActive()
         ? SafeFuture.completedFuture(Optional.empty())
@@ -307,9 +307,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                         list ->
                             list.getData().stream()
                                 .collect(
-                                    toMap(
-                                        StateValidatorData::getPublicKey,
-                                        StateValidatorData::getStatus))));
+                                    toMap(StateValidatorData::getPublicKey, Function.identity()))));
   }
 
   /**
@@ -423,21 +421,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   + " but current slot is "
                   + currentSlot));
     }
-
-    try (final OperationTimer.TimingContext context =
+    // we are in an async context, don't follow the AutoClose pattern
+    final OperationTimer.TimingContext context =
         startTimer(
             dutyMetrics.getValidatorDutyMetric(),
             ATTESTATION_PRODUCTION.getName(),
-            CREATE.getName())) {
+            CREATE.getName());
 
-      final UInt64 epoch = spec.computeEpochAtSlot(slot);
-      final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
 
-      return forkChoiceTrigger
-          .prepareForAttestationProduction(slot)
-          .thenCompose(
-              __ -> {
-                final SafeFuture<Optional<AttestationData>> future =
+    final SafeFuture<Optional<AttestationData>> result =
+        forkChoiceTrigger
+            .prepareForAttestationProduction(slot)
+            .thenCompose(
+                __ ->
                     combinedChainDataClient
                         .getSignedBlockAndStateInEffectAtSlot(slot)
                         .thenCompose(
@@ -472,11 +470,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                                         block, blockAndState.getState(), slot, committeeIndex);
                                 return SafeFuture.completedFuture(Optional.of(attestationData));
                               }
-                            });
-                future.always(context::stopTimer);
-                return future;
-              });
-    }
+                            }));
+    result.always(context::stopTimer);
+    return result;
   }
 
   private AttestationData createAttestationData(
@@ -597,6 +593,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 // the converted attestation.
                 // The conversion happens during processing and is saved in the validatable
                 // attestation.
+                // The attestation might not have been converted if it's ignored and will hence be
+                // rejected by the performance tracker.
                 final Attestation convertedAttestation = validatableAttestation.getAttestation();
                 dutyMetrics.onAttestationPublished(convertedAttestation.getData().getSlot());
                 performanceTracker.saveProducedAttestation(convertedAttestation);
@@ -804,15 +802,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 return SafeFuture.completedFuture(Optional.of(bestState));
               }
 
-              final UInt64 lastQueryableEpoch =
+              final UInt64 maxQueryableEpoch =
                   syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(
                       combinedChainDataClient.getCurrentEpoch());
-              if (lastQueryableEpoch.isLessThan(epoch)) {
+              if (maxQueryableEpoch.isLessThan(epoch)) {
+                final Optional<UInt64> networkCurrentSlot =
+                    chainDataProvider.getNetworkCurrentSlot();
                 return SafeFuture.failedFuture(
                     new IllegalArgumentException(
-                        "Cannot calculate sync committee duties for epoch "
-                            + epoch
-                            + " because it is not within the current or next sync committee periods"));
+                        String.format(
+                            "Cannot calculate sync committee duties for epoch %s because it is not within the current or next sync committee periods (node current epoch %s, computed current slot %s)",
+                            epoch, combinedChainDataClient.getCurrentEpoch(), networkCurrentSlot)));
               }
 
               final UInt64 requiredEpoch;

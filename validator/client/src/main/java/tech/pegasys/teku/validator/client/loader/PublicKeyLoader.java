@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -97,9 +97,9 @@ public class PublicKeyLoader {
 
   private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
     try {
-      final String[] keys = objectMapper.readValue(new URL(url), String[].class);
+      final String[] keys = objectMapper.readValue(URI.create(url).toURL(), String[].class);
       return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
-    } catch (IOException ex) {
+    } catch (IllegalArgumentException | IOException ex) {
       throw new InvalidConfigurationException("Failed to load public keys from URL " + url, ex);
     }
   }

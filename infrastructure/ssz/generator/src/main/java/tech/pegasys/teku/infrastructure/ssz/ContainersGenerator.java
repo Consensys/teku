@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -133,10 +133,13 @@ public class ContainersGenerator {
                 IntStream.range(0, fieldsCount)
                     .mapToObj(
                         i ->
-                            ("  @SuppressWarnings(\"unchecked\")\n"
-                                    + "  public SszSchema<V$> getFieldSchema$() {\n"
-                                    + "    return (SszSchema<V$>) getChildSchema($);\n"
-                                    + "  }\n")
+                            """
+                                  @SuppressWarnings("unchecked")
+                                  public SszSchema<V$> getFieldSchema$() {
+                                    return (SszSchema<V$>) getChildSchema($);
+                                  }
+
+                                """
                                 .replace("$", "" + i))
                     .collect(Collectors.joining("\n\n"))));
     generateFromTemplate(

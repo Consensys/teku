@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,5 +29,10 @@ public class KzgTests {
           .put("kzg/verify_blob_kzg_proof_batch", new KzgVerifyBlobProofBatchTestExecutor())
           // no KZG interface on CL side, EL responsibility
           .put("kzg/verify_kzg_proof", TestExecutor.IGNORE_TESTS)
+          // DataColumnSidecar PeerDAS Fulu utils
+          .put("kzg/compute_cells", new KzgComputeCellsTestExecutor())
+          .put("kzg/compute_cells_and_kzg_proofs", new KzgComputeCellsAndKzgProofsTestExecutor())
+          .put("kzg/recover_cells_and_kzg_proofs", new KzgRecoverCellsAndKzgProofsTestExecutor())
+          .put("kzg/verify_cell_kzg_proof_batch", new KzgVerifyCellKzgProofBatchTestExecutor())
           .build();
 }

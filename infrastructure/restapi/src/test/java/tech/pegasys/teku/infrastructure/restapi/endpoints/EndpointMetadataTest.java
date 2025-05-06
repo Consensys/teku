@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -284,7 +284,7 @@ class EndpointMetadataTest {
   @SuppressWarnings({"unchecked", "rawtypes"})
   void getRequestBody_shouldAcceptLists() throws Exception {
     final DeserializableListTypeDefinition<String> type =
-        new DeserializableListTypeDefinition(STRING_TYPE, Optional.empty());
+        new DeserializableListTypeDefinition(STRING_TYPE, Optional.empty(), Optional.empty());
     final EndpointMetadata metadata =
         validBuilder().requestBodyType(type).response(SC_OK, "Success", STRING_TYPE).build();
     final List<String> requestBody =

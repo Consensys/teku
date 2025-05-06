@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,7 +27,6 @@ public enum TekuMetricCategory implements MetricCategory {
   STORAGE("storage"),
   STORAGE_HOT_DB("storage_hot"),
   STORAGE_FINALIZED_DB("storage_finalized"),
-  REMOTE_VALIDATOR("remote_validator"),
   VALIDATOR("validator"),
   VALIDATOR_PERFORMANCE("validator_performance"),
   VALIDATOR_DUTY("validator_duty");
@@ -59,8 +58,8 @@ public enum TekuMetricCategory implements MetricCategory {
         STORAGE,
         STORAGE_HOT_DB,
         STORAGE_FINALIZED_DB,
-        REMOTE_VALIDATOR,
         VALIDATOR,
-        VALIDATOR_PERFORMANCE);
+        VALIDATOR_PERFORMANCE,
+        VALIDATOR_DUTY);
   }
 }

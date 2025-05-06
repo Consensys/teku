@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefi
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -111,7 +112,7 @@ public class ValidatorTypes {
           .parser(
               url -> {
                 try {
-                  return new URL(url);
+                  return URI.create(url).toURL();
                 } catch (MalformedURLException e) {
                   throw new IllegalArgumentException(e);
                 }

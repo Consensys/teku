@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.unsigned;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.math.BigInteger;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /** An unsigned 64-bit integer. All instances are immutable. */
@@ -166,36 +165,6 @@ public final class UInt64 implements Comparable<UInt64> {
    */
   public UInt64 minus(final UInt64 other) {
     return minus(value, other.value);
-  }
-
-  /**
-   * Return the result of subtracting the specified value from this one. If the operation would
-   * cause an underflow, an empty result is returned.
-   *
-   * @param other the value to subtract.
-   * @return a new UInt64 equal to this value minus the specified value.
-   */
-  public Optional<UInt64> safeMinus(final long other) {
-    checkPositive(other);
-    if (Long.compareUnsigned(value, other) < 0) {
-      return Optional.empty();
-    }
-
-    return Optional.of(fromLongBits(value - other));
-  }
-
-  /**
-   * Return the result of subtracting the specified value from this one. If the operation would
-   * cause an underflow, an empty result is returned.
-   *
-   * @param other the value to subtract.
-   * @return a new UInt64 equal to this value minus the specified value.
-   */
-  public Optional<UInt64> safeMinus(final UInt64 other) {
-    if (isLessThan(other)) {
-      return Optional.empty();
-    }
-    return Optional.of(fromLongBits(value - other.value));
   }
 
   private UInt64 minus(final long longBits1, final long longBits2) {

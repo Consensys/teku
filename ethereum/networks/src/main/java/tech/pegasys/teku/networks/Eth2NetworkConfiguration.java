@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.EPHEMERY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.HOLESKY;
+import static tech.pegasys.teku.spec.networks.Eth2Network.HOODI;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LUKSO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
@@ -56,6 +57,12 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
+  // should fit attestations for a slot given validator set size
+  // so DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS * slots_per_epoch should be >= validator set size
+  // ideally
+  // on all subnets, you may receive and have to cache that number of messages
+  public static final int DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS = 70_000;
+
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
   public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
@@ -63,6 +70,8 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
+
+  public static final boolean DEFAULT_RUST_KZG_ENABLED = false;
 
   // at least 5, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
@@ -106,6 +115,8 @@ public class Eth2NetworkConfiguration {
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
+  private final int pendingAttestationsMaxQueue;
+  private final boolean rustKzgEnabled;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -132,7 +143,9 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
-      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
+      final int pendingAttestationsMaxQueue,
+      final boolean rustKzgEnabled) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -162,6 +175,8 @@ public class Eth2NetworkConfiguration {
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
+    this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
+    this.rustKzgEnabled = rustKzgEnabled;
 
     LOG.debug(
         "P2P async queue - {} threads, max queue size {} ", asyncP2pMaxThreads, asyncP2pMaxQueue);
@@ -275,8 +290,16 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public int getPendingAttestationsMaxQueue() {
+    return pendingAttestationsMaxQueue;
+  }
+
   public boolean isForkChoiceUpdatedAlwaysSendPayloadAttributes() {
     return forkChoiceUpdatedAlwaysSendPayloadAttributes;
+  }
+
+  public boolean isRustKzgEnabled() {
+    return rustKzgEnabled;
   }
 
   @Override
@@ -302,6 +325,7 @@ public class Eth2NetworkConfiguration {
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
         && forkChoiceUpdatedAlwaysSendPayloadAttributes
             == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
+        && rustKzgEnabled == that.rustKzgEnabled
         && Objects.equals(spec, that.spec)
         && Objects.equals(constants, that.constants)
         && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
@@ -348,7 +372,8 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
-        forkChoiceUpdatedAlwaysSendPayloadAttributes);
+        forkChoiceUpdatedAlwaysSendPayloadAttributes,
+        rustKzgEnabled);
   }
 
   public static class Builder {
@@ -375,6 +400,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
     private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<UInt64> electraForkEpoch = Optional.empty();
+    private Optional<UInt64> fuluForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -384,6 +410,8 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
+    private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
+    private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -437,6 +465,8 @@ public class Eth2NetworkConfiguration {
                   builder.electraBuilder(
                       electraBuilder ->
                           electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
+                  builder.fuluBuilder(
+                      fuluBuilder -> fuluForkEpoch.ifPresent(fuluBuilder::fuluForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
@@ -479,7 +509,9 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
-          forkChoiceUpdatedAlwaysSendPayloadAttributes);
+          forkChoiceUpdatedAlwaysSendPayloadAttributes,
+          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
+          rustKzgEnabled);
     }
 
     private void validateCommandLineParameters() {
@@ -505,6 +537,9 @@ public class Eth2NetworkConfiguration {
       checkArgument(
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) >= 2000,
           "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 10000)");
+      checkArgument(
+          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS) >= 10000,
+          "Pending attestations queue size must be at least 10000 (Xnetwork-pending-attestations-max-queue - default 70000)");
     }
 
     public Builder constants(final String constants) {
@@ -680,6 +715,11 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder fuluForkEpoch(final UInt64 fuluForkEpoch) {
+      this.fuluForkEpoch = Optional.of(fuluForkEpoch);
+      return this;
+    }
+
     public Builder safeSlotsToImportOptimistically(final int safeSlotsToImportOptimistically) {
       if (safeSlotsToImportOptimistically < 0) {
         throw new InvalidConfigurationException(
@@ -710,6 +750,11 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
+      this.rustKzgEnabled = rustKzgEnabled;
+      return this;
+    }
+
     public Builder applyNetworkDefaults(final String networkName) {
       Eth2Network.fromStringLenient(networkName)
           .ifPresentOrElse(
@@ -731,6 +776,7 @@ public class Eth2NetworkConfiguration {
         case LUKSO -> applyLuksoNetworkDefaults();
         case HOLESKY -> applyHoleskyNetworkDefaults();
         case EPHEMERY -> applyEphemeryNetworkDefaults();
+        case HOODI -> applyHoodiNetworkDefaults();
         case GNOSIS -> applyGnosisNetworkDefaults();
         case CHIADO -> applyChiadoNetworkDefaults();
         case SWIFT -> applySwiftNetworkDefaults();
@@ -786,8 +832,8 @@ public class Eth2NetworkConfiguration {
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(
               // PegaSys Teku
-              "enr:-KG4QNTx85fjxABbSq_Rta9wy56nQ1fHK0PewJbGjLm1M4bMGx5-3Qq4ZX2-iFJ0pys_O90sVXNNOxp2E7afBsGsBrgDhGV0aDKQu6TalgMAAAD__________4JpZIJ2NIJpcIQEnfA2iXNlY3AyNTZrMaECGXWQ-rQ2KZKRH1aOW4IlPDBkY4XDphxg9pxKytFCkayDdGNwgiMog3VkcIIjKA",
-              "enr:-KG4QF4B5WrlFcRhUU6dZETwY5ZzAXnA0vGC__L1Kdw602nDZwXSTs5RFXFIFUnbQJmhNGVU6OIX7KVrCSTODsz1tK4DhGV0aDKQu6TalgMAAAD__________4JpZIJ2NIJpcIQExNYEiXNlY3AyNTZrMaECQmM9vp7KhaXhI-nqL_R0ovULLCFSFTa9CPPSdb1zPX6DdGNwgiMog3VkcIIjKA",
+              "enr:-Iu4QLm7bZGdAt9NSeJG0cEnJohWcQTQaI9wFLu3Q7eHIDfrI4cwtzvEW3F3VbG9XdFXlrHyFGeXPn9snTCQJ9bnMRABgmlkgnY0gmlwhAOTJQCJc2VjcDI1NmsxoQIZdZD6tDYpkpEfVo5bgiU8MGRjhcOmHGD2nErK0UKRrIN0Y3CCIyiDdWRwgiMo",
+              "enr:-Iu4QEDJ4Wa_UQNbK8Ay1hFEkXvd8psolVK6OhfTL9irqz3nbXxxWyKwEplPfkju4zduVQj6mMhUCm9R2Lc4YM5jPcIBgmlkgnY0gmlwhANrfESJc2VjcDI1NmsxoQJCYz2-nsqFpeEj6eov9HSi9QssIVIVNr0I89J1vXM9foN0Y3CCIyiDdWRwgiMo",
               // Prysmatic Labs
               "enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg",
               "enr:-Ku4QP2xDnEtUXIjzJ_DhlCRN9SN99RYQPJL92TMlSv7U5C1YnYLjwOQHgZIUXw6c-BvRg2Yc2QsZxxoS_pPRVe0yK8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMeFF5GrS7UZpAH2Ly84aLK-TyvH-dRo0JM1i8yygH50YN1ZHCCJxA",
@@ -830,7 +876,7 @@ public class Eth2NetworkConfiguration {
               "enr:-Ku4QH6tYsHKITYeHUu5kdfXgEZWI18EWk_2RtGOn1jBPlx2UlS_uF3Pm5Dx7tnjOvla_zs-wwlPgjnEOcQDWXey51QCh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCo_ujukAAAaf__________gmlkgnY0gmlwhIs7Mc6Jc2VjcDI1NmsxoQIET4Mlv9YzhrYhX_H9D7aWMemUrvki6W4J2Qo0YmFMp4N1ZHCCIy0",
               "enr:-Ku4QDmz-4c1InchGitsgNk4qzorWMiFUoaPJT4G0IiF8r2UaevrekND1o7fdoftNucirj7sFFTTn2-JdC2Ej0p1Mn8Ch2F0dG5ldHOIAAAAAAAAAACEZXRoMpCo_ujukAAAaf__________gmlkgnY0gmlwhKpA-liJc2VjcDI1NmsxoQMpHP5U1DK8O_JQU6FadmWbE42qEdcGlllR8HcSkkfWq4N1ZHCCIy0",
               // Teku bootnode
-              "enr:-KO4QP7MmB3juk8rUjJHcUoxZDU9Np4FlW0HyDEGIjSO7GD9PbSsabu7713cWSUWKDkxIypIXg1A-6lG7ySRGOMZHeGCAmuEZXRoMpDTH2GRkAAAc___________gmlkgnY0gmlwhBSoyGOJc2VjcDI1NmsxoQNta5b_bexSSwwrGW2Re24MjfMntzFd0f2SAxQtMj3ueYN0Y3CCIyiDdWRwgiMo",
+              "enr:-Iu4QKvMF7Ne_RSQoZGvavTuZ1QA5_Pgeb0nq_hrjhU8s0UDV3KhcMXJkGwOWhsDGZL3ISjL0CTP-hfoTjZtEtCEwR4BgmlkgnY0gmlwhAOAaySJc2VjcDI1NmsxoQNta5b_bexSSwwrGW2Re24MjfMntzFd0f2SAxQtMj3ueYN0Y3CCIyiDdWRwgiMo",
               // Another bootnode
               "enr:-L64QC9Hhov4DhQ7mRukTOz4_jHm4DHlGL726NWH4ojH1wFgEwSin_6H95Gs6nW2fktTWbPachHJ6rUFu0iJNgA0SB2CARqHYXR0bmV0c4j__________4RldGgykDb6UBOQAABx__________-CaWSCdjSCaXCEA-2vzolzZWNwMjU2azGhA17lsUg60R776rauYMdrAz383UUgESoaHEzMkvm4K6k6iHN5bmNuZXRzD4N0Y3CCIyiDdWRwgiMo",
               // Lodestart bootnode
@@ -952,6 +998,29 @@ public class Eth2NetworkConfiguration {
               "enr:-MS4QPNnPV4zZJkeytVQTm8fg3Mrtyq7l3oVy9ht4229w5OUOftE2EsXAfgxEopHavIPTzdWGchD-rXDh_eS6fdF_dsBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDKcygcUAAQG___________gmlkgnY0gmlwhKfrAbmEcXVpY4IjUYlzZWNwMjU2azGhAwnM8CLwGlnZFe7XhDoC4PSYZMvWypChdu0NX9vmCGjKiHN5bmNuZXRzAIN0Y3CCI1CDdWRwgiNQ");
     }
 
+    private Builder applyHoodiNetworkDefaults() {
+      return applyTestnetDefaults()
+          .constants(HOODI.configName())
+          .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
+          .eth1DepositContractDeployBlock(0)
+          .defaultInitialStateFromUrl(
+              "https://checkpoint-sync.hoodi.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
+          .customGenesisState(
+              "https://github.com/eth-clients/hoodi/raw/617ea32823e22ff78f66f8534abbb91cecd76962/metadata/genesis.ssz")
+          .discoveryBootnodes(
+              // EF bootnodes
+              "enr:-Mq4QLkmuSwbGBUph1r7iHopzRpdqE-gcm5LNZfcE-6T37OCZbRHi22bXZkaqnZ6XdIyEDTelnkmMEQB8w6NbnJUt9GGAZWaowaYh2F0dG5ldHOIABgAAAAAAACEZXRoMpDS8Zl_YAAJEAAIAAAAAAAAgmlkgnY0gmlwhNEmfKCEcXVpY4IyyIlzZWNwMjU2azGhA0hGa4jZJZYQAS-z6ZFK-m4GCFnWS8wfjO0bpSQn6hyEiHN5bmNuZXRzAIN0Y3CCIyiDdWRwgiMo",
+              "enr:-Ku4QLVumWTwyOUVS4ajqq8ZuZz2ik6t3Gtq0Ozxqecj0qNZWpMnudcvTs-4jrlwYRQMQwBS8Pvtmu4ZPP2Lx3i2t7YBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBd9cEGEAAJEP__________gmlkgnY0gmlwhNEmfKCJc2VjcDI1NmsxoQLdRlI8aCa_ELwTJhVN8k7km7IDc3pYu-FMYBs5_FiigIN1ZHCCIyk",
+              "enr:-LK4QAYuLujoiaqCAs0-qNWj9oFws1B4iy-Hff1bRB7wpQCYSS-IIMxLWCn7sWloTJzC1SiH8Y7lMQ5I36ynGV1ASj4Eh2F0dG5ldHOIYAAAAAAAAACEZXRoMpDS8Zl_YAAJEAAIAAAAAAAAgmlkgnY0gmlwhIbRilSJc2VjcDI1NmsxoQOmI5MlAu3f5WEThAYOqoygpS2wYn0XS5NV2aYq7T0a04N0Y3CCIyiDdWRwgiMo",
+              "enr:-Ku4QIC89sMC0o-irosD4_23lJJ4qCGOvdUz7SmoShWx0k6AaxCFTKviEHa-sa7-EzsiXpDp0qP0xzX6nKdXJX3X-IQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBd9cEGEAAJEP__________gmlkgnY0gmlwhIbRilSJc2VjcDI1NmsxoQK_m0f1DzDc9Cjrspm36zuRa7072HSiMGYWLsKiVSbP34N1ZHCCIyk",
+              "enr:-Ku4QNkWjw5tNzo8DtWqKm7CnDdIq_y7xppD6c1EZSwjB8rMOkSFA1wJPLoKrq5UvA7wcxIotH6Usx3PAugEN2JMncIBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBd9cEGEAAJEP__________gmlkgnY0gmlwhIbHuBeJc2VjcDI1NmsxoQP3FwrhFYB60djwRjAoOjttq6du94DtkQuaN99wvgqaIYN1ZHCCIyk",
+              "enr:-OS4QMJGE13xEROqvKN1xnnt7U-noc51VXyM6wFMuL9LMhQDfo1p1dF_zFdS4OsnXz_vIYk-nQWnqJMWRDKvkSK6_CwDh2F0dG5ldHOIAAAAADAAAACGY2xpZW502IpMaWdodGhvdXNljDcuMC4wLWJldGEuM4RldGgykNLxmX9gAAkQAAgAAAAAAACCaWSCdjSCaXCEhse4F4RxdWljgiMqiXNlY3AyNTZrMaECef77P8k5l3PC_raLw42OAzdXfxeQ-58BJriNaqiRGJSIc3luY25ldHMAg3RjcIIjKIN1ZHCCIyg",
+              // Teku bootnodes
+              "enr:-LK4QDwhXMitMbC8xRiNL-XGMhRyMSOnxej-zGifjv9Nm5G8EF285phTU-CAsMHRRefZimNI7eNpAluijMQP7NDC8kEMh2F0dG5ldHOIAAAAAAAABgCEZXRoMpDS8Zl_YAAJEAAIAAAAAAAAgmlkgnY0gmlwhAOIT_SJc2VjcDI1NmsxoQMoHWNL4MAvh6YpQeM2SUjhUrLIPsAVPB8nyxbmckC6KIN0Y3CCIyiDdWRwgiMo",
+              "enr:-LK4QPYl2HnMPQ7b1es6Nf_tFYkyya5bj9IqAKOEj2cmoqVkN8ANbJJJK40MX4kciL7pZszPHw6vLNyeC-O3HUrLQv8Mh2F0dG5ldHOIAAAAAAAAAMCEZXRoMpDS8Zl_YAAJEAAIAAAAAAAAgmlkgnY0gmlwhAMYRG-Jc2VjcDI1NmsxoQPQ35tjr6q1qUqwAnegQmYQyfqxC_6437CObkZneI9n34N0Y3CCIyiDdWRwgiMo");
+    }
+
     private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {
       if (epochsStoreBlobs == null || epochsStoreBlobs.isBlank()) {
         return Optional.empty();
@@ -982,6 +1051,11 @@ public class Eth2NetworkConfiguration {
         final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
       this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
           forkChoiceUpdatedAlwaysSendPayloadAttributes;
+      return this;
+    }
+
+    public Builder pendingAttestationsMaxQueue(final int pendingAttestationsMaxQueue) {
+      this.pendingAttestationsMaxQueue = OptionalInt.of(pendingAttestationsMaxQueue);
       return this;
     }
   }

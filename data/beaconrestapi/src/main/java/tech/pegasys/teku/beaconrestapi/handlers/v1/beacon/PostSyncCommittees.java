@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -52,10 +52,15 @@ public class PostSyncCommittees extends RestApiEndpoint {
             .operationId("submitPoolSyncCommitteeSignatures")
             .summary("Submit sync committee signatures to node")
             .description(
-                "Submits sync committee message objects to the node.\n\n"
-                    + "Sync committee messages are not present in phase0, but are required for Altair networks.\n\n"
-                    + "If a sync committee message is validated successfully the node MUST publish that sync committee message on all applicable subnets.\n\n"
-                    + "If one or more sync committee messages fail validation the node MUST return a 400 error with details of which sync committee messages have failed, and why.")
+                """
+                      Submits sync committee message objects to the node.
+
+                      Sync committee messages are not present in phase0, but are required for Altair networks.
+
+                      If a sync committee message is validated successfully the node MUST publish that sync committee message on all applicable subnets.
+
+                      If one or more sync committee messages fail validation the node MUST return a 400 error with details of which sync committee messages have failed, and why.
+                      """)
             .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
                 DeserializableTypeDefinition.listOf(

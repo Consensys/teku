@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.networks.Eth2Presets;
 public class SpecConfigLoader {
   private static final Logger LOG = LogManager.getLogger();
   private static final List<String> AVAILABLE_PRESETS =
-      List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra");
+      List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu");
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
@@ -60,17 +60,17 @@ public class SpecConfigLoader {
   }
 
   public static SpecConfigAndParent<? extends SpecConfig> loadRemoteConfig(
-      final Map<String, String> config) {
+      final Map<String, Object> config) {
     final SpecConfigReader reader = new SpecConfigReader();
     if (config.containsKey(SpecConfigReader.PRESET_KEY)) {
       try {
-        applyPreset("remote", reader, true, config.get(SpecConfigReader.PRESET_KEY));
+        applyPreset("remote", reader, true, (String) config.get(SpecConfigReader.PRESET_KEY));
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
     }
     if (config.containsKey(SpecConfigReader.CONFIG_NAME_KEY)) {
-      final String configNameKey = config.get(SpecConfigReader.CONFIG_NAME_KEY);
+      final String configNameKey = (String) config.get(SpecConfigReader.CONFIG_NAME_KEY);
       try {
         processConfig(configNameKey, reader, true);
       } catch (IllegalArgumentException exception) {
@@ -87,9 +87,9 @@ public class SpecConfigLoader {
   static void processConfig(
       final String source, final SpecConfigReader reader, final boolean ignoreUnknownConfigItems) {
     try (final InputStream configFile = loadConfigurationFile(source)) {
-      final Map<String, String> configValues = reader.readValues(configFile);
+      final Map<String, Object> configValues = reader.readValues(configFile);
       final Optional<String> maybePreset =
-          Optional.ofNullable(configValues.get(SpecConfigReader.PRESET_KEY));
+          Optional.ofNullable((String) configValues.get(SpecConfigReader.PRESET_KEY));
 
       // Legacy config files won't have a preset field
       if (maybePreset.isPresent()) {

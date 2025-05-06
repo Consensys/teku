@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.tuweni.bytes.Bytes32;
@@ -412,6 +413,42 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
+  }
+
+  @Test
+  public void onGossipedBlock_onKnownInternalErrorsShouldNotMarkAsInvalid() {
+    final RecentChainData localRecentChainData = mock(RecentChainData.class);
+    blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
+
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    incrementSlot();
+
+    doAnswer(invocation -> SafeFuture.failedFuture(new RejectedExecutionException("full")))
+        .when(asyncRunner)
+        .runAsync((ExceptionThrowingFutureSupplier<?>) any());
+
+    assertThatBlockImport(nextBlock).isCompletedWithValueMatching(result -> !result.isSuccessful());
+    assertThat(invalidBlockRoots).isEmpty();
+  }
+
+  @Test
+  public void onGossipedBlock_onInternalErrorsShouldMarkAsInvalid() {
+    final RecentChainData localRecentChainData = mock(RecentChainData.class);
+    blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
+
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    incrementSlot();
+
+    doAnswer(invocation -> SafeFuture.failedFuture(new RuntimeException("unknown")))
+        .when(asyncRunner)
+        .runAsync((ExceptionThrowingFutureSupplier<?>) any());
+
+    assertThatBlockImport(nextBlock).isCompletedWithValueMatching(result -> !result.isSuccessful());
+    assertThat(invalidBlockRoots).containsOnlyKeys(nextBlock.getRoot());
   }
 
   @Test

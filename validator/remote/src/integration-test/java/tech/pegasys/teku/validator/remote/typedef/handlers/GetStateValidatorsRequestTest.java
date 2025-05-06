@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,7 +36,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecContext;

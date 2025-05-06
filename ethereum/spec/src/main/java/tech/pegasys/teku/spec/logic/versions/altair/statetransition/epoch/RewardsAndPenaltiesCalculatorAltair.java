@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -192,30 +192,26 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
 
   private boolean validatorHasPrevEpochParticipationFlag(
       final ValidatorStatus validator, final int flagIndex) {
-    switch (flagIndex) {
-      case TIMELY_HEAD_FLAG_INDEX:
-        return validator.isPreviousEpochHeadAttester();
-      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
-        return validator.isPreviousEpochTargetAttester();
-      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
-        return validator.isPreviousEpochSourceAttester();
-      default:
-        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
-    }
+    return switch (flagIndex) {
+      case TIMELY_HEAD_FLAG_INDEX -> validator.isPreviousEpochHeadAttester();
+      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX -> validator.isPreviousEpochTargetAttester();
+      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX -> validator.isPreviousEpochSourceAttester();
+      default ->
+          throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    };
   }
 
   private UInt64 getPrevEpochTotalParticipatingBalance(final int flagIndex) {
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
-    switch (flagIndex) {
-      case TIMELY_HEAD_FLAG_INDEX:
-        return totalBalances.getPreviousEpochHeadAttesters();
-      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
-        return totalBalances.getPreviousEpochTargetAttesters();
-      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
-        return totalBalances.getPreviousEpochSourceAttesters();
-      default:
-        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
-    }
+    return switch (flagIndex) {
+      case TIMELY_HEAD_FLAG_INDEX -> totalBalances.getPreviousEpochHeadAttesters();
+      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX ->
+          totalBalances.getPreviousEpochTargetAttesters();
+      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX ->
+          totalBalances.getPreviousEpochSourceAttesters();
+      default ->
+          throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    };
   }
 
   private boolean isUnslashedPrevEpochParticipatingIndex(

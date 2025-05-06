@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,18 +29,20 @@ public class AttestationDutyFactory
   private final Spec spec;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
-
   private final ValidatorDutyMetrics validatorDutyMetrics;
+  private final boolean isDvtEnabled;
 
   public AttestationDutyFactory(
       final Spec spec,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
-      final ValidatorDutyMetrics validatorDutyMetrics) {
+      final ValidatorDutyMetrics validatorDutyMetrics,
+      final boolean isDvtEnabled) {
     this.spec = spec;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.validatorDutyMetrics = validatorDutyMetrics;
+    this.isDvtEnabled = isDvtEnabled;
   }
 
   @Override
@@ -61,6 +63,7 @@ public class AttestationDutyFactory
         spec,
         slot,
         validatorApiChannel,
+        isDvtEnabled ? new UngroupedAggregators() : new AggregatorsGroupedByCommittee(),
         forkProvider,
         VALIDATOR_LOGGER,
         new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs),

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator.performance;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -433,7 +432,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void saveProducedAttestation(final Attestation attestation) {
-    checkState(!attestation.isSingleAttestation(), "Single attestation is not supported");
+    if (attestation.isSingleAttestation()) {
+      LOG.warn("Single attestation is not supported");
+      return;
+    }
     final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
     final Set<Attestation> attestationsInEpoch =
         producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());

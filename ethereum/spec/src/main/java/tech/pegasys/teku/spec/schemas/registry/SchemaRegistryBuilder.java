@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
@@ -40,7 +41,12 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
@@ -49,6 +55,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQU
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
@@ -74,10 +82,15 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
@@ -112,6 +125,11 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
@@ -156,6 +174,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createBeaconBlockSchemaProvider())
         .addProvider(createSignedBeaconBlockSchemaProvider())
         .addProvider(createBeaconStateSchemaProvider())
+        .addProvider(createMetadataMessageSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -191,7 +210,15 @@ public class SchemaRegistryBuilder {
         .addProvider(createWithdrawalRequestSchemaProvider())
         .addProvider(createConsolidationRequestSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider())
-        .addProvider(createSingleAttestationSchemaProvider());
+        .addProvider(createSingleAttestationSchemaProvider())
+
+        // FULU
+        .addProvider(createCellSchemaProvider())
+        .addProvider(createDataColumnSchemaProvider())
+        .addProvider(createDataColumnSidecarSchemaProvider())
+        .addProvider(createMatrixEntrySchemaProvider())
+        .addProvider(createDataColumnSidecarsByRootRequestMessageSchemaProvider())
+        .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -661,6 +688,81 @@ public class SchemaRegistryBuilder {
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 new SignedAggregateAndProofSchema(schemaName, registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createCellSchemaProvider() {
+    return providerBuilder(CELL_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                new CellSchema(SpecConfigFulu.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createDataColumnSchemaProvider() {
+    return providerBuilder(DATA_COLUMN_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                new DataColumnSchema(SpecConfigDeneb.required(specConfig), registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createDataColumnSidecarSchemaProvider() {
+    return providerBuilder(DATA_COLUMN_SIDECAR_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                DataColumnSidecarSchema.create(
+                    SignedBeaconBlockHeader.SSZ_SCHEMA,
+                    registry.get(DATA_COLUMN_SCHEMA),
+                    SpecConfigFulu.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createMatrixEntrySchemaProvider() {
+    return providerBuilder(MATRIX_ENTRY_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                MatrixEntrySchema.create(registry.get(CELL_SCHEMA)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createDataColumnSidecarsByRootRequestMessageSchemaProvider() {
+    return providerBuilder(DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                new DataColumnSidecarsByRootRequestMessageSchema(
+                    SpecConfigFulu.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createDataColumnSidecarsByRangeRequestMessageSchemaProvider() {
+    return providerBuilder(DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                new DataColumnSidecarsByRangeRequestMessage
+                    .DataColumnSidecarsByRangeRequestMessageSchema(
+                    SpecConfigFulu.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createMetadataMessageSchemaProvider() {
+    return providerBuilder(METADATA_MESSAGE_SCHEMA)
+        .withCreator(
+            PHASE0,
+            (registry, specConfig, schemaName) ->
+                new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig()))
+        .withCreator(
+            ALTAIR,
+            (registry, specConfig, schemaName) ->
+                new MetadataMessageSchemaAltair(specConfig.getNetworkingConfig()))
+        .withCreator(
+            FULU, (registry, specConfig, schemaName) -> new MetadataMessageSchemaFulu(specConfig))
         .build();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,7 +39,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.DENEB);
+        .isEqualTo(SpecMilestone.ELECTRA);
   }
 
   @Test
@@ -206,6 +206,16 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(Optional.of(genesisState));
   }
 
+  @Test
+  void shouldFailIfBothCheckpointSyncUrlAndInitialStateSet() {
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--checkpoint-sync-url", "http://foo:9000", "--initial-state", "genesis.ssz"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Both --initial-state and --checkpoint-sync-url are provided");
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"http://foo:9000", "http://foo:9000/"})
   public void checkpointSyncUrlOptionShouldSetInitialAndGenesisStateOptions(
@@ -226,5 +236,17 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(() -> getTekuConfigurationFromArguments("--network", "goerli"))
         .isInstanceOf(AssertionError.class) // thrown because we had an error
         .hasMessageContaining("Goerli support has been removed");
+  }
+
+  @Test
+  public void rustKzgFlagShouldBeDisabledByDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().isRustKzgEnabled()).isFalse();
+  }
+
+  @Test
+  public void rustKzgFlagCanBeUsedToToggleRustKzgOn() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--Xrust-kzg-enabled");
+    assertThat(config.eth2NetworkConfiguration().isRustKzgEnabled()).isTrue();
   }
 }

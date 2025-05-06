@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -65,6 +65,10 @@ public class V4HotKvStoreDao {
 
   public Optional<Checkpoint> getBestJustifiedCheckpoint() {
     return db.get(schema.getVariableBestJustifiedCheckpoint());
+  }
+
+  public Optional<Bytes32> getLatestCanonicalBlockRoot() {
+    return db.get(schema.getVariableLatestCanonicalBlockRoot());
   }
 
   public Optional<Checkpoint> getFinalizedCheckpoint() {
@@ -220,6 +224,11 @@ public class V4HotKvStoreDao {
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(schema.getVariableFinalizedCheckpoint(), checkpoint);
+    }
+
+    @Override
+    public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
+      transaction.put(schema.getVariableLatestCanonicalBlockRoot(), canonicalBlockRoot);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,12 +39,14 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
 
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
       final DeserializableTypeDefinition<TObject> itemType) {
-    return new DeserializableListTypeDefinition<>(itemType, Optional.empty());
+    return new DeserializableListTypeDefinition<>(itemType, Optional.empty(), Optional.empty());
   }
 
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
-      final DeserializableTypeDefinition<TObject> itemType, final int minItems) {
-    return new DeserializableListTypeDefinition<>(itemType, Optional.of(minItems));
+      final DeserializableTypeDefinition<TObject> itemType,
+      final Optional<Integer> minItems,
+      final Optional<Integer> maxItems) {
+    return new DeserializableListTypeDefinition<>(itemType, minItems, maxItems);
   }
 
   static DeserializableTypeDefinition<Map<String, String>> mapOfStrings() {

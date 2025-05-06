@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,9 +29,9 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
@@ -98,7 +98,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+  public SafeFuture<Optional<Map<BLSPublicKey, StateValidatorData>>> getValidatorStatuses(
       final Collection<BLSPublicKey> validatorIdentifiers) {
     return countOptionalDataRequest(
         delegate.getValidatorStatuses(validatorIdentifiers),
@@ -198,12 +198,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    try (final OperationTimer.TimingContext context =
-        startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName())) {
-      SafeFuture<List<SubmitDataError>> request = delegate.sendSignedAttestations(attestations);
-      request.always(context::stopTimer);
-      return countSendRequest(request, BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
-    }
+    // we are in an async context, don't follow the AutoClose pattern
+    final OperationTimer.TimingContext context =
+        startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName());
+    final SafeFuture<List<SubmitDataError>> request =
+        delegate.sendSignedAttestations(attestations).alwaysRun(context::stopTimer);
+    return countSendRequest(request, BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
   }
 
   @Override

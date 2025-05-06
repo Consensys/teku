@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedCheckpointState;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
@@ -43,7 +42,8 @@ public class GetFinalizedCheckpointStateIntegrationTest
     final Response response =
         getResponse(GetFinalizedCheckpointState.ROUTE, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.bellatrix.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.BELLATRIX.lowerCaseName());
     final Bytes actualResponse = Bytes.wrap(response.body().bytes());
     assertThat(actualResponse)
         .isEqualTo(combinedChainDataClient.getBestState().get().get().sszSerialize());

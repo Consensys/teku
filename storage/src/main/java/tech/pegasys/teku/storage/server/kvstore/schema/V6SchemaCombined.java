@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -81,6 +81,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
       KvStoreVariable.create(9, CHECKPOINT_SERIALIZER);
   private static final KvStoreVariable<DepositTreeSnapshot> FINALIZED_DEPOSIT_SNAPSHOT =
       KvStoreVariable.create(10, DEPOSIT_SNAPSHOT_SERIALIZER);
+  private static final KvStoreVariable<Bytes32> LATEST_CANONICAL_BLOCK_ROOT =
+      KvStoreVariable.create(11, BYTES32_SERIALIZER);
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
   private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
@@ -195,6 +197,11 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
+  public KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot() {
+    return LATEST_CANONICAL_BLOCK_ROOT;
+  }
+
+  @Override
   public KvStoreVariable<UInt64> getVariableEarliestBlockSlot() {
     return earliestBlockSlot;
   }
@@ -235,6 +242,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
         .put("EARLIEST_BLOCK_SLOT_AVAILABLE", getVariableEarliestBlockSlot())
+        .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
         .build();
   }
 }

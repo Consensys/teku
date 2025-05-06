@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,7 +30,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.EventType;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;

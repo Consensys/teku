@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -58,6 +58,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionProvider;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionAndPublishingPerformanceFactory;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionMetrics;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -200,6 +201,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
+import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.ValidatorIndexCacheTracker;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -544,6 +546,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initRestAPI();
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
+    initStoredLatestCanonicalBlockUpdater();
   }
 
   private void initKeyValueStore() {
@@ -557,7 +560,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initKzg() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      kzg = KZG.getInstance();
+      kzg = KZG.getInstance(beaconConfig.eth2NetworkConfig().isRustKzgEnabled());
       final String trustedSetupFile =
           beaconConfig
               .eth2NetworkConfig()
@@ -568,7 +571,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                           "Trusted setup should be configured when Deneb is enabled"));
       kzg.loadTrustedSetup(trustedSetupFile);
     } else {
-      kzg = KZG.NOOP;
+      kzg = KZG.DISABLED;
     }
   }
 
@@ -958,6 +961,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }
 
+    final Optional<BlockProductionMetrics> blockProductionMetrics =
+        beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
+            ? Optional.of(BlockProductionMetrics.create(metricsSystem))
+            : Optional.empty();
+
     final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
         new BlockProductionAndPublishingPerformanceFactory(
             timeProvider,
@@ -966,7 +974,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningLocalThreshold(),
             beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningBuilderThreshold(),
             beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningLocalThreshold(),
-            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningBuilderThreshold());
+            beaconConfig.getMetricsConfig().getBlockPublishingPerformanceWarningBuilderThreshold(),
+            blockProductionMetrics);
 
     final DutyMetrics dutyMetrics =
         DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec);
@@ -1049,7 +1058,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initAttestationManager() {
-    pendingAttestations = poolFactory.createPendingPoolForAttestations(spec);
+    pendingAttestations =
+        poolFactory.createPendingPoolForAttestations(
+            spec, beaconConfig.eth2NetworkConfig().getPendingAttestationsMaxQueue());
     final FutureItems<ValidatableAttestation> futureAttestations =
         FutureItems.create(
             ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
@@ -1343,6 +1354,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
+  protected void initStoredLatestCanonicalBlockUpdater() {
+    LOG.debug("BeaconChainController.initStoredLatestCanonicalBlockUpdater()");
+    final StoredLatestCanonicalBlockUpdater storedLatestCanonicalBlockUpdater =
+        new StoredLatestCanonicalBlockUpdater(recentChainData, spec);
+
+    eventChannels.subscribe(SlotEventsChannel.class, storedLatestCanonicalBlockUpdater);
+  }
+
   protected void initValidatorIndexCacheTracker() {
     LOG.debug("BeaconChainController.initValidatorIndexCacheTracker()");
     final ValidatorIndexCacheTracker validatorIndexCacheTracker =
@@ -1378,7 +1397,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             executionLayer,
             recentChainData,
-            proposersDataManager);
+            proposersDataManager,
+            beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled());
   }
 
   private Optional<Eth1Address> getProposerDefaultFeeRecipient() {

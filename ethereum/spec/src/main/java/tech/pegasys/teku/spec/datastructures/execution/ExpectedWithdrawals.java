@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -130,11 +130,8 @@ public class ExpectedWithdrawals {
       final MiscHelpersElectra miscHelpers,
       final SpecConfigElectra specConfig,
       final PredicatesElectra predicates) {
-    final WithdrawalSummary expectedPendingPartialWithdrawals =
+    final WithdrawalSummary withdrawalSummary =
         getPendingPartialWithdrawals(preState, schemaDefinitions, miscHelpers, specConfig);
-    final List<Withdrawal> partialPendingWithdrawals =
-        expectedPendingPartialWithdrawals.withdrawalList();
-    final int partialWithdrawalsCount = expectedPendingPartialWithdrawals.partialWithdrawalCount();
     final List<Withdrawal> withdrawals =
         getExpectedWithdrawals(
             preState,
@@ -142,8 +139,9 @@ public class ExpectedWithdrawals {
             miscHelpers,
             specConfig,
             predicates,
-            partialPendingWithdrawals);
-    return new ExpectedWithdrawals(withdrawals, partialWithdrawalsCount, schemaDefinitions);
+            withdrawalSummary.withdrawalList());
+    return new ExpectedWithdrawals(
+        withdrawals, withdrawalSummary.partialWithdrawalCount(), schemaDefinitions);
   }
 
   public List<Withdrawal> getWithdrawalList() {
@@ -154,54 +152,71 @@ public class ExpectedWithdrawals {
     return partialWithdrawalCount;
   }
 
-  private static WithdrawalSummary getPendingPartialWithdrawals(
+  static WithdrawalSummary getPendingPartialWithdrawals(
       final BeaconStateElectra preState,
       final SchemaDefinitionsElectra schemaDefinitions,
       final MiscHelpersElectra miscHelpers,
       final SpecConfigElectra specConfig) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(preState.getSlot());
     final int maxPendingPartialWithdrawals = specConfig.getMaxPendingPartialsPerWithdrawalsSweep();
-    final List<Withdrawal> partialWithdrawals = new ArrayList<>();
-    final SszList<PendingPartialWithdrawal> pendingPartialWithdrawals =
-        preState.getPendingPartialWithdrawals();
+    final List<Withdrawal> withdrawals = new ArrayList<>();
     int processedPartialWithdrawalsCount = 0;
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
 
-    for (int i = 0; i < pendingPartialWithdrawals.size() && i < maxPendingPartialWithdrawals; i++) {
-      final PendingPartialWithdrawal pendingPartialWithdrawal = pendingPartialWithdrawals.get(i);
-      if (pendingPartialWithdrawal.getWithdrawableEpoch().isGreaterThan(epoch)) {
+    for (PendingPartialWithdrawal withdrawal : preState.getPendingPartialWithdrawals()) {
+      if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch)
+          || withdrawals.size() == maxPendingPartialWithdrawals) {
         break;
       }
-      final Validator validator =
-          preState.getValidators().get(pendingPartialWithdrawal.getValidatorIndex());
-      final boolean hasSufficientBalance =
+      final int validatorIndex = withdrawal.getValidatorIndex();
+      final Validator validator = preState.getValidators().get(validatorIndex);
+      final UInt64 partiallyWithdrawnBalance =
+          getPartiallyWithdrawnBalance(withdrawals, UInt64.valueOf(validatorIndex));
+      final UInt64 remainingBalance =
+          preState
+              .getBalances()
+              .get(withdrawal.getValidatorIndex())
+              .get()
+              .minusMinZero(partiallyWithdrawnBalance);
+      final boolean hasSufficientEffectiveBalance =
           validator
               .getEffectiveBalance()
               .isGreaterThanOrEqualTo(specConfig.getMinActivationBalance());
-      final UInt64 validatorBalance =
-          preState.getBalances().get(pendingPartialWithdrawal.getValidatorIndex()).get();
       final boolean hasExcessBalance =
-          validatorBalance.isGreaterThan(specConfig.getMinActivationBalance());
+          remainingBalance.isGreaterThan(specConfig.getMinActivationBalance());
+      LOG.trace(
+          "pending withdrawal validator index {}, remaining balance {}, requested amount {}; exitEpoch {}, hasSufficientEffectiveBalance {}, hasExcessBalance {}",
+          withdrawal.getValidatorIndex(),
+          remainingBalance,
+          withdrawal.getAmount(),
+          validator.getExitEpoch(),
+          hasSufficientEffectiveBalance,
+          hasExcessBalance);
+
       if (validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)
-          && hasSufficientBalance
+          && hasSufficientEffectiveBalance
           && hasExcessBalance) {
         final UInt64 withdrawableBalance =
-            pendingPartialWithdrawal
+            withdrawal
                 .getAmount()
-                .min(validatorBalance.minusMinZero(specConfig.getMinActivationBalance()));
-        partialWithdrawals.add(
+                .min(remainingBalance.minusMinZero(specConfig.getMinActivationBalance()));
+        withdrawals.add(
             schemaDefinitions
                 .getWithdrawalSchema()
                 .create(
                     withdrawalIndex,
-                    UInt64.valueOf(pendingPartialWithdrawal.getValidatorIndex()),
-                    new Bytes20(validator.getWithdrawalCredentials().slice(12)),
+                    UInt64.valueOf(withdrawal.getValidatorIndex()),
+                    getEthAddressFromWithdrawalCredentials(validator),
                     withdrawableBalance));
         withdrawalIndex = withdrawalIndex.increment();
       }
       processedPartialWithdrawalsCount++;
     }
-    return new WithdrawalSummary(partialWithdrawals, processedPartialWithdrawalsCount);
+    return new WithdrawalSummary(withdrawals, processedPartialWithdrawalsCount);
+  }
+
+  static Bytes20 getEthAddressFromWithdrawalCredentials(final Validator validator) {
+    return new Bytes20(validator.getWithdrawalCredentials().slice(12));
   }
 
   // get_expected_withdrawals
@@ -212,7 +227,6 @@ public class ExpectedWithdrawals {
       final SpecConfigCapella specConfigCapella,
       final Predicates predicates,
       final List<Withdrawal> partialWithdrawals) {
-    final List<Withdrawal> expectedWithdrawals = partialWithdrawals;
     final WithdrawalSchema withdrawalSchema = schemaDefinitionsCapella.getWithdrawalSchema();
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(preState.getSlot());
     final SszList<Validator> validators = preState.getValidators();
@@ -232,37 +246,31 @@ public class ExpectedWithdrawals {
     for (int i = 0; i < bound; i++) {
       final Validator validator = validators.get(validatorIndex);
       if (predicates.hasExecutionWithdrawalCredential(validator)) {
-        final UInt64 finalValidatorIndex = UInt64.valueOf(validatorIndex);
-        final UInt64 partiallyWithdrawalBalance =
-            partialWithdrawals.stream()
-                .filter(
-                    partialWithdrawal ->
-                        partialWithdrawal.getValidatorIndex().equals(finalValidatorIndex))
-                .map(Withdrawal::getAmount)
-                .reduce(UInt64.ZERO, UInt64::plus);
+        final UInt64 partiallyWithdrawnBalance =
+            getPartiallyWithdrawnBalance(partialWithdrawals, UInt64.valueOf(validatorIndex));
         final UInt64 balance =
-            balances.get(validatorIndex).get().minusMinZero(partiallyWithdrawalBalance);
+            balances.get(validatorIndex).get().minusMinZero(partiallyWithdrawnBalance);
 
         if (predicates.isFullyWithdrawableValidatorCredentialsChecked(validator, balance, epoch)) {
-          expectedWithdrawals.add(
+          partialWithdrawals.add(
               withdrawalSchema.create(
                   withdrawalIndex,
                   UInt64.valueOf(validatorIndex),
-                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
+                  getEthAddressFromWithdrawalCredentials(validator),
                   balance));
           withdrawalIndex = withdrawalIndex.increment();
         } else if (predicates.isPartiallyWithdrawableValidatorEth1CredentialsChecked(
             validator, balance)) {
-          expectedWithdrawals.add(
+          partialWithdrawals.add(
               withdrawalSchema.create(
                   withdrawalIndex,
                   UInt64.valueOf(validatorIndex),
-                  new Bytes20(validator.getWithdrawalCredentials().slice(12)),
+                  getEthAddressFromWithdrawalCredentials(validator),
                   balance.minusMinZero(miscHelpers.getMaxEffectiveBalance(validator))));
           withdrawalIndex = withdrawalIndex.increment();
         }
 
-        if (expectedWithdrawals.size() == maxWithdrawalsPerPayload) {
+        if (partialWithdrawals.size() == maxWithdrawalsPerPayload) {
           break;
         }
       }
@@ -270,7 +278,15 @@ public class ExpectedWithdrawals {
       validatorIndex = (validatorIndex + 1) % validatorCount;
     }
 
-    return expectedWithdrawals;
+    return partialWithdrawals;
+  }
+
+  static UInt64 getPartiallyWithdrawnBalance(
+      final List<Withdrawal> currentWithdrawals, final UInt64 validatorIndex) {
+    return currentWithdrawals.stream()
+        .filter(partialWithdrawal -> partialWithdrawal.getValidatorIndex().equals(validatorIndex))
+        .map(Withdrawal::getAmount)
+        .reduce(UInt64.ZERO, UInt64::plus);
   }
 
   public void processWithdrawals(
@@ -305,7 +321,6 @@ public class ExpectedWithdrawals {
     }
 
     if (partialWithdrawalCount > 0) {
-      // new in electra
       reducePendingWithdrawals(MutableBeaconStateElectra.required(state));
     }
 

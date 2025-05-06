@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -57,7 +57,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -151,7 +151,7 @@ class ValidatorApiHandlerTest {
 
   private final BlockProductionAndPublishingPerformanceFactory blockProductionPerformanceFactory =
       new BlockProductionAndPublishingPerformanceFactory(
-          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0, 0, 0);
+          StubTimeProvider.withTimeInMillis(0), __ -> ZERO, false, 0, 0, 0, 0, Optional.empty());
 
   private Spec spec;
   private UInt64 epochStartSlot;
@@ -1222,6 +1222,20 @@ class ValidatorApiHandlerTest {
   public void getSyncCommitteeSelectionProofShouldNotBeImplementedByBeaconNode() {
     assertThatThrownBy(() -> validatorApiHandler.getSyncCommitteeSelectionProof(List.of()))
         .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  public void shouldReportPerformanceWhenAttestationIsIgnored() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(any(), any()))
+        .thenReturn(completedFuture(InternalValidationResult.IGNORE));
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    verify(attestationManager)
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty());
+    verify(performanceTracker).saveProducedAttestation(attestation);
+    verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
+    assertThat(result).isCompletedWithValue(emptyList());
   }
 
   private boolean validatorIsLive(

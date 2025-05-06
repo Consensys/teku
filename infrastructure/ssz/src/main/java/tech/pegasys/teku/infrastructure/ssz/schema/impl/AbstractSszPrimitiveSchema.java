@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -103,6 +103,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
+  @SuppressWarnings("PatternMatchingInstanceof")
   public final DataT createFromPackedNodeUnboxed(final TreeNode node, final int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
@@ -154,9 +155,9 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     final Bytes nodeData;
-    if (node instanceof LeafDataNode) {
+    if (node instanceof final LeafDataNode leafDataNode) {
       // small perf optimization
-      nodeData = ((LeafDataNode) node).getData();
+      nodeData = leafDataNode.getData();
     } else {
       nodeData = node.hashTreeRoot();
     }

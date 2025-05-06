@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -194,7 +194,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             });
   }
 
-  private Attestation convertSingleAttestationToAggregated(
+  public Attestation convertSingleAttestationToAggregated(
       final SingleAttestation singleAttestation,
       final SszBitlist singleAttestationAggregationBits) {
     final AttestationElectraSchema attestationElectraSchema =
@@ -233,7 +233,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         signatureVerifier);
   }
 
-  private SszBitlist getSingleAttestationAggregationBits(
+  public SszBitlist getSingleAttestationAggregationBits(
       final BeaconState state, final SingleAttestation singleAttestation) {
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(

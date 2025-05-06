@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -70,7 +71,8 @@ class RemoteSpecLoaderTest {
     final ObjectMapper objectMapper = new ObjectMapper();
     TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
     Map<String, String> data = objectMapper.readValue(jsonConfig, typeReference);
-    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data).specConfig();
+    final SpecConfig specConfig =
+        SpecConfigLoader.loadRemoteConfig(new HashMap<>(data)).specConfig();
 
     // Check values not assigned, using default values
     assertThat(specConfig.getMaxPayloadSize()).isEqualTo(10485760);

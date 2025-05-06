@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -44,9 +44,11 @@ public class PostSubscribeToBeaconCommitteeSubnet extends RestApiEndpoint {
             .operationId("prepareBeaconCommitteeSubnet")
             .summary("Signal beacon node to prepare for a committee subnet")
             .description(
-                "After Beacon node receives this request, search using discv5 for peers related to this subnet and replace current peers with those ones if necessary If validator is_aggregator, beacon node must:\n"
-                    + "- announce subnet topic subscription on gossipsub\n"
-                    + "- aggregate attestations received on that subnet\n")
+                """
+                    After Beacon node receives this request, search using discv5 for peers related to this subnet and replace current peers with those ones if necessary If validator is_aggregator, beacon node must:
+                    - announce subnet topic subscription on gossipsub
+                    - aggregate attestations received on that subnet
+                    """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
                 DeserializableTypeDefinition.listOf(CommitteeSubscriptionData.SSZ_DATA))

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -116,16 +116,6 @@ public class BeaconStateMutatorsElectra extends BeaconStateMutatorsBellatrix {
     }
 
     final MutableBeaconStateElectra stateElectra = MutableBeaconStateElectra.required(state);
-
-    final ValidatorExitContext validatorExitContext = validatorExitContextSupplier.get();
-
-    if (validatorExitContext.getExitQueueChurn().compareTo(validatorExitContext.getChurnLimit())
-        >= 0) {
-      validatorExitContext.setExitQueueEpoch(validatorExitContext.getExitQueueEpoch().increment());
-      validatorExitContext.setExitQueueChurn(UInt64.ONE);
-    } else {
-      validatorExitContext.setExitQueueChurn(validatorExitContext.getExitQueueChurn().increment());
-    }
 
     final UInt64 exitQueueEpoch =
         computeExitEpochAndUpdateChurn(stateElectra, validator.getEffectiveBalance());

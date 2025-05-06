@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -44,7 +44,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -55,6 +55,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -229,7 +230,7 @@ public class Eth2P2PNetworkFactory {
                 P2PConfig.DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT,
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
-                KZG.NOOP,
+                NoOpKZG.INSTANCE,
                 (__) -> Optional.empty());
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
@@ -439,6 +440,26 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper);
         case ELECTRA ->
             new GossipForkSubscriptionsElectra(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                debugDataDumper);
+        case FULU ->
+            new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,

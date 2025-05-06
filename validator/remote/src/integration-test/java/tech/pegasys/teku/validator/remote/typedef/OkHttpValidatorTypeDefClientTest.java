@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -61,7 +61,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
@@ -227,14 +227,15 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         new MockResponse()
             .setResponseCode(200)
             .setBody(
-                "{\n"
-                    + "  \"data\": {\n"
-                    + "    \"head_slot\": \"1\",\n"
-                    + "    \"sync_distance\": \"1\",\n"
-                    + "    \"is_syncing\": true,\n"
-                    + "    \"is_optimistic\": true\n"
-                    + "  }\n"
-                    + "}"));
+                """
+                            {
+                              "data": {
+                                "head_slot": "1",
+                                "sync_distance": "1",
+                                "is_syncing": true,
+                                "is_optimistic": true
+                              }
+                            }"""));
 
     final SyncingStatus result = typeDefClient.getSyncingStatus();
 

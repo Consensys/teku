@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -73,6 +73,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
+  Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -170,6 +171,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public void setProposerBoostRoot(final Bytes32 boostedBlockRoot) {
     proposerBoostRoot = Optional.of(boostedBlockRoot);
     proposerBoostRootSet = true;
+  }
+
+  @Override
+  public void setLatestCanonicalBlockRoot(final Bytes32 latestCanonicalBlockRoot) {
+    maybeLatestCanonicalBlockRoot = Optional.of(latestCanonicalBlockRoot);
   }
 
   @Override

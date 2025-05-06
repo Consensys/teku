@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
+import tech.pegasys.teku.api.response.ValidatorStatus;
+
 public enum DeletionStatus {
   DELETED("deleted"),
   /**
-   * Should not be confused with {@link tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus}.
-   * Means the key was managed but not managed anymore
+   * Should not be confused with {@link ValidatorStatus}. Means the key was managed but not managed
+   * anymore
    */
   NOT_ACTIVE("not_active"),
   NOT_FOUND("not_found"),

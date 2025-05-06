@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -68,9 +68,13 @@ public class PostPrepareBeaconProposer extends RestApiEndpoint {
         .operationId("prepareBeaconProposer")
         .summary("Provide beacon node with proposals for the given validators.")
         .description(
-            "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\n"
-                + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
-                + "Also note that requests containing currently inactive or unknown validator indices will be accepted, as they may become active at a later epoch.")
+            """
+                Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.
+
+                Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).
+
+                Also note that requests containing currently inactive or unknown validator indices will be accepted, as they may become active at a later epoch.
+                """)
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(DeserializableTypeDefinition.listOf(BeaconPreparableProposer.SSZ_DATA))
         .response(SC_OK, "Preparation information has been received.")

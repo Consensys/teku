@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -63,6 +63,12 @@ public class InternalValidationResultWithState {
       final String descriptionTemplate, final Object... args) {
     return new InternalValidationResultWithState(
         InternalValidationResult.ignore(descriptionTemplate, args), Optional.empty());
+  }
+
+  public static InternalValidationResultWithState ignore(final String description) {
+    return new InternalValidationResultWithState(
+        InternalValidationResult.create(ValidationResultCode.IGNORE, description),
+        Optional.empty());
   }
 
   @FormatMethod

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,8 +20,11 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
@@ -36,36 +39,42 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
-  private final SpecConfigElectra electraSpecConfig =
+  private static final SpecConfigFulu FULU_SPEC_CONFIG =
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
+          .specConfig()
+          .toVersionFulu()
+          .orElseThrow();
+  private static final SpecConfigElectra ELECTRA_SPEC_CONFIG =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
           .specConfig()
           .toVersionElectra()
           .orElseThrow();
-  private final SpecConfigDeneb denebSpecConfig =
+  private static final SpecConfigDeneb DENEB_SPEC_CONFIG =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
           .specConfig()
           .toVersionDeneb()
           .orElseThrow();
-  private final SpecConfigCapella capellaSpecConfig =
+  private static final SpecConfigCapella CAPELLA_SPEC_CONFIG =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
           .specConfig()
           .toVersionCapella()
           .orElseThrow();
-  private final SpecConfigBellatrix bellatrixSpecConfig =
+  private static final SpecConfigBellatrix BELLATRIX_SPEC_CONFIG =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
           .specConfig()
           .toVersionBellatrix()
           .orElseThrow();
-  private final SpecConfigAltair altairSpecConfig =
+  private static final SpecConfigAltair ALTAIR_SPEC_CONFIG =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
           .specConfig()
           .toVersionAltair()
           .orElseThrow();
-  private final SpecConfig phase0SpecConfig =
+  private static final SpecConfig PHASE0_SPEC_CONFIG =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()).specConfig();
 
   public static Stream<Arguments> isLessThanPermutations() {
@@ -105,7 +114,14 @@ public class SpecMilestoneTest {
         Arguments.of(ELECTRA, BELLATRIX, false),
         Arguments.of(ELECTRA, CAPELLA, false),
         Arguments.of(ELECTRA, DENEB, false),
-        Arguments.of(ELECTRA, ELECTRA, false));
+        Arguments.of(ELECTRA, ELECTRA, false),
+        Arguments.of(FULU, PHASE0, false),
+        Arguments.of(FULU, ALTAIR, false),
+        Arguments.of(FULU, BELLATRIX, false),
+        Arguments.of(FULU, CAPELLA, false),
+        Arguments.of(FULU, DENEB, false),
+        Arguments.of(FULU, ELECTRA, false),
+        Arguments.of(FULU, FULU, false));
   }
 
   public static Stream<Arguments> isGreaterThanOrEqualToPermutations() {
@@ -145,7 +161,14 @@ public class SpecMilestoneTest {
         Arguments.of(ELECTRA, BELLATRIX, true),
         Arguments.of(ELECTRA, CAPELLA, true),
         Arguments.of(ELECTRA, DENEB, true),
-        Arguments.of(ELECTRA, ELECTRA, true));
+        Arguments.of(ELECTRA, ELECTRA, true),
+        Arguments.of(FULU, PHASE0, true),
+        Arguments.of(FULU, ALTAIR, true),
+        Arguments.of(FULU, BELLATRIX, true),
+        Arguments.of(FULU, CAPELLA, true),
+        Arguments.of(FULU, DENEB, true),
+        Arguments.of(FULU, ELECTRA, true),
+        Arguments.of(FULU, FULU, true));
   }
 
   public static Stream<Arguments> getPreviousPermutations() {
@@ -154,7 +177,8 @@ public class SpecMilestoneTest {
         Arguments.of(BELLATRIX, ALTAIR),
         Arguments.of(CAPELLA, BELLATRIX),
         Arguments.of(DENEB, CAPELLA),
-        Arguments.of(ELECTRA, DENEB));
+        Arguments.of(ELECTRA, DENEB),
+        Arguments.of(FULU, ELECTRA));
   }
 
   @ParameterizedTest
@@ -188,75 +212,45 @@ public class SpecMilestoneTest {
     assertThat(ALTAIR.getPreviousMilestoneIfExists()).contains(PHASE0);
     assertThat(BELLATRIX.getPreviousMilestoneIfExists()).contains(ALTAIR);
     assertThat(CAPELLA.getPreviousMilestoneIfExists()).contains(BELLATRIX);
+    assertThat(DENEB.getPreviousMilestoneIfExists()).contains(CAPELLA);
+    assertThat(ELECTRA.getPreviousMilestoneIfExists()).contains(DENEB);
+    assertThat(FULU.getPreviousMilestoneIfExists()).contains(ELECTRA);
   }
 
-  @Test
-  public void getAllPriorMilestones_phase0() {
-    assertThat(SpecMilestone.getAllPriorMilestones(PHASE0)).isEmpty();
+  @ParameterizedTest
+  @MethodSource("getPriorMilestonePermutations")
+  public void getAllPriorMilestones(
+      final SpecMilestone current, final Collection<SpecMilestone> priorMilestones) {
+    assertThat(SpecMilestone.getAllPriorMilestones(current)).containsAll(priorMilestones);
   }
 
-  @Test
-  public void getAllPriorMilestones_altair() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.ALTAIR)).contains(PHASE0);
+  public static Stream<Arguments> getPriorMilestonePermutations() {
+    return Stream.of(
+        Arguments.of(PHASE0, List.of()),
+        Arguments.of(ALTAIR, List.of(PHASE0)),
+        Arguments.of(BELLATRIX, List.of(PHASE0, ALTAIR)),
+        Arguments.of(CAPELLA, List.of(PHASE0, ALTAIR, BELLATRIX)),
+        Arguments.of(DENEB, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA)),
+        Arguments.of(ELECTRA, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB)),
+        Arguments.of(FULU, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA)));
   }
 
-  @Test
-  public void getAllPriorMilestones_bellatrix() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.BELLATRIX))
-        .contains(PHASE0, SpecMilestone.ALTAIR);
+  @ParameterizedTest
+  @MethodSource("getMilestonesUpToPermutations")
+  public void getMilestonesUpTo(
+      final SpecMilestone current, final Collection<SpecMilestone> upToMilestones) {
+    assertThat(SpecMilestone.getMilestonesUpTo(current)).containsAll(upToMilestones);
   }
 
-  @Test
-  public void getAllPriorMilestones_capella() {
-    assertThat(SpecMilestone.getAllPriorMilestones(CAPELLA))
-        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
-  }
-
-  @Test
-  public void getAllPriorMilestones_deneb() {
-    assertThat(SpecMilestone.getAllPriorMilestones(DENEB))
-        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA);
-  }
-
-  @Test
-  public void getAllPriorMilestones_electra() {
-    assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.ELECTRA))
-        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA, DENEB);
-  }
-
-  @Test
-  public void getMilestonesUpTo_phase0() {
-    assertThat(SpecMilestone.getMilestonesUpTo(PHASE0)).contains(PHASE0);
-  }
-
-  @Test
-  public void getMilestonesUpTo_altair() {
-    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.ALTAIR))
-        .contains(PHASE0, SpecMilestone.ALTAIR);
-  }
-
-  @Test
-  public void getMilestonesUpTo_bellatrix() {
-    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.BELLATRIX))
-        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
-  }
-
-  @Test
-  public void getMilestonesUpTo_capella() {
-    assertThat(SpecMilestone.getMilestonesUpTo(CAPELLA))
-        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
-  }
-
-  @Test
-  public void getMilestonesUpTo_deneb() {
-    assertThat(SpecMilestone.getMilestonesUpTo(DENEB))
-        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA);
-  }
-
-  @Test
-  public void getMilestonesUpTo_electra() {
-    assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.ELECTRA))
-        .contains(PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, CAPELLA, DENEB);
+  public static Stream<Arguments> getMilestonesUpToPermutations() {
+    return Stream.of(
+        Arguments.of(PHASE0, List.of(PHASE0)),
+        Arguments.of(ALTAIR, List.of(PHASE0, ALTAIR)),
+        Arguments.of(BELLATRIX, List.of(PHASE0, ALTAIR, BELLATRIX)),
+        Arguments.of(CAPELLA, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA)),
+        Arguments.of(DENEB, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB)),
+        Arguments.of(ELECTRA, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA)),
+        Arguments.of(FULU, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU)));
   }
 
   @Test
@@ -287,107 +281,119 @@ public class SpecMilestoneTest {
 
   @Test
   public void getForkVersion_phase0() {
-    final Bytes4 expected = altairSpecConfig.getGenesisForkVersion();
-    assertThat(SpecMilestone.getForkVersion(altairSpecConfig, PHASE0)).contains(expected);
+    final Bytes4 expected = PHASE0_SPEC_CONFIG.getGenesisForkVersion();
+    assertThat(SpecMilestone.getForkVersion(PHASE0_SPEC_CONFIG, PHASE0)).contains(expected);
   }
 
   @Test
   public void getForkVersion_altair() {
-    final Bytes4 expected = altairSpecConfig.getAltairForkVersion();
-    assertThat(SpecMilestone.getForkVersion(altairSpecConfig, SpecMilestone.ALTAIR))
+    final Bytes4 expected = ALTAIR_SPEC_CONFIG.getAltairForkVersion();
+    assertThat(SpecMilestone.getForkVersion(ALTAIR_SPEC_CONFIG, SpecMilestone.ALTAIR))
         .contains(expected);
   }
 
   @Test
   public void getForkVersion_bellatrix() {
-    final Bytes4 expected = bellatrixSpecConfig.getBellatrixForkVersion();
-    assertThat(SpecMilestone.getForkVersion(bellatrixSpecConfig, SpecMilestone.BELLATRIX))
+    final Bytes4 expected = BELLATRIX_SPEC_CONFIG.getBellatrixForkVersion();
+    assertThat(SpecMilestone.getForkVersion(BELLATRIX_SPEC_CONFIG, SpecMilestone.BELLATRIX))
         .contains(expected);
   }
 
   @Test
   public void getForkVersion_capella() {
-    final Bytes4 expected = capellaSpecConfig.getCapellaForkVersion();
-    assertThat(SpecMilestone.getForkVersion(capellaSpecConfig, CAPELLA)).contains(expected);
+    final Bytes4 expected = CAPELLA_SPEC_CONFIG.getCapellaForkVersion();
+    assertThat(SpecMilestone.getForkVersion(CAPELLA_SPEC_CONFIG, CAPELLA)).contains(expected);
   }
 
   @Test
   public void getForkVersion_deneb() {
-    final Bytes4 expected = denebSpecConfig.getDenebForkVersion();
-    assertThat(SpecMilestone.getForkVersion(denebSpecConfig, DENEB)).contains(expected);
+    final Bytes4 expected = DENEB_SPEC_CONFIG.getDenebForkVersion();
+    assertThat(SpecMilestone.getForkVersion(DENEB_SPEC_CONFIG, DENEB)).contains(expected);
   }
 
   @Test
   public void getForkVersion_electra() {
-    final Bytes4 expected = electraSpecConfig.getElectraForkVersion();
-    assertThat(SpecMilestone.getForkVersion(electraSpecConfig, SpecMilestone.ELECTRA))
+    final Bytes4 expected = ELECTRA_SPEC_CONFIG.getElectraForkVersion();
+    assertThat(SpecMilestone.getForkVersion(ELECTRA_SPEC_CONFIG, SpecMilestone.ELECTRA))
         .contains(expected);
   }
 
   @Test
   public void getForkEpoch_phase0() {
     final UInt64 expected = UInt64.ZERO;
-    assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, PHASE0)).contains(expected);
+    assertThat(SpecMilestone.getForkEpoch(PHASE0_SPEC_CONFIG, PHASE0)).contains(expected);
   }
 
   @Test
   public void getForEpoch_altair() {
-    final UInt64 expected = altairSpecConfig.getAltairForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, SpecMilestone.ALTAIR))
+    final UInt64 expected = ALTAIR_SPEC_CONFIG.getAltairForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(ALTAIR_SPEC_CONFIG, SpecMilestone.ALTAIR))
         .contains(expected);
   }
 
   @Test
   public void getForkEpoch_bellatrix() {
-    final UInt64 expected = bellatrixSpecConfig.getBellatrixForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, SpecMilestone.BELLATRIX))
+    final UInt64 expected = BELLATRIX_SPEC_CONFIG.getBellatrixForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(BELLATRIX_SPEC_CONFIG, SpecMilestone.BELLATRIX))
         .contains(expected);
   }
 
   @Test
   public void getForkEpoch_capella() {
-    final UInt64 expected = capellaSpecConfig.getCapellaForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(capellaSpecConfig, CAPELLA)).contains(expected);
+    final UInt64 expected = CAPELLA_SPEC_CONFIG.getCapellaForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(CAPELLA_SPEC_CONFIG, CAPELLA)).contains(expected);
   }
 
   @Test
   public void getForkEpoch_deneb() {
-    final UInt64 expected = denebSpecConfig.getDenebForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, DENEB)).contains(expected);
+    final UInt64 expected = DENEB_SPEC_CONFIG.getDenebForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(DENEB_SPEC_CONFIG, DENEB)).contains(expected);
   }
 
   @Test
   public void getForkEpoch_electra() {
-    final UInt64 expected = electraSpecConfig.getElectraForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(electraSpecConfig, SpecMilestone.ELECTRA))
+    final UInt64 expected = ELECTRA_SPEC_CONFIG.getElectraForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(ELECTRA_SPEC_CONFIG, SpecMilestone.ELECTRA))
         .contains(expected);
   }
 
   @Test
+  public void getForkEpoch_fulu() {
+    final UInt64 expected = FULU_SPEC_CONFIG.getElectraForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(FULU_SPEC_CONFIG, FULU)).contains(expected);
+  }
+
+  @Test
   public void getForkSlot_altairNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR))
+    assertThat(SpecMilestone.getForkEpoch(PHASE0_SPEC_CONFIG, SpecMilestone.ALTAIR))
         .contains(UInt64.MAX_VALUE);
   }
 
   @Test
   public void getForkSlot_bellatrixNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.BELLATRIX))
+    assertThat(SpecMilestone.getForkEpoch(PHASE0_SPEC_CONFIG, SpecMilestone.BELLATRIX))
         .contains(UInt64.MAX_VALUE);
   }
 
   @Test
   public void getForkEpoch_capellaNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, CAPELLA)).contains(UInt64.MAX_VALUE);
+    assertThat(SpecMilestone.getForkEpoch(BELLATRIX_SPEC_CONFIG, CAPELLA))
+        .contains(UInt64.MAX_VALUE);
   }
 
   @Test
   public void getForkEpoch_denebNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(capellaSpecConfig, DENEB)).contains(UInt64.MAX_VALUE);
+    assertThat(SpecMilestone.getForkEpoch(CAPELLA_SPEC_CONFIG, DENEB)).contains(UInt64.MAX_VALUE);
   }
 
   @Test
   public void getForkEpoch_electraNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(denebSpecConfig, SpecMilestone.ELECTRA))
+    assertThat(SpecMilestone.getForkEpoch(DENEB_SPEC_CONFIG, SpecMilestone.ELECTRA))
         .contains(UInt64.MAX_VALUE);
+  }
+
+  @Test
+  public void getForkEpoch_fuluNotScheduled() {
+    assertThat(SpecMilestone.getForkEpoch(ELECTRA_SPEC_CONFIG, FULU)).contains(UInt64.MAX_VALUE);
   }
 }

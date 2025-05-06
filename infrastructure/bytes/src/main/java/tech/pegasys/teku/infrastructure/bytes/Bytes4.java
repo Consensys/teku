@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -52,8 +52,8 @@ public class Bytes4 {
    */
   public static Bytes4 leftPad(final Bytes value) {
     checkNotNull(value);
-    if (value instanceof Bytes4) {
-      return (Bytes4) value;
+    if (value instanceof final Bytes4 bytes4) {
+      return bytes4;
     }
     checkArgument(value.size() <= 4, "Expected at most %s bytes but got %s", 4, value.size());
     MutableBytes result = MutableBytes.create(4);
@@ -70,8 +70,8 @@ public class Bytes4 {
    */
   public static Bytes4 rightPad(final Bytes value) {
     checkNotNull(value);
-    if (value instanceof Bytes4) {
-      return (Bytes4) value;
+    if (value instanceof final Bytes4 bytes4) {
+      return bytes4;
     }
     checkArgument(value.size() <= 4, "Expected at most %s bytes but got %s", 4, value.size());
     MutableBytes result = MutableBytes.create(4);

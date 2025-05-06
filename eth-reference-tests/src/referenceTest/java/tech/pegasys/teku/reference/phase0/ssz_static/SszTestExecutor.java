@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -225,6 +227,19 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsElectra.required(schemas).getSingleAttestationSchema()))
+
+          // Fulu types
+          .put(
+              "ssz_static/DataColumnIdentifier",
+              new SszTestExecutor<>(schemas -> DataColumnIdentifier.SSZ_SCHEMA))
+          .put(
+              "ssz_static/DataColumnSidecar",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsFulu.required(schemas).getDataColumnSidecarSchema()))
+          .put(
+              "ssz_static/MatrixEntry",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsFulu.required(schemas).getMatrixEntrySchema()))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(

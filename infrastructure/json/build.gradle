@@ -5,7 +5,7 @@ dependencies {
   implementation project(':infrastructure:logging')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
-  implementation 'io.tmio:tuweni-units'
+  implementation 'io.consensys.tuweni:tuweni-units'
 
   testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
   testFixturesImplementation 'commons-io:commons-io'

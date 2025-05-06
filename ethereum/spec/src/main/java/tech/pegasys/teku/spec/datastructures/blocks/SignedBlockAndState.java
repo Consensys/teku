@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,12 +39,12 @@ public class SignedBlockAndState extends StateAndBlockSummary {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof SignedBlockAndState)) {
+    if (o instanceof final SignedBlockAndState that) {
+      return Objects.equals(getBlock(), that.getBlock())
+          && Objects.equals(getState(), that.getState());
+    } else {
       return false;
     }
-    final SignedBlockAndState that = (SignedBlockAndState) o;
-    return Objects.equals(getBlock(), that.getBlock())
-        && Objects.equals(getState(), that.getState());
   }
 
   @Override

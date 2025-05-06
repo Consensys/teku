@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.bls.keystore.KeyStoreValidationException;
@@ -94,7 +95,7 @@ public class OwnedKeyManager implements KeyManager {
    * protection information
    *
    * <p>- NOT_ACTIVE indicates the key is not owned, but we had slashing data, should not be
-   * confused with {@link tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus}
+   * confused with {@link ValidatorStatus}
    *
    * <p>- DELETED indicates the key was found, and we have stopped using it and removed it.
    *

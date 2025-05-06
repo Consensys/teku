@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -69,7 +69,8 @@ public class PostAttesterDuties extends RestApiEndpoint {
                     + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
                     + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
+            .requestBodyType(
+                DeserializableTypeDefinition.listOf(INTEGER_TYPE, Optional.of(1), Optional.empty()))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Success response", ATTESTER_DUTIES_RESPONSE_TYPE)
             .response(

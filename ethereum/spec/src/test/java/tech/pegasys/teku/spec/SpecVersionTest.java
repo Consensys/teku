@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
@@ -83,6 +84,13 @@ class SpecVersionTest {
         actualVersion =
             SpecVersion.create(
                 SpecMilestone.ELECTRA, minimalConfig, SchemaRegistryBuilder.create());
+      }
+      case FULU -> {
+        expectedVersion =
+            SpecVersion.createFulu(
+                SpecConfigFulu.required(minimalConfig), SchemaRegistryBuilder.create());
+        actualVersion =
+            SpecVersion.create(SpecMilestone.FULU, minimalConfig, SchemaRegistryBuilder.create());
       }
     }
 

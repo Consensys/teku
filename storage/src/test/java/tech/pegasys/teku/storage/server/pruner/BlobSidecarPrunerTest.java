@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,8 +37,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.storage.archive.DataArchive;
-import tech.pegasys.teku.storage.archive.nooparchive.NoopDataArchive;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.server.Database;
 
 public class BlobSidecarPrunerTest {
@@ -57,13 +55,13 @@ public class BlobSidecarPrunerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
-  private final DataArchive dataArchive = new NoopDataArchive();
+  private final BlobSidecarsArchiver blobSidecarsArchiver = mock(BlobSidecarsArchiver.class);
 
   private final BlobSidecarPruner blobsPruner =
       new BlobSidecarPruner(
           spec,
           database,
-          dataArchive,
+          blobSidecarsArchiver,
           stubMetricsSystem,
           asyncRunner,
           timeProvider,
@@ -118,7 +116,7 @@ public class BlobSidecarPrunerTest {
   }
 
   @Test
-  void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() throws IOException {
+  void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() {
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     // set current slot to MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1 epoch + half epoch
@@ -133,18 +131,14 @@ public class BlobSidecarPrunerTest {
     asyncRunner.executeDueActions();
     verify(database)
         .pruneOldestBlobSidecars(
-            UInt64.valueOf((slotsPerEpoch / 2) - 1),
-            PRUNE_LIMIT,
-            dataArchive.getBlobSidecarWriter());
+            UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT, blobSidecarsArchiver);
     verify(database)
         .pruneOldestNonCanonicalBlobSidecars(
-            UInt64.valueOf((slotsPerEpoch / 2) - 1),
-            PRUNE_LIMIT,
-            dataArchive.getBlobSidecarWriter());
+            UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT, blobSidecarsArchiver);
   }
 
   @Test
-  void shouldUseEpochsStoreBlobs() throws IOException {
+  void shouldUseEpochsStoreBlobs() {
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final int defaultValue = specConfigDeneb.getMinEpochsForBlobSidecarsRequests();
@@ -164,7 +158,7 @@ public class BlobSidecarPrunerTest {
         new BlobSidecarPruner(
             specOverride,
             databaseOverride,
-            dataArchive,
+            blobSidecarsArchiver,
             stubMetricsSystem,
             asyncRunner,
             timeProvider,
@@ -200,14 +194,10 @@ public class BlobSidecarPrunerTest {
     asyncRunner.executeDueActions();
     verify(databaseOverride)
         .pruneOldestBlobSidecars(
-            UInt64.valueOf((slotsPerEpoch / 2) - 1),
-            PRUNE_LIMIT,
-            dataArchive.getBlobSidecarWriter());
+            UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT, blobSidecarsArchiver);
     verify(databaseOverride)
         .pruneOldestNonCanonicalBlobSidecars(
-            UInt64.valueOf((slotsPerEpoch / 2) - 1),
-            PRUNE_LIMIT,
-            dataArchive.getBlobSidecarWriter());
+            UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT, blobSidecarsArchiver);
   }
 
   @Test
@@ -228,7 +218,7 @@ public class BlobSidecarPrunerTest {
         new BlobSidecarPruner(
             specOverride,
             databaseOverride,
-            dataArchive,
+            blobSidecarsArchiver,
             stubMetricsSystem,
             asyncRunner,
             timeProvider,

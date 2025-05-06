@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -60,6 +60,7 @@ public class BlobSidecarsByRootValidatorTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
         };
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     dataStructureUtil = new DataStructureUtil(spec);

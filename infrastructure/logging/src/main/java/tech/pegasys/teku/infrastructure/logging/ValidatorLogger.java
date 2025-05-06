@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -127,7 +127,8 @@ public class ValidatorLogger {
         String.format(
             "%sFailed to produce %s  Slot: %s Validator: %s",
             PREFIX, producedType, slot, formatValidators(maybeKey));
-    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+    log.error(ColorConsolePrinter.print(errorString, Color.RED));
+    log.trace(errorString, error);
   }
 
   public void signerNoLongerActive(

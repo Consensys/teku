@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -45,6 +45,7 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, UInt64> prunedHotBlockRoots;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final Optional<Bytes32> latestCanonicalBlockRoot;
   private final boolean blobSidecarsEnabled;
 
   StoreTransactionUpdates(
@@ -59,6 +60,7 @@ class StoreTransactionUpdates {
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final Optional<Bytes32> latestCanonicalBlockRoot,
       final boolean blobSidecarsEnabled) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
@@ -69,6 +71,8 @@ class StoreTransactionUpdates {
     checkNotNull(maybeEarliestBlobSidecarSlot, "Hot maybe earliest blobSidecar slot is required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(stateRoots, "State roots are required");
+    checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
+    checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
 
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
@@ -81,6 +85,7 @@ class StoreTransactionUpdates {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
   }
 
@@ -98,6 +103,7 @@ class StoreTransactionUpdates {
         stateRoots,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
+        latestCanonicalBlockRoot,
         blobSidecarsEnabled);
   }
 

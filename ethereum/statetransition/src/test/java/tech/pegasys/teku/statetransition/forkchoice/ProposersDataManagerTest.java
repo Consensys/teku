@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -58,6 +58,7 @@ class ProposersDataManagerTest {
           case CAPELLA -> TestSpecFactory.createMinimalWithCapellaForkEpoch(currentForkEpoch);
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = specContext.getDataStructureUtil();
     defaultAddress = dataStructureUtil.randomEth1Address();

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,7 +36,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -82,7 +81,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
+        .isEqualTo(blockContainerAndMetaData.specMilestone().lowerCaseName());
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(true));
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
@@ -105,7 +104,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
+        .isEqualTo(blockContainerAndMetaData.specMilestone().lowerCaseName());
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(false));
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
@@ -129,7 +128,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
+        .isEqualTo(blockContainerAndMetaData.specMilestone().lowerCaseName());
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("false");
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(blockContainerAndMetaData.executionPayloadValue().toDecimalString());

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,6 +28,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.CancellationException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
@@ -100,6 +101,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             blobSidecarManager,
             blockBlobSidecarsTrackersPool,
             FORWARD_SYNC_BATCH_SIZE.intValue(),
+            OptionalInt.empty(),
             new NoOpMetricsSystem());
   }
 
