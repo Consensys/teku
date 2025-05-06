@@ -42,7 +42,7 @@ class GetInclusionListTest extends AbstractMigratedBeaconHandlerWithChainDataPro
   void setUp() {
 
     initialise(SpecMilestone.EIP7805);
-    setHandler(new GetInclusionList(validatorDataProvider, spec));
+    setHandler(new GetInclusionList(validatorDataProvider, schemaDefinitionCache));
   }
 
   @Test

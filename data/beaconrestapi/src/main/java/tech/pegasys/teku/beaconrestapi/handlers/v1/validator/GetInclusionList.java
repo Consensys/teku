@@ -34,19 +34,24 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 
 public class GetInclusionList extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/inclusion_list/{epoch}";
 
   private final ValidatorDataProvider validatorDataProvider;
 
-  public GetInclusionList(final DataProvider provider, final Spec spec) {
-    this(provider.getValidatorDataProvider(), spec);
+  public GetInclusionList(
+      final DataProvider provider, final SchemaDefinitionCache schemaDefinition) {
+    this(provider.getValidatorDataProvider(), schemaDefinition);
   }
 
-  public GetInclusionList(final ValidatorDataProvider validatorDataProvider, final Spec spec) {
+  public GetInclusionList(
+      final ValidatorDataProvider validatorDataProvider,
+      final SchemaDefinitionCache schemaDefinition) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("produceInclusionList")
@@ -56,7 +61,7 @@ public class GetInclusionList extends RestApiEndpoint {
             .pathParam(
                 SLOT_PARAMETER.withDescription(
                     "The slot for which an inclusion list should be created."))
-            .response(SC_OK, "Request successful", getResponseType(spec))
+            .response(SC_OK, "Request successful", getResponseType(schemaDefinition))
             .withServiceUnavailableResponse()
             .build());
     this.validatorDataProvider = validatorDataProvider;
@@ -82,15 +87,15 @@ public class GetInclusionList extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<List<Transaction>> getResponseType(final Spec spec) {
+  private static SerializableTypeDefinition<List<Transaction>> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<List<Transaction>>object()
         .name("ProduceInclusionListResponse")
         .withField(
             "data",
             listOf(
-                spec.getGenesisSchemaDefinitions()
-                    .toVersionEip7805()
-                    .orElseThrow()
+                SchemaDefinitionsEip7805.required(
+                        schemaDefinitionCache.getSchemaDefinition(SpecMilestone.EIP7805))
                     .getInclusionListSchema()
                     .getTransactionSchema()
                     .getJsonTypeDefinition()),
