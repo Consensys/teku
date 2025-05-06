@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,9 +24,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class GraffitiParser {
+  private static final Logger LOG = LogManager.getLogger();
 
   /*
    * Because we're parsing text from a file here we allow as many as 40 bytes to be read from the file.
@@ -49,6 +56,43 @@ public class GraffitiParser {
     } catch (final IOException e) {
       throw new GraffitiLoaderException(
           "Unexpected IO error while reading GraffitiFile: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Creates an appropriate GraffitiProvider for the given file. Attempts to load the file as a
+   * multimode configuration first, and falls back to the single-value behavior if that fails.
+   *
+   * @param defaultGraffiti The default graffiti to use as a fallback
+   * @param validatorPublicKey The public key of the validator (if known)
+   * @param graffitiFile The path to the graffiti file
+   * @return A GraffitiProvider that provides graffiti values according to the file format
+   */
+  public static GraffitiProvider loadGraffitiProvider(
+      final Optional<Bytes32> defaultGraffiti,
+      final Optional<BLSPublicKey> validatorPublicKey,
+      final Optional<Path> graffitiFile) {
+
+    // If no file is provided, just use the default graffiti
+    if (graffitiFile.isEmpty()) {
+      return new FileBackedGraffitiProvider(defaultGraffiti, Optional.empty());
+    }
+
+    // Try to parse the file as a multimode configuration
+    try {
+      // Just try to see if the file can be parsed as YAML, we don't need the result here
+      ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+      mapper.readValue(
+          graffitiFile.get().toFile(), MultimodeGraffitiProvider.GraffitiConfiguration.class);
+
+      // If we get here, the file is a valid YAML matching our format
+      return new MultimodeGraffitiProvider(defaultGraffiti, validatorPublicKey, graffitiFile);
+    } catch (IOException e) {
+      // If parsing fails, fallback to the simple file-backed provider
+      LOG.debug(
+          "Graffiti file {} doesn't appear to be a multimode config, falling back to single-value mode",
+          graffitiFile.get());
+      return new FileBackedGraffitiProvider(defaultGraffiti, graffitiFile);
     }
   }
 
