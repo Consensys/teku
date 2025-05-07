@@ -196,7 +196,7 @@ public class TestSpecFactory {
 
   public static Spec createMinimalWithFuluForkEpoch(final UInt64 fuluForkEpoch) {
     final SpecConfigAndParent<? extends SpecConfig> config =
-        getFuluSpecConfig(Eth2Network.MINIMAL, ZERO, ZERO, fuluForkEpoch);
+        getFuluSpecConfig(Eth2Network.MINIMAL, ZERO, ZERO, ZERO, fuluForkEpoch);
     return create(config, SpecMilestone.FULU);
   }
 
@@ -461,11 +461,12 @@ public class TestSpecFactory {
 
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
       final Eth2Network network) {
-    return getFuluSpecConfig(network, ZERO, ZERO, ZERO);
+    return getFuluSpecConfig(network, ZERO, ZERO, ZERO, ZERO);
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
       final Eth2Network network,
+      final UInt64 capellaForkEpoch,
       final UInt64 denebForkEpoch,
       final UInt64 electraForkEpoch,
       final UInt64 fuluForkEpoch) {
@@ -475,7 +476,7 @@ public class TestSpecFactory {
             builder
                 .altairBuilder(a -> a.altairForkEpoch(ZERO))
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
+                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
                 .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
@@ -498,12 +499,15 @@ public class TestSpecFactory {
             }));
   }
 
-  public static Spec createMinimalWithCapellaDenebAndElectraForkEpoch(
-      final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch, final UInt64 electraForkEpoch) {
+  public static Spec createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final UInt64 electraForkEpoch,
+      final UInt64 fuluForkEpoch) {
     final SpecConfigAndParent<? extends SpecConfig> config =
-        getElectraSpecConfig(
-            Eth2Network.MINIMAL, capellaForkEpoch, denebForkEpoch, electraForkEpoch);
-    return create(config, SpecMilestone.ELECTRA);
+        getFuluSpecConfig(
+            Eth2Network.MINIMAL, capellaForkEpoch, denebForkEpoch, electraForkEpoch, fuluForkEpoch);
+    return create(config, SpecMilestone.FULU);
   }
 
   // Our current config files contain ELECTRA params.

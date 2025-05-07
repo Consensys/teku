@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -72,6 +73,7 @@ public class Eth2PeerManagerTest {
           asyncRunner,
           combinedChainDataClient,
           DataColumnSidecarByRootCustody.NOOP,
+          CustodyGroupCountManager.NOOP,
           recentChainData,
           new NoOpMetricsSystem(),
           eth2PeerFactory,

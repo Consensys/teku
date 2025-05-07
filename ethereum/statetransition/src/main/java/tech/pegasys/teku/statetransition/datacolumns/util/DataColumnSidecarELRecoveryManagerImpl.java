@@ -324,7 +324,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
         .thenAccept(
             blobAndCellProofsList -> {
-              LOG.info("Found {} blobs", blobAndCellProofsList);
+              LOG.info("Found {} blobs", blobAndCellProofsList.size());
               if (blobAndCellProofsList.isEmpty()) {
                 LOG.debug(
                     "Blobs for {} are not found on local EL, reconstruction is not possible",

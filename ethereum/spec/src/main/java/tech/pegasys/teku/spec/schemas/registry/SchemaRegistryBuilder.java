@@ -43,6 +43,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
@@ -132,6 +133,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
@@ -221,6 +223,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createCellSchemaProvider())
         .addProvider(createDataColumnSchemaProvider())
         .addProvider(createDataColumnSidecarSchemaProvider())
+        .addProvider(createDataColumnsByRootIdentifierSchemaProvider())
         .addProvider(createMatrixEntrySchemaProvider())
         .addProvider(createDataColumnSidecarsByRootRequestMessageSchemaProvider())
         .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider())
@@ -751,6 +754,15 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
+  private static SchemaProvider<?> createDataColumnsByRootIdentifierSchemaProvider() {
+    return providerBuilder(DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                new DataColumnsByRootIdentifierSchema(SpecConfigFulu.required(specConfig)))
+        .build();
+  }
+
   private static SchemaProvider<?> createMatrixEntrySchemaProvider() {
     return providerBuilder(MATRIX_ENTRY_SCHEMA)
         .withCreator(
@@ -766,7 +778,8 @@ public class SchemaRegistryBuilder {
             FULU,
             (registry, specConfig, schemaName) ->
                 new DataColumnSidecarsByRootRequestMessageSchema(
-                    SpecConfigFulu.required(specConfig)))
+                    SpecConfigFulu.required(specConfig),
+                    registry.get(DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA)))
         .build();
   }
 

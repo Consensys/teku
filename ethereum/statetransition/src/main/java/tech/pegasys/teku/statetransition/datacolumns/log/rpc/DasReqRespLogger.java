@@ -17,7 +17,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 
 public interface DasReqRespLogger {
 
@@ -30,7 +30,7 @@ public interface DasReqRespLogger {
   DasReqRespLogger NOOP =
       new DasReqRespLogger() {
         @Override
-        public ReqRespMethodLogger<List<DataColumnIdentifier>, DataColumnSidecar>
+        public ReqRespMethodLogger<List<DataColumnsByRootIdentifier>, DataColumnSidecar>
             getDataColumnSidecarsByRootLogger() {
           return new NoopReqRespMethodLogger<>();
         }
@@ -42,7 +42,7 @@ public interface DasReqRespLogger {
         }
       };
 
-  ReqRespMethodLogger<List<DataColumnIdentifier>, DataColumnSidecar>
+  ReqRespMethodLogger<List<DataColumnsByRootIdentifier>, DataColumnSidecar>
       getDataColumnSidecarsByRootLogger();
 
   ReqRespMethodLogger<ByRangeRequest, DataColumnSidecar> getDataColumnSidecarsByRangeLogger();
