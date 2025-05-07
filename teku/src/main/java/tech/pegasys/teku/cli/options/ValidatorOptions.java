@@ -26,18 +26,10 @@ import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.ScopeType;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.logic.common.util.BlsPublicKeyValidators;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
-import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.GraffitiParser;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -188,7 +180,9 @@ public class ValidatorOptions {
                   isLocalSlashingProtectionSynchronizedEnabled)
               .graffitiProvider(
                   GraffitiParser.loadGraffitiProvider(
-                      Optional.ofNullable(graffiti), Optional.empty(), Optional.ofNullable(graffitiFile)))
+                      Optional.ofNullable(graffiti),
+                      Optional.empty(),
+                      Optional.ofNullable(graffitiFile)))
               .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
               .generateEarlyAttestations(generateEarlyAttestations)
               .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
