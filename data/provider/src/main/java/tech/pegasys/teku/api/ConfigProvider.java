@@ -28,7 +28,7 @@ public class ConfigProvider {
     this.spec = spec;
   }
 
-  public Map<String, String> getConfig() {
+  public Map<String, Object> getConfig() {
     final SpecConfigData configuration =
         new SpecConfigData(spec.getSpecConfigAndParent().specConfig());
     return configuration.getConfigMap();

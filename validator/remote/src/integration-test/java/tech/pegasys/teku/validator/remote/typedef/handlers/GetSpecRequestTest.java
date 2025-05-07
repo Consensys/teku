@@ -42,7 +42,7 @@ public class GetSpecRequestTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(SC_OK).setBody("{ \"data\":{\"a\":\"b\"}}"));
 
-    final Optional<Map<String, String>> response = request.submit();
+    final Optional<Map<String, Object>> response = request.submit();
     assertThat(response).isPresent();
     assertThat(response.get().size()).isGreaterThan(0);
   }
