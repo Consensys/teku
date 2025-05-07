@@ -1,8 +1,8 @@
 {
   "version": "fulu",
   "execution_payload_blinded": false,
-  "execution_payload_value": "108477972351052331695947002912406997250600692969108946699443471459098753735725",
-  "consensus_block_value": "1339858616463813965601097196322078011440769170848634627274135136300100178872",
+  "execution_payload_value": "68528524947898482245626587218140549377996721132996815943128004863989176842092",
+  "consensus_block_value": "77180733630415606160778360224182193780458495317001054434989722698587561029367",
   "data": {
     "block": {
       "slot": "1",
@@ -376,34 +376,34 @@
           "0xf14921410d6e44af323bde913793c2037f32eb41f938cabb3c5db5168485eeb88923ac822543db013af49d53be186cc8"
         ],
         "execution_requests": {
+          "deposits": [
+            {
+              "pubkey": "0xb8fa03e47468016f15b89212a91f203194684e0cbbac07b6cd428fc7e10cb7d8a363985b46972eedd7bc434fc701c4b3",
+              "withdrawal_credentials": "0x0100000000000000000000003ece09418d9cc1c206477b3f86b61438983ee789",
+              "amount": "4684851168694822957",
+              "signature": "0xa529495633ab9ab138c0756646074fc7753fafbb44389490ddd46048f29267f6b85e46abbc1fe71c42fc98513ed0f6f800ebc9eaa04b484e29af7d7bb0c38b5e088435aee8583a812545b3057c184a4634957604ec0647d1fa81da2d15a5f198",
+              "index": "4688156139423158509"
+            },
+            {
+              "pubkey": "0xb8a7fcd7c58854073db5f088cddf200b04864b6980925343c0d0b3238d5ce3880197ba175c59b61aade73eb79a74cb28",
+              "withdrawal_credentials": "0x01000000000000000000000001eeb941cebf96b04a6e6129b9adac2fdce3046e",
+              "amount": "4734425686670183278",
+              "signature": "0x94d7e47981799407b6455afd50007fd6c7736bc24b685c668e8af371e8e917d974e93874db6532a4ae61f4f6deea97bd12c425def40e2d7d3e03f647ad4028145163fb47650087a96647e67c495a101275b8b3fe37498b0b65772b420dd2f400",
+              "index": "4724510778780143918"
+            }
+          ],
+          "withdrawals": [
+            {
+              "source_address": "0xc0387f410db44f61de0b6adbfd057a321b02fb21",
+              "validator_pubkey": "0x83feea64397a7a9d3fbac0b9a16ccbfd63c4d4fa5d0fd8bbfa13739148e752ce1e9b1e01654b56cb56a196fd8d64db3f",
+              "amount": "4722858299858427086"
+            }
+          ],
           "consolidations": [
             {
               "source_address": "0x1fde61412d2eacb9a85a6eb41fb2e0333a11f6fb",
               "source_pubkey": "0xadd399d4422421f5e4a3457fa7c9dad6af725f7cf4d3f44c2b8026ff8224308fcb7edbcd677a1835ecff50b3960727b5",
               "target_pubkey": "0x85808a97e324987cd03bfc33e49aaa6cbc8a5cb66fb44111b0d8bc8c6b7c810638e6a6ac88d640b3492a684c19053f61"
-            }
-          ],
-          "deposits": [
-            {
-              "amount": "4684851168694822957",
-              "index": "4688156139423158509",
-              "pubkey": "0xb8fa03e47468016f15b89212a91f203194684e0cbbac07b6cd428fc7e10cb7d8a363985b46972eedd7bc434fc701c4b3",
-              "signature": "0xa529495633ab9ab138c0756646074fc7753fafbb44389490ddd46048f29267f6b85e46abbc1fe71c42fc98513ed0f6f800ebc9eaa04b484e29af7d7bb0c38b5e088435aee8583a812545b3057c184a4634957604ec0647d1fa81da2d15a5f198",
-              "withdrawal_credentials": "0x0100000000000000000000003ece09418d9cc1c206477b3f86b61438983ee789"
-            },
-            {
-              "amount": "4734425686670183278",
-              "index": "4724510778780143918",
-              "pubkey": "0xb8a7fcd7c58854073db5f088cddf200b04864b6980925343c0d0b3238d5ce3880197ba175c59b61aade73eb79a74cb28",
-              "signature": "0x94d7e47981799407b6455afd50007fd6c7736bc24b685c668e8af371e8e917d974e93874db6532a4ae61f4f6deea97bd12c425def40e2d7d3e03f647ad4028145163fb47650087a96647e67c495a101275b8b3fe37498b0b65772b420dd2f400",
-              "withdrawal_credentials": "0x01000000000000000000000001eeb941cebf96b04a6e6129b9adac2fdce3046e"
-            }
-          ],
-          "withdrawals": [
-            {
-              "amount": "4722858299858427086",
-              "source_address": "0xc0387f410db44f61de0b6adbfd057a321b02fb21",
-              "validator_pubkey": "0x83feea64397a7a9d3fbac0b9a16ccbfd63c4d4fa5d0fd8bbfa13739148e752ce1e9b1e01654b56cb56a196fd8d64db3f"
             }
           ]
         }
