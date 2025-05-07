@@ -145,7 +145,7 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
   void getAsBitSet_withFullStartEnd() {
     final SszBitlist list = random(SCHEMA, 100);
 
-    final BitSet fullSlice = list.getAsBitSet(0, 99);
+    final BitSet fullSlice = list.getAsBitSet(0, 100);
 
     final SszBitlist newList = SCHEMA.wrapBitSet(100, fullSlice);
 
