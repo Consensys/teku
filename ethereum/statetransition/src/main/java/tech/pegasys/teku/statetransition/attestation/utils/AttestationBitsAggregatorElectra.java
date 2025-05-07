@@ -49,8 +49,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
     this.committeesSize = Objects.requireNonNull(committeesSize, "committeesSize cannot be null");
     this.committeeBits = initialCommitteeBits.getAsBitSet();
     this.committeeAggregationBitsMap =
-        parseAggregationBits(
-            initialAggregationBits.getAsBitSet(), this.committeeBits, this.committeesSize);
+        parseAggregationBits(initialAggregationBits, this.committeeBits, this.committeesSize);
   }
 
   static AttestationBitsAggregator fromAttestationSchema(
@@ -66,7 +65,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   private static Int2ObjectMap<BitSet> parseAggregationBits(
-      final BitSet flatAggregationBits,
+      final SszBitlist aggregationBits,
       final BitSet committeeIndices,
       final Int2IntMap committeesSizeMap) {
     final Int2ObjectMap<BitSet> result = new Int2ObjectOpenHashMap<>();
@@ -78,8 +77,9 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
       final int committeeSize = committeesSizeMap.getOrDefault(committeeIndex, 0);
       if (committeeSize > 0) {
-        int sliceEnd = Math.min(currentOffset + committeeSize, flatAggregationBits.length());
-        BitSet committeeBits = flatAggregationBits.get(currentOffset, sliceEnd);
+        int sliceEnd =
+            Math.min(currentOffset + committeeSize, aggregationBits.getLastSetBitIndex() + 1);
+        final BitSet committeeBits = aggregationBits.getAsBitSet(currentOffset, sliceEnd);
         result.put(committeeIndex, committeeBits);
       }
       currentOffset += committeeSize; // Always advance by the declared committee size
@@ -100,18 +100,16 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   @Override
   public boolean aggregateWith(final Attestation other) {
     final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
-    final BitSet otherAggregationBitsData = other.getAggregationBits().getAsBitSet();
     final Int2ObjectMap<BitSet> otherParsedAggregationMap =
-        parseAggregationBits(otherAggregationBitsData, otherCommitteeBits, this.committeesSize);
+        parseAggregationBits(other.getAggregationBits(), otherCommitteeBits, this.committeesSize);
     return performMerge(otherCommitteeBits, otherParsedAggregationMap, true);
   }
 
   @Override
   public void or(final Attestation other) {
     final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
-    final BitSet otherAggregationBitsData = other.getAggregationBits().getAsBitSet();
     final Int2ObjectMap<BitSet> otherParsedAggregationMap =
-        parseAggregationBits(otherAggregationBitsData, otherCommitteeBits, this.committeesSize);
+        parseAggregationBits(other.getAggregationBits(), otherCommitteeBits, this.committeesSize);
     performMerge(otherCommitteeBits, otherParsedAggregationMap, false);
   }
 
@@ -182,7 +180,6 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   @Override
   public boolean isSuperSetOf(final Attestation other) {
     final BitSet otherInternalCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
-    final BitSet otherInternalAggregationBits = other.getAggregationBits().getAsBitSet();
 
     final BitSet committeeIntersection = (BitSet) this.committeeBits.clone();
     committeeIntersection.and(otherInternalCommitteeBits);
@@ -192,7 +189,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
     final Int2ObjectMap<BitSet> otherCommitteeAggregationBitsMap =
         parseAggregationBits(
-            otherInternalAggregationBits, otherInternalCommitteeBits, this.committeesSize);
+            other.getAggregationBits(), otherInternalCommitteeBits, this.committeesSize);
 
     for (int committeeIndex = otherInternalCommitteeBits.nextSetBit(0);
         committeeIndex >= 0;
@@ -283,9 +280,9 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   public String toString() {
     long totalSetBits = 0;
     if (committeeAggregationBitsMap != null) {
-      for (final BitSet bs : committeeAggregationBitsMap.values()) {
-        if (bs != null) {
-          totalSetBits += bs.cardinality();
+      for (final BitSet bitSet : committeeAggregationBitsMap.values()) {
+        if (bitSet != null) {
+          totalSetBits += bitSet.cardinality();
         }
       }
     }

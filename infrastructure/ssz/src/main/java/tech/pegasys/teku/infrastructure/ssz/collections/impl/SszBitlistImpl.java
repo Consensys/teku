@@ -96,6 +96,11 @@ public class SszBitlistImpl extends SszListImpl<SszBit> implements SszBitlist {
   }
 
   @Override
+  public BitSet getAsBitSet(final int start, final int end) {
+    return value.getAsBitSet(start, end);
+  }
+
+  @Override
   public int getLastSetBitIndex() {
     return value.getLastSetBitIndex();
   }

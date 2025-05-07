@@ -67,6 +67,10 @@ class BitlistImpl {
     return (BitSet) data.clone();
   }
 
+  public BitSet getAsBitSet(final int start, final int end) {
+    return data.get(start, end);
+  }
+
   public int getLastSetBitIndex() {
     return data.length() - 1;
   }

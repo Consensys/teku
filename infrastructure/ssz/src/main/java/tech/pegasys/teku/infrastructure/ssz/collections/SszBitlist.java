@@ -46,6 +46,8 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit>, SszBitSet
 
   BitSet getAsBitSet();
 
+  BitSet getAsBitSet(int start, int end);
+
   int getLastSetBitIndex();
 
   /**
