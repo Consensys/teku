@@ -87,18 +87,18 @@ class GraffitiParserTest {
   @Test
   void loadGraffitiProvider_shouldCreateMultimodeProviderForYamlFile(final @TempDir Path tempDir)
       throws IOException {
-    // Создаем временный YAML файл
+    // Create temporary YAML file
     final Path yamlFile = tempDir.resolve("graffiti.yaml");
 
-    // Настраиваем конфигурацию
-    MultimodeGraffitiProvider.GraffitiConfiguration config =
+    // Set up configuration
+    final MultimodeGraffitiProvider.GraffitiConfiguration config =
         new MultimodeGraffitiProvider.GraffitiConfiguration();
     config.ordered = List.of("first message", "second message");
 
-    // Записываем в файл
+    // Write to file
     new ObjectMapper(new YAMLFactory()).writeValue(yamlFile.toFile(), config);
 
-    // Проверяем, что создается правильный тип провайдера
+    // Verify that the correct provider type is created
     final GraffitiProvider provider =
         GraffitiParser.loadGraffitiProvider(
             Optional.of(defaultGraffiti), Optional.of(publicKey), Optional.of(yamlFile));
@@ -109,11 +109,11 @@ class GraffitiParserTest {
   @Test
   void loadGraffitiProvider_shouldCreateFileBackedProviderForTextFile(final @TempDir Path tempDir)
       throws IOException {
-    // Создаем временный текстовый файл
+    // Create temporary text file
     final Path textFile = tempDir.resolve("graffiti.txt");
     Files.writeString(textFile, "Simple graffiti text");
 
-    // Проверяем, что создается правильный тип провайдера
+    // Verify that the correct provider type is created
     final GraffitiProvider provider =
         GraffitiParser.loadGraffitiProvider(
             Optional.of(defaultGraffiti), Optional.of(publicKey), Optional.of(textFile));
@@ -124,11 +124,11 @@ class GraffitiParserTest {
   @Test
   void loadGraffitiProvider_shouldHandleInvalidYamlFile(final @TempDir Path tempDir)
       throws IOException {
-    // Создаем временный файл с некорректным YAML
+    // Create temporary file with invalid YAML
     final Path invalidFile = tempDir.resolve("invalid.yaml");
     Files.writeString(invalidFile, "invalid: yaml: format: - missing closing");
 
-    // Проверяем, что создается FileBackedGraffitiProvider, а не падает с ошибкой
+    // Verify that FileBackedGraffitiProvider is created instead of throwing an error
     final GraffitiProvider provider =
         GraffitiParser.loadGraffitiProvider(
             Optional.of(defaultGraffiti), Optional.of(publicKey), Optional.of(invalidFile));
