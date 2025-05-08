@@ -645,6 +645,29 @@ public class AttestationBitsAggregatorElectraTest {
   }
 
   @Test
+  void getAggregationBits_shouldBeConsistent_singleCommittee() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    assertThat(aggregator.getAggregationBits().size()).isEqualTo(committeeSizes.get(0));
+
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
+  @Test
+  void getAggregationBits_shouldBeConsistent_multiCommittee() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    assertThat(aggregator.getAggregationBits().size())
+        .isEqualTo(committeeSizes.get(0) + committeeSizes.get(1));
+
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
+  @Test
   void copy_shouldNotModifyOriginal() {
     final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
     final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
