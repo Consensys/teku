@@ -12,5 +12,6 @@
 - Added `--p2p-static-peers-url` option to read static peers from a URL or file
 - Added node epoch and computed slot to the sync committee duties failure message for more context about the failure condition.
 - Updated third party libraries.
+- Added an info message on startup for the highest supported milestone and associated epoch.
 
 ### Bug Fixes
