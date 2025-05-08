@@ -25,7 +25,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXEC
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.google.common.net.MediaType;
 import java.util.Optional;
@@ -49,8 +48,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
-// TODO-fulu stop ignoring FULU after Electra release
-@TestSpecContext(allMilestones = true, ignoredMilestones = FULU, network = Eth2Network.MINIMAL)
+@TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
 public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
   private ProduceBlockRequest request;
