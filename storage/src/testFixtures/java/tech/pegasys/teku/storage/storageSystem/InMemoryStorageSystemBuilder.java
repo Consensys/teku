@@ -74,25 +74,18 @@ public class InMemoryStorageSystemBuilder {
   }
 
   public StorageSystem build() {
-    final Database database;
-    switch (version) {
-      case LEVELDB_TREE:
-        database = createLevelDbTreeDatabase();
-        break;
-      case LEVELDB2: // Leveldb only varies by db type which doesn't apply to in-memory
-      case V6:
-        database = createV6Database();
-        break;
-      case LEVELDB1: // Leveldb only varies by db type which doesn't apply to in-memory
-      case V5:
-        database = createV5Database();
-        break;
-      case V4:
-        database = createV4Database();
-        break;
-      default:
-        throw new UnsupportedOperationException("Unsupported database version: " + version);
-    }
+    final Database database =
+        switch (version) {
+          case LEVELDB_TREE ->
+              createLevelDbTreeDatabase(); // Leveldb only varies by db type which doesn't apply to
+          // in-memory
+          case LEVELDB2, V6 ->
+              createV6Database(); // Leveldb only varies by db type which doesn't apply to in-memory
+          case LEVELDB1, V5 -> createV5Database();
+          case V4 -> createV4Database();
+          default ->
+              throw new UnsupportedOperationException("Unsupported database version: " + version);
+        };
 
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numberOfValidators);

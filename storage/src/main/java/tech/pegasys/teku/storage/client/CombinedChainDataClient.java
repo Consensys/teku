@@ -179,15 +179,15 @@ public class CombinedChainDataClient {
 
   public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
-    final Optional<List<BlobSidecar>> maybeBlobSidecars =
-        recentChainData.getBlobSidecars(slotAndBlockRoot);
-    if (maybeBlobSidecars.isPresent()) {
-      return SafeFuture.completedFuture(filterBlobSidecars(maybeBlobSidecars.get(), indices));
-    }
-    return historicalChainData
-        .getBlobSidecarKeys(slotAndBlockRoot)
-        .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
-        .thenCompose(this::getBlobSidecars);
+    return recentChainData
+        .getBlobSidecars(slotAndBlockRoot)
+        .map(blobSidecars -> SafeFuture.completedFuture(filterBlobSidecars(blobSidecars, indices)))
+        .orElseGet(
+            () ->
+                historicalChainData
+                    .getBlobSidecarKeys(slotAndBlockRoot)
+                    .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
+                    .thenCompose(this::getBlobSidecars));
   }
 
   public SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
@@ -195,35 +195,21 @@ public class CombinedChainDataClient {
     return historicalChainData
         .getAllBlobSidecarKeys(slot)
         .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
-        .thenCompose(this::getAllBlobSidecars);
+        .thenCompose(this::getBlobSidecars);
   }
 
-  private List<BlobSidecar> filterBlobSidecars(
-      final List<BlobSidecar> blobSidecars, final List<UInt64> indices) {
-    if (indices.isEmpty()) {
-      return blobSidecars;
-    }
-    return blobSidecars.stream().filter(key -> indices.contains(key.getIndex())).toList();
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    return historicalChainData
+        .getArchivedBlobSidecars(slotAndBlockRoot)
+        .thenApply(blobSidecars -> filterBlobSidecars(blobSidecars, indices));
   }
 
-  private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
-      final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
-    if (indices.isEmpty()) {
-      return keys.stream();
-    }
-    return keys.stream().filter(key -> indices.contains(key.getBlobIndex()));
-  }
-
-  private SafeFuture<List<BlobSidecar>> getBlobSidecars(
-      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
-    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
-        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
-  }
-
-  private SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
-      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
-    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
-        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
+  public SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return historicalChainData
+        .getArchivedBlobSidecars(slot)
+        .thenApply(blobSidecars -> filterBlobSidecars(blobSidecars, indices));
   }
 
   public SafeFuture<List<DataColumnSidecar>> getDataColumnSidecars(
@@ -572,15 +558,15 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByKey(
       final SlotAndBlockRootAndBlobIndex key) {
-    final Optional<List<BlobSidecar>> maybeBlobSidecars =
-        recentChainData.getBlobSidecars(key.getSlotAndBlockRoot());
-    if (maybeBlobSidecars.isPresent()) {
-      return key.getBlobIndex().isLessThan(maybeBlobSidecars.get().size())
-          ? SafeFuture.completedFuture(
-              Optional.of(maybeBlobSidecars.get().get(key.getBlobIndex().intValue())))
-          : SafeFuture.completedFuture(Optional.empty());
-    }
-    return historicalChainData.getBlobSidecar(key);
+    return recentChainData
+        .getBlobSidecars(key.getSlotAndBlockRoot())
+        .<SafeFuture<Optional<BlobSidecar>>>map(
+            blobSidecars ->
+                key.getBlobIndex().isLessThan(blobSidecars.size())
+                    ? SafeFuture.completedFuture(
+                        Optional.of(blobSidecars.get(key.getBlobIndex().intValue())))
+                    : SafeFuture.completedFuture(Optional.empty()))
+        .orElseGet(() -> historicalChainData.getBlobSidecar(key));
   }
 
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
@@ -882,6 +868,28 @@ public class CombinedChainDataClient {
             maybeBlockAndState ->
                 maybeBlockAndState.flatMap(
                     blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
+  }
+
+  private List<BlobSidecar> filterBlobSidecars(
+      final List<BlobSidecar> blobSidecars, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return blobSidecars;
+    }
+    return blobSidecars.stream().filter(key -> indices.contains(key.getIndex())).toList();
+  }
+
+  private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
+      final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return keys.stream();
+    }
+    return keys.stream().filter(key -> indices.contains(key.getBlobIndex()));
+  }
+
+  private SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
+        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
   }
 
   private Optional<Checkpoint> getFinalizedCheckpoint() {

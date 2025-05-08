@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-/** Similar to {@link java.util.stream.Stream} but may perform async operations */
+/** Similar to {@link Stream} but may perform async operations */
 public interface AsyncStream<T> extends AsyncStreamBase<T> {
 
   static <T> AsyncStream<T> empty() {

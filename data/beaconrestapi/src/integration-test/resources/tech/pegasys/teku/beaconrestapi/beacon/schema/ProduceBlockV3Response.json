@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu" ]
     },
     "execution_payload_blinded" : {
       "type" : "boolean"
@@ -45,6 +45,8 @@
         "$ref" : "#/components/schemas/BlockContentsElectra"
       }, {
         "$ref" : "#/components/schemas/BlindedBeaconBlockElectra"
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsFulu"
       } ]
     }
   }

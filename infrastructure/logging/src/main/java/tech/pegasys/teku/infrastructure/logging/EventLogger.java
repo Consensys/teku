@@ -55,10 +55,12 @@ public class EventLogger {
 
     final String genesisEventLog =
         String.format(
-            "Genesis Event *** \n"
-                + "Genesis state root: %s \n"
-                + "Genesis block root: %s \n"
-                + "Genesis time: %s GMT",
+            """
+                Genesis Event ***
+                Genesis state root: %s
+                Genesis block root: %s
+                Genesis time: %s GMT
+                """,
             hashTreeRoot.toHexString(), genesisBlockRoot.toHexString(), formattedGenesisTime);
     info(genesisEventLog, Color.CYAN);
   }

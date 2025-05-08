@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -93,7 +93,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
           stubAsyncRunner,
           spec,
           miscHelpersFulu,
-          KZG.NOOP,
+          NoOpKZG.INSTANCE,
           dataColumnSidecarPublisher,
           createCustodyGroupCountManager(config.getNumberOfCustodyGroups()),
           config.getNumberOfColumns(),
@@ -117,7 +117,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             stubAsyncRunner,
             spec,
             miscHelpersFulu,
-            KZG.NOOP,
+            NoOpKZG.INSTANCE,
             dataColumnSidecarPublisher,
             createCustodyGroupCountManager(config.getNumberOfCustodyGroups()),
             config.getNumberOfColumns(),
@@ -138,7 +138,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             stubAsyncRunner,
             spec,
             miscHelpersFulu,
-            KZG.NOOP,
+            NoOpKZG.INSTANCE,
             dataColumnSidecarPublisher,
             CustodyGroupCountManager.NOOP,
             config.getNumberOfColumns(),

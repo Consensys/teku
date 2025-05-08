@@ -43,7 +43,7 @@ public class MetadataMessageSchemaAltair
       final UInt64 seqNumber,
       final Iterable<Integer> attnets,
       final Iterable<Integer> syncnets,
-      final Optional<UInt64> custodySubnetCount) {
+      final Optional<UInt64> custodyGroupCount) {
     return new MetadataMessageAltair(
         this, seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
   }

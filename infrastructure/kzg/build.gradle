@@ -9,4 +9,5 @@ dependencies {
   implementation 'commons-io:commons-io'
 
   testFixturesImplementation 'com.google.guava:guava'
+  testFixturesImplementation 'io.consensys.tuweni:tuweni-bytes'
 }

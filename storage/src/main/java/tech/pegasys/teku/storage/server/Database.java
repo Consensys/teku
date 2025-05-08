@@ -42,7 +42,7 @@ import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 
 public interface Database extends AutoCloseable {
 
@@ -76,16 +76,14 @@ public interface Database extends AutoCloseable {
    *
    * @param lastSlotToPrune inclusive, not reached if limit happens first
    * @param pruneLimit maximum number of slots to prune.
-   * @param archiveWriter write BlobSidecars to archive when pruning.
+   * @param blobSidecarsArchiver write BlobSidecars to archive when pruning.
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
   boolean pruneOldestBlobSidecars(
-      UInt64 lastSlotToPrune,
-      int pruneLimit,
-      final DataArchiveWriter<List<BlobSidecar>> archiveWriter);
+      UInt64 lastSlotToPrune, int pruneLimit, BlobSidecarsArchiver blobSidecarsArchiver);
 
   boolean pruneOldestNonCanonicalBlobSidecars(
-      UInt64 lastSlotToPrune, int pruneLimit, DataArchiveWriter<List<BlobSidecar>> archiveWriter);
+      UInt64 lastSlotToPrune, int pruneLimit, BlobSidecarsArchiver blobSidecarsArchiver);
 
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);

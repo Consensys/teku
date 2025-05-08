@@ -26,7 +26,7 @@ public interface MetadataMessageSchema<T extends MetadataMessage> extends SszCon
       UInt64 seqNumber,
       Iterable<Integer> attnets,
       final Iterable<Integer> syncnets,
-      final Optional<UInt64> custodySubnetCount);
+      final Optional<UInt64> custodyGroupCount);
 
   T createDefault();
 }

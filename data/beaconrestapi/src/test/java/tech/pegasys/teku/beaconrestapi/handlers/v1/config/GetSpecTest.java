@@ -64,7 +64,7 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     setHandler(new GetSpec(configProvider));
     handler.handleRequest(request);
 
-    final Map<String, String> result = (Map<String, String>) request.getResponseBody();
+    final Map<String, Object> result = (Map<String, Object>) request.getResponseBody();
     final Map<String, String> expected =
         parseStringMap(
             Resources.toString(

@@ -73,7 +73,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
@@ -945,7 +945,7 @@ public class KvStoreDatabase implements Database {
   public boolean pruneOldestBlobSidecars(
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
-      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
+      final BlobSidecarsArchiver blobSidecarsArchiver) {
     final Optional<UInt64> earliestBlobSidecarSlot = getEarliestBlobSidecarSlot();
     if (earliestBlobSidecarSlot.isPresent()
         && earliestBlobSidecarSlot.get().isGreaterThan(lastSlotToPrune)) {
@@ -953,7 +953,7 @@ public class KvStoreDatabase implements Database {
     }
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
         streamBlobSidecarKeys(earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
-      return pruneBlobSidecars(pruneLimit, prunableBlobKeys, archiveWriter, false);
+      return pruneBlobSidecars(pruneLimit, prunableBlobKeys, blobSidecarsArchiver, false);
     }
   }
 
@@ -961,7 +961,7 @@ public class KvStoreDatabase implements Database {
   public boolean pruneOldestNonCanonicalBlobSidecars(
       final UInt64 lastSlotToPrune,
       final int pruneLimit,
-      final DataArchiveWriter<List<BlobSidecar>> archiveWriter) {
+      final BlobSidecarsArchiver blobSidecarsArchiver) {
     final Optional<UInt64> earliestBlobSidecarSlot = getEarliestBlobSidecarSlot();
     if (earliestBlobSidecarSlot.isPresent()
         && earliestBlobSidecarSlot.get().isGreaterThan(lastSlotToPrune)) {
@@ -970,14 +970,15 @@ public class KvStoreDatabase implements Database {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
         streamNonCanonicalBlobSidecarKeys(
             earliestBlobSidecarSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
-      return pruneBlobSidecars(pruneLimit, prunableNoncanonicalBlobKeys, archiveWriter, true);
+      return pruneBlobSidecars(
+          pruneLimit, prunableNoncanonicalBlobKeys, blobSidecarsArchiver, true);
     }
   }
 
   private boolean pruneBlobSidecars(
       final int pruneLimit,
       final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
-      final DataArchiveWriter<List<BlobSidecar>> archiveWriter,
+      final BlobSidecarsArchiver blobSidecarsArchiver,
       final boolean nonCanonicalBlobSidecars) {
 
     int pruned = 0;
@@ -1010,11 +1011,9 @@ public class KvStoreDatabase implements Database {
           LOG.warn("Failed to retrieve BlobSidecars for keys: {}", keys);
         }
 
-        // Attempt to archive the BlobSidecars.
-        final boolean blobSidecarArchived = archiveWriter.archive(blobSidecars);
-        if (!blobSidecarArchived) {
-          LOG.error("Failed to archive and prune BlobSidecars. Stopping pruning");
-          break;
+        if (!keys.isEmpty()) {
+          final SlotAndBlockRoot slotAndBlockRoot = keys.getFirst().getSlotAndBlockRoot();
+          blobSidecarsArchiver.archive(slotAndBlockRoot, blobSidecars);
         }
 
         // Remove the BlobSidecars from the database.

@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +62,7 @@ public class PostRemoteKeysTest {
         List.of(
             new ExternalValidator(
                 BLSTestUtil.randomKeyPair(1).getPublicKey(),
-                Optional.of(new URL("http://host.com"))),
+                Optional.of(URI.create("http://host.com").toURL())),
             new ExternalValidator(BLSTestUtil.randomKeyPair(2).getPublicKey(), Optional.empty()));
     final PostRemoteKeysRequest body = new PostRemoteKeysRequest(externalValidators);
     when(request.getRequestBody()).thenReturn(body);
@@ -80,7 +81,7 @@ public class PostRemoteKeysTest {
       throws JsonProcessingException, MalformedURLException {
 
     BLSPublicKey publicKey = BLSTestUtil.randomKeyPair(1).getPublicKey();
-    URL url = new URL("http://host.com");
+    URL url = URI.create("http://host.com").toURL();
 
     List<ExternalValidator> externalValidators =
         List.of(
