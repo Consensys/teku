@@ -53,7 +53,6 @@ public class GetInclusionListRequest extends AbstractTypeDefRequest {
                 SharedApiTypes.withDataWrapper(
                     "GetInclusionListResponse",
                     listOf(new TransactionSchema(specConfig).getJsonTypeDefinition())))
-            .withHandler(SC_NOT_IMPLEMENTED, (request, response) -> Optional.empty())
             .withHandler(SC_SERVICE_UNAVAILABLE, (request, response) -> Optional.empty()));
   }
 }
