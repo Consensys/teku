@@ -189,7 +189,7 @@ public class SchemaTypes {
   public static final SchemaId<DataColumnSidecarSchema> DATA_COLUMN_SIDECAR_SCHEMA =
       create("DATA_COLUMN_SIDECAR_SCHEMA");
   public static final SchemaId<DataColumnsByRootIdentifierSchema>
-      DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA = create("DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA");
+      DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA = create("DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA");
   public static final SchemaId<MatrixEntrySchema> MATRIX_ENTRY_SCHEMA =
       create("MATRIX_ENTRY_SCHEMA");
   public static final SchemaId<DataColumnSidecarsByRootRequestMessageSchema>
