@@ -90,12 +90,12 @@ public abstract class AbstractSszImmutableContainer extends SszContainerImpl {
       return true;
     }
 
-    if (!(obj instanceof AbstractSszImmutableContainer)) {
+    if (obj instanceof final AbstractSszImmutableContainer other) {
+
+      return hashTreeRoot().equals(other.hashTreeRoot());
+    } else {
       return false;
     }
-
-    AbstractSszImmutableContainer other = (AbstractSszImmutableContainer) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

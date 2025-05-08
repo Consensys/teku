@@ -93,14 +93,14 @@ public class KeyStoreLoader {
   private static KeyStoreValidationException convertToKeyStoreValidationException(
       final JsonMappingException e) {
     final String cause;
-    if (e.getCause() instanceof KeyStoreValidationException) {
+    if (e.getCause() instanceof final KeyStoreValidationException keyStoreValidationException) {
       // this is wrapped because it is raised from custom deserializer in KeyStoreBytesModule to
       // validate enums
-      throw (KeyStoreValidationException) e.getCause();
+      throw keyStoreValidationException;
     }
 
-    if (e instanceof InvalidTypeIdException) {
-      cause = getKdfFunctionErrorMessage((InvalidTypeIdException) e);
+    if (e instanceof final InvalidTypeIdException invalidTypeIdException) {
+      cause = getKdfFunctionErrorMessage(invalidTypeIdException);
     } else {
       cause = "Invalid KeyStore: " + e.getMessage();
     }

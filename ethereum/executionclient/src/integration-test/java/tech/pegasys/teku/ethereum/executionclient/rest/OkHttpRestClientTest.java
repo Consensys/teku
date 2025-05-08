@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 class OkHttpRestClientTest {
 
   private static final Map<String, String> TEST_HEADERS = Map.of("foo", "bar");
+  private static final Duration TEST_TIMEOUT = Duration.ofSeconds(5);
   private static final String TEST_PATH = "v1/test";
 
   private final MockWebServer mockWebServer = new MockWebServer();
@@ -92,7 +94,7 @@ class OkHttpRestClientTest {
             .addHeader("Content-Type", "application/json"));
 
     final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
-        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -118,7 +120,7 @@ class OkHttpRestClientTest {
   void getsResponseAsyncIgnoringResponseBody() throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SafeFuture<Response<Void>> responseFuture = underTest.getAsync(TEST_PATH);
+    final SafeFuture<Response<Void>> responseFuture = underTest.getAsync(TEST_PATH, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -135,12 +137,32 @@ class OkHttpRestClientTest {
   }
 
   @Test
+  void getsResponseAsyncTimeouts() throws InterruptedException {
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setHeadersDelay(1, TimeUnit.SECONDS));
+
+    final SafeFuture<Response<Void>> responseFuture =
+        underTest.getAsync(TEST_PATH, Duration.ofMillis(100));
+
+    assertThat(responseFuture)
+        .failsWithin(Duration.ofSeconds(1))
+        .withThrowableThat()
+        .withCauseInstanceOf(InterruptedIOException.class)
+        .withMessageContaining("timeout");
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
+    assertThat(request.getMethod()).isEqualTo("GET");
+  }
+
+  @Test
   void getAsyncHandlesFailures() throws InterruptedException {
     final String errorBody = "{\"code\":400,\"message\":\"Invalid block: missing signature\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(errorBody));
 
     final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
-        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -157,7 +179,7 @@ class OkHttpRestClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(500));
 
     final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> secondResponseFuture =
-        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition, TEST_TIMEOUT);
 
     assertThat(secondResponseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -195,7 +217,8 @@ class OkHttpRestClientTest {
 
     final RequestContainer requestBodyObject = new RequestContainer(2);
     final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
-        underTest.postAsync(TEST_PATH, Map.of(), requestBodyObject, false, responseTypeDefinition);
+        underTest.postAsync(
+            TEST_PATH, Map.of(), requestBodyObject, false, responseTypeDefinition, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -232,7 +255,8 @@ class OkHttpRestClientTest {
 
     final RequestContainer requestBodyObject = new RequestContainer(2);
     final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
-        underTest.postAsync(TEST_PATH, Map.of(), requestBodyObject, true, responseTypeDefinition);
+        underTest.postAsync(
+            TEST_PATH, Map.of(), requestBodyObject, true, responseTypeDefinition, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -272,7 +296,8 @@ class OkHttpRestClientTest {
     doAnswer(invocation -> failingSchema).when(requestBodyObject).getSchema();
 
     final SafeFuture<Response<BuilderApiResponse<ResponseContainer>>> responseFuture =
-        underTest.postAsync(TEST_PATH, Map.of(), requestBodyObject, false, responseTypeDefinition);
+        underTest.postAsync(
+            TEST_PATH, Map.of(), requestBodyObject, false, responseTypeDefinition, TEST_TIMEOUT);
 
     // this will fail if there are uncaught exceptions in other threads
     Waiter.waitFor(() -> assertThat(responseFuture).isDone(), 30, TimeUnit.SECONDS, false);
@@ -291,7 +316,7 @@ class OkHttpRestClientTest {
 
     final RequestContainer requestBodyObject = new RequestContainer(2);
     final SafeFuture<Response<Void>> responseFuture =
-        underTest.postAsync(TEST_PATH, requestBodyObject, false);
+        underTest.postAsync(TEST_PATH, requestBodyObject, false, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -318,7 +343,7 @@ class OkHttpRestClientTest {
 
     final RequestContainer requestBodyObject = new RequestContainer(2);
     final SafeFuture<Response<Void>> responseFuture =
-        underTest.postAsync(TEST_PATH, requestBodyObject, true);
+        underTest.postAsync(TEST_PATH, requestBodyObject, true, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -350,7 +375,7 @@ class OkHttpRestClientTest {
 
     final RequestContainer requestBodyObject = new RequestContainer(2);
     final SafeFuture<Response<Void>> responseFuture =
-        underTest.postAsync(TEST_PATH, requestBodyObject, true);
+        underTest.postAsync(TEST_PATH, requestBodyObject, true, TEST_TIMEOUT);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))

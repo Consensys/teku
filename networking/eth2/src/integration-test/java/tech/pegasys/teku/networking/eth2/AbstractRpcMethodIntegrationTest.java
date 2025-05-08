@@ -213,6 +213,10 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
+        .filter(
+            specMilestone ->
+                specMilestone.isLessThan(
+                    SpecMilestone.FULU)) // TODO-fulu eventually we remove this ignore
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();

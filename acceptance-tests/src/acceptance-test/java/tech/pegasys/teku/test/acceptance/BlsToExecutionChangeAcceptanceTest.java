@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.EventType;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

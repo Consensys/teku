@@ -189,7 +189,7 @@ public class DataColumnSidecarsByRootMessageHandler
               if (maybeSlot.isPresent()) {
                 return combinedChainDataClient.getNonCanonicalSidecar(
                     new DataColumnSlotAndIdentifier(
-                        maybeSlot.get(), identifier.blockRoot(), identifier.columnId()));
+                        maybeSlot.get(), identifier.blockRoot(), identifier.columnIndex()));
               } else {
                 return SafeFuture.completedFuture(Optional.empty());
               }

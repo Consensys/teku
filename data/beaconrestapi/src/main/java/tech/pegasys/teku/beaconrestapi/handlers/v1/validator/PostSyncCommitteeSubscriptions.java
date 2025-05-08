@@ -44,9 +44,13 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
             .operationId("prepareSyncCommitteeSubnets")
             .summary("Subscribe to sync committee subnets")
             .description(
-                "Subscribe to a number of sync committee subnets\n\n"
-                    + "Sync committees are not present in phase0, but are required for Altair networks.\n\n"
-                    + "Subscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.")
+                """
+                    Subscribe to a number of sync committee subnets
+
+                    Sync committees are not present in phase0, but are required for Altair networks.
+
+                    Subscribing to sync committee subnets is an action performed by VC to enable network participation in Altair networks, and only required if the VC has an active validator in an active sync committee.
+                    """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(DeserializableTypeDefinition.listOf(SYNC_COMMITTEE_SUBSCRIPTION))
             .response(SC_OK, "Successful response")

@@ -9,7 +9,8 @@
 ### Breaking Changes
 
 ### Additions and Improvements
-- Updated Teku bootnode ENR on Sepolia and Mainnet
-- Scheduled Electra for Mainnet at epoch 364032 (May 7, 2025, 10:05:11am UTC)
+- Added `--p2p-static-peers-url` option to read static peers from a URL or file
+- Added node epoch and computed slot to the sync committee duties failure message for more context about the failure condition.
+- Updated third party libraries.
 
 ### Bug Fixes

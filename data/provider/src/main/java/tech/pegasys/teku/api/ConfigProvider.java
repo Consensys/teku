@@ -16,11 +16,10 @@ package tech.pegasys.teku.api;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 
 public class ConfigProvider {
   final Spec spec;
@@ -29,7 +28,7 @@ public class ConfigProvider {
     this.spec = spec;
   }
 
-  public Map<String, String> getConfig() {
+  public Map<String, Object> getConfig() {
     final SpecConfigData configuration =
         new SpecConfigData(spec.getSpecConfigAndParent().specConfig());
     return configuration.getConfigMap();
@@ -49,12 +48,7 @@ public class ConfigProvider {
     return v.toString();
   }
 
-  public GetForkScheduleResponse getForkSchedule() {
-    final List<Fork> forkList = spec.getForkSchedule().getForks().stream().map(Fork::new).toList();
-    return new GetForkScheduleResponse(forkList);
-  }
-
-  public List<tech.pegasys.teku.spec.datastructures.state.Fork> getStateForkSchedule() {
+  public List<Fork> getStateForkSchedule() {
     return spec.getForkSchedule().getFullForkList();
   }
 

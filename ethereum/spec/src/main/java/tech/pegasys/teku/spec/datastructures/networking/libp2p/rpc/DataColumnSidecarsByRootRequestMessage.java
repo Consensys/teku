@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,8 +23,8 @@ public class DataColumnSidecarsByRootRequestMessage extends SszListImpl<DataColu
 
   public DataColumnSidecarsByRootRequestMessage(
       final DataColumnSidecarsByRootRequestMessageSchema schema,
-      final List<DataColumnsByRootIdentifier> dataColumnIdentifiers) {
-    super(schema, schema.createTreeFromElements(dataColumnIdentifiers));
+      final List<DataColumnsByRootIdentifier> dataColumnsByRootIdentifiers) {
+    super(schema, schema.createTreeFromElements(dataColumnsByRootIdentifiers));
   }
 
   DataColumnSidecarsByRootRequestMessage(

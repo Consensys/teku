@@ -29,7 +29,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -87,7 +86,7 @@ public class GetState extends RestApiEndpoint {
                         stateAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(stateAndMetaData.getMilestone()).name());
+                              stateAndMetaData.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(stateAndMetaData);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));

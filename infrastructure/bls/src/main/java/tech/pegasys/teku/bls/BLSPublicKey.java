@@ -173,12 +173,12 @@ public final class BLSPublicKey {
       return true;
     }
 
-    if (!(obj instanceof BLSPublicKey)) {
+    if (obj instanceof final BLSPublicKey other) {
+
+      return Objects.equals(this.toBytesCompressed(), other.toBytesCompressed());
+    } else {
       return false;
     }
-
-    BLSPublicKey other = (BLSPublicKey) obj;
-    return Objects.equals(this.toBytesCompressed(), other.toBytesCompressed());
   }
 
   @Override

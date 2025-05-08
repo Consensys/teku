@@ -133,8 +133,8 @@ public class SszDataAssert<T extends SszData> extends AbstractAssert<SszDataAsse
         List<String> res = compareByGetters(c1.get(i), c2.get(i));
         if (!res.isEmpty()) {
           String traceDetails;
-          if (actual instanceof SszContainer) {
-            SszContainerSchema<?> containerSchema = ((SszContainer) actual).getSchema();
+          if (actual instanceof final SszContainer sszContainer) {
+            SszContainerSchema<?> containerSchema = sszContainer.getSchema();
             traceDetails =
                 containerSchema.toString() + "." + containerSchema.getFieldNames().get(i);
           } else {

@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -339,7 +340,9 @@ class BlockOperationSelectorFactoryTestFulu {
 
     assertThatThrownBy(
             () ->
-                factory.createDataColumnSidecarsSelector(KZG.NOOP).apply(signedBlindedBeaconBlock))
+                factory
+                    .createDataColumnSidecarsSelector(NoOpKZG.INSTANCE)
+                    .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "Commitments in the builder BlobsCellBundle don't match the commitments in the block");
@@ -362,7 +365,9 @@ class BlockOperationSelectorFactoryTestFulu {
 
     assertThatThrownBy(
             () ->
-                factory.createDataColumnSidecarsSelector(KZG.NOOP).apply(signedBlindedBeaconBlock))
+                factory
+                    .createDataColumnSidecarsSelector(NoOpKZG.INSTANCE)
+                    .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "The number of blobs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
@@ -385,7 +390,9 @@ class BlockOperationSelectorFactoryTestFulu {
 
     assertThatThrownBy(
             () ->
-                factory.createDataColumnSidecarsSelector(KZG.NOOP).apply(signedBlindedBeaconBlock))
+                factory
+                    .createDataColumnSidecarsSelector(NoOpKZG.INSTANCE)
+                    .apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Expected 128 proofs but got 3");
   }

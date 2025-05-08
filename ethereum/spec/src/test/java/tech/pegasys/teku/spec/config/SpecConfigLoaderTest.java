@@ -19,9 +19,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltair
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
@@ -55,7 +53,7 @@ public class SpecConfigLoaderTest {
    * sufficient.
    */
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"holesky", "mainnet"})
+  @ValueSource(strings = {"hoodi", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
     final SpecConfig config = SpecConfigLoader.loadConfig(name).specConfig();
     assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
@@ -161,10 +159,8 @@ public class SpecConfigLoaderTest {
     return getClass().getResourceAsStream("invalid/" + file);
   }
 
-  private Map<String, String> readJsonConfig(final InputStream source) throws IOException {
-    final ObjectMapper mapper = new ObjectMapper();
-    return mapper
-        .readerFor(mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
-        .readValue(source);
+  private Map<String, Object> readJsonConfig(final InputStream source) {
+    YamlConfigReader reader = new YamlConfigReader();
+    return reader.readValues(source);
   }
 }

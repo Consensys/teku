@@ -436,32 +436,29 @@ public class ProposerConfigManagerTest {
 
   private ProposerConfig.Config buildSingleConfigWithProperty(
       final Properties property, final Object value, final boolean isDefault) {
-    switch (property) {
-      case FEE_RECIPIENT:
-        return new ProposerConfig.Config((Eth1Address) value, null);
-      case BUILDER_ENABLED:
-        return new ProposerConfig.Config(
-            isDefault ? defaultFeeRecipientConfig : null,
-            new ProposerConfig.BuilderConfig((Boolean) value, null, null));
-      case BUILDER_GAS_LIMIT:
-        return new ProposerConfig.Config(
-            isDefault ? defaultFeeRecipientConfig : null,
-            new ProposerConfig.BuilderConfig(isDefault ? false : null, (UInt64) value, null));
-      case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY:
-        return new ProposerConfig.Config(
-            isDefault ? defaultFeeRecipientConfig : null,
-            new ProposerConfig.BuilderConfig(
-                isDefault ? false : null,
-                null,
-                new RegistrationOverrides(null, (BLSPublicKey) value)));
-      case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP:
-        return new ProposerConfig.Config(
-            isDefault ? defaultFeeRecipientConfig : null,
-            new ProposerConfig.BuilderConfig(
-                isDefault ? false : null, null, new RegistrationOverrides((UInt64) value, null)));
-    }
-
-    throw new RuntimeException();
+    return switch (property) {
+      case FEE_RECIPIENT -> new ProposerConfig.Config((Eth1Address) value, null);
+      case BUILDER_ENABLED ->
+          new ProposerConfig.Config(
+              isDefault ? defaultFeeRecipientConfig : null,
+              new ProposerConfig.BuilderConfig((Boolean) value, null, null));
+      case BUILDER_GAS_LIMIT ->
+          new ProposerConfig.Config(
+              isDefault ? defaultFeeRecipientConfig : null,
+              new ProposerConfig.BuilderConfig(isDefault ? false : null, (UInt64) value, null));
+      case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY ->
+          new ProposerConfig.Config(
+              isDefault ? defaultFeeRecipientConfig : null,
+              new ProposerConfig.BuilderConfig(
+                  isDefault ? false : null,
+                  null,
+                  new RegistrationOverrides(null, (BLSPublicKey) value)));
+      case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP ->
+          new ProposerConfig.Config(
+              isDefault ? defaultFeeRecipientConfig : null,
+              new ProposerConfig.BuilderConfig(
+                  isDefault ? false : null, null, new RegistrationOverrides((UInt64) value, null)));
+    };
   }
 
   private void proposerWithRuntimeConfiguration(final Path tempDir) throws IOException {

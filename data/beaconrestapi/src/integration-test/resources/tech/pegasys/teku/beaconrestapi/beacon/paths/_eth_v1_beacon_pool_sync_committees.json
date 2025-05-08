@@ -3,7 +3,7 @@
     "tags" : [ "Beacon", "Validator Required Api" ],
     "operationId" : "submitPoolSyncCommitteeSignatures",
     "summary" : "Submit sync committee signatures to node",
-    "description" : "Submits sync committee message objects to the node.\n\nSync committee messages are not present in phase0, but are required for Altair networks.\n\nIf a sync committee message is validated successfully the node MUST publish that sync committee message on all applicable subnets.\n\nIf one or more sync committee messages fail validation the node MUST return a 400 error with details of which sync committee messages have failed, and why.",
+    "description" : "Submits sync committee message objects to the node.\n\nSync committee messages are not present in phase0, but are required for Altair networks.\n\nIf a sync committee message is validated successfully the node MUST publish that sync committee message on all applicable subnets.\n\nIf one or more sync committee messages fail validation the node MUST return a 400 error with details of which sync committee messages have failed, and why.\n",
     "requestBody" : {
       "content" : {
         "application/json" : {

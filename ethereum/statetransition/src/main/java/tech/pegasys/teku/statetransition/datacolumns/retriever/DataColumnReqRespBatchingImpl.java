@@ -81,7 +81,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
                 entry ->
                     byRootIdentifierSchema.create(
                         entry.getKey(),
-                        entry.getValue().stream().map(DataColumnIdentifier::columnId).toList()))
+                        entry.getValue().stream().map(DataColumnIdentifier::columnIndex).toList()))
             .toList();
     final AsyncStream<DataColumnSidecar> response =
         batchRpc.requestDataColumnSidecarsByRoot(nodeId, dataColumnsByRootIdentifiers);

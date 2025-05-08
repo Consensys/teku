@@ -81,11 +81,11 @@ class SimpleLeafNode implements LeafNode, TreeNode {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof LeafNode)) {
+    if (o instanceof final LeafNode otherLeaf) {
+      return Objects.equals(getData(), otherLeaf.getData());
+    } else {
       return false;
     }
-    LeafNode otherLeaf = (LeafNode) o;
-    return Objects.equals(getData(), otherLeaf.getData());
   }
 
   @Override

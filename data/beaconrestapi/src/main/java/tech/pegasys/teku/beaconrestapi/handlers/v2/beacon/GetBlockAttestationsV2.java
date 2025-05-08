@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -88,7 +87,7 @@ public class GetBlockAttestationsV2 extends RestApiEndpoint {
                         attestationsAndMetadata -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(attestationsAndMetadata.getMilestone()).name());
+                              attestationsAndMetadata.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(attestationsAndMetadata);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));

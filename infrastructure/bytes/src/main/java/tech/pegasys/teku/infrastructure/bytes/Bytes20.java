@@ -49,8 +49,8 @@ public class Bytes20 {
    */
   public static Bytes20 leftPad(final Bytes value) {
     checkNotNull(value);
-    if (value instanceof Bytes20) {
-      return (Bytes20) value;
+    if (value instanceof final Bytes20 bytes20) {
+      return bytes20;
     }
     checkArgument(value.size() <= SIZE, "Expected at most %s bytes but got %s", SIZE, value.size());
     MutableBytes result = MutableBytes.create(SIZE);
@@ -67,8 +67,8 @@ public class Bytes20 {
    */
   public static Bytes20 rightPad(final Bytes value) {
     checkNotNull(value);
-    if (value instanceof Bytes20) {
-      return (Bytes20) value;
+    if (value instanceof final Bytes20 bytes20) {
+      return bytes20;
     }
     checkArgument(value.size() <= SIZE, "Expected at most %s bytes but got %s", SIZE, value.size());
     MutableBytes result = MutableBytes.create(SIZE);

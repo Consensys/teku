@@ -43,6 +43,12 @@ class BitvectorImpl {
     return new BitvectorImpl(bitset, size);
   }
 
+  public static BitvectorImpl wrapBitSet(final BitSet bitSet, final int size) {
+    final int length = bitSet.length();
+    checkArgument(length <= size, "BitSet length (%s) exceeds the size (%s)", length, size);
+    return new BitvectorImpl(bitSet, size);
+  }
+
   public static int sszSerializationLength(final int size) {
     return bitsCeilToBytes(size);
   }
@@ -112,6 +118,10 @@ class BitvectorImpl {
     return data.get(i);
   }
 
+  public BitSet getAsBitSet() {
+    return (BitSet) data.clone();
+  }
+
   public int getSize() {
     return size;
   }
@@ -146,11 +156,12 @@ class BitvectorImpl {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof BitvectorImpl)) {
+    if (o instanceof final BitvectorImpl bitvector) {
+
+      return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
+    } else {
       return false;
     }
-    BitvectorImpl bitvector = (BitvectorImpl) o;
-    return getSize() == bitvector.getSize() && Objects.equal(data, bitvector.data);
   }
 
   @Override

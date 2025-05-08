@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.api.exceptions.PublicKeyException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;

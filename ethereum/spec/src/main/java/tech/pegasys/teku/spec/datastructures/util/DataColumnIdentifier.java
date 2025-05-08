@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 
-public record DataColumnIdentifier(Bytes32 blockRoot, UInt64 columnId) {
+public record DataColumnIdentifier(Bytes32 blockRoot, UInt64 columnIndex) {
   public static DataColumnIdentifier createFromSidecar(final DataColumnSidecar sidecar) {
     return new DataColumnIdentifier(sidecar.getBlockRoot(), sidecar.getIndex());
   }

@@ -134,7 +134,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       // trusted setup loading will be handled by the BeaconChainController
       kzg = KZG.getInstance(false);
     } else {
-      kzg = KZG.NOOP;
+      kzg = KZG.DISABLED;
     }
     this.blobsUtil = new BlobsUtil(spec, kzg);
   }

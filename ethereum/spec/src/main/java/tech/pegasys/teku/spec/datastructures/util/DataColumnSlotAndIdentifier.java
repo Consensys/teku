@@ -25,7 +25,7 @@ public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64
 
   public DataColumnSlotAndIdentifier(
       final UInt64 slot, final DataColumnIdentifier dataColumnIdentifier) {
-    this(slot, dataColumnIdentifier.blockRoot(), dataColumnIdentifier.columnId());
+    this(slot, dataColumnIdentifier.blockRoot(), dataColumnIdentifier.columnIndex());
   }
 
   public static DataColumnSlotAndIdentifier fromDataColumn(

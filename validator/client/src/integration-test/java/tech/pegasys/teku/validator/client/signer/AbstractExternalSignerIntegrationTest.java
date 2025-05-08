@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.signer;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
@@ -60,7 +60,8 @@ public abstract class AbstractExternalSignerIntegrationTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
-            .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
+            .validatorExternalSignerUrl(
+                URI.create("http://127.0.0.1:" + client.getLocalPort()).toURL())
             .validatorExternalSignerTimeout(TIMEOUT)
             .build();
     final Supplier<HttpClient> externalSignerHttpClientFactory =

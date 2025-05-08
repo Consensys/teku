@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.BitSet;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
@@ -47,6 +48,8 @@ public interface SszBitvector extends SszPrimitiveVector<Boolean, SszBit>, SszBi
 
   /** Returns the number of bits set to {@code true} in this {@code SszBitlist}. */
   int getBitCount();
+
+  BitSet getAsBitSet();
 
   @Override
   default boolean isSet(final int i) {

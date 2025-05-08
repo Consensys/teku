@@ -14,7 +14,7 @@
 package tech.pegasys.teku.api;
 
 import static java.util.Collections.emptyList;
-import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
+import static tech.pegasys.teku.api.response.ValidatorStatusUtil.getValidatorStatus;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -45,8 +45,8 @@ import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
-import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.provider.GenesisData;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.api.rewards.EpochAttestationRewardsCalculator;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -155,6 +155,10 @@ public class ChainDataProvider {
         genesisData.getGenesisTime(),
         genesisData.getGenesisValidatorsRoot(),
         spec.atEpoch(ZERO).getConfig().getGenesisForkVersion());
+  }
+
+  public Optional<UInt64> getNetworkCurrentSlot() {
+    return recentChainData.getCurrentSlot();
   }
 
   public tech.pegasys.teku.spec.datastructures.genesis.GenesisData getGenesisStateData() {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.BitSet;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszBitlistImpl;
@@ -42,6 +43,12 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit>, SszBitSet
   SszBitlistSchema<? extends SszBitlist> getSchema();
 
   // Bitlist methods
+
+  BitSet getAsBitSet();
+
+  BitSet getAsBitSet(int start, int end);
+
+  int getLastSetBitIndex();
 
   /**
    * Performs a logical OR of this bit list with the bit list argument.

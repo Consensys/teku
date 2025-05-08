@@ -16,8 +16,10 @@ package tech.pegasys.teku.infrastructure.json.types;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueTypeDefinition<T> {
@@ -28,6 +30,7 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
   private final Optional<Boolean> required;
   private final Optional<String> description;
   private final Optional<String> example;
+  private final Set<T> excludedEnumerations;
 
   public EnumHeaderTypeDefinition(
       final Class<T> itemType,
@@ -36,7 +39,8 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
       final String title,
       final Optional<Boolean> required,
       final Optional<String> description,
-      final Optional<String> example) {
+      final Optional<String> example,
+      final Set<T> excludedEnumerations) {
     this.itemType = itemType;
     this.serializer = serializer;
     this.name = name;
@@ -44,6 +48,7 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
     this.required = required;
     this.description = description;
     this.example = example;
+    this.excludedEnumerations = excludedEnumerations;
   }
 
   @Override
@@ -79,6 +84,9 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
     gen.writeArrayFieldStart("enum");
 
     for (T value : itemType.getEnumConstants()) {
+      if (excludedEnumerations.contains(value)) {
+        continue;
+      }
       gen.writeString(serializeToString(value));
     }
     gen.writeEndArray();
@@ -108,7 +116,14 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
   @Override
   public StringValueTypeDefinition<T> withDescription(final String description) {
     return new EnumHeaderTypeDefinition<>(
-        itemType, serializer, Optional.empty(), title, required, Optional.of(description), example);
+        itemType,
+        serializer,
+        Optional.empty(),
+        title,
+        required,
+        Optional.of(description),
+        example,
+        excludedEnumerations);
   }
 
   @Override
@@ -163,6 +178,7 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
     private Optional<Boolean> required = Optional.empty();
     private Optional<String> description = Optional.empty();
     private Optional<String> example = Optional.empty();
+    private final Set<T> excludedEnumerations = new HashSet<>();
 
     public EnumTypeHeaderDefinitionBuilder(
         final Class<T> itemType, final Function<T, String> serializer) {
@@ -195,9 +211,15 @@ public class EnumHeaderTypeDefinition<T extends Enum<T>> implements StringValueT
       return this;
     }
 
+    public EnumTypeHeaderDefinitionBuilder<T> excludedEnumerations(
+        final Set<T> excludedEnumerations) {
+      this.excludedEnumerations.addAll(excludedEnumerations);
+      return this;
+    }
+
     public EnumHeaderTypeDefinition<T> build() {
       return new EnumHeaderTypeDefinition<>(
-          itemType, serializer, name, title, required, description, example);
+          itemType, serializer, name, title, required, description, example, excludedEnumerations);
     }
   }
 }

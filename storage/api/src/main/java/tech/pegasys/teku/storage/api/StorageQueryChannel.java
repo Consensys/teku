@@ -58,7 +58,7 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(Bytes32 blockRoot);
 
   SafeFuture<Optional<StateAndBlockSummary>> getHotStateAndBlockSummaryByBlockRoot(
-      final Bytes32 blockRoot);
+      Bytes32 blockRoot);
 
   /**
    * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest
@@ -111,6 +111,11 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       SlotAndBlockRoot slotAndBlockRoot);
+
+  // Methods for retrieving archived blobs (when enabled)
+  SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+
+  SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(UInt64 slot);
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 

@@ -97,9 +97,10 @@ class BlstSecretKey implements SecretKey {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SecretKey)) {
+    if (o instanceof final SecretKey secretKey) {
+      return Objects.equals(toBytes(), secretKey.toBytes());
+    } else {
       return false;
     }
-    return Objects.equals(toBytes(), ((SecretKey) o).toBytes());
   }
 }

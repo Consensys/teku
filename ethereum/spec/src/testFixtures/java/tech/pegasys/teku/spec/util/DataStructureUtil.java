@@ -2163,6 +2163,12 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
+  public Withdrawal randomWithdrawal(final UInt64 validatorIndex, final UInt64 amount) {
+    return getCapellaSchemaDefinitions(randomSlot())
+        .getWithdrawalSchema()
+        .create(randomUInt64(), validatorIndex, randomBytes20(), amount);
+  }
+
   public DepositRequest randomDepositRequestWithValidSignature(final UInt64 index) {
     final BLSKeyPair keyPair = randomKeyPair();
     final DepositMessage depositMessage =

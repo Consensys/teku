@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.signer;
 
 import com.google.common.io.Resources;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -126,6 +127,6 @@ public abstract class AbstractSecureExternalSignerIntegrationTest {
   }
 
   protected URL getUrl() throws MalformedURLException {
-    return new URL("https://127.0.0.1:" + client.getLocalPort());
+    return URI.create("https://127.0.0.1:" + client.getLocalPort()).toURL();
   }
 }

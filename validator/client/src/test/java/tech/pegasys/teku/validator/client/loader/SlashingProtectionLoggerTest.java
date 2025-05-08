@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ public class SlashingProtectionLoggerTest {
           new ExternalSigner(
               spec,
               mock(HttpClient.class),
-              new URL("http://127.0.0.1/"),
+              URI.create("http://127.0.0.1/").toURL(),
               publicKey,
               TIMEOUT,
               mock(ThrottlingTaskQueueWithPriority.class),

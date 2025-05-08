@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
@@ -44,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -63,9 +60,6 @@ public class ValidatorDataProvider {
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;
 
-  private static final int SC_INTERNAL_ERROR = 500;
-  private static final int SC_ACCEPTED = 202;
-  private static final int SC_OK = 200;
   private final Spec spec;
 
   public ValidatorDataProvider(
@@ -134,14 +128,6 @@ public class ValidatorDataProvider {
   public SafeFuture<List<SubmitDataError>> submitAttestations(
       final List<Attestation> attestations) {
     return validatorApiChannel.sendSignedAttestations(attestations);
-  }
-
-  public SafeFuture<ValidatorBlockResult> submitSignedBlock(
-      final SignedBeaconBlock signedBeaconBlock,
-      final BroadcastValidationLevel broadcastValidationLevel) {
-    return submitSignedBlock(
-            signedBeaconBlock.asInternalSignedBeaconBlock(spec), broadcastValidationLevel)
-        .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlock(
@@ -272,21 +258,6 @@ public class ValidatorDataProvider {
 
   public boolean isPhase0Slot(final UInt64 slot) {
     return spec.atSlot(slot).getMilestone() == SpecMilestone.PHASE0;
-  }
-
-  private static ValidatorBlockResult generateSubmitSignedBlockResponse(
-      final SendSignedBlockResult result) {
-    int responseCode;
-    Optional<Bytes32> hashRoot = result.getBlockRoot();
-    if (result.getRejectionReason().isEmpty()) {
-      responseCode = SC_OK;
-    } else if (result.getRejectionReason().get().equals(FailureReason.INTERNAL_ERROR.name())) {
-      responseCode = SC_INTERNAL_ERROR;
-    } else {
-      responseCode = SC_ACCEPTED;
-    }
-
-    return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
   }
 
   private ObjectAndMetaData<Attestation> lookUpMetadata(final Attestation attestation) {

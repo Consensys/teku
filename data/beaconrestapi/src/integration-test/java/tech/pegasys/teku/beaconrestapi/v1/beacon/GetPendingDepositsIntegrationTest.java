@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingDeposits;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
@@ -50,7 +49,8 @@ public class GetPendingDepositsIntegrationTest extends AbstractDataBackedRestAPI
     assertThat(node.get("data").get(1).get("slot").asInt()).isEqualTo(10);
     assertThat(node.get("data").get(1).get("pubkey").asText())
         .isEqualTo(stateElectra.getPendingDeposits().get(1).getPublicKey().toHexString());
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.electra.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ELECTRA.lowerCaseName());
   }
 
   public Response get(final String stateId) throws IOException {

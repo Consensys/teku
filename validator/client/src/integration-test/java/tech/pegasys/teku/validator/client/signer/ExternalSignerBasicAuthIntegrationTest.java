@@ -19,6 +19,7 @@ import static org.mockserver.model.HttpResponse.response;
 
 import com.google.common.base.Splitter;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -37,8 +38,9 @@ public class ExternalSignerBasicAuthIntegrationTest
 
   @Override
   protected URL getUrl() throws MalformedURLException {
-    return new URL(
-        String.format("https://%s:%s@127.0.0.1:%s", username, password, client.getLocalPort()));
+    return URI.create(
+            String.format("https://%s:%s@127.0.0.1:%s", username, password, client.getLocalPort()))
+        .toURL();
   }
 
   @Test

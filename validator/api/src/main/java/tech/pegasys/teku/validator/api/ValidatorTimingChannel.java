@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.api;
 
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

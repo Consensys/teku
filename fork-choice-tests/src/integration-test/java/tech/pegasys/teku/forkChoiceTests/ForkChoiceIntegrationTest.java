@@ -113,34 +113,23 @@ public class ForkChoiceIntegrationTest {
     ForkChoiceTestStep stepKind = getStepKind(stepDescription);
     Object value = stepDescription.get(stepKind.name());
 
-    switch (stepKind) {
-      case slot:
-        {
-          return UInt64.valueOf((Integer) value);
-        }
-      case block:
-        {
-          return resolvePart(
+    return switch (stepKind) {
+      case slot -> UInt64.valueOf((Integer) value);
+      case block ->
+          resolvePart(
               SignedBeaconBlock.class,
               SPEC.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
               file,
               value);
-        }
-      case attestation:
-        {
-          return resolvePart(
+      case attestation ->
+          resolvePart(
               Attestation.class,
               SPEC.getGenesisSchemaDefinitions().getAttestationSchema(),
               file,
               value);
-        }
-      case checks:
-        {
-          return value;
-        }
-      default:
-        throw new IllegalArgumentException("Unsupported step kind " + stepKind);
-    }
+      case checks -> value;
+      default -> throw new IllegalArgumentException("Unsupported step kind " + stepKind);
+    };
   }
 
   private static ForkChoiceTestStep getStepKind(final Map<String, Object> ss) {

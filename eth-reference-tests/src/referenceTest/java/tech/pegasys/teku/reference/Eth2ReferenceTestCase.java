@@ -101,6 +101,8 @@ public abstract class Eth2ReferenceTestCase {
 
   private static final ImmutableMap<String, TestExecutor> FULU_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
           .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();

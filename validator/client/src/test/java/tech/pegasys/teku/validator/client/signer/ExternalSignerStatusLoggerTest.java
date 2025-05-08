@@ -19,6 +19,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.assertj.core.api.Assertions;
@@ -39,7 +40,7 @@ class ExternalSignerStatusLoggerTest {
 
   static {
     try {
-      SIGNER_URL = new URL("http://localhost:9000");
+      SIGNER_URL = URI.create("http://localhost:9000").toURL();
     } catch (final MalformedURLException e) {
       throw new RuntimeException(e);
     }

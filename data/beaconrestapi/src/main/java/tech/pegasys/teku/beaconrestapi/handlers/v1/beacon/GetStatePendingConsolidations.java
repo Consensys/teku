@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -92,7 +91,7 @@ public class GetStatePendingConsolidations extends RestApiEndpoint {
                         objectAndMetadata -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(objectAndMetadata.getMilestone()).name());
+                              objectAndMetadata.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(objectAndMetadata);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));

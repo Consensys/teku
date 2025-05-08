@@ -8,6 +8,7 @@ dependencies {
     api project(':infrastructure:kzg')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.yaml:snakeyaml'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'io.consensys.tuweni:tuweni-bytes'
     implementation 'io.consensys.tuweni:tuweni-ssz'

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.jupnp.UpnpService;
@@ -76,7 +75,7 @@ public class UpnpClientTest {
             new RemoteDeviceIdentity(
                 UDN.valueOf(NatManager.SERVICE_TYPE_WAN_IP_CONNECTION),
                 3600,
-                new URL("http://127.63.31.15/"),
+                URI.create("http://127.63.31.15/").toURL(),
                 null,
                 InetAddress.getByName("127.63.31.15")),
             new UDADeviceType("WANConnectionDevice"),

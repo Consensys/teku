@@ -47,8 +47,8 @@ public class BlstSignature implements Signature {
   }
 
   static BlstSignature fromSignature(final Signature signature) {
-    if (signature instanceof BlstSignature) {
-      return (BlstSignature) signature;
+    if (signature instanceof BlstSignature blstSignature) {
+      return blstSignature;
     } else {
       return fromBytes(signature.toBytesCompressed());
     }
@@ -158,9 +158,10 @@ public class BlstSignature implements Signature {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof Signature)) {
+    if (o instanceof final Signature signature) {
+      return Objects.equals(toBytesCompressed(), signature.toBytesCompressed());
+    } else {
       return false;
     }
-    return Objects.equals(toBytesCompressed(), ((Signature) o).toBytesCompressed());
   }
 }

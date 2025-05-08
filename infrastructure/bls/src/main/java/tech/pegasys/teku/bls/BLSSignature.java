@@ -145,10 +145,10 @@ public class BLSSignature {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof BLSSignature)) {
+    if (obj instanceof final BLSSignature signature) {
+      return Objects.equals(toBytesCompressed(), signature.toBytesCompressed());
+    } else {
       return false;
     }
-    BLSSignature other = (BLSSignature) obj;
-    return Objects.equals(toBytesCompressed(), other.toBytesCompressed());
   }
 }

@@ -103,6 +103,7 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   }
 
   @Override
+  @SuppressWarnings("PatternMatchingInstanceof")
   public final DataT createFromPackedNodeUnboxed(final TreeNode node, final int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);
@@ -149,9 +150,9 @@ public abstract class AbstractSszPrimitiveSchema<DataT, SszDataT extends SszPrim
   @Override
   public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
     final Bytes nodeData;
-    if (node instanceof LeafDataNode) {
+    if (node instanceof final LeafDataNode leafDataNode) {
       // small perf optimization
-      nodeData = ((LeafDataNode) node).getData();
+      nodeData = leafDataNode.getData();
     } else {
       nodeData = node.hashTreeRoot();
     }

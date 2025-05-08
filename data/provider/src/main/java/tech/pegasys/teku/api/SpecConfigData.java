@@ -33,8 +33,8 @@ public class SpecConfigData {
     this.specConfig = specConfig;
   }
 
-  public Map<String, String> getConfigMap() {
-    final Map<String, String> configAttributes = new HashMap<>();
+  public Map<String, Object> getConfigMap() {
+    final Map<String, Object> configAttributes = new HashMap<>();
     specConfig
         .getRawConfig()
         .forEach(

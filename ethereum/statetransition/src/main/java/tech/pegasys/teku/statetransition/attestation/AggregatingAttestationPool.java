@@ -354,10 +354,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return spec.validateAttestation(stateAtBlockSlot, attestationData).isEmpty();
   }
 
-  public synchronized Optional<ValidatableAttestation> createAggregateFor(
+  public synchronized Optional<Attestation> createAggregateFor(
       final Bytes32 attestationHashTreeRoot, final Optional<UInt64> committeeIndex) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
-        .flatMap(attestations -> attestations.stream(committeeIndex).findFirst());
+        .flatMap(attestations -> attestations.stream(committeeIndex).findFirst())
+        .map(ValidatableAttestation::getAttestation);
   }
 
   public synchronized void onReorg(final UInt64 commonAncestorSlot) {

@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.google.common.base.Charsets;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -81,7 +82,7 @@ public class ExternalValidatorSourceTest {
   void setup(@TempDir final Path tempDir) throws IOException, InterruptedException {
     config =
         ValidatorConfig.builder()
-            .validatorExternalSignerUrl(new URL("http://localhost:9000"))
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
             .build();
     externalSignerTaskQueue =
         ThrottlingTaskQueueWithPriority.create(
@@ -117,7 +118,7 @@ public class ExternalValidatorSourceTest {
 
     final AddValidatorResult addValidatorResult =
         externalValidatorSource.addValidator(publicKey, Optional.empty());
-    assertImportedSuccessfully(addValidatorResult, new URL("http://localhost:9000"));
+    assertImportedSuccessfully(addValidatorResult, URI.create("http://localhost:9000").toURL());
     assertFileContent(tempDir, publicKey, "{\"pubkey\":\"" + publicKey + "\"}");
 
     final DeleteKeyResult result = externalValidatorSource.deleteValidator(publicKey);
@@ -167,7 +168,7 @@ public class ExternalValidatorSourceTest {
   @Test
   void addValidator_shouldGetUrlIfProvided(@TempDir final Path tempDir) throws IOException {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    final URL url = new URL("http://host.com");
+    final URL url = URI.create("http://host.com").toURL();
 
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, false);
@@ -204,7 +205,8 @@ public class ExternalValidatorSourceTest {
         newExternalValidatorSource(tempDir, false);
 
     final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
-    createRemoteKeyFile(dataDirLayout, publicKey1, Optional.of(new URL("http://host.com")));
+    createRemoteKeyFile(
+        dataDirLayout, publicKey1, Optional.of(URI.create("http://host.com").toURL()));
 
     final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
     createRemoteKeyFile(dataDirLayout, publicKey2, Optional.empty());
@@ -225,8 +227,8 @@ public class ExternalValidatorSourceTest {
 
     assertThat(result)
         .containsExactlyInAnyOrder(
-            new ValidatorProviderInfo(publicKey1, new URL("http://host.com")),
-            new ValidatorProviderInfo(publicKey2, new URL("http://localhost:9000")));
+            new ValidatorProviderInfo(publicKey1, URI.create("http://host.com").toURL()),
+            new ValidatorProviderInfo(publicKey2, URI.create("http://localhost:9000").toURL()));
   }
 
   @Test
@@ -253,8 +255,8 @@ public class ExternalValidatorSourceTest {
 
     assertThat(result)
         .containsExactlyInAnyOrder(
-            new ValidatorProviderInfo(publicKey1, new URL("http://localhost:9000")),
-            new ValidatorProviderInfo(publicKey2, new URL("http://localhost:9000")));
+            new ValidatorProviderInfo(publicKey1, URI.create("http://localhost:9000").toURL()),
+            new ValidatorProviderInfo(publicKey2, URI.create("http://localhost:9000").toURL()));
   }
 
   private void createRemoteKeyFile(

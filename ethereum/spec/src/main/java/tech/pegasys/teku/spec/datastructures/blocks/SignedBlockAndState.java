@@ -39,12 +39,12 @@ public class SignedBlockAndState extends StateAndBlockSummary {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof SignedBlockAndState)) {
+    if (o instanceof final SignedBlockAndState that) {
+      return Objects.equals(getBlock(), that.getBlock())
+          && Objects.equals(getState(), that.getState());
+    } else {
       return false;
     }
-    final SignedBlockAndState that = (SignedBlockAndState) o;
-    return Objects.equals(getBlock(), that.getBlock())
-        && Objects.equals(getState(), that.getState());
   }
 
   @Override

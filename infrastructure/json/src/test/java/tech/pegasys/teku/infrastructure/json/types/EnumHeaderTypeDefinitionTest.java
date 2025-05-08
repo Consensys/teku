@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
@@ -56,18 +57,44 @@ public class EnumHeaderTypeDefinitionTest {
             "Color",
             Optional.of(true),
             Optional.of("The color of the object"),
-            Optional.of("RED"));
+            Optional.of("RED"),
+            Set.of());
 
+    final String json = getJsonDefinition(definition);
+
+    final String expectedJson =
+        "{\"Color\":{\"description\":\"The color of the object\",\"required\":true,\"schema\":{\"type\":\"string\",\"enum\":[\"RED\",\"GREEN\",\"BLUE\"],\"example\":\"RED\"}}}";
+    assertEquals(expectedJson, json);
+  }
+
+  @Test
+  public void serializeOpenApiTypeIgnoresExcludedElements() throws IOException {
+    final EnumHeaderTypeDefinition<Color> definition =
+        new EnumHeaderTypeDefinition<>(
+            Color.class,
+            Color::name,
+            Optional.of("color"),
+            "Color",
+            Optional.of(true),
+            Optional.of("The color of the object"),
+            Optional.of("RED"),
+            Set.of(Color.BLUE));
+
+    final String json = getJsonDefinition(definition);
+
+    final String expectedJson =
+        "{\"Color\":{\"description\":\"The color of the object\",\"required\":true,\"schema\":{\"type\":\"string\",\"enum\":[\"RED\",\"GREEN\"],\"example\":\"RED\"}}}";
+    assertEquals(expectedJson, json);
+  }
+
+  private static String getJsonDefinition(final EnumHeaderTypeDefinition<Color> definition)
+      throws IOException {
     final StringWriter writer = new StringWriter();
     final JsonGenerator gen = new ObjectMapper().getFactory().createGenerator(writer);
     gen.writeStartObject();
     definition.serializeOpenApiType(gen);
     gen.writeEndObject();
     gen.close();
-    final String json = writer.toString();
-
-    final String expectedJson =
-        "{\"Color\":{\"description\":\"The color of the object\",\"required\":true,\"schema\":{\"type\":\"string\",\"enum\":[\"RED\",\"GREEN\",\"BLUE\"],\"example\":\"RED\"}}}";
-    assertEquals(expectedJson, json);
+    return writer.toString();
   }
 }

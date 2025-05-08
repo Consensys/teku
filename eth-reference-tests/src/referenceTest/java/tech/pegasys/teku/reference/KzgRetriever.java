@@ -16,6 +16,7 @@ package tech.pegasys.teku.reference;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -29,7 +30,7 @@ public class KzgRetriever {
         || spec.isMilestoneSupported(SpecMilestone.ELECTRA)) {
       return getKzgWithLoadedTrustedSetup(network);
     }
-    return KZG.NOOP;
+    return NoOpKZG.INSTANCE;
   }
 
   public static KZG getKzgWithLoadedTrustedSetup(final String network) {

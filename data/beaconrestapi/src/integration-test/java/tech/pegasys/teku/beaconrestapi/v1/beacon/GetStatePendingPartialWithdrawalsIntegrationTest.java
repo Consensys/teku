@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStatePendingPartialWithdrawals;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
@@ -40,7 +39,8 @@ public class GetStatePendingPartialWithdrawalsIntegrationTest
     assertThat(node.get("execution_optimistic").asBoolean()).isFalse();
     assertThat(node.get("finalized").asBoolean()).isFalse();
     assertThat(node.get("data").size()).isEqualTo(0);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.electra.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(SpecMilestone.ELECTRA.lowerCaseName());
   }
 
   public Response get(final String stateId) throws IOException {

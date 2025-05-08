@@ -100,9 +100,8 @@ public class RestBuilderClient implements BuilderClient {
 
   @Override
   public SafeFuture<Response<Void>> status() {
-    return restClient
-        .getAsync(BuilderApiMethod.GET_STATUS.getPath())
-        .orTimeout(options.builderStatusTimeout());
+    return restClient.getAsync(
+        BuilderApiMethod.GET_STATUS.getPath(), options.builderStatusTimeout());
   }
 
   @Override
@@ -114,8 +113,7 @@ public class RestBuilderClient implements BuilderClient {
     }
 
     if (nextSszRegisterValidatorsTryMillis.isGreaterThan(timeProvider.getTimeInMillis())) {
-      return registerValidatorsUsingJson(signedValidatorRegistrations)
-          .orTimeout(options.builderRegisterValidatorTimeout());
+      return registerValidatorsUsingJson(signedValidatorRegistrations);
     }
 
     return registerValidatorsUsingSsz(signedValidatorRegistrations)
@@ -134,20 +132,25 @@ public class RestBuilderClient implements BuilderClient {
               }
 
               return SafeFuture.completedFuture(response);
-            })
-        .orTimeout(options.builderRegisterValidatorTimeout());
+            });
   }
 
   private SafeFuture<Response<Void>> registerValidatorsUsingJson(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
     return restClient.postAsync(
-        BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistrations, false);
+        BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
+        signedValidatorRegistrations,
+        false,
+        options.builderRegisterValidatorTimeout());
   }
 
   private SafeFuture<Response<Void>> registerValidatorsUsingSsz(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations) {
     return restClient.postAsync(
-        BuilderApiMethod.REGISTER_VALIDATOR.getPath(), signedValidatorRegistrations, true);
+        BuilderApiMethod.REGISTER_VALIDATOR.getPath(),
+        signedValidatorRegistrations,
+        true,
+        options.builderRegisterValidatorTimeout());
   }
 
   @Override
@@ -183,8 +186,8 @@ public class RestBuilderClient implements BuilderClient {
             setUserAgentHeader
                 ? GET_HEADER_HTTP_HEADERS_WITH_USER_AGENT
                 : GET_HEADER_HTTP_HEADERS_WITHOUT_USER_AGENT,
-            responseTypeDefinition)
-        .orTimeout(options.builderProposalDelayTolerance())
+            responseTypeDefinition,
+            options.builderProposalDelayTolerance())
         .thenApply(
             response ->
                 response.unwrapVersioned(
@@ -217,12 +220,12 @@ public class RestBuilderClient implements BuilderClient {
                 ACCEPT_HEADER),
             signedBlindedBeaconBlock,
             LAST_RECEIVED_HEADER_WAS_IN_SSZ.get(),
-            responseTypeDefinition)
+            responseTypeDefinition,
+            options.builderGetPayloadTimeout())
         .thenApply(
             response ->
                 response.unwrapVersioned(
-                    this::extractBuilderPayload, milestone, BuilderApiResponse::version, false))
-        .orTimeout(options.builderGetPayloadTimeout());
+                    this::extractBuilderPayload, milestone, BuilderApiResponse::version, false));
   }
 
   private <T extends BuilderPayload>

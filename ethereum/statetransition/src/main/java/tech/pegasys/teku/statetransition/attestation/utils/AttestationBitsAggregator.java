@@ -79,11 +79,5 @@ public interface AttestationBitsAggregator {
   boolean requiresCommitteeBits();
 
   /** Creates an independent copy of this instance */
-  default AttestationBitsAggregator copy() {
-    if (requiresCommitteeBits()) {
-      return new AttestationBitsAggregatorElectra(
-          getAggregationBits(), getCommitteeBits(), getCommitteesSize());
-    }
-    return new AttestationBitsAggregatorPhase0(getAggregationBits());
-  }
+  AttestationBitsAggregator copy();
 }

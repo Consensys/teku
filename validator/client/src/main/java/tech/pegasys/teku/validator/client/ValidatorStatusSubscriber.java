@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Map;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public interface ValidatorStatusSubscriber {

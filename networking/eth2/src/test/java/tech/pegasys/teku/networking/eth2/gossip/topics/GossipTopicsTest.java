@@ -56,7 +56,7 @@ public class GossipTopicsTest {
 
   @Test
   public void maxSubscribedTopicsConstantIsLargeEnough() {
-    final SpecMilestone latestMilestone = SpecMilestone.values()[SpecMilestone.values().length - 1];
+    final SpecMilestone latestMilestone = SpecMilestone.getHighestMilestone();
     final Spec spec = TestSpecFactory.createMainnet(latestMilestone);
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);

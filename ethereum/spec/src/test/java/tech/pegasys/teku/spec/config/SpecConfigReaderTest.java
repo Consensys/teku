@@ -13,14 +13,19 @@
 
 package tech.pegasys.teku.spec.config;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SpecConfigReaderTest {
@@ -141,7 +146,7 @@ public class SpecConfigReaderTest {
             assertThatThrownBy(() -> readConfig(stream))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(
-                    "Cannot read spec config: Cannot deserialize value of type `java.lang.String` from Array"));
+                    "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT"));
   }
 
   @Test
@@ -185,6 +190,19 @@ public class SpecConfigReaderTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(
                     "Failed to parse value for constant MIN_GENESIS_TIME: '18446744073709552001'"));
+  }
+
+  @Test
+  public void read_localConfigFile_notLoadingDefaults(@TempDir final Path tempDir)
+      throws IOException {
+    Files.writeString(
+        tempDir.resolve("test.yaml"), "PRESET_BASE: 'mainnet'\nCONFIG_NAME: 'mainnet'", UTF_8);
+    Map<String, Object> data =
+        reader.readValues(Files.newInputStream(tempDir.resolve("test.yaml")));
+    reader.loadFromMap(data, true);
+    assertThatThrownBy(reader::build)
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("SECONDS_PER_ETH1_BLOCK");
   }
 
   @Test
