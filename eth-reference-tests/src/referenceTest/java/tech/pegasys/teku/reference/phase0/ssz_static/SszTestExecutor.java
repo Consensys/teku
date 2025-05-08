@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -139,8 +138,6 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas)
                           .getSyncAggregatorSelectionDataSchema()))
-          // TODO-fulu remove ignore after we add DataColumnsByRootIdentifier container
-          .put("ssz_static/DataColumnsByRootIdentifier", IGNORE_TESTS)
           .put("ssz_static/LightClientBootstrap", IGNORE_TESTS)
           .put("ssz_static/LightClientFinalityUpdate", IGNORE_TESTS)
           .put("ssz_static/LightClientHeader", IGNORE_TESTS)
@@ -232,8 +229,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
 
           // Fulu types
           .put(
-              "ssz_static/DataColumnIdentifier",
-              new SszTestExecutor<>(schemas -> DataColumnIdentifier.SSZ_SCHEMA))
+              "ssz_static/DataColumnsByRootIdentifier",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsFulu.required(schemas)
+                          .getDataColumnsByRootIdentifierSchema()))
           .put(
               "ssz_static/DataColumnSidecar",
               new SszTestExecutor<>(

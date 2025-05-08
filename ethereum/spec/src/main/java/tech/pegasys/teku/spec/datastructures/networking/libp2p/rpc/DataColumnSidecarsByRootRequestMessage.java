@@ -18,13 +18,13 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class DataColumnSidecarsByRootRequestMessage extends SszListImpl<DataColumnIdentifier>
-    implements SszList<DataColumnIdentifier>, RpcRequest {
+public class DataColumnSidecarsByRootRequestMessage extends SszListImpl<DataColumnsByRootIdentifier>
+    implements SszList<DataColumnsByRootIdentifier>, RpcRequest {
 
   public DataColumnSidecarsByRootRequestMessage(
       final DataColumnSidecarsByRootRequestMessageSchema schema,
-      final List<DataColumnIdentifier> dataColumnIdentifiers) {
-    super(schema, schema.createTreeFromElements(dataColumnIdentifiers));
+      final List<DataColumnsByRootIdentifier> dataColumnsByRootIdentifiers) {
+    super(schema, schema.createTreeFromElements(dataColumnsByRootIdentifiers));
   }
 
   DataColumnSidecarsByRootRequestMessage(
