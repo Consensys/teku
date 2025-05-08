@@ -38,7 +38,7 @@ public class OkHttpValidatorMinimalTypeDefClient {
     this.baseEndpoint = baseEndpoint;
   }
 
-  public Optional<Map<String, String>> getSpec() {
+  public Optional<Map<String, Object>> getSpec() {
     final GetSpecRequest request = new GetSpecRequest(baseEndpoint, okHttpClient);
     return request.submit();
   }
