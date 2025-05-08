@@ -81,6 +81,11 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
+  public AttestationBitsAggregator copy() {
+    return new AttestationBitsAggregatorPhase0(aggregationBits);
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("aggregationBits", aggregationBits).toString();
   }

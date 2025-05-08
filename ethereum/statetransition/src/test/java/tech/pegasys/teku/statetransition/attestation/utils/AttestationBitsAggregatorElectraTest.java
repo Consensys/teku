@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.List;
 import java.util.Optional;
@@ -643,6 +644,55 @@ public class AttestationBitsAggregatorElectraTest {
     assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isTrue();
   }
 
+  @Test
+  void getAggregationBits_shouldBeConsistent_singleCommittee() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    assertThat(aggregator.getAggregationBits().size()).isEqualTo(committeeSizes.get(0));
+
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
+  @Test
+  void getAggregationBits_shouldBeConsistent_multiCommittee() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    assertThat(aggregator.getAggregationBits().size())
+        .isEqualTo(committeeSizes.get(0) + committeeSizes.get(1));
+
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
+  @Test
+  void copy_shouldNotModifyOriginal() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    // check aggregator is initialized correctly
+    assertThat(aggregator.getCommitteeBits())
+        .isEqualTo(initialAttestation.getAttestation().getCommitteeBitsRequired());
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+
+    final AttestationBitsAggregator copy = aggregator.copy();
+
+    assertThat(copy.getCommitteeBits()).isEqualTo(aggregator.getCommitteeBits());
+    assertThat(copy.getAggregationBits()).isEqualTo(aggregator.getAggregationBits());
+    assertThat(copy).isNotSameAs(aggregator);
+
+    assertThat(copy.aggregateWith(createAttestation(List.of(1), 1).getAttestation())).isTrue();
+
+    // the original should not be modified
+    assertThat(aggregator.getCommitteeBits())
+        .isEqualTo(initialAttestation.getAttestation().getCommitteeBitsRequired());
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
   private ValidatableAttestation createAttestation(final String commBits, final String aggBits) {
     assertThat(commBits).matches(Pattern.compile("^[0-1]+$"));
     assertThat(aggBits).matches(Pattern.compile("^[0-1]+$"));
@@ -664,7 +714,12 @@ public class AttestationBitsAggregatorElectraTest {
     final SszBitlist aggregationBits =
         attestationSchema
             .getAggregationBitsSchema()
-            .ofBits(committeeSizes.values().intStream().sum(), validators);
+            .ofBits(
+                committeeSizes.int2IntEntrySet().stream()
+                    .filter(entry -> committeeIndices.contains(entry.getIntKey()))
+                    .mapToInt(Entry::getIntValue)
+                    .sum(),
+                validators);
     final Supplier<SszBitvector> committeeBits =
         () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndices);
 
