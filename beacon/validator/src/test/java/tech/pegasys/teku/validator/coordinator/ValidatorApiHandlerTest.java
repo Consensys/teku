@@ -734,7 +734,7 @@ class ValidatorApiHandlerTest {
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(
             eq(attestationData.hashTreeRoot()), eq(Optional.empty())))
-        .thenReturn(aggregate.map(attestation -> ValidatableAttestation.from(spec, attestation)));
+        .thenReturn(aggregate);
 
     assertThat(
             validatorApiHandler.createAggregate(
