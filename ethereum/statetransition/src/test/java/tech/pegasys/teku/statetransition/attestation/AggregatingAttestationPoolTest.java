@@ -124,7 +124,7 @@ class AggregatingAttestationPoolTest {
 
   @TestTemplate
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
-    final Optional<ValidatableAttestation> result =
+    final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(
             dataStructureUtil.randomAttestationData().hashTreeRoot(), committeeIndex);
     assertThat(result).isEmpty();
@@ -136,10 +136,9 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
 
-    final Optional<ValidatableAttestation> result =
+    final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
-    assertThat(result.map(ValidatableAttestation::getAttestation))
-        .contains(aggregateAttestations(attestation1, attestation2));
+    assertThat(result).contains(aggregateAttestations(attestation1, attestation2));
   }
 
   @TestTemplate
@@ -149,10 +148,9 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6, 8);
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
-    final Optional<ValidatableAttestation> result =
+    final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
-    assertThat(result.map(ValidatableAttestation::getAttestation))
-        .contains(aggregateAttestations(attestation1, attestation2));
+    assertThat(result).contains(aggregateAttestations(attestation1, attestation2));
   }
 
   @TestTemplate
