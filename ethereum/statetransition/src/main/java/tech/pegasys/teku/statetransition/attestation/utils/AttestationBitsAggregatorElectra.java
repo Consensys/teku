@@ -76,13 +76,14 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         committeeIndex = committeeIndices.nextSetBit(committeeIndex + 1)) {
 
       final int committeeSize = committeesSizeMap.getOrDefault(committeeIndex, 0);
-      if (committeeSize > 0) {
-        int sliceEnd =
-            Math.min(currentOffset + committeeSize, aggregationBits.getLastSetBitIndex() + 1);
-        final BitSet committeeBits = aggregationBits.getAsBitSet(currentOffset, sliceEnd);
-        result.put(committeeIndex, committeeBits);
+      if (committeeSize == 0) {
+        throw new IllegalArgumentException(
+            "Committee size for committee " + committeeIndex + " not found");
       }
-      currentOffset += committeeSize; // Always advance by the declared committee size
+      final BitSet committeeBits =
+          aggregationBits.getAsBitSet(currentOffset, currentOffset + committeeSize);
+      result.put(committeeIndex, committeeBits);
+      currentOffset += committeeSize;
     }
     return result;
   }
@@ -256,7 +257,8 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   public SszBitvector getCommitteeBits() {
     if (cachedCommitteeBits == null) {
       cachedCommitteeBits =
-          committeeBitsSchema.wrapBitSet(committeeBitsSchema.getLength(), this.committeeBits);
+          committeeBitsSchema.wrapBitSet(
+              committeeBitsSchema.getLength(), (BitSet) this.committeeBits.clone());
     }
     return cachedCommitteeBits;
   }
