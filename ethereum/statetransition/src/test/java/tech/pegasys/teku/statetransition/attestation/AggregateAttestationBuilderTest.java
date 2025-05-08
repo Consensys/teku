@@ -38,7 +38,7 @@ class AggregateAttestationBuilderTest {
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
   private final AggregateAttestationBuilder builder =
-      new AggregateAttestationBuilder(spec, attestationData);
+      new AggregateAttestationBuilder(attestationData);
 
   @Test
   public void canAggregate_shouldBeTrueForFirstAttestation() {
@@ -59,9 +59,9 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void aggregate_shouldTrackIncludedAggregations() {
-    final ValidatableAttestation attestation1 = createAttestation(1);
-    final ValidatableAttestation attestation2 = createAttestation(2);
-    final ValidatableAttestation attestation3 = createAttestation(3);
+    final PooledAttestation attestation1 = createAttestation(1);
+    final PooledAttestation attestation2 = createAttestation(2);
+    final PooledAttestation attestation3 = createAttestation(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -72,9 +72,9 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void aggregate_shouldCombineBitsetsAndSignatures() {
-    final ValidatableAttestation attestation1 = createAttestation(1);
-    final ValidatableAttestation attestation2 = createAttestation(2);
-    final ValidatableAttestation attestation3 = createAttestation(3);
+    final PooledAttestation attestation1 = createAttestation(1);
+    final PooledAttestation attestation2 = createAttestation(2);
+    final PooledAttestation attestation3 = createAttestation(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -85,16 +85,17 @@ class AggregateAttestationBuilderTest {
     final BLSSignature expectedSignature =
         BLS.aggregate(
             asList(
-                attestation1.getAttestation().getAggregateSignature(),
-                attestation2.getAttestation().getAggregateSignature(),
-                attestation3.getAttestation().getAggregateSignature()));
+                attestation1.aggregatedSignature(),
+                attestation2.aggregatedSignature(),
+                attestation3.aggregatedSignature()));
 
     assertThat(builder.buildAggregate())
         .isEqualTo(
-            ValidatableAttestation.from(
-                spec,
-                attestationSchema.create(
-                    expectedAggregationBits, attestationData, expectedSignature)));
+            PooledAttestation.fromValidatableAttestation(
+                ValidatableAttestation.from(
+                    spec,
+                    attestationSchema.create(
+                        expectedAggregationBits, attestationData, expectedSignature))));
   }
 
   @Test
@@ -102,12 +103,13 @@ class AggregateAttestationBuilderTest {
     assertThatThrownBy(builder::buildAggregate).isInstanceOf(IllegalStateException.class);
   }
 
-  private ValidatableAttestation createAttestation(final int... validators) {
+  private PooledAttestation createAttestation(final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
-    return ValidatableAttestation.from(
-        spec,
-        attestationSchema.create(
-            aggregationBits, attestationData, dataStructureUtil.randomSignature()));
+    return PooledAttestation.fromValidatableAttestation(
+        ValidatableAttestation.from(
+            spec,
+            attestationSchema.create(
+                aggregationBits, attestationData, dataStructureUtil.randomSignature())));
   }
 }

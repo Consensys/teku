@@ -19,10 +19,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
@@ -31,55 +27,43 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggreg
  * made redundant by the current aggregate.
  */
 class AggregateAttestationBuilder {
-  private final Spec spec;
-  private final Set<ValidatableAttestation> includedAttestations = new HashSet<>();
+  private final Set<PooledAttestation> includedAttestations = new HashSet<>();
   private final AttestationData attestationData;
   private AttestationBitsAggregator currentAggregateBits;
 
-  AggregateAttestationBuilder(final Spec spec, final AttestationData attestationData) {
-    this.spec = spec;
+  AggregateAttestationBuilder(final AttestationData attestationData) {
     this.attestationData = attestationData;
   }
 
-  public boolean isFullyIncluded(final ValidatableAttestation candidate) {
-    return currentAggregateBits != null
-        && currentAggregateBits.isSuperSetOf(candidate.getAttestation());
-  }
-
-  public boolean aggregate(final ValidatableAttestation attestation) {
+  public boolean aggregate(final PooledAttestation attestation) {
 
     if (currentAggregateBits == null) {
       includedAttestations.add(attestation);
-      currentAggregateBits = AttestationBitsAggregator.of(attestation);
+      currentAggregateBits = attestation.bits().copy();
       return true;
     }
-    if (currentAggregateBits.aggregateWith(attestation.getAttestation())) {
+    if (currentAggregateBits.aggregateWith(attestation)) {
       includedAttestations.add(attestation);
       return true;
     }
     return false;
   }
 
-  public ValidatableAttestation buildAggregate() {
+  public PooledAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
-    final SpecVersion specVersion = spec.atSlot(attestationData.getSlot());
-    return ValidatableAttestation.from(
-        spec,
-        specVersion
-            .getSchemaDefinitions()
-            .getAttestationSchema()
-            .create(
-                currentAggregateBits.getAggregationBits(),
-                attestationData,
-                BLS.aggregate(
-                    includedAttestations.stream()
-                        .map(ValidatableAttestation::getAttestation)
-                        .map(Attestation::getAggregateSignature)
-                        .toList()),
-                currentAggregateBits::getCommitteeBits));
+    final boolean isSingleAttestation =
+        currentAggregateBits.requiresCommitteeBits()
+            && includedAttestations.size() == 1
+            && currentAggregateBits.getBitCount() == 1;
+    return new PooledAttestation(
+        attestationData,
+        currentAggregateBits,
+        BLS.aggregate(
+            includedAttestations.stream().map(PooledAttestation::aggregatedSignature).toList()),
+        isSingleAttestation);
   }
 
-  public Collection<ValidatableAttestation> getIncludedAttestations() {
+  public Collection<PooledAttestation> getIncludedAttestations() {
     return includedAttestations;
   }
 }

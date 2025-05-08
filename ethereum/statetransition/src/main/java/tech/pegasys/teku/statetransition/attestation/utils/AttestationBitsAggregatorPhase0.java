@@ -15,10 +15,12 @@ package tech.pegasys.teku.statetransition.attestation.utils;
 
 import com.google.common.base.MoreObjects;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   private SszBitlist aggregationBits;
@@ -34,12 +36,18 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
 
   @Override
   public void or(final AttestationBitsAggregator other) {
-    aggregationBits = aggregationBits.or(other.getAggregationBits());
+    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other);
+    aggregationBits = aggregationBits.or(otherPhase0.aggregationBits);
   }
 
   @Override
-  public boolean aggregateWith(final Attestation other) {
-    return aggregateWith(other.getAggregationBits());
+  public void or(final PooledAttestation other) {
+    or(other.bits());
+  }
+
+  @Override
+  public boolean aggregateWith(final PooledAttestation other) {
+    return aggregateWith(other.bits().getAggregationBits());
   }
 
   private boolean aggregateWith(final SszBitlist otherAggregationBits) {
@@ -58,6 +66,12 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   @Override
   public boolean isSuperSetOf(final Attestation other) {
     return aggregationBits.isSuperSetOf(other.getAggregationBits());
+  }
+
+  @Override
+  public boolean isSuperSetOf(final PooledAttestation other) {
+    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other.bits());
+    return aggregationBits.isSuperSetOf(otherPhase0.aggregationBits);
   }
 
   @Override
@@ -86,7 +100,44 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
+  public int getBitCount() {
+    return aggregationBits.getBitCount();
+  }
+
+  @Override
+  public boolean isExclusivelyFromCommittee(final int committeeIndex) {
+    throw new IllegalStateException("Committee bits not available in phase0");
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("aggregationBits", aggregationBits).toString();
+  }
+
+  static AttestationBitsAggregatorPhase0 requiresPhase0(
+      final AttestationBitsAggregator aggregator) {
+    if (!(aggregator instanceof AttestationBitsAggregatorPhase0 aggregatorPhase0)) {
+      throw new IllegalArgumentException(
+          "AttestationBitsAggregator required to be Phase0 but was: "
+              + aggregator.getClass().getSimpleName());
+    }
+    return aggregatorPhase0;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (!(o instanceof AttestationBitsAggregatorPhase0 that)) {
+      return false;
+    }
+    return this.aggregationBits.equals(that.aggregationBits);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(aggregationBits);
   }
 }

@@ -20,9 +20,9 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 public interface AttestationBitsAggregator {
-
   static AttestationBitsAggregator fromEmptyFromAttestationSchema(
       final AttestationSchema<?> attestationSchema, final Optional<Int2IntMap> committeesSize) {
     return attestationSchema
@@ -64,11 +64,15 @@ public interface AttestationBitsAggregator {
 
   void or(AttestationBitsAggregator other);
 
-  boolean aggregateWith(Attestation other);
+  void or(PooledAttestation other);
+
+  boolean aggregateWith(PooledAttestation other);
 
   void or(Attestation other);
 
   boolean isSuperSetOf(Attestation other);
+
+  boolean isSuperSetOf(PooledAttestation other);
 
   SszBitlist getAggregationBits();
 
@@ -77,6 +81,10 @@ public interface AttestationBitsAggregator {
   Int2IntMap getCommitteesSize();
 
   boolean requiresCommitteeBits();
+
+  int getBitCount();
+
+  boolean isExclusivelyFromCommittee(int committeeIndex);
 
   /** Creates an independent copy of this instance */
   AttestationBitsAggregator copy();

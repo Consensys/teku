@@ -32,14 +32,16 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 public class AttestationBitsAggregatorElectraTest {
   private final Spec spec = TestSpecFactory.createMainnetElectra();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final AttestationSchema<?> attestationSchema =
+  private final AttestationSchema<Attestation> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
@@ -64,13 +66,13 @@ public class AttestationBitsAggregatorElectraTest {
      012 <- committee 1 indices
      011 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 1, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(1), 1, 2);
 
     final AttestationBitsAggregator aggregator =
         AttestationBitsAggregator.fromEmptyFromAttestationSchema(
             attestationSchema, Optional.of(committeeSizes));
 
-    assertThat(aggregator.aggregateWith(initialAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.aggregateWith(initialAttestation)).isTrue();
 
     assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
 
@@ -83,17 +85,17 @@ public class AttestationBitsAggregatorElectraTest {
      012 <- committee 1 indices
      011 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 1, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(1), 1, 2);
 
     /*
      012 <- committee 1 indices
      110 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 0, 1);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 0, 1);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isFalse();
   }
 
   @Test
@@ -102,17 +104,17 @@ public class AttestationBitsAggregatorElectraTest {
      012 <- committee 1 indices
      011 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 1, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(1), 1, 2);
 
     /*
      012 <- committee 1 indices
      100 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 0);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 0);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isTrue();
 
     /*
      012 <- committee 1 indices
@@ -129,17 +131,17 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|100 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
 
     /*
      01|234 <- committee 0 and 1 indices
      01|010 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0, 1), 1, 3);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1), 1, 3);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isTrue();
 
     /*
      01|234 <- committee 0 and 1 indices
@@ -156,17 +158,17 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|100 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
 
     /*
      01|234|5678 <- committee 0, 1 and 2 indices
      01|011|0001 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0, 1, 2), 1, 3, 4, 8);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1, 2), 1, 3, 4, 8);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isTrue();
 
     /*
      01|234|5678 <- committee 0, 1 and 2 indices
@@ -184,17 +186,17 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|100 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
 
     /*
      01|234|5678 <- committee 0, 1 and 2 indices
      01|110|0001 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0, 1, 2), 1, 2, 3, 8);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1, 2), 1, 2, 3, 8);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isFalse();
 
     // check remained untouched
 
@@ -208,21 +210,21 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|100 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
 
     /*
      01|234|5678 <- committee 0, 1 and 2 indices
      01|110|0001 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0, 1, 2), 1, 2, 3, 8);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1, 2), 1, 2, 3, 8);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
     // cannot aggregate
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isFalse();
 
     // calculate the or
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     /*
      01|234|5678 <- committee 0, 1 and 2 indices
@@ -239,18 +241,18 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|100 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
 
     /*
      123 <- committee 1 indices
      001 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 2);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
     // calculate the or
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     /*
      01|234 <- committee 0 and 1 indices
@@ -268,21 +270,21 @@ public class AttestationBitsAggregatorElectraTest {
      0123 <- committee 2 indices
      0100 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(2), 1);
+    final PooledAttestation initialAttestation = createAttestation(List.of(2), 1);
 
     /*
      0123 <- committee 2 indices
      1101 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(2), 0, 1, 3);
+    final PooledAttestation otherAttestation = createAttestation(List.of(2), 0, 1, 3);
 
-    AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
     // cannot aggregate
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isFalse();
 
     // calculate the or
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     /*
      01|234|5678 <- committee 0, 1 and 2 indices
@@ -299,17 +301,17 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|100 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
 
     /*
      0123 <- committee 1 indices
      1101 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(2), 0, 1, 3);
+    final PooledAttestation otherAttestation = createAttestation(List.of(2), 0, 1, 3);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isTrue();
 
     /*
      01|234|5678 <- committee 0, 1 and 2 indices
@@ -326,17 +328,17 @@ public class AttestationBitsAggregatorElectraTest {
      0123 <- committee 2 indices
      0001 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(2), 3);
+    final PooledAttestation initialAttestation = createAttestation(List.of(2), 3);
 
     /*
      01 <- committee 0 indices
      01 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0), 1);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0), 1);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.aggregateWith(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.aggregateWith(otherAttestation)).isTrue();
 
     /*
      01|2345 <- committee 0 and 2 indices
@@ -367,7 +369,7 @@ public class AttestationBitsAggregatorElectraTest {
     committeeSizes.put(14, 50);
     committeeSizes.put(15, 51);
 
-    final ValidatableAttestation initialAttestation =
+    final PooledAttestation initialAttestation =
         createAttestation(
             "1111111111111111",
             """
@@ -388,13 +390,13 @@ public class AttestationBitsAggregatorElectraTest {
     00100000000000000000000000000000000000000000000000\
     000000000000001000000000000000000000000000000000001\
     """);
-    final ValidatableAttestation att =
+    final PooledAttestation att =
         createAttestation("0001000000000000", "00000000000000000000000100000000000000000000000000");
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
-    assertThat(aggregator.aggregateWith(att.getAttestation())).isTrue();
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
+    assertThat(aggregator.aggregateWith(att)).isTrue();
 
-    final ValidatableAttestation result =
+    final PooledAttestation result =
         createAttestation(
             "1111111111111111",
             """
@@ -416,10 +418,8 @@ public class AttestationBitsAggregatorElectraTest {
         000000000000001000000000000000000000000000000000001\
         """);
 
-    assertThat(aggregator.getCommitteeBits())
-        .isEqualTo(result.getAttestation().getCommitteeBitsRequired());
-    assertThat(aggregator.getAggregationBits())
-        .isEqualTo(result.getAttestation().getAggregationBits());
+    assertThat(aggregator.getCommitteeBits()).isEqualTo(result.bits().getCommitteeBits());
+    assertThat(aggregator.getAggregationBits()).isEqualTo(result.bits().getAggregationBits());
   }
 
   @Test
@@ -428,9 +428,9 @@ public class AttestationBitsAggregatorElectraTest {
         AttestationBitsAggregator.fromEmptyFromAttestationSchema(
             attestationSchema, Optional.of(committeeSizes));
 
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 2);
 
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
     assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactly(2);
@@ -438,12 +438,12 @@ public class AttestationBitsAggregatorElectraTest {
 
   @Test
   void orWithNewCommittee() {
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 1);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0), 1);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 2);
 
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
     assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(1, 4);
@@ -452,12 +452,12 @@ public class AttestationBitsAggregatorElectraTest {
   @Test
   void orWithExistingCommitteeAddNewBits() {
 
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 0);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(1), 0);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 2);
 
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
     assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 2);
@@ -465,12 +465,12 @@ public class AttestationBitsAggregatorElectraTest {
 
   @Test
   void orWithExistingCommitteeOverlapAndNewBits() {
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 0, 1);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(1), 0, 1);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 1, 2);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 1, 2);
 
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
     assertThat(aggregator.getAggregationBits().streamAllSetBits())
@@ -479,12 +479,12 @@ public class AttestationBitsAggregatorElectraTest {
 
   @Test
   void orWithStrictSubsetAttestation() {
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 0, 2);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(1), 0, 2);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 0);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 0);
 
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
     assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 2);
@@ -492,12 +492,12 @@ public class AttestationBitsAggregatorElectraTest {
 
   @Test
   void orWithMultipleCommitteesMixedNewAndExisting() {
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1, 2), 2, 5);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1, 2), 2, 5);
 
-    aggregator.or(otherAttestation.getAttestation());
+    aggregator.or(otherAttestation);
 
     assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1, 2);
     assertThat(aggregator.getAggregationBits().streamAllSetBits())
@@ -506,11 +506,11 @@ public class AttestationBitsAggregatorElectraTest {
 
   @Test
   void orAggregatorWithAggregator() {
-    final ValidatableAttestation att1Data = createAttestation(List.of(0), 0);
-    final AttestationBitsAggregator aggregator1 = AttestationBitsAggregator.of(att1Data);
+    final PooledAttestation att1Data = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator1 = att1Data.bits().copy();
 
-    final ValidatableAttestation att2Data = createAttestation(List.of(0, 1), 1, 2);
-    final AttestationBitsAggregator aggregator2 = AttestationBitsAggregator.of(att2Data);
+    final PooledAttestation att2Data = createAttestation(List.of(0, 1), 1, 2);
+    final AttestationBitsAggregator aggregator2 = att2Data.bits().copy();
 
     aggregator1.or(aggregator2);
 
@@ -524,23 +524,50 @@ public class AttestationBitsAggregatorElectraTest {
   }
 
   @Test
+  void isSuperSetOf_nonPooledAttestation() {
+
+    /*
+     01|234 <- committee 0 and 1 indices
+     10|101 <- bits
+    */
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
+
+    /*
+     01|234 <- committee 0 and 1 indices
+     10|100 <- bits
+    */
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1), 0, 2);
+
+    final Attestation other =
+        attestationSchema.create(
+            otherAttestation.bits().getAggregationBits(),
+            attestationData,
+            dataStructureUtil.randomSignature(),
+            otherAttestation.bits()::getCommitteeBits);
+
+    AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
+
+    assertThat(aggregator.isSuperSetOf(other)).isTrue();
+  }
+
+  @Test
   void isSuperSetOf1() {
 
     /*
      01|234 <- committee 0 and 1 indices
      10|101 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
 
     /*
      01|234 <- committee 0 and 1 indices
      10|100 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0, 1), 0, 2);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1), 0, 2);
 
-    AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.isSuperSetOf(otherAttestation)).isTrue();
   }
 
   @Test
@@ -550,17 +577,17 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|101 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
 
     /*
      01|234 <- committee 0 and 1 indices
      10|101 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.isSuperSetOf(otherAttestation)).isTrue();
   }
 
   @Test
@@ -570,17 +597,17 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|101 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
 
     /*
      01|234 <- committee 0 and 1 indices
      10|111 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(0, 1), 0, 2, 3, 4);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0, 1), 0, 2, 3, 4);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.isSuperSetOf(otherAttestation)).isFalse();
   }
 
   @Test
@@ -590,17 +617,17 @@ public class AttestationBitsAggregatorElectraTest {
      01|234 <- committee 0 and 1 indices
      10|101 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2, 4);
 
     /*
      012 <- committee 1 indices
      111 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 0, 1, 2);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 0, 1, 2);
 
-    AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.isSuperSetOf(otherAttestation)).isFalse();
   }
 
   @Test
@@ -610,17 +637,17 @@ public class AttestationBitsAggregatorElectraTest {
      01 <- committee 0
      10 <- bits
     */
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0), 0);
 
     /*
      012 <- committee 1 indices
      100 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 0);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 0);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isFalse();
+    assertThat(aggregator.isSuperSetOf(otherAttestation)).isFalse();
   }
 
   @Test
@@ -630,53 +657,53 @@ public class AttestationBitsAggregatorElectraTest {
      01|234|5678 <- committee 0, 1 and 2 indices
      11|111|1111 <- bits
     */
-    final ValidatableAttestation initialAttestation =
+    final PooledAttestation initialAttestation =
         createAttestation(List.of(0, 1, 2), 0, 1, 2, 3, 4, 5, 6, 7, 8);
 
     /*
      012 <- committee 1 indices
      100 <- bits
     */
-    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 0);
+    final PooledAttestation otherAttestation = createAttestation(List.of(1), 0);
 
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
-    assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isTrue();
+    assertThat(aggregator.isSuperSetOf(otherAttestation)).isTrue();
   }
 
   @Test
   void getAggregationBits_shouldBeConsistent_singleCommittee() {
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
     assertThat(aggregator.getAggregationBits().size()).isEqualTo(committeeSizes.get(0));
 
     assertThat(aggregator.getAggregationBits())
-        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+        .isEqualTo(initialAttestation.bits().getAggregationBits());
   }
 
   @Test
   void getAggregationBits_shouldBeConsistent_multiCommittee() {
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
     assertThat(aggregator.getAggregationBits().size())
         .isEqualTo(committeeSizes.get(0) + committeeSizes.get(1));
 
     assertThat(aggregator.getAggregationBits())
-        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+        .isEqualTo(initialAttestation.bits().getAggregationBits());
   }
 
   @Test
   void copy_shouldNotModifyOriginal() {
-    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
-    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+    final PooledAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
 
     // check aggregator is initialized correctly
     assertThat(aggregator.getCommitteeBits())
-        .isEqualTo(initialAttestation.getAttestation().getCommitteeBitsRequired());
+        .isEqualTo(initialAttestation.bits().getCommitteeBits());
     assertThat(aggregator.getAggregationBits())
-        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+        .isEqualTo(initialAttestation.bits().getAggregationBits());
 
     final AttestationBitsAggregator copy = aggregator.copy();
 
@@ -684,16 +711,29 @@ public class AttestationBitsAggregatorElectraTest {
     assertThat(copy.getAggregationBits()).isEqualTo(aggregator.getAggregationBits());
     assertThat(copy).isNotSameAs(aggregator);
 
-    assertThat(copy.aggregateWith(createAttestation(List.of(1), 1).getAttestation())).isTrue();
+    assertThat(copy.aggregateWith(createAttestation(List.of(1), 1))).isTrue();
 
     // the original should not be modified
     assertThat(aggregator.getCommitteeBits())
-        .isEqualTo(initialAttestation.getAttestation().getCommitteeBitsRequired());
+        .isEqualTo(initialAttestation.bits().getCommitteeBits());
     assertThat(aggregator.getAggregationBits())
-        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+        .isEqualTo(initialAttestation.bits().getAggregationBits());
   }
 
-  private ValidatableAttestation createAttestation(final String commBits, final String aggBits) {
+  @Test
+  void equals_shouldBeConsistent() {
+    final PooledAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
+    final AttestationBitsAggregator aggregator = initialAttestation.bits().copy();
+
+    assertThat(aggregator).isEqualTo(initialAttestation.bits());
+    assertThat(aggregator.aggregateWith(createAttestation(List.of(0), 1))).isTrue();
+
+    assertThat(aggregator).isNotEqualTo(initialAttestation.bits());
+    assertThat(aggregator).isNotEqualTo(null);
+    assertThat(aggregator).isNotEqualTo(new Object());
+  }
+
+  private PooledAttestation createAttestation(final String commBits, final String aggBits) {
     assertThat(commBits).matches(Pattern.compile("^[0-1]+$"));
     assertThat(aggBits).matches(Pattern.compile("^[0-1]+$"));
     final List<Integer> commBitList =
@@ -709,7 +749,7 @@ public class AttestationBitsAggregatorElectraTest {
     return createAttestation(commBitList, aggBitList);
   }
 
-  private ValidatableAttestation createAttestation(
+  private PooledAttestation createAttestation(
       final List<Integer> committeeIndices, final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema
@@ -724,15 +764,13 @@ public class AttestationBitsAggregatorElectraTest {
         () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndices);
 
     final ValidatableAttestation attestation = mock(ValidatableAttestation.class);
-    when(attestation.getAttestation())
-        .thenReturn(
-            attestationSchema.create(
-                aggregationBits,
-                attestationData,
-                dataStructureUtil.randomSignature(),
-                committeeBits));
+    var realAttestation =
+        attestationSchema.create(
+            aggregationBits, attestationData, dataStructureUtil.randomSignature(), committeeBits);
+    when(attestation.getAttestation()).thenReturn(realAttestation);
+    when(attestation.getUnconvertedAttestation()).thenReturn(realAttestation);
     when(attestation.getCommitteesSize()).thenReturn(Optional.of(committeeSizes));
 
-    return attestation;
+    return PooledAttestation.fromValidatableAttestation(attestation);
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.attestation.utils;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Supplier;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
@@ -103,20 +105,20 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public void or(final AttestationBitsAggregator other) {
-    if (!(other instanceof AttestationBitsAggregatorElectra otherElectra)) {
-      throw new IllegalArgumentException(
-          "AttestationBitsAggregatorElectra.or requires an argument of the same type.");
-    }
+    final AttestationBitsAggregatorElectra otherElectra = requiresElectra(other);
 
     performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, false);
   }
 
   @Override
-  public boolean aggregateWith(final Attestation other) {
-    final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
-    final Int2ObjectMap<BitSet> otherParsedAggregationMap =
-        parseAggregationBits(other.getAggregationBits(), otherCommitteeBits, this.committeesSize);
-    return performMerge(otherCommitteeBits, otherParsedAggregationMap, true);
+  public void or(final PooledAttestation other) {
+    or(other.bits());
+  }
+
+  @Override
+  public boolean aggregateWith(final PooledAttestation other) {
+    final AttestationBitsAggregatorElectra otherElectra = requiresElectra(other.bits());
+    return performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, true);
   }
 
   @Override
@@ -199,21 +201,37 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public boolean isSuperSetOf(final Attestation other) {
-    final BitSet otherInternalCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
+    final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
+    return isSuperSetOf(
+        otherCommitteeBits,
+        () ->
+            parseAggregationBits(
+                other.getAggregationBits(), otherCommitteeBits, this.committeesSize));
+  }
+
+  @Override
+  public boolean isSuperSetOf(final PooledAttestation other) {
+    final AttestationBitsAggregatorElectra otherElectra = requiresElectra(other.bits());
+
+    return isSuperSetOf(otherElectra.committeeBits, () -> otherElectra.committeeAggregationBitsMap);
+  }
+
+  private boolean isSuperSetOf(
+      final BitSet otherCommitteeBits,
+      final Supplier<Int2ObjectMap<BitSet>> otherCommitteeAggregationBitsMapSupplier) {
 
     final BitSet committeeIntersection = (BitSet) this.committeeBits.clone();
-    committeeIntersection.and(otherInternalCommitteeBits);
-    if (!committeeIntersection.equals(otherInternalCommitteeBits)) {
+    committeeIntersection.and(otherCommitteeBits);
+    if (!committeeIntersection.equals(otherCommitteeBits)) {
       return false;
     }
 
     final Int2ObjectMap<BitSet> otherCommitteeAggregationBitsMap =
-        parseAggregationBits(
-            other.getAggregationBits(), otherInternalCommitteeBits, this.committeesSize);
+        otherCommitteeAggregationBitsMapSupplier.get();
 
-    for (int committeeIndex = otherInternalCommitteeBits.nextSetBit(0);
+    for (int committeeIndex = otherCommitteeBits.nextSetBit(0);
         committeeIndex >= 0;
-        committeeIndex = otherInternalCommitteeBits.nextSetBit(committeeIndex + 1)) {
+        committeeIndex = otherCommitteeBits.nextSetBit(committeeIndex + 1)) {
 
       final BitSet thisAggregationBitsForCommittee =
           this.committeeAggregationBitsMap.get(committeeIndex);
@@ -308,6 +326,17 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
+  public int getBitCount() {
+    return committeeAggregationBitsMap.values().stream().mapToInt(BitSet::cardinality).sum();
+  }
+
+  @Override
+  public boolean isExclusivelyFromCommittee(final int committeeIndex) {
+    return committeeAggregationBitsMap.size() == 1
+        && committeeAggregationBitsMap.containsKey(committeeIndex);
+  }
+
+  @Override
   public String toString() {
     long totalSetBits = 0;
     if (committeeAggregationBitsMap != null) {
@@ -323,5 +352,33 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         .add("committeesSize", committeesSize.size())
         .add("cached", cachedAggregationBits != null || cachedCommitteeBits != null)
         .toString();
+  }
+
+  static AttestationBitsAggregatorElectra requiresElectra(
+      final AttestationBitsAggregator aggregator) {
+    if (!(aggregator instanceof AttestationBitsAggregatorElectra aggregatorElectra)) {
+      throw new IllegalArgumentException(
+          "AttestationBitsAggregator required to be Electra but was: "
+              + aggregator.getClass().getSimpleName());
+    }
+    return aggregatorElectra;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (!(o instanceof AttestationBitsAggregatorElectra that)) {
+      return false;
+    }
+    return this.committeeBits.equals(that.committeeBits)
+        && Objects.equals(committeeAggregationBitsMap, that.committeeAggregationBitsMap);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(committeeBits, committeeAggregationBitsMap);
   }
 }
