@@ -139,6 +139,8 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas)
                           .getSyncAggregatorSelectionDataSchema()))
+          // TODO-fulu remove ignore after we add DataColumnsByRootIdentifier container
+          .put("ssz_static/DataColumnsByRootIdentifier", IGNORE_TESTS)
           .put("ssz_static/LightClientBootstrap", IGNORE_TESTS)
           .put("ssz_static/LightClientFinalityUpdate", IGNORE_TESTS)
           .put("ssz_static/LightClientHeader", IGNORE_TESTS)
