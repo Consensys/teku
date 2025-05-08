@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
@@ -35,7 +37,9 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
   private final CellSchema cellSchema;
   private final DataColumnSchema dataColumnSchema;
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
+  private final DataColumnsByRootIdentifierSchema dataColumnsByRootIdentifierSchema;
   private final MatrixEntrySchema matrixEntrySchema;
+
   private final DataColumnSidecarsByRootRequestMessageSchema
       dataColumnSidecarsByRootRequestMessageSchema;
   private final DataColumnSidecarsByRangeRequestMessage
@@ -47,6 +51,8 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     this.cellSchema = schemaRegistry.get(CELL_SCHEMA);
     this.dataColumnSchema = schemaRegistry.get(DATA_COLUMN_SCHEMA);
     this.dataColumnSidecarSchema = schemaRegistry.get(DATA_COLUMN_SIDECAR_SCHEMA);
+    this.dataColumnsByRootIdentifierSchema =
+        schemaRegistry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA);
     this.matrixEntrySchema = schemaRegistry.get(MATRIX_ENTRY_SCHEMA);
     this.dataColumnSidecarsByRootRequestMessageSchema =
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
@@ -73,6 +79,10 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
 
   public DataColumnSidecarSchema getDataColumnSidecarSchema() {
     return dataColumnSidecarSchema;
+  }
+
+  public DataColumnsByRootIdentifierSchema getDataColumnsByRootIdentifierSchema() {
+    return dataColumnsByRootIdentifierSchema;
   }
 
   public MatrixEntrySchema getMatrixEntrySchema() {

@@ -505,8 +505,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return SafeFuture.completedFuture(
         attestationPool
             .createAggregateFor(attestationHashTreeRoot, committeeIndex)
-            .filter(attestation -> attestation.getData().getSlot().equals(slot))
-            .map(ValidatableAttestation::getAttestation));
+            .filter(attestation -> attestation.getData().getSlot().equals(slot)));
   }
 
   @Override
