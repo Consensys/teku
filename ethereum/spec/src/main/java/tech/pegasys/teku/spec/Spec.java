@@ -35,6 +35,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -108,6 +110,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
@@ -145,6 +148,13 @@ public class Spec {
     }
 
     final ForkSchedule forkSchedule = forkScheduleBuilder.build();
+
+    final UInt64 lastForkActivationEpoch =
+        forkSchedule.getActiveMilestones().getLast().getFork().getEpoch();
+    LOG.info(
+        "Creating network specification. Highest milestone supported: {}, from epoch {}",
+        highestMilestoneSupported.lowerCaseName(),
+        lastForkActivationEpoch);
 
     return new Spec(specConfigAndParent, specVersions, forkSchedule);
   }
