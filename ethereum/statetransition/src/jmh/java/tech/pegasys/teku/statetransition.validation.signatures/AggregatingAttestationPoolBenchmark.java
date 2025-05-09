@@ -280,7 +280,7 @@ public class AggregatingAttestationPoolBenchmark {
             "Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
 
     for (int i = 0; i < 1; i++) {
-      benchmark.add(bh);
+      benchmark.getAttestationsForBlock(bh);
     }
   }
 }
