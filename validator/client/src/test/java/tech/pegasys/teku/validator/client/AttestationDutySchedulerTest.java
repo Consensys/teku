@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -67,6 +68,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @SuppressWarnings("unchecked")
   private final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>
       scheduledDuties = mock(SlotBasedScheduledDuties.class);
+
+  private final AttestationDutySchedulingStrategySelector
+      attestationDutySchedulingStrategySelector =
+          mock(AttestationDutySchedulingStrategySelector.class);
 
   private final StubMetricsSystem metricsSystem2 = new StubMetricsSystem();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -936,42 +941,60 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   private void createDutySchedulerWithRealDuties() {
-    final AttestationDutyLoader attestationDutyLoader =
-        new AttestationDutyLoader(
-            validatorApiChannel,
+    final OwnedValidators validators =
+        new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
+    final AttestationDutyDefaultSchedulingStrategy dutySchedulingStrategy =
+        new AttestationDutyDefaultSchedulingStrategy(
+            spec,
             forkProvider,
             dependentRoot ->
                 new SlotBasedScheduledDuties<>(
                     attestationDutyFactory, dependentRoot, Duty::performDuty),
-            new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
-            validatorIndexProvider,
+            validators,
             beaconCommitteeSubscriptions,
-            spec,
-            false,
-            asyncRunner);
+            validatorApiChannel,
+            false);
+    when(attestationDutySchedulingStrategySelector.selectStrategy(anyInt()))
+        .thenReturn(dutySchedulingStrategy);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem,
-            new RetryingDutyLoader<>(asyncRunner, timeProvider, attestationDutyLoader),
+            new RetryingDutyLoader<>(
+                asyncRunner,
+                timeProvider,
+                new AttestationDutyLoader(
+                    validators,
+                    validatorIndexProvider,
+                    validatorApiChannel,
+                    attestationDutySchedulingStrategySelector)),
             spec);
   }
 
   private void createDutySchedulerWithMockDuties() {
-    final AttestationDutyLoader attestationDutyLoader =
-        new AttestationDutyLoader(
-            validatorApiChannel,
+    final OwnedValidators validators =
+        new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
+    final AttestationDutyDefaultSchedulingStrategy dutySchedulingStrategy =
+        new AttestationDutyDefaultSchedulingStrategy(
+            spec,
             forkProvider,
             dependentRoot -> scheduledDuties,
-            new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
-            validatorIndexProvider,
+            validators,
             beaconCommitteeSubscriptions,
-            spec,
-            false,
-            asyncRunner);
+            validatorApiChannel,
+            false);
+    when(attestationDutySchedulingStrategySelector.selectStrategy(anyInt()))
+        .thenReturn(dutySchedulingStrategy);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem2,
-            new RetryingDutyLoader<>(asyncRunner, timeProvider, attestationDutyLoader),
+            new RetryingDutyLoader<>(
+                asyncRunner,
+                timeProvider,
+                new AttestationDutyLoader(
+                    validators,
+                    validatorIndexProvider,
+                    validatorApiChannel,
+                    attestationDutySchedulingStrategySelector)),
             spec);
   }
 }
