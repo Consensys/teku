@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   private SszBitlist aggregationBits;
@@ -41,20 +40,12 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public void or(final PooledAttestation other) {
-    or(other.bits());
-  }
-
-  @Override
-  public boolean aggregateWith(final PooledAttestation other) {
-    return aggregateWith(other.bits().getAggregationBits());
-  }
-
-  private boolean aggregateWith(final SszBitlist otherAggregationBits) {
-    if (aggregationBits.intersects(otherAggregationBits)) {
+  public boolean aggregateWith(final AttestationBitsAggregator other) {
+    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other);
+    if (aggregationBits.intersects(otherPhase0.aggregationBits)) {
       return false;
     }
-    aggregationBits = aggregationBits.or(otherAggregationBits);
+    aggregationBits = aggregationBits.or(otherPhase0.aggregationBits);
     return true;
   }
 
@@ -69,8 +60,8 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public boolean isSuperSetOf(final PooledAttestation other) {
-    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other.bits());
+  public boolean isSuperSetOf(final AttestationBitsAggregator other) {
+    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other);
     return aggregationBits.isSuperSetOf(otherPhase0.aggregationBits);
   }
 

@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 public interface AttestationBitsAggregator {
   static AttestationBitsAggregator fromEmptyFromAttestationSchema(
@@ -64,15 +63,13 @@ public interface AttestationBitsAggregator {
 
   void or(AttestationBitsAggregator other);
 
-  void or(PooledAttestation other);
-
-  boolean aggregateWith(PooledAttestation other);
+  boolean aggregateWith(AttestationBitsAggregator other);
 
   void or(Attestation other);
 
   boolean isSuperSetOf(Attestation other);
 
-  boolean isSuperSetOf(PooledAttestation other);
+  boolean isSuperSetOf(AttestationBitsAggregator other);
 
   SszBitlist getAggregationBits();
 

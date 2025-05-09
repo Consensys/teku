@@ -37,31 +37,31 @@ class AggregateAttestationBuilderTest {
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
-  private final AggregateAttestationBuilder builder =
-      new AggregateAttestationBuilder(attestationData);
+  private final AggregateAttestationBuilder builder = new AggregateAttestationBuilder();
 
   @Test
   public void canAggregate_shouldBeTrueForFirstAttestation() {
-    assertThat(builder.aggregate(createAttestation(1, 2, 3, 4, 5, 6, 7, 8, 9))).isTrue();
+    assertThat(builder.aggregate(createAttestationBitsAndSignature(1, 2, 3, 4, 5, 6, 7, 8, 9)))
+        .isTrue();
   }
 
   @Test
   public void canAggregate_shouldBeTrueWhenValidatorsDoNotOverlap() {
-    builder.aggregate(createAttestation(1, 3, 5));
-    assertThat(builder.aggregate(createAttestation(0, 2, 4))).isTrue();
+    builder.aggregate(createAttestationBitsAndSignature(1, 3, 5));
+    assertThat(builder.aggregate(createAttestationBitsAndSignature(0, 2, 4))).isTrue();
   }
 
   @Test
   public void canAggregate_shouldBeFalseWhenValidatorsDoOverlap() {
-    builder.aggregate(createAttestation(1, 3, 5));
-    assertThat(builder.aggregate(createAttestation(1, 2, 4))).isFalse();
+    builder.aggregate(createAttestationBitsAndSignature(1, 3, 5));
+    assertThat(builder.aggregate(createAttestationBitsAndSignature(1, 2, 4))).isFalse();
   }
 
   @Test
   public void aggregate_shouldTrackIncludedAggregations() {
-    final PooledAttestation attestation1 = createAttestation(1);
-    final PooledAttestation attestation2 = createAttestation(2);
-    final PooledAttestation attestation3 = createAttestation(3);
+    final AttestationBitsAndSignature attestation1 = createAttestationBitsAndSignature(1);
+    final AttestationBitsAndSignature attestation2 = createAttestationBitsAndSignature(2);
+    final AttestationBitsAndSignature attestation3 = createAttestationBitsAndSignature(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -72,9 +72,9 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void aggregate_shouldCombineBitsetsAndSignatures() {
-    final PooledAttestation attestation1 = createAttestation(1);
-    final PooledAttestation attestation2 = createAttestation(2);
-    final PooledAttestation attestation3 = createAttestation(3);
+    final AttestationBitsAndSignature attestation1 = createAttestationBitsAndSignature(1);
+    final AttestationBitsAndSignature attestation2 = createAttestationBitsAndSignature(2);
+    final AttestationBitsAndSignature attestation3 = createAttestationBitsAndSignature(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -91,7 +91,7 @@ class AggregateAttestationBuilderTest {
 
     assertThat(builder.buildAggregate())
         .isEqualTo(
-            PooledAttestation.fromValidatableAttestation(
+            AttestationBitsAndSignature.fromValidatableAttestation(
                 ValidatableAttestation.from(
                     spec,
                     attestationSchema.create(
@@ -103,10 +103,10 @@ class AggregateAttestationBuilderTest {
     assertThatThrownBy(builder::buildAggregate).isInstanceOf(IllegalStateException.class);
   }
 
-  private PooledAttestation createAttestation(final int... validators) {
+  private AttestationBitsAndSignature createAttestationBitsAndSignature(final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
-    return PooledAttestation.fromValidatableAttestation(
+    return AttestationBitsAndSignature.fromValidatableAttestation(
         ValidatableAttestation.from(
             spec,
             attestationSchema.create(

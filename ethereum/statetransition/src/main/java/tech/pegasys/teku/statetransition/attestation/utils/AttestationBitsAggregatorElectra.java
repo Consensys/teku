@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
-import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
@@ -111,13 +110,8 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public void or(final PooledAttestation other) {
-    or(other.bits());
-  }
-
-  @Override
-  public boolean aggregateWith(final PooledAttestation other) {
-    final AttestationBitsAggregatorElectra otherElectra = requiresElectra(other.bits());
+  public boolean aggregateWith(final AttestationBitsAggregator other) {
+    final AttestationBitsAggregatorElectra otherElectra = requiresElectra(other);
     return performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, true);
   }
 
@@ -210,8 +204,8 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public boolean isSuperSetOf(final PooledAttestation other) {
-    final AttestationBitsAggregatorElectra otherElectra = requiresElectra(other.bits());
+  public boolean isSuperSetOf(final AttestationBitsAggregator other) {
+    final AttestationBitsAggregatorElectra otherElectra = requiresElectra(other);
 
     return isSuperSetOf(otherElectra.committeeBits, () -> otherElectra.committeeAggregationBitsMap);
   }

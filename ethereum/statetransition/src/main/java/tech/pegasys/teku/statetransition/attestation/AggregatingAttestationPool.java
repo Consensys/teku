@@ -62,7 +62,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   static final long ATTESTATION_RETENTION_SLOTS = 64;
 
   static final Comparator<PooledAttestation> ATTESTATION_INCLUSION_COMPARATOR =
-      Comparator.<PooledAttestation>comparingInt(attestation -> attestation.bits().getBitCount())
+      Comparator.<PooledAttestation>comparingInt(
+              attestation -> attestation.bitsAndSignature().bits().getBitCount())
           .reversed();
 
   /**
@@ -111,7 +112,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             attestationGroup -> {
               final boolean added =
                   attestationGroup.add(
-                      PooledAttestation.fromValidatableAttestation(attestation),
+                      AttestationBitsAndSignature.fromValidatableAttestation(attestation),
                       attestation.getCommitteeShufflingSeed());
               if (added) {
                 updateSize(1);
@@ -323,7 +324,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(MatchingDataAttestationGroup::stream)
         .filter(
             attestation ->
-                attestation.bits().requiresCommitteeBits()
+                attestation.bitsAndSignature().bits().requiresCommitteeBits()
                     == blockRequiresAttestationsWithCommitteeBits)
         .sorted(ATTESTATION_INCLUSION_COMPARATOR);
   }
