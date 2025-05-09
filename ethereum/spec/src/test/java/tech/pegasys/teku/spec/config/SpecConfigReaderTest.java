@@ -16,12 +16,15 @@ package tech.pegasys.teku.spec.config;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -193,11 +196,32 @@ public class SpecConfigReaderTest {
   }
 
   @Test
+  public void read_listOfBlobSchedules() {
+    final Map<String, Object> data = new HashMap<>();
+    data.put(
+        "BLOB_SCHEDULE",
+        List.of(
+            Map.of("EPOCH", "1", "MAX_BLOBS_PER_BLOCK", "2"),
+            Map.of("EPOCH", "3", "MAX_BLOBS_PER_BLOCK", "4")));
+
+    assertDoesNotThrow(() -> reader.loadFromMap(data, true));
+  }
+
+  @Test
+  public void read_invalidListThrowsException() {
+    final Map<String, Object> data = new HashMap<>();
+    data.put("BLOB_SCHEDULE", List.of("A", "b"));
+    assertThatThrownBy(() -> reader.loadFromMap(data, true))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("BLOB_SCHEDULE");
+  }
+
+  @Test
   public void read_localConfigFile_notLoadingDefaults(@TempDir final Path tempDir)
       throws IOException {
     Files.writeString(
         tempDir.resolve("test.yaml"), "PRESET_BASE: 'mainnet'\nCONFIG_NAME: 'mainnet'", UTF_8);
-    Map<String, Object> data =
+    final Map<String, Object> data =
         reader.readValues(Files.newInputStream(tempDir.resolve("test.yaml")));
     reader.loadFromMap(data, true);
     assertThatThrownBy(reader::build)

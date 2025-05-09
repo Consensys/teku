@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -33,13 +34,17 @@ public class SpecConfigData {
     this.specConfig = specConfig;
   }
 
+  @SuppressWarnings("unchecked")
   public Map<String, Object> getConfigMap() {
     final Map<String, Object> configAttributes = new HashMap<>();
     specConfig
         .getRawConfig()
         .forEach(
             (name, value) -> {
-              if (value != null) {
+              if (value instanceof List<?>) {
+                LOG.warn("Config field {} was a list and we haven't implemented that", name);
+                configAttributes.put(name, value);
+              } else if (value != null) {
                 configAttributes.put(name, ConfigProvider.formatValue(value));
               } else {
                 LOG.warn("Config field {} was set to null in runtime configuration", name);

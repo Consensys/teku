@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -50,6 +51,11 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   @Override
   public UInt64 getFieldElementsPerExtBlob() {
     return delegate.getFieldElementsPerExtBlob();
+  }
+
+  @Override
+  public List<BlobSchedule> getBlobSchedule() {
+    return delegate.getBlobSchedule();
   }
 
   @Override
