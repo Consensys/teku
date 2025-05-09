@@ -175,8 +175,7 @@ public abstract class AbstractNode implements Node {
       reportTerminalBlockHashOverride = true;
       reportTerminalBlockHashEpochOverride = true;
     } else {
-      final Eth2NetworkConfiguration defaultConfiguration =
-          Eth2NetworkConfiguration.builder().applyNetworkDefaults(maybeEth2Network.get()).build();
+      final Eth2NetworkConfiguration defaultConfiguration = tekuConfig.eth2NetworkConfiguration();
       reportTerminalBlockHashOverride =
           !defaultConfiguration
               .getTerminalBlockHashOverride()
