@@ -15,10 +15,13 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecConfigFuluTest {
@@ -107,6 +110,29 @@ public class SpecConfigFuluTest {
   }
 
   @Test
+  public void mainnetBlobSchedule() {
+    final Spec mainnetSpec = TestSpecFactory.createMainnetFulu();
+    final MiscHelpersFulu miscHelpersFulu =
+        mainnetSpec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+    // test defaulting to minimum
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(0))).isEqualTo(UInt64.valueOf(6));
+    // test deneb max blobs boundary
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269568)))
+        .isEqualTo(UInt64.valueOf(6));
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269569)))
+        .isEqualTo(UInt64.valueOf(6));
+    // last epoch of deneb
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364031)))
+        .isEqualTo(UInt64.valueOf(6));
+    // electra boundary
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364032)))
+        .isEqualTo(UInt64.valueOf(9));
+    // inside electra
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033)))
+        .isEqualTo(UInt64.valueOf(9));
+  }
+
+  @Test
   public void mainnetShouldHave12MaxBlobs() {
     final SpecConfigFulu specConfigFulu =
         SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionFulu().orElseThrow();
@@ -133,6 +159,9 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomPositiveInt(8192),
-        dataStructureUtil.randomUInt64(32000000000L)) {};
+        dataStructureUtil.randomUInt64(32000000000L),
+        List.of(
+            new BlobSchedule(
+                dataStructureUtil.randomEpoch(), dataStructureUtil.randomUInt64(64)))) {};
   }
 }

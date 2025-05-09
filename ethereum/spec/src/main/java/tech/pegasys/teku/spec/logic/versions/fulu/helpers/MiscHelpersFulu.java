@@ -13,7 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -44,6 +50,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   @SuppressWarnings("unused")
   private final SchemaDefinitionsFulu schemaDefinitions;
 
+  private final List<BlobSchedule> blobSchedule;
+
   public MiscHelpersFulu(
       final SpecConfigFulu specConfigFulu,
       final Predicates predicates,
@@ -55,10 +63,27 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.predicates = predicates;
     this.specConfigFulu = specConfigFulu;
     this.schemaDefinitions = SchemaDefinitionsFulu.required(schemaDefinitions);
+    this.blobSchedule =
+        specConfigFulu.getBlobSchedule().stream()
+            .sorted(Comparator.comparing(BlobSchedule::epoch))
+            .toList();
   }
 
   @Override
   public Optional<MiscHelpersFulu> toVersionFulu() {
     return Optional.of(this);
+  }
+
+  // get_max_blobs_per_block
+  public UInt64 getMaxBlobsPerBlock(final UInt64 epoch) {
+    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
+
+    final Optional<BlobSchedule> maybeSchedule =
+        blobSchedule.stream()
+            .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
+            .max(Comparator.comparing(BlobSchedule::epoch));
+    return maybeSchedule.isPresent()
+        ? maybeSchedule.get().maxBlobsPerBlock()
+        : blobSchedule.getFirst().maxBlobsPerBlock();
   }
 }

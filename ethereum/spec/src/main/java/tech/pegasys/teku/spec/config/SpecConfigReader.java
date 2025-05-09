@@ -26,8 +26,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -105,8 +107,33 @@ public class SpecConfigReader {
           .put(Bytes.class, fromString(Bytes::fromHexString))
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
           .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
+          .put(List.class, this::blobScheduleFromList)
           .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
+
+  @SuppressWarnings("unchecked")
+  private Object blobScheduleFromList(final Object o) {
+    final List<BlobSchedule> blobSchedule = new ArrayList<>();
+    final List<?> schedule = (List<?>) o;
+    for (Object entry : schedule) {
+      if (entry instanceof Map) {
+        final Map<String, String> data = (Map<String, String>) entry;
+        if (!data.containsKey("EPOCH")
+            || !data.containsKey("MAX_BLOBS_PER_BLOCK")
+            || data.size() != 2) {
+          throw new IllegalArgumentException("Map does not look like a blob schedule");
+        }
+        blobSchedule.add(
+            new BlobSchedule(
+                UInt64.valueOf(data.get("EPOCH")),
+                UInt64.valueOf(data.get("MAX_BLOBS_PER_BLOCK"))));
+
+      } else {
+        throw new IllegalArgumentException("Could not parse entry blob schedule");
+      }
+    }
+    return blobSchedule;
+  }
 
   final SpecConfigBuilder configBuilder = SpecConfig.builder();
 

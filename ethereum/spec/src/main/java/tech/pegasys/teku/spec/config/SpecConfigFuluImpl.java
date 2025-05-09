@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -37,6 +38,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   private final int maxRequestDataColumnSidecars;
   private final int maxBlobsPerBlockFulu;
   private final UInt64 balancePerAdditionalCustodyGroup;
+  private final List<BlobSchedule> blobSchedule;
 
   public SpecConfigFuluImpl(
       final SpecConfigElectra specConfig,
@@ -54,7 +56,8 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final int minEpochsForDataColumnSidecarsRequests,
       final int maxRequestDataColumnSidecars,
       final int maxBlobsPerBlockFulu,
-      final UInt64 balancePerAdditionalCustodyGroup) {
+      final UInt64 balancePerAdditionalCustodyGroup,
+      final List<BlobSchedule> blobSchedule) {
     super(specConfig);
     this.fuluForkVersion = fuluForkVersion;
     this.fuluForkEpoch = fuluForkEpoch;
@@ -71,6 +74,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
     this.maxBlobsPerBlockFulu = maxBlobsPerBlockFulu;
     this.balancePerAdditionalCustodyGroup = balancePerAdditionalCustodyGroup;
+    this.blobSchedule = blobSchedule;
   }
 
   @Override
@@ -91,6 +95,11 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   @Override
   public UInt64 getFieldElementsPerExtBlob() {
     return fieldElementsPerExtBlob;
+  }
+
+  @Override
+  public List<BlobSchedule> getBlobSchedule() {
+    return blobSchedule;
   }
 
   @Override
