@@ -18,10 +18,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -31,19 +33,22 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   private final DataColumnSidecarDB delegateDb;
   private final Function<UInt64, Integer> slotToNumberOfColumns;
 
-  private final Map<UInt64, SlotCache> slotCaches;
+  private final Map<UInt64, SlotCache> readSlotCaches;
+  private final Set<DataColumnSlotAndIdentifier> latestAdded;
 
   public ColumnIdCachingDasDb(
       final DataColumnSidecarDB delegateDb,
       final Function<UInt64, Integer> slotToNumberOfColumns,
-      final int maxCacheSize) {
+      final int slotReadCacheSize,
+      final int sidecarsWriteCacheSize) {
     this.delegateDb = delegateDb;
     this.slotToNumberOfColumns = slotToNumberOfColumns;
-    this.slotCaches = LimitedMap.createSynchronizedLRU(maxCacheSize);
+    this.readSlotCaches = LimitedMap.createSynchronizedLRU(slotReadCacheSize);
+    this.latestAdded = LimitedSet.createSynchronized(sidecarsWriteCacheSize);
   }
 
   private SlotCache getOrCreateSlotCache(final UInt64 slot) {
-    return slotCaches.computeIfAbsent(
+    return readSlotCaches.computeIfAbsent(
         slot,
         __ ->
             new SlotCache(
@@ -51,7 +56,7 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   }
 
   private void invalidateSlotCache(final UInt64 slot) {
-    slotCaches.remove(slot);
+    readSlotCaches.remove(slot);
   }
 
   @Override
@@ -61,6 +66,9 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
 
   @Override
   public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
+    if (!latestAdded.add(DataColumnSlotAndIdentifier.fromDataColumn(sidecar))) {
+      return SafeFuture.COMPLETE;
+    }
     invalidateSlotCache(sidecar.getSlot());
     return delegateDb.addSidecar(sidecar);
   }

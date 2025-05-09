@@ -45,8 +45,10 @@ public class ColumnIdCachingDasDbTest {
   DataColumnSidecarDBStub db = new DataColumnSidecarDBStub();
   DataColumnSidecarDB asyncDb = new DelayedDasDb(this.db, stubAsync.getStubAsyncRunner(), dbDelay);
 
-  final int cacheSize = 2;
-  ColumnIdCachingDasDb columnIdCachingDb = new ColumnIdCachingDasDb(asyncDb, __ -> 128, cacheSize);
+  final int slotReadCacheSize = 2;
+  final int sidecarsWriteCacheSize = 2;
+  ColumnIdCachingDasDb columnIdCachingDb =
+      new ColumnIdCachingDasDb(asyncDb, __ -> 128, slotReadCacheSize, sidecarsWriteCacheSize);
 
   private DataColumnSidecar createSidecar(final int slot, final int index) {
     final UInt64 slotU = UInt64.valueOf(slot);
@@ -77,7 +79,7 @@ public class ColumnIdCachingDasDbTest {
   }
 
   @Test
-  void checkCacheIsInvalidated() {
+  void checkReadCacheIsUpdated() {
     SafeFuture<List<DataColumnSlotAndIdentifier>> res1 =
         columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
 
@@ -100,8 +102,49 @@ public class ColumnIdCachingDasDbTest {
   }
 
   @Test
+  void checkWriteCacheIsUsed() {
+    SafeFuture<List<DataColumnSlotAndIdentifier>> res1 =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
+
+    stubAsync.advanceTimeGradually(ofMillis(1));
+
+    final DataColumnSidecar sidecar = createSidecar(777, 77);
+    SafeFuture<Void> addCompleteFuture1 = columnIdCachingDb.addSidecar(sidecar);
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(res1)
+        .isCompleted(); // no assumptions on result: cache may or may not pick up latest changes
+    assertThat(addCompleteFuture1).isCompleted();
+    long reads1 = db.getDbReadCounter().get();
+    assertThat(reads1).isEqualTo(1);
+    long writes1 = db.getDbWriteCounter().get();
+    assertThat(writes1).isEqualTo(1);
+
+    SafeFuture<List<DataColumnSlotAndIdentifier>> res2 =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
+    stubAsync.advanceTimeGradually(dbDelay);
+
+    assertThat(res2).isCompletedWithValueMatching(l -> !l.isEmpty());
+
+    long reads2 = db.getDbReadCounter().get();
+    assertThat(reads2).isEqualTo(2);
+    long writes2 = db.getDbWriteCounter().get();
+    assertThat(writes2).isEqualTo(writes1);
+
+    // Retry saving the same sidecar, db should not be used
+    SafeFuture<Void> addCompleteFuture2 = columnIdCachingDb.addSidecar(sidecar);
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(addCompleteFuture2).isCompleted();
+    long reads3 = db.getDbReadCounter().get();
+    assertThat(reads3).isEqualTo(reads2);
+    long writes3 = db.getDbWriteCounter().get();
+    assertThat(writes3).isEqualTo(writes1);
+  }
+
+  @Test
   void checkCacheIsPruned() {
-    for (int i = 0; i < cacheSize + 1; i++) {
+    for (int i = 0; i < slotReadCacheSize + 1; i++) {
       columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777 + i));
     }
     stubAsync.advanceTimeGradually(dbDelay);
