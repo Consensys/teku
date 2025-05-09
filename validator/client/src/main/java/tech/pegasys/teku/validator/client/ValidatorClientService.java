@@ -63,7 +63,9 @@ import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
+import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
+import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
@@ -91,6 +93,7 @@ public class ValidatorClientService extends Service {
   private static final Duration DOPPELGANGER_DETECTOR_CHECK_DELAY = Duration.ofSeconds(12);
   private static final Duration DOPPELGANGER_DETECTOR_TIMEOUT = Duration.ofMinutes(15);
   private static final int DOPPELGANGER_DETECTOR_MAX_EPOCHS = 2;
+  private static final int MIN_SIZE_TO_SCHEDULE_ATTESTATION_DUTIES_IN_BATCHES = 1000;
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
@@ -483,24 +486,44 @@ public class ValidatorClientService extends Service {
             dvtSelectionsEndpointEnabled);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
-    final AttestationDutyLoader attestationDutyLoader =
-        new AttestationDutyLoader(
-            validatorApiChannel,
-            forkProvider,
+    final Function<Bytes32, SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>>
+        scheduledAttestationDutiesFactory =
             dependentRoot ->
                 new SlotBasedScheduledDuties<>(
                     attestationDutyFactory,
                     dependentRoot,
-                    validatorDutyMetrics::performDutyWithMetrics),
-            validators,
-            validatorIndexProvider,
-            beaconCommitteeSubscriptions,
+                    validatorDutyMetrics::performDutyWithMetrics);
+    final AttestationDutyDefaultSchedulingStrategy attestationDutyDefaultSchedulingStrategy =
+        new AttestationDutyDefaultSchedulingStrategy(
             spec,
-            dvtSelectionsEndpointEnabled,
+            forkProvider,
+            scheduledAttestationDutiesFactory,
+            validators,
+            beaconCommitteeSubscriptions,
+            validatorApiChannel,
+            dvtSelectionsEndpointEnabled);
+    final AttestationDutyBatchSchedulingStrategy attestationDutyBatchSchedulingStrategy =
+        new AttestationDutyBatchSchedulingStrategy(
+            spec,
+            forkProvider,
+            scheduledAttestationDutiesFactory,
+            validators,
+            beaconCommitteeSubscriptions,
             asyncRunner);
-    validatorTimingChannels.add(attestationDutyLoader);
-    final DutyLoader<?> retryingAttestationDutyLoader =
-        new RetryingDutyLoader<>(asyncRunner, timeProvider, attestationDutyLoader);
+    validatorTimingChannels.add(attestationDutyBatchSchedulingStrategy);
+    final DutyLoader<?> attestationDutyLoader =
+        new RetryingDutyLoader<>(
+            asyncRunner,
+            timeProvider,
+            new AttestationDutyLoader(
+                validators,
+                validatorIndexProvider,
+                validatorApiChannel,
+                new AttestationDutySchedulingStrategySelector(
+                    MIN_SIZE_TO_SCHEDULE_ATTESTATION_DUTIES_IN_BATCHES,
+                    dvtSelectionsEndpointEnabled,
+                    attestationDutyDefaultSchedulingStrategy,
+                    attestationDutyBatchSchedulingStrategy)));
     final DutyLoader<?> blockDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -516,7 +539,7 @@ public class ValidatorClientService extends Service {
                 validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));
     validatorTimingChannels.add(
-        new AttestationDutyScheduler(metricsSystem, retryingAttestationDutyLoader, spec));
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, spec));
     validatorTimingChannels.add(validatorLoader.getSlashingProtectionLogger());
 
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
