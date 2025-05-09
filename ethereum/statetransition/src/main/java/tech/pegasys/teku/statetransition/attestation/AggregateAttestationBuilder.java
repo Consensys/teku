@@ -15,9 +15,9 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
@@ -26,7 +26,7 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggreg
  * made redundant by the current aggregate.
  */
 class AggregateAttestationBuilder {
-  private final Set<AttestationBitsAndSignature> includedAttestations = new HashSet<>();
+  private final List<AttestationBitsAndSignature> includedAttestations = new ArrayList<>();
   private AttestationBitsAggregator currentAggregateBits;
 
   public boolean aggregate(final AttestationBitsAndSignature attestation) {
