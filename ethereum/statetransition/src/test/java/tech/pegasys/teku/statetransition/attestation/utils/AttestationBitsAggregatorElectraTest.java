@@ -733,6 +733,36 @@ public class AttestationBitsAggregatorElectraTest {
     assertThat(aggregator).isNotEqualTo(new Object());
   }
 
+  @Test
+  void isExclusivelyFromCommittee_shouldReturnConsistentResult() {
+    final PooledAttestation fromMultipleCommittees = createAttestation(List.of(0, 1), 0, 3);
+    final PooledAttestation fromSingleCommittee = createAttestation(List.of(0), 0, 1);
+    final PooledAttestation singleAttestationFromSingleCommittee = createAttestation(List.of(1), 0);
+
+    assertThat(fromMultipleCommittees.bits().isExclusivelyFromCommittee(0)).isFalse();
+    assertThat(fromMultipleCommittees.bits().isExclusivelyFromCommittee(1)).isFalse();
+    assertThat(fromMultipleCommittees.bits().isExclusivelyFromCommittee(2)).isFalse();
+
+    assertThat(fromSingleCommittee.bits().isExclusivelyFromCommittee(0)).isTrue();
+    assertThat(fromSingleCommittee.bits().isExclusivelyFromCommittee(1)).isFalse();
+    assertThat(fromSingleCommittee.bits().isExclusivelyFromCommittee(2)).isFalse();
+
+    assertThat(singleAttestationFromSingleCommittee.bits().isExclusivelyFromCommittee(0)).isFalse();
+    assertThat(singleAttestationFromSingleCommittee.bits().isExclusivelyFromCommittee(1)).isTrue();
+    assertThat(singleAttestationFromSingleCommittee.bits().isExclusivelyFromCommittee(2)).isFalse();
+  }
+
+  @Test
+  void getBitCount_shouldReturnConsistentResult() {
+    final PooledAttestation fromMultipleCommittees = createAttestation(List.of(0, 1), 0, 3);
+    final PooledAttestation fromSingleCommittee = createAttestation(List.of(0), 0, 1);
+    final PooledAttestation singleAttestationFromSingleCommittee = createAttestation(List.of(1), 0);
+
+    assertThat(fromMultipleCommittees.bits().getBitCount()).isEqualTo(2);
+    assertThat(fromSingleCommittee.bits().getBitCount()).isEqualTo(2);
+    assertThat(singleAttestationFromSingleCommittee.bits().getBitCount()).isEqualTo(1);
+  }
+
   private PooledAttestation createAttestation(final String commBits, final String aggBits) {
     assertThat(commBits).matches(Pattern.compile("^[0-1]+$"));
     assertThat(aggBits).matches(Pattern.compile("^[0-1]+$"));
