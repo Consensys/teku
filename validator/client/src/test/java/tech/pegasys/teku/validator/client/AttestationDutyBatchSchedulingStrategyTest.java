@@ -13,45 +13,48 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.AttestationDutyBatchSchedulingStrategy.SlotBatchingOptions;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-class AttestationDutyLoaderTest {
+class AttestationDutyBatchSchedulingStrategyTest {
 
-  private static final IntList VALIDATOR_INDICES = IntList.of(1);
+  private static final IntList VALIDATOR_INDICES = IntList.of(1, 2, 3, 4, 5, 6, 7, 8);
+  private static final SlotBatchingOptions SLOT_BATCHING_TEST_OPTIONS =
+      new SlotBatchingOptions(4, Duration.ofMillis(50), 1, Duration.ofMillis(50));
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
       mock(BeaconCommitteeSubscriptions.class);
@@ -67,17 +70,18 @@ class AttestationDutyLoaderTest {
       new Validator(validatorKey, signer, new FileBackedGraffitiProvider());
   private final Map<BLSPublicKey, Validator> validators = Map.of(validatorKey, validator);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
 
-  private final AttestationDutyLoader dutyLoader =
-      new AttestationDutyLoader(
-          validatorApiChannel,
+  private final AttestationDutyBatchSchedulingStrategy dutySchedulingStrategy =
+      new AttestationDutyBatchSchedulingStrategy(
+          spec,
           forkProvider,
           dependentRoot -> scheduledDuties,
           new OwnedValidators(validators),
-          validatorIndexProvider,
           beaconCommitteeSubscriptions,
-          spec,
-          false);
+          asyncRunner,
+          SLOT_BATCHING_TEST_OPTIONS);
 
   @BeforeEach
   void setUp() {
@@ -87,90 +91,73 @@ class AttestationDutyLoaderTest {
   }
 
   @Test
-  void shouldSubscribeToSubnetWhenValidatorIsAggregator() {
-    final UInt64 slot = UInt64.ONE;
-    final int validatorIndex = VALIDATOR_INDICES.getInt(0);
-    final int committeeLength = 1;
-    final int committeeIndex = 3;
-    final int committeesAtSlot = 4;
-    final AttesterDuty duty =
-        new AttesterDuty(
-            validatorKey,
-            validatorIndex,
-            committeeLength,
-            committeeIndex,
-            committeesAtSlot,
-            0,
-            slot);
-    when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty)))));
+  void shouldBatchBySlotsWhenSchedulingEpochIsCurrent() {
+    final UInt64 epoch = UInt64.ZERO;
+    final AttesterDuties duties = getTestDuties(epoch);
 
-    when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
-    when(signer.signAggregationSlot(slot, forkInfo))
+    when(signer.signAggregationSlot(any(UInt64.class), eq(forkInfo)))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
-        dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<SlotBasedScheduledDuties<?, ?>> result =
+        dutySchedulingStrategy.scheduleAllDuties(epoch, duties);
 
+    // there should be 1 delay: 8 / 4 - 1 (no delay at start)
+    asyncRunner.executeDueActions();
+    assertThat(result).isNotCompleted();
+    assertThat(asyncRunner.countDelayedActions()).isOne();
+    timeProvider.advanceTimeBy(SLOT_BATCHING_TEST_OPTIONS.currentEpochSchedulingDelay());
+
+    asyncRunner.executeDueActions();
     assertThat(result).isCompleted();
-    verify(beaconCommitteeSubscriptions)
-        .subscribeToBeaconCommittee(
-            new CommitteeSubscriptionRequest(
-                validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), slot, true));
+
+    verify(beaconCommitteeSubscriptions, times(8)).subscribeToBeaconCommittee(any());
     verify(beaconCommitteeSubscriptions).sendRequests();
   }
 
   @Test
-  void shouldSubscribeToSubnetWhenValidatorIsNotAggregator() {
-    final UInt64 slot = UInt64.ONE;
-    final int validatorIndex = VALIDATOR_INDICES.getInt(0);
-    final int committeeLength = 10000000;
-    final int committeeIndex = 3;
-    final int committeesAtSlot = 4;
-    final AttesterDuty duty =
-        new AttesterDuty(
-            validatorKey,
-            validatorIndex,
-            committeeLength,
-            committeeIndex,
-            committeesAtSlot,
-            0,
-            slot);
-    when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty)))));
+  void shouldBatchBySlotsWhenSchedulingEpochIsInTheFuture() {
+    // still in epoch 0
+    dutySchedulingStrategy.onSlot(UInt64.valueOf(3));
+    final AttesterDuties duties = getTestDuties(UInt64.ZERO);
 
-    when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
-    when(signer.signAggregationSlot(slot, forkInfo))
+    when(signer.signAggregationSlot(any(UInt64.class), eq(forkInfo)))
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
-        dutyLoader.loadDutiesForEpoch(UInt64.ONE);
+    final SafeFuture<SlotBasedScheduledDuties<?, ?>> result =
+        dutySchedulingStrategy.scheduleAllDuties(UInt64.ONE, duties);
 
+    // there should be total of 7 delays: 8 - 1 (no delay at the start)
+    for (int i = 0; i < 7; i++) {
+      asyncRunner.executeDueActions();
+      assertThat(result).isNotCompleted();
+      assertThat(asyncRunner.countDelayedActions()).isOne();
+      timeProvider.advanceTimeBy(SLOT_BATCHING_TEST_OPTIONS.futureEpochSchedulingDelay());
+    }
+
+    asyncRunner.executeDueActions();
     assertThat(result).isCompleted();
-    verify(beaconCommitteeSubscriptions)
-        .subscribeToBeaconCommittee(
-            new CommitteeSubscriptionRequest(
-                validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), slot, false));
+
+    verify(beaconCommitteeSubscriptions, times(8)).subscribeToBeaconCommittee(any());
     verify(beaconCommitteeSubscriptions).sendRequests();
   }
 
-  @Test
-  void shouldSendSubscriptionRequestsWhenAllDutiesAreScheduled() {
-    when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList()))));
-    final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
-        dutyLoader.loadDutiesForEpoch(UInt64.ONE);
-
-    assertThat(result).isCompleted();
-    verify(beaconCommitteeSubscriptions).sendRequests();
+  private AttesterDuties getTestDuties(final UInt64 epoch) {
+    // 8 duties
+    final List<AttesterDuty> duties =
+        UInt64.range(
+                spec.computeStartSlotAtEpoch(epoch),
+                spec.computeStartSlotAtEpoch(epoch.increment()))
+            .map(
+                slot ->
+                    new AttesterDuty(
+                        validatorKey,
+                        VALIDATOR_INDICES.getInt(slot.intValue() % 2),
+                        1,
+                        3,
+                        4,
+                        0,
+                        slot))
+            .toList();
+    return new AttesterDuties(false, dataStructureUtil.randomBytes32(), duties);
   }
 }
