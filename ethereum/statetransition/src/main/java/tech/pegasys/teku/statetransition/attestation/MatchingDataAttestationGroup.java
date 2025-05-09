@@ -45,11 +45,10 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggreg
  * <p>Note that the resulting aggregate will be invalid if attestations with different
  * AttestationData are added.
  */
-public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAndSignature> {
+public class MatchingDataAttestationGroup implements Iterable<PooledAttestation> {
 
-  private final NavigableMap<Integer, Set<AttestationBitsAndSignature>>
-      attestationsByValidatorCount =
-          new TreeMap<>(Comparator.reverseOrder()); // Most validators first
+  private final NavigableMap<Integer, Set<PooledAttestation>> attestationsByValidatorCount =
+      new TreeMap<>(Comparator.reverseOrder()); // Most validators first
 
   private final Spec spec;
   private Optional<Bytes32> committeeShufflingSeed = Optional.empty();
@@ -102,8 +101,7 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(
-      final AttestationBitsAndSignature attestation,
-      final Optional<Bytes32> committeeShufflingSeed) {
+      final PooledAttestation attestation, final Optional<Bytes32> committeeShufflingSeed) {
     if (includedValidators.isSuperSetOf(attestation.bits())) {
       // All attestation bits have already been included on chain
       return false;
@@ -130,29 +128,29 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
    * @return an iterator including attestations for every validator included in this group.
    */
   @Override
-  public Iterator<AttestationBitsAndSignature> iterator() {
+  public Iterator<PooledAttestation> iterator() {
     return new AggregatingIterator(Optional.empty());
   }
 
-  public Iterator<AttestationBitsAndSignature> iterator(final Optional<UInt64> committeeIndex) {
+  public Iterator<PooledAttestation> iterator(final Optional<UInt64> committeeIndex) {
     return new AggregatingIterator(committeeIndex);
   }
 
-  public Stream<PooledAttestation> stream() {
+  public Stream<PooledAttestationWithData> stream() {
     return StreamSupport.stream(spliterator(Optional.empty()), false)
         .map(
             pooledAttestationBitsAndSignature ->
-                new PooledAttestation(attestationData, pooledAttestationBitsAndSignature));
+                new PooledAttestationWithData(attestationData, pooledAttestationBitsAndSignature));
   }
 
-  public Stream<PooledAttestation> stream(final Optional<UInt64> committeeIndex) {
+  public Stream<PooledAttestationWithData> stream(final Optional<UInt64> committeeIndex) {
     return StreamSupport.stream(spliterator(committeeIndex), false)
         .map(
             pooledAttestationBitsAndSignature ->
-                new PooledAttestation(attestationData, pooledAttestationBitsAndSignature));
+                new PooledAttestationWithData(attestationData, pooledAttestationBitsAndSignature));
   }
 
-  public Stream<PooledAttestation> stream(
+  public Stream<PooledAttestationWithData> stream(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
     if (noMatchingAttestations(committeeIndex, requiresCommitteeBits)) {
       return Stream.empty();
@@ -160,11 +158,10 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
     return StreamSupport.stream(spliterator(committeeIndex), false)
         .map(
             pooledAttestationBitsAndSignature ->
-                new PooledAttestation(attestationData, pooledAttestationBitsAndSignature));
+                new PooledAttestationWithData(attestationData, pooledAttestationBitsAndSignature));
   }
 
-  public Spliterator<AttestationBitsAndSignature> spliterator(
-      final Optional<UInt64> committeeIndex) {
+  public Spliterator<PooledAttestation> spliterator(final Optional<UInt64> committeeIndex) {
     return Spliterators.spliteratorUnknownSize(iterator(committeeIndex), 0);
   }
 
@@ -208,14 +205,13 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
     }
     includedValidators.or(attestation);
 
-    final Collection<Set<AttestationBitsAndSignature>> attestationSets =
+    final Collection<Set<PooledAttestation>> attestationSets =
         attestationsByValidatorCount.values();
     int numRemoved = 0;
-    for (Iterator<Set<AttestationBitsAndSignature>> i = attestationSets.iterator(); i.hasNext(); ) {
-      final Set<AttestationBitsAndSignature> candidates = i.next();
-      for (Iterator<AttestationBitsAndSignature> iterator = candidates.iterator();
-          iterator.hasNext(); ) {
-        AttestationBitsAndSignature candidate = iterator.next();
+    for (Iterator<Set<PooledAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
+      final Set<PooledAttestation> candidates = i.next();
+      for (Iterator<PooledAttestation> iterator = candidates.iterator(); iterator.hasNext(); ) {
+        PooledAttestation candidate = iterator.next();
         if (includedValidators.isSuperSetOf(candidate.bits())) {
           iterator.remove();
           numRemoved++;
@@ -258,13 +254,12 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
         && !attestationData.getIndex().equals(committeeIndex.get());
   }
 
-  private class AggregatingIterator implements Iterator<AttestationBitsAndSignature> {
+  private class AggregatingIterator implements Iterator<PooledAttestation> {
 
     private final Optional<UInt64> maybeCommitteeIndex;
     private final AttestationBitsAggregator includedValidators;
 
-    private Iterator<AttestationBitsAndSignature> remainingAttestations =
-        getRemainingAttestations();
+    private Iterator<PooledAttestation> remainingAttestations = getRemainingAttestations();
 
     private AggregatingIterator(final Optional<UInt64> committeeIndex) {
       this.maybeCommitteeIndex = committeeIndex;
@@ -280,7 +275,7 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
     }
 
     @Override
-    public AttestationBitsAndSignature next() {
+    public PooledAttestation next() {
       final AggregateAttestationBuilder builder = new AggregateAttestationBuilder();
       remainingAttestations.forEachRemaining(
           candidate -> {
@@ -291,7 +286,7 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
       return builder.buildAggregate();
     }
 
-    public Iterator<AttestationBitsAndSignature> getRemainingAttestations() {
+    public Iterator<PooledAttestation> getRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::isAttestationRelevant)
@@ -299,7 +294,7 @@ public class MatchingDataAttestationGroup implements Iterable<AttestationBitsAnd
           .iterator();
     }
 
-    private boolean isAttestationRelevant(final AttestationBitsAndSignature candidate) {
+    private boolean isAttestationRelevant(final PooledAttestation candidate) {
       if (!candidate.bits().requiresCommitteeBits()) {
         // Pre-Electra attestation, we always consider all attestations
         return true;

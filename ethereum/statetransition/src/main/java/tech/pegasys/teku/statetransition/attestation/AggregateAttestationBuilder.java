@@ -26,10 +26,10 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggreg
  * made redundant by the current aggregate.
  */
 class AggregateAttestationBuilder {
-  private final List<AttestationBitsAndSignature> includedAttestations = new ArrayList<>();
+  private final List<PooledAttestation> includedAttestations = new ArrayList<>();
   private AttestationBitsAggregator currentAggregateBits;
 
-  public boolean aggregate(final AttestationBitsAndSignature attestation) {
+  public boolean aggregate(final PooledAttestation attestation) {
 
     if (currentAggregateBits == null) {
       includedAttestations.add(attestation);
@@ -43,18 +43,16 @@ class AggregateAttestationBuilder {
     return false;
   }
 
-  public AttestationBitsAndSignature buildAggregate() {
+  public PooledAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
-    return new AttestationBitsAndSignature(
+    return new PooledAttestation(
         currentAggregateBits,
         BLS.aggregate(
-            includedAttestations.stream()
-                .map(AttestationBitsAndSignature::aggregatedSignature)
-                .toList()),
+            includedAttestations.stream().map(PooledAttestation::aggregatedSignature).toList()),
         false);
   }
 
-  public Collection<AttestationBitsAndSignature> getIncludedAttestations() {
+  public Collection<PooledAttestation> getIncludedAttestations() {
     return includedAttestations;
   }
 }

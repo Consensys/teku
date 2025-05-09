@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.attestation.AttestationBitsAndSignature;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 public class AttestationBitsAggregatorElectraTest {
   private final Spec spec = TestSpecFactory.createMainnetElectra();
@@ -758,6 +758,6 @@ public class AttestationBitsAggregatorElectraTest {
     when(attestation.getUnconvertedAttestation()).thenReturn(realAttestation);
     when(attestation.getCommitteesSize()).thenReturn(Optional.of(committeeSizes));
 
-    return AttestationBitsAndSignature.fromValidatableAttestation(attestation).bits();
+    return PooledAttestation.fromValidatableAttestation(attestation).bits();
   }
 }

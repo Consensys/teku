@@ -59,9 +59,9 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void aggregate_shouldTrackIncludedAggregations() {
-    final AttestationBitsAndSignature attestation1 = createAttestationBitsAndSignature(1);
-    final AttestationBitsAndSignature attestation2 = createAttestationBitsAndSignature(2);
-    final AttestationBitsAndSignature attestation3 = createAttestationBitsAndSignature(3);
+    final PooledAttestation attestation1 = createAttestationBitsAndSignature(1);
+    final PooledAttestation attestation2 = createAttestationBitsAndSignature(2);
+    final PooledAttestation attestation3 = createAttestationBitsAndSignature(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -72,9 +72,9 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void aggregate_shouldCombineBitsetsAndSignatures() {
-    final AttestationBitsAndSignature attestation1 = createAttestationBitsAndSignature(1);
-    final AttestationBitsAndSignature attestation2 = createAttestationBitsAndSignature(2);
-    final AttestationBitsAndSignature attestation3 = createAttestationBitsAndSignature(3);
+    final PooledAttestation attestation1 = createAttestationBitsAndSignature(1);
+    final PooledAttestation attestation2 = createAttestationBitsAndSignature(2);
+    final PooledAttestation attestation3 = createAttestationBitsAndSignature(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -91,7 +91,7 @@ class AggregateAttestationBuilderTest {
 
     assertThat(builder.buildAggregate())
         .isEqualTo(
-            AttestationBitsAndSignature.fromValidatableAttestation(
+            PooledAttestation.fromValidatableAttestation(
                 ValidatableAttestation.from(
                     spec,
                     attestationSchema.create(
@@ -103,10 +103,10 @@ class AggregateAttestationBuilderTest {
     assertThatThrownBy(builder::buildAggregate).isInstanceOf(IllegalStateException.class);
   }
 
-  private AttestationBitsAndSignature createAttestationBitsAndSignature(final int... validators) {
+  private PooledAttestation createAttestationBitsAndSignature(final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
-    return AttestationBitsAndSignature.fromValidatableAttestation(
+    return PooledAttestation.fromValidatableAttestation(
         ValidatableAttestation.from(
             spec,
             attestationSchema.create(

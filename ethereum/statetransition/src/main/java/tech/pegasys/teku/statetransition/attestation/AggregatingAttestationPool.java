@@ -61,9 +61,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   /** The valid attestation retention period is 64 slots in deneb */
   static final long ATTESTATION_RETENTION_SLOTS = 64;
 
-  static final Comparator<PooledAttestation> ATTESTATION_INCLUSION_COMPARATOR =
-      Comparator.<PooledAttestation>comparingInt(
-              attestation -> attestation.bitsAndSignature().bits().getBitCount())
+  static final Comparator<PooledAttestationWithData> ATTESTATION_INCLUSION_COMPARATOR =
+      Comparator.<PooledAttestationWithData>comparingInt(
+              attestation -> attestation.pooledAttestation().bits().getBitCount())
           .reversed();
 
   /**
@@ -112,7 +112,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             attestationGroup -> {
               final boolean added =
                   attestationGroup.add(
-                      AttestationBitsAndSignature.fromValidatableAttestation(attestation),
+                      PooledAttestation.fromValidatableAttestation(attestation),
                       attestation.getCommitteeShufflingSeed());
               if (added) {
                 updateSize(1);
@@ -310,7 +310,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(attestationsSchema.collector());
   }
 
-  private Stream<PooledAttestation> streamAggregatesForDataHashesBySlot(
+  private Stream<PooledAttestationWithData> streamAggregatesForDataHashesBySlot(
       final Set<Bytes> dataHashSetForSlot,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
@@ -324,7 +324,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(MatchingDataAttestationGroup::stream)
         .filter(
             attestation ->
-                attestation.bitsAndSignature().bits().requiresCommitteeBits()
+                attestation.pooledAttestation().bits().requiresCommitteeBits()
                     == blockRequiresAttestationsWithCommitteeBits)
         .sorted(ATTESTATION_INCLUSION_COMPARATOR);
   }
