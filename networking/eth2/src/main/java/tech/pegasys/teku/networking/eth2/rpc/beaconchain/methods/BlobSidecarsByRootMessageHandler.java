@@ -17,6 +17,8 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
@@ -116,14 +118,14 @@ public class BlobSidecarsByRootMessageHandler
     requestCounter.labels("ok").inc();
     totalBlobSidecarsRequestedCounter.inc(message.size());
 
-    SafeFuture<Void> future = SafeFuture.COMPLETE;
+    List<SafeFuture<Void>> processingFutures = new ArrayList<>();
+
     final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
     for (final BlobIdentifier identifier : message) {
-      future =
-          future
-              .thenCompose(__ -> retrieveBlobSidecar(identifier))
+      SafeFuture<Void> processingFuture =
+          retrieveBlobSidecar(identifier)
               .thenCompose(
                   maybeSidecar ->
                       validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
@@ -136,21 +138,32 @@ public class BlobSidecarsByRootMessageHandler
                                   callback
                                       .respond(blobSidecar)
                                       .thenRun(sentBlobSidecars::incrementAndGet))
-                          .orElse(SafeFuture.COMPLETE));
+                          .orElse(SafeFuture.COMPLETE))
+              .exceptionally(
+                  err -> {
+                    LOG.debug(
+                        "Failed to process blob sidecar for identifier {}: {}",
+                        identifier,
+                        err.toString());
+                    return null;
+                  });
+
+      processingFutures.add(processingFuture);
     }
 
-    future.finish(
-        () -> {
-          if (sentBlobSidecars.get() != message.size()) {
-            peer.adjustBlobSidecarsRequest(
-                blobSidecarsRequestApproval.get(), sentBlobSidecars.get());
-          }
-          callback.completeSuccessfully();
-        },
-        err -> {
-          peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
-          handleError(callback, err);
-        });
+    SafeFuture.allOf((SafeFuture<?>) processingFutures.stream())
+        .finish(
+            () -> {
+              if (sentBlobSidecars.get() != message.size()) {
+                peer.adjustBlobSidecarsRequest(
+                    blobSidecarsRequestApproval.get(), sentBlobSidecars.get());
+              }
+              callback.completeSuccessfully();
+            },
+            err -> {
+              peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
+              handleError(callback, err);
+            });
   }
 
   private int getMaxRequestBlobSidecars() {

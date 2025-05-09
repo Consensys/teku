@@ -565,7 +565,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   @Override
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final UInt64 currentEpoch, final UInt64 epoch) {
-    return !epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch());
+    return !epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())
+        && super.isAvailabilityOfBlobSidecarsRequiredAtEpoch(currentEpoch, epoch);
   }
 
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
@@ -573,5 +574,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return currentEpoch
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
+  public UInt64 blobSidecarsAvailabilityDeprecationEpoch() {
+    return specConfigFulu.getFuluForkEpoch();
   }
 }

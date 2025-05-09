@@ -146,9 +146,11 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
+              final UInt64 endSlotFulu =
+                  spec.blobSidecarsAvailabilityDeprecationSlot().min(endSlot);
               if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestEpoch)
-                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlot)) {
+                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotFulu)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
               }
@@ -157,8 +159,8 @@ public class BlobSidecarsByRangeMessageHandler
                   combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
 
               final SortedMap<UInt64, Bytes32> canonicalHotRoots;
-              if (endSlot.isGreaterThan(finalizedSlot)) {
-                final UInt64 hotSlotsCount = endSlot.increment().minusMinZero(startSlot);
+              if (endSlotFulu.isGreaterThan(finalizedSlot)) {
+                final UInt64 hotSlotsCount = endSlotFulu.increment().minusMinZero(startSlot);
 
                 canonicalHotRoots =
                     combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
@@ -174,7 +176,7 @@ public class BlobSidecarsByRangeMessageHandler
                   new RequestState(
                       callback,
                       startSlot,
-                      endSlot,
+                      endSlotFulu,
                       canonicalHotRoots,
                       finalizedSlot,
                       specConfig.getMaxRequestBlobSidecars());
