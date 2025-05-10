@@ -646,7 +646,7 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerImage = "consensys/teku"
-def dockerJdkVariants = [ "jdk21" ]
+def dockerJdkVariants = [ "jdk21", "jdk24" ]
 def dockerBuildDir = "build/docker-teku/"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
