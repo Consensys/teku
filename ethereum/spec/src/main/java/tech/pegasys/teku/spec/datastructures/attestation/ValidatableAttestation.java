@@ -130,7 +130,7 @@ public class ValidatableAttestation {
     this.attestation = attestation;
     this.unconvertedAttestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
-    this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
+    this.hashTreeRoot = Suppliers.memoize(unconvertedAttestation::hashTreeRoot);
     this.producedLocally = producedLocally;
   }
 
@@ -146,7 +146,7 @@ public class ValidatableAttestation {
     this.attestation = attestation;
     this.unconvertedAttestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
-    this.hashTreeRoot = Suppliers.memoize(attestation::hashTreeRoot);
+    this.hashTreeRoot = Suppliers.memoize(unconvertedAttestation::hashTreeRoot);
     this.producedLocally = producedLocally;
     this.committeesSize = Optional.of(committeeSizes);
   }

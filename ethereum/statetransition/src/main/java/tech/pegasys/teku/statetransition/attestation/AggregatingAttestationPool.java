@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -60,9 +61,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   /** The valid attestation retention period is 64 slots in deneb */
   static final long ATTESTATION_RETENTION_SLOTS = 64;
 
-  static final Comparator<Attestation> ATTESTATION_INCLUSION_COMPARATOR =
-      Comparator.<Attestation>comparingInt(
-              attestation -> attestation.getAggregationBits().getBitCount())
+  static final Comparator<PooledAttestationWithData> ATTESTATION_INCLUSION_COMPARATOR =
+      Comparator.<PooledAttestationWithData>comparingInt(
+              attestation -> attestation.pooledAttestation().bits().getBitCount())
           .reversed();
 
   /**
@@ -109,7 +110,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     getOrCreateAttestationGroup(attestation.getAttestation(), committeesSize)
         .ifPresent(
             attestationGroup -> {
-              final boolean added = attestationGroup.add(attestation);
+              final boolean added =
+                  attestationGroup.add(
+                      PooledAttestation.fromValidatableAttestation(attestation),
+                      attestation.getCommitteeShufflingSeed());
               if (added) {
                 updateSize(1);
               }
@@ -270,12 +274,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
     final SchemaDefinitions schemaDefinitions =
         spec.atSlot(stateAtBlockSlot.getSlot()).getSchemaDefinitions();
-
+    final AttestationSchema<Attestation> attestationSchema =
+        schemaDefinitions.getAttestationSchema();
     final SszListSchema<Attestation, ?> attestationsSchema =
         schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
 
     final boolean blockRequiresAttestationsWithCommitteeBits =
-        schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
+        attestationSchema.requiresCommitteeBits();
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
 
@@ -295,17 +300,17 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .limit(attestationsSchema.getMaxLength())
         .filter(
             attestation -> {
-              if (spec.computeEpochAtSlot(attestation.getData().getSlot())
-                  .isLessThan(currentEpoch)) {
+              if (spec.computeEpochAtSlot(attestation.data().getSlot()).isLessThan(currentEpoch)) {
                 final int currentCount = prevEpochCount.getAndIncrement();
                 return currentCount < previousEpochLimit;
               }
               return true;
             })
+        .map(pooledAttestation -> pooledAttestation.toAttestation(attestationSchema))
         .collect(attestationsSchema.collector());
   }
 
-  private Stream<Attestation> streamAggregatesForDataHashesBySlot(
+  private Stream<PooledAttestationWithData> streamAggregatesForDataHashesBySlot(
       final Set<Bytes> dataHashSetForSlot,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
@@ -317,10 +322,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
         .flatMap(MatchingDataAttestationGroup::stream)
-        .map(ValidatableAttestation::getAttestation)
         .filter(
             attestation ->
-                attestation.requiresCommitteeBits() == blockRequiresAttestationsWithCommitteeBits)
+                attestation.pooledAttestation().bits().requiresCommitteeBits()
+                    == blockRequiresAttestationsWithCommitteeBits)
         .sorted(ATTESTATION_INCLUSION_COMPARATOR);
   }
 
@@ -332,6 +337,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
     final UInt64 slot = maybeSlot.orElse(recentChainData.getCurrentSlot().orElse(UInt64.ZERO));
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+    final AttestationSchema<Attestation> attestationSchema =
+        schemaDefinitions.getAttestationSchema();
 
     final boolean requiresCommitteeBits =
         schemaDefinitions.getAttestationSchema().requiresCommitteeBits();
@@ -345,7 +352,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(
             matchingDataAttestationGroup ->
                 matchingDataAttestationGroup.stream(maybeCommitteeIndex, requiresCommitteeBits))
-        .map(ValidatableAttestation::getAttestation)
+        .map(pooledAttestation -> pooledAttestation.toAttestation(attestationSchema))
         .toList();
   }
 
@@ -356,9 +363,20 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized Optional<Attestation> createAggregateFor(
       final Bytes32 attestationHashTreeRoot, final Optional<UInt64> committeeIndex) {
-    return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
-        .flatMap(attestations -> attestations.stream(committeeIndex).findFirst())
-        .map(ValidatableAttestation::getAttestation);
+    final MatchingDataAttestationGroup group =
+        attestationGroupByDataHash.get(attestationHashTreeRoot);
+    if (group == null) {
+      return Optional.empty();
+    }
+
+    final AttestationSchema<Attestation> attestationSchema =
+        spec.atSlot(group.getAttestationData().getSlot())
+            .getSchemaDefinitions()
+            .getAttestationSchema();
+
+    return group.stream(committeeIndex)
+        .findFirst()
+        .map(pooledAttestation -> pooledAttestation.toAttestation(attestationSchema));
   }
 
   public synchronized void onReorg(final UInt64 commonAncestorSlot) {
