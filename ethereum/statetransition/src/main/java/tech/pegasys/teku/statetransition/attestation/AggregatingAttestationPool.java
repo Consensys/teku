@@ -115,8 +115,6 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                       PooledAttestation.fromValidatableAttestation(attestation),
                       attestation.getCommitteeShufflingSeed());
               if (added) {
-                System.out.println(
-                    "Added attestation " + attestation.getAttestation().hashTreeRoot());
                 updateSize(1);
               }
             });

@@ -102,11 +102,6 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
    */
   public boolean add(
       final PooledAttestation attestation, final Optional<Bytes32> committeeShufflingSeed) {
-    System.out.println(
-        "add attestation: "
-            + attestation
-            + " to committeeShufflingSeed: "
-            + committeeShufflingSeed);
     if (includedValidators.isSuperSetOf(attestation.bits())) {
       // All attestation bits have already been included on chain
       return false;
