@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import java.util.Objects;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
@@ -27,26 +26,5 @@ public record PooledAttestation(
         AttestationBitsAggregator.of(attestation),
         attestation.getAttestation().getAggregateSignature(),
         attestation.getUnconvertedAttestation().isSingleAttestation());
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof PooledAttestation that)) {
-      return false;
-    }
-
-    // we intentionally ignore isSingleAttestation in equals/hashCode
-    // if bits and signature are equal, the originating attestation type doesn't matter
-    // considering it creates some problems in tests
-    return Objects.equals(aggregatedSignature, that.aggregatedSignature)
-        && Objects.equals(bits, that.bits);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(aggregatedSignature, bits);
   }
 }
