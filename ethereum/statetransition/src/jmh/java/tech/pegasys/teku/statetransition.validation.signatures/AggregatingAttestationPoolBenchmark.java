@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,9 +92,9 @@ public class AggregatingAttestationPoolBenchmark {
 
   record AttestationDataRootAndCommitteeIndex(Bytes32 attestationDataRoot, UInt64 committeeIndex) {}
 
+  private final List<ValidatableAttestation> attestations = new ArrayList<>();
   private BeaconState state;
   private BeaconState newBlockState;
-  private List<ValidatableAttestation> attestations;
   private AggregatingAttestationPool pool;
   private RecentChainData recentChainData;
   private AttestationForkChecker attestationForkChecker;
@@ -175,6 +176,7 @@ public class AggregatingAttestationPoolBenchmark {
               attestation -> {
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 pool.add(attestation);
+                attestations.add(attestation);
               });
 
       mostFrequentSingleAttestationDataRootAndCI =
@@ -203,6 +205,15 @@ public class AggregatingAttestationPoolBenchmark {
   public void getAttestationsForBlock(final Blackhole bh) {
     var attestationsForBlock = pool.getAttestationsForBlock(newBlockState, attestationForkChecker);
     bh.consume(attestationsForBlock);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  public void add(final Blackhole bh) {
+    var emptyPool =
+        new AggregatingAttestationPool(
+            SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+    attestations.forEach(emptyPool::add);
   }
 
   @Benchmark

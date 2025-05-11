@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
 public interface AttestationBitsAggregator {
-
   static AttestationBitsAggregator fromEmptyFromAttestationSchema(
       final AttestationSchema<?> attestationSchema, final Optional<Int2IntMap> committeesSize) {
     return attestationSchema
@@ -64,11 +63,13 @@ public interface AttestationBitsAggregator {
 
   void or(AttestationBitsAggregator other);
 
-  boolean aggregateWith(Attestation other);
+  boolean aggregateWith(AttestationBitsAggregator other);
 
   void or(Attestation other);
 
   boolean isSuperSetOf(Attestation other);
+
+  boolean isSuperSetOf(AttestationBitsAggregator other);
 
   SszBitlist getAggregationBits();
 
@@ -77,6 +78,10 @@ public interface AttestationBitsAggregator {
   Int2IntMap getCommitteesSize();
 
   boolean requiresCommitteeBits();
+
+  int getBitCount();
+
+  boolean isExclusivelyFromCommittee(int committeeIndex);
 
   /** Creates an independent copy of this instance */
   AttestationBitsAggregator copy();
