@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 /**
  * Builds an aggregate attestation, providing functions to test if an attestation can be added or is
@@ -27,7 +27,7 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggreg
  */
 class AggregateAttestationBuilder {
   private final List<PooledAttestation> includedAttestations = new ArrayList<>();
-  private AttestationBitsAggregator currentAggregateBits;
+  private AttestationBits currentAggregateBits;
 
   public boolean aggregate(final PooledAttestation attestation) {
 

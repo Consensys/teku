@@ -15,15 +15,15 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 public record PooledAttestation(
-    AttestationBitsAggregator bits, BLSSignature aggregatedSignature, boolean isSingleAttestation) {
+    AttestationBits bits, BLSSignature aggregatedSignature, boolean isSingleAttestation) {
 
   public static PooledAttestation fromValidatableAttestation(
       final ValidatableAttestation attestation) {
     return new PooledAttestation(
-        AttestationBitsAggregator.of(attestation),
+        AttestationBits.of(attestation),
         attestation.getAttestation().getAggregateSignature(),
         attestation.getUnconvertedAttestation().isSingleAttestation());
   }
