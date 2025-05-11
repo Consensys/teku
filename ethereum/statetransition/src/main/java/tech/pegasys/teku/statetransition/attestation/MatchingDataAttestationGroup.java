@@ -208,10 +208,11 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
     final Collection<Set<PooledAttestation>> attestationSets =
         attestationsByValidatorCount.values();
     int numRemoved = 0;
-    for (Iterator<Set<PooledAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
+    for (final Iterator<Set<PooledAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
       final Set<PooledAttestation> candidates = i.next();
-      for (Iterator<PooledAttestation> iterator = candidates.iterator(); iterator.hasNext(); ) {
-        PooledAttestation candidate = iterator.next();
+      for (final Iterator<PooledAttestation> iterator = candidates.iterator();
+          iterator.hasNext(); ) {
+        final PooledAttestation candidate = iterator.next();
         if (includedValidators.isSuperSetOf(candidate.bits())) {
           iterator.remove();
           numRemoved++;
