@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefi
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -111,7 +112,7 @@ public class ValidatorTypes {
           .parser(
               url -> {
                 try {
-                  return new URL(url);
+                  return URI.create(url).toURL();
                 } catch (MalformedURLException e) {
                   throw new IllegalArgumentException(e);
                 }

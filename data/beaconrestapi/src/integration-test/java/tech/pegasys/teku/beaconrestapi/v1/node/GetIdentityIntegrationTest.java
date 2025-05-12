@@ -99,7 +99,8 @@ public class GetIdentityIntegrationTest extends AbstractDataBackedRestAPIIntegra
     assertThat(response.code()).isEqualTo(SC_OK);
     checkResponseData(
         response,
-        "{\"seq_number\":\"4666673844721362956\",\"attnets\":\"0x0288000000000000\",\"syncnets\":\"0x0f\"}");
+        "{\"seq_number\":\"4666673844721362956\",\"attnets\":\"0x0288000000000000\",\"syncnets\":\"0x0f\","
+            + "\"custody_group_count\":\"4\"}");
   }
 
   private void checkResponseData(final Response response, final String metadata)

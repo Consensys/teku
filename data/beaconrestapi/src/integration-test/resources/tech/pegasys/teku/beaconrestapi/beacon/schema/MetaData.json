@@ -23,7 +23,7 @@
     },
     "custody_group_count" : {
       "type" : "string",
-      "description" : "PeerDAS custody group count.",
+      "description" : "Uint64 representing the node's custody group count. The metadata is present from the Fulu fork.",
       "example" : "1",
       "format" : "uint64"
     }

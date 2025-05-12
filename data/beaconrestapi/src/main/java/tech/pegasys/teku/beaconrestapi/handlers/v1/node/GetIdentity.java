@@ -141,7 +141,8 @@ public class GetIdentity extends RestApiEndpoint {
             MetadataMessage::getOptionalSyncnets)
         .withOptionalField(
             "custody_group_count",
-            UINT64_TYPE.withDescription("PeerDAS custody group count."),
+            UINT64_TYPE.withDescription(
+                "Uint64 representing the node's custody group count. The metadata is present from the Fulu fork."),
             MetadataMessage::getOptionalCustodyGroupCount)
         .build();
   }

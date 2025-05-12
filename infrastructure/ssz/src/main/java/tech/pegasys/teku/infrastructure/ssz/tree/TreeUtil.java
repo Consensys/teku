@@ -177,8 +177,8 @@ public class TreeUtil {
         fromGeneralIndex,
         toGeneralIndex,
         (n, idx) -> {
-          if (n instanceof LeafNode) {
-            visitor.accept((LeafNode) n);
+          if (n instanceof final LeafNode leafNode) {
+            visitor.accept(leafNode);
           }
           return true;
         });
@@ -193,8 +193,8 @@ public class TreeUtil {
         fromGeneralIndex,
         toGeneralIndex,
         (n, idx) -> {
-          if (n instanceof LeafDataNode) {
-            visitor.accept(((LeafDataNode) n).getData());
+          if (n instanceof final LeafDataNode leafDataNode) {
+            visitor.accept(leafDataNode.getData());
           }
           return true;
         });

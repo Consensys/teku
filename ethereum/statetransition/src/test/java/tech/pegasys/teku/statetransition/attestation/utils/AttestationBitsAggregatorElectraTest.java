@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.List;
 import java.util.Optional;
@@ -233,6 +234,34 @@ public class AttestationBitsAggregatorElectraTest {
   }
 
   @Test
+  void aggregateSingleAttestationFillUp() {
+    /*
+     01|234 <- committee 0 and 1 indices
+     10|100 <- bits
+    */
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 2);
+
+    /*
+     123 <- committee 1 indices
+     001 <- bits
+    */
+    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    // calculate the or
+    aggregator.or(otherAttestation.getAttestation());
+
+    /*
+     01|234 <- committee 0 and 1 indices
+     10|101 <- bits
+    */
+
+    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(0, 1);
+    assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactly(0, 2, 4);
+  }
+
+  @Test
   void
       aggregateOnMultipleOverlappingCommitteeBitsButWithSomeOfAggregationOverlappingWhenNoCheck2() {
     /*
@@ -394,6 +423,107 @@ public class AttestationBitsAggregatorElectraTest {
   }
 
   @Test
+  void orIntoEmptyAggregator() {
+    final AttestationBitsAggregator aggregator =
+        AttestationBitsAggregator.fromEmptyFromAttestationSchema(
+            attestationSchema, Optional.of(committeeSizes));
+
+    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+
+    aggregator.or(otherAttestation.getAttestation());
+
+    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
+    assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactly(2);
+  }
+
+  @Test
+  void orWithNewCommittee() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 1);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+
+    aggregator.or(otherAttestation.getAttestation());
+
+    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
+    assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(1, 4);
+  }
+
+  @Test
+  void orWithExistingCommitteeAddNewBits() {
+
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 0);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 2);
+
+    aggregator.or(otherAttestation.getAttestation());
+
+    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
+    assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 2);
+  }
+
+  @Test
+  void orWithExistingCommitteeOverlapAndNewBits() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 0, 1);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 1, 2);
+
+    aggregator.or(otherAttestation.getAttestation());
+
+    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
+    assertThat(aggregator.getAggregationBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(0, 1, 2);
+  }
+
+  @Test
+  void orWithStrictSubsetAttestation() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(1), 0, 2);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    final ValidatableAttestation otherAttestation = createAttestation(List.of(1), 0);
+
+    aggregator.or(otherAttestation.getAttestation());
+
+    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
+    assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 2);
+  }
+
+  @Test
+  void orWithMultipleCommitteesMixedNewAndExisting() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    final ValidatableAttestation otherAttestation = createAttestation(List.of(1, 2), 2, 5);
+
+    aggregator.or(otherAttestation.getAttestation());
+
+    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1, 2);
+    assertThat(aggregator.getAggregationBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(0, 3, 4, 7);
+  }
+
+  @Test
+  void orAggregatorWithAggregator() {
+    final ValidatableAttestation att1Data = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator1 = AttestationBitsAggregator.of(att1Data);
+
+    final ValidatableAttestation att2Data = createAttestation(List.of(0, 1), 1, 2);
+    final AttestationBitsAggregator aggregator2 = AttestationBitsAggregator.of(att2Data);
+
+    aggregator1.or(aggregator2);
+
+    assertThat(aggregator1.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
+    assertThat(aggregator1.getAggregationBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(0, 1, 2);
+
+    // aggregator2 should remain unchanged
+    assertThat(aggregator2.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
+    assertThat(aggregator2.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(1, 2);
+  }
+
+  @Test
   void isSuperSetOf1() {
 
     /*
@@ -514,6 +644,55 @@ public class AttestationBitsAggregatorElectraTest {
     assertThat(aggregator.isSuperSetOf(otherAttestation.getAttestation())).isTrue();
   }
 
+  @Test
+  void getAggregationBits_shouldBeConsistent_singleCommittee() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    assertThat(aggregator.getAggregationBits().size()).isEqualTo(committeeSizes.get(0));
+
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
+  @Test
+  void getAggregationBits_shouldBeConsistent_multiCommittee() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0, 1), 0, 3);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    assertThat(aggregator.getAggregationBits().size())
+        .isEqualTo(committeeSizes.get(0) + committeeSizes.get(1));
+
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
+  @Test
+  void copy_shouldNotModifyOriginal() {
+    final ValidatableAttestation initialAttestation = createAttestation(List.of(0), 0);
+    final AttestationBitsAggregator aggregator = AttestationBitsAggregator.of(initialAttestation);
+
+    // check aggregator is initialized correctly
+    assertThat(aggregator.getCommitteeBits())
+        .isEqualTo(initialAttestation.getAttestation().getCommitteeBitsRequired());
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+
+    final AttestationBitsAggregator copy = aggregator.copy();
+
+    assertThat(copy.getCommitteeBits()).isEqualTo(aggregator.getCommitteeBits());
+    assertThat(copy.getAggregationBits()).isEqualTo(aggregator.getAggregationBits());
+    assertThat(copy).isNotSameAs(aggregator);
+
+    assertThat(copy.aggregateWith(createAttestation(List.of(1), 1).getAttestation())).isTrue();
+
+    // the original should not be modified
+    assertThat(aggregator.getCommitteeBits())
+        .isEqualTo(initialAttestation.getAttestation().getCommitteeBitsRequired());
+    assertThat(aggregator.getAggregationBits())
+        .isEqualTo(initialAttestation.getAttestation().getAggregationBits());
+  }
+
   private ValidatableAttestation createAttestation(final String commBits, final String aggBits) {
     assertThat(commBits).matches(Pattern.compile("^[0-1]+$"));
     assertThat(aggBits).matches(Pattern.compile("^[0-1]+$"));
@@ -535,7 +714,12 @@ public class AttestationBitsAggregatorElectraTest {
     final SszBitlist aggregationBits =
         attestationSchema
             .getAggregationBitsSchema()
-            .ofBits(committeeSizes.values().intStream().sum(), validators);
+            .ofBits(
+                committeeSizes.int2IntEntrySet().stream()
+                    .filter(entry -> committeeIndices.contains(entry.getIntKey()))
+                    .mapToInt(Entry::getIntValue)
+                    .sum(),
+                validators);
     final Supplier<SszBitvector> committeeBits =
         () -> attestationSchema.getCommitteeBitsSchema().orElseThrow().ofBits(committeeIndices);
 

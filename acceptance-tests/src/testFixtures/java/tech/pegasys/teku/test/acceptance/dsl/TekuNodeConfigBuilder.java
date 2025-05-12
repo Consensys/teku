@@ -173,6 +173,18 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withFuluEpoch(final UInt64 fuluForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-fulu-fork-epoch={}", fuluForkEpoch);
+    configMap.put("Xnetwork-fulu-fork-epoch", fuluForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.fuluBuilder(
+                    fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluForkEpoch)));
+    return this;
+  }
+
   public TekuNodeConfigBuilder withTrustedSetupFromClasspath(final String trustedSetup)
       throws Exception {
     mustBe(NodeType.BEACON_NODE);
@@ -221,19 +233,6 @@ public class TekuNodeConfigBuilder {
                             .terminalBlockHash(Bytes32.fromHexString(terminalBlockHash))
                             .terminalBlockHashActivationEpoch(
                                 UInt64.valueOf(terminalBlockHashEpoch))));
-    return this;
-  }
-
-  public TekuNodeConfigBuilder withFuluEpoch(final UInt64 fuluForkEpoch) {
-
-    mustBe(NodeType.BEACON_NODE);
-    LOG.debug("Xnetwork-fulu-fork-epoch={}", fuluForkEpoch);
-    configMap.put("Xnetwork-fulu-fork-epoch", fuluForkEpoch.toString());
-    specConfigModifier =
-        specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.fuluBuilder(
-                    fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluForkEpoch)));
     return this;
   }
 
@@ -557,6 +556,13 @@ public class TekuNodeConfigBuilder {
         Arrays.stream(nodes).map(TekuBeaconNode::getMultiAddr).collect(Collectors.joining(","));
     LOG.debug("p2p-static-peers={}", peers);
     configMap.put("p2p-static-peers", peers);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withPeersUrl(final String peersUrl) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("p2p-static-peers-url={}", peersUrl);
+    configMap.put("p2p-static-peers-url", peersUrl);
     return this;
   }
 

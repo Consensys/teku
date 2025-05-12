@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import com.google.common.base.Strings;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Set;
@@ -225,8 +226,8 @@ public class MetricsOptions {
       return null;
     }
     try {
-      return new URL(metricsEndpoint);
-    } catch (MalformedURLException e) {
+      return URI.create(metricsEndpoint).toURL();
+    } catch (IllegalArgumentException | MalformedURLException e) {
       throw new InvalidConfigurationException(
           "Invalid configuration. Metrics Endpoint has invalid syntax", e);
     }

@@ -18,26 +18,27 @@ import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SpecConfigDataMapBuilder {
-  public static final DeserializableTypeDefinition<Map<String, String>> GET_SPEC_RESPONSE_TYPE =
-      DeserializableTypeDefinition.<Map<String, String>, SpecConfigDataMapBuilder>object()
+
+  public static final DeserializableTypeDefinition<Map<String, Object>> GET_SPEC_RESPONSE_TYPE =
+      DeserializableTypeDefinition.<Map<String, Object>, SpecConfigDataMapBuilder>object()
           .name("GetSpecResponse")
           .initializer(SpecConfigDataMapBuilder::new)
           .finisher(SpecConfigDataMapBuilder::build)
           .withField(
               "data",
-              DeserializableTypeDefinition.mapOfStrings(),
+              DeserializableTypeDefinition.configMap(),
               Function.identity(),
               SpecConfigDataMapBuilder::configMap)
           .build();
 
-  private Map<String, String> configMap = Map.of();
+  private Map<String, Object> configMap = Map.of();
 
-  public SpecConfigDataMapBuilder configMap(final Map<String, String> configMap) {
+  public SpecConfigDataMapBuilder configMap(final Map<String, Object> configMap) {
     this.configMap = configMap;
     return this;
   }
 
-  public Map<String, String> build() {
+  public Map<String, Object> build() {
     return configMap;
   }
 }

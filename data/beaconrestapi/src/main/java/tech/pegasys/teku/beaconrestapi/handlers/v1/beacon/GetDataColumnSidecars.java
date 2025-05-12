@@ -61,10 +61,11 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
         .operationId("getDataColumnSidecars")
         .summary("Get data column sidecars")
         .description(
-            "Retrieves data column sidecars for a given block id.\n"
-                + "    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\n"
-                + "    If the `indices` parameter is specified, only the data column sidecars with the specified indices will be returned. There are no guarantees\n"
-                + "    for the returned data column sidecars in terms of ordering.")
+            """
+                        Retrieves data column sidecars for a given block id.
+                            Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.
+                            If the `indices` parameter is specified, only the data column sidecars with the specified indices will be returned. There are no guarantees
+                            for the returned data column sidecars in terms of ordering.""")
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
         .queryListParam(DATA_COLUMN_INDICES_PARAMETER)

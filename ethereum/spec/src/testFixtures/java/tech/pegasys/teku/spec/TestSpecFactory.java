@@ -194,9 +194,16 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ELECTRA);
   }
 
+  /**
+   * Create a spec that forks to Fulu at the provided epoch
+   *
+   * @param fuluForkEpoch The Fulu fork epoch
+   * @return A spec with Fulu enabled, forking to Fulu at the given epoch
+   */
   public static Spec createMinimalWithFuluForkEpoch(final UInt64 fuluForkEpoch) {
     final SpecConfigAndParent<? extends SpecConfig> config =
-        getFuluSpecConfig(Eth2Network.MINIMAL, ZERO, ZERO, ZERO, fuluForkEpoch);
+        getFuluSpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, fuluForkEpoch);
     return create(config, SpecMilestone.FULU);
   }
 
@@ -268,46 +275,39 @@ public class TestSpecFactory {
       final SpecMilestone specMilestone,
       final Eth2Network network,
       final Consumer<SpecConfigBuilder> configModifier) {
-    final Consumer<SpecConfigBuilder> defaultModifier =
-        switch (specMilestone) {
-          case PHASE0 -> __ -> {};
-          case ALTAIR -> builder -> builder.altairBuilder(a -> a.altairForkEpoch(ZERO));
-          case BELLATRIX ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO));
-          case CAPELLA ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(ZERO));
-          case DENEB ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
-                      .denebBuilder(d -> d.denebForkEpoch(ZERO));
-          case ELECTRA ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
-                      .denebBuilder(d -> d.denebForkEpoch(ZERO))
-                      .electraBuilder(e -> e.electraForkEpoch(ZERO));
-          case FULU ->
-              builder ->
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
-                      .denebBuilder(d -> d.denebForkEpoch(ZERO))
-                      .electraBuilder(e -> e.electraForkEpoch(ZERO))
-                      .fuluBuilder(f -> f.fuluForkEpoch(ZERO));
-        };
+
+    Consumer<SpecConfigBuilder> defaultModifier = __ -> {};
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO)));
+    }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      defaultModifier =
+          defaultModifier.andThen(
+              builder -> builder.fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO)));
+    }
+
     return create(
         SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),
         specMilestone);
@@ -461,7 +461,7 @@ public class TestSpecFactory {
 
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
       final Eth2Network network) {
-    return getFuluSpecConfig(network, ZERO, ZERO, ZERO, ZERO);
+    return getFuluSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
@@ -474,8 +474,8 @@ public class TestSpecFactory {
         network,
         builder ->
             builder
-                .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
+                .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
@@ -489,12 +489,12 @@ public class TestSpecFactory {
             network.configName(),
             builder -> {
               builder
-                  .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                  .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
-                  .denebBuilder(d -> d.denebForkEpoch(ZERO))
-                  .electraBuilder(e -> e.electraForkEpoch(ZERO))
-                  .fuluBuilder(f -> f.fuluForkEpoch(ZERO));
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                  .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));
               configAdapter.accept(builder);
             }));
   }

@@ -57,7 +57,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -734,7 +734,7 @@ class ValidatorApiHandlerTest {
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(
             eq(attestationData.hashTreeRoot()), eq(Optional.empty())))
-        .thenReturn(aggregate.map(attestation -> ValidatableAttestation.from(spec, attestation)));
+        .thenReturn(aggregate);
 
     assertThat(
             validatorApiHandler.createAggregate(

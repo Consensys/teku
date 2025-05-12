@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.EventType;
 
 public abstract class TekuNode extends Node {
   public static final int VALIDATOR_API_PORT = 9052;

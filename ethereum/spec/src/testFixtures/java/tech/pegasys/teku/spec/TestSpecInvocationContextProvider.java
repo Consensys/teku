@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -43,13 +44,17 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     Class<?> clazz = extensionContext.getRequiredTestClass();
     TestSpecContext testSpecContext = clazz.getAnnotation(TestSpecContext.class);
 
-    Set<SpecMilestone> milestones;
-    Set<Eth2Network> networks;
+    final Set<SpecMilestone> milestones;
+    final Set<Eth2Network> networks;
 
     if (testSpecContext.allMilestones()) {
-      milestones = Set.of(SpecMilestone.values());
+      milestones = new HashSet<>(List.of(SpecMilestone.values()));
     } else {
-      milestones = Set.of(testSpecContext.milestone());
+      milestones = new HashSet<>(List.of(testSpecContext.milestone()));
+    }
+
+    for (final SpecMilestone ignoredMilestone : testSpecContext.ignoredMilestones()) {
+      milestones.remove(ignoredMilestone);
     }
 
     if (testSpecContext.allNetworks()) {

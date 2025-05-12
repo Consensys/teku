@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 class FuzzUtilTest {
 
+  // TODO-fulu Upgrade to use Fulu state/block etc.
   private final Spec spec = TestSpecFactory.createMinimalElectra();
   private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
   private final SchemaDefinitionsElectra schemaDefinitions =
