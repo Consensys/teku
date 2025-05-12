@@ -24,6 +24,7 @@ import java.util.Set;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -41,6 +42,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
 
   private final Set<UInt64> columns;
   private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
+  private final MetricsHistogram dataColumnSidecarKzgBatchVerificationTimeSeconds;
 
   public DataColumnSidecarsByRangeListenerValidatingProxy(
       final Spec spec,
@@ -60,6 +62,16 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
     this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
         DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM.apply(
             metricsSystem, timeProvider);
+    this.dataColumnSidecarKzgBatchVerificationTimeSeconds =
+        new MetricsHistogram(
+            metricsSystem,
+            timeProvider,
+            TekuMetricCategory.BEACON,
+            "kzg_verification_data_column_batch_seconds",
+            "Runtime of batched data column kzg verification",
+            new double[] {
+              0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
+            });
   }
 
   @Override
@@ -86,7 +98,15 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                 DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                     .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
           }
-          verifyKzgProof(dataColumnSidecar);
+          try (MetricsHistogram.Timer ignored =
+              dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+            verifyKzgProof(dataColumnSidecar);
+          } catch (final IOException ioException) {
+            throw new DataColumnSidecarsResponseInvalidResponseException(
+                peer,
+                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                    .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+          }
 
           return dataColumnSidecarResponseListener.onResponse(dataColumnSidecar);
         });
