@@ -212,7 +212,7 @@ public class AggregatingAttestationPoolBenchmark {
   @BenchmarkMode(Mode.AverageTime)
   public void add(final Blackhole bh) {
     var emptyPool =
-        new AggregatingAttestationPool(
+        new AggregatingAttestationPoolV1(
             SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     attestations.forEach(emptyPool::add);
   }
