@@ -4,6 +4,7 @@ FROM eclipse-temurin:24 as jre-build
 RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/jlink \
          --add-modules java.base \
          --add-modules java.se \
+         --add-modules java.management \
          --add-modules java.prefs \
          --add-modules jdk.httpserver \
          --add-modules jdk.unsupported \
