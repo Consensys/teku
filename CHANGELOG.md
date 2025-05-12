@@ -13,5 +13,5 @@
 - Added node epoch and computed slot to the sync committee duties failure message for more context about the failure condition.
 - Updated third party libraries.
 - Added an info message on startup for the highest supported milestone and associated epoch.
-
+- Added jdk 24 docker image build.
 ### Bug Fixes
