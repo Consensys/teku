@@ -13,17 +13,26 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 public record PooledAttestation(
-    AttestationBits bits, BLSSignature aggregatedSignature, boolean isSingleAttestation) {
+    AttestationBits bits,
+    Optional<List<UInt64>> validatorIndices,
+    BLSSignature aggregatedSignature,
+    boolean isSingleAttestation) {
 
   public static PooledAttestation fromValidatableAttestation(
       final ValidatableAttestation attestation) {
     return new PooledAttestation(
         AttestationBits.of(attestation),
+        attestation
+            .getIndexedAttestation()
+            .map(indexedAttestation -> indexedAttestation.getAttestingIndices().asListUnboxed()),
         attestation.getAttestation().getAggregateSignature(),
         attestation.getUnconvertedAttestation().isSingleAttestation());
   }
