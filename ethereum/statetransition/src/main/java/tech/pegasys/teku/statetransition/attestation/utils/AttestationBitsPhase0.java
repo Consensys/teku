@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.attestation.utils;
 import com.google.common.base.MoreObjects;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -96,6 +97,16 @@ class AttestationBitsPhase0 implements AttestationBits {
 
   @Override
   public boolean isExclusivelyFromCommittee(final int committeeIndex) {
+    throw new IllegalStateException("Committee bits not available in phase0");
+  }
+
+  @Override
+  public int getFirstCommitteeIndex() {
+    throw new IllegalStateException("Committee bits not available in phase0");
+  }
+
+  @Override
+  public IntStream streamCommitteeIndices() {
     throw new IllegalStateException("Committee bits not available in phase0");
   }
 

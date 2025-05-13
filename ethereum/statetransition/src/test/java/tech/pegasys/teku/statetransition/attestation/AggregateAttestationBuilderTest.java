@@ -182,7 +182,9 @@ class AggregateAttestationBuilderTest {
                   .mapToObj(this::validatorBitToValidatorIndex)
                   .toArray(UInt64[]::new)));
     }
-    return PooledAttestation.fromValidatableAttestation(validatableAttestation);
+    return PooledAttestation.fromValidatableAttestation(
+        validatableAttestation,
+        Arrays.stream(validators).mapToObj(this::validatorBitToValidatorIndex).toList());
   }
 
   private UInt64 validatorBitToValidatorIndex(final int validatorBit) {
