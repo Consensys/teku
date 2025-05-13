@@ -49,6 +49,8 @@ class AggregateAttestationBuilder {
     if (currentAggregateBits.aggregateWith(attestation.bits())) {
       includedAttestations.add(attestation);
       if (accumulateValidatorIndices) {
+        // since we are aggregating only non-intersecting bits,
+        // indices won't overlap too, so we can just add them
         validatorIndices.addAll(attestation.validatorIndices().orElseThrow());
       }
       return true;
