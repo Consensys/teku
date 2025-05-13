@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -88,7 +87,7 @@ class AggregateAttestationBuilderTest {
 
     final BLSSignature expectedSignature =
         BLS.aggregate(
-            asList(
+            List.of(
                 attestation1.aggregatedSignature(),
                 attestation2.aggregatedSignature(),
                 attestation3.aggregatedSignature()));
@@ -117,7 +116,7 @@ class AggregateAttestationBuilderTest {
 
     final BLSSignature expectedSignature =
         BLS.aggregate(
-            asList(
+            List.of(
                 attestation1.aggregatedSignature(),
                 attestation2.aggregatedSignature(),
                 attestation3.aggregatedSignature()));
