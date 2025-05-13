@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -65,6 +66,19 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutureHistoricalSlot
     implements DataColumnSidecarELRecoveryManager {
   private static final Logger LOG = LogManager.getLogger();
+  public static final BiFunction<MetricsSystem, TimeProvider, MetricsHistogram>
+      DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM =
+          (metricsSystem, timeProvider) ->
+              new MetricsHistogram(
+                  metricsSystem,
+                  timeProvider,
+                  TekuMetricCategory.BEACON,
+                  "data_column_sidecar_computation_seconds",
+                  "Time taken to compute data column sidecar, including cells and inclusion proof (histogram)",
+                  new double[] {
+                    0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5,
+                    5.0, 7.5, 10.0
+                  });
 
   private final ConcurrentSkipListMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
       new ConcurrentSkipListMap<>();
@@ -76,6 +90,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher;
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final KZG kzg;
+
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
 
   private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
@@ -104,16 +119,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.dataColumnSidecarComputationTimeSeconds =
-        new MetricsHistogram(
-            metricsSystem,
-            timeProvider,
-            TekuMetricCategory.BEACON,
-            "data_column_sidecar_computation_seconds",
-            "Time taken to compute data column sidecar, including cells and inclusion proof (histogram)",
-            new double[] {
-              0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
-              7.5, 10.0
-            });
+        DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
     this.miscHelpersFuluSupplier =
         () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
@@ -190,17 +196,20 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   private void publishRecoveredDataColumnSidecars(
       final RecoveryTask recoveryTask, final List<BlobAndCellProofs> blobAndCellProofs) {
-    final MetricsHistogram.Timer timer = dataColumnSidecarComputationTimeSeconds.startTimer();
-    final List<DataColumnSidecar> dataColumnSidecars =
-        miscHelpersFuluSupplier
-            .get()
-            .constructDataColumnSidecars(
-                recoveryTask.signedBeaconBlockHeader(),
-                recoveryTask.sszKZGCommitments(),
-                recoveryTask.kzgCommitmentsInclusionProof(),
-                blobAndCellProofs,
-                kzg);
-    timer.closeUnchecked();
+    final List<DataColumnSidecar> dataColumnSidecars;
+    try (MetricsHistogram.Timer ignored = dataColumnSidecarComputationTimeSeconds.startTimer()) {
+      dataColumnSidecars =
+          miscHelpersFuluSupplier
+              .get()
+              .constructDataColumnSidecars(
+                  recoveryTask.signedBeaconBlockHeader(),
+                  recoveryTask.sszKZGCommitments(),
+                  recoveryTask.kzgCommitmentsInclusionProof(),
+                  blobAndCellProofs,
+                  kzg);
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
     final int custodyCount = custodyGroupCountManager.getCustodyGroupCount();
     final int maxCustodyGroups =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())

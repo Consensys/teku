@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
 
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -128,16 +128,7 @@ public class BlockOperationSelectorFactory {
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
     this.dataColumnSidecarComputationTimeSeconds =
-        new MetricsHistogram(
-            metricsSystem,
-            timeProvider,
-            TekuMetricCategory.BEACON,
-            "data_column_sidecar_computation_seconds",
-            "Time taken to compute data column sidecar, including cells and inclusion proof (histogram)",
-            new double[] {
-              0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
-              7.5, 10.0
-            });
+        DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
   }
 
   public Function<BeaconBlockBodyBuilder, SafeFuture<Void>> createSelector(
@@ -710,7 +701,7 @@ public class BlockOperationSelectorFactory {
         return miscHelpersFulu.constructDataColumnSidecars(
             blockContainer.getSignedBlock(), blobAndCellProofsList, kzg);
       } catch (final Throwable t) {
-        return null;
+        throw new RuntimeException(t);
       }
     };
   }
