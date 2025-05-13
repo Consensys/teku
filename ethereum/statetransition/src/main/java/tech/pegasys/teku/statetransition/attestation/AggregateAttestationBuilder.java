@@ -37,8 +37,8 @@ class AggregateAttestationBuilder {
    * Creates a new AggregateAttestationBuilder.
    *
    * @param accumulateValidatorIndices is required to be True when producing aggregation for
-   *     AggregatingAttestationPoolV2 which requires them to calculate rewards.
-   *     When we deprecate AggregatingAttestationPoolV1 we will be able to remove it.
+   *     AggregatingAttestationPoolV2 which requires them to calculate rewards. When we deprecate
+   *     AggregatingAttestationPoolV1 we will be able to remove it.
    */
   AggregateAttestationBuilder(final boolean accumulateValidatorIndices) {
     this.accumulateValidatorIndices = accumulateValidatorIndices;
