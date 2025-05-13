@@ -190,12 +190,12 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
     // Important to do even if the attestation is redundant so we handle re-orgs correctly
     includedValidatorsBySlot.compute(
         slot,
-        (__, attestationBitsCalculator) -> {
-          if (attestationBitsCalculator == null) {
+        (__, includedValidators) -> {
+          if (includedValidators == null) {
             return AttestationBits.of(attestation, committeesSize);
           }
-          attestationBitsCalculator.or(attestation);
-          return attestationBitsCalculator;
+          includedValidators.or(attestation);
+          return includedValidators;
         });
 
     if (includedValidators.isSuperSetOf(attestation)) {
@@ -276,7 +276,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
 
     @Override
     public PooledAttestation next() {
-      final AggregateAttestationBuilder builder = new AggregateAttestationBuilder();
+      final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(false);
       remainingAttestations.forEachRemaining(
           candidate -> {
             if (builder.aggregate(candidate)) {
