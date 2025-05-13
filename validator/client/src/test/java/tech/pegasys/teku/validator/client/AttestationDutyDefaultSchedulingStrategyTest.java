@@ -59,7 +59,6 @@ class AttestationDutyDefaultSchedulingStrategyTest {
   private final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty>
       scheduledDuties = mock(SlotBasedScheduledDuties.class);
 
-  private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
   private final Signer signer = mock(Signer.class);
   private final Validator validator =
@@ -79,8 +78,6 @@ class AttestationDutyDefaultSchedulingStrategyTest {
 
   @BeforeEach
   void setUp() {
-    when(validatorIndexProvider.getValidatorIndices())
-        .thenReturn(SafeFuture.completedFuture(VALIDATOR_INDICES));
     when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
   }
 
