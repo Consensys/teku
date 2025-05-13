@@ -17,16 +17,21 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 class AggregateAttestationBuilderTest {
 
@@ -37,7 +42,7 @@ class AggregateAttestationBuilderTest {
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
-  private final AggregateAttestationBuilder builder = new AggregateAttestationBuilder();
+  private final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(false);
 
   @Test
   public void canAggregate_shouldBeTrueForFirstAttestation() {
@@ -98,17 +103,90 @@ class AggregateAttestationBuilderTest {
   }
 
   @Test
+  public void aggregate_shouldCombineBitsetsAndSignaturesAndIndices() {
+    final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(true);
+    final PooledAttestation attestation1 = createPooledAttestation(true, 1);
+    final PooledAttestation attestation2 = createPooledAttestation(true, 2, 3);
+    final PooledAttestation attestation3 = createPooledAttestation(true, 4, 5, 6);
+    builder.aggregate(attestation1);
+    builder.aggregate(attestation2);
+    builder.aggregate(attestation3);
+
+    final SszBitlist expectedAggregationBits =
+        attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, 1, 2, 3, 4, 5, 6);
+
+    final BLSSignature expectedSignature =
+        BLS.aggregate(
+            asList(
+                attestation1.aggregatedSignature(),
+                attestation2.aggregatedSignature(),
+                attestation3.aggregatedSignature()));
+
+    final ValidatableAttestation expected =
+        ValidatableAttestation.from(
+            spec,
+            attestationSchema.create(expectedAggregationBits, attestationData, expectedSignature));
+
+    assertThat(builder.buildAggregate())
+        .isEqualTo(
+            new PooledAttestation(
+                AttestationBits.of(expected),
+                Optional.of(
+                    List.of(
+                        UInt64.valueOf(101),
+                        UInt64.valueOf(102),
+                        UInt64.valueOf(103),
+                        UInt64.valueOf(104),
+                        UInt64.valueOf(105),
+                        UInt64.valueOf(106))),
+                expectedSignature,
+                false));
+  }
+
+  @Test
+  public void aggregate_shouldThrowIfValidatorIndicesAreRequired() {
+    final AggregateAttestationBuilder builder1 = new AggregateAttestationBuilder(true);
+    final PooledAttestation attestationWithoutIndices = createPooledAttestation(false, 1);
+    final PooledAttestation attestationWithIndices = createPooledAttestation(true, 2, 3);
+    assertThatThrownBy(() -> builder1.aggregate(attestationWithoutIndices));
+
+    final AggregateAttestationBuilder builder2 = new AggregateAttestationBuilder(true);
+    builder2.aggregate(attestationWithIndices);
+    assertThatThrownBy(() -> builder2.aggregate(attestationWithoutIndices));
+  }
+
+  @Test
   public void buildAggregate_shouldThrowExceptionIfNoAttestationsAggregated() {
     assertThatThrownBy(builder::buildAggregate).isInstanceOf(IllegalStateException.class);
   }
 
   private PooledAttestation createPooledAttestation(final int... validators) {
+    return createPooledAttestation(false, validators);
+  }
+
+  private PooledAttestation createPooledAttestation(
+      final boolean includeIndices, final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
-    return PooledAttestation.fromValidatableAttestation(
+
+    final ValidatableAttestation validatableAttestation =
         ValidatableAttestation.from(
             spec,
             attestationSchema.create(
-                aggregationBits, attestationData, dataStructureUtil.randomSignature())));
+                aggregationBits, attestationData, dataStructureUtil.randomSignature()));
+
+    if (includeIndices) {
+      validatableAttestation.setIndexedAttestation(
+          dataStructureUtil.randomIndexedAttestation(
+              attestationData,
+              Arrays.stream(validators)
+                  .mapToObj(this::validatorBitToValidatorIndex)
+                  .toArray(UInt64[]::new)));
+    }
+    return PooledAttestation.fromValidatableAttestation(validatableAttestation);
+  }
+
+  private UInt64 validatorBitToValidatorIndex(final int validatorBit) {
+    return UInt64.valueOf(validatorBit + 100);
   }
 }

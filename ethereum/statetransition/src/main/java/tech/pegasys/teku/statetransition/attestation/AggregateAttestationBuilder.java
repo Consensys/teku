@@ -18,7 +18,9 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 /**
@@ -27,17 +29,28 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
  */
 class AggregateAttestationBuilder {
   private final List<PooledAttestation> includedAttestations = new ArrayList<>();
+  private final boolean accumulateValidatorIndices;
+  private List<UInt64> validatorIndices;
   private AttestationBits currentAggregateBits;
 
-  public boolean aggregate(final PooledAttestation attestation) {
+  AggregateAttestationBuilder(final boolean accumulateValidatorIndices) {
+    this.accumulateValidatorIndices = accumulateValidatorIndices;
+  }
 
+  public boolean aggregate(final PooledAttestation attestation) {
     if (currentAggregateBits == null) {
       includedAttestations.add(attestation);
       currentAggregateBits = attestation.bits().copy();
+      if (accumulateValidatorIndices) {
+        validatorIndices = new ArrayList<>(attestation.validatorIndices().orElseThrow());
+      }
       return true;
     }
     if (currentAggregateBits.aggregateWith(attestation.bits())) {
       includedAttestations.add(attestation);
+      if (accumulateValidatorIndices) {
+        validatorIndices.addAll(attestation.validatorIndices().orElseThrow());
+      }
       return true;
     }
     return false;
@@ -47,6 +60,7 @@ class AggregateAttestationBuilder {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
     return new PooledAttestation(
         currentAggregateBits,
+        Optional.ofNullable(validatorIndices),
         BLS.aggregate(
             includedAttestations.stream().map(PooledAttestation::aggregatedSignature).toList()),
         false);
