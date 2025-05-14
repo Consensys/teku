@@ -17,7 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -74,6 +78,7 @@ abstract class AggregatingAttestationPoolTest {
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
+  private BeaconState state;
   private Int2IntMap committeeSizes;
 
   abstract AggregatingAttestationPool instantiatePool(
@@ -98,15 +103,19 @@ abstract class AggregatingAttestationPoolTest {
               dataStructureUtil.randomUInt64(
                   spec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
 
-      final BeaconState state = dataStructureUtil.randomBeaconState();
+      state = dataStructureUtil.randomBeaconState();
       final UpdatableStore mockStore = mock(UpdatableStore.class);
+      when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
       when(mockRecentChainData.getStore()).thenReturn(mockStore);
       when(mockRecentChainData.getBestState())
           .thenReturn(Optional.of(SafeFuture.completedFuture(state)));
+      when(mockRecentChainData.retrieveStateInEffectAtSlot(any()))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
       when(mockSpec.getBeaconCommitteesSize(any(), any())).thenReturn(committeeSizes);
     }
 
     when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(true);
+
     when(mockSpec.getPreviousEpochAttestationCapacity(any())).thenReturn(Integer.MAX_VALUE);
     // Fwd some calls to the real spec
     when(mockSpec.computeEpochAtSlot(any()))
@@ -116,6 +125,69 @@ abstract class AggregatingAttestationPoolTest {
         .thenAnswer(i -> spec.getCurrentEpoch(i.<BeaconState>getArgument(0)));
     when(mockSpec.atSlot(any())).thenAnswer(invocation -> spec.atSlot(invocation.getArgument(0)));
     when(mockSpec.getGenesisSchemaDefinitions()).thenReturn(spec.getGenesisSchemaDefinitions());
+  }
+
+  @TestTemplate
+  public void add_shouldRetrieveCommitteeSizesFromStateWhenMissing() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    final Attestation attestation = createAttestation(attestationData, spec, 1);
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(mockSpec, attestation);
+
+    assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
+
+    aggregatingPool.add(validatableAttestation);
+
+    final int expectedCalls = specMilestone.isGreaterThanOrEqualTo(ELECTRA) ? 1 : 0;
+
+    verify(mockSpec, times(expectedCalls))
+        .getBeaconCommitteesSize(eq(state), eq(attestationData.getSlot()));
+
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+  }
+
+  @TestTemplate
+  public void add_shouldNotRetrieveCommitteeSizesWhenNotNeeded() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    final Attestation attestation = createAttestation(attestationData, spec, 1);
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(mockSpec, attestation, committeeSizes);
+
+    assertThat(validatableAttestation.getCommitteesSize()).isNotEmpty();
+
+    aggregatingPool.add(validatableAttestation);
+
+    verify(mockSpec, never()).getBeaconCommitteesSize(eq(state), eq(attestationData.getSlot()));
+
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+  }
+
+  @TestTemplate
+  public void add_shouldNotAddIfFailsRetrievingCommitteesSize() {
+    when(mockRecentChainData.getBestState()).thenReturn(Optional.empty());
+    when(mockRecentChainData.retrieveStateInEffectAtSlot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    final Attestation attestation = createAttestation(attestationData, spec, 1);
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(mockSpec, attestation);
+
+    assertThat(validatableAttestation.getCommitteesSize()).isEmpty();
+
+    aggregatingPool.add(validatableAttestation);
+
+    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
+      assertThat(aggregatingPool.getSize()).isZero();
+    } else {
+      assertThat(aggregatingPool.getSize()).isEqualTo(1);
+    }
   }
 
   @TestTemplate
@@ -179,7 +251,7 @@ abstract class AggregatingAttestationPoolTest {
     // Receive the attestation from a block, prior to receiving it via gossip
     aggregatingPool.onAttestationsIncludedInBlock(ONE, List.of(attestation));
     // Attestation isn't added because it's already redundant
-    aggregatingPool.add(ValidatableAttestation.fromValidator(spec, attestation));
+    aggregatingPool.add(ValidatableAttestation.fromValidator(mockSpec, attestation));
     assertThat(aggregatingPool.getSize()).isZero();
 
     // But we now have a MatchingDataAttestationGroup with unknown shuffling seed present
@@ -398,7 +470,6 @@ abstract class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
 
-    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
@@ -408,7 +479,7 @@ abstract class AggregatingAttestationPoolTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
     final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    aggregatingPool.add(ValidatableAttestation.from(spec, attestation));
+    aggregatingPool.add(ValidatableAttestation.from(mockSpec, attestation));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
@@ -421,7 +492,6 @@ abstract class AggregatingAttestationPoolTest {
     final Attestation attestationToRemove =
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
 
-    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(0);
   }
@@ -450,7 +520,6 @@ abstract class AggregatingAttestationPoolTest {
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
-    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ONE));
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
   }
@@ -620,7 +689,6 @@ abstract class AggregatingAttestationPoolTest {
   @TestTemplate
   void onAttestationsIncludedInBlock_shouldNotAddAttestationsAlreadySeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
-    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     // Included in block before we see any attestations with this data
     aggregatingPool.onAttestationsIncludedInBlock(
         ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
@@ -633,13 +701,46 @@ abstract class AggregatingAttestationPoolTest {
   @TestTemplate
   void onAttestationsIncludedInBlock_shouldRemoveAttestationsWhenSeenInABlock() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
-    when(mockRecentChainData.getCurrentEpoch()).thenReturn(Optional.of(ZERO));
     addAttestationFromValidators(attestationData, 2, 3);
 
     aggregatingPool.onAttestationsIncludedInBlock(
         ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
 
     assertThat(aggregatingPool.getSize()).isZero();
+  }
+
+  @TestTemplate
+  public void onAttestationsIncludedInBlock_shouldRetrieveCommitteeSizesFromStateWhenMissing() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+
+    final Attestation attestation = createAttestation(attestationData, spec, 1);
+
+    aggregatingPool.onAttestationsIncludedInBlock(ONE, List.of(attestation));
+
+    final int expectedCalls = specMilestone.isGreaterThanOrEqualTo(ELECTRA) ? 1 : 0;
+
+    verify(mockSpec, times(expectedCalls))
+        .getBeaconCommitteesSize(eq(state), eq(attestationData.getSlot()));
+  }
+
+  @TestTemplate
+  public void onAttestationsIncludedInBlock_shouldNotAddIfFailsRetrievingCommitteesSize() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    addAttestationFromValidators(attestationData, 2, 3);
+
+    when(mockRecentChainData.getBestState()).thenReturn(Optional.empty());
+    when(mockRecentChainData.retrieveStateInEffectAtSlot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    aggregatingPool.onAttestationsIncludedInBlock(
+        ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
+
+    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
+      // we can't process onAttestationsIncludedInBlock wihthout committees size
+      assertThat(aggregatingPool.getSize()).isEqualTo(1);
+    } else {
+      assertThat(aggregatingPool.getSize()).isZero();
+    }
   }
 
   @TestTemplate
