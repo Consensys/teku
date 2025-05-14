@@ -15,38 +15,36 @@ package tech.pegasys.teku.statetransition.attestation.utils;
 
 import com.google.common.base.MoreObjects;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
-class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
+class AttestationBitsPhase0 implements AttestationBits {
   private SszBitlist aggregationBits;
 
-  AttestationBitsAggregatorPhase0(final SszBitlist aggregationBits) {
+  AttestationBitsPhase0(final SszBitlist aggregationBits) {
     this.aggregationBits = aggregationBits;
   }
 
-  static AttestationBitsAggregator fromAttestationSchema(
-      final AttestationSchema<?> attestationSchema) {
-    return new AttestationBitsAggregatorPhase0(attestationSchema.createEmptyAggregationBits());
+  static AttestationBits fromAttestationSchema(final AttestationSchema<?> attestationSchema) {
+    return new AttestationBitsPhase0(attestationSchema.createEmptyAggregationBits());
   }
 
   @Override
-  public void or(final AttestationBitsAggregator other) {
-    aggregationBits = aggregationBits.or(other.getAggregationBits());
+  public void or(final AttestationBits other) {
+    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+    aggregationBits = aggregationBits.or(otherPhase0.aggregationBits);
   }
 
   @Override
-  public boolean aggregateWith(final Attestation other) {
-    return aggregateWith(other.getAggregationBits());
-  }
-
-  private boolean aggregateWith(final SszBitlist otherAggregationBits) {
-    if (aggregationBits.intersects(otherAggregationBits)) {
+  public boolean aggregateWith(final AttestationBits other) {
+    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+    if (aggregationBits.intersects(otherPhase0.aggregationBits)) {
       return false;
     }
-    aggregationBits = aggregationBits.or(otherAggregationBits);
+    aggregationBits = aggregationBits.or(otherPhase0.aggregationBits);
     return true;
   }
 
@@ -58,6 +56,12 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   @Override
   public boolean isSuperSetOf(final Attestation other) {
     return aggregationBits.isSuperSetOf(other.getAggregationBits());
+  }
+
+  @Override
+  public boolean isSuperSetOf(final AttestationBits other) {
+    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+    return aggregationBits.isSuperSetOf(otherPhase0.aggregationBits);
   }
 
   @Override
@@ -81,12 +85,48 @@ class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   }
 
   @Override
-  public AttestationBitsAggregator copy() {
-    return new AttestationBitsAggregatorPhase0(aggregationBits);
+  public AttestationBits copy() {
+    return new AttestationBitsPhase0(aggregationBits);
+  }
+
+  @Override
+  public int getBitCount() {
+    return aggregationBits.getBitCount();
+  }
+
+  @Override
+  public boolean isExclusivelyFromCommittee(final int committeeIndex) {
+    throw new IllegalStateException("Committee bits not available in phase0");
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("aggregationBits", aggregationBits).toString();
+  }
+
+  static AttestationBitsPhase0 requiresPhase0(final AttestationBits aggregator) {
+    if (!(aggregator instanceof AttestationBitsPhase0 aggregatorPhase0)) {
+      throw new IllegalArgumentException(
+          "AttestationBitsAggregator required to be Phase0 but was: "
+              + aggregator.getClass().getSimpleName());
+    }
+    return aggregatorPhase0;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (!(o instanceof AttestationBitsPhase0 that)) {
+      return false;
+    }
+    return this.aggregationBits.equals(that.aggregationBits);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(aggregationBits);
   }
 }
