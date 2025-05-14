@@ -214,7 +214,7 @@ public class ValidatableAttestation {
     }
 
     if (!(attestation.isSingleAttestation() || attestation.requiresCommitteeBits())) {
-      // it isn't a PECTRA attestations, do nothing
+      // it isn't a PECTRA attestation, do nothing
       return;
     }
 
