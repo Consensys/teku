@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.attestation;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,7 +46,7 @@ public abstract class AggregatingAttestationPool implements SlotEventsChannel {
    *
    * <p>With 2 million active validators, we'd expect around 62_500 attestations per slot; so 3
    * slots worth of attestations is almost 187_500.
-
+   *
    * <p>Strictly to cache all attestations for a full 2 epochs is significantly larger than this
    * cache.
    */
@@ -81,17 +80,19 @@ public abstract class AggregatingAttestationPool implements SlotEventsChannel {
    *     otherwise.
    */
   protected boolean ensureCommitteesSizeInAttestation(final ValidatableAttestation attestation) {
-    return ensureCommitteesSizeInAttestation(attestation, () -> retrieveStateForAttestation(attestation.getData()));
+    return ensureCommitteesSizeInAttestation(
+        attestation, () -> retrieveStateForAttestation(attestation.getData()));
   }
 
-  protected boolean ensureCommitteesSizeInAttestation(final ValidatableAttestation attestation, final Supplier<Optional<BeaconState>> stateSupplier) {
+  protected boolean ensureCommitteesSizeInAttestation(
+      final ValidatableAttestation attestation,
+      final Supplier<Optional<BeaconState>> stateSupplier) {
     if (attestation.getCommitteesSize().isPresent()
-            || !attestation.getAttestation().requiresCommitteeBits()) {
+        || !attestation.getAttestation().requiresCommitteeBits()) {
       return true;
     }
 
-    final Optional<BeaconState> maybeState =
-            stateSupplier.get();
+    final Optional<BeaconState> maybeState = stateSupplier.get();
     if (maybeState.isEmpty()) {
       return false;
     }
@@ -101,7 +102,8 @@ public abstract class AggregatingAttestationPool implements SlotEventsChannel {
     return true;
   }
 
-  protected Optional<BeaconState> retrieveStateForAttestation(final AttestationData attestationData) {
+  protected Optional<BeaconState> retrieveStateForAttestation(
+      final AttestationData attestationData) {
     // we can use the first state of the epoch to get committees for an attestation
     final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
     final Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();

@@ -146,7 +146,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     final Supplier<Optional<BeaconState>> cachingStateSupplier =
         Suppliers.memoize(() -> retrieveStateForAttestation(attestation.getData()));
 
-    if(!ensureCommitteesSizeInAttestation(attestation, cachingStateSupplier)) {
+    if (!ensureCommitteesSizeInAttestation(attestation, cachingStateSupplier)) {
       LOG.debug(
           "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
           attestation.getData().getSlot(),
@@ -310,13 +310,13 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     final ValidatableAttestation validatableAttestation =
-            ValidatableAttestation.from(spec, attestation);
+        ValidatableAttestation.from(spec, attestation);
     if (!ensureCommitteesSizeInAttestation(validatableAttestation)) {
       LOG.debug(
-              "Attestation at slot {}, block root {} and target root {} has no committee size. Unable to call onAttestationIncludedInBlock.",
-              attestation.getData().getSlot(),
-              attestation.getData().getBeaconBlockRoot(),
-              attestation.getData().getTarget().getRoot());
+          "Attestation at slot {}, block root {} and target root {} has no committee size. Unable to call onAttestationIncludedInBlock.",
+          attestation.getData().getSlot(),
+          attestation.getData().getBeaconBlockRoot(),
+          attestation.getData().getTarget().getRoot());
       return;
     }
     getOrCreateAttestationGroup(attestation.getData(), validatableAttestation.getCommitteesSize())
@@ -418,7 +418,8 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
     /* -- FillUp phase -- */
 
-    final Stream<PooledAttestationWithRewardInfo> toBeFilledUpAggregates = sortedAggregates.stream().filter(distinctByDataRoot());
+    final Stream<PooledAttestationWithRewardInfo> toBeFilledUpAggregates =
+        sortedAggregates.stream().filter(distinctByDataRoot());
 
     (parallel ? toBeFilledUpAggregates.parallel() : toBeFilledUpAggregates)
         .peek(
@@ -434,13 +435,12 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     /* -- Final conversion phase -- */
 
     return sortedAggregates.stream()
-            .map(a -> a.getAttestation().toAttestation(attestationSchema))
-            .collect(attestationsSchema.collector());
+        .map(a -> a.getAttestation().toAttestation(attestationSchema))
+        .collect(attestationsSchema.collector());
   }
 
   private PooledAttestationWithRewardInfo fillUpAttestation(
-      final PooledAttestationWithRewardInfo attestationWithRewards,
-      final long timeLimitNanos) {
+      final PooledAttestationWithRewardInfo attestationWithRewards, final long timeLimitNanos) {
     if (nanosSupplier.getAsLong() > timeLimitNanos) {
       LOG.info("Time limit reached, skipping fillUpAttestation");
       return attestationWithRewards;

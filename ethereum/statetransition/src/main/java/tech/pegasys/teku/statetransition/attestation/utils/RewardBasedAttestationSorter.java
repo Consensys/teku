@@ -286,7 +286,8 @@ public class RewardBasedAttestationSorter {
     private Map<Integer, Byte> updatesEpochParticipation;
     private UInt64 rewardNumerator;
 
-    public PooledAttestationWithRewardInfo withAttestation(final PooledAttestationWithData attestation) {
+    public PooledAttestationWithRewardInfo withAttestation(
+        final PooledAttestationWithData attestation) {
       return new PooledAttestationWithRewardInfo(
           attestation,
           this.timelySource,

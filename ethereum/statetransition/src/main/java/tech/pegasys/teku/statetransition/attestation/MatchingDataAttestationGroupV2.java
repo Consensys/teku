@@ -121,7 +121,8 @@ public class MatchingDataAttestationGroupV2 {
     return attestationData;
   }
 
-  public PooledAttestationWithData fillUpAggregation(final PooledAttestationWithData attestation, final long timeLimitNanos) {
+  public PooledAttestationWithData fillUpAggregation(
+      final PooledAttestationWithData attestation, final long timeLimitNanos) {
 
     final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(true);
 
