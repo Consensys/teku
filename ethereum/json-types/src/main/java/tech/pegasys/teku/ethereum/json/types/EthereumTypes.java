@@ -95,6 +95,16 @@ public class EthereumTypes {
       new EnumTypeDefinition<>(
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT));
 
+  public static final StringValueTypeDefinition<UInt256> ETH_EXECUTION_TRANSACTION_TYPE =
+      DeserializableTypeDefinition.string(UInt256.class)
+          .formatter(UInt256::toHexString)
+          .parser(UInt256::fromHexString)
+          .example(
+              "0x02f878831469668303f51d843b9ac9f9843b9aca0082520894c93269b73096998db66be0441e836d873535cb9c8894a19041886f000080c001a031cc29234036afbf9a1fb9476b463367cb1f957ac0b919b69bbc798436e604aaa018c4e9c3914eb27aadd0b91e10b18655739fcf8c1fc398763a9f1beecb8ddc86")
+          .description("A transaction on the execution (Ethereum 1) network.")
+          .format("hex")
+          .build();
+
   public static final EnumHeaderTypeDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
       new EnumHeaderTypeDefinition.EnumTypeHeaderDefinitionBuilder<>(
               SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT))

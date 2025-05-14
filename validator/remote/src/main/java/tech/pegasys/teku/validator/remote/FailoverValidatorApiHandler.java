@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -229,6 +230,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createInclusionList(slot, validatorIndex),
         BeaconNodeRequestLabels.CREATE_INCLUSION_LIST_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<Transaction>>> getInclusionList(final UInt64 slot) {
+    return tryRequestUntilSuccess(
+        apiChannel -> apiChannel.getInclusionList(slot),
+        BeaconNodeRequestLabels.GET_INCLUSION_LIST_METHOD);
   }
 
   @Override
