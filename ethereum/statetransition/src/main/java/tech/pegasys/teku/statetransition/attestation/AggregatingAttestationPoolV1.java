@@ -44,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -54,7 +53,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * cases the returned attestations are aggregated to maximise the number of validators that can be
  * included.
  */
-public class AggregatingAttestationPoolV1 implements AggregatingAttestationPool {
+public class AggregatingAttestationPoolV1 extends AggregatingAttestationPool {
   private static final Logger LOG = LogManager.getLogger();
 
   static final Comparator<PooledAttestationWithData> ATTESTATION_INCLUSION_COMPARATOR =
@@ -66,8 +65,6 @@ public class AggregatingAttestationPoolV1 implements AggregatingAttestationPool 
       new HashMap<>();
   private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
 
-  private final Spec spec;
-  private final RecentChainData recentChainData;
   private final SettableGauge sizeGauge;
   private final int maximumAttestationCount;
 
@@ -78,8 +75,7 @@ public class AggregatingAttestationPoolV1 implements AggregatingAttestationPool 
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final int maximumAttestationCount) {
-    this.spec = spec;
-    this.recentChainData = recentChainData;
+    super(spec, recentChainData);
     this.sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -91,9 +87,16 @@ public class AggregatingAttestationPoolV1 implements AggregatingAttestationPool 
 
   @Override
   public synchronized void add(final ValidatableAttestation attestation) {
-    final Optional<Int2IntMap> committeesSize =
-        attestation.getCommitteesSize().or(() -> getCommitteesSize(attestation.getAttestation()));
-    getOrCreateAttestationGroup(attestation.getAttestation(), committeesSize)
+    if (!ensureCommitteesSizeInAttestation(attestation)) {
+      LOG.debug(
+          "Attestation at slot {}, block root {} and target root {} has no committee size. Will NOT add this attestation to the pool.",
+          attestation.getData().getSlot(),
+          attestation.getData().getBeaconBlockRoot(),
+          attestation.getData().getTarget().getRoot());
+      return;
+    }
+
+    getOrCreateAttestationGroup(attestation.getData(), attestation.getCommitteesSize())
         .ifPresent(
             attestationGroup -> {
               final boolean added =
@@ -114,30 +117,12 @@ public class AggregatingAttestationPoolV1 implements AggregatingAttestationPool 
     }
   }
 
-  private Optional<Int2IntMap> getCommitteesSize(final Attestation attestation) {
-    if (attestation.requiresCommitteeBits()) {
-      return getCommitteesSizeUsingTheState(attestation.getData());
-    }
-    return Optional.empty();
-  }
-
   /**
    * @param committeesSize Required for aggregating attestations as per <a
    *     href="https://eips.ethereum.org/EIPS/eip-7549">EIP-7549</a>
    */
   private Optional<MatchingDataAttestationGroup> getOrCreateAttestationGroup(
-      final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
-    final AttestationData attestationData = attestation.getData();
-    // if an attestation has committee bits, committees size should have been computed. If this is
-    // not the case, we should ignore this attestation and not add it to the pool
-    if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
-      LOG.debug(
-          "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
-          attestationData.getSlot(),
-          attestationData.getBeaconBlockRoot(),
-          attestationData.getTarget().getRoot());
-      return Optional.empty();
-    }
+      final AttestationData attestationData, final Optional<Int2IntMap> committeesSize) {
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(attestationData.hashTreeRoot());
@@ -146,58 +131,6 @@ public class AggregatingAttestationPoolV1 implements AggregatingAttestationPool 
             attestationData.hashTreeRoot(),
             key -> new MatchingDataAttestationGroup(spec, attestationData, committeesSize));
     return Optional.of(attestationGroup);
-  }
-
-  private Optional<Int2IntMap> getCommitteesSizeUsingTheState(
-      final AttestationData attestationData) {
-    // we can use the first state of the epoch to get committees for an attestation
-    final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
-    final Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();
-    // the only reason this can happen is we don't have a store yet.
-    if (maybeEpoch.isEmpty()) {
-      return Optional.empty();
-    }
-    final UInt64 currentEpoch = maybeEpoch.get();
-    final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
-
-    LOG.debug("currentEpoch {}, attestationEpoch {}", currentEpoch, attestationEpoch);
-    if (attestationEpoch.equals(currentEpoch)
-        || attestationEpoch.equals(currentEpoch.minusMinZero(1))) {
-
-      return recentChainData
-          .getBestState()
-          .flatMap(
-              state -> {
-                try {
-                  return Optional.of(
-                      spec.getBeaconCommitteesSize(
-                          state.getImmediately(), attestationData.getSlot()));
-                } catch (IllegalStateException e) {
-                  LOG.debug(
-                      "Couldn't retrieve state for committee calculation of slot {}",
-                      attestationData.getSlot());
-                  return Optional.empty();
-                }
-              });
-    }
-
-    // attestation is not from the current or previous epoch
-    // this is really an edge case because the current or previous epoch is at least 31 slots
-    // and the attestation is only valid for 64 slots, so it may be epoch-2 but not beyond.
-    final UInt64 attestationEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(attestationEpoch);
-    LOG.debug("State at slot {} needed", attestationEpochStartSlot);
-    try {
-      return recentChainData
-          .retrieveStateInEffectAtSlot(attestationEpochStartSlot)
-          .getImmediately()
-          .map(state -> spec.getBeaconCommitteesSize(state, attestationData.getSlot()));
-    } catch (final IllegalStateException e) {
-      LOG.debug(
-          "Couldn't retrieve state in effect at slot {} for committee calculation of slot {}",
-          attestationEpochStartSlot,
-          attestationData.getSlot());
-      return Optional.empty();
-    }
   }
 
   @Override
@@ -236,7 +169,17 @@ public class AggregatingAttestationPoolV1 implements AggregatingAttestationPool 
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    getOrCreateAttestationGroup(attestation, getCommitteesSize(attestation))
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestation);
+    if (!ensureCommitteesSizeInAttestation(validatableAttestation)) {
+      LOG.debug(
+          "Attestation at slot {}, block root {} and target root {} has no committee size. Unable to call onAttestationIncludedInBlock.",
+          attestation.getData().getSlot(),
+          attestation.getData().getBeaconBlockRoot(),
+          attestation.getData().getTarget().getRoot());
+      return;
+    }
+    getOrCreateAttestationGroup(attestation.getData(), validatableAttestation.getCommitteesSize())
         .ifPresent(
             attestationGroup -> {
               final int numRemoved =
