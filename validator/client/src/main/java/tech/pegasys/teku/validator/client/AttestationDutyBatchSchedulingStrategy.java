@@ -22,6 +22,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -47,6 +50,8 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
  */
 public class AttestationDutyBatchSchedulingStrategy
     extends AbstractAttestationDutySchedulingStrategy implements ValidatorTimingChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   public record SlotBatchingOptions(
       int currentEpochSlotsToScheduleBeforeDelay,
@@ -118,6 +123,14 @@ public class AttestationDutyBatchSchedulingStrategy
         duties.getDuties().stream()
             .collect(
                 Collectors.groupingBy(AttesterDuty::getSlot, TreeMap::new, Collectors.toList()));
+
+    LOG.info(
+        "{} duties for {} slot(s) will be scheduled for epoch {} in batches with delay of {} ms every {} slot(s)",
+        duties.getDuties().size(),
+        dutiesBySlot.size(),
+        epoch,
+        schedulingDelay.toMillis(),
+        slotsBeforeDelay);
 
     SafeFuture<Void> dutiesScheduling = SafeFuture.COMPLETE;
 
