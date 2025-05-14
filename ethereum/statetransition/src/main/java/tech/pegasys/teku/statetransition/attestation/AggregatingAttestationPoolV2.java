@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -418,23 +419,43 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
     /* -- FillUp phase -- */
 
+    var distintPredicate = distinctByDataRoot();
     final Stream<PooledAttestationWithRewardInfo> toBeFilledUpAggregates =
-        sortedAggregates.stream().filter(distinctByDataRoot());
+        sortedAggregates.stream().map(aggregate ->
+                distintPredicate.test(aggregate) ? aggregate : null);
 
-    (parallel ? toBeFilledUpAggregates.parallel() : toBeFilledUpAggregates)
+    final List<PooledAttestationWithRewardInfo> filledUpAggregates = (parallel ? toBeFilledUpAggregates.parallel() : toBeFilledUpAggregates)
         .peek(
-            attestation ->
-                aggregatingAttestationPoolProfiler.onPreFillUp(stateAtBlockSlot, attestation))
+            attestation -> {
+              if(attestation != null) {
+                aggregatingAttestationPoolProfiler.onPreFillUp(stateAtBlockSlot, attestation);
+              }
+            })
         .map(
-            validatableAttestation ->
-                fillUpAttestation(validatableAttestation, totalTimeLimitNanos))
-        .forEach(
-            attestation ->
-                aggregatingAttestationPoolProfiler.onPostFillUp(stateAtBlockSlot, attestation));
+            validatableAttestation -> {
+              if(validatableAttestation == null) {
+                return null;
+              }
+              return fillUpAttestation(validatableAttestation, totalTimeLimitNanos);
+            })
+        .peek(
+            attestation -> {
+              if(attestation != null) {
+                aggregatingAttestationPoolProfiler.onPostFillUp(stateAtBlockSlot, attestation);
+              }
+            })
+            .toList();
 
     /* -- Final conversion phase -- */
 
-    return sortedAggregates.stream()
+    return IntStream.range(0, sortedAggregates.size()).mapToObj(
+            i -> {
+              var maybeFillup = filledUpAggregates.get(i);
+              if(maybeFillup != null) {
+                return maybeFillup;
+              }
+              return sortedAggregates.get(i);
+            })
         .map(a -> a.getAttestation().toAttestation(attestationSchema))
         .collect(attestationsSchema.collector());
   }
