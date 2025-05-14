@@ -124,10 +124,10 @@ public class AttestationDutyBatchSchedulingStrategy
                 Collectors.groupingBy(AttesterDuty::getSlot, TreeMap::new, Collectors.toList()));
 
     LOG.info(
-        "{} duties for {} slot(s) will be scheduled for epoch {} in batches with delay of {} ms every {} slot(s)",
+        "Scheduling {} attestation duties for epoch {} batched across {} slot(s) with a {} ms delay every {} slot(s)",
         duties.getDuties().size(),
-        dutiesBySlot.size(),
         epoch,
+        dutiesBySlot.size(),
         schedulingDelay.toMillis(),
         slotsBeforeDelay);
 
