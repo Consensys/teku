@@ -17,7 +17,6 @@ import static tech.pegasys.teku.spec.constants.ParticipationFlags.indexToFlag;
 
 import java.util.List;
 import java.util.Optional;
-
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;

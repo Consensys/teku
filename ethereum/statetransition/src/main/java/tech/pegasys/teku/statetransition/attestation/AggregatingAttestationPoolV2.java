@@ -421,37 +421,39 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
     var distintPredicate = distinctByDataRoot();
     final Stream<PooledAttestationWithRewardInfo> toBeFilledUpAggregates =
-        sortedAggregates.stream().map(aggregate ->
-                distintPredicate.test(aggregate) ? aggregate : null);
+        sortedAggregates.stream()
+            .map(aggregate -> distintPredicate.test(aggregate) ? aggregate : null);
 
-    final List<PooledAttestationWithRewardInfo> filledUpAggregates = (parallel ? toBeFilledUpAggregates.parallel() : toBeFilledUpAggregates)
-        .peek(
-            attestation -> {
-              if(attestation != null) {
-                aggregatingAttestationPoolProfiler.onPreFillUp(stateAtBlockSlot, attestation);
-              }
-            })
-        .map(
-            validatableAttestation -> {
-              if(validatableAttestation == null) {
-                return null;
-              }
-              return fillUpAttestation(validatableAttestation, totalTimeLimitNanos);
-            })
-        .peek(
-            attestation -> {
-              if(attestation != null) {
-                aggregatingAttestationPoolProfiler.onPostFillUp(stateAtBlockSlot, attestation);
-              }
-            })
+    final List<PooledAttestationWithRewardInfo> filledUpAggregates =
+        (parallel ? toBeFilledUpAggregates.parallel() : toBeFilledUpAggregates)
+            .peek(
+                attestation -> {
+                  if (attestation != null) {
+                    aggregatingAttestationPoolProfiler.onPreFillUp(stateAtBlockSlot, attestation);
+                  }
+                })
+            .map(
+                validatableAttestation -> {
+                  if (validatableAttestation == null) {
+                    return null;
+                  }
+                  return fillUpAttestation(validatableAttestation, totalTimeLimitNanos);
+                })
+            .peek(
+                attestation -> {
+                  if (attestation != null) {
+                    aggregatingAttestationPoolProfiler.onPostFillUp(stateAtBlockSlot, attestation);
+                  }
+                })
             .toList();
 
     /* -- Final conversion phase -- */
 
-    return IntStream.range(0, sortedAggregates.size()).mapToObj(
+    return IntStream.range(0, sortedAggregates.size())
+        .mapToObj(
             i -> {
               var maybeFillup = filledUpAggregates.get(i);
-              if(maybeFillup != null) {
+              if (maybeFillup != null) {
                 return maybeFillup;
               }
               return sortedAggregates.get(i);
