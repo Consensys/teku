@@ -280,7 +280,7 @@ public class DataColumnSidecarGossipValidator {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
     }
 
     return gossipValidationHelper
@@ -360,7 +360,7 @@ public class DataColumnSidecarGossipValidator {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
     }
 
     // This can be changed between two received DataColumnSidecars from one block, so checking
