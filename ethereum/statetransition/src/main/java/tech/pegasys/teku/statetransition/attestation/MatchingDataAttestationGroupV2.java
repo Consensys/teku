@@ -76,8 +76,6 @@ public class MatchingDataAttestationGroupV2 {
   private final AttestationData attestationData;
   private final Optional<Int2IntMap> committeesSize;
 
-  private final AtomicReference<UInt64> lastFillUpSlot = new AtomicReference<>(UInt64.ZERO);
-
   /**
    * Tracks which validators were included in attestations at a given slot on the canonical chain.
    * Uses ConcurrentSkipListMap for concurrent access. AttestationBits instances managed within this
@@ -123,15 +121,7 @@ public class MatchingDataAttestationGroupV2 {
     return attestationData;
   }
 
-  public PooledAttestationWithData fillUpAggregation(
-      final UInt64 slot, final PooledAttestationWithData attestation, final long timeLimitNanos) {
-
-    //TODO: try to move the logic of one fillup per attestationData on the pool
-    if (lastFillUpSlot.getAndSet(slot).equals(slot)) {
-      // Already filled up for this slot, return the original attestation
-      LOG.info("Already filled up for slot {}, returning original attestation", slot);
-      return attestation;
-    }
+  public PooledAttestationWithData fillUpAggregation(final PooledAttestationWithData attestation, final long timeLimitNanos) {
 
     final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(true);
 

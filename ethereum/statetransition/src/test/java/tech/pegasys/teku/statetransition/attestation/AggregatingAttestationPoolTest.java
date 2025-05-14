@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import org.assertj.core.api.AbstractIntegerAssert;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentMatchers;
@@ -149,7 +150,7 @@ abstract class AggregatingAttestationPoolTest {
     verify(mockSpec, times(expectedCalls))
         .getBeaconCommitteesSize(eq(state), eq(attestationData.getSlot()));
 
-    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+    assertSize().isEqualTo(1);
   }
 
   @TestTemplate
@@ -167,7 +168,7 @@ abstract class AggregatingAttestationPoolTest {
 
     verify(mockSpec, never()).getBeaconCommitteesSize(eq(state), eq(attestationData.getSlot()));
 
-    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+    assertSize().isEqualTo(1);
   }
 
   @TestTemplate
@@ -188,9 +189,9 @@ abstract class AggregatingAttestationPoolTest {
     aggregatingPool.add(validatableAttestation);
 
     if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
-      assertThat(aggregatingPool.getSize()).isZero();
+      assertSize().isZero();
     } else {
-      assertThat(aggregatingPool.getSize()).isEqualTo(1);
+      assertSize().isEqualTo(1);
     }
   }
 
@@ -205,8 +206,8 @@ abstract class AggregatingAttestationPoolTest {
   @TestTemplate
   public void createAggregateFor_shouldAggregateAttestationsWithMatchingData() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5).getAttestation();
+    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6).getAttestation();
 
     final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
@@ -216,8 +217,8 @@ abstract class AggregatingAttestationPoolTest {
   @TestTemplate
   public void createAggregateFor_shouldReturnBestAggregateForMatchingDataWhenSomeOverlap() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5, 7);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6, 8);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5, 7).getAttestation();
+    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6, 8).getAttestation();
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
     final Optional<Attestation> result =
@@ -270,11 +271,11 @@ abstract class AggregatingAttestationPoolTest {
   @TestTemplate
   public void getAttestationsForBlock_shouldIncludeAttestationsThatPassValidation() {
     final Attestation attestation1 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 1, 2);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 1, 2).getAttestation();
     final Attestation attestation2 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 2, 3);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 2, 3).getAttestation();
     final Attestation attestation3 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3, 4);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3, 4).getAttestation();
 
     final BeaconState state = dataStructureUtil.randomBeaconState(ONE);
     when(mockSpec.validateAttestation(state, attestation1.getData()))
@@ -289,8 +290,8 @@ abstract class AggregatingAttestationPoolTest {
   @TestTemplate
   public void getAttestationsForBlock_shouldAggregateAttestationsWhenPossible() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
-    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2).getAttestation();
+    final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4).getAttestation();
 
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(SLOT.increment());
 
@@ -301,10 +302,10 @@ abstract class AggregatingAttestationPoolTest {
   @TestTemplate
   public void getAttestationsForBlock_shouldIncludeAttestationsWithDifferentData() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
-    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2).getAttestation();
+    final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4).getAttestation();
     final Attestation attestation3 =
-        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3, 4);
+        addAttestationFromValidators(dataStructureUtil.randomAttestationData(ZERO), 3, 4).getAttestation();
 
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(ONE);
 
@@ -320,9 +321,9 @@ abstract class AggregatingAttestationPoolTest {
         dataStructureUtil.randomAttestationData(UInt64.valueOf(6));
     final AttestationData attestationData3 =
         dataStructureUtil.randomAttestationData(UInt64.valueOf(7));
-    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData2, 3, 4);
-    final Attestation attestation3 = addAttestationFromValidators(attestationData3, 5, 6);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2).getAttestation();
+    final Attestation attestation2 = addAttestationFromValidators(attestationData2, 3, 4).getAttestation();
+    final Attestation attestation3 = addAttestationFromValidators(attestationData3, 5, 6).getAttestation();
 
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(UInt64.valueOf(10));
 
@@ -383,7 +384,7 @@ abstract class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData0, 1, 9);
 
     // let's add a better aggregation for attestationData1
-    final Attestation bestAttestation = addAttestationFromValidators(attestationData1, 11, 14, 15);
+    final Attestation bestAttestation = addAttestationFromValidators(attestationData1, 11, 14, 15).getAttestation();
 
     assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker).get(0))
         .isEqualTo(bestAttestation);
@@ -422,14 +423,14 @@ abstract class AggregatingAttestationPoolTest {
 
     final List<Attestation> expectedAttestations = new ArrayList<>();
     // Current epoch Attestations
-    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(2), 1, 2));
-    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(1), 2, 3));
-    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch, 3, 4));
+    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(2), 1, 2).getAttestation());
+    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch.plus(1), 2, 3).getAttestation());
+    expectedAttestations.add(addAttestationFromValidators(startSlotAtCurrentEpoch, 3, 4).getAttestation());
 
     // Prev epoch attestations within capacity limit
     for (int i = 0; i < prevEpochCapacity; i++) {
       expectedAttestations.add(
-          addAttestationFromValidators(startSlotAtCurrentEpoch.minus(i + 1), 3 + i, 4 + i));
+          addAttestationFromValidators(startSlotAtCurrentEpoch.minus(i + 1), 3 + i, 4 + i).getAttestation());
     }
     // Add a few extras
     addAttestationFromValidators(startSlotAtCurrentEpoch.minus(3), 1, 2);
@@ -446,7 +447,7 @@ abstract class AggregatingAttestationPoolTest {
         dataStructureUtil.randomAttestationData(SLOT.plus(ONE));
     addAttestationFromValidators(pruneAttestationData, 1, 2);
     final Attestation preserveAttestation =
-        addAttestationFromValidators(preserveAttestationData, 2, 3);
+        addAttestationFromValidators(preserveAttestationData, 2, 3).getAttestation();
 
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
 
@@ -472,7 +473,7 @@ abstract class AggregatingAttestationPoolTest {
   public void getSize_shouldDecreaseWhenAttestationsRemoved() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
+    final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5).getAttestation();
 
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertSize().isEqualTo(1);
@@ -482,8 +483,8 @@ abstract class AggregatingAttestationPoolTest {
   public void getSize_shouldNotIncrementWhenAttestationAlreadyExists() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
-    final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    aggregatingPool.add(ValidatableAttestation.from(mockSpec, attestation));
+    final ValidatableAttestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+    aggregatingPool.add(attestation);
     assertSize().isEqualTo(1);
   }
 
@@ -494,7 +495,7 @@ abstract class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 4, 5);
     assertSize().isEqualTo(2);
     final Attestation attestationToRemove =
-        addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+        addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5).getAttestation();
 
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertSize().isEqualTo(0);
@@ -521,7 +522,7 @@ abstract class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 7, 8);
 
     final Attestation attestationToRemove =
-        addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+        addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5).getAttestation();
     assertSize().isEqualTo(5);
 
     aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
@@ -582,7 +583,7 @@ abstract class AggregatingAttestationPoolTest {
     final AttestationData attestationData2 = dataStructureUtil.randomAttestationData(ZERO);
 
     addAttestationFromValidators(attestationData1, 1, 2, 3);
-    Attestation attestation2 = addAttestationFromValidators(attestationData2, 4, 5);
+    Attestation attestation2 = addAttestationFromValidators(attestationData2, 4, 5).getAttestation();
 
     if(aggregatingPool instanceof AggregatingAttestationPoolV2) {
       when(forkChecker.areAttestationsFromCorrectForkV2(any())).thenReturn(false);
@@ -605,10 +606,10 @@ abstract class AggregatingAttestationPoolTest {
   public void getAttestations_shouldReturnAllAttestations() {
     final AttestationData firstAttestationData = dataStructureUtil.randomAttestationData();
     final Attestation firstAttestation =
-        addAttestationFromValidators(firstAttestationData, 1, 2, 3);
+        addAttestationFromValidators(firstAttestationData, 1, 2, 3).getAttestation();
     final AttestationData secondAttestationData = dataStructureUtil.randomAttestationData();
     final Attestation secondAttestation =
-        addAttestationFromValidators(secondAttestationData, 3, 4, 5);
+        addAttestationFromValidators(secondAttestationData, 3, 4, 5).getAttestation();
     assertThat(aggregatingPool.getAttestations(Optional.empty(), Optional.empty()))
         .containsExactlyInAnyOrder(firstAttestation, secondAttestation);
   }
@@ -640,7 +641,7 @@ abstract class AggregatingAttestationPoolTest {
             dataStructureUtil.randomUInt64(
                 electraSpec.getGenesisSpec().getConfig().getMaxCommitteesPerSlot()));
     final Attestation electraAttestation =
-        addAttestationFromValidators(aggregatingPool, electraAttestationData, electraSpec, 1, 2, 3);
+        addAttestationFromValidators(aggregatingPool, electraAttestationData, electraSpec, 1, 2, 3).getAttestation();
 
     when(mockRecentChainData.getCurrentSlot()).thenReturn(Optional.of(SLOT));
     // Should get the Electra attestation only
@@ -661,7 +662,7 @@ abstract class AggregatingAttestationPoolTest {
             attestationData1.getBeaconBlockRoot(),
             attestationData1.getSource(),
             attestationData1.getTarget());
-    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3).getAttestation();
     addAttestationFromValidators(attestationData2, 4, 5, 6);
     assertThat(
             aggregatingPool.getAttestations(
@@ -675,7 +676,7 @@ abstract class AggregatingAttestationPoolTest {
     // Post Electra the committee index filter is applied to the committee bits
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
     final AttestationData attestationData2 = dataStructureUtil.randomAttestationData();
-    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3).getAttestation();
     final Optional<UInt64> committeeIndexFilter = committeeIndex;
     committeeIndex = Optional.of(committeeIndex.get().plus(1));
     addAttestationFromValidators(attestationData2, 4, 5, 6);
@@ -693,7 +694,7 @@ abstract class AggregatingAttestationPoolTest {
             attestationData1.getBeaconBlockRoot(),
             attestationData1.getSource(),
             attestationData1.getTarget());
-    Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3);
+    Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2, 3).getAttestation();
     addAttestationFromValidators(attestationData2, 4, 5, 6);
     assertThat(
             aggregatingPool.getAttestations(
@@ -721,7 +722,7 @@ abstract class AggregatingAttestationPoolTest {
         aggregatingPool.onAttestationsIncludedInBlock(
                 ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
 
-        assertThat(aggregatingPool.getSize()).isZero();
+      assertSize().isZero();
     }
 
     @TestTemplate
@@ -752,9 +753,9 @@ abstract class AggregatingAttestationPoolTest {
 
         if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
             // we can't process onAttestationsIncludedInBlock wihthout committees size
-            assertThat(aggregatingPool.getSize()).isEqualTo(1);
+          assertSize().isEqualTo(1);
         } else {
-            assertThat(aggregatingPool.getSize()).isZero();
+          assertSize().isZero();
         }
     }
 
@@ -772,21 +773,21 @@ abstract class AggregatingAttestationPoolTest {
     assertSize().isEqualTo(1);
   }
 
-  protected Attestation addAttestationFromValidators(final UInt64 slot, final int... validators) {
+  protected ValidatableAttestation addAttestationFromValidators(final UInt64 slot, final int... validators) {
     return addAttestationFromValidators(dataStructureUtil.randomAttestationData(slot), validators);
   }
 
-  protected Attestation addAttestationFromValidators(
+  protected ValidatableAttestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
     return addAttestationFromValidators(data, spec, validators);
   }
 
-  protected Attestation addAttestationFromValidators(
+  protected ValidatableAttestation addAttestationFromValidators(
       final AttestationData data, final Spec spec, final int... validators) {
     return addAttestationFromValidators(aggregatingPool, data, spec, validators);
   }
 
-  protected Attestation addAttestationFromValidators(
+  protected ValidatableAttestation addAttestationFromValidators(
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationData data,
       final Spec spec,
@@ -820,8 +821,36 @@ abstract class AggregatingAttestationPoolTest {
                               .toArray(UInt64[]::new)));
     }
     aggregatingAttestationPool.add(validatableAttestation);
-    return attestation;
+    return validatableAttestation;
   }
+
+//  protected ValidatableAttestation createValidatableAttestationFromAttestation(final Attestation attestation,
+//                                                                               final AggregatingAttestationPool aggregatingAttestationPool) {
+//    final ValidatableAttestation validatableAttestation =
+//            ValidatableAttestation.from(spec, attestation, committeeSizes);
+//
+//    final Attestation finalAttestation;
+//
+//    if (attestation.isSingleAttestation()) {
+//      finalAttestation = createAttestation(attestation.getData(), spec, attestation.getValidatorIndexRequired().intValue());
+//      validatableAttestation.convertToAggregatedFormatFromSingleAttestation(attestation);
+//    } else {
+//      finalAttestation = attestation;
+//    }
+//
+//    validatableAttestation.saveCommitteeShufflingSeedAndCommitteesSize(
+//            dataStructureUtil.randomBeaconState(100, 15, finalAttestation.getData().getSlot()));
+//    if(aggregatingAttestationPool instanceof AggregatingAttestationPoolV2) {
+//      validatableAttestation.setIndexedAttestation(
+//              dataStructureUtil.randomIndexedAttestation(
+//                      finalAttestation.getData(),
+//                      finalAttestation.getAggregationBits().streamAllSetBits()
+//                              .mapToObj(this::validatorBitToValidatorIndex)
+//                              .toArray(UInt64[]::new)));
+//    }
+//
+//    return validatableAttestation;
+//  }
 
   private UInt64 validatorBitToValidatorIndex(final int validatorBit) {
     return UInt64.valueOf(validatorBit + 100);

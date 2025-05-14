@@ -37,7 +37,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -49,11 +48,10 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
 import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter;
-import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.AttestationWithRewardInfo;
+import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.PooledAttestationWithRewardInfo;
 import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.RewardBasedAttestationSorterFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -65,7 +63,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  *
  * <p>This V2 implementation uses concurrent collections to reduce contention.
  */
-public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool {
+public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ConcurrentMap<Bytes, MatchingDataAttestationGroupV2> attestationGroupByDataHash =
@@ -74,8 +72,6 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
   private final ConcurrentNavigableMap<UInt64, Set<Bytes>> dataHashBySlot =
       new ConcurrentSkipListMap<>();
 
-  private final Spec spec;
-  private final RecentChainData recentChainData;
   private final SettableGauge sizeGauge;
   private final int maximumAttestationCount;
   private final AggregatingAttestationPoolProfiler aggregatingAttestationPoolProfiler;
@@ -101,8 +97,7 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
       final int maxTotalBlockAggregationTimeMillis,
       final boolean earlyDropSingleAttestations,
       final boolean parallel) {
-    this.spec = spec;
-    this.recentChainData = recentChainData;
+    super(spec, recentChainData);
     this.sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -128,8 +123,7 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
       final int maximumAttestationCount,
       final LongSupplier nanosSupplier,
       final RewardBasedAttestationSorterFactory rewardBasedAttestationSorterFactory) {
-    this.spec = spec;
-    this.recentChainData = recentChainData;
+    super(spec, recentChainData);
     this.sizeGauge =
         SettableGauge.create(
             metricsSystem,
@@ -150,12 +144,17 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
   @Override
   public void add(final ValidatableAttestation attestation) {
     final Supplier<Optional<BeaconState>> cachingStateSupplier =
-        Suppliers.memoize(() -> retrieveState(attestation.getData()));
+        Suppliers.memoize(() -> retrieveStateForAttestation(attestation.getData()));
 
-    final Optional<Int2IntMap> committeesSize =
-        attestation
-            .getCommitteesSize()
-            .or(() -> getCommitteesSize(attestation.getAttestation(), cachingStateSupplier));
+    if(!ensureCommitteesSizeInAttestation(attestation, cachingStateSupplier)) {
+      LOG.debug(
+          "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
+          attestation.getData().getSlot(),
+          attestation.getData().getBeaconBlockRoot(),
+          attestation.getData().getTarget().getRoot());
+      return;
+    }
+
     final Optional<List<UInt64>> validatorIndices =
         getValidatorIndices(attestation, cachingStateSupplier);
 
@@ -168,23 +167,13 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
       return;
     }
 
-    getOrCreateAttestationGroup(attestation.getAttestation(), committeesSize)
+    getOrCreateAttestationGroup(attestation.getData(), attestation.getCommitteesSize())
         .ifPresent(
             attestationGroup ->
                 attestationGroup.add(
                     PooledAttestation.fromValidatableAttestation(
                         attestation, validatorIndices.get()),
                     attestation.getCommitteeShufflingSeed()));
-  }
-
-  private Optional<Int2IntMap> getCommitteesSize(
-      final Attestation attestation, final Supplier<Optional<BeaconState>> stateSupplier) {
-    if (attestation.requiresCommitteeBits()) {
-      return stateSupplier
-          .get()
-          .map(state -> spec.getBeaconCommitteesSize(state, attestation.getData().getSlot()));
-    }
-    return Optional.empty();
   }
 
   private Optional<List<UInt64>> getValidatorIndices(
@@ -212,18 +201,7 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
    *     href="https://eips.ethereum.org/EIPS/eip-7549">EIP-7549</a>
    */
   private Optional<MatchingDataAttestationGroupV2> getOrCreateAttestationGroup(
-      final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
-    final AttestationData attestationData = attestation.getData();
-    // if an attestation has committee bits, committees size should have been computed. If this is
-    // not the case, we should ignore this attestation and not add it to the pool
-    if (attestation.requiresCommitteeBits() && committeesSize.isEmpty()) {
-      LOG.debug(
-          "Committees size couldn't be retrieved for attestation at slot {}, block root {} and target root {}. Will NOT add this attestation to the pool.",
-          attestationData.getSlot(),
-          attestationData.getBeaconBlockRoot(),
-          attestationData.getTarget().getRoot());
-      return Optional.empty();
-    }
+      final AttestationData attestationData, final Optional<Int2IntMap> committeesSize) {
 
     final Bytes dataHash = attestationData.hashTreeRoot();
 
@@ -242,48 +220,6 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
                     earlyDropSingleAttestations)); // Pass spec, data, committeesSize
 
     return Optional.of(attestationGroup);
-  }
-
-  private Optional<BeaconState> retrieveState(final AttestationData attestationData) {
-    // we can use the first state of the epoch to get committees for an attestation
-    final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
-    final Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();
-    // the only reason this can happen is we don't have a store yet.
-    if (maybeEpoch.isEmpty()) {
-      return Optional.empty();
-    }
-    final UInt64 currentEpoch = maybeEpoch.get();
-    final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationData.getSlot());
-
-    LOG.debug("currentEpoch {}, attestationEpoch {}", currentEpoch, attestationEpoch);
-    if (attestationEpoch.equals(currentEpoch)
-        || attestationEpoch.equals(currentEpoch.minusMinZero(1))) {
-
-      try {
-        return recentChainData.getBestState().map(SafeFuture::getImmediately);
-      } catch (final IllegalStateException e) {
-        LOG.debug("Couldn't retrieve state for attestation at slot {}", attestationData.getSlot());
-        return Optional.empty();
-      }
-    }
-
-    // attestation is not from the current or previous epoch
-    // this is really an edge case because the current or previous epoch is at least 31 slots
-    // and the attestation is only valid for 64 slots, so it may be epoch-2 but not beyond.
-    final UInt64 attestationEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(attestationEpoch);
-    LOG.debug("State at slot {} needed", attestationEpochStartSlot);
-    try {
-      // Assuming retrieveStateInEffectAtSlot and getBeaconCommitteesSize are thread-safe
-      return recentChainData
-          .retrieveStateInEffectAtSlot(attestationEpochStartSlot)
-          .getImmediately();
-    } catch (final IllegalStateException e) {
-      LOG.debug(
-          "Couldn't retrieve state in effect at slot {} for attestation at slot {}",
-          attestationEpochStartSlot,
-          attestationData.getSlot());
-      return Optional.empty();
-    }
   }
 
   @Override
@@ -373,8 +309,17 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    getOrCreateAttestationGroup(
-            attestation, getCommitteesSize(attestation, () -> retrieveState(attestation.getData())))
+    final ValidatableAttestation validatableAttestation =
+            ValidatableAttestation.from(spec, attestation);
+    if (!ensureCommitteesSizeInAttestation(validatableAttestation)) {
+      LOG.debug(
+              "Attestation at slot {}, block root {} and target root {} has no committee size. Unable to call onAttestationIncludedInBlock.",
+              attestation.getData().getSlot(),
+              attestation.getData().getBeaconBlockRoot(),
+              attestation.getData().getTarget().getRoot());
+      return;
+    }
+    getOrCreateAttestationGroup(attestation.getData(), validatableAttestation.getCommitteesSize())
         .ifPresent(
             attestationGroup -> {
               // MatchingDataAttestationGroupV2 must handle concurrency internally
@@ -396,6 +341,11 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
   @Override
   public int getSize() {
     return size.get();
+  }
+
+  public static Predicate<PooledAttestationWithRewardInfo> distinctByDataRoot() {
+    final Map<Bytes32, Boolean> seen = new ConcurrentHashMap<>();
+    return t -> seen.putIfAbsent(t.getAttestation().data().hashTreeRoot(), Boolean.TRUE) == null;
   }
 
   @Override
@@ -423,6 +373,8 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
     final long nowNanos = nanosSupplier.getAsLong();
     final long totalTimeLimitNanos = nowNanos + maxTotalBlockAggregationTimeMillis;
     final long aggregationTimeLimit = nowNanos + maxBlockAggregationTimeNanos;
+
+    /* -- Aggregation phase -- */
 
     var dataHashes =
         dataHashBySlot
@@ -457,32 +409,37 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
         "Aggregation phase took {} ms. Produced {} aggregations.",
         (nanosSupplier.getAsLong() - fullAggregationStart) / 1_000_000,
         aggregates.size());
-    var sortedAggregates =
+
+    /* -- Sorting phase -- */
+
+    final List<PooledAttestationWithRewardInfo> sortedAggregates =
         rewardBasedAttestationSorter.sort(
             aggregates, Math.toIntExact(attestationsSchema.getMaxLength()));
 
-    return (parallel ? sortedAggregates.parallelStream() : sortedAggregates.stream())
+    /* -- FillUp phase -- */
+
+    final Stream<PooledAttestationWithRewardInfo> toBeFilledUpAggregates = sortedAggregates.stream().filter(distinctByDataRoot());
+
+    (parallel ? toBeFilledUpAggregates.parallel() : toBeFilledUpAggregates)
         .peek(
             attestation ->
                 aggregatingAttestationPoolProfiler.onPreFillUp(stateAtBlockSlot, attestation))
         .map(
             validatableAttestation ->
-                fillUpAttestation(
-                    stateAtBlockSlot.getSlot(), validatableAttestation, totalTimeLimitNanos))
-        .peek(
+                fillUpAttestation(validatableAttestation, totalTimeLimitNanos))
+        .forEach(
             attestation ->
-                aggregatingAttestationPoolProfiler.onPostFillUp(stateAtBlockSlot, attestation))
-        .map(
-            validatableAttestationWithSortingReward ->
-                validatableAttestationWithSortingReward
-                    .getAttestation()
-                    .toAttestation(attestationSchema))
-        .collect(attestationsSchema.collector());
+                aggregatingAttestationPoolProfiler.onPostFillUp(stateAtBlockSlot, attestation));
+
+    /* -- Final conversion phase -- */
+
+    return sortedAggregates.stream()
+            .map(a -> a.getAttestation().toAttestation(attestationSchema))
+            .collect(attestationsSchema.collector());
   }
 
-  private AttestationWithRewardInfo fillUpAttestation(
-      final UInt64 slot,
-      final AttestationWithRewardInfo attestationWithRewards,
+  private PooledAttestationWithRewardInfo fillUpAttestation(
+      final PooledAttestationWithRewardInfo attestationWithRewards,
       final long timeLimitNanos) {
     if (nanosSupplier.getAsLong() > timeLimitNanos) {
       LOG.info("Time limit reached, skipping fillUpAttestation");
@@ -494,12 +451,12 @@ public class AggregatingAttestationPoolV2 implements AggregatingAttestationPool 
         .map(
             group ->
                 attestationWithRewards.withAttestation(
-                    group.fillUpAggregation(slot, attestation, timeLimitNanos)))
+                    group.fillUpAggregation(attestation, timeLimitNanos)))
         .orElse(attestationWithRewards);
   }
 
   private Stream<PooledAttestationWithData> streamAggregatesForDataHashesBySlot(
-      final Set<Bytes> dataHashSetForSlot, // Assumed concurrent set
+      final Set<Bytes> dataHashSetForSlot,
       final BeaconState stateAtBlockSlot,
       final AttestationForkChecker forkChecker,
       final boolean blockRequiresAttestationsWithCommitteeBits,

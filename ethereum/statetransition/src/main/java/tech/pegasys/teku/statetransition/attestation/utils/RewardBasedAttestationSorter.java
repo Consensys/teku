@@ -45,15 +45,17 @@ import tech.pegasys.teku.statetransition.attestation.PooledAttestationWithData;
 
 public class RewardBasedAttestationSorter {
   private static final Logger LOG = LogManager.getLogger();
+
+  // The NOOP sorter just has to apply the limit.
   public static final RewardBasedAttestationSorter NOOP =
       new RewardBasedAttestationSorter(null, null, null, null, null) {
         @Override
-        public List<AttestationWithRewardInfo> sort(
+        public List<PooledAttestationWithRewardInfo> sort(
             final List<PooledAttestationWithData> attestations, final int maxAttestations) {
           return attestations.stream()
               .map(
                   att ->
-                      new AttestationWithRewardInfo(
+                      new PooledAttestationWithRewardInfo(
                           att, false, false, false, Map.of(), false, UInt64.ZERO))
               .limit(maxAttestations)
               .toList();
@@ -127,20 +129,20 @@ public class RewardBasedAttestationSorter {
     return previousEpochParticipation;
   }
 
-  private List<Byte> getEpochParticipation(final AttestationWithRewardInfo attestation) {
+  private List<Byte> getEpochParticipation(final PooledAttestationWithRewardInfo attestation) {
     return attestation.isCurrentEpoch
         ? getCurrentEpochParticipation()
         : getPreviousEpochParticipation();
   }
 
-  public List<AttestationWithRewardInfo> sort(
+  public List<PooledAttestationWithRewardInfo> sort(
       final List<PooledAttestationWithData> attestations, final int maxAttestations) {
 
     var start = nanosSupplier.getAsLong();
-    final List<AttestationWithRewardInfo> finalSortedAttestations =
+    final List<PooledAttestationWithRewardInfo> finalSortedAttestations =
         new ArrayList<>(maxAttestations);
 
-    final PriorityQueue<AttestationWithRewardInfo> attestationQueue =
+    final PriorityQueue<PooledAttestationWithRewardInfo> attestationQueue =
         new PriorityQueue<>(REWARD_COMPARATOR);
 
     attestations.stream()
@@ -156,7 +158,7 @@ public class RewardBasedAttestationSorter {
     LOG.info("Initialization took {} ms.", (initializationEnded - start) / 1_000_000);
 
     while (true) {
-      final AttestationWithRewardInfo bestAttestation = attestationQueue.poll();
+      final PooledAttestationWithRewardInfo bestAttestation = attestationQueue.poll();
       finalSortedAttestations.add(bestAttestation);
 
       // we reached the limit or there are no more attestations to process
@@ -175,10 +177,10 @@ public class RewardBasedAttestationSorter {
 
       bestAttestation.updatesEpochParticipation.forEach(affectedParticipation::set);
 
-      final List<AttestationWithRewardInfo> toReAdd = new ArrayList<>();
+      final List<PooledAttestationWithRewardInfo> toReAdd = new ArrayList<>();
 
       // recalculate rewards for affected attestations
-      for (final AttestationWithRewardInfo potentiallyAffected : attestationQueue) {
+      for (final PooledAttestationWithRewardInfo potentiallyAffected : attestationQueue) {
         if (potentiallyAffected.isCurrentEpoch == bestAttestation.isCurrentEpoch) {
           computeRewards(potentiallyAffected);
           toReAdd.add(potentiallyAffected);
@@ -209,7 +211,7 @@ public class RewardBasedAttestationSorter {
         k -> BeaconStateAccessorsAltair.required(beaconStateAccessors).getBaseReward(state, k));
   }
 
-  private AttestationWithRewardInfo initializeRewardInfo(
+  private PooledAttestationWithRewardInfo initializeRewardInfo(
       final PooledAttestationWithData attestation) {
     final boolean isCurrentEpoch =
         attestation.data().getTarget().getEpoch().equals(spec.getCurrentEpoch(state));
@@ -218,7 +220,7 @@ public class RewardBasedAttestationSorter {
         beaconStateAccessors.getAttestationParticipationFlagIndices(
             state, attestation.data(), state.getSlot().minusMinZero(attestation.data().getSlot()));
 
-    return new AttestationWithRewardInfo(
+    return new PooledAttestationWithRewardInfo(
         attestation,
         attestationParticipationFlagIndices.contains(TIMELY_SOURCE_INDEX),
         attestationParticipationFlagIndices.contains(TIMELY_TARGET_INDEX),
@@ -228,7 +230,7 @@ public class RewardBasedAttestationSorter {
         UInt64.ZERO);
   }
 
-  private void computeRewards(final AttestationWithRewardInfo attestation) {
+  private void computeRewards(final PooledAttestationWithRewardInfo attestation) {
     final List<Byte> epochParticipation = getEpochParticipation(attestation);
     final Int2ByteOpenHashMap updatesEpochParticipation = new Int2ByteOpenHashMap();
 
@@ -274,7 +276,7 @@ public class RewardBasedAttestationSorter {
     attestation.updatesEpochParticipation = updatesEpochParticipation;
   }
 
-  public static class AttestationWithRewardInfo {
+  public static class PooledAttestationWithRewardInfo {
     private final PooledAttestationWithData attestation;
     private final boolean timelySource;
     private final boolean timelyTarget;
@@ -284,8 +286,8 @@ public class RewardBasedAttestationSorter {
     private Map<Integer, Byte> updatesEpochParticipation;
     private UInt64 rewardNumerator;
 
-    public AttestationWithRewardInfo withAttestation(final PooledAttestationWithData attestation) {
-      return new AttestationWithRewardInfo(
+    public PooledAttestationWithRewardInfo withAttestation(final PooledAttestationWithData attestation) {
+      return new PooledAttestationWithRewardInfo(
           attestation,
           this.timelySource,
           this.timelyTarget,
@@ -295,7 +297,7 @@ public class RewardBasedAttestationSorter {
           this.rewardNumerator);
     }
 
-    private AttestationWithRewardInfo(
+    private PooledAttestationWithRewardInfo(
         final PooledAttestationWithData attestation,
         final boolean timelySource,
         final boolean timelyTarget,
@@ -321,8 +323,8 @@ public class RewardBasedAttestationSorter {
     }
   }
 
-  static final Comparator<AttestationWithRewardInfo> REWARD_COMPARATOR =
-      Comparator.<AttestationWithRewardInfo>comparingLong(
+  static final Comparator<PooledAttestationWithRewardInfo> REWARD_COMPARATOR =
+      Comparator.<PooledAttestationWithRewardInfo>comparingLong(
               value -> value.rewardNumerator.longValue())
           .reversed();
 

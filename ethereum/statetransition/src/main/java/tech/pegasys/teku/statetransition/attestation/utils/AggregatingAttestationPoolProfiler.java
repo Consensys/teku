@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.AttestationWithRewardInfo;
+import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.PooledAttestationWithRewardInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public interface AggregatingAttestationPoolProfiler {
@@ -35,13 +35,13 @@ public interface AggregatingAttestationPoolProfiler {
 
         @Override
         public void onPreFillUp(
-            final BeaconState stateAtBlockSlot, final AttestationWithRewardInfo attestation) {
+            final BeaconState stateAtBlockSlot, final PooledAttestationWithRewardInfo attestation) {
           // No-op
         }
 
         @Override
         public void onPostFillUp(
-            final BeaconState stateAtBlockSlot, final AttestationWithRewardInfo attestation) {
+            final BeaconState stateAtBlockSlot, final PooledAttestationWithRewardInfo attestation) {
           // No-op
         }
       };
@@ -52,7 +52,7 @@ public interface AggregatingAttestationPoolProfiler {
       RecentChainData recentChainData,
       AggregatingAttestationPool aggregatingAttestationPool);
 
-  void onPreFillUp(BeaconState stateAtBlockSlot, AttestationWithRewardInfo attestation);
+  void onPreFillUp(BeaconState stateAtBlockSlot, PooledAttestationWithRewardInfo attestation);
 
-  void onPostFillUp(BeaconState stateAtBlockSlot, AttestationWithRewardInfo attestation);
+  void onPostFillUp(BeaconState stateAtBlockSlot, PooledAttestationWithRewardInfo attestation);
 }
