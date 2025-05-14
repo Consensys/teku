@@ -193,11 +193,7 @@ public class ValidatableAttestation {
 
   public void saveCommitteeShufflingSeedAndCommitteesSize(final BeaconState state) {
     saveCommitteeShufflingSeed(state);
-    // The committees size is only required when the committee_bits field is present in the
-    // Attestation
-    if (attestation.isSingleAttestation() || attestation.requiresCommitteeBits()) {
-      saveCommitteesSize(state);
-    }
+    saveCommitteesSize(state);
   }
 
   private void saveCommitteeShufflingSeed(final BeaconState state) {
@@ -212,10 +208,16 @@ public class ValidatableAttestation {
     this.committeeShufflingSeed = Optional.of(committeeShufflingSeed);
   }
 
-  private void saveCommitteesSize(final BeaconState state) {
+  public void saveCommitteesSize(final BeaconState state) {
     if (committeesSize.isPresent()) {
       return;
     }
+
+    if (!(attestation.isSingleAttestation() || attestation.requiresCommitteeBits())) {
+      // it isn't a PECTRA attestations, do nothing
+      return;
+    }
+
     final Int2IntMap committeesSize =
         spec.getBeaconCommitteesSize(state, attestation.getData().getSlot());
     this.committeesSize = Optional.of(committeesSize);
