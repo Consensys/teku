@@ -78,7 +78,7 @@ public class DataColumnSidecarGossipValidator {
                   new double[] {
                     0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
                   });
-  
+
   private final Spec spec;
   private final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet;
   private final Set<InclusionProofInfo> validInclusionProofInfoSet;
