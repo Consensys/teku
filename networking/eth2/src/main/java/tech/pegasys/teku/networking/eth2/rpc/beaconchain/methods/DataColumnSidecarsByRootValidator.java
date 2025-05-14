@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
 import static tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM;
+import static tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator.DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecarValidator {
   private final Set<DataColumnIdentifier> expectedDataColumnIdentifiers;
   private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
+  private final MetricsHistogram dataColumnSidecarKzgBatchVerificationTimeSeconds;
 
   public DataColumnSidecarsByRootValidator(
       final Peer peer,
@@ -46,6 +48,8 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
     this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
         DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM.apply(
             metricsSystem, timeProvider);
+    this.dataColumnSidecarKzgBatchVerificationTimeSeconds =
+        DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM.apply(metricsSystem, timeProvider);
   }
 
   public void validate(final DataColumnSidecar dataColumnSidecar) {
@@ -63,6 +67,12 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
       throw new DataColumnSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
     }
-    verifyKzgProof(dataColumnSidecar);
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+      verifyKzgProof(dataColumnSidecar);
+    } catch (final IOException ioException) {
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+    }
   }
 }
