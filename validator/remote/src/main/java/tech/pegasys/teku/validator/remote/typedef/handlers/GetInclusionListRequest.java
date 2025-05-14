@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
