@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactoryTest.CapturingBeaconBlockBodyBuilder;
 
@@ -31,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -64,6 +67,7 @@ class BlockOperationSelectorFactoryTestBellatrix {
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
       slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(ZERO);
 
   @SuppressWarnings("unchecked")
   private final OperationValidator<AttesterSlashing> attesterSlashingValidator =
@@ -155,7 +159,9 @@ class BlockOperationSelectorFactoryTestBellatrix {
           eth1DataCache,
           graffitiBuilder,
           forkChoiceNotifier,
-          executionLayer);
+          executionLayer,
+          metricsSystem,
+          timeProvider);
   private ExecutionPayloadContext executionPayloadContext;
 
   @BeforeEach

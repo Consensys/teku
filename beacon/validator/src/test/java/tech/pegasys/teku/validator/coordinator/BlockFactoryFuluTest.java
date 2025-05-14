@@ -218,7 +218,9 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
-            executionLayer),
+            executionLayer,
+            metricsSystem,
+            timeProvider),
         kzg);
   }
 }

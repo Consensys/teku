@@ -193,6 +193,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
-            executionLayer));
+            executionLayer,
+            metricsSystem,
+            timeProvider));
   }
 }

@@ -976,7 +976,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionLayer,
               kzg,
               recoveredDataColumnSidecarPublisher,
-              custodyGroupCountManagerLateInit);
+              custodyGroupCountManagerLateInit,
+              metricsSystem,
+              timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
       dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
           recoveryManager::onNewDataColumnSidecar);
@@ -1306,7 +1308,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
-            executionLayerBlockProductionManager);
+            executionLayerBlockProductionManager,
+            metricsSystem,
+            timeProvider);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector, kzg);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
