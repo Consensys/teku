@@ -66,7 +66,19 @@ public class DataColumnSidecarGossipValidator {
                     0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05,
                     0.1, 0.5, 1.0
                   });
-
+  public static final BiFunction<MetricsSystem, TimeProvider, MetricsHistogram>
+      DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM =
+          (metricsSystem, timeProvider) ->
+              new MetricsHistogram(
+                  metricsSystem,
+                  timeProvider,
+                  TekuMetricCategory.BEACON,
+                  "kzg_verification_data_column_batch_seconds",
+                  "Runtime of batched data column kzg verification",
+                  new double[] {
+                    0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
+                  });
+  
   private final Spec spec;
   private final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet;
   private final Set<InclusionProofInfo> validInclusionProofInfoSet;
@@ -78,6 +90,7 @@ public class DataColumnSidecarGossipValidator {
   private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
   private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
   private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
+  private final MetricsHistogram dataColumnSidecarKzgBatchVerificationTimeSeconds;
 
   public static DataColumnSidecarGossipValidator create(
       final Spec spec,
@@ -143,6 +156,8 @@ public class DataColumnSidecarGossipValidator {
     this.dataColumnSidecarInclusionProofVerificationTimeSeconds =
         DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_HISTOGRAM.apply(
             metricsSystem, timeProvider);
+    this.dataColumnSidecarKzgBatchVerificationTimeSeconds =
+        DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM.apply(metricsSystem, timeProvider);
 
     this.validInclusionProofInfoSet = validInclusionProofInfoSet;
     this.validSignedBlockHeaders = validSignedBlockHeaders;
@@ -259,8 +274,13 @@ public class DataColumnSidecarGossipValidator {
     /*
      * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar).
      */
-    if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
-      return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
+        return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
+      }
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
     }
 
     return gossipValidationHelper
@@ -334,8 +354,13 @@ public class DataColumnSidecarGossipValidator {
     /*
      * [REJECT] The sidecar's column data is valid as verified by verify_data_column_sidecar_kzg_proofs(sidecar).
      */
-    if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
-      return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
+    try (MetricsHistogram.Timer ignored =
+        dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
+        return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
+      }
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
     }
 
     // This can be changed between two received DataColumnSidecars from one block, so checking
