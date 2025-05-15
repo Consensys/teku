@@ -17,7 +17,6 @@ import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -27,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.BlobSchedule;
 
 public class SpecBuilderUtil {
   private static final Logger LOG = LogManager.getLogger();
@@ -100,11 +98,6 @@ public class SpecBuilderUtil {
         .forEach(
             field -> {
               try {
-                if (field.getName().equals("blobSchedule")) {
-                  // default value for Deneb max blobs
-                  field.set(builder, List.of(new BlobSchedule(UInt64.ZERO, 6)));
-                  return;
-                }
                 field.setAccessible(true);
                 final Object fillValue = DEFAULT_ZERO_VALUES.get(field.getType());
                 if (fillValue == null) {

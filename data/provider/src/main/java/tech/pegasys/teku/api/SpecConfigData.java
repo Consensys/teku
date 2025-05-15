@@ -42,7 +42,7 @@ public class SpecConfigData {
         .forEach(
             (name, value) -> {
               if (value instanceof List<?>) {
-                LOG.warn("Config field {} was a list and we haven't implemented that", name);
+                LOG.debug("Config field {} is a list", name);
                 configAttributes.put(name, value);
               } else if (value != null) {
                 configAttributes.put(name, ConfigProvider.formatValue(value));
