@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXEC
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.google.common.net.MediaType;
 import java.util.Optional;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsFulu;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -214,6 +216,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsJson() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    assumeThat(specMilestone).isLessThan(FULU);
     final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);
@@ -238,8 +241,35 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
+  public void shouldGetUnblindedBlockContentsFuluAsJson() {
+    assumeThat(specMilestone).isEqualTo(FULU);
+    final BlockContentsFulu blockContents = dataStructureUtil.randomBlockContentsFulu(ONE);
+    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
+            new ProduceBlockRequest.ProduceBlockResponse(blockContents);
+
+    final String mockResponse = readExpectedJsonResource(specMilestone, false, true);
+
+    mockWebServer.enqueue(
+            new MockResponse()
+                    .setResponseCode(SC_OK)
+                    .setBody(mockResponse)
+                    .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "false"));
+
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
+            request.submit(signature, Optional.empty(), Optional.empty());
+
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
+
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+            .isEqualTo(blockResponse.getData());
+  }
+
+  @TestTemplate
   public void shouldGetUnblindedBlockContentsPostDenebAsSsz() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
+    assumeThat(specMilestone).isLessThan(FULU);
     final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);
@@ -265,6 +295,36 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
         .isEqualTo(blockResponse.getData());
+  }
+
+  @TestTemplate
+  public void shouldGetUnblindedBlockContentsFuluAsSsz() {
+    assumeThat(specMilestone).isEqualTo(FULU);
+    final BlockContentsFulu blockContents = dataStructureUtil.randomBlockContentsFulu(ONE);
+    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
+            new ProduceBlockRequest.ProduceBlockResponse(blockContents);
+
+    responseBodyBuffer.write(
+            spec.getGenesisSchemaDefinitions()
+                    .getBlockContainerSchema()
+                    .sszSerialize(blockContents)
+                    .toArray());
+
+    mockWebServer.enqueue(
+            new MockResponse()
+                    .setResponseCode(SC_OK)
+                    .setHeader("Content-Type", MediaType.OCTET_STREAM)
+                    .setBody(responseBodyBuffer));
+
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
+            request.submit(signature, Optional.empty(), Optional.empty());
+
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
+
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+            .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate
