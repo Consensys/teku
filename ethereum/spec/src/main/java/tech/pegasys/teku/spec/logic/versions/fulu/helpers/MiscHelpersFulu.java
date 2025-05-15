@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
 
@@ -22,6 +23,7 @@ import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +42,7 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
+import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -90,6 +93,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   @SuppressWarnings("unused")
   private final SchemaDefinitionsFulu schemaDefinitions;
 
+  private final List<BlobSchedule> blobSchedule;
+
   public MiscHelpersFulu(
       final SpecConfigFulu specConfigFulu,
       final Predicates predicates,
@@ -101,11 +106,28 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.predicates = predicates;
     this.specConfigFulu = specConfigFulu;
     this.schemaDefinitions = SchemaDefinitionsFulu.required(schemaDefinitions);
+    this.blobSchedule =
+        specConfigFulu.getBlobSchedule().stream()
+            .sorted(Comparator.comparing(BlobSchedule::epoch))
+            .toList();
   }
 
   @Override
   public Optional<MiscHelpersFulu> toVersionFulu() {
     return Optional.of(this);
+  }
+
+  // get_max_blobs_per_block
+  public int getMaxBlobsPerBlock(final UInt64 epoch) {
+    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
+
+    final Optional<BlobSchedule> maybeSchedule =
+        blobSchedule.stream()
+            .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
+            .max(Comparator.comparing(BlobSchedule::epoch));
+    return maybeSchedule.isPresent()
+        ? maybeSchedule.get().maxBlobsPerBlock()
+        : blobSchedule.getFirst().maxBlobsPerBlock();
   }
 
   private UInt256 incrementByModule(final UInt256 n) {
