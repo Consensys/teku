@@ -101,6 +101,11 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
+  public boolean isFromCommittee(final int committeeIndex) {
+    throw new IllegalStateException("Committee bits not available in phase0");
+  }
+
+  @Override
   public int getFirstCommitteeIndex() {
     throw new IllegalStateException("Committee bits not available in phase0");
   }

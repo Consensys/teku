@@ -81,6 +81,8 @@ public interface AttestationBits {
 
   boolean isExclusivelyFromCommittee(int committeeIndex);
 
+  boolean isFromCommittee(int committeeIndex);
+
   int getFirstCommitteeIndex();
 
   IntStream streamCommitteeIndices();

@@ -482,7 +482,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
         .filter(Objects::nonNull)
         .filter(group -> group.isValid(stateAtBlockSlot, spec))
         .filter(forkChecker::areAttestationsFromCorrectForkV2)
-        .flatMap(group -> group.stream(baseAggregationTimeLimitNanos))
+        .flatMap(group -> group.streamForBlockProduction(baseAggregationTimeLimitNanos))
         .filter(
             attestation ->
                 attestation.pooledAttestation().bits().requiresCommitteeBits()
@@ -510,7 +510,8 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
         .filter(Objects::nonNull)
         .flatMap(
             matchingDataAttestationGroup ->
-                matchingDataAttestationGroup.stream(maybeCommitteeIndex, requiresCommitteeBits))
+                matchingDataAttestationGroup.streamForApiRequest(
+                    maybeCommitteeIndex, requiresCommitteeBits))
         .map(pooledAttestation -> pooledAttestation.toAttestation(attestationSchema))
         .toList();
   }
@@ -530,7 +531,8 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     final AttestationSchema<Attestation> attestationSchema =
         schemaDefinitions.getAttestationSchema();
 
-    return group.stream(committeeIndex, Long.MAX_VALUE)
+    return group
+        .streamForAggregationProduction(committeeIndex, Long.MAX_VALUE)
         .findFirst()
         .map(pooledAttestation -> pooledAttestation.toAttestation(attestationSchema));
   }

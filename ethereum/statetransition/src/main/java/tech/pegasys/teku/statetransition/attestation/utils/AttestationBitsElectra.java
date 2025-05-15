@@ -331,6 +331,11 @@ class AttestationBitsElectra implements AttestationBits {
   }
 
   @Override
+  public boolean isFromCommittee(final int committeeIndex) {
+    return committeeAggregationBitsMap.containsKey(committeeIndex);
+  }
+
+  @Override
   public int getFirstCommitteeIndex() {
     return committeeBits.nextSetBit(0);
   }

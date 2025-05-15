@@ -126,7 +126,7 @@ import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV2;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfilerLog;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
@@ -1214,7 +1214,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             metricsSystem,
             DEFAULT_MAXIMUM_ATTESTATION_COUNT,
-            new AggregatingAttestationPoolProfilerLog(),
+            AggregatingAttestationPoolProfiler.NOOP, // new AggregatingAttestationPoolProfilerLog(),
             150,
             500,
             true,
