@@ -69,14 +69,12 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(json).contains("BLOB_SCHEDULE");
     assertThat(json).isNotEmpty();
     final ObjectMapper mapper = new ObjectMapper();
-    final JsonNode resultNode = mapper.readTree(json);
+    final JsonNode resultNode = mapper.readTree(json).get("data");
     final JsonNode referenceNode =
         mapper.readTree(
             Resources.toString(
                 Resources.getResource(GetSpecTest.class, "mainnetConfig.json"), UTF_8));
 
-    // Ignoring the "data" field from the response, the new config should match the test
-    // configuration.
-    assertThat(resultNode.get("data")).isEqualTo(referenceNode);
+    assertThat(resultNode).isEqualTo(referenceNode);
   }
 }
