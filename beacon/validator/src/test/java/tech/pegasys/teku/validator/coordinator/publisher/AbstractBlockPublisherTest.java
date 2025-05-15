@@ -49,7 +49,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 
 public class AbstractBlockPublisherTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
