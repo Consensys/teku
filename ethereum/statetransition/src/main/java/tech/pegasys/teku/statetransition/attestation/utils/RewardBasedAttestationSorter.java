@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -91,6 +92,11 @@ public class RewardBasedAttestationSorter {
   public static RewardBasedAttestationSorter create(
       final Spec spec, final BeaconState state, final LongSupplier nanosSupplier) {
     final SpecVersion specVersion = spec.atSlot(state.getSlot());
+
+    if (specVersion.getMilestone().isLessThan(SpecMilestone.ALTAIR)) {
+      // sorter only supports altair and later
+      return NOOP;
+    }
 
     return new RewardBasedAttestationSorter(
         spec,
