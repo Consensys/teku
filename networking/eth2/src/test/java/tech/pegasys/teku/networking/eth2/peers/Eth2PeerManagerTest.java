@@ -180,7 +180,7 @@ public class Eth2PeerManagerTest {
     asyncRunner.executeQueuedActions();
 
     // Didn't receive a status message in time, so disconnect.
-    verify(eth2Peer).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+    verify(eth2Peer).disconnectCleanly(DisconnectReason.NO_STATUS_RECEIVED);
   }
 
   @Test
