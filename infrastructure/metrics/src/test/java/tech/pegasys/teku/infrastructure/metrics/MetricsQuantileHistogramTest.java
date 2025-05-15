@@ -28,7 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class MetricsHistogramTest {
+class MetricsQuantileHistogramTest {
 
   private static final TekuMetricCategory CATEGORY = TekuMetricCategory.BEACON;
   private ObservableMetricsSystem metricsSystem;
@@ -45,8 +45,8 @@ class MetricsHistogramTest {
 
   @Test
   void shouldReportValuesWithNoSpecifiedUpperLimit() {
-    final MetricsHistogram histogram =
-        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 3, List.of());
+    final MetricsQuantileHistogram histogram =
+        MetricsQuantileHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 3, List.of());
 
     for (int i = 1; i <= 100; i++) {
       histogram.recordValue(i);
@@ -66,8 +66,9 @@ class MetricsHistogramTest {
 
   @Test
   void shouldReportValuesWithUpperLimit() {
-    final MetricsHistogram histogram =
-        MetricsHistogram.create(CATEGORY, metricsSystem, "test", "Test help", 2, 80, List.of());
+    final MetricsQuantileHistogram histogram =
+        MetricsQuantileHistogram.create(
+            CATEGORY, metricsSystem, "test", "Test help", 2, 80, List.of());
 
     for (int i = 1; i <= 100; i++) {
       histogram.recordValue(i);
@@ -87,7 +88,7 @@ class MetricsHistogramTest {
 
   private static List<String> key(final List<String> labelValues) {
     final List<String> key = new ArrayList<>();
-    key.add(MetricsHistogram.QUANTILE_LABEL);
+    key.add(MetricsQuantileHistogram.QUANTILE_LABEL);
     key.addAll(labelValues);
     return key;
   }

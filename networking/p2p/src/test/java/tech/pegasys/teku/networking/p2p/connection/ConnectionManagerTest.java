@@ -475,6 +475,7 @@ class ConnectionManagerTest {
         new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
         ENR_FORK_ID,
         SCHEMA_DEFINITIONS_SUPPLIER.getAttnetsENRFieldSchema().ofBits(subnetIds),
-        SCHEMA_DEFINITIONS_SUPPLIER.getSyncnetsENRFieldSchema().getDefault());
+        SCHEMA_DEFINITIONS_SUPPLIER.getSyncnetsENRFieldSchema().getDefault(),
+        Optional.empty());
   }
 }

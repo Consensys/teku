@@ -84,7 +84,8 @@ class MultiaddrUtilTest {
             new InetSocketAddress(InetAddress.getByAddress(ipAddress), port),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
-            SYNC_COMMITTEE_SUBNETS);
+            SYNC_COMMITTEE_SUBNETS,
+            Optional.empty());
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/p2p/" + PEER_ID));
     assertThatComponent(result, Protocol.IP4).isEqualTo(ipAddress);
@@ -103,7 +104,8 @@ class MultiaddrUtilTest {
             new InetSocketAddress(InetAddress.getByAddress(ipAddress), port),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
-            SYNC_COMMITTEE_SUBNETS);
+            SYNC_COMMITTEE_SUBNETS,
+            Optional.empty());
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result)
         .isEqualTo(Multiaddr.fromString("/ip6/3300:4:5000:780:0:12:0:1/tcp/5883/p2p/" + PEER_ID));
@@ -122,7 +124,8 @@ class MultiaddrUtilTest {
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
-            SYNC_COMMITTEE_SUBNETS);
+            SYNC_COMMITTEE_SUBNETS,
+            Optional.empty());
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(
             "/ip4/127.0.0.1/tcp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");
@@ -139,7 +142,8 @@ class MultiaddrUtilTest {
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
-            SYNC_COMMITTEE_SUBNETS);
+            SYNC_COMMITTEE_SUBNETS,
+            Optional.empty());
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(
             "/ip4/127.0.0.1/udp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");
