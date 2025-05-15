@@ -42,14 +42,14 @@ public class StringifyUtil {
       exceptIndexes.removeAll(indexes);
       return lenStr + "[all except " + sortAndJoin(exceptIndexes) + "]";
     } else {
-      List<IntRange> ranges = reduceToIntRanges(indexes);
+      final List<IntRange> ranges = reduceToIntRanges(indexes);
       if (ranges.size() <= 16) {
         return lenStr
             + "["
             + ranges.stream().map(Objects::toString).collect(Collectors.joining(","))
             + "]";
       } else {
-        BitSet bitSet = new BitSet(maxColumns);
+        final BitSet bitSet = new BitSet(maxColumns);
         indexes.forEach(bitSet::set);
         return lenStr + "[bitmap: " + Bytes.of(bitSet.toByteArray()) + "]";
       }
@@ -61,7 +61,7 @@ public class StringifyUtil {
   }
 
   public static String toIntRangeString(final Collection<Integer> ints) {
-    List<IntRange> ranges = reduceToIntRanges(ints);
+    final List<IntRange> ranges = reduceToIntRanges(ints);
     return "[" + ranges.stream().map(Objects::toString).collect(Collectors.joining(",")) + "]";
   }
 

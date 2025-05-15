@@ -63,9 +63,9 @@ public class StringifyUtilTest {
   @ParameterizedTest
   @MethodSource("provideTestCaseParameters")
   void columnIndexesToString_test(final TestCase testCase) {
-    List<Integer> idxList = testCase.indexes.boxed().toList();
-    String s = StringifyUtil.columnIndexesToString(idxList, MAX_INDEXES_LEN);
-    System.out.println(s);
+    final List<Integer> idxList = testCase.indexes.boxed().toList();
+    final String s = StringifyUtil.columnIndexesToString(idxList, MAX_INDEXES_LEN);
+
     assertThat(s).isEqualTo("(len: " + idxList.size() + ") " + testCase.expectedString);
   }
 }
