@@ -92,6 +92,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -143,8 +144,7 @@ public class Eth2P2PNetworkBuilder {
   protected boolean recordMessageArrival;
   protected DebugDataDumper debugDataDumper;
   private DasGossipLogger dasGossipLogger;
-
-  //  private DasReqRespLogger dasReqRespLogger;
+  private DasReqRespLogger dasReqRespLogger;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -197,7 +197,8 @@ public class Eth2P2PNetworkBuilder {
             spec,
             kzg,
             discoveryNodeIdExtractor,
-            dasTotalCustodyGroupCount);
+            dasTotalCustodyGroupCount,
+            dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
@@ -725,6 +726,11 @@ public class Eth2P2PNetworkBuilder {
 
   public Eth2P2PNetworkBuilder gossipDasLogger(final DasGossipLogger dasGossipLogger) {
     this.dasGossipLogger = dasGossipLogger;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder reqRespDasLogger(final DasReqRespLogger dasReqRespLogger) {
+    this.dasReqRespLogger = dasReqRespLogger;
     return this;
   }
 }

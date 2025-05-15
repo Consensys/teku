@@ -245,7 +245,7 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
 
   @VisibleForTesting
   @Override
-  synchronized void prune(final UInt64 slotLimit) {
+  protected synchronized void prune(final UInt64 slotLimit) {
     final List<T> toRemove = new ArrayList<>();
     for (SlotAndRoot slotAndRoot : orderedPendingItems) {
       if (slotAndRoot.getSlot().isGreaterThan(slotLimit)) {

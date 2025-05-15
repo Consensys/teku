@@ -625,6 +625,23 @@ public class TekuBeaconNode extends TekuNode {
     }
   }
 
+  public Optional<SignedBeaconBlock> getBlockAtSlot(final UInt64 slot) throws IOException {
+    final Optional<String> result =
+        httpClient.getOptional(getRestApiUrl(), "/eth/v2/beacon/blocks/" + slot);
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      final DeserializableTypeDefinition<SignedBeaconBlock> jsonTypeDefinition =
+          SharedApiTypes.withDataWrapper(
+              "block",
+              spec.atSlot(slot)
+                  .getSchemaDefinitions()
+                  .getSignedBeaconBlockSchema()
+                  .getJsonTypeDefinition());
+      return Optional.of(JsonUtil.parse(result.get(), jsonTypeDefinition));
+    }
+  }
+
   private Optional<BeaconState> fetchHeadState() throws IOException {
     return fetchState("head");
   }
@@ -654,6 +671,13 @@ public class TekuBeaconNode extends TekuNode {
           Bytes32.fromHexString(
               jsonNode.get("data").get("validator").get("withdrawal_credentials").asText()));
     }
+  }
+
+  public int getDataColumnSidecarCount(final String blockId) throws IOException {
+    final String result =
+        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/data_column_sidecars/" + blockId);
+    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+    return jsonNode.get("data").size();
   }
 
   public void waitForValidators(final int numberOfValidators) {

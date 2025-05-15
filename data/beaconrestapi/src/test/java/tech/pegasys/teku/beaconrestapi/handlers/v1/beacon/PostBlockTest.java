@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 
 public class PostBlockTest extends AbstractPostBlockTest {
 
@@ -57,8 +57,9 @@ public class PostBlockTest extends AbstractPostBlockTest {
   @Test
   void shouldAcceptBlockContentsAsSsz() throws Exception {
     setupDeneb();
-    final SignedBlockContents data = dataStructureUtil.randomSignedBlockContents(UInt64.ONE);
-    final SignedBlockContents result =
+    final SignedBlockContentsDeneb data =
+        dataStructureUtil.randomSignedBlockContentsDeneb(UInt64.ONE);
+    final SignedBlockContentsDeneb result =
         handler
             .getMetadata()
             .getRequestBody(

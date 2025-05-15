@@ -38,7 +38,7 @@ public class LogFormatter {
       final String kzgCommitment,
       final String kzgProof) {
     return String.format(
-        "block %s (%s), index %s, blob %s, commitment %s, proof %s",
+        "BlobSidecar[block %s (%s), index %s, blob %s, commitment %s, proof %s]",
         formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitment, kzgProof);
   }
 

@@ -146,7 +146,7 @@ public class FileSystemBlobSidecarsArchiverTest {
   private BlobSidecar createBlobSidecar(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(slot, 1);
-    final Blob blob = dataStructureUtil.randomBlob();
+    final Blob blob = dataStructureUtil.randomValidBlob();
     final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
     return miscHelpersDeneb.constructBlobSidecar(signedBeaconBlock, UInt64.ZERO, blob, proof);
   }

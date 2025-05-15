@@ -24,12 +24,14 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
@@ -191,5 +193,43 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+    return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
+    return SafeFuture.completedFuture(Optional.empty());
   }
 }

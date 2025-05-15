@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -119,6 +120,10 @@ public abstract class Node {
   }
 
   public int waitForEpochAtOrAbove(final int epoch) {
+    return waitForEpochAtOrAbove(epoch, Duration.ofMinutes(2));
+  }
+
+  public int waitForEpochAtOrAbove(final int epoch, final Duration timeout) {
     final AtomicInteger actualEpoch = new AtomicInteger();
     waitFor(
         () -> {
@@ -126,8 +131,8 @@ public abstract class Node {
           assertThat(currentEpoch).isGreaterThanOrEqualTo(epoch);
           actualEpoch.set(currentEpoch);
         },
-        2,
-        TimeUnit.MINUTES);
+        (int) timeout.toSeconds(),
+        TimeUnit.SECONDS);
     return actualEpoch.get();
   }
 

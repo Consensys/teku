@@ -594,52 +594,44 @@ workflows:
           requires:
             - moduleChecks
             - spotless
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - referenceTestsPrep:
           requires:
             - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - referenceTests:
           requires:
             - assemble
             - referenceTestsPrep
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - unitTests:
           requires:
             - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - propertyTests:
           requires:
             - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - integrationTests:
           requires:
             - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - acceptanceTests:
           requires:
             - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - extractAPISpec:
           requires:
             - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
+          # TODO: remove, temporary disabled
+          filters: pipeline.git.branch == "master"
       - publish-cloudsmith:
           filters:
             branches:

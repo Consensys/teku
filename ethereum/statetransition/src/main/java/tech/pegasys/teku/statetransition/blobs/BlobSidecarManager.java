@@ -19,11 +19,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public interface BlobSidecarManager {
+public interface BlobSidecarManager extends AvailabilityCheckerFactory<BlobSidecar> {
   BlobSidecarManager NOOP =
       new BlobSidecarManager() {
 
@@ -47,15 +48,15 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
+        public AvailabilityChecker<BlobSidecar> createAvailabilityChecker(
             final SignedBeaconBlock block) {
-          return BlobSidecarsAvailabilityChecker.NOOP;
+          return AvailabilityChecker.NOOP_BLOBSIDECAR;
         }
 
         @Override
-        public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+        public DataAndValidationResult<BlobSidecar> createAvailabilityCheckerAndValidateImmediately(
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+          return DataAndValidationResult.notRequired();
         }
       };
 
@@ -68,19 +69,13 @@ public interface BlobSidecarManager {
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
-  BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
+  @Override
+  AvailabilityChecker<BlobSidecar> createAvailabilityChecker(SignedBeaconBlock block);
 
-  BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+  DataAndValidationResult<BlobSidecar> createAvailabilityCheckerAndValidateImmediately(
       SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
   interface ReceivedBlobSidecarListener {
     void onBlobSidecarReceived(BlobSidecar blobSidecar);
-  }
-
-  enum RemoteOrigin {
-    RPC,
-    GOSSIP,
-    LOCAL_EL,
-    LOCAL_PROPOSAL
   }
 }

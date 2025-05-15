@@ -33,8 +33,9 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -48,7 +49,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 
 public class AbstractBlockPublisherTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
@@ -65,7 +66,8 @@ public class AbstractBlockPublisherTest {
               dutyMetrics,
               false));
 
-  final SignedBlockContents signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+  final SignedBlockContentsDeneb signedBlockContents =
+      dataStructureUtil.randomSignedBlockContentsDeneb();
   final SignedBeaconBlock signedBlock = signedBlockContents.getSignedBlock();
   final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(signedBlock);
 
@@ -93,7 +95,8 @@ public class AbstractBlockPublisherTest {
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher)
         .importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
@@ -130,12 +133,13 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     validationResult.complete(BroadcastValidationResult.SUCCESS);
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
   }
@@ -170,13 +174,13 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     validationResult.complete(BroadcastValidationResult.CONSENSUS_FAILURE);
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(
@@ -211,12 +215,13 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     // Complete block publishing
     publishBlockFuture.complete(null);
 
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
 
     verify(blockPublisher)
         .importBlock(
@@ -241,7 +246,8 @@ public class AbstractBlockPublisherTest {
             SendSignedBlockResult.notImported(FailureReason.FAILED_STATE_TRANSITION.name()));
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher)
+        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher)
         .importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
@@ -303,6 +309,13 @@ public class AbstractBlockPublisherTest {
     @Override
     void publishBlobSidecars(
         final List<BlobSidecar> blobSidecars,
+        final SignedBeaconBlock block,
+        final BlockPublishingPerformance blockPublishingPerformance) {}
+
+    @Override
+    void publishDataColumnSidecars(
+        final List<DataColumnSidecar> dataColumnSidecars,
+        final SignedBeaconBlock block,
         final BlockPublishingPerformance blockPublishingPerformance) {}
   }
 }

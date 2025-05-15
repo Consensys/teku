@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -263,5 +264,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
     attestationGossipManager.unsubscribeFromSubnetId(subnetId);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("fork", fork)
+        .add("activationEpoch", getActivationEpoch())
+        .toString();
   }
 }
