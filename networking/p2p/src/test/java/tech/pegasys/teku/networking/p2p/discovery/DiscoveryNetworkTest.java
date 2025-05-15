@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
@@ -290,6 +291,14 @@ class DiscoveryNetworkTest {
         .isEqualTo(nodeIdValue);
   }
 
+  @ParameterizedTest
+  @MethodSource("getCscFixtures")
+  public void cscIsCorrectlyEncoded(final String hexString, final Integer csc) {
+    discoveryNetwork.setDASTotalCustodySubnetCount(csc);
+    verify(discoveryService)
+        .updateCustomENRField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
+  }
+
   public DiscoveryPeer createDiscoveryPeer(final Optional<EnrForkId> maybeForkId) {
     final SszBitvector syncCommitteeSubnets =
         schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
@@ -300,7 +309,8 @@ class DiscoveryNetworkTest {
         maybeForkId,
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
             .getDefault(),
-        syncCommitteeSubnets);
+        syncCommitteeSubnets,
+        Optional.empty());
   }
 
   public static Stream<Arguments> provideNodeIds() {
@@ -310,5 +320,13 @@ class DiscoveryNetworkTest {
         Arguments.of("28805562758054575154484845"),
         Arguments.of(
             "57467522110468688239177851250859789869070302005900722885377252304169193209346"));
+  }
+
+  private static Stream<Arguments> getCscFixtures() {
+    return Stream.of(
+        Arguments.of("0x", 0),
+        Arguments.of("0x80", 128),
+        Arguments.of("0x8c", 140),
+        Arguments.of("0x0190", 400));
   }
 }
