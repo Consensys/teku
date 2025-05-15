@@ -119,6 +119,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsFulu;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -1192,6 +1193,12 @@ public final class DataStructureUtil {
 
   public BlockContainerAndMetaData randomBlockContainerAndMetaData(
       final BlockContentsDeneb blockContents, final UInt64 slotNum) {
+    return new BlockContainerAndMetaData(
+        blockContents, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
+  }
+
+  public BlockContainerAndMetaData randomBlockContainerAndMetaData(
+      final BlockContentsFulu blockContents, final UInt64 slotNum) {
     return new BlockContainerAndMetaData(
         blockContents, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
   }
@@ -2540,6 +2547,18 @@ public final class DataStructureUtil {
     final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return (BlockContentsDeneb)
         getDenebSchemaDefinitions(slot)
+            .getBlockContentsSchema()
+            .create(beaconBlock, kzgProofs, blobs);
+  }
+
+  public BlockContentsFulu randomBlockContentsFulu(final UInt64 slot) {
+    final BeaconBlock beaconBlock = randomBeaconBlock(slot);
+    final int numberOfBlobs =
+        beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
+    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+    return (BlockContentsFulu)
+        getFuluSchemaDefinitions(slot)
             .getBlockContentsSchema()
             .create(beaconBlock, kzgProofs, blobs);
   }
