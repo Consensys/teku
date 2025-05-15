@@ -562,6 +562,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .sum();
   }
 
+  @Override
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+      final UInt64 currentEpoch, final UInt64 epoch) {
+    return !epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch());
+  }
+
   public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
       final UInt64 currentEpoch, final UInt64 epoch) {
     return currentEpoch

@@ -152,7 +152,6 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-
               if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestEpoch)
                   && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotFulu)) {
