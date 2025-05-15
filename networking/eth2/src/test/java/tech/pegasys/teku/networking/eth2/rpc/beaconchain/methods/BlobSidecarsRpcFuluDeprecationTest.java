@@ -139,8 +139,8 @@ public class BlobSidecarsRpcFuluDeprecationTest {
     final BlobSidecarsByRangeMessageHandler handler =
         new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getSlotsPerEpoch(ZERO));
-    // request for over 2 epochs from epoch 1 2nd slot to end of epoch 2. On epoch 2, the first slot is where fulu
-    // activated. Expect replies limited up to (not including) fulu activation slot
+    // request for over 2 epochs from epoch 1 2nd slot to end of epoch 2. On epoch 2, the first slot
+    // is where fulu is activated. Expect replies limited up to (not including) fulu activation slot
     UInt64 startSlot = UInt64.ONE.times(slotsPerEpoch).increment();
     UInt64 count = slotsPerEpoch.times(2).plus(5);
     final UInt64 latestFinalizedSlot = UInt64.valueOf(3).times(slotsPerEpoch);
