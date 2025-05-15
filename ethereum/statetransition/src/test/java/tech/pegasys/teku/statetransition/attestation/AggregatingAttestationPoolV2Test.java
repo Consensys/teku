@@ -64,10 +64,8 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
   @TestTemplate
   public void createAggregateFor_shouldReturnAggregateSingleAttestations() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final Attestation attestation1 =
-        addAttestationFromValidators(attestationData, 1).getAttestation();
-    final Attestation attestation2 =
-        addAttestationFromValidators(attestationData, 2).getAttestation();
+    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1);
+    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2);
 
     final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
