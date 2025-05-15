@@ -737,7 +737,7 @@ public class ChainBuilder {
                     final Blob blob = blobs.get(index);
                     final KZGCommitment kzgCommitment = kzgCommitments.get(index);
                     final List<Bytes32> merkleProof =
-                        miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                        miscHelpersDeneb.computeBlobKzgCommitmentInclusionProof(
                             blobSidecarIndex, nextBlockAndState.getBlock().getMessage().getBody());
                     return new BlobSidecar(
                         blobSidecarSchema,

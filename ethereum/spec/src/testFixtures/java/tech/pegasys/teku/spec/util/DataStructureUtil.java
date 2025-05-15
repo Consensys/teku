@@ -2560,7 +2560,7 @@ public final class DataStructureUtil {
   public List<Bytes32> validKzgCommitmentInclusionProof(
       final UInt64 blobIndex, final BeaconBlockBody beaconBlockBody) {
     return MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
-        .computeKzgCommitmentInclusionProof(blobIndex, beaconBlockBody);
+        .computeBlobKzgCommitmentInclusionProof(blobIndex, beaconBlockBody);
   }
 
   public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
