@@ -102,7 +102,7 @@ public class SpecBuilderUtil {
               try {
                 if (field.getName().equals("blobSchedule")) {
                   // default value for Deneb max blobs
-                  field.set(builder, List.of(new BlobSchedule(UInt64.ZERO, UInt64.valueOf(6))));
+                  field.set(builder, List.of(new BlobSchedule(UInt64.ZERO, 6)));
                   return;
                 }
                 field.setAccessible(true);

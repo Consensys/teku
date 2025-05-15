@@ -126,7 +126,7 @@ public class SpecConfigReader {
         blobSchedule.add(
             new BlobSchedule(
                 UInt64.valueOf(data.get("EPOCH")),
-                UInt64.valueOf(data.get("MAX_BLOBS_PER_BLOCK"))));
+                Integer.parseInt(data.get("MAX_BLOBS_PER_BLOCK"))));
 
       } else {
         throw new IllegalArgumentException("Could not parse entry blob schedule");

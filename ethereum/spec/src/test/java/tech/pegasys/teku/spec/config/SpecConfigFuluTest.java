@@ -115,21 +115,16 @@ public class SpecConfigFuluTest {
     final MiscHelpersFulu miscHelpersFulu =
         mainnetSpec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
     // test defaulting to minimum
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(0))).isEqualTo(UInt64.valueOf(6));
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(0))).isEqualTo(6);
     // test deneb max blobs boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269568)))
-        .isEqualTo(UInt64.valueOf(6));
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269569)))
-        .isEqualTo(UInt64.valueOf(6));
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269568))).isEqualTo(6);
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269569))).isEqualTo(6);
     // last epoch of deneb
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364031)))
-        .isEqualTo(UInt64.valueOf(6));
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364031))).isEqualTo(6);
     // electra boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364032)))
-        .isEqualTo(UInt64.valueOf(9));
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364032))).isEqualTo(9);
     // inside electra
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033)))
-        .isEqualTo(UInt64.valueOf(9));
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033))).isEqualTo(9);
   }
 
   @Test
@@ -162,6 +157,6 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomUInt64(32000000000L),
         List.of(
             new BlobSchedule(
-                dataStructureUtil.randomEpoch(), dataStructureUtil.randomUInt64(64)))) {};
+                dataStructureUtil.randomEpoch(), dataStructureUtil.randomPositiveInt(64)))) {};
   }
 }

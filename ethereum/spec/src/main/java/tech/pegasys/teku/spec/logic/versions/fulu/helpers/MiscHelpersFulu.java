@@ -75,7 +75,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   // get_max_blobs_per_block
-  public UInt64 getMaxBlobsPerBlock(final UInt64 epoch) {
+  public int getMaxBlobsPerBlock(final UInt64 epoch) {
     checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
 
     final Optional<BlobSchedule> maybeSchedule =
