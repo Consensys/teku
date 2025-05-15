@@ -123,7 +123,9 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final MetricsSystem metricsSystem,
       final int maximumAttestationCount,
       final LongSupplier nanosSupplier,
-      final RewardBasedAttestationSorterFactory rewardBasedAttestationSorterFactory) {
+      final RewardBasedAttestationSorterFactory rewardBasedAttestationSorterFactory,
+      final int maxBlockAggregationTimeMillis,
+      final int maxTotalBlockAggregationTimeMillis) {
     super(spec, recentChainData);
     this.sizeGauge =
         SettableGauge.create(
@@ -133,8 +135,10 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
             "The number of attestations available to be included in proposed blocks");
     this.maximumAttestationCount = maximumAttestationCount;
     this.aggregatingAttestationPoolProfiler = AggregatingAttestationPoolProfiler.NOOP;
-    this.maxBlockAggregationTimeNanos = Integer.MAX_VALUE * 1_000_000L;
-    this.maxTotalBlockAggregationTimeMillis = Integer.MAX_VALUE * 1_000_000L;
+    this.maxBlockAggregationTimeNanos =
+        maxBlockAggregationTimeMillis * 1_000_000L; // Integer.MAX_VALUE * 1_000_000L
+    this.maxTotalBlockAggregationTimeMillis =
+        maxTotalBlockAggregationTimeMillis * 1_000_000L; // Integer.MAX_VALUE * 1_000_000L
     this.earlyDropSingleAttestations = false;
     this.parallel = false;
     this.nanosSupplier = nanosSupplier;

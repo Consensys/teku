@@ -267,7 +267,6 @@ public class MatchingDataAttestationGroupV2 {
 
   public Stream<PooledAttestationWithData> streamForApiRequest(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
-    // Read lock needed for accessing includedValidators properties
     boolean noMatch;
     readLock.lock();
     try {
@@ -291,7 +290,6 @@ public class MatchingDataAttestationGroupV2 {
   private Spliterator<PooledAttestation> spliterator(
       final long timeLimitNanos,
       final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
-    // Delegate to iterator creation which handles locking
     return Spliterators.spliteratorUnknownSize(
         createAggregatingIterator(timeLimitNanos, candidatesStreamSupplier), 0);
   }
@@ -302,14 +300,10 @@ public class MatchingDataAttestationGroupV2 {
    * @return true if this group is empty.
    */
   public boolean isEmpty() {
-    // isEmpty() on ConcurrentSkipListMap is thread-safe and fast
     return attestationsByValidatorCount.isEmpty() && singleAttestationsByCommitteeIndex.isEmpty();
   }
 
   public int size() {
-    // Iterate over the values (concurrent sets) and sum their sizes.
-    // This gives an approximate size at a moment in time, acceptable for metrics.
-    // No lock needed as iterating values and set.size() are safe.
     return attestationsByValidatorCount.values().stream().mapToInt(Set::size).sum()
         + singleAttestationsByCommitteeIndex.values().stream().mapToInt(Set::size).sum();
   }
@@ -373,25 +367,23 @@ public class MatchingDataAttestationGroupV2 {
     } finally {
       writeLock.unlock();
     }
-    return numRemoved; // Return the count accurately calculated under lock
+    return numRemoved;
   }
 
   public void onReorg(final UInt64 commonAncestorSlot) {
     writeLock.lock();
     try {
-      // tailMap is a view, need to collect keys/entries before clearing
       final NavigableMap<UInt64, AttestationBits> removedSlotsView =
           includedValidatorsBySlot.tailMap(commonAncestorSlot, false);
       if (removedSlotsView.isEmpty()) {
         // No relevant attestations in affected slots, so nothing to do.
         return;
       }
-      // Clear the view, which removes entries from the underlying concurrent map
+
       removedSlotsView.clear();
 
       // Recalculate totalSeenAggregationBits as validators may have been seen in multiple blocks
-      includedValidators = createEmptyAttestationBits(); // Re-initialize
-      // Iterate safely over remaining values and aggregate under lock
+      includedValidators = createEmptyAttestationBits();
       includedValidatorsBySlot.values().forEach(aggregator -> includedValidators.or(aggregator));
     } finally {
       writeLock.unlock();
@@ -403,22 +395,21 @@ public class MatchingDataAttestationGroupV2 {
   }
 
   public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
-    // Volatile read is safe without needing a lock here
     return committeeShufflingSeedRef.get().map(validSeeds::contains).orElse(false);
   }
 
   private boolean noMatchingAttestations(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
-    // Assumes called under read lock already by stream(...)
+    // Assumes called under read lock
     return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
         || noMatchingPreElectraAttestations(committeeIndex);
   }
 
   private boolean noMatchingPreElectraAttestations(final Optional<UInt64> committeeIndex) {
-    // Assumes called under read lock already by noMatchingAttestations
+    // Assumes called under read lock
     return committeeIndex.isPresent()
-        && !includedValidators.requiresCommitteeBits() // Read under caller's lock
-        && !attestationData.getIndex().equals(committeeIndex.get()); // immutable data access
+        && !includedValidators.requiresCommitteeBits()
+        && !attestationData.getIndex().equals(committeeIndex.get());
   }
 
   private Supplier<Stream<PooledAttestation>> blockProductionCandidatesStreamSupplier() {

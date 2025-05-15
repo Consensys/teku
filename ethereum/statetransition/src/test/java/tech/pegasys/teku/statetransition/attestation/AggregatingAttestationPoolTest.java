@@ -68,16 +68,16 @@ abstract class AggregatingAttestationPoolTest {
   public static final UInt64 SLOT = UInt64.valueOf(1234);
   private static final int COMMITTEE_SIZE = 130;
 
-  private Spec spec;
-  private SpecMilestone specMilestone;
+  protected Spec spec;
+  protected SpecMilestone specMilestone;
   protected DataStructureUtil dataStructureUtil;
   protected Optional<UInt64> committeeIndex;
-  private final Spec mockSpec = mock(Spec.class);
-  private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
+  protected final Spec mockSpec = mock(Spec.class);
+  protected final RecentChainData mockRecentChainData = mock(RecentChainData.class);
 
   protected AggregatingAttestationPool aggregatingPool;
 
-  private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
+  protected final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
   private BeaconState state;
   private Int2IntMap committeeSizes;
@@ -858,11 +858,11 @@ abstract class AggregatingAttestationPoolTest {
     return validatableAttestation;
   }
 
-  private AttestationData createAttestationData() {
+  protected AttestationData createAttestationData() {
     return createAttestationData(dataStructureUtil.randomUInt64());
   }
 
-  private AttestationData createAttestationData(final UInt64 slot) {
+  protected AttestationData createAttestationData(final UInt64 slot) {
     if (specMilestone.isLessThan(ELECTRA)) {
       return dataStructureUtil.randomAttestationData(
           slot, committeeIndex.orElse(UInt64.valueOf(dataStructureUtil.randomPositiveInt())));

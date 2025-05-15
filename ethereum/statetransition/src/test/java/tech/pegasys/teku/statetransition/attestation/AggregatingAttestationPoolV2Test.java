@@ -14,21 +14,25 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 import static tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.NOOP;
 
 import java.util.Optional;
+import java.util.function.LongSupplier;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.RewardBasedAttestationSorterFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -38,6 +42,22 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
   @Override
   AggregatingAttestationPool instantiatePool(
       final Spec spec, final RecentChainData recentChainData, final int maxAttestations) {
+    return instantiatePool(
+        spec,
+        recentChainData,
+        maxAttestations,
+        System::nanoTime,
+        Integer.MAX_VALUE,
+        Integer.MAX_VALUE);
+  }
+
+  AggregatingAttestationPool instantiatePool(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final int maxAttestations,
+      final LongSupplier nanosSupplier,
+      final int maxBlockAggregationTimeMillis,
+      final int maxTotalBlockAggregationTimeMillis) {
     final RewardBasedAttestationSorterFactory sorterFactory =
         mock(RewardBasedAttestationSorterFactory.class);
     when(sorterFactory.create(any())).thenReturn(NOOP);
@@ -47,28 +67,68 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         recentChainData,
         new NoOpMetricsSystem(),
         maxAttestations,
-        System::nanoTime,
-        sorterFactory);
+        nanosSupplier,
+        sorterFactory,
+        maxBlockAggregationTimeMillis,
+        maxTotalBlockAggregationTimeMillis);
   }
 
   @TestTemplate
   @Override
   public void createAggregateFor_shouldAggregateAttestationsWithMatchingData() {
-    // This test is replaced by the one below
-  }
-
-  @TestTemplate
-  @Override
-  public void createAggregateFor_shouldReturnBestAggregateForMatchingDataWhenSomeOverlap() {}
-
-  @TestTemplate
-  public void createAggregateFor_shouldReturnAggregateSingleAttestations() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData = createAttestationData();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2);
 
     final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
     assertThat(result).contains(aggregateAttestations(attestation1, attestation2));
+  }
+
+  @TestTemplate
+  @Override
+  public void createAggregateFor_shouldReturnBestAggregateForMatchingDataWhenSomeOverlap() {
+    // this does not apply since we only deal with single attestation, which cannot partially
+    // overlap
+  }
+
+  @TestTemplate
+  public void getAttestationsForBlock_shouldFillupOnlyFirstAggregateFromSameMatchingData() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+
+    final AttestationData attestationData = createAttestationData(ZERO);
+
+    final Attestation attestationBestAggregate =
+        addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+    final Attestation attestationAggregate = addAttestationFromValidators(attestationData, 1, 2, 5);
+
+    final Attestation singleAttestation = addAttestationFromValidators(attestationData, 6);
+
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
+
+    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+        .containsExactlyInAnyOrder(
+            aggregateAttestations(attestationBestAggregate, singleAttestation),
+            attestationAggregate);
+  }
+
+  @TestTemplate
+  public void getAttestationsForBlock_shouldNotTryToFillupIfTimeLimitIsExceeded() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+
+    // by passing 0 to maxTotalBlockAggregationTimeMillis we give no time to fillup
+    aggregatingPool =
+        instantiatePool(mockSpec, mockRecentChainData, 10, System::nanoTime, Integer.MAX_VALUE, 0);
+
+    final AttestationData attestationData = createAttestationData(ZERO);
+
+    final Attestation attestationBestAggregate =
+        addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+    addAttestationFromValidators(attestationData, 6);
+
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
+
+    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+        .containsExactlyInAnyOrder(attestationBestAggregate);
   }
 }
