@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
 
@@ -22,9 +23,6 @@ import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +42,6 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -125,12 +122,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
 
     final Optional<BlobSchedule> maybeSchedule =
-            blobSchedule.stream()
-                    .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
-                    .max(Comparator.comparing(BlobSchedule::epoch));
+        blobSchedule.stream()
+            .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
+            .max(Comparator.comparing(BlobSchedule::epoch));
     return maybeSchedule.isPresent()
-            ? maybeSchedule.get().maxBlobsPerBlock()
-            : blobSchedule.getFirst().maxBlobsPerBlock();
+        ? maybeSchedule.get().maxBlobsPerBlock()
+        : blobSchedule.getFirst().maxBlobsPerBlock();
   }
 
   private UInt256 incrementByModule(final UInt256 n) {
