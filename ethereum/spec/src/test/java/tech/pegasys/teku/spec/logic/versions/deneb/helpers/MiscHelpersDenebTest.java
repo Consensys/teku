@@ -163,7 +163,8 @@ class MiscHelpersDenebTest {
     for (int i = 0; i < numberOfCommitments; ++i) {
       final UInt64 blobSidecarIndex = UInt64.valueOf(i);
       final List<Bytes32> merkleProof =
-          miscHelpersDeneb.computeKzgCommitmentInclusionProof(blobSidecarIndex, beaconBlockBody);
+          miscHelpersDeneb.computeBlobKzgCommitmentInclusionProof(
+              blobSidecarIndex, beaconBlockBody);
       assertThat(merkleProof.size())
           .isEqualTo(
               SpecConfigDeneb.required(spec.getGenesisSpecConfig())
@@ -193,7 +194,7 @@ class MiscHelpersDenebTest {
 
         final UInt64 wrongIndex = UInt64.valueOf(j);
         final List<Bytes32> merkleProofWrong =
-            miscHelpersDeneb.computeKzgCommitmentInclusionProof(wrongIndex, beaconBlockBody);
+            miscHelpersDeneb.computeBlobKzgCommitmentInclusionProof(wrongIndex, beaconBlockBody);
         assertThat(merkleProofWrong.size())
             .isEqualTo(
                 SpecConfigDeneb.required(spec.getGenesisSpecConfig())

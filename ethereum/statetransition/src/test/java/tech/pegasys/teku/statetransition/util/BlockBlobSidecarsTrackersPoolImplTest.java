@@ -656,7 +656,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                                 .getKZGCommitment()
                                 .getBytesCompressed())
                         .kzgCommitmentInclusionProof(
-                            miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                            miscHelpersDeneb.computeBlobKzgCommitmentInclusionProof(
                                 index, block.getMessage().getBody()))
                         .build())
             .toList();

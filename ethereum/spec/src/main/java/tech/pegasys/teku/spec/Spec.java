@@ -35,8 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -54,10 +52,12 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -108,7 +108,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
-  private static final Logger LOG = LogManager.getLogger();
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
@@ -146,13 +145,6 @@ public class Spec {
     }
 
     final ForkSchedule forkSchedule = forkScheduleBuilder.build();
-
-    final UInt64 lastForkActivationEpoch =
-        forkSchedule.getActiveMilestones().getLast().getFork().getEpoch();
-    LOG.info(
-        "Creating network specification. Highest milestone supported: {}, from epoch {}",
-        highestMilestoneSupported.lowerCaseName(),
-        lastForkActivationEpoch);
 
     return new Spec(specConfigAndParent, specVersions, forkSchedule);
   }
@@ -431,6 +423,16 @@ public class Spec {
                     "Bellatrix milestone is required to deserialize execution payload header"))
         .getExecutionPayloadHeaderSchema()
         .jsonDeserialize(objectMapper.createParser(jsonFile));
+  }
+
+  public DataColumnSidecar deserializeSidecar(final Bytes serializedSidecar, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionFulu()
+        .orElseThrow(
+            () -> new RuntimeException("FULU milestone is required to deserialize column sidecar"))
+        .getDataColumnSidecarSchema()
+        .sszDeserialize(serializedSidecar);
   }
 
   // BeaconState
@@ -948,14 +950,14 @@ public class Spec {
 
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(DENEB)) {
-      return false;
-    }
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return getCurrentEpoch(store)
-        .minusMinZero(epoch)
-        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionDeneb()
+        .map(
+            denebMiscHelpers ->
+                denebMiscHelpers.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+                    getCurrentEpoch(store), epoch))
+        .orElse(false);
   }
 
   /**
@@ -1000,6 +1002,26 @@ public class Spec {
                 .getBlobSidecarSubnetCount());
   }
 
+  public Optional<Integer> getNumberOfDataColumns() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getNumberOfColumns);
+  }
+
+  public Optional<Integer> getNumberOfDataColumnSubnets() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
+  }
+
+  public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
+      final ReadOnlyStore store, final UInt64 epoch) {
+    if (getSpecConfigFulu().isEmpty()) {
+      return false;
+    }
+    final SpecConfig config = atEpoch(epoch).getConfig();
+    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
+    return getCurrentEpoch(store)
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
     return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
@@ -1018,6 +1040,15 @@ public class Spec {
     return Optional.ofNullable(forMilestone(highestSupportedMilestone))
         .map(SpecVersion::getConfig)
         .flatMap(SpecConfig::toVersionDeneb);
+  }
+
+  // Fulu private helpers
+  private Optional<SpecConfigFulu> getSpecConfigFulu() {
+    final SpecMilestone highestSupportedMilestone =
+        getForkSchedule().getHighestSupportedMilestone();
+    return Optional.ofNullable(forMilestone(highestSupportedMilestone))
+        .map(SpecVersion::getConfig)
+        .flatMap(SpecConfig::toVersionFulu);
   }
 
   // Private helpers
