@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.LogManager;
@@ -225,14 +226,15 @@ public class MatchingDataAttestationGroupV2 {
    * @return an iterator including attestations for every validator included in this group.
    */
   private Iterator<PooledAttestation> createAggregatingIterator(
-      final Optional<UInt64> committeeIndex, final long timeLimitNanos, final Flow flow) {
+      final long timeLimitNanos,
+      final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
     readLock.lock();
     try {
       // Capture a copy of includedValidators under lock for the iterator's isolated use
       AttestationBits includedValidatorsCopy = this.includedValidators.copy();
 
       final AggregatingIterator iterator =
-          new AggregatingIterator(committeeIndex, includedValidatorsCopy, flow);
+          new AggregatingIterator(includedValidatorsCopy, candidatesStreamSupplier);
       if (timeLimitNanos == Long.MAX_VALUE) {
         return iterator;
       }
@@ -246,7 +248,7 @@ public class MatchingDataAttestationGroupV2 {
 
   public Stream<PooledAttestationWithData> streamForBlockProduction(final long timeLimitNanos) {
     return StreamSupport.stream(
-            spliterator(Optional.empty(), timeLimitNanos, Flow.BLOCK_PRODUCTION), false)
+            spliterator(timeLimitNanos, blockProductionCandidatesStreamSupplier()), false)
         .map(
             pooledAttestation -> new PooledAttestationWithData(attestationData, pooledAttestation));
   }
@@ -254,7 +256,11 @@ public class MatchingDataAttestationGroupV2 {
   public Stream<PooledAttestationWithData> streamForAggregationProduction(
       final Optional<UInt64> committeeIndex, final long timeLimitNanos) {
     return StreamSupport.stream(
-            spliterator(committeeIndex, timeLimitNanos, Flow.AGGREGATION_PRODUCTION), false)
+            spliterator(
+                timeLimitNanos,
+                aggregationProductionCandidatesStreamSupplier(
+                    committeeIndex, includedValidators.requiresCommitteeBits())),
+            false)
         .map(
             pooledAttestation -> new PooledAttestationWithData(attestationData, pooledAttestation));
   }
@@ -273,17 +279,21 @@ public class MatchingDataAttestationGroupV2 {
       return Stream.empty();
     }
     return StreamSupport.stream(
-            spliterator(committeeIndex, Long.MAX_VALUE, Flow.API_REQUEST), false)
+            spliterator(
+                Long.MAX_VALUE,
+                apiRequestCandidatesStreamSupplier(committeeIndex, requiresCommitteeBits)),
+            false)
         .map(
             pooledAttestationBitsAndSignature ->
                 new PooledAttestationWithData(attestationData, pooledAttestationBitsAndSignature));
   }
 
   private Spliterator<PooledAttestation> spliterator(
-      final Optional<UInt64> committeeIndex, final long timeLimitNanos, final Flow flow) {
+      final long timeLimitNanos,
+      final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
     // Delegate to iterator creation which handles locking
     return Spliterators.spliteratorUnknownSize(
-        createAggregatingIterator(committeeIndex, timeLimitNanos, flow), 0);
+        createAggregatingIterator(timeLimitNanos, candidatesStreamSupplier), 0);
   }
 
   /**
@@ -411,15 +421,66 @@ public class MatchingDataAttestationGroupV2 {
         && !attestationData.getIndex().equals(committeeIndex.get()); // immutable data access
   }
 
-  private enum Flow {
-    BLOCK_PRODUCTION,
-    AGGREGATION_PRODUCTION,
-    API_REQUEST,
+  private Supplier<Stream<PooledAttestation>> blockProductionCandidatesStreamSupplier() {
+    return () -> attestationsByValidatorCount.values().stream().flatMap(Set::stream);
   }
 
-  private class AggregatingIterator implements Iterator<PooledAttestation> {
-    private final Flow flow;
-    private final Optional<UInt64> maybeCommitteeIndex;
+  private Supplier<Stream<PooledAttestation>> aggregationProductionCandidatesStreamSupplier(
+      final Optional<UInt64> maybeCommitteeIndex, final boolean requiresCommitteeBits) {
+    if (maybeCommitteeIndex.isPresent() && requiresCommitteeBits) {
+      // We are in aggregation mode post-Electra.
+      // Only consider single attestations for the committee index
+      // the main use case is committee aggregation.
+      // The issue is related to getAttestation API,
+      // so we won't return aggregates when committeeIndex is specified in the call.
+      return () ->
+          singleAttestationsByCommitteeIndex
+              .getOrDefault(maybeCommitteeIndex.get().intValue(), Set.of())
+              .stream();
+    }
+    return () -> attestationsByValidatorCount.values().stream().flatMap(Set::stream);
+  }
+
+  private Supplier<Stream<PooledAttestation>> apiRequestCandidatesStreamSupplier(
+      final Optional<UInt64> maybeCommitteeIndex, final boolean requiresCommitteeBits) {
+    if (!requiresCommitteeBits) {
+      // in pre-electra mode this group has been already checked against committee index
+      // so we can just stream everything (single attestations don't exist)
+      return () -> attestationsByValidatorCount.values().stream().flatMap(Set::stream);
+    }
+
+    // post electra we need a committee matcher if the committee index is specified
+    final Predicate<PooledAttestation> committeeMatcher =
+        maybeCommitteeIndex
+            .<Predicate<PooledAttestation>>map(
+                committeeIndex ->
+                    (PooledAttestation pooledAttestation) ->
+                        pooledAttestation.bits().isFromCommittee(committeeIndex.intValue()))
+            .orElse(pooledAttestation -> true);
+
+    return () -> {
+      final Stream<PooledAttestation> singleAttestationsStream =
+          maybeCommitteeIndex
+              .map(
+                  committeeIndex ->
+                      // Stream single attestations by committee index
+                      singleAttestationsByCommitteeIndex
+                          .getOrDefault(committeeIndex.intValue(), Set.of())
+                          .stream())
+              .orElse(
+                  // No committee index filter, stream all single attestations
+                  singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream));
+      // stream aggregates first and then single attestations
+      return Stream.concat(
+          attestationsByValidatorCount.values().stream()
+              .flatMap(Set::stream)
+              .filter(committeeMatcher),
+          singleAttestationsStream);
+    };
+  }
+
+  private static class AggregatingIterator implements Iterator<PooledAttestation> {
+    private final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier;
     // Holds a *copy* of the state from the time of creation, safe for local mutation.
     private final AttestationBits iteratorSpecificIncludedValidators;
 
@@ -427,11 +488,9 @@ public class MatchingDataAttestationGroupV2 {
 
     // Constructor receives the copy made under lock
     private AggregatingIterator(
-        final Optional<UInt64> committeeIndex,
         final AttestationBits includedValidatorsCopy,
-        final Flow flow) {
-      this.flow = flow;
-      this.maybeCommitteeIndex = committeeIndex;
+        final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
+      this.candidatesStreamSupplier = candidatesStreamSupplier;
       this.iteratorSpecificIncludedValidators = includedValidatorsCopy; // Use the provided copy
       this.remainingAttestations = getRemainingAttestations();
     }
@@ -461,79 +520,9 @@ public class MatchingDataAttestationGroupV2 {
 
     // Fetches attestations not yet covered *by this iterator*
     private Iterator<PooledAttestation> getRemainingAttestations() {
-      final Stream<PooledAttestation> candidatesStream =
-          switch (flow) {
-            case BLOCK_PRODUCTION ->
-                MatchingDataAttestationGroupV2.this.attestationsByValidatorCount.values().stream()
-                    .flatMap(Set::stream);
 
-            case AGGREGATION_PRODUCTION -> {
-              if (maybeCommitteeIndex.isPresent()
-                  && iteratorSpecificIncludedValidators.requiresCommitteeBits()) {
-                // We are in aggregation mode post-Electra.
-                // Only consider single attestations for the committee index
-                // the main use case is committee aggregation.
-                // The issue is related to getAttestation API,
-                // so we won't return aggregates when committeeIndex is specified in the call.
-                yield MatchingDataAttestationGroupV2.this
-                    .singleAttestationsByCommitteeIndex
-                    .getOrDefault(maybeCommitteeIndex.get().intValue(), Set.of())
-                    .stream();
-              }
-              yield MatchingDataAttestationGroupV2.this
-                  .attestationsByValidatorCount
-                  .values()
-                  .stream()
-                  .flatMap(Set::stream);
-            }
-            case API_REQUEST -> {
-              if (iteratorSpecificIncludedValidators.requiresCommitteeBits()) {
-                final Predicate<PooledAttestation> committeeMatcher =
-                    maybeCommitteeIndex
-                        .<Predicate<PooledAttestation>>map(
-                            committeeIndex ->
-                                (PooledAttestation pooledAttestation) ->
-                                    pooledAttestation
-                                        .bits()
-                                        .isFromCommittee(committeeIndex.intValue()))
-                        .orElse(pooledAttestation -> true);
-
-                final Stream<PooledAttestation> singleAttestationsStream =
-                    maybeCommitteeIndex
-                        .map(
-                            committeeIndex ->
-                                MatchingDataAttestationGroupV2.this
-                                    .singleAttestationsByCommitteeIndex
-                                    .getOrDefault(committeeIndex.intValue(), Set.of())
-                                    .stream())
-                        .orElse(
-                            MatchingDataAttestationGroupV2.this
-                                .singleAttestationsByCommitteeIndex
-                                .values()
-                                .stream()
-                                .flatMap(Set::stream));
-
-                yield Stream.concat(
-                    MatchingDataAttestationGroupV2.this
-                        .attestationsByValidatorCount
-                        .values()
-                        .stream()
-                        .flatMap(Set::stream)
-                        .filter(committeeMatcher),
-                    singleAttestationsStream);
-              } else {
-                // in pre-electra mode this group has been already checked against committee index
-                // so we can just stream everything (single attestations don't exist)
-                yield MatchingDataAttestationGroupV2.this
-                    .attestationsByValidatorCount
-                    .values()
-                    .stream()
-                    .flatMap(Set::stream);
-              }
-            }
-          };
-
-      return candidatesStream
+      return candidatesStreamSupplier
+          .get()
           // Check against the iterator's local copy of included validators
           .filter(candidate -> !iteratorSpecificIncludedValidators.isSuperSetOf(candidate.bits()))
           .iterator();
