@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class MilestoneDependentTypesUtilTest {
-  private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
 
   @ParameterizedTest(name = "{0}")
