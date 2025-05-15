@@ -175,16 +175,11 @@ class AggregateAttestationBuilderTest {
                 aggregationBits, attestationData, dataStructureUtil.randomSignature()));
 
     if (includeIndices) {
-      validatableAttestation.setIndexedAttestation(
-          dataStructureUtil.randomIndexedAttestation(
-              attestationData,
-              Arrays.stream(validators)
-                  .mapToObj(this::validatorBitToValidatorIndex)
-                  .toArray(UInt64[]::new)));
+      return PooledAttestation.fromValidatableAttestation(
+          validatableAttestation,
+          Arrays.stream(validators).mapToObj(this::validatorBitToValidatorIndex).toList());
     }
-    return PooledAttestation.fromValidatableAttestation(
-        validatableAttestation,
-        Arrays.stream(validators).mapToObj(this::validatorBitToValidatorIndex).toList());
+    return PooledAttestation.fromValidatableAttestation(validatableAttestation);
   }
 
   private UInt64 validatorBitToValidatorIndex(final int validatorBit) {
