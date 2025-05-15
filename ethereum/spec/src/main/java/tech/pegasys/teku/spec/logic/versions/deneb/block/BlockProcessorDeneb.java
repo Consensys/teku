@@ -70,13 +70,17 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
         SchemaDefinitionsCapella.required(schemaDefinitions));
   }
 
+  public int getMaxBlobsPerBlock(final BeaconState state) {
+    return SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
+  }
+
   @Override
   public void validateExecutionPayload(
       final BeaconState genericState,
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
-    final int maxBlobsPerBlock = SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
+    final int maxBlobsPerBlock = getMaxBlobsPerBlock(genericState);
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
     if (blobKzgCommitments.size() > maxBlobsPerBlock) {
       throw new BlockProcessingException(

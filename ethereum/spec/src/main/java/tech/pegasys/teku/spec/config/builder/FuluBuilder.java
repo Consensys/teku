@@ -16,11 +16,15 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -45,6 +49,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer maxRequestDataColumnSidecars;
   private Integer maxBlobsPerBlockFulu;
   private UInt64 balancePerAdditionalCustodyGroup;
+  private List<BlobSchedule> blobSchedule = new ArrayList<>();
 
   FuluBuilder() {}
 
@@ -68,7 +73,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             minEpochsForDataColumnSidecarsRequests,
             maxRequestDataColumnSidecars,
             maxBlobsPerBlockFulu,
-            balancePerAdditionalCustodyGroup),
+            balancePerAdditionalCustodyGroup,
+            blobSchedule),
         specConfigAndParent);
   }
 
@@ -100,6 +106,11 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
       final UInt64 kzgCommitmentsInclusionProofDepth) {
     checkNotNull(kzgCommitmentsInclusionProofDepth);
     this.kzgCommitmentsInclusionProofDepth = kzgCommitmentsInclusionProofDepth;
+    return this;
+  }
+
+  public FuluBuilder blobSchedule(final List<BlobSchedule> blobSchedule) {
+    this.blobSchedule = blobSchedule;
     return this;
   }
 
@@ -178,6 +189,22 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     }
 
     validateConstants();
+  }
+
+  public void validateBlobSchedule(
+      final Optional<BlobSchedule> denebSchedule, final Optional<BlobSchedule> electraSchedule) {
+    denebSchedule.ifPresent(
+        schedule -> {
+          if (!blobSchedule.contains(schedule)) {
+            blobSchedule.add(schedule);
+          }
+        });
+    electraSchedule.ifPresent(
+        schedule -> {
+          if (!blobSchedule.contains(schedule)) {
+            blobSchedule.add(schedule);
+          }
+        });
   }
 
   @Override
