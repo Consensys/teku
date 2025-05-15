@@ -343,6 +343,17 @@ class UInt64Test {
     assertThatThrownBy(UInt64.ZERO::decrement).isInstanceOf(ArithmeticException.class);
   }
 
+  @Test
+  void safeDecrement() {
+    assertThat(UInt64.ONE.safeDecrement()).isEqualTo(UInt64.ZERO);
+    assertThat(UInt64.valueOf(3).safeDecrement().safeDecrement()).isEqualTo(UInt64.ONE);
+  }
+
+  @Test
+  void safeDecrement_shouldNotUnderflows() {
+    assertThat(UInt64.ZERO.safeDecrement()).isEqualTo(UInt64.ZERO);
+  }
+
   @ParameterizedTest
   @MethodSource("additionNumbers")
   void subtract_shouldSubtractWhenNotOverflowing(

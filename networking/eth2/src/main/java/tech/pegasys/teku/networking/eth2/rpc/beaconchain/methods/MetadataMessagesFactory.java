@@ -22,15 +22,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
-public class MetadataMessagesFactory {
+public class MetadataMessagesFactory implements CustodyGroupCountChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
   private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
   private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
-  // TODO-fulu update with Fulu networking-related changes (CustodyGroupCountChannel)
-  private final Optional<UInt64> custodyGroupCount = Optional.empty();
+  private Optional<UInt64> custodyGroupCount = Optional.empty();
 
   public synchronized void updateAttestationSubnetIds(
       final Iterable<Integer> attestationSubnetIds) {
@@ -42,6 +42,21 @@ public class MetadataMessagesFactory {
       final Iterable<Integer> syncCommitteeSubnetIds) {
     this.syncCommitteeSubnetIds = syncCommitteeSubnetIds;
     handleUpdate();
+  }
+
+  public synchronized void updateCustodyGroupCount(final UInt64 custodyGroupCount) {
+    this.custodyGroupCount = Optional.of(custodyGroupCount);
+    handleUpdate();
+  }
+
+  @Override
+  public void onCustodyGroupCountUpdate(final int groupCount) {
+    // we don't care until it's synced
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {
+    updateCustodyGroupCount(UInt64.valueOf(groupCount));
   }
 
   private void handleUpdate() {

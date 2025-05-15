@@ -28,6 +28,7 @@ public class DiscoveryPeer {
   private final Optional<EnrForkId> enrForkId;
   private final SszBitvector persistentAttestationSubnets;
   private final SszBitvector syncCommitteeSubnets;
+  private final Optional<Integer> dasCustodySubnetCount;
 
   public DiscoveryPeer(
       final Bytes publicKey,
@@ -35,13 +36,15 @@ public class DiscoveryPeer {
       final InetSocketAddress nodeAddress,
       final Optional<EnrForkId> enrForkId,
       final SszBitvector persistentAttestationSubnets,
-      final SszBitvector syncCommitteeSubnets) {
+      final SszBitvector syncCommitteeSubnets,
+      final Optional<Integer> dasCustodySubnetCount) {
     this.publicKey = publicKey;
     this.nodeId = nodeId;
     this.nodeAddress = nodeAddress;
     this.enrForkId = enrForkId;
     this.persistentAttestationSubnets = persistentAttestationSubnets;
     this.syncCommitteeSubnets = syncCommitteeSubnets;
+    this.dasCustodySubnetCount = dasCustodySubnetCount;
   }
 
   public Bytes getPublicKey() {
@@ -68,6 +71,10 @@ public class DiscoveryPeer {
     return syncCommitteeSubnets;
   }
 
+  public Optional<Integer> getDasCustodySubnetCount() {
+    return dasCustodySubnetCount;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -81,7 +88,8 @@ public class DiscoveryPeer {
         && Objects.equal(getNodeAddress(), that.getNodeAddress())
         && Objects.equal(getEnrForkId(), that.getEnrForkId())
         && Objects.equal(getPersistentAttestationSubnets(), that.getPersistentAttestationSubnets())
-        && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets());
+        && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets())
+        && Objects.equal(getDasCustodySubnetCount(), that.getDasCustodySubnetCount());
   }
 
   @Override
@@ -91,7 +99,8 @@ public class DiscoveryPeer {
         getNodeAddress(),
         getEnrForkId(),
         getPersistentAttestationSubnets(),
-        getSyncCommitteeSubnets());
+        getSyncCommitteeSubnets(),
+        getDasCustodySubnetCount());
   }
 
   @Override
@@ -102,6 +111,7 @@ public class DiscoveryPeer {
         .add("enrForkId", enrForkId)
         .add("persistentSubnets", persistentAttestationSubnets)
         .add("syncCommitteeSubnets", syncCommitteeSubnets)
+        .add("dasCustodySubnetCount", dasCustodySubnetCount)
         .toString();
   }
 }
