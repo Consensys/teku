@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
@@ -51,7 +54,16 @@ public class AddPeer extends RestApiEndpoint {
         DiscoveryNetwork<?> discoveryNetwork =
                 networkDataProvider.getDiscoveryNetwork().orElseThrow();
         final List<String> peerAddress = request.getRequestBody();
-        peerAddress.forEach(discoveryNetwork::addStaticPeer);
-        request.respondWithCode(SC_OK);
+        if(peerAddress.isEmpty()) {
+            request.respondError(SC_BAD_REQUEST, "No peer address provided");
+            return;
+        }
+        try {
+            peerAddress.forEach(discoveryNetwork::addStaticPeer);
+            request.respondWithCode(SC_OK);
+        }
+        catch (final IllegalArgumentException e) {
+            request.respondError(SC_INTERNAL_SERVER_ERROR,e.getMessage());
+        }
     }
 }

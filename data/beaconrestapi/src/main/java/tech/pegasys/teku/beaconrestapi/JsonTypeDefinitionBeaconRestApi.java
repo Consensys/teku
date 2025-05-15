@@ -324,7 +324,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetGlobalValidatorInclusion(dataProvider))
             .endpoint(new GetFinalizedStateSlotBefore(dataProvider))
             .endpoint(new GetValidatorInclusion(dataProvider))
-                .endpoint(new AddPeer(dataProvider));
+            .endpoint(new AddPeer(dataProvider));
 
     builder = applyAddons(builder, config, spec, dataProvider, schemaCache);
     return builder.build();
