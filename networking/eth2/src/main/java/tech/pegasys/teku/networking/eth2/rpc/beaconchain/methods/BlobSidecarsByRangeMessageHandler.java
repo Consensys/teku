@@ -86,7 +86,8 @@ public class BlobSidecarsByRangeMessageHandler
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
 
     final SpecConfigDeneb specConfig =
-        SpecConfigDeneb.required(spec.atSlot(request.getMaxSlot()).getConfig());
+        SpecConfigDeneb.required(
+            spec.atSlot(getFuluCappedMaxSlot(request.getMaxSlot())).getConfig());
 
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
@@ -112,6 +113,10 @@ public class BlobSidecarsByRangeMessageHandler
     return Optional.empty();
   }
 
+  private UInt64 getFuluCappedMaxSlot(final UInt64 maxSlot) {
+    return spec.blobSidecarsAvailabilityDeprecationSlot().minus(1).min(maxSlot);
+  }
+
   @Override
   public void onIncomingMessage(
       final String protocolId,
@@ -126,10 +131,11 @@ public class BlobSidecarsByRangeMessageHandler
         peer.getId(),
         message.getCount(),
         startSlot);
+    final UInt64 endSlotFulu = getFuluCappedMaxSlot(endSlot);
 
-    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
+    final SpecConfigDeneb specConfig =
+        SpecConfigDeneb.required(spec.atSlot(endSlotFulu).getConfig());
     final int requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
-
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
 
@@ -146,8 +152,7 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              final UInt64 endSlotFulu =
-                  spec.blobSidecarsAvailabilityDeprecationSlot().min(endSlot);
+
               if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestEpoch)
                   && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotFulu)) {

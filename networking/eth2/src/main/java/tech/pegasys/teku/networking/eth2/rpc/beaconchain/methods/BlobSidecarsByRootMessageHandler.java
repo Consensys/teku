@@ -17,8 +17,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
@@ -118,18 +116,17 @@ public class BlobSidecarsByRootMessageHandler
     requestCounter.labels("ok").inc();
     totalBlobSidecarsRequestedCounter.inc(message.size());
 
-    List<SafeFuture<Void>> processingFutures = new ArrayList<>();
-
+    SafeFuture<Void> future = SafeFuture.COMPLETE;
     final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
     for (final BlobIdentifier identifier : message) {
-      SafeFuture<Void> processingFuture =
-          retrieveBlobSidecar(identifier)
-              .thenCompose(
+      future =
+          future
+              .thenCompose(__ -> retrieveBlobSidecar(identifier))
+              .thenComposeChecked(
                   maybeSidecar ->
-                      validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
-                          .thenApply(__ -> maybeSidecar))
+                      validateMinAndMaxRequestEpoch(identifier, maybeSidecar, finalizedEpoch))
               .thenComposeChecked(
                   maybeSidecar ->
                       maybeSidecar
@@ -138,32 +135,21 @@ public class BlobSidecarsByRootMessageHandler
                                   callback
                                       .respond(blobSidecar)
                                       .thenRun(sentBlobSidecars::incrementAndGet))
-                          .orElse(SafeFuture.COMPLETE))
-              .exceptionally(
-                  err -> {
-                    LOG.debug(
-                        "Failed to process blob sidecar for identifier {}: {}",
-                        identifier,
-                        err.toString());
-                    return null;
-                  });
-
-      processingFutures.add(processingFuture);
+                          .orElse(SafeFuture.COMPLETE));
     }
 
-    SafeFuture.allOf((SafeFuture<?>) processingFutures.stream())
-        .finish(
-            () -> {
-              if (sentBlobSidecars.get() != message.size()) {
-                peer.adjustBlobSidecarsRequest(
-                    blobSidecarsRequestApproval.get(), sentBlobSidecars.get());
-              }
-              callback.completeSuccessfully();
-            },
-            err -> {
-              peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
-              handleError(callback, err);
-            });
+    future.finish(
+        () -> {
+          if (sentBlobSidecars.get() != message.size()) {
+            peer.adjustBlobSidecarsRequest(
+                blobSidecarsRequestApproval.get(), sentBlobSidecars.get());
+          }
+          callback.completeSuccessfully();
+        },
+        err -> {
+          peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
+          handleError(callback, err);
+        });
   }
 
   private int getMaxRequestBlobSidecars() {
@@ -185,9 +171,10 @@ public class BlobSidecarsByRootMessageHandler
    *
    * <ul>
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
+   *   <li>The block root references a block before fulu activation epoch - ignore
    * </ul>
    */
-  private SafeFuture<Void> validateMinimumRequestEpoch(
+  private SafeFuture<Optional<BlobSidecar>> validateMinAndMaxRequestEpoch(
       final BlobIdentifier identifier,
       final Optional<BlobSidecar> maybeSidecar,
       final UInt64 finalizedEpoch) {
@@ -197,10 +184,13 @@ public class BlobSidecarsByRootMessageHandler
             combinedChainDataClient
                 .getBlockByBlockRoot(identifier.getBlockRoot())
                 .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
-        .thenAcceptChecked(
+        .thenComposeChecked(
             maybeSlot -> {
-              if (maybeSlot.isEmpty()) {
-                return;
+              if (maybeSlot.isEmpty()
+                  || maybeSlot
+                      .get()
+                      .isGreaterThanOrEqualTo(spec.blobSidecarsAvailabilityDeprecationSlot())) {
+                return SafeFuture.completedFuture(Optional.empty());
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
               if (!spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
@@ -212,6 +202,7 @@ public class BlobSidecarsByRootMessageHandler
                         "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: %s",
                         identifier.getBlockRoot(), maybeSlot.get()));
               }
+              return SafeFuture.completedFuture(maybeSidecar);
             });
   }
 

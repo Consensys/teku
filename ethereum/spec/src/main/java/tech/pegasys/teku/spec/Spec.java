@@ -104,7 +104,6 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -953,20 +952,17 @@ public class Spec {
       final ReadOnlyStore store, final UInt64 epoch) {
     return atEpoch(epoch)
         .miscHelpers()
-        .toVersionFulu()
+        .toVersionDeneb()
         .map(
-            fuluMiscHelpers ->
-                fuluMiscHelpers.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+            denebMiscHelpers ->
+                denebMiscHelpers.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                     getCurrentEpoch(store), epoch))
         .orElse(false);
   }
 
   public UInt64 blobSidecarsAvailabilityDeprecationSlot() {
-    return forMilestone(SpecMilestone.FULU)
-        .miscHelpers()
-        .toVersionFulu()
-        .map(MiscHelpersFulu::blobSidecarsAvailabilityDeprecationEpoch)
-        .map(deprecationEpoch -> computeStartSlotAtEpoch(deprecationEpoch).minus(UInt64.ONE))
+    return getSpecConfigFulu()
+        .map(maybeConfig -> computeStartSlotAtEpoch(maybeConfig.getFuluForkEpoch()))
         .orElse(UInt64.MAX_VALUE);
   }
 
