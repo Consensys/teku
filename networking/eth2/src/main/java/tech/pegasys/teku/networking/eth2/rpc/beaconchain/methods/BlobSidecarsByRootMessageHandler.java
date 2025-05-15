@@ -124,10 +124,9 @@ public class BlobSidecarsByRootMessageHandler
       future =
           future
               .thenCompose(__ -> retrieveBlobSidecar(identifier))
-              .thenCompose(
+              .thenComposeChecked(
                   maybeSidecar ->
-                      validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
-                          .thenApply(__ -> maybeSidecar))
+                      validateMinAndMaxRequestEpoch(identifier, maybeSidecar, finalizedEpoch))
               .thenComposeChecked(
                   maybeSidecar ->
                       maybeSidecar
@@ -174,7 +173,7 @@ public class BlobSidecarsByRootMessageHandler
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
    * </ul>
    */
-  private SafeFuture<Void> validateMinimumRequestEpoch(
+  private SafeFuture<Optional<BlobSidecar>> validateMinAndMaxRequestEpoch(
       final BlobIdentifier identifier,
       final Optional<BlobSidecar> maybeSidecar,
       final UInt64 finalizedEpoch) {
@@ -184,10 +183,13 @@ public class BlobSidecarsByRootMessageHandler
             combinedChainDataClient
                 .getBlockByBlockRoot(identifier.getBlockRoot())
                 .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
-        .thenAcceptChecked(
+        .thenComposeChecked(
             maybeSlot -> {
-              if (maybeSlot.isEmpty()) {
-                return;
+              if (maybeSlot.isEmpty()
+                  || maybeSlot
+                      .get()
+                      .isGreaterThanOrEqualTo(spec.blobSidecarsAvailabilityDeprecationSlot())) {
+                return SafeFuture.completedFuture(Optional.empty());
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
               if (!spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
@@ -199,6 +201,7 @@ public class BlobSidecarsByRootMessageHandler
                         "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: %s",
                         identifier.getBlockRoot(), maybeSlot.get()));
               }
+              return SafeFuture.completedFuture(maybeSidecar);
             });
   }
 
