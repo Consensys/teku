@@ -130,6 +130,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .orElseGet(() -> blobSchedule.getFirst().maxBlobsPerBlock());
   }
 
+  public int getHighestMaxBlobsPerBlockFromSchedule() {
+    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
+    return blobSchedule.stream()
+        .max(Comparator.comparing(BlobSchedule::maxBlobsPerBlock))
+        .map(BlobSchedule::maxBlobsPerBlock)
+        .orElseGet(() -> blobSchedule.getLast().maxBlobsPerBlock());
+  }
+
   private UInt256 incrementByModule(final UInt256 n) {
     if (n.equals(UInt256.MAX_VALUE)) {
       return UInt256.ZERO;

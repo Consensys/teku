@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -378,9 +377,7 @@ public class BlobSidecarGossipValidatorTest {
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
   }
 
-  // fixme need to understand what this test is doing and fix
   @TestTemplate
-  @Disabled
   void shouldVerifySignedHeaderAgainAfterItDroppedFromCache(final SpecContext specContext) {
     final Spec specMock = mock(Spec.class);
     final SpecVersion specVersion = mock(SpecVersion.class);
@@ -388,6 +385,7 @@ public class BlobSidecarGossipValidatorTest {
     when(specMock.getGenesisSpec()).thenReturn(specVersion);
     when(specVersion.getConfig()).thenReturn(specContext.getSpec().getGenesisSpecConfig());
     // This will make cache of size 3
+    when(specVersion.getSlotsPerEpoch()).thenReturn(1);
     when(specMock.getMaxBlobsPerBlockAtSlot(any()))
         .thenReturn(specContext.getSpec().getMaxBlobsPerBlockAtSlot(ZERO));
     this.blobSidecarValidator =

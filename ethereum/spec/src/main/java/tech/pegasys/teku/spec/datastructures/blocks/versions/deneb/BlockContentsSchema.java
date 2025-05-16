@@ -46,7 +46,6 @@ public class BlockContentsSchema
     super(
         containerName,
         namedSchema("block", schemaRegistry.get(BEACON_BLOCK_SCHEMA)),
-        // fixme need this to be the maximum count from blob schema for fulu and after
         namedSchema(
             FIELD_KZG_PROOFS,
             SszListSchema.create(SszKZGProofSchema.INSTANCE, maxBlobsOrCommitments(specConfig))),
