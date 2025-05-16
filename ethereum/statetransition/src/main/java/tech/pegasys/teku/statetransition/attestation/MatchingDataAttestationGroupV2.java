@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
+import tech.pegasys.teku.statetransition.attestation.utils.TimeLimitingIterator;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -523,40 +523,6 @@ public class MatchingDataAttestationGroupV2 {
           // Check against the iterator's local copy of included validators
           .filter(candidate -> !iteratorSpecificIncludedValidators.isSuperSetOf(candidate.bits()))
           .iterator();
-    }
-  }
-
-  private static class TimeLimitingIterator<T> implements Iterator<T> {
-    private final long timeLimitNanos;
-    private final Iterator<T> delegate;
-    private final LongConsumer onTimeLimit;
-    private final LongSupplier nanosSupplier;
-
-    public TimeLimitingIterator(
-        final LongSupplier nanosSupplier,
-        final long timeLimitNanos,
-        final Iterator<T> delegate,
-        final LongConsumer onTimeLimit) {
-      this.timeLimitNanos = timeLimitNanos;
-      this.delegate = delegate;
-      this.onTimeLimit = onTimeLimit;
-      this.nanosSupplier = nanosSupplier;
-    }
-
-    @Override
-    public boolean hasNext() {
-      if (nanosSupplier.getAsLong() <= timeLimitNanos) {
-        return delegate.hasNext();
-      }
-
-      onTimeLimit.accept(timeLimitNanos);
-
-      return false;
-    }
-
-    @Override
-    public T next() {
-      return delegate.next();
     }
   }
 }
