@@ -106,11 +106,12 @@ public abstract class AbstractSszListSchema<
     int length = getLength(node);
     SszSchema<?> elementSchema = getElementSchema();
     if (elementSchema.isFixedSize()) {
-      if (getSszElementBitSize() == 1) {
+      final int elementSize = getSszElementBitSize();
+      if (elementSize == 1) {
         // BitlistImpl is handled specially
         return length / 8 + 1;
       } else {
-        return bitsCeilToBytes(length * getSszElementBitSize());
+        return bitsCeilToBytes(length * elementSize);
       }
     } else {
       return getCompatibleVectorSchema().getVariablePartSize(getVectorNode(node), length)
@@ -121,6 +122,11 @@ public abstract class AbstractSszListSchema<
   @Override
   public boolean isFixedSize() {
     return false;
+  }
+
+  @Override
+  public boolean hasExtraDataInBackingTree() {
+    return true;
   }
 
   @Override
