@@ -47,9 +47,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer samplesPerSlot;
   private Integer minEpochsForDataColumnSidecarsRequests;
   private Integer maxRequestDataColumnSidecars;
-  private Integer maxBlobsPerBlockFulu;
   private UInt64 balancePerAdditionalCustodyGroup;
-  private List<BlobSchedule> blobSchedule = new ArrayList<>();
+  private final List<BlobSchedule> blobSchedule = new ArrayList<>();
 
   FuluBuilder() {}
 
@@ -72,7 +71,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             samplesPerSlot,
             minEpochsForDataColumnSidecarsRequests,
             maxRequestDataColumnSidecars,
-            maxBlobsPerBlockFulu,
             balancePerAdditionalCustodyGroup,
             blobSchedule),
         specConfigAndParent);
@@ -110,7 +108,10 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   }
 
   public FuluBuilder blobSchedule(final List<BlobSchedule> blobSchedule) {
-    this.blobSchedule = blobSchedule;
+    checkNotNull(this.blobSchedule);
+    this.blobSchedule.clear();
+    // copy list rather than use the one passed in case we need to add to the list during validation
+    this.blobSchedule.addAll(blobSchedule);
     return this;
   }
 
@@ -160,12 +161,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   public FuluBuilder maxRequestDataColumnSidecars(final Integer maxRequestDataColumnSidecars) {
     checkNotNull(maxRequestDataColumnSidecars);
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
-    return this;
-  }
-
-  public FuluBuilder maxBlobsPerBlockFulu(final Integer maxBlobsPerBlockFulu) {
-    checkNotNull(maxBlobsPerBlockFulu);
-    this.maxBlobsPerBlockFulu = maxBlobsPerBlockFulu;
     return this;
   }
 
@@ -224,7 +219,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     constants.put("kzgCommitmentsInclusionProofDepth", kzgCommitmentsInclusionProofDepth);
     constants.put("minEpochsForDataColumnSidecarsRequests", minEpochsForDataColumnSidecarsRequests);
     constants.put("maxRequestDataColumnSidecars", maxRequestDataColumnSidecars);
-    constants.put("maxBlobsPerBlockFulu", maxBlobsPerBlockFulu);
     constants.put("balancePerAdditionalCustodyGroup", balancePerAdditionalCustodyGroup);
 
     return constants;

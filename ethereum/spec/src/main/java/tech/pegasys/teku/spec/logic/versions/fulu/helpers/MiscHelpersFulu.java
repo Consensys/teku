@@ -125,9 +125,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         blobSchedule.stream()
             .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
             .max(Comparator.comparing(BlobSchedule::epoch));
-    return maybeSchedule.isPresent()
-        ? maybeSchedule.get().maxBlobsPerBlock()
-        : blobSchedule.getFirst().maxBlobsPerBlock();
+    return maybeSchedule
+        .map(BlobSchedule::maxBlobsPerBlock)
+        .orElseGet(() -> blobSchedule.getFirst().maxBlobsPerBlock());
   }
 
   private UInt256 incrementByModule(final UInt256 n) {

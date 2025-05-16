@@ -16,7 +16,9 @@ package tech.pegasys.teku.spec;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -966,6 +968,7 @@ public class Spec {
    * the last two forks.
    */
   public Optional<Integer> getMaxBlobsPerBlockForHighestMilestone() {
+    // fixme blob max can come from miscHelpersFulu
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
 
@@ -1094,5 +1097,23 @@ public class Spec {
   @Override
   public int hashCode() {
     return Objects.hash(forkSchedule);
+  }
+
+  public Optional<Integer> getMaxBlobsPerBlockAtSlot(final UInt64 slot) {
+    final SpecVersion specVersion = atSlot(slot);
+    switch (specVersion.getMilestone()) {
+      case DENEB, ELECTRA -> {
+        return Optional.of(
+            specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
+      }
+      default -> {
+        if (specVersion.getMilestone().isGreaterThan(CAPELLA)) {
+          final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+          return Optional.of(
+              specVersion.miscHelpers().toVersionFulu().orElseThrow().getMaxBlobsPerBlock(epoch));
+        }
+      }
+    }
+    return Optional.empty();
   }
 }

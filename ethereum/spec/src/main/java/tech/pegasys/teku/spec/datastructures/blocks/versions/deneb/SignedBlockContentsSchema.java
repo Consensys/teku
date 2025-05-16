@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -49,11 +50,18 @@ public class SignedBlockContentsSchema
         namedSchema("signed_block", schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
-            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+            SszListSchema.create(SszKZGProofSchema.INSTANCE, maxBlobsOrCommitments(specConfig))),
         namedSchema(
             FIELD_BLOBS,
             SszListSchema.create(
-                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobsPerBlock())));
+                schemaRegistry.get(BLOB_SCHEMA), maxBlobsOrCommitments(specConfig))));
+  }
+
+  private static int maxBlobsOrCommitments(final SpecConfigDeneb specConfig) {
+    if (specConfig.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return specConfig.getMaxBlobCommitmentsPerBlock();
+    }
+    return specConfig.getMaxBlobsPerBlock();
   }
 
   public SignedBlockContents create(
