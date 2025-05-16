@@ -23,8 +23,7 @@
           "description" : "Array of indices for data column sidecars to request for in the specified block. Returns all data column sidecars in the block if not specified.",
           "example" : "1",
           "format" : "uint64"
-        },
-        "minItems" : "1"
+        }
       }
     } ],
     "responses" : {
