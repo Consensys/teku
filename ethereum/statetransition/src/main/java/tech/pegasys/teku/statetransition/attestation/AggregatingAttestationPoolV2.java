@@ -220,6 +220,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
             __ ->
                 new MatchingDataAttestationGroupV2(
                     spec,
+                    nanosSupplier,
                     attestationData,
                     committeesSize,
                     earlyDropSingleAttestations)); // Pass spec, data, committeesSize
@@ -388,7 +389,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
             .descendingMap() // Safe view
             .values();
 
-    var fullAggregationStart = nanosSupplier.getAsLong();
     var aggregates =
         (parallel ? dataHashes.parallelStream() : dataHashes.stream())
             .flatMap(
@@ -412,7 +412,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
     LOG.info(
         "Aggregation phase took {} ms. Produced {} aggregations.",
-        (nanosSupplier.getAsLong() - fullAggregationStart) / 1_000_000,
+        (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
         aggregates.size());
 
     /* -- Sorting phase -- */

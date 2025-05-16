@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -77,6 +76,7 @@ public class MatchingDataAttestationGroupV2 {
       new AtomicReference<>(Optional.empty());
   private final AttestationData attestationData;
   private final Optional<Int2IntMap> committeesSize;
+  private final LongSupplier nanosSupplier;
 
   /**
    * Tracks which validators were included in attestations at a given slot on the canonical chain.
@@ -102,6 +102,7 @@ public class MatchingDataAttestationGroupV2 {
 
   public MatchingDataAttestationGroupV2(
       final Spec spec,
+      final LongSupplier nanosSupplier,
       final AttestationData attestationData,
       final Optional<Int2IntMap> committeesSize,
       final boolean earlyDropSingleAttestations) {
@@ -111,6 +112,7 @@ public class MatchingDataAttestationGroupV2 {
     // Initialization happens before concurrent access is possible
     this.includedValidators = createEmptyAttestationBits();
     this.earlyDropSingleAttestations = earlyDropSingleAttestations;
+    this.nanosSupplier = nanosSupplier;
   }
 
   private AttestationBits createEmptyAttestationBits() {
@@ -132,6 +134,7 @@ public class MatchingDataAttestationGroupV2 {
 
     final Iterator<PooledAttestation> singleAttestationTimeLimitedIterator =
         new TimeLimitingIterator<>(
+            nanosSupplier,
             timeLimitNanos,
             singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream).iterator(),
             __ -> LOG.info("Time limit reached, while fillingUp single attestation"));
@@ -240,7 +243,10 @@ public class MatchingDataAttestationGroupV2 {
       }
 
       return new TimeLimitingIterator<>(
-          timeLimitNanos, iterator, __ -> LOG.info("Time limit reached, skipping aggregation"));
+          nanosSupplier,
+          timeLimitNanos,
+          iterator,
+          __ -> LOG.info("Time limit reached, skipping aggregation"));
     } finally {
       readLock.unlock();
     }
@@ -526,16 +532,6 @@ public class MatchingDataAttestationGroupV2 {
     private final LongConsumer onTimeLimit;
     private final LongSupplier nanosSupplier;
 
-    public TimeLimitingIterator(
-        final long timeLimitNanos, final Iterator<T> delegate, final LongConsumer onTimeLimit) {
-      this.timeLimitNanos = timeLimitNanos;
-      this.delegate = delegate;
-      this.onTimeLimit = onTimeLimit;
-      this.nanosSupplier = System::nanoTime;
-    }
-
-    @VisibleForTesting
-    @SuppressWarnings("unused")
     public TimeLimitingIterator(
         final LongSupplier nanosSupplier,
         final long timeLimitNanos,

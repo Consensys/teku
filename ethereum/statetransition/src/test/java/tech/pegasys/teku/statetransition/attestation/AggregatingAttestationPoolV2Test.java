@@ -116,7 +116,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
   public void getAttestationsForBlock_shouldNotTryToFillupIfTimeLimitIsExceeded() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
 
-    // by passing 0 to maxTotalBlockAggregationTimeMillis we give no time to fillup
+    // by passing 0 as maxTotalBlockAggregationTimeMillis we give no time to fillup
     aggregatingPool =
         instantiatePool(mockSpec, mockRecentChainData, 10, System::nanoTime, Integer.MAX_VALUE, 0);
 
@@ -130,5 +130,45 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
 
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
         .containsExactlyInAnyOrder(attestationBestAggregate);
+  }
+
+  @TestTemplate
+  public void getAttestationsForBlock_shouldNotContinueAggregatingIfTimeLimitIsExceeded() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
+
+    LongSupplier nanosSupplier = mock(LongSupplier.class);
+    when(nanosSupplier.getAsLong())
+        .thenReturn(
+            0L, // first call to get now
+            1_000_000L, // 1 ms, first aggregation time check
+            3_000_000L // 3 ms, second aggregation time
+            );
+
+    final int maxBlockAggregationTimeMillis = 2; // less than 3 ms
+
+    // by passing 0 as maxBlockAggregationTimeMillis we limit the time to aggregate
+    aggregatingPool =
+        instantiatePool(
+            mockSpec,
+            mockRecentChainData,
+            10,
+            nanosSupplier,
+            maxBlockAggregationTimeMillis,
+            Integer.MAX_VALUE);
+
+    final AttestationData attestationData = createAttestationData(ZERO);
+
+    final Attestation attestationBestAggregate =
+        addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+
+    addAttestationFromValidators(attestationData, 1, 2, 5);
+
+    final Attestation singleAttestation = addAttestationFromValidators(attestationData, 6);
+
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
+
+    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+        .containsExactlyInAnyOrder(
+            aggregateAttestations(attestationBestAggregate, singleAttestation));
   }
 }
