@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -79,13 +80,19 @@ public abstract class AggregatingAttestationPool implements SlotEventsChannel {
    *     otherwise.
    */
   protected boolean ensureCommitteesSizeInAttestation(final ValidatableAttestation attestation) {
+    return ensureCommitteesSizeInAttestation(
+        attestation, () -> retrieveStateForAttestation(attestation.getData()));
+  }
+
+  protected boolean ensureCommitteesSizeInAttestation(
+      final ValidatableAttestation attestation,
+      final Supplier<Optional<BeaconState>> stateSupplier) {
     if (attestation.getCommitteesSize().isPresent()
         || !attestation.getAttestation().requiresCommitteeBits()) {
       return true;
     }
 
-    final Optional<BeaconState> maybeState =
-        retrieveStateForAttestation(attestation.getAttestation().getData());
+    final Optional<BeaconState> maybeState = stateSupplier.get();
     if (maybeState.isEmpty()) {
       return false;
     }
@@ -95,7 +102,8 @@ public abstract class AggregatingAttestationPool implements SlotEventsChannel {
     return true;
   }
 
-  private Optional<BeaconState> retrieveStateForAttestation(final AttestationData attestationData) {
+  protected Optional<BeaconState> retrieveStateForAttestation(
+      final AttestationData attestationData) {
     // we can use the first state of the epoch to get committees for an attestation
     final MiscHelpers miscHelpers = spec.atSlot(attestationData.getSlot()).miscHelpers();
     final Optional<UInt64> maybeEpoch = recentChainData.getCurrentEpoch();

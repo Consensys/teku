@@ -22,6 +22,7 @@ import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 public record PooledAttestation(
     AttestationBits bits,
+    // we can remove the Optional once we deprecate AggregatingAttestationPoolV1
     Optional<List<UInt64>> validatorIndices,
     BLSSignature aggregatedSignature,
     boolean isSingleAttestation) {
@@ -30,9 +31,16 @@ public record PooledAttestation(
       final ValidatableAttestation attestation) {
     return new PooledAttestation(
         AttestationBits.of(attestation),
-        attestation
-            .getIndexedAttestation()
-            .map(indexedAttestation -> indexedAttestation.getAttestingIndices().asListUnboxed()),
+        Optional.empty(),
+        attestation.getAttestation().getAggregateSignature(),
+        attestation.getUnconvertedAttestation().isSingleAttestation());
+  }
+
+  public static PooledAttestation fromValidatableAttestation(
+      final ValidatableAttestation attestation, final List<UInt64> validatorIndices) {
+    return new PooledAttestation(
+        AttestationBits.of(attestation),
+        Optional.of(validatorIndices),
         attestation.getAttestation().getAggregateSignature(),
         attestation.getUnconvertedAttestation().isSingleAttestation());
   }
