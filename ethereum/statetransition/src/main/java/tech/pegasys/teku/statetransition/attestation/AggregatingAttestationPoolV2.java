@@ -112,8 +112,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     this.earlyDropSingleAttestations = earlyDropSingleAttestations;
     this.parallel = parallel;
     this.nanosSupplier = System::nanoTime;
-    this.rewardBasedAttestationSorterFactory =
-        new RewardBasedAttestationSorterFactory(spec, nanosSupplier);
+    this.rewardBasedAttestationSorterFactory = RewardBasedAttestationSorterFactory.DEFAULT;
   }
 
   @VisibleForTesting
@@ -361,7 +360,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
     final RewardBasedAttestationSorter rewardBasedAttestationSorter =
-        rewardBasedAttestationSorterFactory.create(stateAtBlockSlot);
+        rewardBasedAttestationSorterFactory.create(spec, stateAtBlockSlot);
     final SchemaDefinitions schemaDefinitions =
         spec.atSlot(stateAtBlockSlot.getSlot()).getSchemaDefinitions();
 

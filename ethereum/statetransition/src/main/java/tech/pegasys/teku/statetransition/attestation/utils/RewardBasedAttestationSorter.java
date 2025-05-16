@@ -28,7 +28,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,7 +49,7 @@ public class RewardBasedAttestationSorter {
 
   // The NOOP sorter just has to apply the limit.
   public static final RewardBasedAttestationSorter NOOP =
-      new RewardBasedAttestationSorter(null, null, null, null, null) {
+      new RewardBasedAttestationSorter(null, null, null, null) {
         @Override
         public List<PooledAttestationWithRewardInfo> sort(
             final List<PooledAttestationWithData> attestations, final int maxAttestations) {
@@ -61,18 +60,20 @@ public class RewardBasedAttestationSorter {
         }
       };
 
+  static final Comparator<PooledAttestationWithRewardInfo> REWARD_COMPARATOR =
+      Comparator.<PooledAttestationWithRewardInfo>comparingLong(
+              value -> value.rewardNumerator.longValue())
+          .reversed();
+
   private final Spec spec;
   private final BeaconStateAltair state;
   private final BeaconStateAccessorsAltair beaconStateAccessors;
   private final MiscHelpersAltair miscHelpers;
 
-  private final LongSupplier nanosSupplier;
-
   private List<Byte> currentEpochParticipation;
   private List<Byte> previousEpochParticipation;
 
-  public static RewardBasedAttestationSorter create(
-      final Spec spec, final BeaconState state, final LongSupplier nanosSupplier) {
+  public static RewardBasedAttestationSorter create(final Spec spec, final BeaconState state) {
     final SpecVersion specVersion = spec.atSlot(state.getSlot());
 
     if (specVersion.getMilestone().isLessThan(SpecMilestone.ALTAIR)) {
@@ -84,21 +85,18 @@ public class RewardBasedAttestationSorter {
         spec,
         BeaconStateAltair.required(state),
         BeaconStateAccessorsAltair.required(specVersion.beaconStateAccessors()),
-        specVersion.miscHelpers().toVersionAltair().orElseThrow(),
-        nanosSupplier);
+        specVersion.miscHelpers().toVersionAltair().orElseThrow());
   }
 
   protected RewardBasedAttestationSorter(
       final Spec spec,
       final BeaconStateAltair state,
       final BeaconStateAccessorsAltair beaconStateAccessors,
-      final MiscHelpersAltair miscHelpers,
-      final LongSupplier nanosSupplier) {
+      final MiscHelpersAltair miscHelpers) {
     this.spec = spec;
     this.state = state;
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
-    this.nanosSupplier = nanosSupplier;
   }
 
   private List<Byte> getCurrentEpochParticipation() {
@@ -126,7 +124,7 @@ public class RewardBasedAttestationSorter {
   public List<PooledAttestationWithRewardInfo> sort(
       final List<PooledAttestationWithData> attestations, final int maxAttestations) {
 
-    var start = nanosSupplier.getAsLong();
+    final long start = System.nanoTime();
     final List<PooledAttestationWithRewardInfo> finalSortedAttestations =
         new ArrayList<>(maxAttestations);
 
@@ -142,7 +140,7 @@ public class RewardBasedAttestationSorter {
       return finalSortedAttestations;
     }
 
-    var initializationEnded = nanosSupplier.getAsLong();
+    final long initializationEnded = System.nanoTime();
     LOG.info("Initialization took {} ms.", (initializationEnded - start) / 1_000_000);
 
     while (true) {
@@ -151,13 +149,12 @@ public class RewardBasedAttestationSorter {
 
       // we reached the limit or there are no more attestations to process
       if (finalSortedAttestations.size() >= maxAttestations || attestationQueue.isEmpty()) {
-        LOG.info(
-            "Sorting took: {} ms", (nanosSupplier.getAsLong() - initializationEnded) / 1_000_000);
+        LOG.info("Sorting took: {} ms", (System.nanoTime() - initializationEnded) / 1_000_000);
         return finalSortedAttestations;
       }
 
       // apply participation changes
-      var affectedParticipation = getEpochParticipation(bestAttestation);
+      final List<Byte> affectedParticipation = getEpochParticipation(bestAttestation);
       if (bestAttestation.updatesEpochParticipation.isEmpty()) {
         // no changes to participation
         continue;
@@ -320,22 +317,16 @@ public class RewardBasedAttestationSorter {
     }
   }
 
-  static final Comparator<PooledAttestationWithRewardInfo> REWARD_COMPARATOR =
-      Comparator.<PooledAttestationWithRewardInfo>comparingLong(
-              value -> value.rewardNumerator.longValue())
-          .reversed();
+  @FunctionalInterface
+  public interface RewardBasedAttestationSorterFactory {
+    RewardBasedAttestationSorterFactory DEFAULT =
+        new RewardBasedAttestationSorterFactory() {
+          @Override
+          public RewardBasedAttestationSorter create(final Spec spec, final BeaconState state) {
+            return RewardBasedAttestationSorter.create(spec, state);
+          }
+        };
 
-  public static class RewardBasedAttestationSorterFactory {
-    private final Spec spec;
-    private final LongSupplier nanosSupplier;
-
-    public RewardBasedAttestationSorterFactory(final Spec spec, final LongSupplier nanosSupplier) {
-      this.spec = spec;
-      this.nanosSupplier = nanosSupplier;
-    }
-
-    public RewardBasedAttestationSorter create(final BeaconState state) {
-      return RewardBasedAttestationSorter.create(spec, state, nanosSupplier);
-    }
+    RewardBasedAttestationSorter create(final Spec spec, final BeaconState state);
   }
 }

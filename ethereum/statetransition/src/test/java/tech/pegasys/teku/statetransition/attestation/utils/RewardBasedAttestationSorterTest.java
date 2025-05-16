@@ -52,8 +52,8 @@ import tech.pegasys.teku.statetransition.attestation.PooledAttestationWithData;
 import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.PooledAttestationWithRewardInfo;
 
 /**
- * Here we assume the reward calculation is correct since we test it as part of the reference test
- * execution. {@see
+ * NOTE: Here we assume the reward calculation is correct since we test it as part of the reference
+ * test execution via {@link
  * tech.pegasys.teku.reference.common.operations.OperationsTestExecutor#verifyRewardBasedAttestationSorter}
  */
 public class RewardBasedAttestationSorterTest {
@@ -98,14 +98,14 @@ public class RewardBasedAttestationSorterTest {
     // Default base reward for any validator
     when(beaconStateAccessors.getBaseReward(eq(state), anyInt())).thenReturn(BASE_REWARD_VALUE);
 
-    sorter = RewardBasedAttestationSorter.create(spec, state, () -> 0L);
+    sorter = RewardBasedAttestationSorter.create(spec, state);
   }
 
   @Test
   void create_shouldReturnNOOP() {
     when(specVersion.getMilestone()).thenReturn(SpecMilestone.PHASE0);
 
-    assertThat(RewardBasedAttestationSorter.create(spec, state, () -> 0L)).isSameAs(NOOP);
+    assertThat(RewardBasedAttestationSorter.create(spec, state)).isSameAs(NOOP);
   }
 
   @Test

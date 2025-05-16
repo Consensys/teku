@@ -48,7 +48,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
       final Spec spec, final RecentChainData recentChainData, final int maxAttestations) {
     final RewardBasedAttestationSorterFactory sorterFactory =
         mock(RewardBasedAttestationSorterFactory.class);
-    when(sorterFactory.create(any())).thenReturn(NOOP);
+    when(sorterFactory.create(any(), any())).thenReturn(NOOP);
 
     return instantiatePool(
         spec,
@@ -66,7 +66,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
       final int maxTotalBlockAggregationTimeMillis) {
     final RewardBasedAttestationSorterFactory sorterFactory =
         mock(RewardBasedAttestationSorterFactory.class);
-    when(sorterFactory.create(any())).thenReturn(NOOP);
+    when(sorterFactory.create(any(), any())).thenReturn(NOOP);
 
     return instantiatePool(
         mockSpec,
@@ -203,7 +203,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         attestations.stream().map(this::convertToPooledAttestationWithRewardInfo).toList();
 
     var localSorter =
-        new RewardBasedAttestationSorter(null, null, null, null, null) {
+        new RewardBasedAttestationSorter(null, null, null, null) {
           @Override
           public List<PooledAttestationWithRewardInfo> sort(
               final List<PooledAttestationWithData> attestations, final int maxAttestations) {
@@ -212,7 +212,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         };
 
     var sorterFactory = mock(RewardBasedAttestationSorterFactory.class);
-    when(sorterFactory.create(any())).thenReturn(localSorter);
+    when(sorterFactory.create(any(), any())).thenReturn(localSorter);
 
     aggregatingPool =
         instantiatePool(

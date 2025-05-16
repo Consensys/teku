@@ -535,8 +535,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 validatableAttestation, attestationIndices));
 
     final List<PooledAttestationWithRewardInfo> sortedPooledAttestations =
-        RewardBasedAttestationSorter.create(spec, preState, System::nanoTime)
-            .sort(List.of(pooledAttestation), 1);
+        RewardBasedAttestationSorter.create(spec, preState).sort(List.of(pooledAttestation), 1);
 
     final UInt64 reward =
         sortedPooledAttestations
