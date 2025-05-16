@@ -192,21 +192,21 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isGreaterThanOrEqualTo(FULU);
     final BlockContentsFulu blockContents = dataStructureUtil.randomBlockContentsFulu(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
-            dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
+        dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature =
-            blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
+        blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(
-            response,
-            false,
-            blockContainerAndMetaData.executionPayloadValue(),
-            blockContainerAndMetaData.consensusBlockValue());
+        response,
+        false,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
     final JsonNode expectedAsJsonNode =
-            JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, false, true));
+        JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, false, true));
 
     assertThat(resultAsJsonNode).isEqualTo(expectedAsJsonNode);
   }
@@ -240,21 +240,21 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isGreaterThanOrEqualTo(FULU);
     final BlockContentsFulu blockContents = dataStructureUtil.randomBlockContentsFulu(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
-            dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
+        dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(
-            response,
-            false,
-            blockContainerAndMetaData.executionPayloadValue(),
-            blockContainerAndMetaData.consensusBlockValue());
+        response,
+        false,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
     final BlockContentsFulu result =
-            (BlockContentsFulu)
-                    spec.getGenesisSchemaDefinitions()
-                            .getBlockContainerSchema()
-                            .sszDeserialize(Bytes.of(response.body().bytes()));
+        (BlockContentsFulu)
+            spec.getGenesisSchemaDefinitions()
+                .getBlockContainerSchema()
+                .sszDeserialize(Bytes.of(response.body().bytes()));
     assertThat(result).isEqualTo(blockContents);
   }
 
