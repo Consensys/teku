@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.addon.CapellaRestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.addon.DenebRestApiBuilderAddon;
+import tech.pegasys.teku.beaconrestapi.addon.FuluRestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.addon.LightClientRestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
@@ -338,6 +339,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
         List.of(
             new CapellaRestApiBuilderAddon(spec, dataProvider, schemaCache),
             new DenebRestApiBuilderAddon(spec, dataProvider, schemaCache),
+            new FuluRestApiBuilderAddon(spec, dataProvider, schemaCache),
             new LightClientRestApiBuilderAddon(config, dataProvider, schemaCache));
 
     RestApiBuilder builderUpdated = builder;

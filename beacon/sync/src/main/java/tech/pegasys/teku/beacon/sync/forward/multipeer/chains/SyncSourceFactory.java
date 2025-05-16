@@ -53,6 +53,9 @@ public class SyncSourceFactory {
     final Optional<Integer> maybeMaxBlobSidecarsPerMinute =
         maybeMaxBlobsPerBlock.map(
             maxBlobsPerBlock -> this.maxBlobSidecarsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
+    final Optional<Integer> maxDataColumnSidecarsPerMinute =
+        spec.getNumberOfDataColumns()
+            .map(dataColumnsPerBlock -> maxBlocksPerMinute * dataColumnsPerBlock.intValue());
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
@@ -62,7 +65,8 @@ public class SyncSourceFactory {
                 source,
                 maxBlocksPerMinute,
                 maybeMaxBlobsPerBlock,
-                maybeMaxBlobSidecarsPerMinute));
+                maybeMaxBlobSidecarsPerMinute,
+                maxDataColumnSidecarsPerMinute));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {

@@ -46,7 +46,13 @@ public class MetadataMessageHandler
 
     final int protocolVersion = BeaconChainMethodIds.extractGetMetadataVersion(protocolId);
     final SpecMilestone milestone =
-        protocolVersion == 1 ? SpecMilestone.PHASE0 : SpecMilestone.ALTAIR;
+        switch (protocolVersion) {
+          case 1 -> SpecMilestone.PHASE0;
+          case 2 -> SpecMilestone.ALTAIR;
+          case 3 -> SpecMilestone.FULU;
+          default ->
+              throw new IllegalStateException("Unexpected protocol version: " + protocolVersion);
+        };
     final MetadataMessageSchema<?> schema =
         spec.forMilestone(milestone).getSchemaDefinitions().getMetadataMessageSchema();
 

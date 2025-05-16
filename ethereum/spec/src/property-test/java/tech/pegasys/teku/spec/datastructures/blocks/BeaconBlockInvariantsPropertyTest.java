@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.SignedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix.BlindedBeaconBlockSupplier;
@@ -62,7 +62,7 @@ public class BeaconBlockInvariantsPropertyTest {
   @Property
   void extractSlotFromSignedBlockContents(
       @ForAll(supplier = SignedBlockContentsSupplier.class)
-          final SignedBlockContents signedBlockContents) {
+          final SignedBlockContentsDeneb signedBlockContents) {
     assertThat(
             BeaconBlockInvariants.extractSignedBlockContainerSlot(
                 signedBlockContents.sszSerialize()))

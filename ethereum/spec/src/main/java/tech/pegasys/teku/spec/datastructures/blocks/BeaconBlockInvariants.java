@@ -18,7 +18,7 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas.UI
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 /** Utility functions to extract data from the ssz bytes of block variants */
@@ -52,8 +52,8 @@ public class BeaconBlockInvariants {
    *
    * <p>The slot is the first field but is inside the variable length beacon block so a 4 byte
    * offset to the start of the beacon block data is recorded. Use that prefix to get the {@link
-   * BeaconBlock} data or in case of {@link SignedBlockContents} the {@link SignedBeaconBlock} data
-   * and then find the slot as for an unsigned block.
+   * BeaconBlock} data or in case of {@link SignedBlockContentsDeneb} the {@link SignedBeaconBlock}
+   * data and then find the slot as for an unsigned block.
    *
    * @param bytes the SSZ bytes to extract a slot from
    */

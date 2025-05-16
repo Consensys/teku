@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -122,6 +123,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
+      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,

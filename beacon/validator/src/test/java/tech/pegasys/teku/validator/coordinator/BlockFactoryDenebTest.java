@@ -30,7 +30,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -50,7 +51,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
             .blockContainer();
 
-    assertThat(blockContainer).isInstanceOf(BlockContents.class);
+    assertThat(blockContainer).isInstanceOf(BlockContentsDeneb.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
     assertThat(blockContainer.getBlobs())
@@ -148,7 +149,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     executionPayload = dataStructureUtil.randomExecutionPayload();
 
     final int blobsCount = 3;
-    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+    final BlobsBundleDeneb blobsBundle =
         prepareBuilderPayload(spec, blobsCount).getOptionalBlobsBundle().orElseThrow();
 
     final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(true, spec);
@@ -192,6 +193,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
-            executionLayer));
+            executionLayer,
+            metricsSystem,
+            timeProvider));
   }
 }

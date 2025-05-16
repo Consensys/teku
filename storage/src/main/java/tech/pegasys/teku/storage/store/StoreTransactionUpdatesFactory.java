@@ -260,6 +260,7 @@ class StoreTransactionUpdatesFactory {
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
         maybeLatestCanonicalBlockRoot,
-        spec.isMilestoneSupported(SpecMilestone.DENEB));
+        spec.isMilestoneSupported(SpecMilestone.DENEB),
+        spec.isMilestoneSupported(SpecMilestone.FULU));
   }
 }

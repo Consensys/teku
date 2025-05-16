@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -32,8 +34,10 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -49,8 +53,11 @@ public interface Eth2Peer extends Peer, SyncSource {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
+      final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
-      final KZG kzg) {
+      final KZG kzg,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     return new DefaultEth2Peer(
         spec,
         peer,
@@ -61,8 +68,11 @@ public interface Eth2Peer extends Peer, SyncSource {
         peerChainValidator,
         blockRequestTracker,
         blobSidecarsRequestTracker,
+        dataColumnSidecarsRequestTracker,
         requestTracker,
-        kzg);
+        kzg,
+        metricsSystem,
+        timeProvider);
   }
 
   void updateStatus(PeerStatus status);
@@ -72,6 +82,8 @@ public interface Eth2Peer extends Peer, SyncSource {
   void subscribeInitialStatus(PeerStatusSubscriber subscriber);
 
   void subscribeStatusUpdates(PeerStatusSubscriber subscriber);
+
+  void subscribeMetadataUpdates(PeerMetadataUpdateSubscriber subscriber);
 
   PeerStatus getStatus();
 
@@ -96,6 +108,10 @@ public interface Eth2Peer extends Peer, SyncSource {
   SafeFuture<Void> requestBlobSidecarsByRoot(
       List<BlobIdentifier> blobIdentifiers, RpcResponseListener<BlobSidecar> listener);
 
+  SafeFuture<Void> requestDataColumnSidecarsByRoot(
+      List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
+      RpcResponseListener<DataColumnSidecar> listener);
+
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(UInt64 slot);
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(Bytes32 blockRoot);
@@ -118,6 +134,14 @@ public interface Eth2Peer extends Peer, SyncSource {
   void adjustBlobSidecarsRequest(
       RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
 
+  long getAvailableDataColumnSidecarsRequestCount();
+
+  Optional<RequestApproval> approveDataColumnSidecarsRequest(
+      ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount);
+
+  void adjustDataColumnSidecarsRequest(
+      RequestApproval dataColumnSidecarsRequest, long returnedDataColumnSidecarsCount);
+
   boolean approveRequest();
 
   SafeFuture<UInt64> sendPing();
@@ -128,5 +152,15 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   interface PeerStatusSubscriber {
     void onPeerStatus(final PeerStatus initialStatus);
+  }
+
+  @FunctionalInterface
+  interface PeerMetadataUpdateSubscriber {
+
+    /**
+     * Sends the current peer metadata upon subscription if metadata has been received already. Then
+     * calls the method any time the peer metadata is updated
+     */
+    void onPeerMetadataUpdate(Eth2Peer peer, MetadataMessage metadata);
   }
 }

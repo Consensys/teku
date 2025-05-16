@@ -52,8 +52,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -223,7 +223,8 @@ public class HistoricalBatchFetcher {
             requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock);
 
     final SafeFuture<Void> blobSidecarsRequest;
-    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)
+        || blobSidecarManager.isAvailabilityRequiredAtSlot(requestParams.getStartSlot())) {
       maybeEarliestBlobSidecarSlot =
           Optional.of(
               requestParams
@@ -316,7 +317,8 @@ public class HistoricalBatchFetcher {
         .thenCompose(
             __ -> {
               final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
-              validateBlobSidecars(latestSlotInBatch, blocksToImport);
+              validateBlobSidecars(
+                  blocksToImport.getFirst().getSlot(), latestSlotInBatch, blocksToImport);
 
               final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
               return storageUpdateChannel
@@ -390,8 +392,11 @@ public class HistoricalBatchFetcher {
   }
 
   private void validateBlobSidecars(
-      final UInt64 latestSlotInBatch, final Collection<SignedBeaconBlock> blocks) {
-    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
+      final UInt64 firstSlotInBatch,
+      final UInt64 latestSlotInBatch,
+      final Collection<SignedBeaconBlock> blocks) {
+    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(firstSlotInBatch)
+        && !blobSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
       return;
     }
     LOG.trace("Validating blob sidecars for a batch");
@@ -404,19 +409,19 @@ public class HistoricalBatchFetcher {
             block.getSlotAndBlockRoot(), Collections.emptyList());
 
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
-    final BlobSidecarsAndValidationResult validationResult =
+    final DataAndValidationResult<BlobSidecar> validationResult =
         blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
 
     if (validationResult.isFailure()) {
       final String causeMessage =
           validationResult
-              .getCause()
+              .cause()
               .map(cause -> " (" + ExceptionUtil.getRootCauseMessage(cause) + ")")
               .orElse("");
       throw new IllegalArgumentException(
           String.format(
               "Blob sidecars validation for block %s failed: %s%s",
-              block.getRoot(), validationResult.getValidationResult(), causeMessage));
+              block.getRoot(), validationResult.validationResult(), causeMessage));
     }
   }
 

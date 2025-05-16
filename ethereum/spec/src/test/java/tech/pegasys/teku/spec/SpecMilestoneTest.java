@@ -319,6 +319,13 @@ public class SpecMilestoneTest {
   }
 
   @Test
+  public void getForkVersion_fulu() {
+    final Bytes4 expected = FULU_SPEC_CONFIG.getFuluForkVersion();
+    assertThat(SpecMilestone.getForkVersion(FULU_SPEC_CONFIG, SpecMilestone.FULU))
+        .contains(expected);
+  }
+
+  @Test
   public void getForkEpoch_phase0() {
     final UInt64 expected = UInt64.ZERO;
     assertThat(SpecMilestone.getForkEpoch(PHASE0_SPEC_CONFIG, PHASE0)).contains(expected);

@@ -32,7 +32,7 @@ class BlobTest {
   private final BlobSchema blobSchema =
       schemaDefinitions.toVersionDeneb().orElseThrow().getBlobSchema();
 
-  private final Bytes correctData = dataStructureUtil.randomBlob().getBytes();
+  private final Bytes correctData = dataStructureUtil.randomValidBlob().getBytes();
 
   @Test
   public void objectEquality() {

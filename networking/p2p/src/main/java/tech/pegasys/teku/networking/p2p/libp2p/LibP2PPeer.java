@@ -140,13 +140,20 @@ public class LibP2PPeer implements Peer {
   @Override
   public void disconnectImmediately(
       final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
-    connected.set(false);
-    disconnectReason = reason;
-    disconnectLocallyInitiated = locallyInitiated;
-    SafeFuture.of(connection.close())
-        .finish(
-            () -> LOG.trace("Disconnected from {} because {}", getId(), reason),
-            error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
+    if (connected.getAndSet(false)) {
+      disconnectReason = reason;
+      disconnectLocallyInitiated = locallyInitiated;
+      SafeFuture.of(connection.close())
+          .finish(
+              () ->
+                  // TODO: LOG.trace in prod
+                  LOG.info(
+                      "Disconnected forcibly {} because {} from {}",
+                      locallyInitiated ? "locally" : "remotely",
+                      reason,
+                      connection.remoteAddress()),
+              error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
+    }
   }
 
   private SafeFuture<Optional<String>> getAgentVersionFromIdentity() {
@@ -171,20 +178,25 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
-    LOG.trace("Disconnecting peer {} because {}", getId(), reason);
-    connected.set(false);
-    disconnectReason = Optional.of(reason);
-    disconnectLocallyInitiated = true;
-    return disconnectRequestHandler
-        .requestDisconnect(reason)
-        .handle(
-            (__, error) -> {
-              if (error != null) {
-                LOG.debug("Failed to disconnect from " + getId() + " cleanly.", error);
-              }
-              disconnectImmediately(Optional.of(reason), true);
-              return null;
-            });
+    if (connected.getAndSet(false)) {
+      // TODO: LOG.trace in prod
+      LOG.info("Disconnecting cleanly because {} from {}", reason, connection.remoteAddress());
+      connected.set(false);
+      disconnectReason = Optional.of(reason);
+      disconnectLocallyInitiated = true;
+      return disconnectRequestHandler
+          .requestDisconnect(reason)
+          .handle(
+              (__, error) -> {
+                if (error != null) {
+                  LOG.debug("Failed to disconnect from " + getId() + " cleanly.", error);
+                }
+                disconnectImmediately(Optional.of(reason), true);
+                return null;
+              });
+    } else {
+      return SafeFuture.COMPLETE;
+    }
   }
 
   @Override

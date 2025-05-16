@@ -49,6 +49,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -1107,6 +1109,93 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getFirstCustodyIncompleteSlot() {
+    return dao.getFirstCustodyIncompleteSlot();
+  }
+
+  @Override
+  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
+    return dao.getFirstSamplerIncompleteSlot();
+  }
+
+  @Override
+  public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
+    final Optional<Bytes> maybePayload = dao.getSidecar(identifier);
+    return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
+  }
+
+  @Override
+  public Optional<DataColumnSidecar> getNonCanonicalSidecar(
+      final DataColumnSlotAndIdentifier identifier) {
+    final Optional<Bytes> maybePayload = dao.getNonCanonicalSidecar(identifier);
+    return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+      final UInt64 firstSlot, final UInt64 lastSlot) {
+    return dao.streamDataColumnIdentifiers(firstSlot, lastSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+      final UInt64 firstSlot, final UInt64 lastSlot) {
+    return dao.streamNonCanonicalDataColumnIdentifiers(firstSlot, lastSlot);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestDataColumnSidecarSlot() {
+    return dao.getEarliestDataSidecarColumnSlot();
+  }
+
+  @Override
+  public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setFirstCustodyIncompleteSlot(slot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setFirstSamplerIncompleteSlot(slot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void addSidecar(final DataColumnSidecar sidecar) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addSidecar(sidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addNonCanonicalSidecar(sidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void pruneAllSidecars(final UInt64 tillSlotInclusive) {
+    try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
+            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
+        final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
+            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
+        final FinalizedUpdater updater = finalizedUpdater()) {
+      prunableIdentifiers.forEach(updater::removeSidecar);
+      prunableNonCanonicalIdentifiers.forEach(updater::removeNonCanonicalSidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void close() throws Exception {
     dao.close();
   }
@@ -1131,6 +1220,10 @@ public class KvStoreDatabase implements Database {
       updateBlobSidecarData(
           update.getEarliestBlobSidecarSlot(),
           update.getBlobSidecars().values().stream().flatMap(Collection::stream));
+    }
+    if (update.isSidecarsEnabled()) {
+      removeNonCanonicalSidecars(
+          update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
     }
     long finalizedDataUpdatedTime = System.currentTimeMillis();
 
@@ -1290,6 +1383,59 @@ public class KvStoreDatabase implements Database {
                   key -> {
                     LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
                     updater.removeBlobSidecar(key);
+                  });
+        }
+        updater.commit();
+      }
+    }
+  }
+
+  private void removeNonCanonicalSidecars(
+      final Map<Bytes32, UInt64> deletedHotBlocks,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
+
+    final Set<SlotAndBlockRoot> nonCanonicalBlocks =
+        deletedHotBlocks.entrySet().stream()
+            .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
+            .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
+            .collect(Collectors.toSet());
+
+    if (storeNonCanonicalBlocks) {
+      final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
+      int index = 0;
+      while (nonCanonicalBlocksIterator.hasNext()) {
+        final int start = index;
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
+            dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next())
+                .forEach(
+                    key -> {
+                      dao.getSidecar(key)
+                          .ifPresent(
+                              sidecarBytes -> {
+                                DataColumnSidecar sideCar =
+                                    spec.deserializeSidecar(sidecarBytes, key.slot());
+                                updater.addNonCanonicalSidecar(sideCar);
+                                LOG.trace(
+                                    "Moving non-canonical sidecar with identifier {} to non-canonical sidecars table",
+                                    key);
+                                updater.removeSidecar(key);
+                              });
+                    });
+            index++;
+          }
+          updater.commit();
+        }
+      }
+    } else {
+      LOG.trace("Removing sidecars for non-canonical blocks");
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+          dao.getDataColumnIdentifiers(slotAndBlockRoot)
+              .forEach(
+                  key -> {
+                    LOG.trace("Removing sidecar with identifier {} for non-canonical block", key);
+                    updater.removeSidecar(key);
                   });
         }
         updater.commit();

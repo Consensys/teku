@@ -48,6 +48,7 @@ public class StorageUpdate {
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
   private final boolean blobSidecarsEnabled;
+  private final boolean sidecarsEnabled;
   private final boolean isEmpty;
 
   public StorageUpdate(
@@ -64,7 +65,8 @@ public class StorageUpdate {
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
-      @NonUpdating final boolean blobSidecarsEnabled) {
+      @NonUpdating final boolean blobSidecarsEnabled,
+      @NonUpdating final boolean sidecarsEnabled) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -79,6 +81,7 @@ public class StorageUpdate {
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
+    this.sidecarsEnabled = sidecarsEnabled;
     checkArgument(
         optimisticTransitionBlockRootSet || optimisticTransitionBlockRoot.isEmpty(),
         "Can't have optimisticTransitionBlockRoot present but not set");
@@ -174,6 +177,10 @@ public class StorageUpdate {
 
   public boolean isBlobSidecarsEnabled() {
     return blobSidecarsEnabled;
+  }
+
+  public boolean isSidecarsEnabled() {
+    return sidecarsEnabled;
   }
 
   @Retention(RetentionPolicy.RUNTIME)

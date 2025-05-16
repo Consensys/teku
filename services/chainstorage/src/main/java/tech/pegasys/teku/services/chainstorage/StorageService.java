@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
@@ -218,7 +219,8 @@ public class StorageService extends Service implements StorageServiceFacade {
               eventChannels
                   .subscribe(Eth1DepositStorageChannel.class, depositStorage)
                   .subscribe(Eth1EventsChannel.class, depositStorage)
-                  .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel);
+                  .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
+                  .subscribe(SidecarUpdateChannel.class, chainStorage);
             })
         .thenCompose(
             __ ->

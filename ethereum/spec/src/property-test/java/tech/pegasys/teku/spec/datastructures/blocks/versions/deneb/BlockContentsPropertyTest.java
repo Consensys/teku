@@ -24,14 +24,15 @@ import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.Block
 public class BlockContentsPropertyTest {
 
   @Property
-  void roundTrip(@ForAll(supplier = BlockContentsSupplier.class) final BlockContents blockContents)
+  void roundTrip(
+      @ForAll(supplier = BlockContentsSupplier.class) final BlockContentsDeneb blockContents)
       throws JsonProcessingException {
     assertRoundTrip(blockContents);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlockContentsSupplier.class) final BlockContents blockContents,
+      @ForAll(supplier = BlockContentsSupplier.class) final BlockContentsDeneb blockContents,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(blockContents, seed);
   }

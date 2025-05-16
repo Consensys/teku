@@ -628,6 +628,34 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withLogLevel(final String logLevel) {
+    LOG.debug("logging: {}", logLevel);
+    configMap.put("logging", logLevel);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withGossipScoringEnabled(final boolean gossipScoringEnabled) {
+    LOG.debug("Xp2p-gossip-scoring-enabled: {}", gossipScoringEnabled);
+    configMap.put("Xp2p-gossip-scoring-enabled", gossipScoringEnabled);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
+    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
+    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withStubBlobCount(final Optional<Integer> stubBlobCount) {
+    LOG.debug("Xinterop-number-of-blobs: {}", stubBlobCount);
+    if (stubBlobCount.isPresent()) {
+      configMap.put("Xinterop-number-of-blobs", stubBlobCount.get());
+    } else {
+      configMap.remove("Xinterop-number-of-blobs");
+    }
+    return this;
+  }
+
   private TekuNodeConfigBuilder withPrivateKey(final PrivKey privKey) throws IOException {
     mustBe(NodeType.BEACON_NODE, NodeType.BOOTNODE);
     this.maybePrivKey = Optional.ofNullable(privKey);
