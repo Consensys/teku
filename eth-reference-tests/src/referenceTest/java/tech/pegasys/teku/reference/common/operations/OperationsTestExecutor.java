@@ -18,9 +18,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -31,6 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -56,6 +60,10 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestationWithData;
+import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter;
+import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.PooledAttestationWithRewardInfo;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -279,7 +287,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 testDefinition,
                 dataFileName,
                 testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
+        var preState = state.commitChanges();
         processor.processAttestation(state, attestation);
+
+        verifyRewardBasedAttestationSorter(testDefinition.getSpec(), preState, state, attestation);
       }
       case SYNC_AGGREGATE -> {
         final SyncAggregate syncAggregate =
@@ -483,5 +494,62 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private static class ExecutionMeta {
     @JsonProperty(value = "execution_valid", required = true)
     private boolean executionValid;
+  }
+
+  private static final long PROPOSER_REWARD_DENOMINATOR =
+      WEIGHT_DENOMINATOR
+          .minus(PROPOSER_WEIGHT)
+          .times(WEIGHT_DENOMINATOR)
+          .dividedBy(PROPOSER_WEIGHT)
+          .longValue();
+
+  /** checks that our sorter */
+  private void verifyRewardBasedAttestationSorter(
+      final Spec spec,
+      final BeaconState preState,
+      final BeaconState postState,
+      final Attestation attestation) {
+    var specVersion = spec.atSlot(preState.getSlot());
+
+    var blockProcessorAltair = specVersion.getBlockProcessor().toVersionAltair();
+    if (blockProcessorAltair.isEmpty()) {
+      // Phase0 is not supported
+      return;
+    }
+
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestation);
+    validatableAttestation.saveCommitteesSize(preState);
+
+    var attestationIndices =
+        specVersion
+            .getAttestationUtil()
+            .getAttestingIndices(preState, attestation)
+            .intStream()
+            .mapToObj(UInt64::valueOf)
+            .toList();
+    var pooledAttestation =
+        new PooledAttestationWithData(
+            attestation.getData(),
+            PooledAttestation.fromValidatableAttestation(
+                validatableAttestation, attestationIndices));
+
+    final List<PooledAttestationWithRewardInfo> sortedPooledAttestations =
+        RewardBasedAttestationSorter.create(spec, preState)
+            .sort(List.of(pooledAttestation), 1);
+
+    final UInt64 reward =
+        sortedPooledAttestations
+            .getFirst()
+            .getRewardNumerator()
+            .dividedBy(PROPOSER_REWARD_DENOMINATOR);
+
+    var proposerIndex = specVersion.beaconStateAccessors().getBeaconProposerIndex(preState);
+    var preBalance = preState.getBalances().get(proposerIndex).get();
+    var postBalance = postState.getBalances().get(proposerIndex).get();
+
+    final UInt64 expectedReward = postBalance.minus(preBalance);
+
+    assertThat(reward).isEqualTo(expectedReward);
   }
 }
