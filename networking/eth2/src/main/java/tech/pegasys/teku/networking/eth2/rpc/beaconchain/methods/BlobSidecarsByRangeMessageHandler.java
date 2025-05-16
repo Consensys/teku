@@ -89,7 +89,7 @@ public class BlobSidecarsByRangeMessageHandler
         SpecConfigDeneb.required(spec.atSlot(request.getMaxSlot()).getConfig());
 
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
-    final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
+    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(request.getMaxSlot()).orElseThrow();
 
     int requestedCount;
     try {
@@ -128,7 +128,8 @@ public class BlobSidecarsByRangeMessageHandler
         startSlot);
 
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
-    final int requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
+    final int requestedCount =
+        calculateRequestedCount(message, spec.getMaxBlobsPerBlockAtSlot(endSlot).orElseThrow());
 
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);

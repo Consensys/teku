@@ -26,11 +26,14 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
@@ -50,7 +53,7 @@ import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase
 
 @TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
 public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
-
+  private static final Logger LOG = LogManager.getLogger();
   private ProduceBlockRequest request;
   private Buffer responseBodyBuffer;
 
@@ -212,7 +215,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void shouldGetUnblindedBlockContentsPostDenebAsJson() {
+  public void shouldGetUnblindedBlockContentsPostDenebAsJson() throws JsonProcessingException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final ProduceBlockRequest.ProduceBlockResponse blockResponse =
@@ -326,6 +329,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
             blinded ? "Blinded" : "",
             blockContents ? "BlockContents" : "Block",
             specMilestone.name());
+    LOG.info("Read expected json file: responses/produce_block_responses/{}", fileName);
     return readResource("responses/produce_block_responses/" + fileName);
   }
 }

@@ -328,7 +328,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             method -> {
               final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobSidecarsByRangeRequestMessage request;
-              final int maxBlobsPerBlock = calculateMaxBlobsPerBlock(startSlot.plus(count));
+              final int maxBlobsPerBlock = getMaxBlobsPerBlock(startSlot.plus(count));
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
@@ -361,8 +361,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
   }
 
-  private int calculateMaxBlobsPerBlock(final UInt64 endSlot) {
-    return SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig()).getMaxBlobsPerBlock();
+  private int getMaxBlobsPerBlock(final UInt64 slot) {
+    return spec.getMaxBlobsPerBlockAtSlot(slot).orElseThrow();
   }
 
   @Override

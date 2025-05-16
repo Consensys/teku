@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -73,6 +75,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
   private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
+  private static final Logger LOG = LogManager.getLogger();
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -125,9 +128,21 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         blobSchedule.stream()
             .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
             .max(Comparator.comparing(BlobSchedule::epoch));
-    return maybeSchedule.isPresent()
-        ? maybeSchedule.get().maxBlobsPerBlock()
-        : blobSchedule.getFirst().maxBlobsPerBlock();
+
+    final int maxBlobs =
+        maybeSchedule
+            .map(BlobSchedule::maxBlobsPerBlock)
+            .orElseGet(() -> blobSchedule.getFirst().maxBlobsPerBlock());
+    LOG.debug("Max blobs at epoch {} found to be {}", epoch, maxBlobs);
+    return maxBlobs;
+  }
+
+  public int getHighestMaxBlobsPerBlockFromSchedule() {
+    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
+    return blobSchedule.stream()
+        .max(Comparator.comparing(BlobSchedule::maxBlobsPerBlock))
+        .map(BlobSchedule::maxBlobsPerBlock)
+        .orElseGet(() -> blobSchedule.getLast().maxBlobsPerBlock());
   }
 
   private UInt256 incrementByModule(final UInt256 n) {

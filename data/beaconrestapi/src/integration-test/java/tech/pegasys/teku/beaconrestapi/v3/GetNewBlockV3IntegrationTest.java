@@ -36,6 +36,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @TestSpecContext(allMilestones = true)
 public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
+  private static final Logger LOG = LogManager.getLogger();
   private DataStructureUtil dataStructureUtil;
   private SpecMilestone specMilestone;
 
@@ -235,6 +238,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
             blinded ? "Blinded" : "",
             blockContents ? "BlockContents" : "Block",
             specMilestone.name());
+
+    LOG.info("Read expected json file: {}", fileName);
     return Resources.toString(
         Resources.getResource(GetNewBlockV3IntegrationTest.class, fileName), UTF_8);
   }

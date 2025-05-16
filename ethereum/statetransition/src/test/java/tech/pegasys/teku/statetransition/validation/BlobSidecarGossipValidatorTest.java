@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -333,7 +334,7 @@ public class BlobSidecarGossipValidatorTest {
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(blobSidecar.getSignedBeaconBlockHeader())
-            .index(UInt64.ZERO)
+            .index(ZERO)
             .build();
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar0))
@@ -352,7 +353,7 @@ public class BlobSidecarGossipValidatorTest {
 
     // BlobSidecar from the new block
     final BlobSidecar blobSidecarNew =
-        dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.ZERO).build();
+        dataStructureUtil.createRandomBlobSidecarBuilder().index(ZERO).build();
     final Bytes32 parentRoot =
         blobSidecarNew.getSignedBeaconBlockHeader().getMessage().getParentRoot();
 
@@ -385,6 +386,8 @@ public class BlobSidecarGossipValidatorTest {
     when(specVersion.getConfig()).thenReturn(specContext.getSpec().getGenesisSpecConfig());
     // This will make cache of size 3
     when(specVersion.getSlotsPerEpoch()).thenReturn(1);
+    when(specMock.getMaxBlobsPerBlockAtSlot(any()))
+        .thenReturn(specContext.getSpec().getMaxBlobsPerBlockAtSlot(ZERO));
     this.blobSidecarValidator =
         BlobSidecarGossipValidator.create(
             specMock, invalidBlocks, gossipValidationHelper, miscHelpersDeneb, kzg);
@@ -413,7 +416,7 @@ public class BlobSidecarGossipValidatorTest {
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .signedBeaconBlockHeader(blobSidecar.getSignedBeaconBlockHeader())
-            .index(UInt64.ZERO)
+            .index(ZERO)
             .build();
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar0))
