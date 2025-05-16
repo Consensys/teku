@@ -198,6 +198,7 @@ public class RewardBasedAttestationSorterTest {
             STATE_SLOT.minus(3), CURRENT_EPOCH, List.of(1), List.of(TIMELY_TARGET_FLAG_INDEX));
 
     // Att4 (Val 2, Previous Epoch): Timely Head. Reward: 1000*14 = 14000. Should not be recomputed.
+    // TH is unrealistic here, but we want to test the case where a previous epoch attestation
     final PooledAttestationWithData att4 =
         mockPooledAttestationWithData(
             STATE_SLOT.minus(35), // Slot in previous epoch
@@ -207,39 +208,38 @@ public class RewardBasedAttestationSorterTest {
 
     final List<PooledAttestationWithData> attestations = List.of(att1, att2, att3, att4);
 
-    // Initial rewards computed:
-    // Att1: 40000 (Val 0: TS+TT)
-    // Att2: 14000 (Val 0: TS)
-    // Att3: 26000 (Val 1: TT)
-    // Att4: 14000 (Val 2: TH, Previous Epoch)
-    // Initial Queue Order (highest reward first): Att1, Att3, Att2 (or Att4), Att4 (or Att2)
+    /* Initial rewards computed:
+    Att1: 40000 (Val 0: TS+TT)
+    Att2: 14000 (Val 0: TS)
+    Att3: 26000 (Val 1: TT)
+    Att4: 14000 (Val 2: TH, Previous Epoch)
+    Initial Queue Order (highest reward first): Att1, Att3, Att2 (or Att4), Att4 (or Att2)
+    */
 
     final List<RewardBasedAttestationSorter.PooledAttestationWithRewardInfo> sortedAttestations =
         sorter.sort(attestations, 4);
 
-    // Step 1: Att1 (40000) is chosen.
-    // Validator 0 participation updated with TS_FLAG | TT_FLAG.
-    // Att2 and Att3 (current epoch) are re-evaluated. Att4 (previous epoch) is not.
-    //  - Re-evaluating Att2 (Val 0, wants TS): Val 0 now has TS_FLAG. Reward contribution for TS is
-    // 0.
-    //    New Att2 reward = 0.
-    //  - Re-evaluating Att3 (Val 1, wants TT): Unchanged as it's for Val 1. Reward = 26000.
-    // New Queue Order (Att1 already picked): Att3 (26000), Att4 (14000), Att2 (0)
-    // (Note: if Att2 and Att4 had same initial reward, their relative order might depend on
-    // original list order or other factors before re-evaluation)
+    /*
+     Step 1: Att1 (40000) is chosen.
+     Validator 0 participation updated with TS_FLAG | TT_FLAG.
+     Att2 and Att3 (current epoch) are re-evaluated. Att4 (previous epoch) is not.
+      - Re-evaluating Att2 (Val 0, wants TS): Val 0 now has TS_FLAG. Reward contribution for TS is 0.
+      - Re-evaluating Att3 (Val 1, wants TT): Unchanged as it's for Val 1. Reward = 26000.
+     New Queue Order (Att1 already picked): Att3 (26000), Att4 (14000), Att2 (0)
 
-    // Step 2: Att3 (26000) is chosen.
-    // Validator 1 participation updated with TT_FLAG.
-    // Att2 (current epoch) is re-evaluated. Att4 (previous epoch) is not.
-    //  - Re-evaluating Att2 (Val 0, wants TS): Still 0 reward.
-    // New Queue Order (Att1, Att3 picked): Att4 (14000), Att2 (0)
+     Step 2: Att3 (26000) is chosen.
+     Validator 1 participation updated with TT_FLAG.
+     Att2 (current epoch) is re-evaluated. Att4 (previous epoch) is not.
+      - Re-evaluating Att2 (Val 0, wants TS): Still 0 reward.
+     New Queue Order (Att1, Att3 picked): Att4 (14000), Att2 (0)
 
-    // Step 3: Att4 (14000) is chosen.
-    // Validator 2 (previous epoch) participation updated.
-    // Att2 (current epoch) is NOT re-evaluated because Att4 is previous epoch.
-    // New Queue Order (Att1, Att3, Att4 picked): Att2 (0)
+     Step 3: Att4 (14000) is chosen.
+     Validator 2 (previous epoch) participation updated.
+     Att2 (current epoch) is NOT re-evaluated because Att4 is the previous epoch.
+     New Queue Order (Att1, Att3, Att4 picked): Att2 (0)
 
-    // Step 4: Att2 (0) is chosen.
+     Step 4: Att2 (0) is chosen.
+    */
 
     // Expected final order: Att1, Att3, Att4, Att2
     assertThat(sortedAttestations).hasSize(4);
