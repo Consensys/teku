@@ -178,8 +178,11 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
     final Attestation attestationBestAggregate =
         addAttestationFromValidators(attestationData, 1, 2, 3, 4);
 
+    // let's add another attestation which overlaps, so that it should be added to another aggregate
+    // in the result, but we will not have time to get it
     addAttestationFromValidators(attestationData, 1, 2, 5);
 
+    // the fillup will anyway happen since the total time limit won't be reached
     final Attestation singleAttestation = addAttestationFromValidators(attestationData, 6);
 
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
