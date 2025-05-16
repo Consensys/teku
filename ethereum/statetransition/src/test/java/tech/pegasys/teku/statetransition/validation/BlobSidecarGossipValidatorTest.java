@@ -378,7 +378,6 @@ public class BlobSidecarGossipValidatorTest {
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
   }
 
-
   // fixme need to understand what this test is doing and fix
   @TestTemplate
   @Disabled
