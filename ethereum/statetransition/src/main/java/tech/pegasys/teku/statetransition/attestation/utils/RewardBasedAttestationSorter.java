@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.statetransition.attestation.utils;
 
-import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.TIMELY_HEAD_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.TIMELY_SOURCE_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.TIMELY_TARGET_WEIGHT;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FLAG_INDEX;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_TARGET_FLAG_INDEX;
 
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.Int2ByteOpenHashMap;
@@ -37,7 +39,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.constants.IncentivizationWeights;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -69,22 +70,6 @@ public class RewardBasedAttestationSorter {
 
   private List<Byte> currentEpochParticipation;
   private List<Byte> previousEpochParticipation;
-
-  private static final int TIMELY_SOURCE_INDEX =
-      MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS.indexOf(TIMELY_SOURCE_WEIGHT);
-  private static final int TIMELY_TARGET_INDEX =
-      MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS.indexOf(
-          IncentivizationWeights.TIMELY_TARGET_WEIGHT);
-  private static final int TIMELY_HEAD_INDEX =
-      MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS.indexOf(
-          IncentivizationWeights.TIMELY_HEAD_WEIGHT);
-
-  static {
-    checkState(TIMELY_SOURCE_INDEX != -1);
-    checkState(TIMELY_TARGET_INDEX != -1);
-    checkState(TIMELY_HEAD_INDEX != -1);
-    checkState(MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS.size() == 3);
-  }
 
   public static RewardBasedAttestationSorter create(
       final Spec spec, final BeaconState state, final LongSupplier nanosSupplier) {
@@ -225,9 +210,9 @@ public class RewardBasedAttestationSorter {
 
     return new PooledAttestationWithRewardInfo(
         attestation,
-        attestationParticipationFlagIndices.contains(TIMELY_SOURCE_INDEX),
-        attestationParticipationFlagIndices.contains(TIMELY_TARGET_INDEX),
-        attestationParticipationFlagIndices.contains(TIMELY_HEAD_INDEX),
+        attestationParticipationFlagIndices.contains(TIMELY_SOURCE_FLAG_INDEX),
+        attestationParticipationFlagIndices.contains(TIMELY_TARGET_FLAG_INDEX),
+        attestationParticipationFlagIndices.contains(TIMELY_HEAD_FLAG_INDEX),
         Map.of(),
         isCurrentEpoch,
         UInt64.ZERO);
@@ -248,22 +233,24 @@ public class RewardBasedAttestationSorter {
       final UInt64 baseReward = getValidatorBaseRewards(attestingIndexInt);
 
       if (attestation.timelySource
-          && !miscHelpers.hasFlag(previousParticipationFlags, TIMELY_SOURCE_INDEX)) {
-        newParticipationFlags = miscHelpers.addFlag(newParticipationFlags, TIMELY_SOURCE_INDEX);
+          && !miscHelpers.hasFlag(previousParticipationFlags, TIMELY_SOURCE_FLAG_INDEX)) {
+        newParticipationFlags =
+            miscHelpers.addFlag(newParticipationFlags, TIMELY_SOURCE_FLAG_INDEX);
         proposerRewardNumerator =
             proposerRewardNumerator.plus(baseReward.times(TIMELY_SOURCE_WEIGHT));
       }
 
-      if (attestation.timelySource
-          && !miscHelpers.hasFlag(previousParticipationFlags, TIMELY_TARGET_INDEX)) {
-        newParticipationFlags = miscHelpers.addFlag(newParticipationFlags, TIMELY_TARGET_INDEX);
+      if (attestation.timelyTarget
+          && !miscHelpers.hasFlag(previousParticipationFlags, TIMELY_TARGET_FLAG_INDEX)) {
+        newParticipationFlags =
+            miscHelpers.addFlag(newParticipationFlags, TIMELY_TARGET_FLAG_INDEX);
         proposerRewardNumerator =
             proposerRewardNumerator.plus(baseReward.times(TIMELY_TARGET_WEIGHT));
       }
 
-      if (attestation.timelySource
-          && !miscHelpers.hasFlag(previousParticipationFlags, TIMELY_HEAD_INDEX)) {
-        newParticipationFlags = miscHelpers.addFlag(newParticipationFlags, TIMELY_HEAD_INDEX);
+      if (attestation.timelyHead
+          && !miscHelpers.hasFlag(previousParticipationFlags, TIMELY_HEAD_FLAG_INDEX)) {
+        newParticipationFlags = miscHelpers.addFlag(newParticipationFlags, TIMELY_HEAD_FLAG_INDEX);
         proposerRewardNumerator =
             proposerRewardNumerator.plus(baseReward.times(TIMELY_HEAD_WEIGHT));
       }
