@@ -24,15 +24,19 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 import static tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.NOOP;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.LongSupplier;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter;
+import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.PooledAttestationWithRewardInfo;
 import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter.RewardBasedAttestationSorterFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -42,19 +46,21 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
   @Override
   AggregatingAttestationPool instantiatePool(
       final Spec spec, final RecentChainData recentChainData, final int maxAttestations) {
+    final RewardBasedAttestationSorterFactory sorterFactory =
+        mock(RewardBasedAttestationSorterFactory.class);
+    when(sorterFactory.create(any())).thenReturn(NOOP);
+
     return instantiatePool(
         spec,
         recentChainData,
         maxAttestations,
         System::nanoTime,
+        sorterFactory,
         Integer.MAX_VALUE,
         Integer.MAX_VALUE);
   }
 
   AggregatingAttestationPool instantiatePool(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final int maxAttestations,
       final LongSupplier nanosSupplier,
       final int maxBlockAggregationTimeMillis,
       final int maxTotalBlockAggregationTimeMillis) {
@@ -62,6 +68,24 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         mock(RewardBasedAttestationSorterFactory.class);
     when(sorterFactory.create(any())).thenReturn(NOOP);
 
+    return instantiatePool(
+        mockSpec,
+        mockRecentChainData,
+        10,
+        nanosSupplier,
+        sorterFactory,
+        maxBlockAggregationTimeMillis,
+        maxTotalBlockAggregationTimeMillis);
+  }
+
+  AggregatingAttestationPool instantiatePool(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final int maxAttestations,
+      final LongSupplier nanosSupplier,
+      final RewardBasedAttestationSorterFactory sorterFactory,
+      final int maxBlockAggregationTimeMillis,
+      final int maxTotalBlockAggregationTimeMillis) {
     return new AggregatingAttestationPoolV2(
         spec,
         recentChainData,
@@ -117,8 +141,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
 
     // by passing 0 as maxTotalBlockAggregationTimeMillis we give no time to fillup
-    aggregatingPool =
-        instantiatePool(mockSpec, mockRecentChainData, 10, System::nanoTime, Integer.MAX_VALUE, 0);
+    aggregatingPool = instantiatePool(System::nanoTime, Integer.MAX_VALUE, 0);
 
     final AttestationData attestationData = createAttestationData(ZERO);
 
@@ -136,7 +159,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
   public void getAttestationsForBlock_shouldNotContinueAggregatingIfTimeLimitIsExceeded() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(ELECTRA);
 
-    LongSupplier nanosSupplier = mock(LongSupplier.class);
+    final LongSupplier nanosSupplier = mock(LongSupplier.class);
     when(nanosSupplier.getAsLong())
         .thenReturn(
             0L, // first call to get now
@@ -148,13 +171,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
 
     // by passing 0 as maxBlockAggregationTimeMillis we limit the time to aggregate
     aggregatingPool =
-        instantiatePool(
-            mockSpec,
-            mockRecentChainData,
-            10,
-            nanosSupplier,
-            maxBlockAggregationTimeMillis,
-            Integer.MAX_VALUE);
+        instantiatePool(nanosSupplier, maxBlockAggregationTimeMillis, Integer.MAX_VALUE);
 
     final AttestationData attestationData = createAttestationData(ZERO);
 
@@ -170,5 +187,53 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
         .containsExactlyInAnyOrder(
             aggregateAttestations(attestationBestAggregate, singleAttestation));
+  }
+
+  @TestTemplate
+  public void getAttestationsForBlock_shouldRespectSorter() {
+    var attestations =
+        List.of(
+            createAttestation(createAttestationData(), 1, 2, 3, 4),
+            createAttestation(createAttestationData(), 4, 5, 6));
+
+    var sorterResult =
+        attestations.stream().map(this::convertToPooledAttestationWithRewardInfo).toList();
+
+    var localSorter =
+        new RewardBasedAttestationSorter(null, null, null, null, null) {
+          @Override
+          public List<PooledAttestationWithRewardInfo> sort(
+              final List<PooledAttestationWithData> attestations, final int maxAttestations) {
+            return sorterResult;
+          }
+        };
+
+    var sorterFactory = mock(RewardBasedAttestationSorterFactory.class);
+    when(sorterFactory.create(any())).thenReturn(localSorter);
+
+    aggregatingPool =
+        instantiatePool(
+            mockSpec,
+            mockRecentChainData,
+            10,
+            () -> 0L,
+            sorterFactory,
+            Integer.MAX_VALUE,
+            Integer.MAX_VALUE);
+
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
+
+    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+        .containsExactlyElementsOf(attestations);
+  }
+
+  private PooledAttestationWithRewardInfo convertToPooledAttestationWithRewardInfo(
+      final Attestation attestation) {
+    final ValidatableAttestation validatableAttestation =
+        createValidatableAttestationFromAttestation(attestation, true, true);
+    return PooledAttestationWithRewardInfo.empty(
+        new PooledAttestationWithData(
+            validatableAttestation.getData(),
+            PooledAttestation.fromValidatableAttestation(validatableAttestation)));
   }
 }

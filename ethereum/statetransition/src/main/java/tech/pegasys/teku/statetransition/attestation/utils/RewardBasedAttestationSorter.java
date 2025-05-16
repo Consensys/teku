@@ -54,10 +54,7 @@ public class RewardBasedAttestationSorter {
         public List<PooledAttestationWithRewardInfo> sort(
             final List<PooledAttestationWithData> attestations, final int maxAttestations) {
           return attestations.stream()
-              .map(
-                  att ->
-                      new PooledAttestationWithRewardInfo(
-                          att, false, false, false, Map.of(), false, UInt64.ZERO))
+              .map(PooledAttestationWithRewardInfo::empty)
               .limit(maxAttestations)
               .toList();
         }
@@ -106,7 +103,7 @@ public class RewardBasedAttestationSorter {
         nanosSupplier);
   }
 
-  private RewardBasedAttestationSorter(
+  protected RewardBasedAttestationSorter(
       final Spec spec,
       final BeaconStateAltair state,
       final BeaconStateAccessorsAltair beaconStateAccessors,
@@ -291,6 +288,12 @@ public class RewardBasedAttestationSorter {
 
     private Map<Integer, Byte> updatesEpochParticipation;
     private UInt64 rewardNumerator;
+
+    public static PooledAttestationWithRewardInfo empty(
+        final PooledAttestationWithData attestation) {
+      return new PooledAttestationWithRewardInfo(
+          attestation, false, false, false, Map.of(), false, UInt64.ZERO);
+    }
 
     public PooledAttestationWithRewardInfo withAttestation(
         final PooledAttestationWithData attestation) {
