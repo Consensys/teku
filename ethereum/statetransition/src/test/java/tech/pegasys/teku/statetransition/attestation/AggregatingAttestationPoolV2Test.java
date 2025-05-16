@@ -54,7 +54,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         spec,
         recentChainData,
         maxAttestations,
-        System::nanoTime,
+        () -> 0L,
         sorterFactory,
         Integer.MAX_VALUE,
         Integer.MAX_VALUE);
