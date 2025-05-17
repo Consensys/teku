@@ -319,13 +319,9 @@ public class RewardBasedAttestationSorter {
 
   @FunctionalInterface
   public interface RewardBasedAttestationSorterFactory {
-    RewardBasedAttestationSorterFactory DEFAULT =
-        new RewardBasedAttestationSorterFactory() {
-          @Override
-          public RewardBasedAttestationSorter create(final Spec spec, final BeaconState state) {
-            return RewardBasedAttestationSorter.create(spec, state);
-          }
-        };
+    RewardBasedAttestationSorterFactory DEFAULT = RewardBasedAttestationSorter::create;
+
+    RewardBasedAttestationSorterFactory NOOP = (spec, state) -> RewardBasedAttestationSorter.NOOP;
 
     RewardBasedAttestationSorter create(final Spec spec, final BeaconState state);
   }
