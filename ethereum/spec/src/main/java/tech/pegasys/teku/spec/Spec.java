@@ -1112,18 +1112,18 @@ public class Spec {
   public Optional<Integer> getMaxBlobsPerBlockAtSlot(final UInt64 slot) {
     final SpecVersion specVersion = atSlot(slot);
     switch (specVersion.getMilestone()) {
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> {
+        return Optional.empty();
+      }
       case DENEB, ELECTRA -> {
         return Optional.of(
             specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
       }
       default -> {
-        if (specVersion.getMilestone().isGreaterThan(CAPELLA)) {
           final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
           return Optional.of(
               specVersion.miscHelpers().toVersionFulu().orElseThrow().getMaxBlobsPerBlock(epoch));
-        }
       }
     }
-    return Optional.empty();
   }
 }

@@ -84,9 +84,6 @@ public class SpecConfigFuluTest {
   }
 
   @Test
-  public void shouldMatchElectraForkEpochBlobCount() {}
-
-  @Test
   public void maxBlobsFuluEpoch() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
     final int maxBlobsPerBlock = 512;
