@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -50,13 +49,13 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldThrowExceptionForInvalidPeerAddress() throws Exception {
+  public void shouldReturnInternalErrorIfInvalidPeerAddress() throws Exception {
     final List<String> peers = List.of("invalid-peer-address");
     request.setRequestBody(peers);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
     doThrow(new IllegalArgumentException("Invalid peer address"))
         .when(discoveryNetwork)
-        .addStaticPeer(any());
+        .addStaticPeer(peers.get(0));
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
@@ -68,5 +67,15 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
     when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnInternalErrorWhenDiscoveryNetworkNotAvailable() throws Exception {
+    final List<String> peers =
+            List.of("/ip4/127.0.0.1/udp/9001/p2p/16Uiu2HAmFakePeerId");
+    request.setRequestBody(peers);
+    when(network.getDiscoveryNetwork()).thenReturn(Optional.empty());
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
 }

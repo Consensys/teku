@@ -56,16 +56,23 @@ public class AddPeer extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    DiscoveryNetwork<?> discoveryNetwork = networkDataProvider.getDiscoveryNetwork().orElseThrow();
-    final List<String> peerAddress = request.getRequestBody();
-    if (peerAddress.isEmpty()) {
-      request.respondError(SC_BAD_REQUEST, "No peer address provided");
-      return;
-    }
     try {
+
+      final DiscoveryNetwork<?> discoveryNetwork =
+          networkDataProvider
+              .getDiscoveryNetwork()
+              .orElseThrow(() -> new IllegalStateException("Discovery network not available"));
+      final List<String> peerAddress = request.getRequestBody();
+      if (peerAddress.isEmpty()) {
+        request.respondError(SC_BAD_REQUEST, "No peer address provided");
+        return;
+      }
+
       peerAddress.forEach(discoveryNetwork::addStaticPeer);
       request.respondWithCode(SC_OK);
     } catch (final IllegalArgumentException e) {
+      request.respondError(SC_BAD_REQUEST, e.getMessage());
+    } catch (final IllegalStateException e) {
       request.respondError(SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
   }
