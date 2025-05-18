@@ -43,7 +43,7 @@ class RemoteSpecLoaderTest {
 
   @Test
   void shouldIgnoreUnknownConfigItems() {
-    final Map<String, String> rawConfig = getRawConfigForSpec(spec);
+    final Map<String, Object> rawConfig = getRawConfigForSpec(spec);
     rawConfig.put("UNKNOWN_ITEM", "foo");
     when(apiClient.getSpec()).thenReturn(Optional.of(rawConfig));
     final Spec result = RemoteSpecLoader.getSpec(apiClient);
@@ -53,7 +53,7 @@ class RemoteSpecLoaderTest {
 
   @Test
   void shouldFillWhenRequiredItemsAreMissing() {
-    final Map<String, String> rawConfig = getRawConfigForSpec(spec);
+    final Map<String, Object> rawConfig = getRawConfigForSpec(spec);
     assertThat(rawConfig.remove("GENESIS_FORK_VERSION")).isNotNull();
 
     when(apiClient.getSpec()).thenReturn(Optional.of(rawConfig));
@@ -85,7 +85,7 @@ class RemoteSpecLoaderTest {
     assertThat(specConfig.getMaximumGossipClockDisparity()).isEqualTo(500);
   }
 
-  private Map<String, String> getRawConfigForSpec(final Spec spec) {
+  private Map<String, Object> getRawConfigForSpec(final Spec spec) {
     return new ConfigProvider(spec).getConfig();
   }
 }

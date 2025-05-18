@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.BitSet;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
@@ -33,6 +34,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
 
   public static SszBitvectorImpl ofBits(final SszBitvectorSchema<?> schema, final int... bits) {
     return new SszBitvectorImpl(schema, new BitvectorImpl(schema.getLength(), bits));
+  }
+
+  public static SszBitvectorImpl wrapBitSet(
+      final SszBitvectorSchema<?> schema, final int size, final BitSet bitSet) {
+    return new SszBitvectorImpl(schema, BitvectorImpl.wrapBitSet(bitSet, size));
   }
 
   public static SszBitvector fromBytes(
@@ -56,6 +62,11 @@ public class SszBitvectorImpl extends SszVectorImpl<SszBit> implements SszBitvec
     super(schema, () -> schema.sszDeserializeTree(SszReader.fromBytes(value.serialize())));
     checkNotNull(value);
     this.value = value;
+  }
+
+  @Override
+  public BitSet getAsBitSet() {
+    return value.getAsBitSet();
   }
 
   @SuppressWarnings("unchecked")

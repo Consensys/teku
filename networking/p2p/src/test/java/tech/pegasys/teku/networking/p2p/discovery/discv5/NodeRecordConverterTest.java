@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
@@ -23,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.schema.EnrField;
@@ -30,6 +32,9 @@ import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -75,7 +80,8 @@ class NodeRecordConverterTest {
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             Optional.empty(),
             ATTNETS,
-            SYNCNETS);
+            SYNCNETS,
+            Optional.empty());
     assertThat(CONVERTER.convertToDiscoveryPeer(nodeRecord, false, SCHEMA_DEFINITIONS))
         .contains(expectedPeer);
   }
@@ -117,7 +123,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 30303),
                 ENR_FORK_ID,
                 ATTNETS,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -151,7 +158,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("129.24.31.22", 1234),
                 ENR_FORK_ID,
                 ATTNETS,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -179,7 +187,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
                 ATTNETS,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -199,7 +208,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("127.0.0.1", 1234),
                 ENR_FORK_ID,
                 ATTNETS,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -220,7 +230,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
                 persistentSubnets,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -241,7 +252,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
                 ATT_SUBNET_SCHEMA.getDefault(),
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -262,7 +274,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
                 ATTNETS,
-                syncnets));
+                syncnets,
+                Optional.empty()));
   }
 
   @Test
@@ -285,7 +298,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 ENR_FORK_ID,
                 ATTNETS,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -306,7 +320,8 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 Optional.of(enrForkId),
                 ATTNETS,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
   }
 
   @Test
@@ -326,7 +341,28 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 Optional.empty(),
                 ATTNETS,
-                SYNCNETS));
+                SYNCNETS,
+                Optional.empty()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("getCgcFixtures")
+  public void shouldDecodeCgcCorrectly(final String hexString, final Integer csc) {
+    assertThat(
+            convertNodeRecordWithFields(
+                false,
+                new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
+                new EnrField(EnrField.TCP, 1234),
+                new EnrField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString))))
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY,
+                NODE_ID,
+                new InetSocketAddress("127.0.0.1", 1234),
+                Optional.empty(),
+                ATTNETS,
+                SYNCNETS,
+                Optional.of(csc)));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(
@@ -340,5 +376,14 @@ class NodeRecordConverterTest {
     fieldList.add(new EnrField(EnrField.ID, IdentitySchema.V4));
     fieldList.add(new EnrField(EnrField.PKEY_SECP256K1, PUB_KEY));
     return NodeRecordFactory.DEFAULT.createFromValues(UInt64.ZERO, fieldList);
+  }
+
+  private static Stream<Arguments> getCgcFixtures() {
+    return Stream.of(
+        Arguments.of("0x00", 0),
+        Arguments.of("0x", 0),
+        Arguments.of("0x80", 128),
+        Arguments.of("0x8c", 140),
+        Arguments.of("0x0190", 400));
   }
 }

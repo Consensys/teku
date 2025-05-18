@@ -70,6 +70,8 @@ public class ActiveEth2P2PNetworkTest {
       new SubnetSubscriptionService();
   private final SubnetSubscriptionService syncCommitteeSubnetService =
       new SubnetSubscriptionService();
+  private final SubnetSubscriptionService dataColumnSidecarCommitteeSubnetService =
+      new SubnetSubscriptionService();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final GossipConfigurator gossipConfigurator = GossipConfigurator.NOOP;
@@ -310,9 +312,11 @@ public class ActiveEth2P2PNetworkTest {
         recentChainData,
         attestationSubnetService,
         syncCommitteeSubnetService,
+        dataColumnSidecarCommitteeSubnetService,
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider,
+        0,
         true);
   }
 }

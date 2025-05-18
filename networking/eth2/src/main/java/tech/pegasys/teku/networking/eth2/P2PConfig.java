@@ -26,8 +26,11 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class P2PConfig {
 
@@ -47,6 +50,7 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 30_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
+  public static final int DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT = 0;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -57,6 +61,7 @@ public class P2PConfig {
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
+  private final int dasExtraCustodyGroupCount;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
@@ -75,6 +80,7 @@ public class P2PConfig {
       final GossipEncoding gossipEncoding,
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
+      final int dasExtraCustodyGroupCount,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
@@ -91,6 +97,7 @@ public class P2PConfig {
     this.gossipEncoding = gossipEncoding;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+    this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
@@ -133,6 +140,15 @@ public class P2PConfig {
 
   public boolean isSubscribeAllSubnetsEnabled() {
     return subscribeAllSubnetsEnabled;
+  }
+
+  public int getTotalCustodyGroupCount(final SpecVersion specVersion) {
+    final SpecConfigFulu specConfig = SpecConfigFulu.required(specVersion.getConfig());
+    final int minCustodyGroupRequirement = specConfig.getCustodyRequirement();
+    final int maxGroups = specConfig.getNumberOfCustodyGroups();
+    return Integer.min(
+        maxGroups,
+        MathHelpers.intPlusMaxIntCapped(minCustodyGroupRequirement, dasExtraCustodyGroupCount));
   }
 
   public int getPeerBlocksRateLimit() {
@@ -184,6 +200,8 @@ public class P2PConfig {
     private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+    private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+    private int dasExtraCustodyGroupCount = DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
     private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
     private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
@@ -228,6 +246,10 @@ public class P2PConfig {
       discoveryConfig.advertisedUdpPortIpv6Default(
           OptionalInt.of(networkConfig.getAdvertisedPortIpv6()));
 
+      if (subscribeAllCustodySubnetsEnabled) {
+        dasExtraCustodyGroupCount = Integer.MAX_VALUE;
+      }
+
       return new P2PConfig(
           spec,
           networkConfig,
@@ -236,6 +258,7 @@ public class P2PConfig {
           gossipEncoding,
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
+          dasExtraCustodyGroupCount,
           peerBlocksRateLimit,
           peerBlobSidecarsRateLimit,
           peerRequestLimit,
@@ -286,6 +309,18 @@ public class P2PConfig {
     public Builder subscribeAllSubnetsEnabled(final Boolean subscribeAllSubnetsEnabled) {
       checkNotNull(subscribeAllSubnetsEnabled);
       this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
+      return this;
+    }
+
+    public Builder dasExtraCustodyGroupCount(final int dasExtraCustodyGroupCount) {
+      this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
+      return this;
+    }
+
+    public Builder subscribeAllCustodySubnetsEnabled(
+        final Boolean subscribeAllCustodySubnetsEnabled) {
+      checkNotNull(subscribeAllCustodySubnetsEnabled);
+      this.subscribeAllCustodySubnetsEnabled = subscribeAllCustodySubnetsEnabled;
       return this;
     }
 

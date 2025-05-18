@@ -31,6 +31,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
+import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
@@ -125,12 +126,9 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
 
   @ParameterizedTest
   @MethodSource("bitlistArgs")
-  void testWrapBitSet(final SszBitlist bitlist1) {
-    final BitSet bits = new BitSet(bitlist1.size());
-
-    bitlist1.streamAllSetBits().forEach(bits::set);
-
-    final SszBitlist bitlist2 = bitlist1.getSchema().wrapBitSet(bitlist1.size(), bits);
+  void testBitSetRoundtrip(final SszBitlist bitlist1) {
+    final SszBitlist bitlist2 =
+        bitlist1.getSchema().wrapBitSet(bitlist1.size(), bitlist1.getAsBitSet());
 
     for (int i = 0; i < bitlist1.size(); i++) {
       assertThat(bitlist2.getBit(i)).isEqualTo(bitlist1.getBit(i));
@@ -141,6 +139,35 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     assertThat(bitlist2.hashCode()).isEqualTo(bitlist1.hashCode());
     assertThat(bitlist2.hashTreeRoot()).isEqualTo(bitlist1.hashTreeRoot());
     assertThat(bitlist2.sszSerialize()).isEqualTo(bitlist1.sszSerialize());
+  }
+
+  @Test
+  void getAsBitSet_withFullStartEnd() {
+    final SszBitlist list = random(SCHEMA, 100);
+
+    final BitSet fullSlice = list.getAsBitSet(0, 100);
+
+    final SszBitlist newList = SCHEMA.wrapBitSet(100, fullSlice);
+
+    assertThat(newList.getAsBitSet()).isEqualTo(fullSlice);
+    SszDataAssert.assertThatSszData(newList).isEqualByAllMeansTo(list);
+  }
+
+  @Test
+  void getAsBitSet_withSubsetStartEnd() {
+    final SszBitlist list = random(SCHEMA, 100);
+
+    final BitSet slice = list.getAsBitSet(5, 55);
+
+    final SszBitlist newList = SCHEMA.wrapBitSet(50, slice);
+
+    assertThat(newList.getAsBitSet()).isEqualTo(slice);
+    IntStream.range(0, 50)
+        .forEach(
+            i ->
+                assertThat(newList.getBit(i))
+                    .describedAs("Bit %s should be equal", i)
+                    .isEqualTo(list.getBit(i + 5)));
   }
 
   @Test

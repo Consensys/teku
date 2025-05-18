@@ -52,7 +52,13 @@ public interface SszCollectionSchema<
     // https://github.com/Consensys/teku/issues/9035
     // This is a generic implementation which works for both Vector and List but it potentially
     // could do better if construct the tree directly in List/Vector subclasses
-    checkArgument(elements.size() <= getMaxLength(), "Too many elements for this collection type");
+    checkArgument(
+        elements.size() <= getMaxLength(),
+        String.format(
+            "Too many elements for this collection type (element type: %s, max length %s, size %s)",
+            !elements.isEmpty() ? elements.getFirst().getClass().getName() : "UNKNOWN",
+            getMaxLength(),
+            elements.size()));
     SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
     int idx = 0;
     for (SszElementT element : elements) {

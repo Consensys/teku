@@ -55,6 +55,12 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {}
 
   @Override
+  public void subscribeToDataColumnSidecarSubnetId(final int subnetId) {}
+
+  @Override
+  public void unsubscribeFromDataColumnSidecarSubnetId(final int subnetId) {}
+
+  @Override
   public MetadataMessage getMetadata() {
     return spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
   }

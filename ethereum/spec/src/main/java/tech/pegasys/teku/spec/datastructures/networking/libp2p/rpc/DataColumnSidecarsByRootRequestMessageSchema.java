@@ -18,10 +18,13 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public class DataColumnSidecarsByRootRequestMessageSchema
-    extends AbstractSszListSchema<DataColumnIdentifier, DataColumnSidecarsByRootRequestMessage> {
+    extends AbstractSszListSchema<
+        DataColumnsByRootIdentifier, DataColumnSidecarsByRootRequestMessage> {
 
-  public DataColumnSidecarsByRootRequestMessageSchema(final SpecConfigFulu specConfig) {
-    super(DataColumnIdentifier.SSZ_SCHEMA, specConfig.getMaxRequestDataColumnSidecars());
+  public DataColumnSidecarsByRootRequestMessageSchema(
+      final SpecConfigFulu specConfig,
+      final DataColumnsByRootIdentifierSchema byRootIdentifierSchema) {
+    super(byRootIdentifierSchema, specConfig.getMaxRequestDataColumnSidecars());
   }
 
   @Override
