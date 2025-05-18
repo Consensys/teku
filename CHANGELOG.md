@@ -7,6 +7,7 @@
 ## Unreleased Changes
 
 ### Breaking Changes
+- Previous versions of teku will not be able to read configuration from this version of teku (including VC) due to BPO configuration being added.
 
 ### Additions and Improvements
 - Added `--p2p-static-peers-url` option to read static peers from a URL or file
