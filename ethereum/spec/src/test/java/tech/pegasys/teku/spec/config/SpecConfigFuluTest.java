@@ -71,7 +71,6 @@ public class SpecConfigFuluTest {
                   b.denebBuilder(eb -> eb.maxBlobsPerBlock(4));
 
                   b.electraBuilder(eb -> eb.maxBlobsPerBlockElectra(8));
-                  b.fuluBuilder(fb -> fb.maxBlobsPerBlockFulu(12));
                 });
 
     final SpecConfigDeneb denebConfig =
@@ -80,12 +79,38 @@ public class SpecConfigFuluTest {
     final SpecConfigElectra electraConfig =
         specConfigAndParent.forMilestone(SpecMilestone.ELECTRA).toVersionElectra().orElseThrow();
 
-    final SpecConfigFulu fuluConfig =
-        specConfigAndParent.forMilestone(SpecMilestone.FULU).toVersionFulu().orElseThrow();
-
     assertThat(denebConfig.getMaxBlobsPerBlock()).isEqualTo(4);
     assertThat(electraConfig.getMaxBlobsPerBlock()).isEqualTo(8);
-    assertThat(fuluConfig.getMaxBlobsPerBlock()).isEqualTo(12);
+  }
+
+  @Test
+  public void maxBlobsFuluEpoch() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    final SpecConfigAndParent<?> specConfigAndParent =
+        SpecConfigLoader.loadConfig(
+            "mainnet",
+            b -> {
+              b.fuluBuilder(
+                  fb ->
+                      fb.fuluForkEpoch(fuluEpoch)
+                          .blobSchedule(
+                              List.of(
+                                  new BlobSchedule(UInt64.valueOf(269568), 6),
+                                  new BlobSchedule(UInt64.valueOf(364032), 9),
+                                  new BlobSchedule(fuluEpoch, maxBlobsPerBlock))));
+            });
+    final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
+
+    // max blobs per block in fulu will start out at the same as electra
+    assertThat(
+            fuluSpec
+                .forMilestone(SpecMilestone.FULU)
+                .miscHelpers()
+                .toVersionFulu()
+                .orElseThrow()
+                .getMaxBlobsPerBlock(fuluEpoch))
+        .isEqualTo(maxBlobsPerBlock);
   }
 
   @Test
@@ -127,13 +152,6 @@ public class SpecConfigFuluTest {
     assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033))).isEqualTo(9);
   }
 
-  @Test
-  public void mainnetShouldHave12MaxBlobs() {
-    final SpecConfigFulu specConfigFulu =
-        SpecConfigLoader.loadConfig("mainnet").specConfig().toVersionFulu().orElseThrow();
-    assertThat(specConfigFulu.getMaxBlobsPerBlock()).isEqualTo(12);
-  }
-
   private SpecConfigFulu createRandomFuluConfig(
       final SpecConfigElectra electraConfig, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
@@ -151,7 +169,6 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(4096),
-        dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomUInt64(32000000000L),

@@ -38,9 +38,7 @@
               "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
             }, {
               "$ref" : "#/components/schemas/SignedBlockContentsElectra"
-            }, {
-              "$ref" : "#/components/schemas/SignedBlockContentsFulu"
-            } ]
+            }]
           }
         }
       }
