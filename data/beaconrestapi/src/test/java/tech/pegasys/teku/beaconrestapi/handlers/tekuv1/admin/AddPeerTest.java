@@ -49,7 +49,7 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldReturnInternalErrorIfInvalidPeerAddress() throws Exception {
+  public void shouldReturnBadRequestIfInvalidPeerAddress() throws Exception {
     final List<String> peers = List.of("invalid-peer-address");
     request.setRequestBody(peers);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
@@ -57,7 +57,7 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
         .when(discoveryNetwork)
         .addStaticPeer(peers.get(0));
     handler.handleRequest(request);
-    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
