@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -180,8 +181,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContentsDeneb unsignedBlockContents =
-        dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContents, denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
@@ -332,8 +332,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContentsDeneb unsignedBlockContents =
-        dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BlockContentsDeneb unsignedBlockContentsMock = mock(BlockContentsDeneb.class);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContentsMock, denebSlot);
@@ -376,8 +375,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContentsDeneb unsignedBlockContents =
-        dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BlockContentsDeneb unsignedBlockContentsMock = mock(BlockContentsDeneb.class);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContentsMock, denebSlot);
@@ -577,8 +575,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContentsDeneb unsignedBlockContents =
-        dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContents, denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
