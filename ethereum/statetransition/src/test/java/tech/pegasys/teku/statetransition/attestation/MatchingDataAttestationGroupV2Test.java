@@ -447,7 +447,7 @@ class MatchingDataAttestationGroupV2Test {
   @TestTemplate
   void fillUp_withTimeLimit_stopsAggregating(final SpecContext specContext) {
     specContext.assumeElectraActive();
-    final long TIME_LIMIT_NANOS = 1_000_000_000L;
+    final long timeLimitNanos = 1_000_000_000L;
     final PooledAttestation single1 = addPooledAttestation(Optional.of(0), 3);
     addPooledAttestation(Optional.of(1), 4);
 
@@ -455,10 +455,10 @@ class MatchingDataAttestationGroupV2Test {
     final PooledAttestationWithData initial = toPooledAttestationWithData(initialAgg);
 
     when(nanoSupplier.getAsLong())
-        .thenReturn(TIME_LIMIT_NANOS - 10) // first Aggregation attempt on time
-        .thenReturn(TIME_LIMIT_NANOS + 10); // second Aggregation after time limit
+        .thenReturn(timeLimitNanos - 10) // first Aggregation attempt on time
+        .thenReturn(timeLimitNanos + 10); // second Aggregation after time limit
 
-    final PooledAttestationWithData result = group.fillUpAggregation(initial, TIME_LIMIT_NANOS);
+    final PooledAttestationWithData result = group.fillUpAggregation(initial, timeLimitNanos);
 
     final Attestation expectedWithSingle1 =
         aggregateAttestations(committeeSizes, toAttestation(initialAgg), toAttestation(single1));
