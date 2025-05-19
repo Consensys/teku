@@ -71,8 +71,7 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnInternalErrorWhenDiscoveryNetworkNotAvailable() throws Exception {
-    final List<String> peers =
-            List.of("/ip4/127.0.0.1/udp/9001/p2p/16Uiu2HAmFakePeerId");
+    final List<String> peers = List.of("/ip4/127.0.0.1/udp/9001/p2p/16Uiu2HAmFakePeerId");
     request.setRequestBody(peers);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.empty());
     handler.handleRequest(request);
