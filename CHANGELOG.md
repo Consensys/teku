@@ -16,4 +16,6 @@
 - Added an info message on startup for the highest supported milestone and associated epoch.
 - Added jdk 24 docker image build.
 - Improved performance when scheduling attestations in the beginning of the epoch for a large number of validators.
+- Add `/teku/v1/admin/add_peer` endpoint to allow adding static peers via the REST API.
+
 ### Bug Fixes
