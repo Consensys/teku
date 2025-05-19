@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_CELL;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
@@ -809,7 +810,7 @@ public final class DataStructureUtil {
 
   public SyncCommitteeMessage randomSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
-    return getAltairSchemaDefinitions(UInt64.ZERO)
+    return getAltairSchemaDefinitions(ZERO)
         .getSyncCommitteeMessageSchema()
         .create(slot, beaconBlockRoot, randomUInt64(), randomSignature());
   }
@@ -2052,7 +2053,7 @@ public final class DataStructureUtil {
         new BeaconBlock(
             schemaDefinitions.getBeaconBlockSchema(),
             anchorState.getSlot(),
-            UInt64.ZERO,
+            ZERO,
             anchorState.getLatestBlockHeader().getParentRoot(),
             anchorState.hashTreeRoot(),
             spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema().createEmpty());
@@ -2446,14 +2447,14 @@ public final class DataStructureUtil {
 
   public SszList<SszKZGProof> randomSszKZGProofs(final int count) {
     return randomSszList(
-        getDenebSchemaDefinitions(UInt64.ZERO).getBlobsBundleSchema().getProofsSchema(),
+        getDenebSchemaDefinitions(ZERO).getBlobsBundleSchema().getProofsSchema(),
         this::randomSszKZGProof,
         count);
   }
 
   public SszList<Blob> randomSszBlobs(final int count) {
     return randomSszList(
-        getDenebSchemaDefinitions(UInt64.ZERO).getBlobsBundleSchema().getBlobsSchema(),
+        getDenebSchemaDefinitions(ZERO).getBlobsBundleSchema().getBlobsSchema(),
         this::randomValidBlob,
         count);
   }
