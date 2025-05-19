@@ -4,10 +4,9 @@
 *~.nib
 *.iml
 *.launch
-*.swp
 *.log
 .lh/*
-db/
+/db/
 db.version
 .classpath
 .DS_Store
