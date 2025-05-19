@@ -23,10 +23,9 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -55,8 +54,6 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
-
-
 
   @Test
   public void shouldReturnOkWhenAValidListIsProvided() throws Exception {
@@ -89,8 +86,6 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
   }
-
-
 
   @Test
   public void shouldReturnInternalErrorWhenDiscoveryNetworkNotAvailable() throws Exception {

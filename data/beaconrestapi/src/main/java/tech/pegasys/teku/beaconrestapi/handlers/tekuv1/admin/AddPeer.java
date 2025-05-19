@@ -65,9 +65,9 @@ public class AddPeer extends RestApiEndpoint {
       }
 
       final DiscoveryNetwork<?> discoveryNetwork =
-              networkDataProvider
-                      .getDiscoveryNetwork()
-                      .orElseThrow(() -> new IllegalStateException("Discovery network not available"));
+          networkDataProvider
+              .getDiscoveryNetwork()
+              .orElseThrow(() -> new IllegalStateException("Discovery network not available"));
       peerAddress.forEach(discoveryNetwork::addStaticPeer);
       request.respondWithCode(SC_OK);
     } catch (final IllegalArgumentException e) {
