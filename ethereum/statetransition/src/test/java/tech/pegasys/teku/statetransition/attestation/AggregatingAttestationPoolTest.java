@@ -206,7 +206,7 @@ abstract class AggregatingAttestationPoolTest {
 
     final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
-    assertThat(result).contains(aggregateAttestations(attestation1, attestation2));
+    assertThat(result).contains(aggregateAttestations(committeeSizes, attestation1, attestation2));
   }
 
   @TestTemplate
@@ -218,7 +218,7 @@ abstract class AggregatingAttestationPoolTest {
 
     final Optional<Attestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot(), committeeIndex);
-    assertThat(result).contains(aggregateAttestations(attestation1, attestation2));
+    assertThat(result).contains(aggregateAttestations(committeeSizes, attestation1, attestation2));
   }
 
   @TestTemplate
@@ -291,7 +291,7 @@ abstract class AggregatingAttestationPoolTest {
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(SLOT.increment());
 
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
-        .containsExactly(aggregateAttestations(attestation1, attestation2));
+        .containsExactly(aggregateAttestations(committeeSizes, attestation1, attestation2));
   }
 
   @TestTemplate
@@ -305,7 +305,8 @@ abstract class AggregatingAttestationPoolTest {
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(ONE);
 
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
-        .containsExactlyInAnyOrder(aggregateAttestations(attestation1, attestation2), attestation3);
+        .containsExactlyInAnyOrder(
+            aggregateAttestations(committeeSizes, attestation1, attestation2), attestation3);
   }
 
   @TestTemplate
