@@ -22,6 +22,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
@@ -33,6 +35,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
@@ -51,6 +55,10 @@ public class GetAttestationData extends RestApiEndpoint {
               "data", AttestationData.SSZ_SCHEMA.getJsonTypeDefinition(), Function.identity())
           .build();
 
+  private static final OctetStreamResponseContentTypeDefinition<AttestationData> SSZ_RESPONSE_TYPE =
+      new OctetStreamResponseContentTypeDefinition<>(
+          SszData::sszSerialize, __ -> Collections.emptyMap());
+
   public GetAttestationData(final DataProvider provider) {
     this(provider.getValidatorDataProvider());
   }
@@ -66,8 +74,9 @@ public class GetAttestationData extends RestApiEndpoint {
             .queryParam(
                 COMMITTEE_INDEX_PARAMETER.withDescription(
                     "`UInt64` The committee index for which an attestation data should be created."))
-            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", RESPONSE_TYPE, SSZ_RESPONSE_TYPE)
             .withNotFoundResponse()
+            .withNotAcceptedResponse()
             .withChainDataResponses()
             .build());
     this.provider = provider;
