@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -259,11 +261,12 @@ public class MatchingDataAttestationGroupV2 {
 
   public Stream<PooledAttestationWithData> streamForAggregationProduction(
       final Optional<UInt64> committeeIndex, final long timeLimitNanos) {
+    checkArgument(
+        committeeIndex.isPresent() || !includedValidators.requiresCommitteeBits(),
+        "Committee index must be present if committee bits are required");
     return StreamSupport.stream(
             spliterator(
-                timeLimitNanos,
-                aggregationProductionCandidatesStreamSupplier(
-                    committeeIndex, includedValidators.requiresCommitteeBits())),
+                timeLimitNanos, aggregationProductionCandidatesStreamSupplier(committeeIndex)),
             false)
         .map(
             pooledAttestation -> new PooledAttestationWithData(attestationData, pooledAttestation));
@@ -421,13 +424,10 @@ public class MatchingDataAttestationGroupV2 {
   }
 
   private Supplier<Stream<PooledAttestation>> aggregationProductionCandidatesStreamSupplier(
-      final Optional<UInt64> maybeCommitteeIndex, final boolean requiresCommitteeBits) {
-    if (maybeCommitteeIndex.isPresent() && requiresCommitteeBits) {
+      final Optional<UInt64> maybeCommitteeIndex) {
+    if (maybeCommitteeIndex.isPresent()) {
       // We are in aggregation mode post-Electra.
-      // Only consider single attestations for the committee index
-      // the main use case is committee aggregation.
-      // The issue is related to getAttestation API,
-      // so we won't return aggregates when committeeIndex is specified in the call.
+      // Only consider single attestations from the given committee index
       return () ->
           singleAttestationsByCommitteeIndex
               .getOrDefault(maybeCommitteeIndex.get().intValue(), Set.of())
