@@ -287,7 +287,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 testDefinition,
                 dataFileName,
                 testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
-        var preState = state.commitChanges();
+        final BeaconState preState = state.commitChanges();
         processor.processAttestation(state, attestation);
 
         verifyRewardBasedAttestationSorter(testDefinition.getSpec(), preState, state, attestation);
