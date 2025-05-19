@@ -48,8 +48,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -275,8 +275,7 @@ class BlockOperationSelectorFactoryTestDeneb {
 
   @Test
   void shouldCreateBlobSidecarsForBlockContents() {
-    final SignedBlockContentsDeneb signedBlockContents =
-        dataStructureUtil.randomSignedBlockContentsDeneb();
+    final SignedBlockContainer signedBlockContents = dataStructureUtil.randomSignedBlockContents();
 
     final MiscHelpersDeneb miscHelpersDeneb =
         MiscHelpersDeneb.required(spec.atSlot(signedBlockContents.getSlot()).miscHelpers());

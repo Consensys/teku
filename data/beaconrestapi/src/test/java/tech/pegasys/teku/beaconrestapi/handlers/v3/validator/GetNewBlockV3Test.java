@@ -31,7 +31,6 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
@@ -46,8 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -118,31 +116,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldHandleUnBlindedBlockContentsPostDeneb() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    assumeThat(specMilestone).isLessThan(FULU);
-    final BlockContentsDeneb blockContents = dataStructureUtil.randomBlockContents(ONE);
-    final BlockContainerAndMetaData blockContainerAndMetaData =
-        dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
-    doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
-        .when(validatorDataProvider)
-        .produceBlock(ONE, signature, Optional.empty(), Optional.empty());
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-    assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(blockContainerAndMetaData.specMilestone().lowerCaseName());
-    assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("false");
-    assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockContainerAndMetaData.executionPayloadValue().toDecimalString());
-    assertThat(request.getResponseHeaders(HEADER_CONSENSUS_BLOCK_VALUE))
-        .isEqualTo(blockContainerAndMetaData.consensusBlockValue().toDecimalString());
-  }
-
-  @TestTemplate
-  void shouldHandleUnBlindedBlockContentsFulu() throws Exception {
-    assumeThat(specMilestone).isEqualTo(FULU);
-    final BlockContentsFulu blockContents = dataStructureUtil.randomBlockContentsFulu(ONE);
+    final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))

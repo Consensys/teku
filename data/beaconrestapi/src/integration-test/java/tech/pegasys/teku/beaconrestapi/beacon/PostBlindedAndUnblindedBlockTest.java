@@ -132,7 +132,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
       signedBlockContainerSchema =
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlindedBlockContainerSchema();
     } else {
-      request = dataStructureUtil.randomSignedBlockContentsDeneb(UInt64.ONE);
+      request = dataStructureUtil.randomSignedBlockContents(UInt64.ONE);
       signedBlockContainerSchema =
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlockContainerSchema();
     }

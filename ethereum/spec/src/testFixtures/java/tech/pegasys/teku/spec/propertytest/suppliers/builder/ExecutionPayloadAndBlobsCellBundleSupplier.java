@@ -14,16 +14,13 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.builder;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class ExecutionPayloadAndBlobsBundleSupplier
-    extends DataStructureUtilSupplier<ExecutionPayloadAndBlobsBundle> {
-  public ExecutionPayloadAndBlobsBundleSupplier() {
-    super(
-        DataStructureUtil::randomExecutionPayloadAndBlobsBundle,
-        SpecMilestone.DENEB,
-        SpecMilestone.ELECTRA);
+public class ExecutionPayloadAndBlobsCellBundleSupplier
+    extends DataStructureUtilSupplier<ExecutionPayloadAndBlobsCellBundle> {
+  public ExecutionPayloadAndBlobsCellBundleSupplier() {
+    super(DataStructureUtil::randomExecutionPayloadAndBlobsCellBundle, SpecMilestone.FULU);
   }
 }
