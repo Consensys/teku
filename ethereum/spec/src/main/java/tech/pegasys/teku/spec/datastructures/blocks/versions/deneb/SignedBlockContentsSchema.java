@@ -49,11 +49,12 @@ public class SignedBlockContentsSchema
         namedSchema("signed_block", schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA)),
         namedSchema(
             FIELD_KZG_PROOFS,
-            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+            SszListSchema.create(
+                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(
             FIELD_BLOBS,
             SszListSchema.create(
-                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobsPerBlock())));
+                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
   public SignedBlockContents create(
