@@ -2526,7 +2526,11 @@ public final class DataStructureUtil {
             .orElseThrow()
             .size();
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+    final List<KZGProof> kzgProofs =
+        randomKZGProofs(
+            spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)
+                ? numberOfBlobs * CELLS_PER_EXT_BLOB
+                : numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
         .create(signedBeaconBlock, kzgProofs, blobs);
