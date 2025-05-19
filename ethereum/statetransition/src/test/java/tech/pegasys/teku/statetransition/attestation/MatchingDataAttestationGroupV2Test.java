@@ -111,40 +111,6 @@ class MatchingDataAttestationGroupV2Test {
     int numRemoved = group.onAttestationIncludedInBlock(UInt64.ZERO, toAttestation(attestation1));
     assertThat(numRemoved).isEqualTo(0); // Attestation (1) is covered by (1,2) which is still there
     numRemoved += group.onAttestationIncludedInBlock(UInt64.ZERO, toAttestation(attestation2));
-    // Attestation (2) is covered by (1,2).
-    // If attestation (1,2) was added, and (1) and (2) were added:
-    // onAttestationIncludedInBlock(attestation1) -> if (1,2) is present, (1) is covered.
-    // includedValidators will get bit 1. Attestation (1) is removed.
-    // onAttestationIncludedInBlock(attestation2) -> includedValidators gets bit 2. Attestation (2)
-    // is removed.
-    // The attestation (1,2) will be removed if both 1 and 2 are included.
-    // The original test structure had `addPooledAttestation(1,2)` which creates an aggregate.
-    // This aggregate (1,2) will be removed once both 1 and 2 are included.
-
-    // Let's trace:
-    // add(3) -> group has (3)
-    // add(1,2) -> group has (3), (1,2)
-    // onBlock(att1=(1)): includedValidators=(1). (3) not removed. (1,2) not removed (2 not
-    // covered). size=2. numRemoved=0
-    // onBlock(att2=(2)): includedValidators=(1,2). (3) not removed. (1,2) is removed. size=1.
-    // numRemoved for this call = 1
-    // Total numRemoved = 1.
-
-    // Original test `assertThat(numRemoved).isEqualTo(1);` implies total.
-    // My trace for V2:
-    // add(3) -> singleA_by_idx {0:[3]} or att_by_count {1:[(3)]} depending on Electra
-    // add(1,2) -> att_by_count {2:[(1,2)]}
-    // onBlock(att1=toAttestation(createPooledAttestation(1))):
-    //   includedValidators gets bit 1.
-    //   single (3) not removed. aggregate (1,2) not removed.
-    //   If (1) was also added explicitly, it would be removed.
-    //   numRemoved = 0.
-    // onBlock(att2=toAttestation(createPooledAttestation(2))):
-    //   includedValidators gets bit 1,2.
-    //   single (3) not removed. aggregate (1,2) is now fully covered and removed.
-    //   numRemoved for this call = 1.
-    // Total numRemoved = 0 + 1 = 1. This matches.
-
     assertThat(numRemoved).isEqualTo(1);
     verifyGroupContainsExactly(toPooledAttestationWithData(attestation3));
   }
@@ -160,21 +126,23 @@ class MatchingDataAttestationGroupV2Test {
         group.onAttestationIncludedInBlock(
             UInt64.ZERO,
             aggregateAttestations(toAttestation(attestation1), toAttestation(attestation2)));
-    // aggregateAttestations(att1, att2) creates an attestation with bits (1,2)
-    // This makes attestation1 and attestation2 redundant.
+
     verifyGroupContainsExactly(toPooledAttestationWithData(attestation3));
     assertThat(numRemoved).isEqualTo(2);
   }
 
   @TestTemplate
   public void add_shouldIgnoreAttestationWhoseBitsHaveAllBeenRemoved() {
+    // Create attestations that will be removed
     final PooledAttestation attestation1 = createPooledAttestation(1);
     final PooledAttestation attestation2 = createPooledAttestation(2);
+
+    // Create attestation to be added / ignored
     final PooledAttestation attestationToIgnore = createPooledAttestation(1, 2);
 
-    group.onAttestationIncludedInBlock(UInt64.ZERO, toAttestation(attestation1));
-    group.onAttestationIncludedInBlock(UInt64.ZERO, toAttestation(attestation2));
-    // After these, includedValidators has bits 1 and 2.
+    int numRemoved = group.onAttestationIncludedInBlock(UInt64.ZERO, toAttestation(attestation1));
+    numRemoved +=  group.onAttestationIncludedInBlock(UInt64.ZERO, toAttestation(attestation2));
+    assertThat(numRemoved).isEqualTo(0);
 
     assertThat(group.add(attestationToIgnore, Optional.empty())).isFalse();
     verifyGroupContainsExactly(); // empty
@@ -217,21 +185,167 @@ class MatchingDataAttestationGroupV2Test {
     verifyGroupContainsExactly(toPooledAttestationWithData(attestation));
   }
 
-  // TODO: migrate iterator_ to apiRequest?
+//  // TODO: migrate iterator_ to apiRequest?
+//
+//  @TestTemplate
+//  public void iterator_shouldAggregateAttestationsWhereValidatorsDoNotOverlap() {
+//    final PooledAttestation attestation1 = addPooledAttestation(1);
+//    final PooledAttestation attestation2 = addPooledAttestation(2);
+//
+//    final Attestation expected =
+//        aggregateAttestations(toAttestation(attestation1), toAttestation(attestation2));
+//
+//    verifyGroupContainsExactly(
+//        toPooledAttestationWithData(
+//            PooledAttestation.fromValidatableAttestation(
+//                ValidatableAttestation.from(spec, expected, committeeSizes))));
+//  }
 
+
+
+  // --- Tests for streamForApiRequest ---
   @TestTemplate
-  public void iterator_shouldAggregateAttestationsWhereValidatorsDoNotOverlap() {
+  public void streamForApiRequest_shouldAggregateDisjointAttestations(final SpecContext specContext) {
     final PooledAttestation attestation1 = addPooledAttestation(1);
     final PooledAttestation attestation2 = addPooledAttestation(2);
 
-    final Attestation expected =
-        aggregateAttestations(toAttestation(attestation1), toAttestation(attestation2));
+    final Attestation expectedAggregate =
+            aggregateAttestations(toAttestation(attestation1), toAttestation(attestation2));
 
-    verifyGroupContainsExactly(
-        toPooledAttestationWithData(
-            PooledAttestation.fromValidatableAttestation(
-                ValidatableAttestation.from(spec, expected, committeeSizes))));
+    verifyStreamForApiRequest(
+            Optional.empty(),
+            isElectra(specContext),
+            toPooledAttestationWithData(
+                    PooledAttestation.fromValidatableAttestation(
+                            ValidatableAttestation.from(spec, expectedAggregate, committeeSizes))));
   }
+
+  @TestTemplate
+  public void streamForApiRequest_shouldPrioritizeLargerAndAggregateNonOverlapping(final SpecContext specContext) {
+    final PooledAttestation bigAttestation = addPooledAttestation(1, 3, 5, 7); // Aggregate (4 validators)
+    final PooledAttestation mediumAttestation = addPooledAttestation(3, 5, 9); // Aggregate (3 validators)
+    final PooledAttestation littleAttestation = addPooledAttestation(2, 4);   // Aggregate (2 validators)
+
+    final Attestation combinedBigLittle = aggregateAttestations(toAttestation(bigAttestation), toAttestation(littleAttestation));
+
+    verifyStreamForApiRequest(
+            Optional.empty(),
+            isElectra(specContext),
+            toPooledAttestationWithData(PooledAttestation.fromValidatableAttestation(
+                    ValidatableAttestation.from(spec, combinedBigLittle, committeeSizes))), // Aggregate of (1,2,3,4,5,7)
+            toPooledAttestationWithData(mediumAttestation) // Separate (3,5,9) because 9 is new, but 3,5 overlap
+    );
+  }
+
+  @TestTemplate
+  public void streamForApiRequest_shouldReturnOverlappingAttestationsSeparately(final SpecContext specContext) {
+    final PooledAttestation attestation1 = addPooledAttestation(1, 2, 5);
+    final PooledAttestation attestation2 = addPooledAttestation(1, 2, 3);
+
+    // These overlap but neither is a superset of the other. They should be returned separately.
+    verifyStreamForApiRequest(
+            Optional.empty(),
+            isElectra(specContext),
+            toPooledAttestationWithData(attestation1),
+            toPooledAttestationWithData(attestation2));
+  }
+
+
+  @TestTemplate
+  void streamForApiRequest_shouldAggregateLeavingNoRedundantParts(final SpecContext specContext) {
+    final PooledAttestation useful1 = addPooledAttestation(1, 2, 3);
+    addPooledAttestation(2, 4); // This is (2,4). Partially overlaps with (1,2,3) and (4)
+    final PooledAttestation useful2 = addPooledAttestation(4);
+
+    // Expect (1,2,3) and (4) to be aggregated into (1,2,3,4).
+    // The attestation (2,4) becomes redundant.
+    final PooledAttestationWithData expected =
+            toPooledAttestationWithData(
+                    PooledAttestation.fromValidatableAttestation(
+                            ValidatableAttestation.from(
+                                    spec,
+                                    aggregateAttestations(toAttestation(useful1), toAttestation(useful2)),
+                                    committeeSizes)));
+    verifyStreamForApiRequest(Optional.empty(), isElectra(specContext), expected);
+  }
+
+  @TestTemplate
+  void streamForApiRequest_electra_withCommitteeIndex_returnsMatchingAggregated(final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    // C0 attestations
+    final PooledAttestation singleC0V1 = addPooledAttestation(Optional.of(0), 1); // Single
+    final PooledAttestation aggC0V23 = addPooledAttestation(Optional.of(0), 2, 3); // Aggregate
+    // C1 attestations
+    final PooledAttestation singleC1V4 = addPooledAttestation(Optional.of(1), 4); // Single
+
+    // Request for committee 0
+    // Expected: aggregate of singleC0V1 and aggC0V23
+    final Attestation expectedForC0 = aggregateAttestations(toAttestation(singleC0V1), toAttestation(aggC0V23));
+
+    verifyStreamForApiRequest(
+            Optional.of(UInt64.ZERO),
+            true,
+            toPooledAttestationWithData(PooledAttestation.fromValidatableAttestation(
+                    ValidatableAttestation.from(spec, expectedForC0, committeeSizes))));
+
+    // Request for committee 1
+    // Expected: single from singleC1V4
+    verifyStreamForApiRequest(
+            Optional.of(UInt64.ONE),
+            true,
+            toPooledAttestationWithData(singleC1V4));
+  }
+
+
+  // --- Tests for streamForAggregationProduction ---
+  @TestTemplate
+  void streamForAggregationProduction_phase0_withAggregates_returnsAggregatedResult(final SpecContext specContext) {
+    specContext.assumeIsNotOneOf(ELECTRA);
+    final PooledAttestation att1 = addPooledAttestation(1, 2);
+    final PooledAttestation att2 = addPooledAttestation(3);
+    final Attestation expected = aggregateAttestations(toAttestation(att1), toAttestation(att2));
+
+    // streamForAggregationProduction without committee index (or pre-Electra) uses attestationsByValidatorCount
+    verifyStreamForAggregationProductionPhase0ContainsExactly(
+            toPooledAttestationWithData(
+                    PooledAttestation.fromValidatableAttestation(ValidatableAttestation.from(spec, expected, committeeSizes))));
+  }
+
+  @TestTemplate
+  void streamForAggregationProduction_electra_noCommitteeIndex_returnsOnlyAggregatedAggregates(final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    final PooledAttestation agg1 = addPooledAttestation(1, 2); // Aggregate
+    addPooledAttestation(Optional.of(0),3); // Single on committee 0
+    final PooledAttestation agg2 = addPooledAttestation(4,5); // Aggregate
+
+    // Without committee index, Electra's aggregation production streams from attestationsByValidatorCount.
+    // Singles are ignored. Aggregates agg1 and agg2 should be combined.
+    final Attestation expected = aggregateAttestations(toAttestation(agg1), toAttestation(agg2));
+    verifyStreamForAggregationProductionContainsExactly(
+            toPooledAttestationWithData(
+                    PooledAttestation.fromValidatableAttestation(ValidatableAttestation.from(spec, expected, committeeSizes))));
+  }
+
+  @TestTemplate
+  void streamForAggregationProduction_electra_withCommitteeIndex_returnsOnlyAggregatedMatchingSingles(final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    // Committee 0
+    final PooledAttestation singleC0V1 = addPooledAttestation(Optional.of(0), 1);
+    final PooledAttestation singleC0V2 = addPooledAttestation(Optional.of(0), 2);
+    addPooledAttestation(Optional.of(0), 5, 6); // Aggregate on C0, should be ignored by this stream
+
+    // Committee 1
+    addPooledAttestation(Optional.of(1), 3); // Single on C1, should be ignored
+
+    // Request for committee 0. Expect aggregation of singleC0V1 and singleC0V2.
+    final Attestation expectedForC0 = aggregateAttestations(toAttestation(singleC0V1), toAttestation(singleC0V2));
+    verifyStreamForAggregationProductionContainsExactly(
+            toPooledAttestationWithData(
+                    PooledAttestation.fromValidatableAttestation(ValidatableAttestation.from(spec, expectedForC0, committeeSizes))));
+  }
+
+
+
 
   // TODO: block production flow
 
@@ -250,29 +364,6 @@ class MatchingDataAttestationGroupV2Test {
                         toAttestation(bigAttestation), toAttestation(littleAttestation)),
                     committeeSizes))),
         toPooledAttestationWithData(mediumAttestation));
-  }
-
-  private PooledAttestationWithData toPooledAttestationWithDataWithSortedValidatorIndices(
-      final PooledAttestationWithData attestation) {
-    return new PooledAttestationWithData(
-        attestation.data(),
-        new PooledAttestation(
-            attestation.pooledAttestation().bits(),
-            attestation.pooledAttestation().validatorIndices().map(TreeSet::new).map(List::copyOf),
-            attestation.pooledAttestation().aggregatedSignature(),
-            attestation.pooledAttestation().isSingleAttestation()));
-  }
-
-  void verifyGroupContainsExactly(final PooledAttestationWithData... expectedAttestations) {
-    // streamForApiRequest with no committee index is the only stream that gives us all attestations
-    assertThat(
-            group
-                .streamForApiRequest(
-                    Optional.empty(),
-                    spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(ELECTRA))
-                // we convert to a sorted ValidatorIndices list so we can compare
-                .map(this::toPooledAttestationWithDataWithSortedValidatorIndices))
-        .containsExactly(expectedAttestations);
   }
 
   @TestTemplate
@@ -352,7 +443,7 @@ class MatchingDataAttestationGroupV2Test {
         UInt64.ZERO, toAttestation(createPooledAttestation(1, 2, 3, 4, 5, 6, 7)));
 
     assertThat(group.size()).isZero();
-    assertThat(group.streamForBlockProduction(Long.MAX_VALUE)).isEmpty();
+    verifyGroupContainsExactly();
   }
 
   @TestTemplate
@@ -373,8 +464,7 @@ class MatchingDataAttestationGroupV2Test {
 
     // Validator 7 is still relevant (from attestation2)
     assertThat(group.size()).isEqualTo(1);
-    assertThat(group.streamForBlockProduction(Long.MAX_VALUE))
-        .containsExactly(toPooledAttestationWithData(attestation2));
+    verifyGroupContainsExactly(toPooledAttestationWithData(attestation2));
   }
 
   @TestTemplate
@@ -400,8 +490,7 @@ class MatchingDataAttestationGroupV2Test {
 
     assertThat(group.add(attestation, Optional.empty())).isTrue();
     assertThat(group.size()).isEqualTo(1);
-    assertThat(group.streamForBlockProduction(Long.MAX_VALUE))
-        .containsExactly(toPooledAttestationWithData(attestation));
+    verifyGroupContainsExactly(toPooledAttestationWithData(attestation));
   }
 
   @TestTemplate
@@ -425,8 +514,7 @@ class MatchingDataAttestationGroupV2Test {
     // Attestation (1,2,3,4) has validator 1, which is not in (2,3,4). So it can be added.
     assertThat(group.add(attestation2, Optional.empty())).isTrue();
     assertThat(group.size()).isEqualTo(1);
-    assertThat(group.streamForBlockProduction(Long.MAX_VALUE))
-        .containsExactly(toPooledAttestationWithData(attestation2));
+    verifyGroupContainsExactly(toPooledAttestationWithData(attestation2));
   }
 
   @TestTemplate
@@ -449,11 +537,17 @@ class MatchingDataAttestationGroupV2Test {
             aggregateAttestations(
                 attestation1Data.toAttestation(attestationSchema),
                 attestation2Data.toAttestation(attestationSchema)));
-    // Aggregate of (1) and (2) has bits (1,2).
-    // This covers original (1), original (2), and (1,2).
-    // Attestation (3,4) remains.
+
     assertThat(numRemoved).isEqualTo(3);
     assertThat(group.size()).isEqualTo(1);
+  }
+
+  void verifyGroupContainsExactly(final PooledAttestationWithData... expectedAttestations) {
+    // streamForApiRequest with no committee index is the only stream that gives us all attestations
+    verifyStreamForApiRequest(
+        Optional.empty(),
+        spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(ELECTRA),
+        expectedAttestations);
   }
 
   void verifyStreamForAggregationProductionContainsExactly(
@@ -492,6 +586,17 @@ class MatchingDataAttestationGroupV2Test {
                 .streamForApiRequest(committeeIndex, requiresCommitteeBits)
                 .map(this::toPooledAttestationWithDataWithSortedValidatorIndices))
         .containsExactly(expectedAttestations);
+  }
+
+  private PooledAttestationWithData toPooledAttestationWithDataWithSortedValidatorIndices(
+          final PooledAttestationWithData attestation) {
+    return new PooledAttestationWithData(
+            attestation.data(),
+            new PooledAttestation(
+                    attestation.pooledAttestation().bits(),
+                    attestation.pooledAttestation().validatorIndices().map(TreeSet::new).map(List::copyOf),
+                    attestation.pooledAttestation().aggregatedSignature(),
+                    attestation.pooledAttestation().isSingleAttestation()));
   }
 
   private PooledAttestation addPooledAttestation(final int... validators) {
@@ -590,5 +695,13 @@ class MatchingDataAttestationGroupV2Test {
             ValidatableAttestation.from(spec, attestation, committeeSizes),
             validatorBitToValidatorIndex(
                 attestation.getAggregationBits().getAllSetBits().toIntArray())));
+  }
+
+  private boolean isElectra(final SpecContext specContext) {
+    return specContext.getSpecMilestone().isGreaterThanOrEqualTo(ELECTRA);
+  }
+
+  private boolean isElectra(final Spec spec) {
+    return spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(ELECTRA);
   }
 }
