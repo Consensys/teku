@@ -76,7 +76,7 @@ public class DataColumnSidecarDbAccessorBuilder {
   }
 
   public DataColumnSidecarDbAccessor build() {
-    ColumnIdCachingDasDb columnIdCachingDasDb =
+    final ColumnIdCachingDasDb columnIdCachingDasDb =
         new ColumnIdCachingDasDb(
             db,
             this::getNumberOfColumnsForSlot,

@@ -119,8 +119,8 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
         SafeFuture.collectAll(prevSlotCount, finalizedSlot)
             .thenPeek(
                 prevSlotCountFinalizedSlot -> {
-                  LOG.info(
-                      "[nyota] DataColumnSidecarDB.addSidecar: new slot: {}, prevSlot count: {}, total added: {}, finalizedSlot: {}",
+                  LOG.debug(
+                      "DataColumnSidecarDB.addSidecar: new slot: {}, prevSlot count: {}, total added: {}, finalizedSlot: {}",
                       slot,
                       prevSlotCountFinalizedSlot.get(0),
                       currentAddCounter,
@@ -148,8 +148,8 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
                 })
             .thenAccept(
                 oldCountNewCount ->
-                    LOG.info(
-                        "[nyota] DataColumnSidecarDB: setFirstCustodyIncompleteSlot {} ({} cols) ~> {} ({} cols)",
+                    LOG.debug(
+                        "DataColumnSidecarDB: setFirstCustodyIncompleteSlot {} ({} cols) ~> {} ({} cols)",
                         maybeCurrentSlot.map(UInt64::toString).orElse("NA"),
                         oldCountNewCount.left(),
                         newSlot,
@@ -162,8 +162,8 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
     private void logNewFirstSamplerIncompleteSlot(
         final Optional<UInt64> maybeCurrentSlot, final UInt64 newSlot) {
       if (maybeCurrentSlot.isEmpty() || !maybeCurrentSlot.get().equals(newSlot)) {
-        LOG.info(
-            "[nyota] DataColumnSidecarDB: setFirstSamplerIncompleteSlot {} ~> {}",
+        LOG.debug(
+            "DataColumnSidecarDB: setFirstSamplerIncompleteSlot {} ~> {}",
             maybeCurrentSlot.map(UInt64::toString).orElse("NA"),
             newSlot);
       }

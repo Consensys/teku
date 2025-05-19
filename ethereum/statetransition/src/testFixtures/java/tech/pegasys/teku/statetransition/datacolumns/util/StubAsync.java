@@ -29,14 +29,14 @@ public class StubAsync {
   }
 
   public void advanceTimeGradually(final Duration delta) {
-    for (int i = 0; i < delta.toMillis(); i++) {
+    for (long i = 0; i < delta.toMillis(); i++) {
       stubTimeProvider.advanceTimeBy(ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();
     }
   }
 
   public void advanceTimeGraduallyUntilAllDone(final Duration maxAdvancePeriod) {
-    for (int i = 0; i < maxAdvancePeriod.toMillis(); i++) {
+    for (long i = 0; i < maxAdvancePeriod.toMillis(); i++) {
       if (!stubAsyncRunner.hasDelayedActions()) {
         return;
       }
