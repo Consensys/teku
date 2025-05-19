@@ -20,9 +20,13 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import java.util.List;
 import java.util.Optional;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
@@ -38,10 +42,36 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
+  void metadata_shouldHandle200() {
+    verifyMetadataEmptyResponse(handler, SC_OK);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+
+
+  @Test
   public void shouldReturnOkWhenAValidListIsProvided() throws Exception {
     final List<String> peers =
         List.of(
-            "/ip4/178.128.136.233/udp/9001/p2p/16Uiu2HAmNSjEXNqaFjfLePKk87WZ7QwuTPd1HPEfJEeYnaC3bGZ1");
+            "/ip4/127.0.0.1/udp/9001/p2p/16Uiu2HAmNSjEXNqaFjfLePKk87WZ7QwuTPd1HPEfJEeYnaC3bGZ1");
+    request.setRequestBody(peers);
+    when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+  }
+
+  @Test
+  public void shouldReturnOkWhenRequestBodyIsEmpty() throws Exception {
+    final List<String> peers = List.of();
     request.setRequestBody(peers);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
     handler.handleRequest(request);
@@ -60,14 +90,7 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
   }
 
-  @Test
-  public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
-    final List<String> peers = List.of();
-    request.setRequestBody(peers);
-    when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
-    handler.handleRequest(request);
-    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
-  }
+
 
   @Test
   public void shouldReturnInternalErrorWhenDiscoveryNetworkNotAvailable() throws Exception {
