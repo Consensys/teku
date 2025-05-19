@@ -1,0 +1,46 @@
+{
+  "post" : {
+    "tags" : [ "Teku" ],
+    "operationId" : "AddPeer",
+    "summary" : "Add a peer to the node",
+    "description" : "Adds a peer to the node.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Peer added successfully",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Invalid peer address",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
