@@ -25,13 +25,15 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -40,8 +42,14 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfArrayJsonRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -52,14 +60,17 @@ public class PostAttestationsV2 extends RestApiEndpoint {
   private final ValidatorDataProvider validatorDataProvider;
 
   public PostAttestationsV2(
-      final DataProvider validatorDataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
-    this(validatorDataProvider.getValidatorDataProvider(), schemaDefinitionCache);
+      final DataProvider validatorDataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    this(validatorDataProvider.getValidatorDataProvider(), spec, schemaDefinitionCache);
   }
 
   public PostAttestationsV2(
       final ValidatorDataProvider validatorDataProvider,
+      final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(schemaDefinitionCache));
+    super(createMetadata(spec, schemaDefinitionCache));
     this.validatorDataProvider = validatorDataProvider;
   }
 
@@ -82,7 +93,7 @@ public class PostAttestationsV2 extends RestApiEndpoint {
   }
 
   private static EndpointMetadata createMetadata(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
 
     final BiPredicate<Attestation, SpecMilestone> attestationSchemaPredicate =
         (attestation, milestone) ->
@@ -95,22 +106,46 @@ public class PostAttestationsV2 extends RestApiEndpoint {
 
     builder.withType(
         value -> attestationSchemaPredicate.test(value, SpecMilestone.PHASE0),
-        schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.PHASE0)
-            .getAttestationSchema()
-            .getJsonTypeDefinition());
+        getPhaseOAttestationSchema(schemaDefinitionCache).getJsonTypeDefinition());
     builder.withType(
         value -> attestationSchemaPredicate.test(value, SpecMilestone.ELECTRA),
-        SchemaDefinitionsElectra.required(
-                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA))
-            .getSingleAttestationSchema()
-            .getJsonTypeDefinition());
+        getElectraAttestationSchema(schemaDefinitionCache).getJsonTypeDefinition());
     final SerializableOneOfTypeDefinition<Attestation> attestationSchemaDefinition =
         builder.build();
 
     final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<Attestation>
         attestationBodySelector =
-            context -> headerBasedSelector(context.getHeaders(), schemaDefinitionCache);
+            context -> {
+              final Map<String, String> headers = context.getHeaders();
+              if (!headers.containsKey(HEADER_CONSENSUS_VERSION)) {
+                throw new BadRequestException(
+                    String.format(
+                        "Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
+              }
+              final SpecMilestone milestone =
+                  getMilestoneFromConsensusVersionHeader(headers.get(HEADER_CONSENSUS_VERSION));
+              return getAttestationSchema(milestone, schemaDefinitionCache).getJsonTypeDefinition();
+            };
+
+    final BiFunction<Bytes, Optional<String>, List<? extends Attestation>>
+        milestoneSpecificOctetStreamParser =
+            (attestationsBytes, headerConsensusVersion) -> {
+              final SpecMilestone milestone =
+                  getMilestoneFromConsensusVersionHeader(
+                      headerConsensusVersion.orElseThrow(
+                          () ->
+                              new BadRequestException(
+                                  String.format(
+                                      "Missing required header value for (%s)",
+                                      HEADER_CONSENSUS_VERSION))));
+              final SpecConfig specConfig = spec.forMilestone(milestone).getConfig();
+              return SszListSchema.create(
+                      getAttestationSchema(milestone, schemaDefinitionCache),
+                      (long) specConfig.getMaxValidatorsPerCommittee()
+                          * specConfig.getMaxCommitteesPerSlot())
+                  .sszDeserialize(attestationsBytes)
+                  .asList();
+            };
 
     return EndpointMetadata.post(ROUTE)
         .operationId("submitPoolAttestationsV2")
@@ -123,7 +158,9 @@ public class PostAttestationsV2 extends RestApiEndpoint {
                   """)
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
         .requestBodyType(
-            SerializableTypeDefinition.listOf(attestationSchemaDefinition), attestationBodySelector)
+            SerializableTypeDefinition.listOf(attestationSchemaDefinition),
+            attestationBodySelector,
+            milestoneSpecificOctetStreamParser)
         .headerRequired(
             ETH_CONSENSUS_VERSION_TYPE.withDescription(
                 "Version of the attestations being submitted."))
@@ -136,30 +173,36 @@ public class PostAttestationsV2 extends RestApiEndpoint {
         .build();
   }
 
-  public static DeserializableTypeDefinition<? extends Attestation> headerBasedSelector(
-      final Map<String, String> headers, final SchemaDefinitionCache schemaDefinitionCache) {
-    if (!headers.containsKey(HEADER_CONSENSUS_VERSION)) {
-      throw new BadRequestException(
-          String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
-    }
+  private static SpecMilestone getMilestoneFromConsensusVersionHeader(
+      final String consensusVersionHeader) {
     try {
-      final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
-      if (milestone.isLessThanOrEqualTo(SpecMilestone.DENEB)) {
-        return schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.PHASE0)
-            .getAttestationSchema()
-            .getJsonTypeDefinition();
-      } else {
-        return SchemaDefinitionsElectra.required(
-                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA))
-            .getSingleAttestationSchema()
-            .getJsonTypeDefinition();
-      }
-    } catch (Exception e) {
+      return SpecMilestone.forName(consensusVersionHeader);
+    } catch (Exception ex) {
       throw new BadRequestException(
           String.format(
               "Invalid value for (%s) header: %s",
-              HEADER_CONSENSUS_VERSION, headers.get(HEADER_CONSENSUS_VERSION)));
+              HEADER_CONSENSUS_VERSION, consensusVersionHeader));
     }
+  }
+
+  private static SszSchema<? extends Attestation> getAttestationSchema(
+      final SpecMilestone milestone, final SchemaDefinitionCache schemaDefinitionCache) {
+    if (milestone.isLessThan(SpecMilestone.ELECTRA)) {
+      return getPhaseOAttestationSchema(schemaDefinitionCache);
+    } else {
+      return getElectraAttestationSchema(schemaDefinitionCache);
+    }
+  }
+
+  private static AttestationSchema<Attestation> getPhaseOAttestationSchema(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttestationSchema();
+  }
+
+  private static SingleAttestationSchema getElectraAttestationSchema(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return SchemaDefinitionsElectra.required(
+            schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA))
+        .getSingleAttestationSchema();
   }
 }
