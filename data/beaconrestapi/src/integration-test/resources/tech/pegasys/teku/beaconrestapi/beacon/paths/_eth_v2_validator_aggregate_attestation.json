@@ -62,11 +62,27 @@
             "schema" : {
               "$ref" : "#/components/schemas/GetAggregatedAttestationResponseV2"
             }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
           }
         }
       },
       "404" : {
         "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "406" : {
+        "description" : "Not acceptable",
         "content" : {
           "application/json" : {
             "schema" : {
