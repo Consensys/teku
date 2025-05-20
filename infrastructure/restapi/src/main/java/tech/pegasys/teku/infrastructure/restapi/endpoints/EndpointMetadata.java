@@ -602,7 +602,7 @@ public class EndpointMetadata {
       this.requestBodyTypes.put(
           ContentTypes.OCTET_STREAM,
           OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
-      // any time we're setting a request body type, it's possible to get unsupported media-type, so
+      // any time we're setting a request body type, it's possible to get Unsupported media type, so
       // add implicitly
       return withUnsupportedMediaTypeResponse();
     }
