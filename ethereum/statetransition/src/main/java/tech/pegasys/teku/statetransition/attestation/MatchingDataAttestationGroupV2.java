@@ -342,11 +342,11 @@ public class MatchingDataAttestationGroupV2 {
 
       attestationsByValidatorCount
           .entrySet()
-          .removeIf(entry -> removeFromPooledAttestationSet(entry.getValue()));
+          .removeIf(entry -> pruneSupersededPooledAttestations(entry.getValue()));
 
       singleAttestationsByCommitteeIndex
           .entrySet()
-          .removeIf(entry -> removeFromPooledAttestationSet(entry.getValue()));
+          .removeIf(entry -> pruneSupersededPooledAttestations(entry.getValue()));
 
       return sizeBefore - size();
     } finally {
@@ -354,7 +354,7 @@ public class MatchingDataAttestationGroupV2 {
     }
   }
 
-  private boolean removeFromPooledAttestationSet(final Set<PooledAttestation> candidates) {
+  private boolean pruneSupersededPooledAttestations(final Set<PooledAttestation> candidates) {
     candidates.removeIf(candidate -> includedValidators.isSuperSetOf(candidate.bits()));
     return candidates.isEmpty();
   }
