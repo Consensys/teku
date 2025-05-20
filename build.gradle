@@ -562,9 +562,7 @@ application {
       // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
       "-XX:NativeMemoryTracking=summary",
       // 32Mb for Netty Direct ByteBuf
-      "-Dio.netty.maxDirectMemory=33554432",
-      // avoids JDK 24+ warning
-      "--enable-native-access=ALL-UNNAMED"
+      "-Dio.netty.maxDirectMemory=33554432"
   ]
 }
 
@@ -648,7 +646,7 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerImage = "consensys/teku"
-def dockerJdkVariants = [ "jdk21", "jdk24" ]
+def dockerJdkVariants = [ "jdk21" ]
 def dockerBuildDir = "build/docker-teku/"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
