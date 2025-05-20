@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentMatchers;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -58,7 +60,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-abstract class AggregatingAttestationPoolTest {
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
+class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
   private static final int COMMITTEE_SIZE = 130;
@@ -70,18 +73,19 @@ abstract class AggregatingAttestationPoolTest {
   private final Spec mockSpec = mock(Spec.class);
   private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
 
-  private AggregatingAttestationPool aggregatingPool;
+  private AggregatingAttestationPool aggregatingPool =
+      new AggregatingAttestationPool(
+          mockSpec,
+          mockRecentChainData,
+          new NoOpMetricsSystem(),
+          DEFAULT_MAXIMUM_ATTESTATION_COUNT);
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 
   private Int2IntMap committeeSizes;
 
-  abstract AggregatingAttestationPool instantiatePool(
-      final Spec spec, final RecentChainData recentChainData, final int maxAttestations);
-
   @BeforeEach
   public void setUp(final SpecContext specContext) {
-    aggregatingPool = instantiatePool(mockSpec, mockRecentChainData, 100);
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
@@ -457,7 +461,8 @@ abstract class AggregatingAttestationPoolTest {
 
   @TestTemplate
   void shouldRemoveOldSlotsWhenMaximumNumberOfAttestationsReached() {
-    aggregatingPool = instantiatePool(mockSpec, mockRecentChainData, 5);
+    aggregatingPool =
+        new AggregatingAttestationPool(mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5);
     final AttestationData attestationData0 = dataStructureUtil.randomAttestationData(ZERO);
     final AttestationData attestationData1 = dataStructureUtil.randomAttestationData(ONE);
     final AttestationData attestationData2 =
@@ -481,7 +486,8 @@ abstract class AggregatingAttestationPoolTest {
 
   @TestTemplate
   void shouldNotRemoveLastSlotEvenWhenMaximumNumberOfAttestationsReached() {
-    aggregatingPool = instantiatePool(mockSpec, mockRecentChainData, 5);
+    aggregatingPool =
+        new AggregatingAttestationPool(mockSpec, mockRecentChainData, new NoOpMetricsSystem(), 5);
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
     addAttestationFromValidators(attestationData, 1, 2);
     addAttestationFromValidators(attestationData, 2, 3);
@@ -536,7 +542,11 @@ abstract class AggregatingAttestationPoolTest {
     assumeThat(specMilestone).isLessThan(ELECTRA);
     final Spec mockedSpec = mock(Spec.class);
     final AggregatingAttestationPool aggregatingPool =
-        instantiatePool(mockedSpec, mockRecentChainData, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+        new AggregatingAttestationPool(
+            mockedSpec,
+            mockRecentChainData,
+            new NoOpMetricsSystem(),
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     // Adding a phase0 attestation to the aggregation pool
     final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
     when(mockedSpec.atSlot(any())).thenReturn(phase0Spec.getGenesisSpec());

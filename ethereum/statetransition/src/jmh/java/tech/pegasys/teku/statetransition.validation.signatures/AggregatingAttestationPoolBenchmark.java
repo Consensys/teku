@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -108,7 +107,7 @@ public class AggregatingAttestationPoolBenchmark {
         new HashMap<>();
 
     this.pool =
-        new AggregatingAttestationPoolV1(
+        new AggregatingAttestationPool(
             SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     this.recentChainData = mock(RecentChainData.class);
 
@@ -212,7 +211,7 @@ public class AggregatingAttestationPoolBenchmark {
   @BenchmarkMode(Mode.AverageTime)
   public void add(final Blackhole bh) {
     var emptyPool =
-        new AggregatingAttestationPoolV1(
+        new AggregatingAttestationPool(
             SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     attestations.forEach(emptyPool::add);
   }
