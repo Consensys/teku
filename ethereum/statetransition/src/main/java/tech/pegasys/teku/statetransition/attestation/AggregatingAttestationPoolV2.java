@@ -144,7 +144,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     this.rewardBasedAttestationSorterFactory = rewardBasedAttestationSorterFactory;
   }
 
-  // No longer synchronized
   @Override
   public void add(final ValidatableAttestation attestation) {
     final Supplier<Optional<BeaconState>> cachingStateSupplier =
