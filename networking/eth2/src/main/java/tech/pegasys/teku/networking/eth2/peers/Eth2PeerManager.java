@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.Meta
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -85,7 +86,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
-      final Duration eth2StatusUpdateInterval) {
+      final Duration eth2StatusUpdateInterval,
+      final DasReqRespLogger dasLogger) {
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.eth2PeerFactory = eth2PeerFactory;
@@ -96,11 +98,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             asyncRunner,
             this,
             combinedChainDataClient,
+            dataColumnSidecarCustody,
+            custodyGroupCountManager,
             recentChainData,
             metricsSystem,
             statusMessageFactory,
             metadataMessagesFactory,
-            rpcEncoding);
+            rpcEncoding,
+            dasLogger);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
@@ -128,7 +133,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final KZG kzg,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
-      final Optional<UInt64> custodyGroupCount) {
+      final Optional<UInt64> custodyGroupCount,
+      final DasReqRespLogger dasLogger) {
 
     // FIXME: we have no guarantee here that it's synced already
     custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
@@ -163,7 +169,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         rpcEncoding,
         eth2RpcPingInterval,
         eth2RpcOutstandingPingThreshold,
-        eth2StatusUpdateInterval);
+        eth2StatusUpdateInterval,
+        dasLogger);
   }
 
   public MetadataMessage getMetadataMessage() {
