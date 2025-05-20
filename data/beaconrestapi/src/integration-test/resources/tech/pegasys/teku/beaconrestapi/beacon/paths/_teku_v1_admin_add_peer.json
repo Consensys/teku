@@ -2,8 +2,8 @@
   "post" : {
     "tags" : [ "Teku" ],
     "operationId" : "AddPeer",
-    "summary" : "Add static peers to the node",
-    "description" : "Add static peers to the node.",
+    "summary" : "Add a static peer to the node",
+    "description" : "Add a static peer to the node.",
     "requestBody" : {
       "content" : {
         "application/json" : {
@@ -18,7 +18,7 @@
     },
     "responses" : {
       "200" : {
-        "description" : "Peers added successfully",
+        "description" : "Peer added successfully",
         "content" : { }
       },
       "400" : {

@@ -43,11 +43,11 @@ public class AddPeer extends RestApiEndpoint {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("AddPeer")
-            .summary("Add static peers to the node")
-            .description("Add static peers to the node.")
+            .summary("Add a static peer to the node")
+            .description("Add a static peer to the node.")
             .tags(TAG_TEKU)
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
-            .response(SC_OK, "Peers added successfully")
+            .response(SC_OK, "Peer added successfully")
             .withBadRequestResponse(Optional.of("Invalid peer address"))
             .withInternalErrorResponse()
             .build());
@@ -58,7 +58,7 @@ public class AddPeer extends RestApiEndpoint {
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     try {
 
-      final List<String> peerAddress = request.getRequestBody();
+      final String peerAddress = request.getRequestBody();
       if (peerAddress.isEmpty()) {
         request.respondWithCode(SC_OK);
         return;
@@ -68,7 +68,8 @@ public class AddPeer extends RestApiEndpoint {
           networkDataProvider
               .getDiscoveryNetwork()
               .orElseThrow(() -> new IllegalStateException("Discovery network not available"));
-      peerAddress.forEach(discoveryNetwork::addStaticPeer);
+
+      discoveryNetwork.addStaticPeer(peerAddress);
       request.respondWithCode(SC_OK);
     } catch (final IllegalArgumentException e) {
       request.respondError(SC_BAD_REQUEST, e.getMessage());

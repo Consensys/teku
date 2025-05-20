@@ -57,10 +57,8 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnOkWhenAValidListIsProvided() throws Exception {
-    final List<String> peers =
-        List.of(
-            "/ip4/127.0.0.1/udp/9001/p2p/16Uiu2HAmNSjEXNqaFjfLePKk87WZ7QwuTPd1HPEfJEeYnaC3bGZ1");
-    request.setRequestBody(peers);
+    final String peerAddress = "/ip4/someIP/udp/9001/p2p/somePeerId";
+    request.setRequestBody(peerAddress);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
@@ -68,8 +66,8 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnOkWhenRequestBodyIsEmpty() throws Exception {
-    final List<String> peers = List.of();
-    request.setRequestBody(peers);
+    final String peerAddress = "";
+    request.setRequestBody(peerAddress);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
@@ -77,20 +75,20 @@ class AddPeerTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnBadRequestIfInvalidPeerAddress() throws Exception {
-    final List<String> peers = List.of("invalid-peer-address");
-    request.setRequestBody(peers);
+    final String peerAddress = "invalid-peer-address";
+    request.setRequestBody(peerAddress);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.of(discoveryNetwork));
     doThrow(new IllegalArgumentException("Invalid peer address"))
         .when(discoveryNetwork)
-        .addStaticPeer(peers.get(0));
+        .addStaticPeer(peerAddress);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldReturnInternalErrorWhenDiscoveryNetworkNotAvailable() throws Exception {
-    final List<String> peers = List.of("/ip4/127.0.0.1/udp/9001/p2p/16Uiu2HAmFakePeerId");
-    request.setRequestBody(peers);
+    final String peerAddress = "/ip4/someIP/udp/9001/p2p/somePeerId";
+    request.setRequestBody(peerAddress);
     when(network.getDiscoveryNetwork()).thenReturn(Optional.empty());
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
