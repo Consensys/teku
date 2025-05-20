@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.v2.beacon;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,13 +52,9 @@ public class PostAttestationsV2ElectraIntegrationTest extends PostAttestationsV2
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  protected String serializeAttestations(final List<?> attestations) throws IOException {
-    final SerializableTypeDefinition<List<SingleAttestation>> attestationsListTypeDef =
-        SerializableTypeDefinition.listOf(
-            SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
-                .getSingleAttestationSchema()
-                .getJsonTypeDefinition());
-    return JsonUtil.serialize((List<SingleAttestation>) attestations, attestationsListTypeDef);
+  protected AttestationSchema<Attestation> getAttestationSchema() {
+    return SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions())
+        .getSingleAttestationSchema()
+        .castTypeToAttestationSchema();
   }
 }

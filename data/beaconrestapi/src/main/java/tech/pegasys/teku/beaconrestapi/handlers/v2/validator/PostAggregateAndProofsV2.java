@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -129,7 +130,7 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
                           .getSchemaDefinition(milestone)
                           .getSignedAggregateAndProofSchema(),
                       (long) specConfig.getMaxCommitteesPerSlot()
-                          * specConfig.getTargetCommitteeSize())
+                          * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE)
                   .sszDeserialize(bytes)
                   .asList();
             };

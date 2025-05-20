@@ -216,31 +216,6 @@ public class EndpointMetadata {
     return tags;
   }
 
-  public StringValueTypeDefinition<?> getPathParameterDefinition(final String parameterName) {
-    checkArgument(
-        pathParams.containsKey(parameterName),
-        "Path parameter " + parameterName + " was not found in endpoint metadata");
-    return pathParams.get(parameterName);
-  }
-
-  public StringValueTypeDefinition<?> getQueryParameterDefinition(final String parameterName) {
-    checkArgument(
-        requiredQueryParams.containsKey(parameterName)
-            || queryParams.containsKey(parameterName)
-            || queryParamsAllowEmpty.containsKey(parameterName)
-            || queryListParams.containsKey(parameterName),
-        "Query parameter " + parameterName + " was not found in endpoint metadata");
-    if (requiredQueryParams.containsKey(parameterName)) {
-      return requiredQueryParams.get(parameterName);
-    } else if (queryParams.containsKey(parameterName)) {
-      return queryParams.get(parameterName);
-    } else if (queryParamsAllowEmpty.containsKey(parameterName)) {
-      return queryParamsAllowEmpty.get(parameterName);
-    }
-
-    return queryListParams.get(parameterName);
-  }
-
   public ResponseContentTypeDefinition<?> getResponseType(
       final int statusCode, final String contentType) {
     final OpenApiResponse response = responses.get(Integer.toString(statusCode));
@@ -589,26 +564,15 @@ public class EndpointMetadata {
       return this;
     }
 
-    public EndpointMetaDataBuilder requestBodyType(
-        final DeserializableTypeDefinition<?> requestBodyType) {
-      this.requestBodyTypes.put(
-          ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
-      return this;
-    }
-
     public EndpointMetaDataBuilder optionalRequestBody() {
       this.requiredRequestBody = false;
       return this;
     }
 
-    public <T> EndpointMetaDataBuilder requestBodyType(
-        final DeserializableTypeDefinition<T> requestBodyType,
-        final IOFunction<Bytes, T> octetStreamParser) {
+    public EndpointMetaDataBuilder requestBodyType(
+        final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyTypes.put(
           ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
-      this.requestBodyTypes.put(
-          ContentTypes.OCTET_STREAM,
-          OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
       return this;
     }
 
@@ -631,30 +595,35 @@ public class EndpointMetadata {
     }
 
     public <T> EndpointMetaDataBuilder requestBodyType(
+        final DeserializableTypeDefinition<T> requestBodyType,
+        final IOFunction<Bytes, T> octetStreamParser) {
+      this.requestBodyTypes.put(
+          ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
+      this.requestBodyTypes.put(
+          ContentTypes.OCTET_STREAM,
+          OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
+      // any time we're setting a request body type, it's possible to get unsupported media-type, so
+      // add implicitly
+      return withUnsupportedMediaTypeResponse();
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector,
         final IOFunction<Bytes, T> octetStreamParser) {
-      // any time we're setting a request body type, it's possible to get unsupported media-type, so
-      // add implicitly
-      response(
-          SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media-type supplied", HTTP_ERROR_RESPONSE_TYPE);
       this.requestBodyTypes.put(
           ContentTypes.JSON,
           new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
       this.requestBodyTypes.put(
           ContentTypes.OCTET_STREAM,
           OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
-      return this;
+      return withUnsupportedMediaTypeResponse();
     }
 
     public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableOneOfTypeDefinition<T> requestBodyType,
         final BodyTypeSelector<T> bodyTypeSelector,
         final BiFunction<Bytes, Optional<String>, T> milestoneSpecificOctetStreamParser) {
-      // any time we're setting a request body type, it's possible to get unsupported media-type, so
-      // add implicitly
-      response(
-          SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media-type supplied", HTTP_ERROR_RESPONSE_TYPE);
       this.requestBodyTypes.put(
           ContentTypes.JSON,
           new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
@@ -662,7 +631,7 @@ public class EndpointMetadata {
           ContentTypes.OCTET_STREAM,
           MilestoneSpecificOctetStreamRequestContentTypeDefinition.parseBytes(
               milestoneSpecificOctetStreamParser));
-      return this;
+      return withUnsupportedMediaTypeResponse();
     }
 
     public <T> EndpointMetaDataBuilder requestBodyType(
@@ -670,10 +639,6 @@ public class EndpointMetadata {
         final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<T> bodyTypeSelector,
         final BiFunction<Bytes, Optional<String>, List<? extends T>>
             milestoneSpecificOctetStreamParser) {
-      // any time we're setting a request body type, it's possible to get unsupported media-type, so
-      // add implicitly
-      response(
-          SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media-type supplied", HTTP_ERROR_RESPONSE_TYPE);
       this.requestBodyTypes.put(
           ContentTypes.JSON,
           new OneOfArrayJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
@@ -681,7 +646,7 @@ public class EndpointMetadata {
           ContentTypes.OCTET_STREAM,
           MilestoneSpecificOctetStreamRequestContentTypeDefinition.parseBytes(
               milestoneSpecificOctetStreamParser));
-      return this;
+      return withUnsupportedMediaTypeResponse();
     }
 
     public EndpointMetaDataBuilder response(
