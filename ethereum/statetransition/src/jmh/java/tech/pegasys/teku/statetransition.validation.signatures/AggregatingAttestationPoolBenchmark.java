@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 @Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
@@ -109,7 +110,11 @@ public class AggregatingAttestationPoolBenchmark {
 
     this.pool =
         new AggregatingAttestationPoolV1(
-            SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+            SPEC,
+            recentChainData,
+            new NoOpMetricsSystem(),
+            AggregatingAttestationPoolProfiler.NOOP,
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     this.recentChainData = mock(RecentChainData.class);
 
     try (final FileInputStream fileInputStream = new FileInputStream(STATE_PATH)) {
@@ -213,7 +218,11 @@ public class AggregatingAttestationPoolBenchmark {
   public void add(final Blackhole bh) {
     var emptyPool =
         new AggregatingAttestationPoolV1(
-            SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+            SPEC,
+            recentChainData,
+            new NoOpMetricsSystem(),
+            AggregatingAttestationPoolProfiler.NOOP,
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     attestations.forEach(emptyPool::add);
   }
 
