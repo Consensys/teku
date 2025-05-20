@@ -87,7 +87,7 @@ public class BlobSidecarsByRangeMessageHandler
 
     final SpecConfigDeneb specConfig =
         SpecConfigDeneb.required(
-            spec.atSlot(getFuluCappedMaxSlot(request.getMaxSlot())).getConfig());
+            spec.atSlot(getEndSlotBeforeFulu(request.getMaxSlot())).getConfig());
 
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
@@ -113,8 +113,8 @@ public class BlobSidecarsByRangeMessageHandler
     return Optional.empty();
   }
 
-  private UInt64 getFuluCappedMaxSlot(final UInt64 maxSlot) {
-    return spec.blobSidecarsAvailabilityDeprecationSlot().minus(1).min(maxSlot);
+  private UInt64 getEndSlotBeforeFulu(final UInt64 maxSlot) {
+    return spec.blobSidecarsAvailabilityDeprecationSlot().safeDecrement().min(maxSlot);
   }
 
   @Override
@@ -131,10 +131,10 @@ public class BlobSidecarsByRangeMessageHandler
         peer.getId(),
         message.getCount(),
         startSlot);
-    final UInt64 endSlotFulu = getFuluCappedMaxSlot(endSlot);
+    final UInt64 endSlotBeforeFulu = getEndSlotBeforeFulu(endSlot);
 
     final SpecConfigDeneb specConfig =
-        SpecConfigDeneb.required(spec.atSlot(endSlotFulu).getConfig());
+        SpecConfigDeneb.required(spec.atSlot(endSlotBeforeFulu).getConfig());
     final int requestedCount = calculateRequestedCount(message, specConfig.getMaxBlobsPerBlock());
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
@@ -154,7 +154,7 @@ public class BlobSidecarsByRangeMessageHandler
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
               if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestEpoch)
-                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotFulu)) {
+                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotBeforeFulu)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
               }
@@ -163,8 +163,8 @@ public class BlobSidecarsByRangeMessageHandler
                   combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
 
               final SortedMap<UInt64, Bytes32> canonicalHotRoots;
-              if (endSlotFulu.isGreaterThan(finalizedSlot)) {
-                final UInt64 hotSlotsCount = endSlotFulu.increment().minusMinZero(startSlot);
+              if (endSlotBeforeFulu.isGreaterThan(finalizedSlot)) {
+                final UInt64 hotSlotsCount = endSlotBeforeFulu.increment().minusMinZero(startSlot);
 
                 canonicalHotRoots =
                     combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
@@ -180,7 +180,7 @@ public class BlobSidecarsByRangeMessageHandler
                   new RequestState(
                       callback,
                       startSlot,
-                      endSlotFulu,
+                      endSlotBeforeFulu,
                       canonicalHotRoots,
                       finalizedSlot,
                       specConfig.getMaxRequestBlobSidecars());
