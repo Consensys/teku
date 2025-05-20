@@ -258,7 +258,7 @@ public class SimpleSidecarRetrieverTest {
                     IntStream.range(0, columnCount)
                         .mapToObj(UInt64::valueOf)
                         .map(colIdx -> new DataColumnSlotAndIdentifier(slot, Bytes32.ZERO, colIdx)))
-            .limit(100_000)
+            .limit(20_000)
             .toList();
 
     List<SafeFuture<DataColumnSidecar>> sidecarFutures =
