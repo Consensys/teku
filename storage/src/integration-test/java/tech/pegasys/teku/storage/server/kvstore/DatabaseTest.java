@@ -64,7 +64,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -73,6 +75,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -249,7 +252,8 @@ public class DatabaseTest {
             false,
             Optional.empty(),
             Optional.empty(),
-            true));
+            true,
+            false));
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -265,7 +269,8 @@ public class DatabaseTest {
             false,
             Optional.empty(),
             Optional.empty(),
-            true));
+            true,
+            false));
     // Will not be overridden from Database interface, only initial set
     assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
@@ -415,7 +420,8 @@ public class DatabaseTest {
             false,
             Optional.empty(),
             Optional.empty(),
-            true));
+            true,
+            false));
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -431,7 +437,8 @@ public class DatabaseTest {
             false,
             Optional.empty(),
             Optional.empty(),
-            true));
+            true,
+            false));
 
     // check all non-canonical blobs are present
     List.of(blobSidecar1_0, blobSidecar2_0, blobSidecar2_1, blobSidecar3_0, blobSidecar5_0)
@@ -2311,6 +2318,140 @@ public class DatabaseTest {
     commit(transaction);
 
     assertThat(database.getLatestCanonicalBlockRoot()).contains(randomBlockRoot);
+  }
+
+  @TestTemplate
+  public void addSidecar_isOperative(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
+
+    database.addSidecar(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier)).contains(dataColumnSidecar);
+  }
+
+  @TestTemplate
+  public void setFirstCustodyIncompleteSlot_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    assertThat(database.getFirstCustodyIncompleteSlot().isEmpty()).isTrue();
+
+    final UInt64 incompleteSlot = UInt64.valueOf(123);
+    database.setFirstCustodyIncompleteSlot(UInt64.valueOf(123));
+    assertThat(database.getFirstCustodyIncompleteSlot()).contains(incompleteSlot);
+  }
+
+  @TestTemplate
+  public void setFirstSamplerIncompleteSlot_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    assertThat(database.getFirstSamplerIncompleteSlot().isEmpty()).isTrue();
+
+    final UInt64 incompleteSlot = UInt64.valueOf(123);
+    database.setFirstSamplerIncompleteSlot(UInt64.valueOf(123));
+    assertThat(database.getFirstSamplerIncompleteSlot()).contains(incompleteSlot);
+  }
+
+  @TestTemplate
+  @SuppressWarnings("JavaCase")
+  public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final DataColumnSidecar dataColumnSidecar1_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
+    final DataColumnSidecar dataColumnSidecar1_1 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar dataColumnSidecar2_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+
+    database.addSidecar(dataColumnSidecar1_0);
+    database.addSidecar(dataColumnSidecar1_1);
+    database.addSidecar(dataColumnSidecar2_0);
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(dataColumnSidecar1_0.getSlot().plus(1))) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(dataColumnSidecar1_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1);
+    }
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(
+            dataColumnSidecar1_0.getSlot().plus(1), dataColumnSidecar2_0.getSlot().plus(1))) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
+    }
+  }
+
+  @TestTemplate
+  @SuppressWarnings("JavaCase")
+  public void pruneAllSidecars_isOperative(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar dataColumnSidecar1_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
+    final DataColumnSidecar dataColumnSidecar1_1 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar dataColumnSidecar2_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+
+    database.addSidecar(dataColumnSidecar1_0);
+    database.addSidecar(dataColumnSidecar1_1);
+    database.addSidecar(dataColumnSidecar2_0);
+
+    database.pruneAllSidecars(ZERO);
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(
+              columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1, columnSlotAndIdentifier2_0);
+    }
+
+    database.pruneAllSidecars(ONE);
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
+    }
+
+    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot());
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
