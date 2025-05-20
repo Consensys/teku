@@ -62,10 +62,21 @@ public class DataColumnSidecarGossipValidator {
                   TekuMetricCategory.BEACON,
                   "data_column_sidecar_inclusion_proof_verification_seconds",
                   "Time taken to verify data column sidecar inclusion proof",
-                  new double[] {
-                    0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05,
-                    0.1, 0.5, 1.0
-                  });
+                  0.001,
+                  0.002,
+                  0.003,
+                  0.004,
+                  0.005,
+                  0.01,
+                  0.015,
+                  0.02,
+                  0.025,
+                  0.03,
+                  0.04,
+                  0.05,
+                  0.1,
+                  0.5,
+                  1.0);
   public static final BiFunction<MetricsSystem, TimeProvider, MetricsHistogram>
       DATA_COLUMN_SIDECAR_KZG_BATCH_VERIFICATION_HISTOGRAM =
           (metricsSystem, timeProvider) ->
@@ -75,9 +86,20 @@ public class DataColumnSidecarGossipValidator {
                   TekuMetricCategory.BEACON,
                   "kzg_verification_data_column_batch_seconds",
                   "Runtime of batched data column kzg verification",
-                  new double[] {
-                    0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
-                  });
+                  0.005,
+                  0.01,
+                  0.025,
+                  0.05,
+                  0.075,
+                  0.1,
+                  0.25,
+                  0.5,
+                  0.75,
+                  1.0,
+                  1.25,
+                  1.5,
+                  1.75,
+                  2.0);
 
   private final Spec spec;
   private final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet;

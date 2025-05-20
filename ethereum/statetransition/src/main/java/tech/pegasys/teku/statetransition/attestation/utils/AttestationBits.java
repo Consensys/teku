@@ -15,60 +15,59 @@ package tech.pegasys.teku.statetransition.attestation.utils;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
-public interface AttestationBitsAggregator {
-
-  static AttestationBitsAggregator fromEmptyFromAttestationSchema(
+public interface AttestationBits {
+  static AttestationBits fromEmptyFromAttestationSchema(
       final AttestationSchema<?> attestationSchema, final Optional<Int2IntMap> committeesSize) {
     return attestationSchema
         .toVersionElectra()
         .map(
             schema ->
-                AttestationBitsAggregatorElectra.fromAttestationSchema(
-                    schema, committeesSize.orElseThrow()))
-        .orElseGet(() -> AttestationBitsAggregatorPhase0.fromAttestationSchema(attestationSchema));
+                AttestationBitsElectra.fromAttestationSchema(schema, committeesSize.orElseThrow()))
+        .orElseGet(() -> AttestationBitsPhase0.fromAttestationSchema(attestationSchema));
   }
 
-  static AttestationBitsAggregator of(final ValidatableAttestation attestation) {
+  static AttestationBits of(final ValidatableAttestation attestation) {
     return attestation
         .getAttestation()
         .getCommitteeBits()
         .map(
             committeeBits ->
-                (AttestationBitsAggregator)
-                    new AttestationBitsAggregatorElectra(
+                (AttestationBits)
+                    new AttestationBitsElectra(
                         attestation.getAttestation().getAggregationBits(),
                         committeeBits,
                         attestation.getCommitteesSize().orElseThrow()))
         .orElseGet(
-            () ->
-                new AttestationBitsAggregatorPhase0(
-                    attestation.getAttestation().getAggregationBits()));
+            () -> new AttestationBitsPhase0(attestation.getAttestation().getAggregationBits()));
   }
 
-  static AttestationBitsAggregator of(
+  static AttestationBits of(
       final Attestation attestation, final Optional<Int2IntMap> committeesSize) {
     return attestation
         .getCommitteeBits()
-        .<AttestationBitsAggregator>map(
+        .<AttestationBits>map(
             committeeBits ->
-                new AttestationBitsAggregatorElectra(
+                new AttestationBitsElectra(
                     attestation.getAggregationBits(), committeeBits, committeesSize.orElseThrow()))
-        .orElseGet(() -> new AttestationBitsAggregatorPhase0(attestation.getAggregationBits()));
+        .orElseGet(() -> new AttestationBitsPhase0(attestation.getAggregationBits()));
   }
 
-  void or(AttestationBitsAggregator other);
+  void or(AttestationBits other);
 
-  boolean aggregateWith(Attestation other);
+  boolean aggregateWith(AttestationBits other);
 
   void or(Attestation other);
 
   boolean isSuperSetOf(Attestation other);
+
+  boolean isSuperSetOf(AttestationBits other);
 
   SszBitlist getAggregationBits();
 
@@ -78,6 +77,16 @@ public interface AttestationBitsAggregator {
 
   boolean requiresCommitteeBits();
 
+  int getBitCount();
+
+  boolean isExclusivelyFromCommittee(int committeeIndex);
+
+  boolean isFromCommittee(int committeeIndex);
+
+  int getFirstCommitteeIndex();
+
+  IntStream streamCommitteeIndices();
+
   /** Creates an independent copy of this instance */
-  AttestationBitsAggregator copy();
+  AttestationBits copy();
 }

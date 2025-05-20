@@ -21,6 +21,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class ExecutionPayloadAndBlobsBundleSupplier
     extends DataStructureUtilSupplier<ExecutionPayloadAndBlobsBundle> {
   public ExecutionPayloadAndBlobsBundleSupplier() {
-    super(DataStructureUtil::randomExecutionPayloadAndBlobsBundle, SpecMilestone.DENEB);
+    super(
+        DataStructureUtil::randomExecutionPayloadAndBlobsBundle,
+        SpecMilestone.DENEB,
+        SpecMilestone.ELECTRA);
   }
 }

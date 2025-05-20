@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.builder;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,19 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.deneb.BlobsBundleSupplier;
+import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
+import tech.pegasys.teku.spec.propertytest.suppliers.builder.ExecutionPayloadAndBlobsCellBundleSupplier;
 
-public class BlobsBundlePropertyTest {
+public class ExecutionPayloadAndBlobsCellBundlePropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = BlobsBundleSupplier.class) final BlobsBundleDeneb blobsBundle)
+  void roundTrip(
+      @ForAll(supplier = ExecutionPayloadAndBlobsCellBundleSupplier.class)
+          final ExecutionPayloadAndBlobsCellBundle executionPayloadAndBlobsCellBundle)
       throws JsonProcessingException {
-    assertRoundTrip(blobsBundle);
+    assertRoundTrip(executionPayloadAndBlobsCellBundle);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlobsBundleSupplier.class) final BlobsBundleDeneb blobsBundle,
+      @ForAll(supplier = ExecutionPayloadAndBlobsCellBundleSupplier.class)
+          final ExecutionPayloadAndBlobsCellBundle executionPayloadAndBlobsCellBundle,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(blobsBundle, seed);
+    assertDeserializeMutatedThrowsExpected(executionPayloadAndBlobsCellBundle, seed);
   }
 }

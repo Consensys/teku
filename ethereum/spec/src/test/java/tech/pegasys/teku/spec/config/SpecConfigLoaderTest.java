@@ -66,6 +66,59 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
+  public void shouldReadConfigByDefaults(@TempDir final Path tempDir) throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(
+        configFile,
+        """
+            CONFIG_NAME: 'mainnet'
+            PRESET_BASE: 'mainnet'
+            """);
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(configFile.toString(), true, __ -> {}).specConfig();
+    assertAllBellatrixFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
+  }
+
+  @Test
+  public void shouldReadConfigByDefaultsWithoutPreset(@TempDir final Path tempDir)
+      throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(configFile, "CONFIG_NAME: 'mainnet'\n");
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(configFile.toString(), true, __ -> {}).specConfig();
+    assertAllBellatrixFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
+  }
+
+  @Test
+  public void shouldFailToReadConfigWithoutDefaulting(@TempDir final Path tempDir)
+      throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(configFile, "PRESET_BASE: 'mainnet'\n");
+    assertThatThrownBy(() -> SpecConfigLoader.loadConfig(configFile.toString(), true, __ -> {}))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "The specified network configuration had missing or invalid values for constants");
+  }
+
+  @Test
+  public void shouldFailToReadConfigWithMissingConfigName(@TempDir final Path tempDir)
+      throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(
+        configFile,
+        """
+            CONFIG_NAME: 'missing'
+            PRESET_BASE: 'mainnet'
+            """);
+    assertThatThrownBy(() -> SpecConfigLoader.loadConfig(configFile.toString(), true, __ -> {}))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "The specified network configuration had missing or invalid values for constants");
+  }
+
+  @Test
   public void shouldLoadMainnetFromFileUrl() throws Exception {
     final URL url = getMainnetConfigResourceAsUrl();
     final SpecConfig config = SpecConfigLoader.loadConfig(url.toString()).specConfig();

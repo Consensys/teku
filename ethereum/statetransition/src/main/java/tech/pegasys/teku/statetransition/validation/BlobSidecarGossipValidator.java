@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -120,10 +119,8 @@ public class BlobSidecarGossipValidator {
      * [REJECT] The sidecar's index is consistent with `MAX_BLOBS_PER_BLOCK` -- i.e. `blob_sidecar.index < MAX_BLOBS_PER_BLOCK`.
      */
     final Optional<Integer> maxBlobsPerBlockAtSlot =
-        spec.atSlot(blobSidecar.getSlot())
-            .getConfig()
-            .toVersionDeneb()
-            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+        spec.getMaxBlobsPerBlockAtSlot(blobSidecar.getSlot());
+
     if (maxBlobsPerBlockAtSlot.isEmpty()) {
       return completedFuture(reject("BlobSidecar's slot is pre-Deneb"));
     }

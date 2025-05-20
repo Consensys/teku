@@ -103,7 +103,6 @@ final class RustKZG implements KZG {
     throw new RuntimeException("LibPeerDASKZG library doesn't support computeBlobKzgProof");
   }
 
-  // TODO: test
   @Override
   public List<KZGCell> computeCells(final Bytes blob) {
     final Cells cells = library.computeCells(blob.toArrayUnsafe());

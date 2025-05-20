@@ -1,22 +1,22 @@
 {
-  "signingRoot" : "0x3f9c1cc3af54c94ee8a677aee350bb772b00c3864b7dfdd34ffaf6ab004d1f0a",
+  "signingRoot" : "0x7b2e98fad7257912bd8f1b69b5a62c678aa519575269bf883e4eadeed27c28c3",
   "type" : "BLOCK_V2",
   "fork_info" : {
     "fork" : {
-      "previous_version" : "0x003ea73e",
-      "current_version" : "0x135fa13e",
-      "epoch" : "4517950290795281992"
+      "previous_version" : "0x4dc28f3e",
+      "current_version" : "0x60e3893e",
+      "epoch" : "4511340353633578184"
     },
-    "genesis_validators_root" : "0xed1cad3ee8099978b13707b6acc357bb1b768147301dd68a5d5beccacb0094b3"
+    "genesis_validators_root" : "0x39a1953e6838168c8643a463fae6a9ef34827d8f094079731460faeb348471de"
   },
   "beacon_block" : {
     "version" : "BELLATRIX",
     "block_header" : {
       "slot" : "4666673844721362956",
-      "proposer_index" : "4665021361504678828",
-      "parent_root" : "0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e",
-      "state_root" : "0x103ac9406cdc59b89027eb1c9e97f607dd5fdccfa8fb2da4eaeea9d25032add9",
-      "body_root" : "0xada3b1be6d79e8300c701822a4358a8e8d323c74cf16dbd998db63273f032b34"
+      "proposer_index" : "4512992836850262312",
+      "parent_root" : "0xdafbb23e48beb933bcf49f8ad83a43ee157382b57a54add02fdaa802f09fdc28",
+      "state_root" : "0xed1cad3ee8099978b13707b6acc357bb1b768147301dd68a5d5beccacb0094b3",
+      "body_root" : "0x62cdc15d2f6bf805cde0f5d1dd5f0cc6383e0ecb15d2baddbcc0927f02b35cbd"
     }
   }
 }

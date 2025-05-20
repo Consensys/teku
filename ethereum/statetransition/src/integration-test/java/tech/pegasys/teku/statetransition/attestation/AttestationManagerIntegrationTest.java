@@ -73,7 +73,7 @@ class AttestationManagerIntegrationTest {
       new AggregateGenerator(spec, storageSystem.chainBuilder().getValidatorKeys());
 
   private final AggregatingAttestationPool attestationPool =
-      new AggregatingAttestationPool(
+      new AggregatingAttestationPoolV1(
           spec, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData);

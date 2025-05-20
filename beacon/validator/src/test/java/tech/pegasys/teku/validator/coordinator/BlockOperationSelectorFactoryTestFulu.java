@@ -50,8 +50,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsFulu;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
@@ -285,8 +285,7 @@ class BlockOperationSelectorFactoryTestFulu {
 
   @Test
   void shouldCreateDataColumnSidecarsForBlockContents() {
-    final SignedBlockContentsFulu signedBlockContents =
-        dataStructureUtil.randomSignedBlockContentsFulu();
+    final SignedBlockContainer signedBlockContents = dataStructureUtil.randomSignedBlockContents();
 
     final MiscHelpersFulu miscHelpersFulu =
         MiscHelpersFulu.required(spec.atSlot(signedBlockContents.getSlot()).miscHelpers());
