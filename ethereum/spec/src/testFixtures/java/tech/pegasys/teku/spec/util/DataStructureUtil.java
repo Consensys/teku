@@ -2718,7 +2718,7 @@ public final class DataStructureUtil {
               .orElseGet(DataStructureUtil.this::randomNumberOfBlobsPerBlock);
 
       return dataColumnSidecarSchema.create(
-          index.orElseGet(DataStructureUtil.this::randomBlobSidecarIndex),
+          index.orElseGet(DataStructureUtil.this::randomDataColumnSidecarIndex),
           dataColumn.orElseGet(
               () -> randomDataColumn(signedBlockHeader.getMessage().getSlot(), numberOfProofs)),
           kzgCommitments.orElseGet(
@@ -2921,6 +2921,15 @@ public final class DataStructureUtil {
                 .orElseThrow()
                 .getMaxBlobsPerBlock()
             + 1);
+  }
+
+  public UInt64 randomDataColumnSidecarIndex() {
+    return randomUInt64(
+        spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+            .getConfig()
+            .toVersionFulu()
+            .orElseThrow()
+            .getNumberOfColumns());
   }
 
   private int randomInt(final int origin, final int bound) {

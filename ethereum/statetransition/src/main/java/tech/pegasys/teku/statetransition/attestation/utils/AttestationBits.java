@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation.utils;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -79,6 +80,12 @@ public interface AttestationBits {
   int getBitCount();
 
   boolean isExclusivelyFromCommittee(int committeeIndex);
+
+  boolean isFromCommittee(int committeeIndex);
+
+  int getFirstCommitteeIndex();
+
+  IntStream streamCommitteeIndices();
 
   /** Creates an independent copy of this instance */
   AttestationBits copy();

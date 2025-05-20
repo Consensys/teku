@@ -275,12 +275,10 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withNetwork(final URL networkYaml, final String networkName)
-      throws Exception {
-    LOG.debug("Network={}", networkName);
+  public TekuNodeConfigBuilder withNetwork(final URL networkYaml) throws Exception {
     LOG.debug("Copy Network from URL {}", networkYaml);
     configMap.put("network", NETWORK_FILE_PATH);
-    configFileMap.put(copyToTmpFile(networkYaml), NETWORK_FILE_PATH);
+    configFileMap.put(Node.copyToTmpFile(networkYaml, ".yaml"), NETWORK_FILE_PATH);
     return this;
   }
 
@@ -643,16 +641,6 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
     LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
     configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
-    return this;
-  }
-
-  public TekuNodeConfigBuilder withStubBlobCount(final Optional<Integer> stubBlobCount) {
-    LOG.debug("Xinterop-number-of-blobs: {}", stubBlobCount);
-    if (stubBlobCount.isPresent()) {
-      configMap.put("Xinterop-number-of-blobs", stubBlobCount.get());
-    } else {
-      configMap.remove("Xinterop-number-of-blobs");
-    }
     return this;
   }
 

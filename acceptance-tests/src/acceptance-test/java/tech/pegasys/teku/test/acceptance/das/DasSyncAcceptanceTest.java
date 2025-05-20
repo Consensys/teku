@@ -15,6 +15,7 @@ package tech.pegasys.teku.test.acceptance.das;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
@@ -98,7 +99,7 @@ public class DasSyncAcceptanceTest extends AcceptanceTestBase {
   }
 
   private TekuBeaconNode createLateJoiningNode(
-      final TekuBeaconNode primaryNode, final int genesisTime) throws IOException {
+      final TekuBeaconNode primaryNode, final int genesisTime) throws Exception {
     return createTekuBeaconNode(
         createConfigBuilder()
             .withGenesisTime(genesisTime)
@@ -108,17 +109,10 @@ public class DasSyncAcceptanceTest extends AcceptanceTestBase {
             .build());
   }
 
-  private TekuNodeConfigBuilder createConfigBuilder() throws IOException {
+  private TekuNodeConfigBuilder createConfigBuilder() throws Exception {
     return TekuNodeConfigBuilder.createBeaconNode()
-        .withNetwork("minimal")
-        .withAltairEpoch(UInt64.valueOf(0))
-        .withBellatrixEpoch(UInt64.valueOf(0))
-        .withCapellaEpoch(UInt64.valueOf(0))
-        .withDenebEpoch(UInt64.valueOf(0))
-        .withElectraEpoch(UInt64.valueOf(0))
-        .withFuluEpoch(UInt64.valueOf(fuluEpoch))
+        .withNetwork(Resources.getResource("fulu-minimal.yaml"))
         .withStubExecutionEngine()
-        .withStubBlobCount(Optional.of(1))
         .withLogLevel("DEBUG");
   }
 }

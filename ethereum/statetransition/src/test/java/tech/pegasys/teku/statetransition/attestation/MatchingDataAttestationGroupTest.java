@@ -120,7 +120,8 @@ class MatchingDataAttestationGroupTest {
     int numRemoved =
         group.onAttestationIncludedInBlock(
             UInt64.ZERO,
-            aggregateAttestations(toAttestation(attestation1), toAttestation(attestation2)));
+            aggregateAttestations(
+                committeeSizes, toAttestation(attestation1), toAttestation(attestation2)));
 
     assertThat(group.stream(Optional.of(UInt64.ZERO)))
         .containsExactly(toPooledAttestationWithData(attestation3));
@@ -155,7 +156,8 @@ class MatchingDataAttestationGroupTest {
         .containsExactly(toPooledAttestationWithData(attestation1));
 
     final Attestation expected =
-        aggregateAttestations(toAttestation(attestation2), toAttestation(attestation3));
+        aggregateAttestations(
+            committeeSizes, toAttestation(attestation2), toAttestation(attestation3));
 
     assertThat(group.stream(Optional.of(UInt64.ONE)))
         .containsExactly(
@@ -184,7 +186,8 @@ class MatchingDataAttestationGroupTest {
     final PooledAttestation attestation2 = addPooledAttestation(2);
 
     final Attestation expected =
-        aggregateAttestations(toAttestation(attestation1), toAttestation(attestation2));
+        aggregateAttestations(
+            committeeSizes, toAttestation(attestation1), toAttestation(attestation2));
 
     assertThat(group.stream(Optional.of(UInt64.ZERO)))
         .containsExactlyInAnyOrder(
@@ -205,7 +208,9 @@ class MatchingDataAttestationGroupTest {
                 ValidatableAttestation.from(
                     spec,
                     aggregateAttestations(
-                        toAttestation(bigAttestation), toAttestation(littleAttestation)),
+                        committeeSizes,
+                        toAttestation(bigAttestation),
+                        toAttestation(littleAttestation)),
                     committeeSizes)),
             mediumAttestation);
   }
@@ -250,7 +255,8 @@ class MatchingDataAttestationGroupTest {
             PooledAttestation.fromValidatableAttestation(
                 ValidatableAttestation.from(
                     spec,
-                    aggregateAttestations(toAttestation(useful1), toAttestation(useful2)),
+                    aggregateAttestations(
+                        committeeSizes, toAttestation(useful1), toAttestation(useful2)),
                     committeeSizes)));
 
     assertThat(group.stream(Optional.of(UInt64.ZERO))).containsExactly(expected);
@@ -363,6 +369,7 @@ class MatchingDataAttestationGroupTest {
         group.onAttestationIncludedInBlock(
             UInt64.ZERO,
             aggregateAttestations(
+                committeeSizes,
                 attestation1.toAttestation(attestationSchema),
                 attestation2.toAttestation(attestationSchema)));
 
