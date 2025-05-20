@@ -21,26 +21,27 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
-class AttestationBitsPhase0 implements AttestationBits {
+class AttestationBitsAggregatorPhase0 implements AttestationBitsAggregator {
   private SszBitlist aggregationBits;
 
-  AttestationBitsPhase0(final SszBitlist aggregationBits) {
+  AttestationBitsAggregatorPhase0(final SszBitlist aggregationBits) {
     this.aggregationBits = aggregationBits;
   }
 
-  static AttestationBits fromAttestationSchema(final AttestationSchema<?> attestationSchema) {
-    return new AttestationBitsPhase0(attestationSchema.createEmptyAggregationBits());
+  static AttestationBitsAggregator fromAttestationSchema(
+      final AttestationSchema<?> attestationSchema) {
+    return new AttestationBitsAggregatorPhase0(attestationSchema.createEmptyAggregationBits());
   }
 
   @Override
-  public void or(final AttestationBits other) {
-    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+  public void or(final AttestationBitsAggregator other) {
+    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other);
     aggregationBits = aggregationBits.or(otherPhase0.aggregationBits);
   }
 
   @Override
-  public boolean aggregateWith(final AttestationBits other) {
-    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+  public boolean aggregateWith(final AttestationBitsAggregator other) {
+    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other);
     if (aggregationBits.intersects(otherPhase0.aggregationBits)) {
       return false;
     }
@@ -59,8 +60,8 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public boolean isSuperSetOf(final AttestationBits other) {
-    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+  public boolean isSuperSetOf(final AttestationBitsAggregator other) {
+    final AttestationBitsAggregatorPhase0 otherPhase0 = requiresPhase0(other);
     return aggregationBits.isSuperSetOf(otherPhase0.aggregationBits);
   }
 
@@ -85,8 +86,8 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public AttestationBits copy() {
-    return new AttestationBitsPhase0(aggregationBits);
+  public AttestationBitsAggregator copy() {
+    return new AttestationBitsAggregatorPhase0(aggregationBits);
   }
 
   @Override
@@ -104,8 +105,9 @@ class AttestationBitsPhase0 implements AttestationBits {
     return MoreObjects.toStringHelper(this).add("aggregationBits", aggregationBits).toString();
   }
 
-  static AttestationBitsPhase0 requiresPhase0(final AttestationBits aggregator) {
-    if (!(aggregator instanceof AttestationBitsPhase0 aggregatorPhase0)) {
+  static AttestationBitsAggregatorPhase0 requiresPhase0(
+      final AttestationBitsAggregator aggregator) {
+    if (!(aggregator instanceof AttestationBitsAggregatorPhase0 aggregatorPhase0)) {
       throw new IllegalArgumentException(
           "AttestationBitsAggregator required to be Phase0 but was: "
               + aggregator.getClass().getSimpleName());
@@ -119,7 +121,7 @@ class AttestationBitsPhase0 implements AttestationBits {
       return true;
     }
 
-    if (!(o instanceof AttestationBitsPhase0 that)) {
+    if (!(o instanceof AttestationBitsAggregatorPhase0 that)) {
       return false;
     }
     return this.aggregationBits.equals(that.aggregationBits);

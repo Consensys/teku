@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -67,10 +67,11 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
    * <p>Pruning isn't required for this map because the entire attestation group is dropped by
    * {@link AggregatingAttestationPool} once it is too old to be included in blocks (32 slots).
    */
-  private final NavigableMap<UInt64, AttestationBits> includedValidatorsBySlot = new TreeMap<>();
+  private final NavigableMap<UInt64, AttestationBitsAggregator> includedValidatorsBySlot =
+      new TreeMap<>();
 
   /** Precalculated combined list of included validators across all blocks. */
-  private AttestationBits includedValidators;
+  private AttestationBitsAggregator includedValidators;
 
   public MatchingDataAttestationGroup(
       final Spec spec,
@@ -82,8 +83,8 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
     this.includedValidators = createEmptyAttestationBits();
   }
 
-  private AttestationBits createEmptyAttestationBits() {
-    return AttestationBits.fromEmptyFromAttestationSchema(
+  private AttestationBitsAggregator createEmptyAttestationBits() {
+    return AttestationBitsAggregator.fromEmptyFromAttestationSchema(
         spec.atSlot(attestationData.getSlot()).getSchemaDefinitions().getAttestationSchema(),
         committeesSize);
   }
@@ -192,7 +193,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
         slot,
         (__, attestationBitsCalculator) -> {
           if (attestationBitsCalculator == null) {
-            return AttestationBits.of(attestation, committeesSize);
+            return AttestationBitsAggregator.of(attestation, committeesSize);
           }
           attestationBitsCalculator.or(attestation);
           return attestationBitsCalculator;
@@ -225,7 +226,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
   }
 
   public void onReorg(final UInt64 commonAncestorSlot) {
-    final NavigableMap<UInt64, AttestationBits> removedSlots =
+    final NavigableMap<UInt64, AttestationBitsAggregator> removedSlots =
         includedValidatorsBySlot.tailMap(commonAncestorSlot, false);
     if (removedSlots.isEmpty()) {
       // No relevant attestations in affected slots, so nothing to do.
@@ -257,7 +258,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
   private class AggregatingIterator implements Iterator<PooledAttestation> {
 
     private final Optional<UInt64> maybeCommitteeIndex;
-    private final AttestationBits includedValidators;
+    private final AttestationBitsAggregator includedValidators;
 
     private Iterator<PooledAttestation> remainingAttestations = getRemainingAttestations();
 
