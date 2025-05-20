@@ -23,8 +23,8 @@ public class DataColumnSidecarsByRootRequestMessage extends SszListImpl<DataColu
 
   public DataColumnSidecarsByRootRequestMessage(
       final DataColumnSidecarsByRootRequestMessageSchema schema,
-      final List<DataColumnsByRootIdentifier> dataColumnIdentifiers) {
-    super(schema, schema.createTreeFromElements(dataColumnIdentifiers));
+      final List<DataColumnsByRootIdentifier> dataColumnsByRootIdentifiers) {
+    super(schema, schema.createTreeFromElements(dataColumnsByRootIdentifiers));
   }
 
   DataColumnSidecarsByRootRequestMessage(
