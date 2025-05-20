@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,13 +24,15 @@ import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalcula
 public class DataColumnSidecarDbAccessorBuilder {
 
   // is roughly 600Kb (cache entry for one slot is about 60 bytes)
-  private static final int DEFAULT_COLUMN_ID_CACHE_MAX_SLOT_COUNT = 10 * 1024;
+  private static final int DEFAULT_COLUMN_ID_READ_CACHE_MAX_SLOT_COUNT = 10 * 1024;
+  private static final int DEFAULT_COLUMN_ID_WRITE_CACHE_MAX_COUNT = 3 * 128;
 
   private final DataColumnSidecarDB db;
   private Spec spec;
   private MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
   private final AutoPruneDbBuilder autoPruneDbBuilder = new AutoPruneDbBuilder();
-  private int columnIdCacheMaxSlotCount = DEFAULT_COLUMN_ID_CACHE_MAX_SLOT_COUNT;
+  private int columnIdReadCacheSlotCount = DEFAULT_COLUMN_ID_READ_CACHE_MAX_SLOT_COUNT;
+  private int columnIdWriteCacheCount = DEFAULT_COLUMN_ID_WRITE_CACHE_MAX_COUNT;
 
   DataColumnSidecarDbAccessorBuilder(final DataColumnSidecarDB db) {
     this.db = db;
@@ -47,9 +49,15 @@ public class DataColumnSidecarDbAccessorBuilder {
     return this;
   }
 
-  public DataColumnSidecarDbAccessorBuilder columnIdCacheMaxSlotCount(
-      final int columnIdCacheMaxSlotCount) {
-    this.columnIdCacheMaxSlotCount = columnIdCacheMaxSlotCount;
+  public DataColumnSidecarDbAccessorBuilder columnIdCacheSlotCount(
+      final int columnIdCacheSlotCount) {
+    this.columnIdReadCacheSlotCount = columnIdCacheSlotCount;
+    return this;
+  }
+
+  public DataColumnSidecarDbAccessorBuilder columnIdWriteCacheCount(
+      final int columnIdWriteCacheCount) {
+    this.columnIdWriteCacheCount = columnIdWriteCacheCount;
     return this;
   }
 
@@ -68,8 +76,12 @@ public class DataColumnSidecarDbAccessorBuilder {
   }
 
   public DataColumnSidecarDbAccessor build() {
-    ColumnIdCachingDasDb columnIdCachingDasDb =
-        new ColumnIdCachingDasDb(db, this::getNumberOfColumnsForSlot, columnIdCacheMaxSlotCount);
+    final ColumnIdCachingDasDb columnIdCachingDasDb =
+        new ColumnIdCachingDasDb(
+            db,
+            this::getNumberOfColumnsForSlot,
+            columnIdReadCacheSlotCount,
+            columnIdWriteCacheCount);
     return autoPruneDbBuilder.build(columnIdCachingDasDb);
   }
 

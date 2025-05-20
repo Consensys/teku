@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,17 +36,20 @@ import tech.pegasys.teku.statetransition.datacolumns.util.StubAsync;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public class ColumnIdCachingDasDbTest {
-  final Spec spec = TestSpecFactory.createMinimalFulu();
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
-  final Duration dbDelay = ofMillis(5);
-  final StubAsync stubAsync = new StubAsync();
+  private final Duration dbDelay = ofMillis(5);
+  private final StubAsync stubAsync = new StubAsync();
 
-  DataColumnSidecarDBStub db = new DataColumnSidecarDBStub();
-  DataColumnSidecarDB asyncDb = new DelayedDasDb(this.db, stubAsync.getStubAsyncRunner(), dbDelay);
+  private final DataColumnSidecarDBStub db = new DataColumnSidecarDBStub();
+  private final DataColumnSidecarDB asyncDb =
+      new DelayedDasDb(this.db, stubAsync.getStubAsyncRunner(), dbDelay);
 
-  final int cacheSize = 2;
-  ColumnIdCachingDasDb columnIdCachingDb = new ColumnIdCachingDasDb(asyncDb, __ -> 128, cacheSize);
+  private final int slotReadCacheSize = 2;
+  private final int sidecarsWriteCacheSize = 2;
+  private final ColumnIdCachingDasDb columnIdCachingDb =
+      new ColumnIdCachingDasDb(asyncDb, __ -> 128, slotReadCacheSize, sidecarsWriteCacheSize);
 
   private DataColumnSidecar createSidecar(final int slot, final int index) {
     final UInt64 slotU = UInt64.valueOf(slot);
@@ -59,40 +62,40 @@ public class ColumnIdCachingDasDbTest {
 
   @Test
   void sanityTest() {
-    SafeFuture<List<DataColumnSlotAndIdentifier>> res1 =
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> res1 =
         columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
 
     assertThat(res1).isNotDone();
     stubAsync.advanceTimeGradually(dbDelay);
     assertThat(res1).isCompletedWithValue(emptyList());
-    long reads0 = db.getDbReadCounter().get();
+    final long reads0 = db.getDbReadCounter().get();
     assertThat(reads0).isGreaterThan(0);
 
-    SafeFuture<List<DataColumnSlotAndIdentifier>> res2 =
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> res2 =
         columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
 
     assertThat(res2).isCompletedWithValue(emptyList());
-    long reads1 = db.getDbReadCounter().get();
+    final long reads1 = db.getDbReadCounter().get();
     assertThat(reads1).isEqualTo(reads0);
   }
 
   @Test
-  void checkCacheIsInvalidated() {
-    SafeFuture<List<DataColumnSlotAndIdentifier>> res1 =
+  void checkReadCacheIsUpdated() {
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> res1 =
         columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
 
     stubAsync.advanceTimeGradually(ofMillis(1));
 
-    SafeFuture<Void> addCompleteFuture = columnIdCachingDb.addSidecar(createSidecar(777, 77));
+    final SafeFuture<Void> addCompleteFuture = columnIdCachingDb.addSidecar(createSidecar(777, 77));
     stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
 
     assertThat(res1)
         .isCompleted(); // no assumptions on result: cache may or may not pick up latest changes
     assertThat(addCompleteFuture).isCompleted();
-    long reads0 = db.getDbReadCounter().get();
+    final long reads0 = db.getDbReadCounter().get();
     assertThat(reads0).isGreaterThan(0);
 
-    SafeFuture<List<DataColumnSlotAndIdentifier>> res2 =
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> res2 =
         columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
     stubAsync.advanceTimeGradually(dbDelay);
 
@@ -100,17 +103,58 @@ public class ColumnIdCachingDasDbTest {
   }
 
   @Test
+  void checkWriteCacheIsUsed() {
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> res1 =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
+
+    stubAsync.advanceTimeGradually(ofMillis(1));
+
+    final DataColumnSidecar sidecar = createSidecar(777, 77);
+    final SafeFuture<Void> addCompleteFuture1 = columnIdCachingDb.addSidecar(sidecar);
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(res1)
+        .isCompleted(); // no assumptions on result: cache may or may not pick up latest changes
+    assertThat(addCompleteFuture1).isCompleted();
+    final long reads1 = db.getDbReadCounter().get();
+    assertThat(reads1).isEqualTo(1);
+    final long writes1 = db.getDbWriteCounter().get();
+    assertThat(writes1).isEqualTo(1);
+
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> res2 =
+        columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
+    stubAsync.advanceTimeGradually(dbDelay);
+
+    assertThat(res2).isCompletedWithValueMatching(l -> !l.isEmpty());
+
+    final long reads2 = db.getDbReadCounter().get();
+    assertThat(reads2).isEqualTo(2);
+    final long writes2 = db.getDbWriteCounter().get();
+    assertThat(writes2).isEqualTo(writes1);
+
+    // Retry saving the same sidecar, db should not be used
+    final SafeFuture<Void> addCompleteFuture2 = columnIdCachingDb.addSidecar(sidecar);
+    stubAsync.advanceTimeGraduallyUntilAllDone(ofSeconds(1));
+
+    assertThat(addCompleteFuture2).isCompleted();
+    final long reads3 = db.getDbReadCounter().get();
+    assertThat(reads3).isEqualTo(reads2);
+    final long writes3 = db.getDbWriteCounter().get();
+    assertThat(writes3).isEqualTo(writes1);
+  }
+
+  @Test
   void checkCacheIsPruned() {
-    for (int i = 0; i < cacheSize + 1; i++) {
+    for (int i = 0; i < slotReadCacheSize + 1; i++) {
       columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777 + i));
     }
     stubAsync.advanceTimeGradually(dbDelay);
-    long reads0 = db.getDbReadCounter().get();
+    final long reads0 = db.getDbReadCounter().get();
     assertThat(reads0).isGreaterThan(0);
 
     columnIdCachingDb.getColumnIdentifiers(UInt64.valueOf(777));
     stubAsync.advanceTimeGradually(dbDelay);
-    long reads1 = db.getDbReadCounter().get();
+    final long reads1 = db.getDbReadCounter().get();
     // the first cache entry (for slot 777) should be evicted and a query to underlying db should be
     // done
     assertThat(reads1).isGreaterThan(reads0);

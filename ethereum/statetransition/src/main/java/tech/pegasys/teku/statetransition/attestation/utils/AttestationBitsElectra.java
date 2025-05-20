@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
@@ -327,6 +328,21 @@ class AttestationBitsElectra implements AttestationBits {
   public boolean isExclusivelyFromCommittee(final int committeeIndex) {
     return committeeAggregationBitsMap.size() == 1
         && committeeAggregationBitsMap.containsKey(committeeIndex);
+  }
+
+  @Override
+  public boolean isFromCommittee(final int committeeIndex) {
+    return committeeAggregationBitsMap.containsKey(committeeIndex);
+  }
+
+  @Override
+  public int getFirstCommitteeIndex() {
+    return committeeBits.nextSetBit(0);
+  }
+
+  @Override
+  public IntStream streamCommitteeIndices() {
+    return committeeBits.stream();
   }
 
   @Override
