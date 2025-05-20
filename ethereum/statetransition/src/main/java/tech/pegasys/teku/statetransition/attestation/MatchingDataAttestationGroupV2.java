@@ -231,8 +231,8 @@ public class MatchingDataAttestationGroupV2 {
   private Iterator<PooledAttestation> createAggregatingIterator(
       final long timeLimitNanos,
       final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
-    readLock.lock();
     final AttestationBits includedValidatorsCopy;
+    readLock.lock();
     try {
       // Capture a copy of includedValidators under lock for the iterator's isolated use
       includedValidatorsCopy = this.includedValidators.copy();
