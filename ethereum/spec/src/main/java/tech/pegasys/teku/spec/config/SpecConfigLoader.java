@@ -33,6 +33,19 @@ public class SpecConfigLoader {
   private static final Logger LOG = LogManager.getLogger();
   private static final List<String> AVAILABLE_PRESETS =
       List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu");
+  private static final List<String> BUILTIN_NETWORKS =
+      List.of(
+          "chiado",
+          "ephemery",
+          "gnosis",
+          "holesky",
+          "hoodi",
+          "lukso",
+          "less-swift",
+          "mainnet",
+          "minimal",
+          "sepolia",
+          "swift");
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
@@ -48,15 +61,6 @@ public class SpecConfigLoader {
   public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
       final String configName, final Consumer<SpecConfigBuilder> modifier) {
     return loadConfig(configName, true, modifier);
-  }
-
-  public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
-      final String configName,
-      final boolean ignoreUnknownConfigItems,
-      final Consumer<SpecConfigBuilder> modifier) {
-    final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(configName, reader, ignoreUnknownConfigItems);
-    return reader.build(modifier);
   }
 
   public static SpecConfigAndParent<? extends SpecConfig> loadRemoteConfig(
@@ -84,23 +88,74 @@ public class SpecConfigLoader {
     return reader.build();
   }
 
-  static void processConfig(
-      final String source, final SpecConfigReader reader, final boolean ignoreUnknownConfigItems) {
-    try (final InputStream configFile = loadConfigurationFile(source)) {
-      final Map<String, Object> configValues = reader.readValues(configFile);
+  static SpecConfigAndParent<? extends SpecConfig> loadConfig(
+      final String configName,
+      final boolean isForgiving,
+      final Consumer<SpecConfigBuilder> modifier) {
+    final SpecConfigReader reader = new SpecConfigReader();
+    processConfig(configName, reader, isForgiving);
+    return reader.build(modifier);
+  }
+
+  // A little extra configuration is able to be loaded from builtin configs.
+  // isForgiving
+  //   - if config in source has entries we don't need, we will silently ignore them
+  //   - if `CONFIG_NAME` is set in config, and we're missing fields, we will copy them
+  // Presets will be loaded if specified also, this happens after defaulting from config_name
+  private static void processConfig(
+      final String source, final SpecConfigReader reader, final boolean isForgiving) {
+    try {
+      final Map<String, Object> configValues = readConfigToMap(source, reader);
+
+      if (!BUILTIN_NETWORKS.contains(source)
+          && configValues.containsKey(SpecConfigReader.CONFIG_NAME_KEY)
+          && isForgiving) {
+        final String builtinConfigName =
+            (String) configValues.get(SpecConfigReader.CONFIG_NAME_KEY);
+        if (BUILTIN_NETWORKS.contains(builtinConfigName)) {
+          final Map<String, Object> builtinConfig = readConfigToMap(builtinConfigName, reader);
+          boolean firstError = true;
+          for (final String entry : builtinConfig.keySet()) {
+            if (!configValues.containsKey(entry)) {
+              if (firstError) {
+                firstError = false;
+                LOG.warn(
+                    "Mapping missing values from {} with our builtin config for {}",
+                    source,
+                    builtinConfigName);
+              }
+              LOG.warn("Defaulting {}", entry);
+              configValues.put(entry, builtinConfig.get(entry));
+            }
+          }
+        } else {
+          LOG.debug(
+              "Skipping defaulting config from CONFIG_NAME {}, as this was not found to be builtin",
+              builtinConfigName);
+        }
+      }
       final Optional<String> maybePreset =
           Optional.ofNullable((String) configValues.get(SpecConfigReader.PRESET_KEY));
 
       // Legacy config files won't have a preset field
       if (maybePreset.isPresent()) {
         final String preset = maybePreset.get();
-        applyPreset(source, reader, ignoreUnknownConfigItems, preset);
+        applyPreset(source, reader, isForgiving, preset);
       }
-
-      reader.loadFromMap(configValues, ignoreUnknownConfigItems);
-    } catch (IOException | IllegalArgumentException e) {
+      reader.loadFromMap(configValues, isForgiving);
+    } catch (IOException e) {
       throw new IllegalArgumentException(
           "Unable to load configuration for network \"" + source + "\": " + e.getMessage(), e);
+    }
+  }
+
+  private static Map<String, Object> readConfigToMap(
+      final String source, final SpecConfigReader reader) {
+    try (final InputStream configFile = loadConfigurationFile(source)) {
+      return reader.readValues(configFile);
+    } catch (IOException | IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          "Unable to load configuration source \"" + source + "\": " + e.getMessage(), e);
     }
   }
 

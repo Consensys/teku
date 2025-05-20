@@ -23,12 +23,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface StorageQueryChannel extends ChannelInterface {
@@ -114,4 +116,20 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<List<BlobSidecar>> getArchivedBlobSidecars(UInt64 slot);
+
+  SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
+
+  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
+
+  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
+
+  SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(
+      DataColumnSlotAndIdentifier identifier);
+
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(UInt64 slot);
+
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(
+      UInt64 startSlot, UInt64 endSlot, UInt64 limit);
+
+  SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot();
 }
