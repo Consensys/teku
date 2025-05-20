@@ -232,24 +232,24 @@ public class MatchingDataAttestationGroupV2 {
       final long timeLimitNanos,
       final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
     readLock.lock();
+    final AttestationBits includedValidatorsCopy;
     try {
       // Capture a copy of includedValidators under lock for the iterator's isolated use
-      AttestationBits includedValidatorsCopy = this.includedValidators.copy();
-
-      final AggregatingIterator iterator =
-          new AggregatingIterator(includedValidatorsCopy, candidatesStreamSupplier);
-      if (timeLimitNanos == Long.MAX_VALUE) {
-        return iterator;
-      }
-
-      return new TimeLimitingIterator<>(
-          nanosSupplier,
-          timeLimitNanos,
-          iterator,
-          __ -> LOG.info("Time limit reached, skipping aggregation"));
+      includedValidatorsCopy = this.includedValidators.copy();
     } finally {
       readLock.unlock();
     }
+    final AggregatingIterator iterator =
+        new AggregatingIterator(includedValidatorsCopy, candidatesStreamSupplier);
+    if (timeLimitNanos == Long.MAX_VALUE) {
+      return iterator;
+    }
+
+    return new TimeLimitingIterator<>(
+        nanosSupplier,
+        timeLimitNanos,
+        iterator,
+        __ -> LOG.info("Time limit reached, skipping aggregation"));
   }
 
   public Stream<PooledAttestationWithData> streamForBlockProduction(final long timeLimitNanos) {
@@ -274,14 +274,7 @@ public class MatchingDataAttestationGroupV2 {
 
   public Stream<PooledAttestationWithData> streamForApiRequest(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
-    boolean noMatch;
-    readLock.lock();
-    try {
-      noMatch = noMatchingAttestations(committeeIndex, requiresCommitteeBits);
-    } finally {
-      readLock.unlock();
-    }
-    if (noMatch) {
+    if (noMatchingAttestations(committeeIndex, requiresCommitteeBits)) {
       return Stream.empty();
     }
     return StreamSupport.stream(
@@ -322,7 +315,6 @@ public class MatchingDataAttestationGroupV2 {
    * @param attestation the attestation to logically remove from the pool.
    */
   public int onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
-    int numRemoved;
     writeLock.lock();
     try {
       // Record validators in attestation as seen in this slot
@@ -346,35 +338,25 @@ public class MatchingDataAttestationGroupV2 {
       includedValidators.or(attestation);
 
       // Calculate size *before* removal for accurate delta.
-      int sizeBefore = size();
+      final int sizeBefore = size();
 
-      // Remove fully covered attestations using removeIf on the concurrent sets
       attestationsByValidatorCount
-          .values()
-          .forEach(
-              candidates ->
-                  candidates.removeIf(
-                      candidate -> includedValidators.isSuperSetOf(candidate.bits())));
+          .entrySet()
+          .removeIf(entry -> removeFromPooledAttestationSet(entry.getValue()));
 
-      // Also remove empty sets from the outer map for cleanup
-      attestationsByValidatorCount.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+      singleAttestationsByCommitteeIndex
+          .entrySet()
+          .removeIf(entry -> removeFromPooledAttestationSet(entry.getValue()));
 
-      singleAttestationsByCommitteeIndex.forEach(
-          (committeeIndex, singleAttestations) -> {
-            singleAttestations.removeIf(
-                singleAttestation -> includedValidators.isSuperSetOf(singleAttestation.bits()));
-            if (singleAttestations.isEmpty()) {
-              singleAttestationsByCommitteeIndex.remove(committeeIndex);
-            }
-          });
-
-      int sizeAfter = size();
-      numRemoved = sizeBefore - sizeAfter;
-
+      return sizeBefore - size();
     } finally {
       writeLock.unlock();
     }
-    return numRemoved;
+  }
+
+  private boolean removeFromPooledAttestationSet(final Set<PooledAttestation> candidates) {
+    candidates.removeIf(candidate -> includedValidators.isSuperSetOf(candidate.bits()));
+    return candidates.isEmpty();
   }
 
   public void onReorg(final UInt64 commonAncestorSlot) {
@@ -407,9 +389,13 @@ public class MatchingDataAttestationGroupV2 {
 
   private boolean noMatchingAttestations(
       final Optional<UInt64> committeeIndex, final boolean requiresCommitteeBits) {
-    // Assumes called under read lock
-    return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
-        || noMatchingPreElectraAttestations(committeeIndex);
+    readLock.lock();
+    try {
+      return requiresCommitteeBits != includedValidators.requiresCommitteeBits()
+          || noMatchingPreElectraAttestations(committeeIndex);
+    } finally {
+      readLock.unlock();
+    }
   }
 
   private boolean noMatchingPreElectraAttestations(final Optional<UInt64> committeeIndex) {
