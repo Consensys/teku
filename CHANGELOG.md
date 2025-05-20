@@ -16,4 +16,6 @@
 - Added an info message on startup for the highest supported milestone and associated epoch.
 - Added jdk 24 docker image build.
 - Improved performance when scheduling attestations in the beginning of the epoch for a large number of validators.
+- Improved config loading to use builtin configurations to default any fields we need that were missing from a passed in configuration.
+
 ### Bug Fixes
