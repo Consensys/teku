@@ -701,6 +701,38 @@ public class AttestationBitsElectraTest {
   }
 
   @Test
+  void isFromCommittee_shouldReturnConsistentResult() {
+    final AttestationBits fromMultipleCommittees = createAttestationBits(List.of(0, 1), 0, 3);
+    final AttestationBits fromSingleCommittee = createAttestationBits(List.of(0), 0, 1);
+    final AttestationBits singleAttestationFromSingleCommittee =
+        createAttestationBits(List.of(1), 0);
+
+    assertThat(fromMultipleCommittees.isFromCommittee(0)).isTrue();
+    assertThat(fromMultipleCommittees.isFromCommittee(1)).isTrue();
+    assertThat(fromMultipleCommittees.isFromCommittee(2)).isFalse();
+
+    assertThat(fromSingleCommittee.isFromCommittee(0)).isTrue();
+    assertThat(fromSingleCommittee.isFromCommittee(1)).isFalse();
+    assertThat(fromSingleCommittee.isFromCommittee(2)).isFalse();
+
+    assertThat(singleAttestationFromSingleCommittee.isFromCommittee(0)).isFalse();
+    assertThat(singleAttestationFromSingleCommittee.isFromCommittee(1)).isTrue();
+    assertThat(singleAttestationFromSingleCommittee.isFromCommittee(2)).isFalse();
+  }
+
+  @Test
+  void streamCommitteeIndices__shouldReturnConsistentResult() {
+    final AttestationBits fromMultipleCommittees = createAttestationBits(List.of(0, 1), 0, 3);
+    final AttestationBits fromSingleCommittee = createAttestationBits(List.of(0), 0, 1);
+    final AttestationBits singleAttestationFromSingleCommittee =
+        createAttestationBits(List.of(1), 0);
+
+    assertThat(fromMultipleCommittees.streamCommitteeIndices()).containsExactly(0, 1);
+    assertThat(fromSingleCommittee.streamCommitteeIndices()).containsExactly(0);
+    assertThat(singleAttestationFromSingleCommittee.streamCommitteeIndices()).containsExactly(1);
+  }
+
+  @Test
   void getBitCount_shouldReturnConsistentResult() {
     final AttestationBits fromMultipleCommittees = createAttestationBits(List.of(0, 1), 0, 3);
     final AttestationBits fromSingleCommittee = createAttestationBits(List.of(0), 0, 1);

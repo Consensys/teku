@@ -178,8 +178,8 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
   }
 
   /**
-   * Updates {@code seenAggregationBits} and removes any attestation from this group whose
-   * aggregation bits have all been seen.
+   * Updates includedValidators bits and removes any attestation from this group whose aggregation
+   * bits have all been seen.
    *
    * <p>This is well suited for removing attestations that have been included in a block.
    *
