@@ -30,10 +30,8 @@ import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
@@ -41,7 +39,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -51,7 +48,6 @@ import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
-import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
@@ -83,17 +79,13 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetBackboneSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
-import tech.pegasys.teku.networking.eth2.peers.DataColumnPeerManagerImpl;
-import tech.pegasys.teku.networking.eth2.peers.MetadataDasPeerCustodyTracker;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -105,11 +97,8 @@ import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFacto
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -124,14 +113,10 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -139,11 +124,12 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
@@ -151,41 +137,8 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
-import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
-import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
-import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
-import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerLateInit;
-import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
-import tech.pegasys.teku.statetransition.datacolumns.DasLongPollCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustodyImpl;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyImpl;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManagerImpl;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl;
-import tech.pegasys.teku.statetransition.datacolumns.LateInitDataColumnSidecarCustody;
-import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
-import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
-import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
-import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
-import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRootReqResp;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqRespBatchingImpl;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -214,7 +167,6 @@ import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -232,7 +184,6 @@ import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
-import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -263,7 +214,6 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
-import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -298,7 +248,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
   protected volatile AsyncRunnerEventThread forkChoiceExecutor;
 
-  private final AsyncRunner operationPoolAsyncRunner;
+  private volatile AsyncRunner operationPoolAsyncRunner;
 
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
@@ -327,7 +277,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   protected volatile PendingPool<ValidatableAttestation> pendingAttestations;
   protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
-  protected volatile DataColumnSidecarELRecoveryManager dataColumnSidecarELRecoveryManager;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
   protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   protected volatile ActiveValidatorTracker activeValidatorTracker;
@@ -336,24 +285,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
-  protected volatile DasGossipLogger dasGossipLogger;
-  protected volatile DasReqRespLogger dasReqRespLogger;
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
-  protected volatile CustodyGroupCountManagerLateInit custodyGroupCountManagerLateInit;
-  protected volatile DataColumnSidecarManager dataColumnSidecarManager;
-  protected volatile LateInitDataColumnSidecarCustody dataColumnSidecarCustody =
-      new LateInitDataColumnSidecarCustody();
-  protected volatile DasCustodySync dasCustodySync;
-  protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
-  protected volatile DataAvailabilitySampler dataAvailabilitySampler;
+  // TODO-fulu Add CustodyGroupCountManagerLateInit
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
   protected volatile StorageUpdateChannel storageUpdateChannel;
-  protected volatile SyncPreImportBlockChannel syncPreImportBlockChannel;
   protected volatile StableSubnetSubscriber stableSubnetSubscriber;
   protected volatile ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
   protected volatile RewardCalculator rewardCalculator;
@@ -364,8 +304,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
   protected DebugDataDumper debugDataDumper;
-  protected volatile UInt256 nodeId;
-  protected volatile BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -409,8 +347,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "future_items_size",
             "Current number of items held for future slots, labelled by type",
             "type");
-    this.dasGossipLogger = new DasGossipBatchLogger(operationPoolAsyncRunner, timeProvider);
-    this.dasReqRespLogger = DasReqRespLogger.create(timeProvider);
     this.ephemerySlotValidationService = new EphemerySlotValidationService();
   }
 
@@ -453,8 +389,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockManager.start(),
             syncService.start(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)),
-            SafeFuture.fromRunnable(() -> dasCustodySync.start()))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -586,8 +521,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initKzg();
     initBlockBlobSidecarsTrackersPool();
     initBlobSidecarManager();
-    initDasSamplerManager();
-    initDataColumnSidecarManager();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
@@ -606,22 +539,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationManager();
     initBlockManager();
     initSyncCommitteePools();
-    preInitCustodyGroupCountManager();
     initP2PNetwork();
-    initCustodyGroupCountManager();
-    initDasCustody();
-    initDataColumnSidecarELRecoveryManager();
-    initDasSyncPreSampler();
     initSyncService();
     initSlotProcessor();
     initMetrics();
     initAttestationTopicSubscriber();
     initActiveValidatorTracker();
     initSubnetSubscriber();
-    initDataColumnSidecarSubnetBackboneSubscriber();
     initSlashingEventsSubscriptions();
     initPerformanceTracker();
-    initBlobSidecarReconstructionProvider();
     initDataProvider();
     initValidatorApiHandler();
     initRestAPI();
@@ -652,7 +578,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                           "Trusted setup should be configured when Deneb is enabled"));
       kzg.loadTrustedSetup(trustedSetupFile);
     } else {
-      kzg = KZG.NOOP;
+      kzg = KZG.DISABLED;
     }
   }
 
@@ -685,233 +611,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
-  private void initDasSamplerManager() {
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      LOG.info("Activated DAS Sampler Manager for FULU");
-      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, kzg, spec);
-    } else {
-      LOG.info("Using NOOP DAS Sampler Manager");
-      this.dasSamplerManager = DasSamplerManager.NOOP;
-    }
-  }
-
-  protected void initDataColumnSidecarManager() {
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DataColumnSidecarGossipValidator dataColumnSidecarGossipValidator =
-          DataColumnSidecarGossipValidator.create(
-              spec,
-              invalidBlockRoots,
-              gossipValidationHelper,
-              MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
-              kzg,
-              metricsSystem,
-              timeProvider);
-      dataColumnSidecarManager =
-          new DataColumnSidecarManagerImpl(
-              dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem, timeProvider);
-      eventChannels.subscribe(
-          DataColumnSidecarGossipChannel.class,
-          dataColumnSidecarManager::onDataColumnSidecarPublish);
-    } else {
-      dataColumnSidecarManager = DataColumnSidecarManager.NOOP;
-    }
-  }
-
-  protected void initDasCustody() {
-    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      return;
-    }
-    LOG.info("Activating DAS Custody for FULU");
-    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
-    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specVersionFulu.getConfig());
-    final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
-        MinCustodyPeriodSlotCalculator.createFromSpec(spec);
-    final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
-
-    final DataColumnSidecarDbAccessor dbAccessor;
-    {
-      DataColumnSidecarDB sidecarDB =
-          DataColumnSidecarDB.create(
-              combinedChainDataClient,
-              eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
-      dbAccessor =
-          DataColumnSidecarDbAccessor.builder(sidecarDB)
-              .spec(spec)
-              .minCustodyPeriodSlotCalculator(minCustodyPeriodSlotCalculator)
-              .withAutoPrune(
-                  pruneBuilder ->
-                      pruneBuilder.pruneMarginSlots(slotsPerEpoch).prunePeriodSlots(slotsPerEpoch))
-              .build();
-    }
-    CanonicalBlockResolver canonicalBlockResolver =
-        slot ->
-            combinedChainDataClient
-                .getBlockAtSlotExact(slot)
-                .thenApply(sbb -> sbb.flatMap(SignedBeaconBlock::getBeaconBlock));
-
-    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(specVersionFulu.miscHelpers());
-
-    final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
-    final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
-    final int totalMyCustodyGroups =
-        beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
-    eventChannels
-        .getPublisher(CustodyGroupCountChannel.class)
-        .onCustodyGroupCountUpdate(totalMyCustodyGroups);
-
-    final DataColumnSidecarCustody custody;
-    {
-      final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
-          new DataColumnSidecarCustodyImpl(
-              spec,
-              canonicalBlockResolver,
-              dbAccessor,
-              minCustodyPeriodSlotCalculator,
-              custodyGroupCountManagerLateInit,
-              totalMyCustodyGroups);
-      eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
-      eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
-
-      DasLongPollCustody.GossipWaitTimeoutCalculator gossipWaitTimeoutCalculator =
-          slot -> {
-            Duration slotDuration =
-                Duration.ofSeconds(spec.atSlot(slot).getConfig().getSecondsPerSlot());
-            return slotDuration.dividedBy(3);
-          };
-
-      final DasLongPollCustody dasLongPollCustody =
-          new DasLongPollCustody(
-              dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, gossipWaitTimeoutCalculator);
-      eventChannels.subscribe(SlotEventsChannel.class, dasLongPollCustody);
-
-      final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
-          new DataColumnSidecarByRootCustodyImpl(
-              dasLongPollCustody,
-              combinedChainDataClient,
-              UInt64.valueOf(slotsPerEpoch)
-                  .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
-      final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
-          new DataColumnSidecarRecoveringCustodyImpl(
-              dataColumnSidecarByRootCustody,
-              operationPoolAsyncRunner,
-              spec,
-              miscHelpersFulu,
-              kzg,
-              dataColumnSidecar ->
-                  eventChannels
-                      .getPublisher(DataColumnSidecarGossipChannel.class)
-                      .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
-              custodyGroupCountManagerLateInit,
-              specConfigFulu.getNumberOfColumns(),
-              specConfigFulu.getNumberOfCustodyGroups(),
-              slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
-              metricsSystem,
-              timeProvider);
-      eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
-
-      // TODO fix this dirty hack
-      // This is to resolve the initialization loop Network <--> DAS Custody
-      this.dataColumnSidecarCustody.init(dataColumnSidecarRecoveringCustody);
-
-      custody = dataColumnSidecarRecoveringCustody;
-    }
-
-    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-        (dataColumnSidecar, remoteOrigin) ->
-            custody
-                .onNewValidatedDataColumnSidecar(dataColumnSidecar)
-                .ifExceptionGetsHereRaiseABug());
-
-    DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
-    p2pNetwork.subscribeConnect(dasPeerManager);
-
-    BatchDataColumnsByRootReqResp loggingByRootReqResp =
-        new LoggingBatchDataColumnsByRootReqResp(dasPeerManager, dasReqRespLogger);
-    DataColumnReqResp dasRpc =
-        new DataColumnReqRespBatchingImpl(
-            loggingByRootReqResp,
-            SchemaDefinitionsFulu.required(specVersionFulu.getSchemaDefinitions()));
-
-    MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
-    p2pNetwork.subscribeConnect(peerCustodyTracker);
-    DasPeerCustodyCountSupplier custodyCountSupplier =
-        DasPeerCustodyCountSupplier.capped(
-            peerCustodyTracker, minCustodyGroupRequirement, maxGroups);
-
-    // TODO NOOP peer searcher should work for interop but needs to be implemented
-    DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
-    DataColumnSidecarRetriever sidecarRetriever =
-        new SimpleSidecarRetriever(
-            spec,
-            dasPeerManager,
-            dataColumnPeerSearcher,
-            custodyCountSupplier,
-            dasRpc,
-            operationPoolAsyncRunner,
-            Duration.ofSeconds(1));
-    RecoveringSidecarRetriever recoveringSidecarRetriever =
-        new RecoveringSidecarRetriever(
-            sidecarRetriever,
-            kzg,
-            miscHelpersFulu,
-            canonicalBlockResolver,
-            dbAccessor,
-            operationPoolAsyncRunner,
-            Duration.ofMinutes(5),
-            specConfigFulu.getNumberOfColumns());
-    dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
-        (sidecar, remoteOrigin) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
-    blockManager.subscribePreImportBlocks(
-        (block, remoteOrigin) -> dataColumnSidecarCustody.onNewBlock(block, remoteOrigin));
-    dasCustodySync = new DasCustodySync(custody, recoveringSidecarRetriever);
-    eventChannels.subscribe(SlotEventsChannel.class, dasCustodySync);
-
-    CurrentSlotProvider currentSlotProvider =
-        CurrentSlotProvider.create(spec, recentChainData.getStore());
-    final DasSamplerBasic dasSampler =
-        new DasSamplerBasic(
-            spec,
-            currentSlotProvider,
-            dbAccessor,
-            custody,
-            recoveringSidecarRetriever,
-            custodyGroupCountManagerLateInit);
-    LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
-    this.dataAvailabilitySampler = dasSampler;
-  }
-
-  protected void initDasSyncPreSampler() {
-    DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
-    eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
-  }
-
-  protected void preInitCustodyGroupCountManager() {
-    this.custodyGroupCountManagerLateInit = new CustodyGroupCountManagerLateInit();
-  }
-
-  protected void initCustodyGroupCountManager() {
-    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      return;
-    }
-    final SpecConfigFulu specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-    final int totalMyCustodyGroups =
-        beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
-    final CustodyGroupCountManagerImpl custodyGroupCountManager =
-        new CustodyGroupCountManagerImpl(
-            spec,
-            specConfigFulu,
-            proposersDataManager,
-            eventChannels.getPublisher(CustodyGroupCountChannel.class),
-            combinedChainDataClient,
-            totalMyCustodyGroups,
-            nodeId,
-            metricsSystem);
-    eventChannels.subscribe(SlotEventsChannel.class, custodyGroupCountManager);
-    custodyGroupCountManagerLateInit.setCustodyGroupCountManager(custodyGroupCountManager);
-  }
-
   protected void initMergeMonitors() {
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       terminalPowBlockMonitor =
@@ -940,7 +639,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =
           eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
-
       final BlockBlobSidecarsTrackersPoolImpl pool =
           poolFactory.createPoolForBlockBlobSidecarsTrackers(
               blockImportChannel,
@@ -953,37 +651,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               blobSidecarGossipChannel::publishBlobSidecar);
       eventChannels.subscribe(FinalizedCheckpointChannel.class, pool);
       blockBlobSidecarsTrackersPool = pool;
+
     } else {
       blockBlobSidecarsTrackersPool = BlockBlobSidecarsTrackersPool.NOOP;
-    }
-  }
-
-  protected void initDataColumnSidecarELRecoveryManager() {
-    LOG.debug("BeaconChainController.initDataColumnSidecarELRecoveryManager()");
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-
-      final Consumer<List<DataColumnSidecar>> recoveredDataColumnSidecarPublisher =
-          dataColumnSidecars ->
-              eventChannels
-                  .getPublisher(DataColumnSidecarGossipChannel.class)
-                  .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.RECOVERED);
-
-      final DataColumnSidecarELRecoveryManager recoveryManager =
-          poolFactory.createDataColumnSidecarELRecoveryManager(
-              spec,
-              beaconAsyncRunner,
-              recentChainData,
-              executionLayer,
-              kzg,
-              recoveredDataColumnSidecarPublisher,
-              custodyGroupCountManagerLateInit);
-      eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
-      dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
-          recoveryManager::onNewDataColumnSidecar);
-      blockManager.subscribePreImportBlocks(recoveryManager::onNewBlock);
-      dataColumnSidecarELRecoveryManager = recoveryManager;
-    } else {
-      dataColumnSidecarELRecoveryManager = DataColumnSidecarELRecoveryManager.NOOP;
     }
   }
 
@@ -1095,12 +765,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blsToExecutionChangePool::removeAll);
   }
 
-  protected void initBlobSidecarReconstructionProvider() {
-    LOG.debug("BeaconChainController.initBlobSidecarReconstructionProvider()");
-    this.blobSidecarReconstructionProvider =
-        new BlobSidecarReconstructionProvider(combinedChainDataClient, spec);
-  }
-
   protected void initDataProvider() {
     dataProvider =
         DataProvider.builder()
@@ -1108,7 +772,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .recentChainData(recentChainData)
             .combinedChainDataClient(combinedChainDataClient)
             .rewardCalculator(rewardCalculator)
-            .blobSidecarReconstructionProvider(blobSidecarReconstructionProvider)
             .p2pNetwork(p2pNetwork)
             .syncService(syncService)
             .validatorApiChannel(
@@ -1165,7 +828,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceExecutor,
             recentChainData,
             blobSidecarManager,
-            dasSamplerManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -1254,24 +916,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, stableSubnetSubscriber);
   }
 
-  protected void initDataColumnSidecarSubnetBackboneSubscriber() {
-    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      return;
-    }
-    LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
-    DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
-        new DataColumnSidecarSubnetBackboneSubscriber(
-            spec,
-            p2pNetwork,
-            nodeId,
-            beaconConfig
-                .p2pConfig()
-                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
-
-    eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
-    eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);
-  }
-
   public void initExecutionLayerBlockProductionManager() {
     LOG.debug("BeaconChainController.initExecutionLayerBlockProductionManager()");
     this.executionLayerBlockProductionManager =
@@ -1307,7 +951,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayerBlockProductionManager);
-    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector, kzg);
+    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -1322,13 +966,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
           eventChannels.getPublisher(BlobSidecarGossipChannel.class, beaconAsyncRunner);
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
-    }
-    final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      dataColumnSidecarGossipChannel =
-          eventChannels.getPublisher(DataColumnSidecarGossipChannel.class, beaconAsyncRunner);
-    } else {
-      dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
 
     final Optional<BlockProductionMetrics> blockProductionMetrics =
@@ -1350,7 +987,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DutyMetrics dutyMetrics =
         DutyMetrics.create(metricsSystem, timeProvider, recentChainData, spec);
 
-    final BlockPublisher blockPublisher =
+    final MilestoneBasedBlockPublisher blockPublisher =
         new MilestoneBasedBlockPublisher(
             beaconAsyncRunner,
             spec,
@@ -1359,18 +996,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockGossipChannel,
             blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
-            dataColumnSidecarGossipChannel,
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(
-                spec,
-                recentChainData,
-                combinedChainDataClient,
-                rewardCalculator,
-                blobSidecarReconstructionProvider),
+            new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
             dataProvider.getNetworkDataProvider(),
             combinedChainDataClient,
@@ -1513,21 +1144,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     PortAvailability.checkPortsAvailable(
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(), maybeUdpPort);
-    final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
-    eventChannels.subscribe(CustodyGroupCountChannel.class, metadataMessagesFactory);
 
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
-            .dataColumnSidecarCustody(dataColumnSidecarCustody)
-            .custodyGroupCountManager(custodyGroupCountManagerLateInit)
-            .metadataMessagesFactory(metadataMessagesFactory)
+            .dataColumnSidecarCustody(DataColumnSidecarByRootCustody.NOOP)
+            .custodyGroupCountManager(CustodyGroupCountManager.NOOP)
+            .metadataMessagesFactory(new MetadataMessagesFactory())
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
-            .gossipedDataColumnSidecarOperationProcessor(
-                dataColumnSidecarManager::onDataColumnSidecarGossip)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
@@ -1536,8 +1163,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
-            .gossipDasLogger(dasGossipLogger)
-            .reqRespDasLogger(dasReqRespLogger)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)
@@ -1563,11 +1188,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
-
-    this.nodeId =
-        p2pNetwork
-            .getDiscoveryNodeId()
-            .orElseThrow(() -> new InvalidConfigurationException("NodeID is required"));
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
@@ -1590,7 +1210,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool =
-        new AggregatingAttestationPool(
+        new AggregatingAttestationPoolV1(
             spec, recentChainData, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
@@ -1678,7 +1298,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected SyncServiceFactory createSyncServiceFactory() {
-    syncPreImportBlockChannel = eventChannels.getPublisher(SyncPreImportBlockChannel.class);
     return new DefaultSyncServiceFactory(
         beaconConfig.syncConfig(),
         beaconConfig.eth2NetworkConfig().getNetworkBoostrapConfig().getGenesisState(),
@@ -1689,7 +1308,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         recentChainData,
         combinedChainDataClient,
         storageUpdateChannel,
-        syncPreImportBlockChannel,
         p2pNetwork,
         blockImporter,
         blobSidecarManager,
