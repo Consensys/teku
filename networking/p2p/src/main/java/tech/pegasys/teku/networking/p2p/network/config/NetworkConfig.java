@@ -49,6 +49,7 @@ public class NetworkConfig {
   public static final int DEFAULT_P2P_PORT = 9000;
   public static final int DEFAULT_P2P_PORT_IPV6 = 9090;
   public static final boolean DEFAULT_YAMUX_ENABLED = false;
+  public static final boolean DEFAULT_STRICT_CONFIG_LOADING_ENABLED = false;
 
   private final GossipConfig gossipConfig;
   private final WireLogsConfig wireLogsConfig;

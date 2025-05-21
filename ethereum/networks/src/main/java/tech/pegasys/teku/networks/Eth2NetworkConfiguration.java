@@ -412,6 +412,7 @@ public class Eth2NetworkConfiguration {
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
     private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
+    private boolean strictConfigLoadingEnabled;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -427,6 +428,7 @@ public class Eth2NetworkConfiguration {
         spec =
             SpecFactory.create(
                 constants,
+                strictConfigLoadingEnabled,
                 builder -> {
                   // Ephemery network field change periodically, update to current
                   if (constants.equals(EPHEMERY.configName())) {
@@ -1056,6 +1058,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder pendingAttestationsMaxQueue(final int pendingAttestationsMaxQueue) {
       this.pendingAttestationsMaxQueue = OptionalInt.of(pendingAttestationsMaxQueue);
+      return this;
+    }
+
+    public Builder strictConfigLoadingEnabled(final boolean strictConfigLoadingEnabled) {
+      this.strictConfigLoadingEnabled = strictConfigLoadingEnabled;
       return this;
     }
   }
