@@ -17,5 +17,6 @@
 - Added jdk 24 docker image build.
 - Improved performance when scheduling attestations in the beginning of the epoch for a large number of validators.
 - Improved configuration loading to use builtin configurations to default any fields we need that were missing from a passed in configuration.
+- Add `/teku/v1/admin/add_peer` endpoint to allow adding static peers via the REST API.
 
 ### Bug Fixes

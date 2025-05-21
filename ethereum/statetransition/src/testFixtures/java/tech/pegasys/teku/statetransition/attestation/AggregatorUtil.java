@@ -55,9 +55,9 @@ public class AggregatorUtil {
     return firstAttestation
         .getSchema()
         .create(
-            aggregateBits.getAggregationBits(),
+            aggregateBits.getAggregationSszBits(),
             firstAttestation.getData(),
             BLS.aggregate(signatures),
-            aggregateBits::getCommitteeBits);
+            aggregateBits::getCommitteeSszBits);
   }
 }

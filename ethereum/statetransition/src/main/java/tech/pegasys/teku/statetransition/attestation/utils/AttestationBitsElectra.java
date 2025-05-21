@@ -39,8 +39,8 @@ class AttestationBitsElectra implements AttestationBits {
   private Int2ObjectMap<BitSet> committeeAggregationBitsMap;
   private BitSet committeeBits;
 
-  private SszBitlist cachedAggregationBits = null;
-  private SszBitvector cachedCommitteeBits = null;
+  private SszBitlist cachedAggregationSszBits = null;
+  private SszBitvector cachedCommitteeSszBits = null;
 
   AttestationBitsElectra(
       final SszBitlist initialAggregationBits,
@@ -249,9 +249,9 @@ class AttestationBitsElectra implements AttestationBits {
   }
 
   @Override
-  public SszBitlist getAggregationBits() {
-    if (cachedAggregationBits != null) {
-      return cachedAggregationBits;
+  public SszBitlist getAggregationSszBits() {
+    if (cachedAggregationSszBits != null) {
+      return cachedAggregationSszBits;
     }
     final List<Integer> committeeIndicesInOrder = new ArrayList<>();
     for (int i = committeeBits.nextSetBit(0); i >= 0; i = committeeBits.nextSetBit(i + 1)) {
@@ -279,24 +279,24 @@ class AttestationBitsElectra implements AttestationBits {
       }
       currentOffset += committeeSize;
     }
-    cachedAggregationBits =
+    cachedAggregationSszBits =
         aggregationBitsSchema.wrapBitSet(totalBitlistSize, combinedAggregationBits);
-    return cachedAggregationBits;
+    return cachedAggregationSszBits;
   }
 
   @Override
-  public SszBitvector getCommitteeBits() {
-    if (cachedCommitteeBits == null) {
-      cachedCommitteeBits =
+  public SszBitvector getCommitteeSszBits() {
+    if (cachedCommitteeSszBits == null) {
+      cachedCommitteeSszBits =
           committeeBitsSchema.wrapBitSet(
               committeeBitsSchema.getLength(), (BitSet) this.committeeBits.clone());
     }
-    return cachedCommitteeBits;
+    return cachedCommitteeSszBits;
   }
 
   private void invalidateCache() {
-    this.cachedAggregationBits = null;
-    this.cachedCommitteeBits = null;
+    this.cachedAggregationSszBits = null;
+    this.cachedCommitteeSszBits = null;
   }
 
   @Override
@@ -359,7 +359,7 @@ class AttestationBitsElectra implements AttestationBits {
         .add("committeeBits", committeeBits.cardinality())
         .add("committeeAggregationBitsMap", totalSetBits)
         .add("committeesSize", committeesSize.size())
-        .add("cached", cachedAggregationBits != null || cachedCommitteeBits != null)
+        .add("sszBitsCached", cachedAggregationSszBits != null || cachedCommitteeSszBits != null)
         .toString();
   }
 

@@ -833,8 +833,17 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
+    final UInt64 index =
+        spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)
+            ? ZERO
+            : randomUInt64();
     return new AttestationData(
-        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
+        slot, index, randomBytes32(), randomCheckpoint(), randomCheckpoint());
+  }
+
+  public AttestationData randomAttestationData(final UInt64 slot, final UInt64 committeeIndex) {
+    return new AttestationData(
+        slot, committeeIndex, randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {

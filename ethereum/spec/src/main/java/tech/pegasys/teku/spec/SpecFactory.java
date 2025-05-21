@@ -38,12 +38,15 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 public class SpecFactory {
 
   public static Spec create(final String configName) {
-    return create(configName, __ -> {});
+    return create(configName, false, __ -> {});
   }
 
-  public static Spec create(final String configName, final Consumer<SpecConfigBuilder> modifier) {
+  public static Spec create(
+      final String configName,
+      final boolean strictConfigLoadingEnabled,
+      final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigAndParent<? extends SpecConfig> config =
-        SpecConfigLoader.loadConfig(configName, modifier);
+        SpecConfigLoader.loadConfig(configName, strictConfigLoadingEnabled, modifier);
     return create(config);
   }
 
