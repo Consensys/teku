@@ -1,0 +1,119 @@
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu;
+
+import com.google.common.annotations.VisibleForTesting;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFuluImpl;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFuluImpl;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
+public class BeaconStateSchemaFulu extends AbstractBeaconStateSchema<BeaconStateFulu, MutableBeaconStateFulu> {
+    public static final int PROPOSER_LOOKAHEAD_FIELD_INDEX = 37;
+
+    @VisibleForTesting
+    BeaconStateSchemaFulu(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+        super("BeaconStateFulu", getUniqueFields(specConfig, schemaRegistry), specConfig);
+    }
+
+    private static List<SszField> getUniqueFields(
+            final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+        final List<SszField> newFields =
+                List.of(
+
+                        new SszField(
+                                PROPOSER_LOOKAHEAD_FIELD_INDEX,
+                                BeaconStateFields.PROPOSER_LOOKAHEAD,
+                                () -> SszUInt64ListSchema.create((long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch()))
+                       );
+
+        return Stream.concat(
+                        BeaconStateSchemaDeneb.getUniqueFields(specConfig, schemaRegistry).stream(),
+                        newFields.stream())
+                .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    public SszPrimitiveListSchema<Byte, SszByte, ?> getPreviousEpochParticipationSchema() {
+        return (SszPrimitiveListSchema<Byte, SszByte, ?>)
+                getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION));
+    }
+
+    @SuppressWarnings("unchecked")
+    public SszPrimitiveListSchema<Byte, SszByte, ?> getCurrentEpochParticipationSchema() {
+        return (SszPrimitiveListSchema<Byte, SszByte, ?>)
+                getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION));
+    }
+
+    public SszUInt64ListSchema<?> getInactivityScoresSchema() {
+        return (SszUInt64ListSchema<?>)
+                getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
+    }
+
+    public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
+        return (SyncCommittee.SyncCommitteeSchema)
+                getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
+    }
+
+    public ExecutionPayloadHeaderSchemaDeneb getLastExecutionPayloadHeaderSchema() {
+        return (ExecutionPayloadHeaderSchemaDeneb)
+                getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
+    }
+    @Override
+    public MutableBeaconStateFulu createBuilder() {
+        return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
+    }
+
+    public static BeaconStateSchemaFulu create(
+            final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+        return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
+    }
+
+    public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
+        checkArgument(
+                schema instanceof BeaconStateSchemaFulu,
+                "Expected a BeaconStateSchemaFulu but was %s",
+                schema.getClass());
+        return (BeaconStateSchemaFulu) schema;
+    }
+
+    @SuppressWarnings("unchecked")
+    public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
+        return (SszListSchema<HistoricalSummary, ?>)
+                getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
+    }
+
+    @Override
+    public BeaconStateFulu createEmpty() {
+        return createEmptyBeaconStateImpl();
+    }
+
+    private BeaconStateFuluImpl createEmptyBeaconStateImpl() {
+        return new BeaconStateFuluImpl(this);
+    }
+
+    @Override
+    public BeaconStateFuluImpl createFromBackingNode(final TreeNode node) {
+        return new BeaconStateFuluImpl(this, node);
+    }
+}
