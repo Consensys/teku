@@ -47,6 +47,7 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
@@ -611,4 +612,22 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
   }
+
+  //compute_proposer_indices
+  public List<UInt64> computeProposerIndices(
+      final BeaconState state, final UInt64 epoch) {
+    final Bytes32 epochSeed = state.getSeed(state,epoch, Domain.BEACON_PROPOSER);
+    final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
+    final int slotsPerEpoch = specConfigFulu.getSlotsPerEpoch();
+    final List<Bytes32> seeds = IntStream.range(0, slotsPerEpoch)
+        .mapToObj(
+            i -> {
+              return Hash.sha256(
+                  Hash.sha256(epochSeed,startSlot.plus(i))
+                      );
+            })
+        .collect(Collectors.toList());
+  }
+
+
 }

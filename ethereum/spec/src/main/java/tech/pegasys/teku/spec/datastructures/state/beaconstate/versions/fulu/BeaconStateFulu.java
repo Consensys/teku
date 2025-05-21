@@ -17,8 +17,13 @@ import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
 public interface BeaconStateFulu extends BeaconStateElectra {
   static BeaconStateFulu required(final BeaconState state) {
@@ -42,7 +47,7 @@ public interface BeaconStateFulu extends BeaconStateElectra {
   static void describeCustomFuluFields(
       final MoreObjects.ToStringHelper stringBuilder, final BeaconStateFulu state) {
     BeaconStateFulu.describeCustomFuluFields(stringBuilder, state);
-    addItems(stringBuilder, "pending_deposits", state.getPendingDeposits());
+    addItems(stringBuilder, "proposer_lookahead", state.getProposerLookahead());
   }
 
   @Override
@@ -59,5 +64,10 @@ public interface BeaconStateFulu extends BeaconStateElectra {
   @Override
   default Optional<BeaconStateFulu> toVersionFulu() {
     return Optional.of(this);
+  }
+
+  default SszUInt64List getProposerLookahead() {
+    final int index = getSchema().getFieldIndex(PROPOSER_LOOKAHEAD);
+    return getAny(index);
   }
 }
