@@ -2,16 +2,13 @@
   "post" : {
     "tags" : [ "Teku" ],
     "operationId" : "AddPeer",
-    "summary" : "Add a static peer to the node",
-    "description" : "Add a static peer to the node.",
+    "summary" : "Add a static peer to the node ",
+    "description" : "Add a static peer to the node passing a multiaddress.",
     "requestBody" : {
       "content" : {
         "application/json" : {
           "schema" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
+            "type" : "string"
           }
         }
       }
