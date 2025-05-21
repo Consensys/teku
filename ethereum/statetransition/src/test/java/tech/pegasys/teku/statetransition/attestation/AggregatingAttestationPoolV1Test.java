@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
@@ -28,6 +29,10 @@ public class AggregatingAttestationPoolV1Test extends AggregatingAttestationPool
   AggregatingAttestationPool instantiatePool(
       final Spec spec, final RecentChainData recentChainData, final int maxAttestations) {
     return new AggregatingAttestationPoolV1(
-        spec, recentChainData, new NoOpMetricsSystem(), maxAttestations);
+        spec,
+        recentChainData,
+        new NoOpMetricsSystem(),
+        AggregatingAttestationPoolProfiler.NOOP,
+        maxAttestations);
   }
 }

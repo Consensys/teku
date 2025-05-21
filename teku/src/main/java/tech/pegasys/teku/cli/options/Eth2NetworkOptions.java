@@ -31,6 +31,7 @@ import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class Eth2NetworkOptions {
@@ -284,6 +285,17 @@ public class Eth2NetworkOptions {
       arity = "1")
   private Long eth1DepositContractDeployBlockOverride;
 
+  @Option(
+      names = {"--Xstartup-strict-config-loader-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Strict config loading will fail if a required parameter is not present in a passed in file, otherwise defaults will be used.",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean strictConfigLoadingEnabled = NetworkConfig.DEFAULT_STRICT_CONFIG_LOADING_ENABLED;
+
   @CommandLine.Option(
       names = {"--Xepochs-store-blobs"},
       hidden = true,
@@ -331,6 +343,7 @@ public class Eth2NetworkOptions {
     }
 
     builder.applyNetworkDefaults(network);
+    builder.strictConfigLoadingEnabled(strictConfigLoadingEnabled);
     if (startupTargetPeerCount != null) {
       builder.startupTargetPeerCount(startupTargetPeerCount);
     }
