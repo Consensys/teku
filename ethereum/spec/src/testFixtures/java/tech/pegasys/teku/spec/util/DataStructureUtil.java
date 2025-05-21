@@ -41,6 +41,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.checkerframework.checker.guieffect.qual.UI;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -807,8 +808,9 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
+    final UInt64 index = spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA) ? ZERO: randomUInt64();
     return new AttestationData(
-        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
+        slot, index, randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final UInt64 committeeIndex) {
