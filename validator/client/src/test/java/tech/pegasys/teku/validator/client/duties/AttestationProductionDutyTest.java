@@ -134,6 +134,62 @@ class AttestationProductionDutyTest {
   }
 
   @TestTemplate
+  public void shouldFailWhenUnsignedAttestationIsCreatedInvalid(final SpecContext specContext) {
+    final Validator validator = createValidator();
+
+    final Optional<AttestationData> invalidAttestationData =
+        Optional.of(dataStructureUtil.randomAttestationData(SLOT.increment()));
+
+    when(validatorApiChannel.createAttestationData(SLOT, 0))
+        .thenReturn(completedFuture(invalidAttestationData));
+
+    final SafeFuture<Optional<AttestationData>> attestationFuture =
+        duty.addValidator(validator, 0, 5, 10, 11);
+    performAndReportDuty();
+
+    assertThat(attestationFuture).isCompletedWithValue(invalidAttestationData);
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(TYPE),
+            eq(SLOT),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
+            any(IllegalArgumentException.class));
+    verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
+  }
+
+  @TestTemplate
+  public void shouldFailWhenUnsignedAttestationIsCreatedInvalidElectra(
+      final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    final Validator validator = createValidator();
+
+    final Optional<AttestationData> invalidAttestationData =
+        Optional.of(dataStructureUtil.randomAttestationData(SLOT, UInt64.ONE));
+
+    when(validatorApiChannel.createAttestationData(SLOT, 0))
+        .thenReturn(completedFuture(invalidAttestationData));
+
+    final SafeFuture<Optional<AttestationData>> attestationFuture =
+        duty.addValidator(validator, 0, 5, 10, 11);
+    performAndReportDuty();
+
+    assertThat(attestationFuture).isCompletedWithValue(invalidAttestationData);
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(TYPE),
+            eq(SLOT),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
+            any(IllegalArgumentException.class));
+    verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
+  }
+
+  @TestTemplate
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsCanNotBeCreated() {
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
