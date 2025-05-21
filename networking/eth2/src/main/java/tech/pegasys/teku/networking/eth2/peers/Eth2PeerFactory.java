@@ -77,9 +77,16 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
-        RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider),
-        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider),
-        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider),
-        kzg);
+        RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider, "blocks"),
+        RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blobSidecars"),
+        RateTracker.create(
+            peerBlocksRateLimit * spec.getNumberOfDataColumns().orElse(1),
+            TIME_OUT,
+            timeProvider,
+            "dataColumns"),
+        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "requestTracker"),
+        kzg,
+        metricsSystem,
+        timeProvider);
   }
 }

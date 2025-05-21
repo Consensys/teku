@@ -27,12 +27,16 @@ public class RateTrackerImpl implements RateTracker {
   private final int peerRateLimit;
   private final long timeoutSeconds;
   private final TimeProvider timeProvider;
+  private final String name;
 
   private long objectsWithinWindow = 0L;
   private int newRequestId = 0;
 
   public RateTrackerImpl(
-      final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
+      final int peerRateLimit,
+      final long timeoutSeconds,
+      final TimeProvider timeProvider,
+      final String name) {
     Preconditions.checkArgument(
         peerRateLimit > 0,
         "peerRateLimit should be a positive number but it was %s",
@@ -40,6 +44,7 @@ public class RateTrackerImpl implements RateTracker {
     this.peerRateLimit = peerRateLimit;
     this.timeoutSeconds = timeoutSeconds;
     this.timeProvider = timeProvider;
+    this.name = name;
   }
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
@@ -63,6 +68,12 @@ public class RateTrackerImpl implements RateTracker {
   }
 
   @Override
+  public long getAvailableObjectCount() {
+    pruneRequests();
+    return peerRateLimit - objectsWithinWindow;
+  }
+
+  @Override
   public synchronized void adjustObjectsRequest(
       final RequestApproval requestApproval, final long returnedObjectsCount) {
     pruneRequests();
@@ -83,5 +94,18 @@ public class RateTrackerImpl implements RateTracker {
         requests.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
     headMap.values().forEach(value -> objectsWithinWindow -= value);
     headMap.clear();
+  }
+
+  @Override
+  public String toString() {
+    return "RateTrackerImpl{"
+        + "peerRateLimit="
+        + peerRateLimit
+        + ", objectsWithinWindow="
+        + objectsWithinWindow
+        + ", name='"
+        + name
+        + '\''
+        + '}';
   }
 }

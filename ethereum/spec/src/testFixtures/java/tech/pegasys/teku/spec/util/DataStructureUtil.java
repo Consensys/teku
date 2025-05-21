@@ -811,6 +811,11 @@ public final class DataStructureUtil {
         slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
+  public AttestationData randomAttestationData(final UInt64 slot, final UInt64 committeeIndex) {
+    return new AttestationData(
+        slot, committeeIndex, randomBytes32(), randomCheckpoint(), randomCheckpoint());
+  }
+
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
     return new AttestationData(
         slot,
