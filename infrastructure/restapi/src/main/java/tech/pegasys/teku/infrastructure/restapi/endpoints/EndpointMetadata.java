@@ -602,8 +602,6 @@ public class EndpointMetadata {
       this.requestBodyTypes.put(
           ContentTypes.OCTET_STREAM,
           OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
-      // any time we're setting a request body type, it's possible to get Unsupported media type, so
-      // add implicitly
       return withUnsupportedMediaTypeResponse();
     }
 
@@ -637,8 +635,7 @@ public class EndpointMetadata {
     public <T> EndpointMetaDataBuilder requestBodyType(
         final SerializableTypeDefinition<List<T>> requestBodyType,
         final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<T> bodyTypeSelector,
-        final BiFunction<Bytes, Optional<String>, List<? extends T>>
-            milestoneSpecificOctetStreamParser) {
+        final BiFunction<Bytes, Optional<String>, List<T>> milestoneSpecificOctetStreamParser) {
       this.requestBodyTypes.put(
           ContentTypes.JSON,
           new OneOfArrayJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));

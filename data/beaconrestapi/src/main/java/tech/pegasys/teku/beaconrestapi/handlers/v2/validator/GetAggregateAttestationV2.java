@@ -23,13 +23,13 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
+import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -39,9 +39,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -80,10 +77,9 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                 HttpStatusCodes.SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
-                getSszResponseType(),
+                EthereumTypes.sszResponseType(),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
-            .withNotAcceptedResponse()
             .withChainDataResponses()
             .build());
     this.provider = provider;
@@ -112,7 +108,6 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  @SuppressWarnings("unchecked")
   private static SerializableTypeDefinition<ObjectAndMetaData<Attestation>> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
 
@@ -131,11 +126,6 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField("data", oneOfTypeDefinition, ObjectAndMetaData::getData)
         .build();
-  }
-
-  private static ResponseContentTypeDefinition<Attestation> getSszResponseType() {
-    return new OctetStreamResponseContentTypeDefinition<>(
-        SszData::sszSerialize, __ -> Collections.emptyMap());
   }
 
   private static Predicate<Attestation> phase0AttestationPredicate() {

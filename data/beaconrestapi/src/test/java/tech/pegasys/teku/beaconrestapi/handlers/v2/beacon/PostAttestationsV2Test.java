@@ -36,25 +36,19 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
@@ -77,41 +71,6 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     request.setRequestBody(attestations);
     request.setRequestHeader(
         HEADER_CONSENSUS_VERSION, specMilestone.name().toLowerCase(Locale.ROOT));
-    when(validatorDataProvider.submitAttestations(attestations))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isNull();
-  }
-
-  @TestTemplate
-  void shouldBeAbleToSubmitAttestationAsSsz() throws Exception {
-    final List<Attestation> attestations =
-        List.of(dataStructureUtil.randomAttestation(), dataStructureUtil.randomAttestation());
-    final SszSchema<Attestation> attestationSchema;
-    if (specMilestone.isGreaterThanOrEqualTo(ELECTRA)) {
-      attestationSchema =
-          SchemaDefinitionsElectra.required(
-                  schemaDefinitionCache.getSchemaDefinition(specMilestone))
-              .getSingleAttestationSchema()
-              .castTypeToAttestationSchema();
-    } else {
-      attestationSchema =
-          schemaDefinitionCache.getSchemaDefinition(specMilestone).getAttestationSchema();
-    }
-    final SpecConfig config = spec.forMilestone(specMilestone).getConfig();
-    final Bytes attestationsBytes =
-        SszListSchema.create(
-                attestationSchema,
-                (long) config.getMaxValidatorsPerCommittee() * config.getMaxCommitteesPerSlot())
-            .createFromElements(attestations)
-            .sszSerialize();
-    request.setRequestBody(attestationsBytes);
-    request.setRequestHeader(
-        HEADER_CONSENSUS_VERSION, specMilestone.name().toLowerCase(Locale.ROOT));
-    request.setRequestHeader("Content-Type", ContentTypes.OCTET_STREAM);
     when(validatorDataProvider.submitAttestations(attestations))
         .thenReturn(SafeFuture.completedFuture(List.of()));
 
@@ -182,9 +141,6 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
   void metadata_shouldHandle200() {
     verifyMetadataEmptyResponse(handler, SC_OK);
   }
-
-  @TestTemplate
-  void metadata_shouldHandleRequestBodyAsSsz() {}
 
   private String getExpectedResponseAsJson(final SpecMilestone specMilestone) throws IOException {
     final String fileName =

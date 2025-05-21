@@ -19,7 +19,6 @@ import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDepend
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.headerBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
@@ -31,7 +30,6 @@ import java.util.function.BiPredicate;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -113,27 +111,23 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedAggregateAndProofSchema);
 
-    final BiFunction<Bytes, Optional<String>, List<? extends SignedAggregateAndProof>>
+    final BiFunction<Bytes, Optional<String>, List<SignedAggregateAndProof>>
         milestoneSpecificOctetStreamParser =
-            (bytes, headerConsensusVersion) -> {
-              final SpecMilestone milestone =
-                  getMilestoneFromConsensusVersionHeader(
-                      headerConsensusVersion.orElseThrow(
-                          () ->
-                              new BadRequestException(
-                                  String.format(
-                                      "Missing required header value for (%s)",
-                                      HEADER_CONSENSUS_VERSION))));
-              final SpecConfig specConfig = spec.forMilestone(milestone).getConfig();
-              return SszListSchema.create(
-                      schemaDefinitionCache
-                          .getSchemaDefinition(milestone)
-                          .getSignedAggregateAndProofSchema(),
-                      (long) specConfig.getMaxCommitteesPerSlot()
-                          * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE)
-                  .sszDeserialize(bytes)
-                  .asList();
-            };
+            (bytes, headerConsensusVersion) ->
+                headerBasedSelector(
+                    schemaDefinitionCache,
+                    headerConsensusVersion,
+                    (milestone, schemaDefinitions) -> {
+                      final SpecConfig specConfig = spec.forMilestone(milestone).getConfig();
+                      return SszListSchema.create(
+                              schemaDefinitionCache
+                                  .getSchemaDefinition(milestone)
+                                  .getSignedAggregateAndProofSchema(),
+                              (long) specConfig.getMaxCommitteesPerSlot()
+                                  * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE)
+                          .sszDeserialize(bytes)
+                          .asList();
+                    });
 
     return EndpointMetadata.post(ROUTE)
         .operationId("publishAggregateAndProofsV2")
@@ -152,17 +146,5 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
         .withBadRequestResponse(Optional.of("Invalid request syntax."))
         .withChainDataResponses()
         .build();
-  }
-
-  private static SpecMilestone getMilestoneFromConsensusVersionHeader(
-      final String consensusVersionHeader) {
-    try {
-      return SpecMilestone.forName(consensusVersionHeader);
-    } catch (Exception ex) {
-      throw new BadRequestException(
-          String.format(
-              "Invalid value for (%s) header: %s",
-              HEADER_CONSENSUS_VERSION, consensusVersionHeader));
-    }
   }
 }
