@@ -123,7 +123,7 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       blockProductionPerformance.beaconBlockBodyPreparationStarted();
 
-      final SafeFuture<Void> blockBodyProductionComplete;
+      final SafeFuture<Void> setExecutionDataComplete;
 
       // In `setExecutionData` the following fields are set:
       // Post-Bellatrix: Execution Payload / Execution Payload Header
@@ -132,7 +132,7 @@ public class BlockOperationSelectorFactory {
         final SchemaDefinitions schemaDefinitions =
             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
 
-        blockBodyProductionComplete =
+        setExecutionDataComplete =
             forkChoiceNotifier
                 .getPayloadId(parentRoot, blockSlotState.getSlot())
                 .thenCompose(
@@ -145,7 +145,7 @@ public class BlockOperationSelectorFactory {
                             blockSlotState,
                             blockProductionPerformance));
       } else {
-        blockBodyProductionComplete = SafeFuture.COMPLETE;
+        setExecutionDataComplete = SafeFuture.COMPLETE;
       }
 
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
@@ -202,9 +202,8 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-      blockProductionPerformance.beaconBlockBodyPrepared();
-
-      return blockBodyProductionComplete;
+      return setExecutionDataComplete.thenPeek(
+          __ -> blockProductionPerformance.beaconBlockBodyPrepared());
     };
   }
 
