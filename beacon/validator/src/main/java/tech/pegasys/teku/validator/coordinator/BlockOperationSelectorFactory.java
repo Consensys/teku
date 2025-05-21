@@ -121,7 +121,33 @@ public class BlockOperationSelectorFactory {
       final BlockProductionPerformance blockProductionPerformance) {
 
     return bodyBuilder -> {
-      blockProductionPerformance.beaconBlockPreparationStarted();
+      blockProductionPerformance.beaconBlockBodyPreparationStarted();
+
+      final SafeFuture<Void> setExecutionDataComplete;
+
+      // In `setExecutionData` the following fields are set:
+      // Post-Bellatrix: Execution Payload / Execution Payload Header
+      // Post-Deneb: KZG Commitments
+      if (bodyBuilder.supportsExecutionPayload()) {
+        final SchemaDefinitions schemaDefinitions =
+            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
+
+        setExecutionDataComplete =
+            forkChoiceNotifier
+                .getPayloadId(parentRoot, blockSlotState.getSlot())
+                .thenCompose(
+                    executionPayloadContext ->
+                        setExecutionData(
+                            executionPayloadContext,
+                            bodyBuilder,
+                            requestedBuilderBoostFactor,
+                            SchemaDefinitionsBellatrix.required(schemaDefinitions),
+                            blockSlotState,
+                            blockProductionPerformance));
+      } else {
+        setExecutionDataComplete = SafeFuture.COMPLETE;
+      }
+
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
       final SszList<Attestation> attestations =
@@ -176,34 +202,8 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-      final SchemaDefinitions schemaDefinitions =
-          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
-
-      final SafeFuture<Void> blockProductionComplete;
-
-      // In `setExecutionData` the following fields are set:
-      // Post-Bellatrix: Execution Payload / Execution Payload Header
-      // Post-Deneb: KZG Commitments
-      if (bodyBuilder.supportsExecutionPayload()) {
-        blockProductionComplete =
-            forkChoiceNotifier
-                .getPayloadId(parentRoot, blockSlotState.getSlot())
-                .thenCompose(
-                    executionPayloadContext ->
-                        setExecutionData(
-                            executionPayloadContext,
-                            bodyBuilder,
-                            requestedBuilderBoostFactor,
-                            SchemaDefinitionsBellatrix.required(schemaDefinitions),
-                            blockSlotState,
-                            blockProductionPerformance));
-      } else {
-        blockProductionComplete = SafeFuture.COMPLETE;
-      }
-
-      blockProductionPerformance.beaconBlockPrepared();
-
-      return blockProductionComplete;
+      return setExecutionDataComplete.thenPeek(
+          __ -> blockProductionPerformance.beaconBlockBodyPrepared());
     };
   }
 

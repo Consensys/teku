@@ -25,7 +25,7 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   public static final String PREPARATION_APPLY_DEFERRED_ATTESTATIONS =
       "preparation_apply_deferred_attestations";
   public static final String PREPARATION_PROCESS_HEAD = "preparation_process_head";
-  public static final String BEACON_BLOCK_PREPARED = "beacon_block_prepared";
+  public static final String BEACON_BLOCK_BODY_PREPARED = "beacon_block_body_prepared";
   public static final String RETRIEVE_STATE = "retrieve_state";
   public static final String LOCAL_GET_PAYLOAD = "local_get_payload";
   public static final String BUILDER_GET_HEADER = "builder_get_header";
@@ -34,7 +34,8 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   public static final String STATE_TRANSITION = "state_transition";
   public static final String STATE_HASHING = "state_hashing";
   public static final String GET_ATTESTATIONS_FOR_BLOCK = "get_attestations_for_block";
-  public static final String BEACON_BLOCK_PREPARATION_STARTED = "beacon_block_preparation_started";
+  public static final String BEACON_BLOCK_BODY_PREPARATION_STARTED =
+      "beacon_block_body_preparation_started";
   public static final String TOTAL_PRODUCTION_TIME_LABEL = "total_production_time";
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
@@ -88,8 +89,8 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   }
 
   @Override
-  public void beaconBlockPrepared() {
-    performanceTracker.addEvent(BEACON_BLOCK_PREPARED);
+  public void beaconBlockBodyPrepared() {
+    performanceTracker.addEvent(BEACON_BLOCK_BODY_PREPARED);
   }
 
   @Override
@@ -135,7 +136,7 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   }
 
   @Override
-  public void beaconBlockPreparationStarted() {
-    performanceTracker.addEvent(BEACON_BLOCK_PREPARATION_STARTED);
+  public void beaconBlockBodyPreparationStarted() {
+    performanceTracker.addEvent(BEACON_BLOCK_BODY_PREPARATION_STARTED);
   }
 }
