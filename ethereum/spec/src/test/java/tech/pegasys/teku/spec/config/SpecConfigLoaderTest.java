@@ -20,12 +20,12 @@ import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellat
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 
 import com.google.common.io.Resources;
-import io.vertx.core.file.OpenOptions;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -102,8 +102,8 @@ public class SpecConfigLoaderTest {
     try (final InputStream inputStream = getMainnetConfigAsStream()) {
       writeStreamToFile(inputStream, file);
     }
-    try (FileWriter writer = new FileWriter(file.toFile(), OpenOptions.DEFAULT_APPEND)) {
-      writer.write("UNKNOWN_OPTION: FOO");
+    try (FileWriter writer = new FileWriter(file.toFile(), StandardCharsets.UTF_8, true)) {
+      writer.write("\nUNKNOWN_OPTION: FOO");
     }
     assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toString(), true, false, __ -> {}))
         .isInstanceOf(IllegalArgumentException.class)
