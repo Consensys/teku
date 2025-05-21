@@ -45,7 +45,7 @@ public class AddPeer extends RestApiEndpoint {
             .summary("Add a static peer to the node")
             .description("Add a static peer to the node.")
             .tags(TAG_TEKU)
-            .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
+            .requestBodyType(STRING_TYPE)
             .response(SC_OK, "Peer added successfully")
             .withBadRequestResponse(Optional.of("Invalid peer address"))
             .withInternalErrorResponse()
