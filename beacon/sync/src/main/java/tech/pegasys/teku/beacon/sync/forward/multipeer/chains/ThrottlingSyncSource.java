@@ -150,7 +150,8 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 count,
       final List<UInt64> columns,
       final RpcResponseListener<DataColumnSidecar> listener) {
-    if (dataColumnSidecarsRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
+    final long maxColumnsSidecarsCount = count.times(columns.size()).longValue();
+    if (dataColumnSidecarsRateTracker.approveObjectsRequest(maxColumnsSidecarsCount).isPresent()) {
       LOG.debug("Sending request for {} data column sidecars on {} columns", count, columns.size());
       return delegate.requestDataColumnSidecarsByRange(startSlot, count, columns, listener);
     } else {

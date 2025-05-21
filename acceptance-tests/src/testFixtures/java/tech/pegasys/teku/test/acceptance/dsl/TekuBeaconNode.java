@@ -108,9 +108,9 @@ public class TekuBeaconNode extends TekuNode {
               .orElseThrow()
               .getKey()
               .getAbsolutePath();
-      this.spec = SpecFactory.create(tmpConfigFilePath, config.getSpecConfigModifier());
+      this.spec = SpecFactory.create(tmpConfigFilePath, true, config.getSpecConfigModifier());
     } else {
-      this.spec = SpecFactory.create(config.getNetworkName(), config.getSpecConfigModifier());
+      this.spec = SpecFactory.create(config.getNetworkName(), true, config.getSpecConfigModifier());
     }
     if (config.getConfigMap().containsKey("validator-api-enabled")) {
       container.addExposedPort(VALIDATOR_API_PORT);

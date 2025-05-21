@@ -74,9 +74,9 @@ public class AttestationBitsElectraTest {
 
     assertThat(aggregator.aggregateWith(attestation)).isTrue();
 
-    assertThat(aggregator.getCommitteeBits().streamAllSetBits()).containsExactly(1);
+    assertThat(aggregator.getCommitteeSszBits().streamAllSetBits()).containsExactly(1);
 
-    assertThat(aggregator.getAggregationBits().streamAllSetBits()).containsExactly(1, 2);
+    assertThat(aggregator.getAggregationSszBits().streamAllSetBits()).containsExactly(1, 2);
   }
 
   @Test
@@ -117,8 +117,8 @@ public class AttestationBitsElectraTest {
      111 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(0, 1, 2);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(0, 1, 2);
   }
 
   @Test
@@ -142,8 +142,8 @@ public class AttestationBitsElectraTest {
      11|110 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(0, 1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(0, 1, 2, 3);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(0, 1, 2, 3);
   }
 
   @Test
@@ -167,8 +167,8 @@ public class AttestationBitsElectraTest {
      11|111|0001 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(0, 1, 2);
-    assertThat(attestation.getAggregationBits().streamAllSetBits())
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 1, 2);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
         .containsExactly(0, 1, 2, 3, 4, 8);
   }
 
@@ -190,8 +190,8 @@ public class AttestationBitsElectraTest {
 
     // check remained untouched
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(0, 1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(0, 2);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(0, 2);
   }
 
   @Test
@@ -219,8 +219,9 @@ public class AttestationBitsElectraTest {
      11|110|0001 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(0, 1, 2);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(0, 1, 2, 3, 8);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 1, 2);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
+        .containsExactly(0, 1, 2, 3, 8);
   }
 
   @Test
@@ -245,8 +246,8 @@ public class AttestationBitsElectraTest {
      10|101 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(0, 1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(0, 2, 4);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(0, 2, 4);
   }
 
   @Test
@@ -275,8 +276,8 @@ public class AttestationBitsElectraTest {
      11|110|0001 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(2);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(0, 1, 3);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(2);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(0, 1, 3);
   }
 
   @Test
@@ -300,8 +301,9 @@ public class AttestationBitsElectraTest {
      10|100|1101 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(0, 1, 2);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(0, 2, 5, 6, 8);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 1, 2);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
+        .containsExactly(0, 2, 5, 6, 8);
   }
 
   @Test
@@ -325,8 +327,8 @@ public class AttestationBitsElectraTest {
      01|0001 <- bits
     */
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(0, 2);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactly(1, 5);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 2);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(1, 5);
   }
 
   @Test
@@ -398,8 +400,8 @@ public class AttestationBitsElectraTest {
         000000000000001000000000000000000000000000000000001\
         """);
 
-    assertThat(attestation.getCommitteeBits()).isEqualTo(result.getCommitteeBits());
-    assertThat(attestation.getAggregationBits()).isEqualTo(result.getAggregationBits());
+    assertThat(attestation.getCommitteeSszBits()).isEqualTo(result.getCommitteeSszBits());
+    assertThat(attestation.getAggregationSszBits()).isEqualTo(result.getAggregationSszBits());
   }
 
   @Test
@@ -412,8 +414,8 @@ public class AttestationBitsElectraTest {
 
     bits.or(otherAttestation);
 
-    assertThat(bits.getCommitteeBits().streamAllSetBits()).containsExactly(1);
-    assertThat(bits.getAggregationBits().streamAllSetBits()).containsExactly(2);
+    assertThat(bits.getCommitteeSszBits().streamAllSetBits()).containsExactly(1);
+    assertThat(bits.getAggregationSszBits().streamAllSetBits()).containsExactly(2);
   }
 
   @Test
@@ -424,8 +426,10 @@ public class AttestationBitsElectraTest {
 
     attestation.or(otherAttestation);
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(1, 4);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(0, 1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(1, 4);
   }
 
   @Test
@@ -437,8 +441,9 @@ public class AttestationBitsElectraTest {
 
     attestation.or(otherAttestation);
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 2);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(0, 2);
   }
 
   @Test
@@ -449,8 +454,8 @@ public class AttestationBitsElectraTest {
 
     attestation.or(otherAttestation);
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits())
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
         .containsExactlyInAnyOrder(0, 1, 2);
   }
 
@@ -462,8 +467,9 @@ public class AttestationBitsElectraTest {
 
     attestation.or(otherAttestation);
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits()).containsExactly(1);
-    assertThat(attestation.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 2);
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(1);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(0, 2);
   }
 
   @Test
@@ -474,9 +480,9 @@ public class AttestationBitsElectraTest {
 
     attestation.or(otherAttestation);
 
-    assertThat(attestation.getCommitteeBits().streamAllSetBits())
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits())
         .containsExactlyInAnyOrder(0, 1, 2);
-    assertThat(attestation.getAggregationBits().streamAllSetBits())
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits())
         .containsExactlyInAnyOrder(0, 3, 4, 7);
   }
 
@@ -488,12 +494,13 @@ public class AttestationBitsElectraTest {
 
     att1Data.or(att2Data);
 
-    assertThat(att1Data.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
-    assertThat(att1Data.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1, 2);
+    assertThat(att1Data.getCommitteeSszBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
+    assertThat(att1Data.getAggregationSszBits().streamAllSetBits())
+        .containsExactlyInAnyOrder(0, 1, 2);
 
     // aggregator2 should remain unchanged
-    assertThat(att2Data.getCommitteeBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
-    assertThat(att2Data.getAggregationBits().streamAllSetBits()).containsExactlyInAnyOrder(1, 2);
+    assertThat(att2Data.getCommitteeSszBits().streamAllSetBits()).containsExactlyInAnyOrder(0, 1);
+    assertThat(att2Data.getAggregationSszBits().streamAllSetBits()).containsExactlyInAnyOrder(1, 2);
   }
 
   @Test
@@ -513,10 +520,10 @@ public class AttestationBitsElectraTest {
 
     final Attestation other =
         attestationSchema.create(
-            otherAttestation.getAggregationBits(),
+            otherAttestation.getAggregationSszBits(),
             attestationData,
             dataStructureUtil.randomSignature(),
-            otherAttestation::getCommitteeBits);
+            otherAttestation::getCommitteeSszBits);
 
     assertThat(attestation.isSuperSetOf(other)).isTrue();
   }
@@ -631,22 +638,22 @@ public class AttestationBitsElectraTest {
   }
 
   @Test
-  void getAggregationBits_shouldBeConsistent_singleCommittee() {
+  void getAggregationSszBits_shouldBeConsistent_singleCommittee() {
     final AttestationBits attestation = createAttestationBits(List.of(0), 0);
 
-    assertThat(attestation.getAggregationBits().size()).isEqualTo(committeeSizes.get(0));
+    assertThat(attestation.getAggregationSszBits().size()).isEqualTo(committeeSizes.get(0));
 
-    assertThat(attestation.getAggregationBits()).isEqualTo(attestation.getAggregationBits());
+    assertThat(attestation.getAggregationSszBits()).isEqualTo(attestation.getAggregationSszBits());
   }
 
   @Test
-  void getAggregationBits_shouldBeConsistent_multiCommittee() {
+  void getAggregationSszBits_shouldBeConsistent_multiCommittee() {
     final AttestationBits attestation = createAttestationBits(List.of(0, 1), 0, 3);
 
-    assertThat(attestation.getAggregationBits().size())
+    assertThat(attestation.getAggregationSszBits().size())
         .isEqualTo(committeeSizes.get(0) + committeeSizes.get(1));
 
-    assertThat(attestation.getAggregationBits()).isEqualTo(attestation.getAggregationBits());
+    assertThat(attestation.getAggregationSszBits()).isEqualTo(attestation.getAggregationSszBits());
   }
 
   @Test
@@ -656,15 +663,16 @@ public class AttestationBitsElectraTest {
 
     final AttestationBits copy = attestation.copy();
 
-    assertThat(copy.getCommitteeBits()).isEqualTo(attestation.getCommitteeBits());
-    assertThat(copy.getAggregationBits()).isEqualTo(attestation.getAggregationBits());
+    assertThat(copy.getCommitteeSszBits()).isEqualTo(attestation.getCommitteeSszBits());
+    assertThat(copy.getAggregationSszBits()).isEqualTo(attestation.getAggregationSszBits());
     assertThat(copy).isNotSameAs(attestation);
 
     assertThat(copy.aggregateWith(createAttestationBits(List.of(1), 1))).isTrue();
 
     // the original should not be modified
-    assertThat(attestation.getCommitteeBits()).isEqualTo(sameAttestation.getCommitteeBits());
-    assertThat(attestation.getAggregationBits()).isEqualTo(sameAttestation.getAggregationBits());
+    assertThat(attestation.getCommitteeSszBits()).isEqualTo(sameAttestation.getCommitteeSszBits());
+    assertThat(attestation.getAggregationSszBits())
+        .isEqualTo(sameAttestation.getAggregationSszBits());
   }
 
   @Test

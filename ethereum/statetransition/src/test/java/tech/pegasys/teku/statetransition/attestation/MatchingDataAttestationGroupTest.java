@@ -444,10 +444,10 @@ class MatchingDataAttestationGroupTest {
 
   private Attestation toAttestation(final PooledAttestation pooledAttestation) {
     return attestationSchema.create(
-        pooledAttestation.bits().getAggregationBits(),
+        pooledAttestation.bits().getAggregationSszBits(),
         attestationData,
         pooledAttestation.aggregatedSignature(),
-        pooledAttestation.bits()::getCommitteeBits);
+        pooledAttestation.bits()::getCommitteeSszBits);
   }
 
   private PooledAttestationWithData toPooledAttestationWithData(

@@ -102,7 +102,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     final UInt64 endSlot = message.getMaxSlot();
     final List<UInt64> columns = message.getColumns();
 
-    ReqRespResponseLogger<DataColumnSidecar> responseLogger =
+    final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         dasLogger
             .getDataColumnSidecarsByRangeLogger()
             .onInboundRequest(
@@ -110,7 +110,7 @@ public class DataColumnSidecarsByRangeMessageHandler
                     peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
                 new DasReqRespLogger.ByRangeRequest(
                     message.getStartSlot(), message.getCount().intValue(), message.getColumns()));
-    LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
+    final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
         new LoggingResponseCallback<>(responseCallback, responseLogger);
 
     final int requestedCount = message.getMaximumResponseChunks();

@@ -148,4 +148,8 @@ public class NetworkDataProvider {
 
     return new Peer(peerId, null, address, state, direction);
   }
+
+  public Optional<DiscoveryNetwork<?>> getDiscoveryNetwork() {
+    return network.getDiscoveryNetwork();
+  }
 }

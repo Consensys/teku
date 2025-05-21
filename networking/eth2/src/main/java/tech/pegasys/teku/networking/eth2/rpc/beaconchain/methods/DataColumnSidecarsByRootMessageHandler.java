@@ -114,7 +114,7 @@ public class DataColumnSidecarsByRootMessageHandler
       final DataColumnSidecarsByRootRequestMessage message,
       final ResponseCallback<DataColumnSidecar> responseCallback) {
 
-    ReqRespResponseLogger<DataColumnSidecar> responseLogger =
+    final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         dasLogger
             .getDataColumnSidecarsByRootLogger()
             .onInboundRequest(
@@ -122,7 +122,7 @@ public class DataColumnSidecarsByRootMessageHandler
                     peer.getId().toBase58(), peer.getDiscoveryNodeId().orElseThrow()),
                 message.asList());
 
-    LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
+    final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
         new LoggingResponseCallback<>(responseCallback, responseLogger);
 
     final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
@@ -140,7 +140,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
-    Stream<SafeFuture<Boolean>> responseStream =
+    final Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
             .flatMap(
                 byRootIdentifier ->
@@ -160,7 +160,7 @@ public class DataColumnSidecarsByRootMessageHandler
                                     finalizedEpoch,
                                     responseCallbackWithLogging)));
 
-    SafeFuture<List<Boolean>> listOfResponses = SafeFuture.collectAll(responseStream);
+    final SafeFuture<List<Boolean>> listOfResponses = SafeFuture.collectAll(responseStream);
 
     listOfResponses
         .thenApply(list -> list.stream().filter(isSent -> isSent).count())
@@ -231,6 +231,7 @@ public class DataColumnSidecarsByRootMessageHandler
               if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
                   combinedChainDataClient.getStore(), requestedEpoch)
               // TODO uncomment when sync by range is ready
+              // https://github.com/Consensys/teku/issues/9448
               /* || requestedEpoch.isLessThan(finalizedEpoch)*/ ) {
                 throw new RpcException(
                     INVALID_REQUEST_CODE,

@@ -69,9 +69,9 @@ public interface AttestationBits {
 
   boolean isSuperSetOf(AttestationBits other);
 
-  SszBitlist getAggregationBits();
+  SszBitlist getAggregationSszBits();
 
-  SszBitvector getCommitteeBits();
+  SszBitvector getCommitteeSszBits();
 
   Int2IntMap getCommitteesSize();
 
