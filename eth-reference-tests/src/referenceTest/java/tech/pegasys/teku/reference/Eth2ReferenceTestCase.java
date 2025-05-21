@@ -24,6 +24,8 @@ import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorBellatrix;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.deneb.merkle_proof.MerkleProofTests;
+import tech.pegasys.teku.reference.fulu.network.ComputeColumnsForCustodyGroupTestExecutor;
+import tech.pegasys.teku.reference.fulu.network.GetCustodyGroupTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
@@ -100,14 +102,14 @@ public abstract class Eth2ReferenceTestCase {
 
   private static final ImmutableMap<String, TestExecutor> FULU_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
-          .put("merkle_proof/single_merkle_proof", TestExecutor.IGNORE_TESTS)
-          // TODO-fulu enable merkle proof tests
-          // .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
-          // TODO-fulu networking test types (networking/compute_columns_for_custody_group)
-          .put("networking/get_custody_groups", TestExecutor.IGNORE_TESTS)
-          .put("networking/compute_columns_for_custody_group", TestExecutor.IGNORE_TESTS)
+          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
+          .put("networking/get_custody_groups", new GetCustodyGroupTestExecutor())
+          .put(
+              "networking/compute_columns_for_custody_group",
+              new ComputeColumnsForCustodyGroupTestExecutor())
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
