@@ -24,8 +24,8 @@ import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorBellatrix;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.deneb.merkle_proof.MerkleProofTests;
-import tech.pegasys.teku.reference.fulu.network.ComputeColumnsForCustodyGroupTestExecution;
-import tech.pegasys.teku.reference.fulu.network.GetCustodyGroupTestExecution;
+import tech.pegasys.teku.reference.fulu.network.ComputeColumnsForCustodyGroupTestExecutor;
+import tech.pegasys.teku.reference.fulu.network.GetCustodyGroupTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
@@ -106,10 +106,10 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
-          .put("networking/get_custody_groups", new GetCustodyGroupTestExecution())
+          .put("networking/get_custody_groups", new GetCustodyGroupTestExecutor())
           .put(
               "networking/compute_columns_for_custody_group",
-              new ComputeColumnsForCustodyGroupTestExecution())
+              new ComputeColumnsForCustodyGroupTestExecutor())
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
