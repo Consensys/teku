@@ -315,6 +315,7 @@ public class Eth2NetworkOptions {
       description = "Enable the new aggregating attestation pool.",
       arity = "0..1",
       fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   private boolean aggregatingAttestationPoolV2Enabled =
       Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
@@ -325,6 +326,7 @@ public class Eth2NetworkOptions {
       description = "Enable the profiler for the aggregating attestation pool",
       arity = "0..1",
       fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   private boolean aggregatingAttestationPoolProfilingEnabled =
       Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED;
@@ -357,6 +359,7 @@ public class Eth2NetworkOptions {
           "Discard single attestations upon receiving an attestation that contains that single attestation.",
       arity = "0..1",
       fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   private boolean aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled =
       Eth2NetworkConfiguration
@@ -368,6 +371,7 @@ public class Eth2NetworkOptions {
       description = "Enable parallel processing of aggregating attestations.",
       arity = "0..1",
       fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   private boolean aggregatingAttestationPoolV2ParallelEnabled =
       Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_PARALLEL_ENABLED;
