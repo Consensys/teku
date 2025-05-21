@@ -29,6 +29,11 @@ public interface RateTracker {
             RequestApproval requestApproval, long returnedObjectsCount) {}
 
         @Override
+        public long getAvailableObjectCount() {
+          return 0;
+        }
+
+        @Override
         public void pruneRequests() {}
       };
 
@@ -36,12 +41,17 @@ public interface RateTracker {
   // they can have the objects they request otherwise they get none.
   Optional<RequestApproval> approveObjectsRequest(long objectsCount);
 
+  long getAvailableObjectCount();
+
   void adjustObjectsRequest(RequestApproval requestApproval, long returnedObjectsCount);
 
   void pruneRequests();
 
   static RateTracker create(
-      final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
-    return new RateTrackerImpl(peerRateLimit, timeoutSeconds, timeProvider);
+      final int peerRateLimit,
+      final long timeoutSeconds,
+      final TimeProvider timeProvider,
+      final String name) {
+    return new RateTrackerImpl(peerRateLimit, timeoutSeconds, timeProvider, name);
   }
 }
