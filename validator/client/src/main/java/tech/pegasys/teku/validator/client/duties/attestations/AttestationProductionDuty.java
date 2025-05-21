@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -215,13 +216,19 @@ public class AttestationProductionDuty implements Duty {
         .exceptionally(error -> ProductionResult.failure(validator.publicKey(), error));
   }
 
-  private static void validateAttestationData(
-      final UInt64 slot, final AttestationData attestationData) {
+  private void validateAttestationData(final UInt64 slot, final AttestationData attestationData) {
     checkArgument(
         attestationData.getSlot().equals(slot),
         "Unsigned attestation slot (%s) does not match expected slot %s",
         attestationData.getSlot(),
         slot);
+
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      checkArgument(
+          attestationData.getIndex().equals(UInt64.ZERO),
+          "Unsigned attestation slot (%s) must have index 0",
+          slot);
+    }
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(
