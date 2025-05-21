@@ -3,12 +3,13 @@
     "tags" : [ "Teku" ],
     "operationId" : "AddPeer",
     "summary" : "Add a static peer to the node",
-    "description" : "Add a static peer to the node passing a multiaddress.",
+    "description" : "Add a static peer to the node.",
     "requestBody" : {
       "content" : {
         "application/json" : {
           "schema" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Multiaddress of the peer to add"
           }
         }
       }
