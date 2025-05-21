@@ -267,7 +267,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   public SafeFuture<Void> requestDataColumnSidecarsByRoot(
       final List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
       final RpcResponseListener<DataColumnSidecar> listener) {
-    // TODO
+    // TODO-fulu
     return SafeFuture.COMPLETE;
   }
 
@@ -277,7 +277,7 @@ public class RespondingEth2Peer implements Eth2Peer {
       final UInt64 count,
       final List<UInt64> columns,
       final RpcResponseListener<DataColumnSidecar> listener) {
-    // TODO
+    // TODO-fulu
     return SafeFuture.COMPLETE;
   }
 
