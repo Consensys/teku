@@ -3,7 +3,7 @@
     "tags" : [ "Teku" ],
     "operationId" : "AddPeer",
     "summary" : "Add a static peer to the node",
-    "description" : "Add a static peer to the node.",
+    "description" : "Add a static peer to the node passing a multiaddress.",
     "requestBody" : {
       "content" : {
         "application/json" : {
