@@ -134,7 +134,7 @@ class AttestationProductionDutyTest {
   }
 
   @TestTemplate
-  public void shouldFailWhenUnsignedAttestationIsCreatedInvalid(final SpecContext specContext) {
+  public void shouldFailWhenUnsignedAttestationIsCreatedInvalid() {
     final Validator validator = createValidator();
 
     final Optional<AttestationData> invalidAttestationData =
