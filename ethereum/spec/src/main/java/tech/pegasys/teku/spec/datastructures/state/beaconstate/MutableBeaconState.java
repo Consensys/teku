@@ -224,6 +224,7 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   default Optional<MutableBeaconStateElectra> toMutableVersionElectra() {
     return Optional.empty();
   }
+
   default Optional<MutableBeaconStateFulu> toMutableVersionFulu() {
     return Optional.empty();
   }

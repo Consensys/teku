@@ -194,5 +194,7 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     return Optional.empty();
   }
 
-  default Optional<BeaconStateFulu> toVersionFulu() { return Optional.empty(); }
+  default Optional<BeaconStateFulu> toVersionFulu() {
+    return Optional.empty();
+  }
 }
