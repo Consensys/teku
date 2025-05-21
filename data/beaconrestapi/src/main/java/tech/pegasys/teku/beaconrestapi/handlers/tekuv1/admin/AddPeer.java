@@ -42,7 +42,7 @@ public class AddPeer extends RestApiEndpoint {
         EndpointMetadata.post(ROUTE)
             .operationId("AddPeer")
             .summary("Add a static peer to the node")
-            .description("Add a static peer to the node.")
+            .description("Add a static peer to the node passing a multiaddress.")
             .tags(TAG_TEKU)
             .requestBodyType(STRING_TYPE)
             .response(SC_OK, "Peer added successfully")
