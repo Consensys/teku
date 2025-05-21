@@ -333,7 +333,7 @@ public class Eth2NetworkOptions {
       names = {"--Xaggregating-attestation-pool-v2-block-aggregation-time-limit"},
       paramLabel = "<NUMBER>",
       description = "Maximum time to spend packing attestations when producing a block.",
-      arity = "0..1",
+      arity = "1",
       hidden = true)
   private int aggregatingAttestationPoolV2BlockAggregationTimeLimit =
       Eth2NetworkConfiguration
@@ -344,7 +344,7 @@ public class Eth2NetworkOptions {
       paramLabel = "<NUMBER>",
       description =
           "Maximum time to spend packing and improving attestations when producing a block.",
-      arity = "0..1",
+      arity = "1",
       hidden = true)
   private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
       Eth2NetworkConfiguration
