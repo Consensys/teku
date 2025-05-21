@@ -309,6 +309,69 @@ public class Eth2NetworkOptions {
       arity = "0..1")
   private String epochsStoreBlobs;
 
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable the new aggregating attestation pool.",
+      arity = "0..1",
+      fallbackValue = "true",
+      hidden = true)
+  private boolean aggregatingAttestationPoolV2Enabled =
+      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-profiling-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable the profiler for the aggregating attestation pool",
+      arity = "0..1",
+      fallbackValue = "true",
+      hidden = true)
+  private boolean aggregatingAttestationPoolProfilingEnabled =
+      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-block-aggregation-time-limit"},
+      paramLabel = "<NUMBER>",
+      description = "Maximum time to spend packing attestations when producing a block.",
+      arity = "0..1",
+      hidden = true)
+  private int aggregatingAttestationPoolV2BlockAggregationTimeLimit =
+      Eth2NetworkConfiguration
+          .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-total-block-aggregation-time-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "Maximum time to spend packing and improving attestations when producing a block.",
+      arity = "0..1",
+      hidden = true)
+  private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
+      Eth2NetworkConfiguration
+          .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-early-drop-single-attestations-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Discard single attestations upon receiving an attestation that contains that single attestation.",
+      arity = "0..1",
+      fallbackValue = "true",
+      hidden = true)
+  private boolean aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled =
+      Eth2NetworkConfiguration
+          .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_EARLY_DROP_SINGLE_ATTESTATIONS_ENABLED;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-parallel-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable parallel processing of aggregating attestations.",
+      arity = "0..1",
+      fallbackValue = "true",
+      hidden = true)
+  private boolean aggregatingAttestationPoolV2ParallelEnabled =
+      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_PARALLEL_ENABLED;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
   }
@@ -401,6 +464,15 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .aggregatingAttestationPoolV2Enabled(aggregatingAttestationPoolV2Enabled)
+        .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
+        .aggregatingAttestationPoolV2BlockAggregationTimeLimit(
+            aggregatingAttestationPoolV2BlockAggregationTimeLimit)
+        .aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(
+            aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
+        .aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled(
+            aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled)
+        .aggregatingAttestationPoolV2ParallelEnabled(aggregatingAttestationPoolV2ParallelEnabled)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
         .rustKzgEnabled(rustKzgEnabled);
