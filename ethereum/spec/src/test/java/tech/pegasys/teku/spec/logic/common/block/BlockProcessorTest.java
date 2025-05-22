@@ -63,7 +63,7 @@ public abstract class BlockProcessorTest {
   }
 
   @Test
-  void blockInvalidWhenProposerSlashed() {
+  void blockInvalidHasRootCauseIllegalArgumentException() {
     final BeaconState preState =
         dataStructureUtil
             .randomBeaconState(UInt64.valueOf(1024))
