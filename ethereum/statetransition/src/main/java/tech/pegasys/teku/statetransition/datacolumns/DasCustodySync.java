@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
 public class DasCustodySync implements SlotEventsChannel {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;

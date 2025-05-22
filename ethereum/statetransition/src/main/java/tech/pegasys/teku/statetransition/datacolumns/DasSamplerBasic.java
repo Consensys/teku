@@ -40,7 +40,7 @@ import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
 public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckpointChannel {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;

@@ -37,7 +37,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCou
 
 public class GossipTopicDasPeerCustodyTracker
     implements DasPeerCustodyCountSupplier, PeerConnectedSubscriber<Eth2Peer> {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   public static final int NO_SUBNET_COUNT_INFO = -1;
 

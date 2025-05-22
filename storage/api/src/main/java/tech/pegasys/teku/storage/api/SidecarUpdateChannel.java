@@ -20,14 +20,14 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 
 public interface SidecarUpdateChannel extends ChannelInterface {
 
-  // TODO: as it's pushed separately from sidecars, an eventual consistency could occur.
-  //  Clarify that it's safe
+  // TODO-fulu: as it's pushed separately from sidecars, an eventual consistency could occur.
+  // Clarify that it's safe
   SafeFuture<Void> onFirstCustodyIncompleteSlot(UInt64 slot);
 
   SafeFuture<Void> onFirstSamplerIncompleteSlot(UInt64 slot);
 
   SafeFuture<Void> onNewSidecar(DataColumnSidecar sidecar);
 
-  // TODO: Make a dedicated pruner instead
+  // TODO-fulu: Make a dedicated pruner instead
   SafeFuture<Void> onSidecarsAvailabilitySlot(UInt64 earliestSlotRequired);
 }

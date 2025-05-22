@@ -24,7 +24,7 @@ import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
 
 public class DasPreSampler {
 
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final DataAvailabilitySampler sampler;
 

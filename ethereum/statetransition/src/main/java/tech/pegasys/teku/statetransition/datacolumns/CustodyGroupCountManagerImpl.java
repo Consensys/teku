@@ -34,7 +34,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyGroupCountManager {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final int initCustodyGroupCount;
   private final AtomicInteger custodyGroupCount;

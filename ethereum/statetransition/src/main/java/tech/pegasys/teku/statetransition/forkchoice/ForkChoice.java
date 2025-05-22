@@ -454,7 +454,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final AvailabilityChecker<?> availabilityChecker;
     if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      LOG.info("Created DAS availabilityChecker for slot {}", block.getSlot());
+      LOG.trace("Created DAS availabilityChecker for slot {}", block.getSlot());
       availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
     } else {
       availabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
@@ -483,7 +483,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .getAvailabilityCheckResult()
             .thenPeek(
                 result -> {
-                  LOG.info(
+                  LOG.trace(
                       "Availability check slot {} result: {}",
                       block.getSlot(),
                       result.toLogString());
@@ -571,14 +571,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     switch (dataAndValidationResult.validationResult()) {
       case VALID, NOT_REQUIRED ->
-          LOG.debug("sidecars validation result: {}", dataAndValidationResult::toLogString);
+          LOG.debug("Sidecars validation result: {}", dataAndValidationResult::toLogString);
       case NOT_AVAILABLE -> {
-        LOG.debug("sidecars validation result: {}", dataAndValidationResult::toLogString);
+        LOG.debug("Sidecars validation result: {}", dataAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             dataAndValidationResult.cause());
       }
       case INVALID -> {
-        LOG.error("sidecars validation result: {}", dataAndValidationResult::toLogString);
+        LOG.error("Sidecars validation result: {}", dataAndValidationResult::toLogString);
         debugDataDumper.saveInvalidSidecars(dataAndValidationResult.data(), block);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             dataAndValidationResult.cause());

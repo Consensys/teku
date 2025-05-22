@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndV
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 
 public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker<UInt64> {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final DataAvailabilitySampler dataAvailabilitySampler;
   private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();

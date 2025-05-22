@@ -235,10 +235,9 @@ public class DasCustodySyncTest {
     assertAllCustodyColumnsPresent();
   }
 
-  //  @Disabled("There are 2 issues at the moment: almost no sync and too many DB queries")
   @Test
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
-    // TODO this is too high and needs to be fixed
+    // TODO-fulu this is too high and needs to be fixed
     int maxAverageColumnDbReadsPerSlot = 400;
     int maxAverageBlockDbReadsPerSlot = 400;
 

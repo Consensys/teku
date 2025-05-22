@@ -37,7 +37,7 @@ import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarRetriever delegate;
   private final KZG kzg;
@@ -74,7 +74,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
-    // TODO we probably need a better heuristics to submit requests for recovery
+    // TODO-fulu we probably need a better heuristics to submit requests for recovery
     asyncRunner
         .runAfterDelay(
             () -> {
@@ -217,7 +217,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       if (!recovered && sidecar.getBlockRoot().equals(block.getRoot())) {
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         if (existingSidecarsByColIdx.size() >= recoverColumnCount) {
-          // TODO: Make it asynchronously as it's heavy CPU operation
+          // TODO-fulu: Make it asynchronously as it's heavy CPU operation
           recover();
           recoveryComplete();
         }

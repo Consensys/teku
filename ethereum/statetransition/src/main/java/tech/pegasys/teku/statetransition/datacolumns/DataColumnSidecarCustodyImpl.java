@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 public class DataColumnSidecarCustodyImpl
     implements DataColumnSidecarCustody, SlotEventsChannel, FinalizedCheckpointChannel {
 
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private record SlotCustody(
       UInt64 slot,
@@ -152,10 +152,9 @@ public class DataColumnSidecarCustodyImpl
     if (updateEpoch(spec.computeEpochAtSlot(slot))) {
       int groupCount = custodyGroupCountManager.getCustodyGroupCount();
       final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
-      // FIXME: ignoring the case when it's less, let's skip pruning in early version, to implement
-      // in
-      // future
-      // Invalidating current custody as number of required groups have increased
+      // TODO-fulu: ignoring the case when it's less, let's skip pruning in early version, to
+      // implement
+      // in future invalidating current custody as number of required groups have increased
       if (groupCount > oldGroupCount) {
         LOG.info("Custody group count changed from {} to {}", oldGroupCount, groupCount);
         final UInt64 minCustodyPeriodSlot =
@@ -189,10 +188,9 @@ public class DataColumnSidecarCustodyImpl
                 maybeFirstIncompleteOrLastComplete
                     .map(
                         firstIncompleteOrLastComplete -> {
-                          // FIXME: if we don't have finalization, we will not advance it and it's
-                          // an issue
-                          // FIXME: non-finalized epochs could be still not synced with up-to-date
-                          // custody
+                          // TODO-fulu: if we don't have finalization, we will not advance it and
+                          // it's an issue
+                          //  non-finalized epochs could be still not synced with up-to-date custody
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.info(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());

@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecarRecoveringCustody {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarByRootCustody delegate;
   private final AsyncRunner asyncRunner;

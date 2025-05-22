@@ -45,11 +45,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
-// TODO improve thread-safety: external calls are better to do outside of the synchronize block to
+// TODO-fulu improve thread-safety: external calls are better to do outside of the synchronize block
+// to
 // prevent potential dead locks
 public class SimpleSidecarRetriever
     implements DataColumnSidecarRetriever, DataColumnPeerManager.PeerListener {
-  private static final Logger LOG = LogManager.getLogger("das-nyota");
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final MiscHelpersFulu miscHelpersFulu;

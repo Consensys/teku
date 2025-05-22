@@ -63,7 +63,7 @@ public class DataColumnPeerManagerImpl
 
   @Override
   public void banNode(final UInt256 node) {
-    // TODO
+    // TODO-fulu
   }
 
   @Override

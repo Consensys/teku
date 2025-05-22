@@ -52,7 +52,7 @@ public class BlobSidecarReconstructionProvider {
 
   public SafeFuture<List<BlobSidecar>> reconstructBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
-    // TODO: suboptimal
+    // TODO-fulu: suboptimal
     return combinedChainDataClient
         .getBlockAtSlotExact(slot)
         .thenCompose(

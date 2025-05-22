@@ -815,8 +815,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
 
-      // TODO fix this dirty hack
-      // This is to resolve the initialization loop Network <--> DAS Custody
+      // TODO-fulu fix this hack to resolve the initialization loop Network <--> DAS Custody
       this.dataColumnSidecarCustody.init(dataColumnSidecarRecoveringCustody);
 
       custody = dataColumnSidecarRecoveringCustody;
@@ -844,7 +843,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DasPeerCustodyCountSupplier.capped(
             peerCustodyTracker, minCustodyGroupRequirement, maxGroups);
 
-    // TODO NOOP peer searcher should work for interop but needs to be implemented
+    // TODO-fulu NOOP peer searcher should work for interop but needs to be implemented
     DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
     DataColumnSidecarRetriever sidecarRetriever =
         new SimpleSidecarRetriever(
