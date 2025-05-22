@@ -152,8 +152,10 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
-                      combinedChainDataClient.getStore(), requestEpoch)
+              final boolean availabilityRequiredAtStart =
+                  spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+                      combinedChainDataClient.getStore(), requestEpoch);
+              if (availabilityRequiredAtStart
                   && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotBeforeFulu)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
@@ -184,7 +186,7 @@ public class BlobSidecarsByRangeMessageHandler
                       canonicalHotRoots,
                       finalizedSlot,
                       specConfig.getMaxRequestBlobSidecars());
-              if (message.getCount().isZero()) {
+              if (message.getCount().isZero() || !availabilityRequiredAtStart) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendBlobSidecars(initialState);
