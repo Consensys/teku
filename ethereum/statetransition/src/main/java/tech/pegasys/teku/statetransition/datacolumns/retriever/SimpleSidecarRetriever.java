@@ -205,8 +205,8 @@ public class SimpleSidecarRetriever
 
     final long activeRequestCount =
         pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
-    LOG.info(
-        "[nyota] SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
+    LOG.trace(
+        "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
         retrieveCounter,
         errorCounter,
         pendingRequests.size(),
@@ -260,16 +260,15 @@ public class SimpleSidecarRetriever
 
   @Override
   public synchronized void peerConnected(final UInt256 nodeId) {
-    LOG.info(
-        "[nyota] SimpleSidecarRetriever.peerConnected: {}",
-        "0x..." + nodeId.toHexString().substring(58));
+    LOG.trace(
+        "SimpleSidecarRetriever.peerConnected: {}", "0x..." + nodeId.toHexString().substring(58));
     connectedPeers.put(nodeId, new ConnectedPeer(nodeId));
   }
 
   @Override
   public synchronized void peerDisconnected(final UInt256 nodeId) {
-    LOG.info(
-        "[nyota] SimpleSidecarRetriever.peerDisconnected: {}",
+    LOG.trace(
+        "SimpleSidecarRetriever.peerDisconnected: {}",
         "0x..." + nodeId.toHexString().substring(58));
     connectedPeers.remove(nodeId);
   }

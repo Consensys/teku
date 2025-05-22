@@ -105,12 +105,12 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         .thenPeek(
             maybeBlock -> {
               if (!maybeBlock.map(b -> b.getRoot().equals(columnId.blockRoot())).orElse(false)) {
-                LOG.info("[nyota] Recovery: CAN'T initiate recovery for " + columnId);
+                LOG.trace("Recovery: CAN'T initiate recovery for " + columnId);
                 promise.completeExceptionally(
                     new NotOnCanonicalChainException(columnId, maybeBlock));
               } else {
                 final BeaconBlock block = maybeBlock.orElseThrow();
-                LOG.info("[nyota] Recovery: initiating recovery for " + columnId);
+                LOG.trace("Recovery: initiating recovery for " + columnId);
                 final RecoveryEntry recovery = addRecovery(columnId, block);
                 recovery.addRequest(columnId.columnIndex(), promise);
               }
@@ -138,8 +138,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
   private RecoveryEntry createNewRecovery(final BeaconBlock block) {
     final RecoveryEntry recoveryEntry = new RecoveryEntry(block, kzg, specHelpers);
-    LOG.info(
-        "[nyota] Recovery: new RecoveryEntry for slot {} and block {} ",
+    LOG.trace(
+        "Recovery: new RecoveryEntry for slot {} and block {} ",
         recoveryEntry.block.getSlot(),
         recoveryEntry.block.getRoot());
     sidecarDB
@@ -226,8 +226,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     private void recoveryComplete() {
       recovered = true;
-      LOG.info(
-          "[nyota] Recovery: completed for the slot {}, requests complete: {}",
+      LOG.trace(
+          "Recovery: completed for the slot {}, requests complete: {}",
           block.getSlot(),
           promisesByColIdx.values().stream().mapToInt(List::size).sum());
 

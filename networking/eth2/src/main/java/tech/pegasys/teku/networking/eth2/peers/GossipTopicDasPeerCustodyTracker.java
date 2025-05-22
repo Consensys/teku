@@ -61,7 +61,7 @@ public class GossipTopicDasPeerCustodyTracker
     asyncRunner.runWithFixedDelay(
         this::refreshExistingSubscriptions,
         Duration.ofSeconds(1),
-        e -> LOG.warn("[nyota] Error {}", e, e));
+        e -> LOG.warn("Error refreshing existing subscriptions", e));
   }
 
   @Override
