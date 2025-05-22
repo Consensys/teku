@@ -450,10 +450,16 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
     /* -- Final conversion phase -- */
 
-    return IntStream.range(0, sortedAggregates.size())
-        .mapToObj(i -> filledUpAggregates.get(i).orElse(sortedAggregates.get(i)))
-        .map(a -> a.getAttestation().toAttestation(attestationSchema))
-        .collect(attestationsSchema.collector());
+    final SszList<Attestation> result =
+        IntStream.range(0, sortedAggregates.size())
+            .mapToObj(i -> filledUpAggregates.get(i).orElse(sortedAggregates.get(i)))
+            .map(a -> a.getAttestation().toAttestation(attestationSchema))
+            .collect(attestationsSchema.collector());
+
+    LOG.info(
+        "getAttestationsForBlock took {} ms.", (nanosSupplier.getAsLong() - nowNanos) / 1_000_000);
+
+    return result;
   }
 
   private PooledAttestationWithRewardInfo fillUpAttestation(
