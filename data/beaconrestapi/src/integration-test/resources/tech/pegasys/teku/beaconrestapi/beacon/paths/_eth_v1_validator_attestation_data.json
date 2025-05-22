@@ -31,11 +31,17 @@
             "schema" : {
               "$ref" : "#/components/schemas/ProduceAttestationDataResponse"
             }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
           }
         }
       },
-      "503" : {
-        "description" : "Service unavailable",
+      "404" : {
+        "description" : "Not found",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -44,8 +50,18 @@
           }
         }
       },
-      "404" : {
-        "description" : "Not found",
+      "406" : {
+        "description" : "Not acceptable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Service unavailable",
         "content" : {
           "application/json" : {
             "schema" : {

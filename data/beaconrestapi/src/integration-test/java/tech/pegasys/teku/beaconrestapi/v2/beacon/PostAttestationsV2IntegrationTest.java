@@ -34,10 +34,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
@@ -62,6 +64,19 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final Response response = postAttestations(attestations, specMilestone.name());
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  @Test
+  void shouldPostAttestationsAsSsz_NoErrors() throws Exception {
+    final List<Attestation> attestations = getAttestationList(2);
+
+    when(validatorApiChannel.sendSignedAttestations(attestations))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
+
+    final Response response = postAttestationsAsSsz(attestations, specMilestone.name());
 
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.body().string()).isEmpty();
@@ -160,18 +175,26 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     return attestations;
   }
 
-  @SuppressWarnings("unchecked")
-  protected String serializeAttestations(final List<?> attestations) throws IOException {
+  protected String serializeAttestations(final List<Attestation> attestations) throws IOException {
     final SerializableTypeDefinition<List<Attestation>> attestationsListTypeDef =
-        SerializableTypeDefinition.listOf(
-            spec.getGenesisSchemaDefinitions()
-                .getAttestationSchema()
-                .castTypeToAttestationSchema()
-                .getJsonTypeDefinition());
-    return JsonUtil.serialize((List<Attestation>) attestations, attestationsListTypeDef);
+        SerializableTypeDefinition.listOf(getAttestationSchema().getJsonTypeDefinition());
+    return JsonUtil.serialize(attestations, attestationsListTypeDef);
   }
 
-  private Response postAttestations(final List<?> attestations, final String milestone)
+  protected byte[] serializeAttestationsToSsz(final List<Attestation> attestations) {
+    return SszListSchema.create(
+            getAttestationSchema(),
+            (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot())
+        .createFromElements(attestations)
+        .sszSerialize()
+        .toArrayUnsafe();
+  }
+
+  protected AttestationSchema<Attestation> getAttestationSchema() {
+    return spec.getGenesisSchemaDefinitions().getAttestationSchema();
+  }
+
+  private Response postAttestations(final List<Attestation> attestations, final String milestone)
       throws IOException {
     if (milestone == null) {
       return post(PostAttestationsV2.ROUTE, serializeAttestations(attestations));
@@ -179,6 +202,15 @@ public class PostAttestationsV2IntegrationTest extends AbstractDataBackedRestAPI
     return post(
         PostAttestationsV2.ROUTE,
         serializeAttestations(attestations),
+        Collections.emptyMap(),
+        Optional.of(milestone));
+  }
+
+  private Response postAttestationsAsSsz(
+      final List<Attestation> attestations, final String milestone) throws IOException {
+    return postSsz(
+        PostAttestationsV2.ROUTE,
+        serializeAttestationsToSsz(attestations),
         Collections.emptyMap(),
         Optional.of(milestone));
   }

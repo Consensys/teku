@@ -15,23 +15,23 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.api.ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_TYPE;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.headerBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -40,9 +40,16 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfArrayJsonRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestationSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 
@@ -52,14 +59,17 @@ public class PostAttestationsV2 extends RestApiEndpoint {
   private final ValidatorDataProvider validatorDataProvider;
 
   public PostAttestationsV2(
-      final DataProvider validatorDataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
-    this(validatorDataProvider.getValidatorDataProvider(), schemaDefinitionCache);
+      final DataProvider validatorDataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    this(validatorDataProvider.getValidatorDataProvider(), spec, schemaDefinitionCache);
   }
 
   public PostAttestationsV2(
       final ValidatorDataProvider validatorDataProvider,
+      final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(schemaDefinitionCache));
+    super(createMetadata(spec, schemaDefinitionCache));
     this.validatorDataProvider = validatorDataProvider;
   }
 
@@ -82,7 +92,7 @@ public class PostAttestationsV2 extends RestApiEndpoint {
   }
 
   private static EndpointMetadata createMetadata(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
 
     final BiPredicate<Attestation, SpecMilestone> attestationSchemaPredicate =
         (attestation, milestone) ->
@@ -95,22 +105,39 @@ public class PostAttestationsV2 extends RestApiEndpoint {
 
     builder.withType(
         value -> attestationSchemaPredicate.test(value, SpecMilestone.PHASE0),
-        schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.PHASE0)
-            .getAttestationSchema()
-            .getJsonTypeDefinition());
+        getPhaseOAttestationSchema(schemaDefinitionCache).getJsonTypeDefinition());
     builder.withType(
         value -> attestationSchemaPredicate.test(value, SpecMilestone.ELECTRA),
-        SchemaDefinitionsElectra.required(
-                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA))
-            .getSingleAttestationSchema()
-            .getJsonTypeDefinition());
+        getElectraAttestationSchema(schemaDefinitionCache).getJsonTypeDefinition());
     final SerializableOneOfTypeDefinition<Attestation> attestationSchemaDefinition =
         builder.build();
 
     final OneOfArrayJsonRequestContentTypeDefinition.BodyTypeSelector<Attestation>
         attestationBodySelector =
-            context -> headerBasedSelector(context.getHeaders(), schemaDefinitionCache);
+            context ->
+                headerBasedSelector(
+                    context.getHeaders(),
+                    schemaDefinitionCache,
+                    PostAttestationsV2::getAttestationSchema);
+
+    final BiFunction<Bytes, Optional<String>, List<Attestation>>
+        milestoneSpecificOctetStreamParser =
+            (bytes, headerConsensusVersion) -> {
+              return headerBasedSelector(
+                  schemaDefinitionCache,
+                  headerConsensusVersion,
+                  (milestone, schemaDefinitions) -> {
+                    final SpecConfig specConfig = spec.forMilestone(milestone).getConfig();
+                    final SszSchema<Attestation> attestationSchema =
+                        getAttestationSchema(schemaDefinitions);
+                    return SszListSchema.create(
+                            attestationSchema,
+                            (long) specConfig.getMaxValidatorsPerCommittee()
+                                * specConfig.getMaxCommitteesPerSlot())
+                        .sszDeserialize(bytes)
+                        .asList();
+                  });
+            };
 
     return EndpointMetadata.post(ROUTE)
         .operationId("submitPoolAttestationsV2")
@@ -123,7 +150,9 @@ public class PostAttestationsV2 extends RestApiEndpoint {
                   """)
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED, TAG_EXPERIMENTAL)
         .requestBodyType(
-            SerializableTypeDefinition.listOf(attestationSchemaDefinition), attestationBodySelector)
+            SerializableTypeDefinition.listOf(attestationSchemaDefinition),
+            attestationBodySelector,
+            milestoneSpecificOctetStreamParser)
         .headerRequired(
             ETH_CONSENSUS_VERSION_TYPE.withDescription(
                 "Version of the attestations being submitted."))
@@ -136,30 +165,25 @@ public class PostAttestationsV2 extends RestApiEndpoint {
         .build();
   }
 
-  public static DeserializableTypeDefinition<? extends Attestation> headerBasedSelector(
-      final Map<String, String> headers, final SchemaDefinitionCache schemaDefinitionCache) {
-    if (!headers.containsKey(HEADER_CONSENSUS_VERSION)) {
-      throw new BadRequestException(
-          String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
-    }
-    try {
-      final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
-      if (milestone.isLessThanOrEqualTo(SpecMilestone.DENEB)) {
-        return schemaDefinitionCache
-            .getSchemaDefinition(SpecMilestone.PHASE0)
-            .getAttestationSchema()
-            .getJsonTypeDefinition();
-      } else {
-        return SchemaDefinitionsElectra.required(
-                schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA))
-            .getSingleAttestationSchema()
-            .getJsonTypeDefinition();
-      }
-    } catch (Exception e) {
-      throw new BadRequestException(
-          String.format(
-              "Invalid value for (%s) header: %s",
-              HEADER_CONSENSUS_VERSION, headers.get(HEADER_CONSENSUS_VERSION)));
-    }
+  private static SszSchema<Attestation> getAttestationSchema(
+      final SchemaDefinitions schemaDefinitions) {
+    return schemaDefinitions
+        .toVersionElectra()
+        .map(
+            schemaDefinitionsElectra ->
+                schemaDefinitionsElectra.getSingleAttestationSchema().castTypeToAttestationSchema())
+        .orElse(schemaDefinitions.getAttestationSchema());
+  }
+
+  private static AttestationSchema<Attestation> getPhaseOAttestationSchema(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttestationSchema();
+  }
+
+  private static SingleAttestationSchema getElectraAttestationSchema(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return SchemaDefinitionsElectra.required(
+            schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA))
+        .getSingleAttestationSchema();
   }
 }
