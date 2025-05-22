@@ -489,56 +489,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public SafeFuture<Void> requestDataColumnSidecarsByRange(
-      final UInt64 startSlot,
-      final UInt64 count,
-      final List<UInt64> columns,
-      final RpcResponseListener<DataColumnSidecar> listener) {
-    return rpcMethods
-        .getDataColumnSidecarsByRange()
-        .map(
-            method -> {
-              final UInt64 firstSupportedSlot = firstSlotSupportingDataColumnSidecarsByRange.get();
-              final DataColumnSidecarsByRangeRequestMessage request;
-
-              if (startSlot.isLessThan(firstSupportedSlot)) {
-                LOG.debug(
-                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
-                    firstSupportedSlot,
-                    startSlot);
-                final UInt64 updatedCount =
-                    count.minusMinZero(firstSupportedSlot.minusMinZero(startSlot));
-                if (updatedCount.isZero()) {
-                  return SafeFuture.COMPLETE;
-                }
-                request =
-                    dataColumnSidecarsByRangeRequestMessageSchema
-                        .get()
-                        .create(firstSupportedSlot, updatedCount, columns);
-              } else {
-                request =
-                    dataColumnSidecarsByRangeRequestMessageSchema
-                        .get()
-                        .create(startSlot, count, columns);
-              }
-              return requestStream(
-                  method,
-                  request,
-                  new DataColumnSidecarsByRangeListenerValidatingProxy(
-                      spec,
-                      this,
-                      listener,
-                      kzg,
-                      metricsSystem,
-                      timeProvider,
-                      request.getStartSlot(),
-                      request.getCount(),
-                      request.getColumns()));
-            })
-        .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRange"));
-  }
-
-  @Override
   public SafeFuture<MetadataMessage> requestMetadata() {
     return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
   }
