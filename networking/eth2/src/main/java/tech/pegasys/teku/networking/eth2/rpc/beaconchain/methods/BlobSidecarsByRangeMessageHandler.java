@@ -135,7 +135,9 @@ public class BlobSidecarsByRangeMessageHandler
 
     final SpecConfigDeneb specConfig =
         SpecConfigDeneb.required(spec.atSlot(endSlotBeforeFulu).getConfig());
-    final int requestedCount = calculateRequestedCount(message, spec.getMaxBlobsPerBlockAtSlot(endSlotBeforeFulu).orElseThrow());
+    final int requestedCount =
+        calculateRequestedCount(
+            message, spec.getMaxBlobsPerBlockAtSlot(endSlotBeforeFulu).orElseThrow());
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
 
