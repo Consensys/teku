@@ -66,12 +66,12 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public SszBitlist getAggregationBits() {
+  public SszBitlist getAggregationSszBits() {
     return aggregationBits;
   }
 
   @Override
-  public SszBitvector getCommitteeBits() {
+  public SszBitvector getCommitteeSszBits() {
     throw new IllegalStateException("Committee bits not available in phase0");
   }
 
