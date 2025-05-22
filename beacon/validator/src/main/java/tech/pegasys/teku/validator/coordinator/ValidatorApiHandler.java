@@ -505,8 +505,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return SafeFuture.completedFuture(
         attestationPool
             .createAggregateFor(attestationHashTreeRoot, committeeIndex)
-            .filter(attestation -> attestation.getData().getSlot().equals(slot))
-            .map(ValidatableAttestation::getAttestation));
+            .filter(attestation -> attestation.getData().getSlot().equals(slot)));
   }
 
   @Override
@@ -802,15 +801,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 return SafeFuture.completedFuture(Optional.of(bestState));
               }
 
-              final UInt64 lastQueryableEpoch =
+              final UInt64 maxQueryableEpoch =
                   syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(
                       combinedChainDataClient.getCurrentEpoch());
-              if (lastQueryableEpoch.isLessThan(epoch)) {
+              if (maxQueryableEpoch.isLessThan(epoch)) {
+                final Optional<UInt64> networkCurrentSlot =
+                    chainDataProvider.getNetworkCurrentSlot();
                 return SafeFuture.failedFuture(
                     new IllegalArgumentException(
-                        "Cannot calculate sync committee duties for epoch "
-                            + epoch
-                            + " because it is not within the current or next sync committee periods"));
+                        String.format(
+                            "Cannot calculate sync committee duties for epoch %s because it is not within the current or next sync committee periods (node current epoch %s, computed current slot %s)",
+                            epoch, combinedChainDataClient.getCurrentEpoch(), networkCurrentSlot)));
               }
 
               final UInt64 requiredEpoch;

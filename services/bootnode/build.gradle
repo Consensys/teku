@@ -13,6 +13,6 @@ dependencies {
     implementation project(':storage')
     implementation project(':storage:api')
 
-    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation platform('org.junit:junit-bom:5.12.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }

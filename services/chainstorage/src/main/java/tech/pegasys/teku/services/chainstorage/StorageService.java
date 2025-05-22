@@ -36,10 +36,10 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
-import tech.pegasys.teku.storage.archive.DataArchive;
-import tech.pegasys.teku.storage.archive.fsarchive.FileSystemArchive;
-import tech.pegasys.teku.storage.archive.nooparchive.NoopDataArchive;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
+import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
 import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.CombinedStorageChannelSplitter;
@@ -159,11 +159,13 @@ public class StorageService extends Service implements StorageServiceFacade {
                     pruningActiveLabelledGauge);
               }
 
-              final DataArchive dataArchive =
+              final BlobSidecarsArchiver blobSidecarsArchiver =
                   config
                       .getBlobsArchivePath()
-                      .<DataArchive>map(path -> new FileSystemArchive(Path.of(path)))
-                      .orElse(new NoopDataArchive());
+                      .<BlobSidecarsArchiver>map(
+                          path ->
+                              new FileSystemBlobSidecarsArchiver(config.getSpec(), Path.of(path)))
+                      .orElse(BlobSidecarsArchiver.NOOP);
 
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
@@ -171,7 +173,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                         new BlobSidecarPruner(
                             config.getSpec(),
                             database,
-                            dataArchive,
+                            blobSidecarsArchiver,
                             serviceConfig.getMetricsSystem(),
                             storagePrunerAsyncRunner,
                             serviceConfig.getTimeProvider(),
@@ -183,13 +185,16 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningActiveLabelledGauge,
                             config.isStoreNonCanonicalBlocksEnabled()));
               }
-              final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage =
                   ChainStorage.create(
                       database,
                       config.getSpec(),
                       config.getDataStorageMode(),
-                      config.getStateRebuildTimeoutSeconds());
+                      config.getStateRebuildTimeoutSeconds(),
+                      blobSidecarsArchiver);
+
+              final EventChannels eventChannels = serviceConfig.getEventChannels();
+
               final DepositStorage depositStorage =
                   DepositStorage.create(
                       eventChannels.getPublisher(Eth1EventsChannel.class),
@@ -214,7 +219,8 @@ public class StorageService extends Service implements StorageServiceFacade {
               eventChannels
                   .subscribe(Eth1DepositStorageChannel.class, depositStorage)
                   .subscribe(Eth1EventsChannel.class, depositStorage)
-                  .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel);
+                  .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel)
+                  .subscribe(SidecarUpdateChannel.class, chainStorage);
             })
         .thenCompose(
             __ ->

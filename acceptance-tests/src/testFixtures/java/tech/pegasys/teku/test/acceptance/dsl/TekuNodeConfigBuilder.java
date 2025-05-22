@@ -173,6 +173,18 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withFuluEpoch(final UInt64 fuluForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-fulu-fork-epoch={}", fuluForkEpoch);
+    configMap.put("Xnetwork-fulu-fork-epoch", fuluForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder ->
+                specConfigBuilder.fuluBuilder(
+                    fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluForkEpoch)));
+    return this;
+  }
+
   public TekuNodeConfigBuilder withTrustedSetupFromClasspath(final String trustedSetup)
       throws Exception {
     mustBe(NodeType.BEACON_NODE);
@@ -263,12 +275,10 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withNetwork(final URL networkYaml, final String networkName)
-      throws Exception {
-    LOG.debug("Network={}", networkName);
+  public TekuNodeConfigBuilder withNetwork(final URL networkYaml) throws Exception {
     LOG.debug("Copy Network from URL {}", networkYaml);
     configMap.put("network", NETWORK_FILE_PATH);
-    configFileMap.put(copyToTmpFile(networkYaml), NETWORK_FILE_PATH);
+    configFileMap.put(Node.copyToTmpFile(networkYaml, ".yaml"), NETWORK_FILE_PATH);
     return this;
   }
 
@@ -547,6 +557,13 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withPeersUrl(final String peersUrl) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("p2p-static-peers-url={}", peersUrl);
+    configMap.put("p2p-static-peers-url", peersUrl);
+    return this;
+  }
+
   public TekuNodeConfigBuilder withExternalSignerUrl(final String externalSignerUrl) {
     LOG.debug("validators-external-signer-url={}", externalSignerUrl);
     configMap.put("validators-external-signer-url", externalSignerUrl);
@@ -606,6 +623,24 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withGraffiti(final String graffiti) {
     LOG.debug("validators-graffiti: {}", graffiti);
     configMap.put("validators-graffiti", graffiti);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withLogLevel(final String logLevel) {
+    LOG.debug("logging: {}", logLevel);
+    configMap.put("logging", logLevel);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withGossipScoringEnabled(final boolean gossipScoringEnabled) {
+    LOG.debug("Xp2p-gossip-scoring-enabled: {}", gossipScoringEnabled);
+    configMap.put("Xp2p-gossip-scoring-enabled", gossipScoringEnabled);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
+    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
+    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
     return this;
   }
 

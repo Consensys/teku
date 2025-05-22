@@ -110,12 +110,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
         };
 
     dataStructureUtil = new DataStructureUtil(spec);
     maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.forMilestone(specMilestone).getConfig())
-            .getMaxBlobsPerBlock();
+        spec.getMaxBlobsPerBlockAtSlot(spec.computeStartSlotAtEpoch(currentForkEpoch))
+            .orElseThrow();
     slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
     startSlot = currentForkEpoch.increment().times(slotsPerEpoch);
     handler = new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);

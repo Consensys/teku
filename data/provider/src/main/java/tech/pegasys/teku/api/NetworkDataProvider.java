@@ -18,9 +18,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.peer.Eth2PeerWithEnr;
-import tech.pegasys.teku.api.response.v1.node.Direction;
-import tech.pegasys.teku.api.response.v1.node.Peer;
-import tech.pegasys.teku.api.response.v1.node.State;
+import tech.pegasys.teku.api.provider.Direction;
+import tech.pegasys.teku.api.provider.Peer;
+import tech.pegasys.teku.api.provider.State;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -147,5 +147,9 @@ public class NetworkDataProvider {
         eth2Peer.connectionInitiatedLocally() ? Direction.outbound : Direction.inbound;
 
     return new Peer(peerId, null, address, state, direction);
+  }
+
+  public Optional<DiscoveryNetwork<?>> getDiscoveryNetwork() {
+    return network.getDiscoveryNetwork();
   }
 }

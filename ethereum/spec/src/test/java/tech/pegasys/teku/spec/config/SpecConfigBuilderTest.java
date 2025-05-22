@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
 import tech.pegasys.teku.spec.config.builder.DenebBuilder;
 import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
+import tech.pegasys.teku.spec.config.builder.FuluBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -50,7 +52,8 @@ class SpecConfigBuilderTest {
           BellatrixBuilder.class,
           CapellaBuilder.class,
           DenebBuilder.class,
-          ElectraBuilder.class);
+          ElectraBuilder.class,
+          FuluBuilder.class);
 
   /**
    * Ensures Builders have actually non-primitive setters, because primitive setters are silently
@@ -115,7 +118,7 @@ class SpecConfigBuilderTest {
   public void shouldCreateSpecExposingNonActiveConfig() {
     final Spec spec = getSpec(__ -> {});
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
-    assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(ELECTRA);
+    assertThat(spec.getSpecConfigAndParent().specConfig().getMilestone()).isEqualTo(FULU);
   }
 
   @Test

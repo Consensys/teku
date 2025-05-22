@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
@@ -64,6 +67,24 @@ public class GossipTopics {
         forkDigest, GossipTopicName.getBlobSidecarSubnetTopicName(subnetId), gossipEncoding);
   }
 
+  public static String getDataColumnSidecarSubnetTopic(
+      final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
+    return getTopic(
+        forkDigest, GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId), gossipEncoding);
+  }
+
+  public static Set<String> getAllDataColumnSidecarSubnetTopics(
+      final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
+
+    return spec.getNumberOfDataColumnSubnets()
+        .map(
+            subnetCount ->
+                IntStream.range(0, subnetCount)
+                    .mapToObj(i -> getDataColumnSidecarSubnetTopic(forkDigest, i, gossipEncoding))
+                    .collect(Collectors.toSet()))
+        .orElse(Collections.emptySet());
+  }
+
   public static Set<String> getAllTopics(
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
@@ -77,7 +98,6 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-
     spec.forMilestone(specMilestone)
         .getConfig()
         .toVersionDeneb()
@@ -85,6 +105,8 @@ public class GossipTopics {
             config ->
                 addBlobSidecarSubnetTopics(
                     config.getBlobSidecarSubnetCount(), topics, forkDigest, gossipEncoding));
+
+    topics.addAll(getAllDataColumnSidecarSubnetTopics(gossipEncoding, forkDigest, spec));
 
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));

@@ -19,12 +19,13 @@ import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltair
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class SpecConfigLoaderTest {
    * sufficient.
    */
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"holesky", "mainnet"})
+  @ValueSource(strings = {"hoodi", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
     final SpecConfig config = SpecConfigLoader.loadConfig(name).specConfig();
     assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
@@ -65,6 +66,88 @@ public class SpecConfigLoaderTest {
   public void shouldLoadMainnet() throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfig("mainnet").specConfig();
     assertAllBellatrixFieldsSet(config);
+  }
+
+  @Test
+  public void shouldReadConfigByDefaults(@TempDir final Path tempDir) throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(
+        configFile,
+        """
+            CONFIG_NAME: 'mainnet'
+            PRESET_BASE: 'mainnet'
+            """);
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(configFile.toString(), false, true, __ -> {}).specConfig();
+    assertAllBellatrixFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
+  }
+
+  @Test
+  public void shouldFailToReadConfigWithMissingItemsWhenStrict(@TempDir final Path tempDir)
+      throws IOException {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(configFile, "CONFIG_NAME: 'mainnet'");
+    assertThatThrownBy(
+            () -> SpecConfigLoader.loadConfig(configFile.toString(), true, true, __ -> {}))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "The specified network configuration had missing or invalid values for constants");
+  }
+
+  @Test
+  public void shouldFailToReadConfigIfNotForgivingAndHasExtraItems(@TempDir final Path tempDir)
+      throws Exception {
+    final Path file = tempDir.resolve("mainnet.yml");
+    try (final InputStream inputStream = getMainnetConfigAsStream()) {
+      writeStreamToFile(inputStream, file);
+    }
+    try (FileWriter writer = new FileWriter(file.toFile(), StandardCharsets.UTF_8, true)) {
+      writer.write("\nUNKNOWN_OPTION: FOO");
+    }
+    assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toString(), true, false, __ -> {}))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Detected unknown spec config entries: UNKNOWN_OPTION");
+  }
+
+  @Test
+  public void shouldReadConfigByDefaultsWithoutPreset(@TempDir final Path tempDir)
+      throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(configFile, "CONFIG_NAME: 'mainnet'\n");
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(configFile.toString(), false, true, __ -> {}).specConfig();
+    assertAllBellatrixFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
+  }
+
+  @Test
+  public void shouldFailToReadConfigWithoutDefaulting(@TempDir final Path tempDir)
+      throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(configFile, "PRESET_BASE: 'mainnet'\n");
+    assertThatThrownBy(
+            () -> SpecConfigLoader.loadConfig(configFile.toString(), true, true, __ -> {}))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "The specified network configuration had missing or invalid values for constants");
+  }
+
+  @Test
+  public void shouldFailToReadConfigWithMissingConfigName(@TempDir final Path tempDir)
+      throws Exception {
+    final Path configFile = tempDir.resolve("config.yaml");
+    Files.writeString(
+        configFile,
+        """
+            CONFIG_NAME: 'missing'
+            PRESET_BASE: 'mainnet'
+            """);
+    assertThatThrownBy(
+            () -> SpecConfigLoader.loadConfig(configFile.toString(), true, true, __ -> {}))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "The specified network configuration had missing or invalid values for constants");
   }
 
   @Test
@@ -161,10 +244,8 @@ public class SpecConfigLoaderTest {
     return getClass().getResourceAsStream("invalid/" + file);
   }
 
-  private Map<String, String> readJsonConfig(final InputStream source) throws IOException {
-    final ObjectMapper mapper = new ObjectMapper();
-    return mapper
-        .readerFor(mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
-        .readValue(source);
+  private Map<String, Object> readJsonConfig(final InputStream source) {
+    YamlConfigReader reader = new YamlConfigReader();
+    return reader.readValues(source);
   }
 }

@@ -20,16 +20,23 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.stream.Collectors;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -210,13 +217,21 @@ public class P2POptions {
   private Integer minimumRandomlySelectedPeerCount;
 
   @Option(
+      names = {"--p2p-static-peers-url"},
+      paramLabel = "<URL>",
+      description =
+          "Specifies a URL or file containing a list of 'static' peers (one per line) with which to establish and maintain connections. Accepts multiaddr format.",
+      arity = "1")
+  private String p2pStaticPeersUrl;
+
+  @Option(
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description =
-          "Specifies a list of 'static' peers with which to establish and maintain connections",
+          "Specifies a comma-separated list of 'static' peers with which to establish and maintain connections. Accepts multiaddr format.",
       split = ",",
-      arity = "0..*")
-  private List<String> p2pStaticPeers = new ArrayList<>();
+      arity = "1")
+  private final List<String> p2pStaticPeers = new ArrayList<>();
 
   @Option(
       names = {"--p2p-direct-peers"},
@@ -310,6 +325,16 @@ public class P2POptions {
       arity = "0..1",
       fallbackValue = "true")
   private boolean subscribeAllSubnetsEnabled = P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+
+  @Option(
+      names = {"--p2p-subscribe-all-custody-subnets-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean subscribeAllCustodySubnetsEnabled =
+      P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
 
   @Option(
       names = {"--Xp2p-gossip-scoring-enabled"},
@@ -439,6 +464,14 @@ public class P2POptions {
   private int floodPublishMaxMessageSizeThreshold =
       GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
+  @Option(
+      names = {"--Xdas-extra-custody-group-count"},
+      paramLabel = "<NUMBER>",
+      description = "Number of extra custody groups",
+      arity = "1",
+      hidden = true)
+  private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -453,6 +486,38 @@ public class P2POptions {
     return p2pUpperBound;
   }
 
+  private List<String> getStaticPeersList() {
+    final List<String> staticPeers = new ArrayList<>(p2pStaticPeers);
+
+    if (p2pStaticPeersUrl != null) {
+      try {
+        final Optional<InputStream> maybeStream =
+            ResourceLoader.urlOrFile().load(p2pStaticPeersUrl);
+        if (maybeStream.isPresent()) {
+          try (final BufferedReader reader =
+              new BufferedReader(
+                  new InputStreamReader(maybeStream.get(), StandardCharsets.UTF_8))) {
+            final List<String> peersFromUrl =
+                reader
+                    .lines()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                    .collect(Collectors.toList());
+            staticPeers.addAll(peersFromUrl);
+          }
+        } else {
+          throw new InvalidConfigurationException(
+              String.format("Static peers URL not found: %s", p2pStaticPeersUrl));
+        }
+      } catch (Exception e) {
+        throw new InvalidConfigurationException(
+            String.format("Failed to read static peers from URL: %s", p2pStaticPeersUrl), e);
+      }
+    }
+
+    return staticPeers;
+  }
+
   public void configure(final TekuConfiguration.Builder builder) {
     // From a discovery configuration perspective, direct peers are static peers
     p2pStaticPeers.addAll(p2pDirectPeers);
@@ -461,6 +526,7 @@ public class P2POptions {
         .p2p(
             b -> {
               b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                  .subscribeAllCustodySubnetsEnabled(subscribeAllCustodySubnetsEnabled)
                   .batchVerifyMaxThreads(batchVerifyMaxThreads)
                   .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
                   .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
@@ -471,7 +537,8 @@ public class P2POptions {
                   .allTopicsFilterEnabled(allTopicsFilterEnabled)
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
-                  .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled);
+                  .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
+                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(
@@ -507,7 +574,7 @@ public class P2POptions {
                 d.advertisedUdpPortIpv6(OptionalInt.of(p2pAdvertisedPortIpv6));
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
-                  .staticPeers(p2pStaticPeers)
+                  .staticPeers(getStaticPeersList())
                   .siteLocalAddressesEnabled(siteLocalAddressesEnabled);
             })
         .network(

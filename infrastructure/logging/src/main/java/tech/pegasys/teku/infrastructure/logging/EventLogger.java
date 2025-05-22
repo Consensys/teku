@@ -55,10 +55,12 @@ public class EventLogger {
 
     final String genesisEventLog =
         String.format(
-            "Genesis Event *** \n"
-                + "Genesis state root: %s \n"
-                + "Genesis block root: %s \n"
-                + "Genesis time: %s GMT",
+            """
+                Genesis Event ***
+                Genesis state root: %s
+                Genesis block root: %s
+                Genesis time: %s GMT
+                """,
             hashTreeRoot.toHexString(), genesisBlockRoot.toHexString(), formattedGenesisTime);
     info(genesisEventLog, Color.CYAN);
   }
@@ -255,17 +257,28 @@ public class EventLogger {
       final UInt64 nodeSlot,
       final UInt64 headSlot,
       final Bytes32 bestBlockRoot,
+      final Bytes32 bestBlockParentRoot,
       final UInt64 justifiedCheckpoint,
       final UInt64 finalizedCheckpoint,
       final int numPeers) {
-    String blockRoot = "                                                       ... empty";
+    final String headBlockRoot;
+    final String bestBlockRootOrParent;
     if (nodeSlot.equals(headSlot)) {
-      blockRoot = LogFormatter.formatHashRoot(bestBlockRoot);
+      headBlockRoot = LogFormatter.formatAbbreviatedHashRoot(bestBlockRoot);
+      bestBlockRootOrParent = LogFormatter.formatAbbreviatedHashRoot(bestBlockParentRoot);
+    } else {
+      headBlockRoot = "   ... empty";
+      bestBlockRootOrParent = LogFormatter.formatAbbreviatedHashRoot(bestBlockRoot);
     }
     final String slotEventLog =
         String.format(
-            "Slot Event  *** Slot: %s, Block: %s, Justified: %s, Finalized: %s, Peers: %d",
-            nodeSlot, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
+            "Slot Event  *** Slot: %s, Block: %s <~ %s, Justified: %s, Finalized: %s, Peers: %d",
+            nodeSlot,
+            headBlockRoot,
+            bestBlockRootOrParent,
+            justifiedCheckpoint,
+            finalizedCheckpoint,
+            numPeers);
     info(slotEventLog, Color.WHITE);
   }
 

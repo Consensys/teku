@@ -1,0 +1,44 @@
+{
+  "post" : {
+    "tags" : [ "Teku" ],
+    "operationId" : "AddPeer",
+    "summary" : "Add a static peer to the node",
+    "description" : "Add a static peer to the node passing a multiaddress.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "string",
+            "description" : "Multiaddress of the peer to add"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Peer added successfully",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Invalid peer address",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

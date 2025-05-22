@@ -131,7 +131,7 @@ public class GenesisGenerator {
   }
 
   public InitialStateData generate() {
-    final Spec spec = SpecFactory.create(network, specConfigModifier);
+    final Spec spec = SpecFactory.create(network, false, specConfigModifier);
     final GenesisStateBuilder genesisBuilder = new GenesisStateBuilder();
     genesisBuilder
         .spec(spec)

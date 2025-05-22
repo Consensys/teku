@@ -36,7 +36,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -46,7 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -82,7 +81,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
+        .isEqualTo(blockContainerAndMetaData.specMilestone().lowerCaseName());
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(true));
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
@@ -105,7 +104,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
+        .isEqualTo(blockContainerAndMetaData.specMilestone().lowerCaseName());
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(false));
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
@@ -117,7 +116,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldHandleUnBlindedBlockContentsPostDeneb() throws Exception {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BlockContainer blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
@@ -129,7 +128,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
+        .isEqualTo(blockContainerAndMetaData.specMilestone().lowerCaseName());
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("false");
     assertThat(request.getResponseHeaders(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(blockContainerAndMetaData.executionPayloadValue().toDecimalString());

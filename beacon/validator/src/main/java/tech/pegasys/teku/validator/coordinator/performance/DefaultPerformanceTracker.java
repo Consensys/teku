@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
@@ -257,7 +257,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     LOG.debug(
         "Checking if block {} is in historic block roots {} of the state {}",
         producedBlock,
-        state.getBlockRoots(),
+        state.getBlockRoots().hashTreeRoot(),
         state.hashTreeRoot());
     return producedBlock.getSlot().isLessThan(state.getSlot())
         && spec.getBlockRootAtSlot(state, producedBlock.getSlot())
@@ -304,19 +304,19 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Pre-process attestations included on chain to group them by
     // data hash to inclusion slot to aggregation bitlist
-    final Map<Bytes32, NavigableMap<UInt64, AttestationBitsAggregator>>
-        slotAndBitlistsByAttestationDataHash = new HashMap<>();
+    final Map<Bytes32, NavigableMap<UInt64, AttestationBits>> slotAndBitlistsByAttestationDataHash =
+        new HashMap<>();
     for (final Map.Entry<UInt64, List<Attestation>> entry :
         attestationsIncludedOnChain.entrySet()) {
       for (final Attestation attestation : entry.getValue()) {
         final Optional<Int2IntMap> committeesSize = getCommitteesSize(attestation, state);
         final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
-        final NavigableMap<UInt64, AttestationBitsAggregator> slotToBitlists =
+        final NavigableMap<UInt64, AttestationBits> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
         slotToBitlists.merge(
             entry.getKey(),
-            AttestationBitsAggregator.of(attestation, committeesSize),
+            AttestationBits.of(attestation, committeesSize),
             (firstBitsAggregator, secondBitsAggregator) -> {
               firstBitsAggregator.or(secondBitsAggregator);
               return firstBitsAggregator;
@@ -330,7 +330,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
         continue;
       }
-      final NavigableMap<UInt64, AttestationBitsAggregator> slotAndBitlists =
+      final NavigableMap<UInt64, AttestationBits> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
         if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation)) {

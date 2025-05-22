@@ -31,6 +31,7 @@ import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class Eth2NetworkOptions {
@@ -95,6 +96,17 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
+      names = {"--Xrust-kzg-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Use Rust KZG library LibPeerDASKZG with fallback to CKZG4844 for EIP-4844 methods",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean rustKzgEnabled = Eth2NetworkConfiguration.DEFAULT_RUST_KZG_ENABLED;
+
+  @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allow late blocks to be reorged out if they meet the requirements.",
@@ -157,6 +169,14 @@ public class Eth2NetworkOptions {
       description = "Override the electra fork activation epoch.",
       arity = "1")
   private UInt64 electraForkEpoch;
+
+  @Option(
+      names = {"--Xnetwork-fulu-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Fulu fork activation epoch.",
+      arity = "1")
+  private UInt64 fuluForkEpoch;
 
   @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
@@ -265,6 +285,17 @@ public class Eth2NetworkOptions {
       arity = "1")
   private Long eth1DepositContractDeployBlockOverride;
 
+  @Option(
+      names = {"--Xstartup-strict-config-loader-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Strict config loading will fail if a required parameter is not present in a passed in file, otherwise defaults will be used.",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean strictConfigLoadingEnabled = NetworkConfig.DEFAULT_STRICT_CONFIG_LOADING_ENABLED;
+
   @CommandLine.Option(
       names = {"--Xepochs-store-blobs"},
       hidden = true,
@@ -277,6 +308,73 @@ public class Eth2NetworkOptions {
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
   private String epochsStoreBlobs;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable the new aggregating attestation pool.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean aggregatingAttestationPoolV2Enabled =
+      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-profiling-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable the profiler for the aggregating attestation pool",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean aggregatingAttestationPoolProfilingEnabled =
+      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-block-aggregation-time-limit"},
+      paramLabel = "<NUMBER>",
+      description = "Maximum time to spend packing attestations when producing a block.",
+      arity = "1",
+      hidden = true)
+  private int aggregatingAttestationPoolV2BlockAggregationTimeLimit =
+      Eth2NetworkConfiguration
+          .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-total-block-aggregation-time-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "Maximum time to spend packing and improving attestations when producing a block.",
+      arity = "1",
+      hidden = true)
+  private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
+      Eth2NetworkConfiguration
+          .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-early-drop-single-attestations-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Discard single attestations upon receiving an attestation that contains that single attestation.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled =
+      Eth2NetworkConfiguration
+          .DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_EARLY_DROP_SINGLE_ATTESTATIONS_ENABLED;
+
+  @Option(
+      names = {"--Xaggregating-attestation-pool-v2-parallel-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable parallel processing of aggregating attestations.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean aggregatingAttestationPoolV2ParallelEnabled =
+      Eth2NetworkConfiguration.DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_PARALLEL_ENABLED;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig(builder -> {});
@@ -306,7 +404,13 @@ public class Eth2NetworkOptions {
               + ".io/get-started/connect).");
     }
 
+    if (initialState != null && checkpointSyncUrl != null) {
+      throw new InvalidConfigurationException(
+          "Both --initial-state and --checkpoint-sync-url are provided. Please specify only one.");
+    }
+
     builder.applyNetworkDefaults(network);
+    builder.strictConfigLoadingEnabled(strictConfigLoadingEnabled);
     if (startupTargetPeerCount != null) {
       builder.startupTargetPeerCount(startupTargetPeerCount);
     }
@@ -340,6 +444,9 @@ public class Eth2NetworkOptions {
     if (electraForkEpoch != null) {
       builder.electraForkEpoch(electraForkEpoch);
     }
+    if (fuluForkEpoch != null) {
+      builder.fuluForkEpoch(fuluForkEpoch);
+    }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
     }
@@ -361,8 +468,18 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .aggregatingAttestationPoolV2Enabled(aggregatingAttestationPoolV2Enabled)
+        .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
+        .aggregatingAttestationPoolV2BlockAggregationTimeLimit(
+            aggregatingAttestationPoolV2BlockAggregationTimeLimit)
+        .aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(
+            aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
+        .aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled(
+            aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled)
+        .aggregatingAttestationPoolV2ParallelEnabled(aggregatingAttestationPoolV2ParallelEnabled)
         .epochsStoreBlobs(epochsStoreBlobs)
-        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
+        .rustKzgEnabled(rustKzgEnabled);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);

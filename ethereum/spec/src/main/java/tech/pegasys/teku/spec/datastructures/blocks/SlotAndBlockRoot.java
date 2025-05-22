@@ -22,12 +22,21 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlotAndBlockRoot implements Comparable<SlotAndBlockRoot> {
+  private static final Bytes32 BYTES32_MAX = Bytes32.repeat((byte) 0xff);
   private final UInt64 slot;
   private final Bytes32 blockRoot;
 
   public SlotAndBlockRoot(final UInt64 slot, final Bytes32 blockRoot) {
     this.slot = slot;
     this.blockRoot = blockRoot;
+  }
+
+  public static SlotAndBlockRoot createLow(final UInt64 slot) {
+    return new SlotAndBlockRoot(slot, Bytes32.ZERO);
+  }
+
+  public static SlotAndBlockRoot createHigh(final UInt64 slot) {
+    return new SlotAndBlockRoot(slot, BYTES32_MAX);
   }
 
   public UInt64 getSlot() {

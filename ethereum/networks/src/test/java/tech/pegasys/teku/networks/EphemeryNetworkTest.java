@@ -14,14 +14,11 @@
 package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +30,6 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.SpecConfigReader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
@@ -51,7 +47,6 @@ public class EphemeryNetworkTest {
   private long expectedMinGenesisTime;
   private long expectedChainId;
   private long periodSinceGenesis;
-  private final SpecConfigReader reader = new SpecConfigReader();
   private SpecConfigAndParent<? extends SpecConfig> configFile;
   private SpecConfig config;
 
@@ -105,15 +100,6 @@ public class EphemeryNetworkTest {
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("MIN_GENESIS_TIME"))
         .isEqualTo(String.valueOf(MIN_GENESIS_TIME));
-  }
-
-  @Test
-  public void read_missingConfig() {
-    processFileAsInputStream(getInvalidConfigPath("missingChurnLimit"), this::readConfig);
-
-    assertThatThrownBy(reader::build)
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("MIN_PER_EPOCH_CHURN_LIMIT");
   }
 
   @Test
@@ -219,40 +205,6 @@ public class EphemeryNetworkTest {
         .isEqualTo(String.valueOf(GENESIS_CHAINID));
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("DEPOSIT_NETWORK_ID"))
         .isEqualTo(String.valueOf(GENESIS_CHAINID));
-  }
-
-  private static String getInvalidConfigPath(final String name) {
-    return getConfigPath(name);
-  }
-
-  private static String getConfigPath(final String name) {
-    final String path = "tech/pegasys/teku/networks/";
-    return path + name + ".yaml";
-  }
-
-  private void processFileAsInputStream(final String fileName, final InputStreamHandler handler) {
-    try (final InputStream inputStream = getFileFromResourceAsStream(fileName)) {
-      handler.accept(inputStream);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private InputStream getFileFromResourceAsStream(final String fileName) {
-    final InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
-    if (inputStream == null) {
-      throw new IllegalArgumentException("File not found: " + fileName);
-    }
-
-    return inputStream;
-  }
-
-  private interface InputStreamHandler {
-    void accept(InputStream inputStream) throws IOException;
-  }
-
-  private void readConfig(final InputStream preset) throws IOException {
-    reader.readAndApply(preset, false);
   }
 
   private Spec getSpec(final Consumer<SpecConfigBuilder> consumer) {

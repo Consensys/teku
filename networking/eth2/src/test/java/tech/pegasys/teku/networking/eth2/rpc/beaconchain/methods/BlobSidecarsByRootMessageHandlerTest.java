@@ -102,6 +102,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
+          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     messageSchema =
@@ -281,7 +282,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
             blobIdentifiers.get(0).getBlockRoot());
   }
 
@@ -318,7 +319,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
             blobIdentifiers.get(0).getBlockRoot());
   }
 
@@ -360,8 +361,9 @@ public class BlobSidecarsByRootMessageHandlerTest {
             .mapToObj(__ -> dataStructureUtil.randomSignedBeaconBlock())
             .toList();
     final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getMaxBlobsPerBlock();
+        spec.getMaxBlobsPerBlockAtSlot(blocks.getFirst().getSlot()).orElseThrow();
+    SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+        .getMaxBlobsPerBlock();
     final List<BlobSidecar> blobSidecars =
         blocks.stream()
             .map(

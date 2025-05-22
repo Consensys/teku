@@ -18,12 +18,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.json.JsonTestUtil.parseStringMap;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
@@ -64,12 +64,17 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     setHandler(new GetSpec(configProvider));
     handler.handleRequest(request);
 
-    final Map<String, String> result = (Map<String, String>) request.getResponseBody();
-    final Map<String, String> expected =
-        parseStringMap(
+    final String json = request.getResponseBodyAsJson(handler);
+
+    assertThat(json).contains("BLOB_SCHEDULE");
+    assertThat(json).isNotEmpty();
+    final ObjectMapper mapper = new ObjectMapper();
+    final JsonNode resultNode = mapper.readTree(json).get("data");
+    final JsonNode referenceNode =
+        mapper.readTree(
             Resources.toString(
                 Resources.getResource(GetSpecTest.class, "mainnetConfig.json"), UTF_8));
 
-    assertThat(result).containsExactlyInAnyOrderEntriesOf(expected);
+    assertThat(resultNode).isEqualTo(referenceNode);
   }
 }

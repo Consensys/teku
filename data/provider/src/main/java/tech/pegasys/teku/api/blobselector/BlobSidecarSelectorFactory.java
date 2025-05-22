@@ -23,21 +23,27 @@ import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSidecarSelector> {
-
   private final Spec spec;
+  private final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
 
-  public BlobSidecarSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
+  public BlobSidecarSelectorFactory(
+      final Spec spec,
+      final CombinedChainDataClient client,
+      final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider) {
     super(client);
     this.spec = spec;
+    this.blobSidecarReconstructionProvider = blobSidecarReconstructionProvider;
   }
 
   @Override
@@ -178,12 +184,44 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
-    return client.getBlobSidecars(slotAndBlockRoot, indices).thenApply(Optional::of);
+    if (spec.atSlot(slotAndBlockRoot.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return blobSidecarReconstructionProvider
+          .reconstructBlobSidecars(slotAndBlockRoot, indices)
+          .thenApply(Optional::of);
+    }
+    return client
+        .getBlobSidecars(slotAndBlockRoot, indices)
+        .thenCompose(
+            blobSidecars -> {
+              if (blobSidecars.isEmpty()) {
+                // attempt retrieving from archive (when enabled)
+                return client.getArchivedBlobSidecars(slotAndBlockRoot, indices);
+              }
+              return SafeFuture.completedFuture(blobSidecars);
+            })
+        .thenApply(Optional::of);
   }
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
-    return client.getBlobSidecars(slot, indices).thenApply(Optional::of);
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return blobSidecarReconstructionProvider
+          .reconstructBlobSidecars(slot, indices)
+          .thenApply(Optional::of);
+    }
+    return client
+        .getBlobSidecars(slot, indices)
+        .thenCompose(
+            blobSidecars -> {
+              if (blobSidecars.isEmpty()) {
+                // attempt retrieving from archive (when enabled)
+                return client.getArchivedBlobSidecars(slot, indices);
+              }
+              return SafeFuture.completedFuture(blobSidecars);
+            })
+        .thenApply(Optional::of);
   }
 
   private Optional<BlobSidecarsAndMetaData> addMetaData(

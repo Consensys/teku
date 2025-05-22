@@ -16,7 +16,10 @@ package tech.pegasys.teku.spec;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -52,10 +55,12 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -102,6 +107,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -421,6 +427,16 @@ public class Spec {
                     "Bellatrix milestone is required to deserialize execution payload header"))
         .getExecutionPayloadHeaderSchema()
         .jsonDeserialize(objectMapper.createParser(jsonFile));
+  }
+
+  public DataColumnSidecar deserializeSidecar(final Bytes serializedSidecar, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionFulu()
+        .orElseThrow(
+            () -> new RuntimeException("FULU milestone is required to deserialize column sidecar"))
+        .getDataColumnSidecarSchema()
+        .sszDeserialize(serializedSidecar);
   }
 
   // BeaconState
@@ -938,14 +954,14 @@ public class Spec {
 
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(DENEB)) {
-      return false;
-    }
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return getCurrentEpoch(store)
-        .minusMinZero(epoch)
-        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionDeneb()
+        .map(
+            denebMiscHelpers ->
+                denebMiscHelpers.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+                    getCurrentEpoch(store), epoch))
+        .orElse(false);
   }
 
   /**
@@ -956,6 +972,15 @@ public class Spec {
   public Optional<Integer> getMaxBlobsPerBlockForHighestMilestone() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
+
+    // once blob schedule is fully defined back to deneb,
+    // this function will just be able to query the blob_schedule
+    if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
+      return forMilestone(FULU)
+          .miscHelpers()
+          .toVersionFulu()
+          .map(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromSchedule);
+    }
 
     final Optional<Integer> maybeHighestMaxBlobsPerBlock =
         forMilestone(highestSupportedMilestone)
@@ -990,6 +1015,26 @@ public class Spec {
                 .getBlobSidecarSubnetCount());
   }
 
+  public Optional<Integer> getNumberOfDataColumns() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getNumberOfColumns);
+  }
+
+  public Optional<Integer> getNumberOfDataColumnSubnets() {
+    return getSpecConfigFulu().map(SpecConfigFulu::getDataColumnSidecarSubnetCount);
+  }
+
+  public boolean isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
+      final ReadOnlyStore store, final UInt64 epoch) {
+    if (getSpecConfigFulu().isEmpty()) {
+      return false;
+    }
+    final SpecConfig config = atEpoch(epoch).getConfig();
+    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
+    return getCurrentEpoch(store)
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
     return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
@@ -1008,6 +1053,15 @@ public class Spec {
     return Optional.ofNullable(forMilestone(highestSupportedMilestone))
         .map(SpecVersion::getConfig)
         .flatMap(SpecConfig::toVersionDeneb);
+  }
+
+  // Fulu private helpers
+  private Optional<SpecConfigFulu> getSpecConfigFulu() {
+    final SpecMilestone highestSupportedMilestone =
+        getForkSchedule().getHighestSupportedMilestone();
+    return Optional.ofNullable(forMilestone(highestSupportedMilestone))
+        .map(SpecVersion::getConfig)
+        .flatMap(SpecConfig::toVersionFulu);
   }
 
   // Private helpers
@@ -1053,5 +1107,23 @@ public class Spec {
   @Override
   public int hashCode() {
     return Objects.hash(forkSchedule);
+  }
+
+  public Optional<Integer> getMaxBlobsPerBlockAtSlot(final UInt64 slot) {
+    final SpecVersion specVersion = atSlot(slot);
+    switch (specVersion.getMilestone()) {
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> {
+        return Optional.empty();
+      }
+      case DENEB, ELECTRA -> {
+        return Optional.of(
+            specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
+      }
+      default -> {
+        final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+        return Optional.of(
+            specVersion.miscHelpers().toVersionFulu().orElseThrow().getMaxBlobsPerBlock(epoch));
+      }
+    }
   }
 }

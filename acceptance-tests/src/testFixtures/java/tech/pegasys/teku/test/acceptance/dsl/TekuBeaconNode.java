@@ -50,7 +50,7 @@ import org.assertj.core.api.ThrowingConsumer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.EventType;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
@@ -100,7 +100,18 @@ public class TekuBeaconNode extends TekuNode {
       final Network network, final TekuDockerVersion version, final TekuNodeConfig tekuNodeConfig) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = tekuNodeConfig;
-    this.spec = SpecFactory.create(config.getNetworkName(), config.getSpecConfigModifier());
+    if (config.getConfigFileMap().containsValue(NETWORK_FILE_PATH)) {
+      final String tmpConfigFilePath =
+          config.getConfigFileMap().entrySet().stream()
+              .filter(entry -> entry.getValue().equals(NETWORK_FILE_PATH))
+              .findFirst()
+              .orElseThrow()
+              .getKey()
+              .getAbsolutePath();
+      this.spec = SpecFactory.create(tmpConfigFilePath, true, config.getSpecConfigModifier());
+    } else {
+      this.spec = SpecFactory.create(config.getNetworkName(), true, config.getSpecConfigModifier());
+    }
     if (config.getConfigMap().containsKey("validator-api-enabled")) {
       container.addExposedPort(VALIDATOR_API_PORT);
     }
@@ -625,6 +636,23 @@ public class TekuBeaconNode extends TekuNode {
     }
   }
 
+  public Optional<SignedBeaconBlock> getBlockAtSlot(final UInt64 slot) throws IOException {
+    final Optional<String> result =
+        httpClient.getOptional(getRestApiUrl(), "/eth/v2/beacon/blocks/" + slot);
+    if (result.isEmpty()) {
+      return Optional.empty();
+    } else {
+      final DeserializableTypeDefinition<SignedBeaconBlock> jsonTypeDefinition =
+          SharedApiTypes.withDataWrapper(
+              "block",
+              spec.atSlot(slot)
+                  .getSchemaDefinitions()
+                  .getSignedBeaconBlockSchema()
+                  .getJsonTypeDefinition());
+      return Optional.of(JsonUtil.parse(result.get(), jsonTypeDefinition));
+    }
+  }
+
   private Optional<BeaconState> fetchHeadState() throws IOException {
     return fetchState("head");
   }
@@ -654,6 +682,13 @@ public class TekuBeaconNode extends TekuNode {
           Bytes32.fromHexString(
               jsonNode.get("data").get("validator").get("withdrawal_credentials").asText()));
     }
+  }
+
+  public int getDataColumnSidecarCount(final String blockId) throws IOException {
+    final String result =
+        httpClient.get(getRestApiUrl(), "/teku/v1/beacon/data_column_sidecars/" + blockId);
+    final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
+    return jsonNode.get("data").size();
   }
 
   public void waitForValidators(final int numberOfValidators) {

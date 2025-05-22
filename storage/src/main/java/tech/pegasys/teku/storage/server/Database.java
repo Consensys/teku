@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -34,13 +35,14 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
-import tech.pegasys.teku.storage.archive.DataArchiveWriter;
+import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 
 public interface Database extends AutoCloseable {
 
@@ -74,16 +76,14 @@ public interface Database extends AutoCloseable {
    *
    * @param lastSlotToPrune inclusive, not reached if limit happens first
    * @param pruneLimit maximum number of slots to prune.
-   * @param archiveWriter write BlobSidecars to archive when pruning.
+   * @param blobSidecarsArchiver write BlobSidecars to archive when pruning.
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
   boolean pruneOldestBlobSidecars(
-      UInt64 lastSlotToPrune,
-      int pruneLimit,
-      final DataArchiveWriter<List<BlobSidecar>> archiveWriter);
+      UInt64 lastSlotToPrune, int pruneLimit, BlobSidecarsArchiver blobSidecarsArchiver);
 
   boolean pruneOldestNonCanonicalBlobSidecars(
-      UInt64 lastSlotToPrune, int pruneLimit, DataArchiveWriter<List<BlobSidecar>> archiveWriter);
+      UInt64 lastSlotToPrune, int pruneLimit, BlobSidecarsArchiver blobSidecarsArchiver);
 
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
@@ -249,4 +249,45 @@ public interface Database extends AutoCloseable {
 
   Optional<UInt64> pruneFinalizedStates(
       Optional<UInt64> lastPrunedSlot, UInt64 lastSlotToPruneStateFor, long pruneLimit);
+
+  // Sidecars
+  Optional<UInt64> getFirstCustodyIncompleteSlot();
+
+  Optional<UInt64> getFirstSamplerIncompleteSlot();
+
+  Optional<DataColumnSidecar> getSidecar(DataColumnSlotAndIdentifier identifier);
+
+  Optional<DataColumnSidecar> getNonCanonicalSidecar(DataColumnSlotAndIdentifier identifier);
+
+  @MustBeClosed
+  Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(
+      UInt64 firstSlot, UInt64 lastSlot);
+
+  @MustBeClosed
+  default Stream<DataColumnSlotAndIdentifier> streamDataColumnIdentifiers(final UInt64 slot) {
+    return streamDataColumnIdentifiers(slot, slot);
+  }
+
+  @MustBeClosed
+  Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+      UInt64 firstSlot, UInt64 lastSlot);
+
+  @MustBeClosed
+  default Stream<DataColumnSlotAndIdentifier> streamNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return streamNonCanonicalDataColumnIdentifiers(slot, slot);
+  }
+
+  Optional<UInt64> getEarliestDataColumnSidecarSlot();
+
+  void setFirstCustodyIncompleteSlot(UInt64 slot);
+
+  void setFirstSamplerIncompleteSlot(UInt64 slot);
+
+  void addSidecar(DataColumnSidecar sidecar);
+
+  void addNonCanonicalSidecar(DataColumnSidecar sidecar);
+
+  // prunes both canonical and non canonical sidecars
+  void pruneAllSidecars(UInt64 tillSlotInclusive);
 }

@@ -40,4 +40,8 @@ public enum GossipTopicName {
   public static String getBlobSidecarSubnetTopicName(final int subnetId) {
     return "blob_sidecar_" + subnetId;
   }
+
+  public static String getDataColumnSidecarSubnetTopicName(final int subnetId) {
+    return "data_column_sidecar_" + subnetId;
+  }
 }

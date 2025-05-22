@@ -27,8 +27,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
@@ -67,7 +68,8 @@ class BlockPublisherDenebTest {
 
   @Test
   void publishBlobSidecars_shouldPublishBlobSidecars() {
-    blockPublisherDeneb.publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
+    blockPublisherDeneb.publishBlobSidecars(
+        blobSidecars, mock(SignedBeaconBlock.class), BlockPublishingPerformance.NOOP);
 
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecars);
   }

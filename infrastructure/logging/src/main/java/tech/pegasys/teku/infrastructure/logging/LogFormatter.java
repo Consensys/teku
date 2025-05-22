@@ -38,7 +38,19 @@ public class LogFormatter {
       final String kzgCommitment,
       final String kzgProof) {
     return String.format(
-        "block %s (%s), index %s, blob %s, commitment %s, proof %s",
+        "BlobSidecar[block %s (%s), index %s, blob %s, commitment %s, proof %s]",
         formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitment, kzgProof);
+  }
+
+  public static String formatDataColumnSidecar(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final UInt64 index,
+      final String blob,
+      final int kzgCommitmentsSize,
+      final int kzgProofsSize) {
+    return String.format(
+        "DataColumnSidecar[block %s (%s), index %s, 1st cell %s, commitments %s, proofs %s]",
+        formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitmentsSize, kzgProofsSize);
   }
 }

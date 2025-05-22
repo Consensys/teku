@@ -25,9 +25,11 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -41,20 +43,24 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   private final Spec spec;
 
   public MilestoneBasedBlockFactory(
-      final Spec spec, final BlockOperationSelectorFactory operationSelector) {
+      final Spec spec, final BlockOperationSelectorFactory operationSelector, final KZG kzg) {
     this.spec = spec;
     final BlockFactoryPhase0 blockFactoryPhase0 = new BlockFactoryPhase0(spec, operationSelector);
 
     // Not needed for all milestones
     final Supplier<BlockFactoryDeneb> blockFactoryDenebSupplier =
         Suppliers.memoize(() -> new BlockFactoryDeneb(spec, operationSelector));
+    final Supplier<BlockFactoryFulu> blockFactoryFuluSupplier =
+        Suppliers.memoize(() -> new BlockFactoryFulu(spec, operationSelector, kzg));
 
     // Populate forks factories
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+                registeredFactories.put(milestone, blockFactoryFuluSupplier.get());
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredFactories.put(milestone, blockFactoryDenebSupplier.get());
               } else {
                 registeredFactories.put(milestone, blockFactoryPhase0);
@@ -96,6 +102,13 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
     final SpecMilestone milestone = getMilestone(blockContainer.getSlot());
     return registeredFactories.get(milestone).createBlobSidecars(blockContainer);
+  }
+
+  @Override
+  public List<DataColumnSidecar> createDataColumnSidecars(
+      final SignedBlockContainer blockContainer) {
+    final SpecMilestone milestone = getMilestone(blockContainer.getSlot());
+    return registeredFactories.get(milestone).createDataColumnSidecars(blockContainer);
   }
 
   private SpecMilestone getMilestone(final UInt64 slot) {

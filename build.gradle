@@ -21,11 +21,11 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '7.0.2'
+  id 'com.diffplug.spotless' version '7.0.3'
   id 'com.github.ben-manes.versions' version '0.52.0'
   id 'com.github.jk1.dependency-license-report' version '2.9'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'net.ltgt.errorprone' version '4.1.0' apply false
+  id 'net.ltgt.errorprone' version '4.2.0' apply false
   id 'de.undercouch.download' version '5.6.0'
   id 'org.ajoberstar.grgit' version '5.3.0'
 }
@@ -249,6 +249,9 @@ allprojects {
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
+      // ignore PatternMatchingInstanceof for now
+      check("PatternMatchingInstanceof", net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
       // These are experimental checks that we want enabled
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('DeduplicateConstants', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
@@ -324,7 +327,7 @@ allprojects {
 }
 
 def nightly = System.getenv("NIGHTLY") != null
-def refTestVersion = nightly ? "nightly" : "v1.5.0-beta.4"
+def refTestVersion = nightly ? "nightly" : "v1.6.0-alpha.0"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-spec-tests/releases/download'
@@ -559,7 +562,9 @@ application {
       // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
       "-XX:NativeMemoryTracking=summary",
       // 32Mb for Netty Direct ByteBuf
-      "-Dio.netty.maxDirectMemory=33554432"
+      "-Dio.netty.maxDirectMemory=33554432",
+      // avoids JDK 24+ warning
+      "--enable-native-access=ALL-UNNAMED"
   ]
 }
 
@@ -643,7 +648,7 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerImage = "consensys/teku"
-def dockerJdkVariants = [ "jdk21" ]
+def dockerJdkVariants = [ "jdk21", "jdk24" ]
 def dockerBuildDir = "build/docker-teku/"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]

@@ -192,30 +192,26 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
 
   private boolean validatorHasPrevEpochParticipationFlag(
       final ValidatorStatus validator, final int flagIndex) {
-    switch (flagIndex) {
-      case TIMELY_HEAD_FLAG_INDEX:
-        return validator.isPreviousEpochHeadAttester();
-      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
-        return validator.isPreviousEpochTargetAttester();
-      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
-        return validator.isPreviousEpochSourceAttester();
-      default:
-        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
-    }
+    return switch (flagIndex) {
+      case TIMELY_HEAD_FLAG_INDEX -> validator.isPreviousEpochHeadAttester();
+      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX -> validator.isPreviousEpochTargetAttester();
+      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX -> validator.isPreviousEpochSourceAttester();
+      default ->
+          throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    };
   }
 
   private UInt64 getPrevEpochTotalParticipatingBalance(final int flagIndex) {
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
-    switch (flagIndex) {
-      case TIMELY_HEAD_FLAG_INDEX:
-        return totalBalances.getPreviousEpochHeadAttesters();
-      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
-        return totalBalances.getPreviousEpochTargetAttesters();
-      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
-        return totalBalances.getPreviousEpochSourceAttesters();
-      default:
-        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
-    }
+    return switch (flagIndex) {
+      case TIMELY_HEAD_FLAG_INDEX -> totalBalances.getPreviousEpochHeadAttesters();
+      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX ->
+          totalBalances.getPreviousEpochTargetAttesters();
+      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX ->
+          totalBalances.getPreviousEpochSourceAttesters();
+      default ->
+          throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    };
   }
 
   private boolean isUnslashedPrevEpochParticipatingIndex(

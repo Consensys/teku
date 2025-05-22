@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
@@ -27,8 +28,20 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_MAX_QU
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
 import com.google.common.base.Supplier;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -77,6 +90,24 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(syncConfig.getForwardSyncMaxPendingBatches()).isEqualTo(8);
     assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(100);
     assertThat(syncConfig.getForwardSyncMaxBlobSidecarsPerMinute()).isEqualTo(400);
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS)
+  public void shouldReadUrlFromConfigurationFile(@TempDir final Path tempDir) throws Exception {
+    final Path peersFile = tempDir.resolve("peers.txt");
+    final Path configPath = tempDir.resolve("config.yaml");
+    Files.writeString(peersFile, "\n\n127.0.1.1\n127.1.1.1\n", StandardCharsets.UTF_8);
+    Files.writeString(
+        configPath,
+        String.format("p2p-static-peers-url: \"%s\"", peersFile.toAbsolutePath()),
+        StandardCharsets.UTF_8);
+
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());
+
+    final DiscoveryConfig discoConfig = tekuConfig.discovery();
+    assertThat(discoConfig.getStaticPeers()).isEqualTo(List.of("127.0.1.1", "127.1.1.1"));
   }
 
   @Test
@@ -471,5 +502,97 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(networkConfig.getListenPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
     assertThat(networkConfig.getAdvertisedPort()).isEqualTo(DEFAULT_P2P_PORT);
     assertThat(networkConfig.getAdvertisedPortIpv6()).isEqualTo(DEFAULT_P2P_PORT_IPV6);
+  }
+
+  @Test
+  public void staticPeersUrl_shouldReadPeersFromUrl(@TempDir final Path tempDir) throws Exception {
+    // Create a test file with peers
+    final Path peersFile = tempDir.resolve("static-peers.txt");
+    Files.writeString(peersFile, "peer1\npeer2\n#comment\n\npeer3");
+
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-static-peers-url", peersFile.toAbsolutePath().toString());
+
+    assertThat(tekuConfiguration.discovery().getStaticPeers())
+        .containsExactlyInAnyOrder("peer1", "peer2", "peer3");
+  }
+
+  @Test
+  public void staticPeersUrl_shouldCombineWithCommandLinePeers(@TempDir final Path tempDir)
+      throws Exception {
+    // Create a test file with peers
+    final Path peersFile = tempDir.resolve("static-peers.txt");
+    Files.writeString(peersFile, "peer1\npeer2");
+
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-static-peers-url",
+            peersFile.toAbsolutePath().toString(),
+            "--p2p-static-peers",
+            "peer3,peer4");
+
+    assertThat(tekuConfiguration.discovery().getStaticPeers())
+        .containsExactlyInAnyOrder("peer1", "peer2", "peer3", "peer4");
+  }
+
+  @ParameterizedTest
+  @MethodSource("peerBoundsTestParameters")
+  public void shouldSmartDefaultPeerBounds(
+      final String lowerIn,
+      final String upperIn,
+      final int lowerExpected,
+      final int upperExpected) {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-upper-bound", upperIn, "--p2p-peer-lower-bound", lowerIn);
+
+    assertThat(tekuConfiguration.discovery().getMinPeers()).isEqualTo(lowerExpected);
+    assertThat(tekuConfiguration.discovery().getMaxPeers()).isEqualTo(upperExpected);
+  }
+
+  private static Stream<Arguments> peerBoundsTestParameters() {
+    return Stream.of(
+        Arguments.of("100", "200", 100, 200),
+        Arguments.of("100", "100", 100, 100),
+        Arguments.of("0", "0", 0, 0),
+        Arguments.of("1024000", "1024000", 1024000, 1024000),
+        Arguments.of("200", "100", 100, 200));
+  }
+
+  @Test
+  public void peersLowerBound_mustNotBeNegative() {
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments("--p2p-peer-lower-bound", "-1"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid minPeers: -1");
+  }
+
+  @Test
+  public void peersUpperBound_mustNotBeNegative() {
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments("--p2p-peer-upper-bound", "-1"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid maxPeers: -1");
+  }
+
+  @Test
+  public void staticPeersUrl_shouldThrowIfUrlDoesNotExist() {
+    // Create a dummy instance of P2POptions
+    final P2POptions p2pOptions = new P2POptions();
+
+    // Use reflection to access a private field and set its value
+    try {
+      final Field field = P2POptions.class.getDeclaredField("p2pStaticPeersUrl");
+      field.setAccessible(true);
+      field.set(p2pOptions, "/non/existent/file.txt");
+
+      // Use reflection to call a private method getStaticPeersList
+      final Method method = P2POptions.class.getDeclaredMethod("getStaticPeersList");
+      method.setAccessible(true);
+
+      assertThatThrownBy(() -> method.invoke(p2pOptions))
+          .hasCauseInstanceOf(InvalidConfigurationException.class);
+    } catch (Exception e) {
+      fail("Test setup failed: " + e.getMessage(), e);
+    }
   }
 }

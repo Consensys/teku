@@ -668,8 +668,8 @@ class ExecutionLayerManagerImplTest {
             SpecConfigDeneb.required(spec.getGenesisSpecConfig()).getMaxBlobsPerBlock());
     final UInt64 slot = dataStructureUtil.randomSlot();
     final List<BlobAndProof> getBlobsResponse =
-        prepareEngineGetBlobsResponse(versionedHashes, slot);
-    assertThat(executionLayerManager.engineGetBlobs(versionedHashes, slot))
+        prepareEngineGetBlobAndProofsResponse(versionedHashes, slot);
+    assertThat(executionLayerManager.engineGetBlobAndProofs(versionedHashes, slot))
         .isCompletedWithValue(getBlobsResponse.stream().map(Optional::ofNullable).toList());
   }
 
@@ -805,7 +805,7 @@ class ExecutionLayerManagerImplTest {
     return getPayloadResponse;
   }
 
-  private List<BlobAndProof> prepareEngineGetBlobsResponse(
+  private List<BlobAndProof> prepareEngineGetBlobAndProofsResponse(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     final List<BlobSidecar> blobSidecars =
         dataStructureUtil.randomBlobSidecars(
@@ -814,7 +814,7 @@ class ExecutionLayerManagerImplTest {
         blobSidecars.stream()
             .map(blobSidecar -> new BlobAndProof(blobSidecar.getBlob(), blobSidecar.getKZGProof()))
             .toList();
-    when(executionClientHandler.engineGetBlobs(blobVersionedHashes, slot))
+    when(executionClientHandler.engineGetBlobsV1(blobVersionedHashes, slot))
         .thenReturn(SafeFuture.completedFuture(getBlobsResponse));
     return getBlobsResponse;
   }

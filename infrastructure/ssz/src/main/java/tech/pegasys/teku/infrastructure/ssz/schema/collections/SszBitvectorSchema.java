@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
+import java.util.BitSet;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -27,6 +28,13 @@ public interface SszBitvectorSchema<SszBitvectorT extends SszBitvector>
   }
 
   SszBitvectorT ofBits(int... setBitIndices);
+
+  /**
+   * Creates an SszBitvector by wrapping a given bitSet. This is an optimized constructor that DOES
+   * NOT clone the bitSet. It is used in aggregating attestation pool. DO NOT MUTATE after the
+   * wrapping!! SszBitvector is supposed to be immutable.
+   */
+  SszBitvectorT wrapBitSet(int size, BitSet bitSet);
 
   default SszBitvectorT fromBytes(final Bytes bitvectorBytes) {
     return sszDeserialize(bitvectorBytes);

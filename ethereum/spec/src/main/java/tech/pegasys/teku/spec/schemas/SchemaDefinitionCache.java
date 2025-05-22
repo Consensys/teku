@@ -61,6 +61,6 @@ public class SchemaDefinitionCache {
   }
 
   public List<SpecMilestone> getSupportedMilestones() {
-    return spec.getForkSchedule().getSupportedMilestones();
+    return spec.getForkSchedule().getSupportedMilestones().stream().toList();
   }
 }

@@ -31,6 +31,8 @@ public @interface TestSpecContext {
 
   boolean allMilestones() default false;
 
+  SpecMilestone[] ignoredMilestones() default {};
+
   boolean allNetworks() default false;
 
   boolean doNotGenerateSpec() default false;

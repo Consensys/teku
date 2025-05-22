@@ -69,13 +69,13 @@ public class SszUnionImpl implements SszUnion {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SszUnion)) {
+    if (o instanceof final SszUnion sszUnion) {
+      return Objects.equal(getSchema(), sszUnion.getSchema())
+          && getSelector() == sszUnion.getSelector()
+          && Objects.equal(hashTreeRoot(), sszUnion.hashTreeRoot());
+    } else {
       return false;
     }
-    SszUnion sszUnion = (SszUnion) o;
-    return Objects.equal(getSchema(), sszUnion.getSchema())
-        && getSelector() == sszUnion.getSelector()
-        && Objects.equal(hashTreeRoot(), sszUnion.hashTreeRoot());
   }
 
   @Override
