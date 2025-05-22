@@ -11,15 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.builder.versions.deneb;
+package tech.pegasys.teku.spec.config;
 
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BlobsBundleSupplier extends DataStructureUtilSupplier<BlobsBundleDeneb> {
-  public BlobsBundleSupplier() {
-    super(DataStructureUtil::randomBuilderBlobsBundle, SpecMilestone.DENEB);
-  }
-}
+public record BlobSchedule(UInt64 epoch, int maxBlobsPerBlock) {}

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.attestation.utils;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Supplier;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
@@ -28,7 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchem
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 
-class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
+class AttestationBitsElectra implements AttestationBits {
 
   private final SszBitlistSchema<?> aggregationBitsSchema;
   private final SszBitvectorSchema<?> committeeBitsSchema;
@@ -37,10 +39,10 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   private Int2ObjectMap<BitSet> committeeAggregationBitsMap;
   private BitSet committeeBits;
 
-  private SszBitlist cachedAggregationBits = null;
-  private SszBitvector cachedCommitteeBits = null;
+  private SszBitlist cachedAggregationSszBits = null;
+  private SszBitvector cachedCommitteeSszBits = null;
 
-  AttestationBitsAggregatorElectra(
+  AttestationBitsElectra(
       final SszBitlist initialAggregationBits,
       final SszBitvector initialCommitteeBits,
       final Int2IntMap committeesSize) {
@@ -52,7 +54,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         parseAggregationBits(initialAggregationBits, this.committeeBits, this.committeesSize);
   }
 
-  private AttestationBitsAggregatorElectra(
+  private AttestationBitsElectra(
       final SszBitlistSchema<?> aggregationBitsSchema,
       final SszBitvectorSchema<?> committeeBitsSchema,
       final Int2IntMap committeesSize,
@@ -65,7 +67,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
     this.committeeAggregationBitsMap = committeeAggregationBitsMap;
   }
 
-  static AttestationBitsAggregator fromAttestationSchema(
+  static AttestationBits fromAttestationSchema(
       final AttestationSchema<?> attestationSchema, final Int2IntMap committeesSize) {
     final SszBitlist emptyAggregationBits = attestationSchema.createEmptyAggregationBits();
     final SszBitvector emptyCommitteeBits =
@@ -73,8 +75,7 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
             .createEmptyCommitteeBits()
             .orElseThrow(
                 () -> new IllegalStateException("Electra schema must provide committee bits"));
-    return new AttestationBitsAggregatorElectra(
-        emptyAggregationBits, emptyCommitteeBits, committeesSize);
+    return new AttestationBitsElectra(emptyAggregationBits, emptyCommitteeBits, committeesSize);
   }
 
   private static Int2ObjectMap<BitSet> parseAggregationBits(
@@ -102,21 +103,16 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public void or(final AttestationBitsAggregator other) {
-    if (!(other instanceof AttestationBitsAggregatorElectra otherElectra)) {
-      throw new IllegalArgumentException(
-          "AttestationBitsAggregatorElectra.or requires an argument of the same type.");
-    }
+  public void or(final AttestationBits other) {
+    final AttestationBitsElectra otherElectra = requiresElectra(other);
 
     performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, false);
   }
 
   @Override
-  public boolean aggregateWith(final Attestation other) {
-    final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
-    final Int2ObjectMap<BitSet> otherParsedAggregationMap =
-        parseAggregationBits(other.getAggregationBits(), otherCommitteeBits, this.committeesSize);
-    return performMerge(otherCommitteeBits, otherParsedAggregationMap, true);
+  public boolean aggregateWith(final AttestationBits other) {
+    final AttestationBitsElectra otherElectra = requiresElectra(other);
+    return performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, true);
   }
 
   @Override
@@ -199,21 +195,37 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
 
   @Override
   public boolean isSuperSetOf(final Attestation other) {
-    final BitSet otherInternalCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
+    final BitSet otherCommitteeBits = other.getCommitteeBitsRequired().getAsBitSet();
+    return isSuperSetOf(
+        otherCommitteeBits,
+        () ->
+            parseAggregationBits(
+                other.getAggregationBits(), otherCommitteeBits, this.committeesSize));
+  }
+
+  @Override
+  public boolean isSuperSetOf(final AttestationBits other) {
+    final AttestationBitsElectra otherElectra = requiresElectra(other);
+
+    return isSuperSetOf(otherElectra.committeeBits, () -> otherElectra.committeeAggregationBitsMap);
+  }
+
+  private boolean isSuperSetOf(
+      final BitSet otherCommitteeBits,
+      final Supplier<Int2ObjectMap<BitSet>> otherCommitteeAggregationBitsMapSupplier) {
 
     final BitSet committeeIntersection = (BitSet) this.committeeBits.clone();
-    committeeIntersection.and(otherInternalCommitteeBits);
-    if (!committeeIntersection.equals(otherInternalCommitteeBits)) {
+    committeeIntersection.and(otherCommitteeBits);
+    if (!committeeIntersection.equals(otherCommitteeBits)) {
       return false;
     }
 
     final Int2ObjectMap<BitSet> otherCommitteeAggregationBitsMap =
-        parseAggregationBits(
-            other.getAggregationBits(), otherInternalCommitteeBits, this.committeesSize);
+        otherCommitteeAggregationBitsMapSupplier.get();
 
-    for (int committeeIndex = otherInternalCommitteeBits.nextSetBit(0);
+    for (int committeeIndex = otherCommitteeBits.nextSetBit(0);
         committeeIndex >= 0;
-        committeeIndex = otherInternalCommitteeBits.nextSetBit(committeeIndex + 1)) {
+        committeeIndex = otherCommitteeBits.nextSetBit(committeeIndex + 1)) {
 
       final BitSet thisAggregationBitsForCommittee =
           this.committeeAggregationBitsMap.get(committeeIndex);
@@ -237,9 +249,9 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public SszBitlist getAggregationBits() {
-    if (cachedAggregationBits != null) {
-      return cachedAggregationBits;
+  public SszBitlist getAggregationSszBits() {
+    if (cachedAggregationSszBits != null) {
+      return cachedAggregationSszBits;
     }
     final List<Integer> committeeIndicesInOrder = new ArrayList<>();
     for (int i = committeeBits.nextSetBit(0); i >= 0; i = committeeBits.nextSetBit(i + 1)) {
@@ -267,24 +279,24 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
       }
       currentOffset += committeeSize;
     }
-    cachedAggregationBits =
+    cachedAggregationSszBits =
         aggregationBitsSchema.wrapBitSet(totalBitlistSize, combinedAggregationBits);
-    return cachedAggregationBits;
+    return cachedAggregationSszBits;
   }
 
   @Override
-  public SszBitvector getCommitteeBits() {
-    if (cachedCommitteeBits == null) {
-      cachedCommitteeBits =
+  public SszBitvector getCommitteeSszBits() {
+    if (cachedCommitteeSszBits == null) {
+      cachedCommitteeSszBits =
           committeeBitsSchema.wrapBitSet(
               committeeBitsSchema.getLength(), (BitSet) this.committeeBits.clone());
     }
-    return cachedCommitteeBits;
+    return cachedCommitteeSszBits;
   }
 
   private void invalidateCache() {
-    this.cachedAggregationBits = null;
-    this.cachedCommitteeBits = null;
+    this.cachedAggregationSszBits = null;
+    this.cachedCommitteeSszBits = null;
   }
 
   @Override
@@ -298,13 +310,39 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
   }
 
   @Override
-  public AttestationBitsAggregator copy() {
-    return new AttestationBitsAggregatorElectra(
+  public AttestationBits copy() {
+    return new AttestationBitsElectra(
         aggregationBitsSchema,
         committeeBitsSchema,
         committeesSize,
         cloneCommitteeAggregationBitsMap(committeeAggregationBitsMap),
         (BitSet) committeeBits.clone());
+  }
+
+  @Override
+  public int getBitCount() {
+    return committeeAggregationBitsMap.values().stream().mapToInt(BitSet::cardinality).sum();
+  }
+
+  @Override
+  public boolean isExclusivelyFromCommittee(final int committeeIndex) {
+    return committeeAggregationBitsMap.size() == 1
+        && committeeAggregationBitsMap.containsKey(committeeIndex);
+  }
+
+  @Override
+  public boolean isFromCommittee(final int committeeIndex) {
+    return committeeAggregationBitsMap.containsKey(committeeIndex);
+  }
+
+  @Override
+  public int getFirstCommitteeIndex() {
+    return committeeBits.nextSetBit(0);
+  }
+
+  @Override
+  public IntStream streamCommitteeIndices() {
+    return committeeBits.stream();
   }
 
   @Override
@@ -321,7 +359,34 @@ class AttestationBitsAggregatorElectra implements AttestationBitsAggregator {
         .add("committeeBits", committeeBits.cardinality())
         .add("committeeAggregationBitsMap", totalSetBits)
         .add("committeesSize", committeesSize.size())
-        .add("cached", cachedAggregationBits != null || cachedCommitteeBits != null)
+        .add("sszBitsCached", cachedAggregationSszBits != null || cachedCommitteeSszBits != null)
         .toString();
+  }
+
+  static AttestationBitsElectra requiresElectra(final AttestationBits aggregator) {
+    if (!(aggregator instanceof AttestationBitsElectra aggregatorElectra)) {
+      throw new IllegalArgumentException(
+          "AttestationBitsAggregator required to be Electra but was: "
+              + aggregator.getClass().getSimpleName());
+    }
+    return aggregatorElectra;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (!(o instanceof AttestationBitsElectra that)) {
+      return false;
+    }
+    return this.committeeBits.equals(that.committeeBits)
+        && Objects.equals(committeeAggregationBitsMap, that.committeeAggregationBitsMap);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(committeeBits, committeeAggregationBitsMap);
   }
 }

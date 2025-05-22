@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -63,9 +63,9 @@ public class StringifyUtilTest {
   @ParameterizedTest
   @MethodSource("provideTestCaseParameters")
   void columnIndexesToString_test(final TestCase testCase) {
-    List<Integer> idxList = testCase.indexes.boxed().toList();
-    String s = StringifyUtil.columnIndexesToString(idxList, MAX_INDEXES_LEN);
-    System.out.println(s);
+    final List<Integer> idxList = testCase.indexes.boxed().toList();
+    final String s = StringifyUtil.columnIndexesToString(idxList, MAX_INDEXES_LEN);
+
     assertThat(s).isEqualTo("(len: " + idxList.size() + ") " + testCase.expectedString);
   }
 }

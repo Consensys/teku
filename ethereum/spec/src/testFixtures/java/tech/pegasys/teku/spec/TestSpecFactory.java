@@ -510,11 +510,6 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.FULU);
   }
 
-  // Our current config files contain ELECTRA params.
-  // So all specConfigs created from them will be ELECTRA.
-  // Here we just want to make sure that a given config supports the given milestone
-  // (which useless in theory because they are all ELECTRA)
-
   private static SpecConfigAndParent<? extends SpecConfig> requireAltair(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
     checkArgument(specConfigAndParent.specConfig().toVersionAltair().isPresent());

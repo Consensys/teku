@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactoryTest.CapturingBeaconBlockBodyBuilder;
 
@@ -38,6 +39,8 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -45,8 +48,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -87,6 +90,7 @@ class BlockOperationSelectorFactoryTestDeneb {
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
       slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(ZERO);
 
   @SuppressWarnings("unchecked")
   private final OperationValidator<AttesterSlashing> attesterSlashingValidator =
@@ -165,7 +169,9 @@ class BlockOperationSelectorFactoryTestDeneb {
           eth1DataCache,
           graffitiBuilder,
           forkChoiceNotifier,
-          executionLayer);
+          executionLayer,
+          metricsSystem,
+          timeProvider);
   private ExecutionPayloadContext executionPayloadContext;
 
   @BeforeEach
@@ -269,8 +275,7 @@ class BlockOperationSelectorFactoryTestDeneb {
 
   @Test
   void shouldCreateBlobSidecarsForBlockContents() {
-    final SignedBlockContentsDeneb signedBlockContents =
-        dataStructureUtil.randomSignedBlockContentsDeneb();
+    final SignedBlockContainer signedBlockContents = dataStructureUtil.randomSignedBlockContents();
 
     final MiscHelpersDeneb miscHelpersDeneb =
         MiscHelpersDeneb.required(spec.atSlot(signedBlockContents.getSlot()).miscHelpers());

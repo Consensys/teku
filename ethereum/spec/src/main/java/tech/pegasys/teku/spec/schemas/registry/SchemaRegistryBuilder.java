@@ -43,7 +43,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
@@ -755,7 +755,7 @@ public class SchemaRegistryBuilder {
   }
 
   private static SchemaProvider<?> createDataColumnsByRootIdentifierSchemaProvider() {
-    return providerBuilder(DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA)
+    return providerBuilder(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA)
         .withCreator(
             FULU,
             (registry, specConfig, schemaName) ->
@@ -779,7 +779,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new DataColumnSidecarsByRootRequestMessageSchema(
                     SpecConfigFulu.required(specConfig),
-                    registry.get(DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA)))
+                    registry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA)))
         .build();
   }
 

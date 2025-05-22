@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlockContentsSupplier;
 
 public class SignedBlockContentsPropertyTest {
@@ -26,7 +27,7 @@ public class SignedBlockContentsPropertyTest {
   @Property
   void roundTrip(
       @ForAll(supplier = SignedBlockContentsSupplier.class)
-          final SignedBlockContentsDeneb signedBlockContents)
+          final SignedBlockContainer signedBlockContents)
       throws JsonProcessingException {
     assertRoundTrip(signedBlockContents);
   }
@@ -34,7 +35,7 @@ public class SignedBlockContentsPropertyTest {
   @Property
   void deserializeMutated(
       @ForAll(supplier = SignedBlockContentsSupplier.class)
-          final SignedBlockContentsDeneb signedBlockContents,
+          final SignedBlockContainer signedBlockContents,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(signedBlockContents, seed);
   }

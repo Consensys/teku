@@ -28,8 +28,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class Eth2PeerFactory {
 
   private static final long TIME_OUT = 60;
-  private static final int REQUEST_RATE_LIMIT_BOOST = 50;
-  private static final int BLOCK_RATE_LIMIT_BOOST = 10;
   private final Spec spec;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -79,16 +77,14 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
-        RateTracker.create(
-            peerBlocksRateLimit * BLOCK_RATE_LIMIT_BOOST, TIME_OUT, timeProvider, "blocks"),
+        RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider, "blocks"),
         RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blobSidecars"),
         RateTracker.create(
             peerBlocksRateLimit * spec.getNumberOfDataColumns().orElse(1),
             TIME_OUT,
             timeProvider,
             "dataColumns"),
-        RateTracker.create(
-            peerRequestLimit * REQUEST_RATE_LIMIT_BOOST, TIME_OUT, timeProvider, "requestTracker"),
+        RateTracker.create(peerRequestLimit, TIME_OUT, timeProvider, "requestTracker"),
         kzg,
         metricsSystem,
         timeProvider);

@@ -594,44 +594,52 @@ workflows:
           requires:
             - moduleChecks
             - spotless
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - referenceTestsPrep:
           requires:
             - assemble
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - referenceTests:
           requires:
             - assemble
             - referenceTestsPrep
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - unitTests:
           requires:
             - assemble
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - propertyTests:
           requires:
             - assemble
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - integrationTests:
           requires:
             - assemble
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - acceptanceTests:
           requires:
             - assemble
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - extractAPISpec:
           requires:
             - assemble
-          # TODO: remove, temporary disabled
-          filters: pipeline.git.branch == "master"
+          filters:
+            tags:
+              <<: *filters-release-tags
       - publish-cloudsmith:
           filters:
             branches:

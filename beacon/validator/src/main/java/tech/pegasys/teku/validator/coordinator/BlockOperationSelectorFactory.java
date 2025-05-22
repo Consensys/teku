@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
 
 import java.util.HashSet;
 import java.util.List;
@@ -23,11 +24,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
@@ -94,6 +98,7 @@ public class BlockOperationSelectorFactory {
   private final GraffitiBuilder graffitiBuilder;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
+  private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -107,7 +112,9 @@ public class BlockOperationSelectorFactory {
       final Eth1DataCache eth1DataCache,
       final GraffitiBuilder graffitiBuilder,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
+      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -120,6 +127,8 @@ public class BlockOperationSelectorFactory {
     this.graffitiBuilder = graffitiBuilder;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
+    this.dataColumnSidecarComputationTimeSeconds =
+        DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
   }
 
   public Function<BeaconBlockBodyBuilder, SafeFuture<Void>> createSelector(
@@ -688,8 +697,12 @@ public class BlockOperationSelectorFactory {
                               .toList()))
               .toList();
 
-      return miscHelpersFulu.constructDataColumnSidecars(
-          blockContainer.getSignedBlock(), blobAndCellProofsList, kzg);
+      try (MetricsHistogram.Timer ignored = dataColumnSidecarComputationTimeSeconds.startTimer()) {
+        return miscHelpersFulu.constructDataColumnSidecars(
+            blockContainer.getSignedBlock(), blobAndCellProofsList, kzg);
+      } catch (final Throwable t) {
+        throw new RuntimeException(t);
+      }
     };
   }
 

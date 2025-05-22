@@ -100,7 +100,18 @@ public class TekuBeaconNode extends TekuNode {
       final Network network, final TekuDockerVersion version, final TekuNodeConfig tekuNodeConfig) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = tekuNodeConfig;
-    this.spec = SpecFactory.create(config.getNetworkName(), config.getSpecConfigModifier());
+    if (config.getConfigFileMap().containsValue(NETWORK_FILE_PATH)) {
+      final String tmpConfigFilePath =
+          config.getConfigFileMap().entrySet().stream()
+              .filter(entry -> entry.getValue().equals(NETWORK_FILE_PATH))
+              .findFirst()
+              .orElseThrow()
+              .getKey()
+              .getAbsolutePath();
+      this.spec = SpecFactory.create(tmpConfigFilePath, true, config.getSpecConfigModifier());
+    } else {
+      this.spec = SpecFactory.create(config.getNetworkName(), true, config.getSpecConfigModifier());
+    }
     if (config.getConfigMap().containsKey("validator-api-enabled")) {
       container.addExposedPort(VALIDATOR_API_PORT);
     }
@@ -675,7 +686,7 @@ public class TekuBeaconNode extends TekuNode {
 
   public int getDataColumnSidecarCount(final String blockId) throws IOException {
     final String result =
-        httpClient.get(getRestApiUrl(), "/eth/v1/beacon/data_column_sidecars/" + blockId);
+        httpClient.get(getRestApiUrl(), "/teku/v1/beacon/data_column_sidecars/" + blockId);
     final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
     return jsonNode.get("data").size();
   }

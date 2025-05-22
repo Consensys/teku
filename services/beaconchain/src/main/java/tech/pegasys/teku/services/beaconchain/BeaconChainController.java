@@ -139,7 +139,11 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV2;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfilerCSV;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
@@ -364,6 +368,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
   protected DebugDataDumper debugDataDumper;
+  protected Path debugDataDirectory;
   protected volatile UInt256 nodeId;
   protected volatile BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
 
@@ -412,6 +417,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.dasGossipLogger = new DasGossipBatchLogger(operationPoolAsyncRunner, timeProvider);
     this.dasReqRespLogger = DasReqRespLogger.create(timeProvider);
     this.ephemerySlotValidationService = new EphemerySlotValidationService();
+    this.debugDataDirectory = serviceConfig.getDataDirLayout().getDebugDataDirectory();
   }
 
   @Override
@@ -976,7 +982,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionLayer,
               kzg,
               recoveredDataColumnSidecarPublisher,
-              custodyGroupCountManagerLateInit);
+              custodyGroupCountManagerLateInit,
+              metricsSystem,
+              timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
       dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
           recoveryManager::onNewDataColumnSidecar);
@@ -1306,7 +1314,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
-            executionLayerBlockProductionManager);
+            executionLayerBlockProductionManager,
+            metricsSystem,
+            timeProvider);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector, kzg);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
@@ -1589,9 +1599,29 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
+    final Eth2NetworkConfiguration eth2NetworkConfiguration = beaconConfig.eth2NetworkConfig();
+
+    final AggregatingAttestationPoolProfiler profiler =
+        eth2NetworkConfiguration.isAggregatingAttestationPoolProfilingEnabled()
+            ? new AggregatingAttestationPoolProfilerCSV(debugDataDirectory)
+            : AggregatingAttestationPoolProfiler.NOOP;
+
     attestationPool =
-        new AggregatingAttestationPool(
-            spec, recentChainData, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+        eth2NetworkConfiguration.isAggregatingAttestationPoolV2Enabled()
+            ? new AggregatingAttestationPoolV2(
+                spec,
+                recentChainData,
+                metricsSystem,
+                DEFAULT_MAXIMUM_ATTESTATION_COUNT,
+                profiler,
+                eth2NetworkConfiguration.getAggregatingAttestationPoolV2BlockAggregationTimeLimit(),
+                eth2NetworkConfiguration
+                    .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(),
+                eth2NetworkConfiguration
+                    .isAggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled(),
+                eth2NetworkConfiguration.isAggregatingAttestationPoolV2ParallelEnabled())
+            : new AggregatingAttestationPoolV1(
+                spec, recentChainData, metricsSystem, profiler, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);

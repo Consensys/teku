@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
@@ -58,7 +58,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     this.dataColumnSchema = schemaRegistry.get(DATA_COLUMN_SCHEMA);
     this.dataColumnSidecarSchema = schemaRegistry.get(DATA_COLUMN_SIDECAR_SCHEMA);
     this.dataColumnsByRootIdentifierSchema =
-        schemaRegistry.get(DATA_COLUMN_BY_ROOT_IDENTIFIER_SCHEMA);
+        schemaRegistry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA);
     this.matrixEntrySchema = schemaRegistry.get(MATRIX_ENTRY_SCHEMA);
     this.executionPayloadAndBlobsCellBundleSchema =
         schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA);

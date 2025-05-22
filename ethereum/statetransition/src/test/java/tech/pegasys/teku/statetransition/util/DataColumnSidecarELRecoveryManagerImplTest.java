@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
 
 import java.util.List;
@@ -34,6 +35,8 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
@@ -55,6 +58,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final UInt64 historicalTolerance = UInt64.valueOf(5);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInMillis(ZERO);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
@@ -77,7 +81,9 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
               executionLayer,
               kzg,
               dataColumnSidecarPublisher,
-              custodyGroupCountManager);
+              custodyGroupCountManager,
+              metricsSystem,
+              timeProvider);
 
   private UInt64 currentSlot = historicalTolerance.times(2);
 
@@ -108,7 +114,9 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
                 executionLayer,
                 kzg,
                 dataColumnSidecarPublisher,
-                custodyGroupCountManager);
+                custodyGroupCountManager,
+                metricsSystem,
+                timeProvider);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     dataColumnSidecarELRecoveryManagerCustom.onSlot(UInt64.ONE);
     dataColumnSidecarELRecoveryManagerCustom.onNewBlock(block, Optional.empty());

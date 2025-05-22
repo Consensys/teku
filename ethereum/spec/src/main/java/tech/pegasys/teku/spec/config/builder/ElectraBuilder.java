@@ -18,9 +18,13 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -28,7 +32,7 @@ import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigElectraImpl;
 
 public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecConfigElectra> {
-
+  private static final Logger LOG = LogManager.getLogger();
   private Bytes4 electraForkVersion;
   private UInt64 electraForkEpoch;
 
@@ -250,6 +254,17 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("blobSidecarSubnetCountElectra", blobSidecarSubnetCountElectra);
 
     return constants;
+  }
+
+  public Optional<BlobSchedule> getBlobSchedule() {
+    if (maxBlobsPerBlockElectra == null || electraForkEpoch == null) {
+      LOG.debug(
+          "electraForkEpoch = {}, maxBlobsPerBlockElectra = {}",
+          electraForkEpoch,
+          maxBlobsPerBlockElectra);
+      return Optional.empty();
+    }
+    return Optional.of(new BlobSchedule(electraForkEpoch, maxBlobsPerBlockElectra));
   }
 
   @Override

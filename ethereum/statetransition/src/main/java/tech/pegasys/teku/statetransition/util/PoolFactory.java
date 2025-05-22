@@ -150,7 +150,9 @@ public class PoolFactory {
       final ExecutionLayerChannel executionLayer,
       final KZG kzg,
       final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final CustodyGroupCountManager custodyGroupCountManager,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     return new DataColumnSidecarELRecoveryManagerImpl(
         spec,
         asyncRunner,
@@ -161,7 +163,9 @@ public class PoolFactory {
         EL_RECOVERY_TASKS_LIMIT,
         kzg,
         dataColumnSidecarPublisher,
-        custodyGroupCountManager);
+        custodyGroupCountManager,
+        metricsSystem,
+        timeProvider);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(

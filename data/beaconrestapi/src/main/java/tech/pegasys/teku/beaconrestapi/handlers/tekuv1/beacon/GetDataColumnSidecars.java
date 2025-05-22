@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.DATA_COLUMN_INDICES_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class GetDataColumnSidecars extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/data_column_sidecars/{block_id}";
+  public static final String ROUTE = "/teku/v1/beacon/data_column_sidecars/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetDataColumnSidecars(

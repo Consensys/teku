@@ -16,11 +16,15 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -43,8 +47,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer samplesPerSlot;
   private Integer minEpochsForDataColumnSidecarsRequests;
   private Integer maxRequestDataColumnSidecars;
-  private Integer maxBlobsPerBlockFulu;
   private UInt64 balancePerAdditionalCustodyGroup;
+  private final List<BlobSchedule> blobSchedule = new ArrayList<>();
 
   FuluBuilder() {}
 
@@ -67,8 +71,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             samplesPerSlot,
             minEpochsForDataColumnSidecarsRequests,
             maxRequestDataColumnSidecars,
-            maxBlobsPerBlockFulu,
-            balancePerAdditionalCustodyGroup),
+            balancePerAdditionalCustodyGroup,
+            blobSchedule),
         specConfigAndParent);
   }
 
@@ -100,6 +104,14 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
       final UInt64 kzgCommitmentsInclusionProofDepth) {
     checkNotNull(kzgCommitmentsInclusionProofDepth);
     this.kzgCommitmentsInclusionProofDepth = kzgCommitmentsInclusionProofDepth;
+    return this;
+  }
+
+  public FuluBuilder blobSchedule(final List<BlobSchedule> blobSchedule) {
+    checkNotNull(this.blobSchedule);
+    this.blobSchedule.clear();
+    // copy list rather than use the one passed in case we need to add to the list during validation
+    this.blobSchedule.addAll(blobSchedule);
     return this;
   }
 
@@ -152,12 +164,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
-  public FuluBuilder maxBlobsPerBlockFulu(final Integer maxBlobsPerBlockFulu) {
-    checkNotNull(maxBlobsPerBlockFulu);
-    this.maxBlobsPerBlockFulu = maxBlobsPerBlockFulu;
-    return this;
-  }
-
   public FuluBuilder balancePerAdditionalCustodyGroup(
       final UInt64 balancePerAdditionalCustodyGroup) {
     checkNotNull(balancePerAdditionalCustodyGroup);
@@ -180,6 +186,22 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     validateConstants();
   }
 
+  public void validateBlobSchedule(
+      final Optional<BlobSchedule> denebSchedule, final Optional<BlobSchedule> electraSchedule) {
+    denebSchedule.ifPresent(
+        schedule -> {
+          if (!blobSchedule.contains(schedule)) {
+            blobSchedule.add(schedule);
+          }
+        });
+    electraSchedule.ifPresent(
+        schedule -> {
+          if (!blobSchedule.contains(schedule)) {
+            blobSchedule.add(schedule);
+          }
+        });
+  }
+
   @Override
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
@@ -197,7 +219,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     constants.put("kzgCommitmentsInclusionProofDepth", kzgCommitmentsInclusionProofDepth);
     constants.put("minEpochsForDataColumnSidecarsRequests", minEpochsForDataColumnSidecarsRequests);
     constants.put("maxRequestDataColumnSidecars", maxRequestDataColumnSidecars);
-    constants.put("maxBlobsPerBlockFulu", maxBlobsPerBlockFulu);
     constants.put("balancePerAdditionalCustodyGroup", balancePerAdditionalCustodyGroup);
 
     return constants;

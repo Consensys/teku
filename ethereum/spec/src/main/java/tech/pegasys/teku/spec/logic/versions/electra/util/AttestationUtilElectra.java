@@ -70,24 +70,17 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
     final List<UInt64> committeeIndices = attestation.getCommitteeIndicesRequired();
     final SszBitlist aggregationBits = attestation.getAggregationBits();
-    final IntList attestingIndices = new IntArrayList();
+    final IntList attestingIndices = new IntArrayList(aggregationBits.getBitCount());
     int committeeOffset = 0;
     for (final UInt64 committeeIndex : committeeIndices) {
       final IntList committee =
           beaconStateAccessors.getBeaconCommittee(
               state, attestation.getData().getSlot(), committeeIndex);
-      final IntList committeeAttesters =
-          getCommitteeAttesters(committee, aggregationBits, committeeOffset);
-      attestingIndices.addAll(committeeAttesters);
+      streamCommitteeAttesters(committee, aggregationBits, committeeOffset)
+          .forEach(attestingIndices::add);
       committeeOffset += committee.size();
     }
     return attestingIndices;
-  }
-
-  public IntList getCommitteeAttesters(
-      final IntList committee, final SszBitlist aggregationBits, final int committeeOffset) {
-    return IntList.of(
-        streamCommitteeAttesters(committee, aggregationBits, committeeOffset).toArray());
   }
 
   public IntStream streamCommitteeAttesters(

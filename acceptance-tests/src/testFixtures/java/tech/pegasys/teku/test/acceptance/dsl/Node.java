@@ -253,7 +253,11 @@ public abstract class Node {
   }
 
   protected static File copyToTmpFile(final URL fileUrl) throws Exception {
-    final File tmpFile = File.createTempFile("teku", ".tmp");
+    return copyToTmpFile(fileUrl, ".tmp");
+  }
+
+  protected static File copyToTmpFile(final URL fileUrl, final String suffix) throws Exception {
+    final File tmpFile = File.createTempFile("teku", suffix);
     tmpFile.deleteOnExit();
     try (InputStream inputStream = fileUrl.openStream();
         FileOutputStream out = new FileOutputStream(tmpFile)) {
