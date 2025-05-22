@@ -196,8 +196,8 @@ public class BlobSidecarsByRootMessageHandler
                 throw new RpcException(
                     INVALID_REQUEST_CODE,
                     String.format(
-                        "Block root (%s) references a block earlier than the minimum_request_epoch",
-                        identifier.getBlockRoot()));
+                        "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: %s",
+                        identifier.getBlockRoot(), maybeSlot.get()));
               }
             });
   }

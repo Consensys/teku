@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGProof {
+  public static final KZGProof ZERO = fromArray(new byte[BYTES_PER_PROOF]);
 
   public static KZGProof fromHexString(final String hexString) {
     return KZGProof.fromBytesCompressed(Bytes48.fromHexString(hexString));

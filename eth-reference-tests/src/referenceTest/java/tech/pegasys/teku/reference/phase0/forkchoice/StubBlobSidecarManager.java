@@ -30,9 +30,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 /** Simplified version of {@link BlobSidecarManager} which is used in fork choice reference tests */
@@ -77,28 +78,28 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   }
 
   /**
-   * Creates an implementation of {@link BlobSidecarsAvailabilityChecker} which uses {@link
+   * Creates an implementation of {@link AvailabilityChecker} which uses {@link
    * KZG#verifyBlobKzgProofBatch(List, List, List)} method with the blobs and proofs that the
    * reference test has provided
    */
   @Override
-  public BlobSidecarsAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
-    return new BlobSidecarsAvailabilityChecker() {
+  public AvailabilityChecker<BlobSidecar> createAvailabilityChecker(final SignedBeaconBlock block) {
+    return new AvailabilityChecker<BlobSidecar>() {
       @Override
       public boolean initiateDataAvailabilityCheck() {
         return true;
       }
 
       @Override
-      public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
+      public SafeFuture<DataAndValidationResult<BlobSidecar>> getAvailabilityCheckResult() {
         final BlobsAndProofs blobsAndProofs = blobsAndProofsByBlockRoot.remove(block.getRoot());
         if (blobsAndProofs == null) {
-          return SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED);
+          return SafeFuture.completedFuture(DataAndValidationResult.notRequired());
         }
         return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
       }
 
-      private BlobSidecarsAndValidationResult validateImmediately(
+      private DataAndValidationResult<BlobSidecar> validateImmediately(
           final SignedBeaconBlock block, final BlobsAndProofs blobsAndProofs) {
         final List<KZGCommitment> kzgCommitments =
             BeaconBlockBodyDeneb.required(block.getMessage().getBody())
@@ -109,18 +110,18 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         final List<Bytes> blobs = blobsAndProofs.blobs.stream().map(Blob::getBytes).toList();
         try {
           if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, blobsAndProofs.proofs)) {
-            return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList());
+            return DataAndValidationResult.invalidResult(Collections.emptyList());
           }
         } catch (final Exception ex) {
-          return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList(), ex);
+          return DataAndValidationResult.invalidResult(Collections.emptyList(), ex);
         }
-        return BlobSidecarsAndValidationResult.validResult(Collections.emptyList());
+        return DataAndValidationResult.validResult(Collections.emptyList());
       }
     };
   }
 
   @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+  public DataAndValidationResult<BlobSidecar> createAvailabilityCheckerAndValidateImmediately(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     throw new UnsupportedOperationException("Not available in fork choice reference tests");
   }

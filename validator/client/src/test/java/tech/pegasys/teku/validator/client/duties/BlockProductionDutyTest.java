@@ -51,11 +51,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -180,7 +181,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContents, denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
@@ -216,9 +217,10 @@ class BlockProductionDutyTest {
 
     final SignedBlockContainer signedBlockContainer = signedBlockContainerArgumentCaptor.getValue();
 
-    assertThat(signedBlockContainer).isInstanceOf(SignedBlockContents.class);
+    assertThat(signedBlockContainer).isInstanceOf(SignedBlockContentsDeneb.class);
 
-    final SignedBlockContents signedBlockContents = (SignedBlockContents) signedBlockContainer;
+    final SignedBlockContentsDeneb signedBlockContents =
+        (SignedBlockContentsDeneb) signedBlockContainer;
 
     assertThat(signedBlockContents.isBlinded()).isFalse();
 
@@ -330,8 +332,8 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
-    final BlockContents unsignedBlockContentsMock = mock(BlockContents.class);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContentsDeneb unsignedBlockContentsMock = mock(BlockContentsDeneb.class);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContentsMock, denebSlot);
 
@@ -373,8 +375,8 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
-    final BlockContents unsignedBlockContentsMock = mock(BlockContents.class);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContentsDeneb unsignedBlockContentsMock = mock(BlockContentsDeneb.class);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContentsMock, denebSlot);
 
@@ -573,7 +575,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
-    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainer unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContents, denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
@@ -597,8 +599,8 @@ class BlockProductionDutyTest {
     verify(validatorApiChannel)
         .createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti), Optional.empty());
 
-    final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
-        ArgumentCaptor.forClass(SignedBlockContents.class);
+    final ArgumentCaptor<SignedBlockContentsDeneb> signedBlockContentsArgumentCaptor =
+        ArgumentCaptor.forClass(SignedBlockContentsDeneb.class);
 
     verify(validatorApiChannel)
         .sendSignedBlock(
@@ -612,7 +614,8 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    final SignedBlockContents signedBlockContents = signedBlockContentsArgumentCaptor.getValue();
+    final SignedBlockContentsDeneb signedBlockContents =
+        signedBlockContentsArgumentCaptor.getValue();
 
     assertThat(signedBlockContents.isBlinded()).isFalse();
 

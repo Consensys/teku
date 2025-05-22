@@ -58,6 +58,11 @@ public class MultiaddrPeerAddress extends PeerAddress {
   }
 
   @Override
+  public String toString() {
+    return getId() + " (" + getMultiaddr() + ")";
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;

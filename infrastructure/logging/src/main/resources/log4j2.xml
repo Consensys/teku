@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration level="INFO">
     <Loggers>
+        <!--         Remove all DEBUG and TRACE logging from noisy dependencies-->
+        <Logger name="io.netty" level="INFO" additivity="FALSE"/>
+        <Logger name="io.vertx" level="INFO" additivity="FALSE"/>
+        <Logger name="org.quartz" level="INFO" additivity="FALSE"/>
+        <Logger name="org.eclipse.jetty" level="INFO" additivity="FALSE"/>
+        <Logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http" level="INFO" additivity="FALSE"/>
+        <!--         Remove all DEBUG and TRACE logging from noisy dependencies-->
         <Root level="info" additivity="true">
         </Root>
     </Loggers>
