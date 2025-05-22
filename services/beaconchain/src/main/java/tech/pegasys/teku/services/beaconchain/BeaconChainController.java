@@ -816,6 +816,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
 
       // TODO-fulu fix this hack to resolve the initialization loop Network <--> DAS Custody
+      // (https://github.com/Consensys/teku/issues/9463)
       this.dataColumnSidecarCustody.init(dataColumnSidecarRecoveringCustody);
 
       custody = dataColumnSidecarRecoveringCustody;
@@ -844,6 +845,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             peerCustodyTracker, minCustodyGroupRequirement, maxGroups);
 
     // TODO-fulu NOOP peer searcher should work for interop but needs to be implemented
+    // (https://github.com/Consensys/teku/issues/9464)
     DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
     DataColumnSidecarRetriever sidecarRetriever =
         new SimpleSidecarRetriever(

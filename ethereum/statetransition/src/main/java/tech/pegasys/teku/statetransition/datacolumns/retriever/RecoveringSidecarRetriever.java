@@ -75,6 +75,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
     // TODO-fulu we probably need a better heuristics to submit requests for recovery
+    // (https://github.com/Consensys/teku/issues/9465)
     asyncRunner
         .runAfterDelay(
             () -> {
@@ -218,6 +219,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         if (existingSidecarsByColIdx.size() >= recoverColumnCount) {
           // TODO-fulu: Make it asynchronously as it's heavy CPU operation
+          // (https://github.com/Consensys/teku/issues/9466)
           recover();
           recoveryComplete();
         }

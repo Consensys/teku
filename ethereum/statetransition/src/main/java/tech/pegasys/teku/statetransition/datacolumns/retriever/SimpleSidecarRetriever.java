@@ -46,8 +46,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 // TODO-fulu improve thread-safety: external calls are better to do outside of the synchronize block
-// to
-// prevent potential dead locks
+// to prevent potential dead locks (https://github.com/Consensys/teku/issues/9467)
 public class SimpleSidecarRetriever
     implements DataColumnSidecarRetriever, DataColumnPeerManager.PeerListener {
   private static final Logger LOG = LogManager.getLogger();

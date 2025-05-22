@@ -153,8 +153,8 @@ public class DataColumnSidecarCustodyImpl
       int groupCount = custodyGroupCountManager.getCustodyGroupCount();
       final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
       // TODO-fulu: ignoring the case when it's less, let's skip pruning in early version, to
-      // implement
-      // in future invalidating current custody as number of required groups have increased
+      // implement in future invalidating current custody as number of required groups have
+      // increased (https://github.com/Consensys/teku/issues/9468)
       if (groupCount > oldGroupCount) {
         LOG.info("Custody group count changed from {} to {}", oldGroupCount, groupCount);
         final UInt64 minCustodyPeriodSlot =
@@ -191,6 +191,7 @@ public class DataColumnSidecarCustodyImpl
                           // TODO-fulu: if we don't have finalization, we will not advance it and
                           // it's an issue
                           //  non-finalized epochs could be still not synced with up-to-date custody
+                          // (https://github.com/Consensys/teku/issues/9469)
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.info(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());

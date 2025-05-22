@@ -61,7 +61,7 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
       final List<DataColumnSidecar> dataColumnSidecars,
       final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    // TODO-fulu blockPublishingPerformance
+    // TODO-fulu blockPublishingPerformance (https://github.com/Consensys/teku/issues/9473)
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(
         dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }

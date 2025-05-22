@@ -238,6 +238,7 @@ public class DasCustodySyncTest {
   @Test
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
     // TODO-fulu this is too high and needs to be fixed
+    // (https://github.com/Consensys/teku/issues/9470)
     int maxAverageColumnDbReadsPerSlot = 400;
     int maxAverageBlockDbReadsPerSlot = 400;
 
