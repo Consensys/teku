@@ -24,8 +24,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -72,14 +72,15 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
     return operationSelector.createBlobSidecarsSelector().apply(blockContainer);
   }
 
-  private BlockContents createBlockContents(
+  private BlockContentsDeneb createBlockContents(
       final BeaconBlock block, final BlobsBundle blobsBundle) {
     return getBlockContentsSchema(block.getSlot())
         .create(block, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 
-  private BlockContentsSchema getBlockContentsSchema(final UInt64 slot) {
-    return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getBlockContentsSchema();
+  private BlockContentsSchemaDeneb getBlockContentsSchema(final UInt64 slot) {
+    return (BlockContentsSchemaDeneb)
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlockContentsSchema();
   }
 }

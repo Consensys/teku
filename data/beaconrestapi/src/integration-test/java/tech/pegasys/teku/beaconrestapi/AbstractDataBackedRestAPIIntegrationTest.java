@@ -80,6 +80,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -217,6 +218,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .spec(spec)
             .recentChainData(recentChainData)
             .combinedChainDataClient(combinedChainDataClient)
+            .blobSidecarReconstructionProvider(mock(BlobSidecarReconstructionProvider.class))
             .p2pNetwork(eth2P2PNetwork)
             .syncService(syncService)
             .validatorApiChannel(validatorApiChannel)

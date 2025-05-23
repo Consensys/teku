@@ -230,7 +230,7 @@ public class DataColumnSidecarsByRootMessageHandler
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
               if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
                   combinedChainDataClient.getStore(), requestedEpoch)
-              // TODO uncomment when sync by range is ready
+              // TODO-fulu uncomment when sync by range is ready
               // https://github.com/Consensys/teku/issues/9448
               /* || requestedEpoch.isLessThan(finalizedEpoch)*/ ) {
                 throw new RpcException(

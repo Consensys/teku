@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -63,11 +65,13 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       "forkchoice_updated_with_attributesV3";
   public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
   public static final String GET_PAYLOAD_V4_METHOD = "get_payloadV4";
+  public static final String GET_PAYLOAD_V5_METHOD = "get_payloadV5";
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
   public static final String NEW_PAYLOAD_V4_METHOD = "new_payloadV4";
   public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
   public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
   public static final String GET_BLOBS_V1_METHOD = "get_blobs_versionV1";
+  public static final String GET_BLOBS_V2_METHOD = "get_blobs_versionV2";
 
   private final ExecutionEngineClient delegate;
 
@@ -115,6 +119,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   @Override
   public SafeFuture<Response<GetPayloadV4Response>> getPayloadV4(final Bytes8 payloadId) {
     return countRequest(() -> delegate.getPayloadV4(payloadId), GET_PAYLOAD_V4_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<GetPayloadV5Response>> getPayloadV5(final Bytes8 payloadId) {
+    return countRequest(() -> delegate.getPayloadV5(payloadId), GET_PAYLOAD_V5_METHOD);
   }
 
   @Override
@@ -202,5 +211,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(
       final List<VersionedHash> blobVersionedHashes) {
     return countRequest(() -> delegate.getBlobsV1(blobVersionedHashes), GET_BLOBS_V1_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<List<BlobAndProofV2>>> getBlobsV2(
+      final List<VersionedHash> blobVersionedHashes) {
+    return countRequest(() -> delegate.getBlobsV2(blobVersionedHashes), GET_BLOBS_V2_METHOD);
   }
 }

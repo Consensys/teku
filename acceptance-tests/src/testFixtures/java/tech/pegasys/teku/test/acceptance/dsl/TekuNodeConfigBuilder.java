@@ -275,12 +275,10 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withNetwork(final URL networkYaml, final String networkName)
-      throws Exception {
-    LOG.debug("Network={}", networkName);
+  public TekuNodeConfigBuilder withNetwork(final URL networkYaml) throws Exception {
     LOG.debug("Copy Network from URL {}", networkYaml);
     configMap.put("network", NETWORK_FILE_PATH);
-    configFileMap.put(copyToTmpFile(networkYaml), NETWORK_FILE_PATH);
+    configFileMap.put(Node.copyToTmpFile(networkYaml, ".yaml"), NETWORK_FILE_PATH);
     return this;
   }
 
@@ -625,6 +623,24 @@ public class TekuNodeConfigBuilder {
   public TekuNodeConfigBuilder withGraffiti(final String graffiti) {
     LOG.debug("validators-graffiti: {}", graffiti);
     configMap.put("validators-graffiti", graffiti);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withLogLevel(final String logLevel) {
+    LOG.debug("logging: {}", logLevel);
+    configMap.put("logging", logLevel);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withGossipScoringEnabled(final boolean gossipScoringEnabled) {
+    LOG.debug("Xp2p-gossip-scoring-enabled: {}", gossipScoringEnabled);
+    configMap.put("Xp2p-gossip-scoring-enabled", gossipScoringEnabled);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasExtraCustodyGroupCount(final int extraCustodySubnetCount) {
+    LOG.debug("Xdas-extra-custody-group-count: {}", extraCustodySubnetCount);
+    configMap.put("Xdas-extra-custody-group-count", extraCustodySubnetCount);
     return this;
   }
 

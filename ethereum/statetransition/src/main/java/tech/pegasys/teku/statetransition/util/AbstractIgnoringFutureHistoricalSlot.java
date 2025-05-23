@@ -30,7 +30,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
  *
  * <p>- handling pruning calculation logic based on slot finalization
  */
-abstract class AbstractIgnoringFutureHistoricalSlot
+public abstract class AbstractIgnoringFutureHistoricalSlot
     implements SlotEventsChannel, FinalizedCheckpointChannel {
   public static final UInt64 PRUNE_SLOT = UInt64.ONE;
   private final Spec spec;
@@ -72,7 +72,7 @@ abstract class AbstractIgnoringFutureHistoricalSlot
     this.latestFinalizedSlot = checkpoint.getEpochStartSlot(spec);
   }
 
-  abstract void prune(UInt64 slotLimit);
+  protected abstract void prune(UInt64 slotLimit);
 
   protected UInt64 getCurrentSlot() {
     return currentSlot;

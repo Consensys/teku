@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BlockContentsSupplier extends DataStructureUtilSupplier<BlockContents> {
+public class BlockContentsSupplier extends DataStructureUtilSupplier<BlockContainer> {
 
   public BlockContentsSupplier() {
     super(DataStructureUtil::randomBlockContents, SpecMilestone.DENEB);

@@ -327,6 +327,16 @@ public class P2POptions {
   private boolean subscribeAllSubnetsEnabled = P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
 
   @Option(
+      names = {"--p2p-subscribe-all-custody-subnets-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean subscribeAllCustodySubnetsEnabled =
+      P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
+
+  @Option(
       names = {"--Xp2p-gossip-scoring-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -454,6 +464,14 @@ public class P2POptions {
   private int floodPublishMaxMessageSizeThreshold =
       GossipConfig.DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
 
+  @Option(
+      names = {"--Xdas-extra-custody-group-count"},
+      paramLabel = "<NUMBER>",
+      description = "Number of extra custody groups",
+      arity = "1",
+      hidden = true)
+  private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -508,6 +526,7 @@ public class P2POptions {
         .p2p(
             b -> {
               b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                  .subscribeAllCustodySubnetsEnabled(subscribeAllCustodySubnetsEnabled)
                   .batchVerifyMaxThreads(batchVerifyMaxThreads)
                   .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
                   .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
@@ -518,7 +537,8 @@ public class P2POptions {
                   .allTopicsFilterEnabled(allTopicsFilterEnabled)
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
-                  .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled);
+                  .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
+                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

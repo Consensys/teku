@@ -40,8 +40,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -56,7 +58,7 @@ public class BlobSidecarSelectorFactoryTest {
   private final List<BlobSidecar> blobSidecars = data.randomBlobSidecars(3);
 
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory =
-      new BlobSidecarSelectorFactory(spec, client);
+      new BlobSidecarSelectorFactory(spec, client, mock(BlobSidecarReconstructionProvider.class));
 
   @Test
   public void headSelector_shouldGetHeadBlobSidecars()
@@ -281,6 +283,57 @@ public class BlobSidecarSelectorFactoryTest {
     } else {
       verify(client, never()).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
     }
+  }
+
+  @Test
+  public void shouldForwardRequestsToReconstructionProviderAfterFulu()
+      throws InterruptedException, ExecutionException {
+    final BlobSidecarReconstructionProvider blobSidecarReconstructionProviderMock =
+        mock(BlobSidecarReconstructionProvider.class);
+    final BlobSidecarSelectorFactory blobSidecarSelectorFactoryFulu =
+        new BlobSidecarSelectorFactory(
+            TestSpecFactory.createMinimalFulu(), client, blobSidecarReconstructionProviderMock);
+
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(100);
+
+    when(client.getChainHead()).thenReturn(Optional.of(ChainHead.create(blockAndState)));
+    when(blobSidecarReconstructionProviderMock.reconstructBlobSidecars(
+            blockAndState.getSlotAndBlockRoot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<List<BlobSidecar>> result =
+        blobSidecarSelectorFactoryFulu
+            .headSelector()
+            .getBlobSidecars(indices)
+            .get()
+            .map(ObjectAndMetaData::getData);
+    assertThat(result).hasValue(blobSidecars);
+    verify(blobSidecarReconstructionProviderMock)
+        .reconstructBlobSidecars(any(SlotAndBlockRoot.class), anyList());
+  }
+
+  @Test
+  public void shouldForwardSlotSelectorRequestsToReconstructionProviderAfterFulu()
+      throws InterruptedException, ExecutionException {
+    final BlobSidecarReconstructionProvider blobSidecarReconstructionProviderMock =
+        mock(BlobSidecarReconstructionProvider.class);
+    final BlobSidecarSelectorFactory blobSidecarSelectorFactoryFulu =
+        new BlobSidecarSelectorFactory(
+            TestSpecFactory.createMinimalFulu(), client, blobSidecarReconstructionProviderMock);
+
+    when(client.isFinalized(block.getSlot())).thenReturn(true);
+    when(blobSidecarReconstructionProviderMock.reconstructBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<List<BlobSidecar>> result =
+        blobSidecarSelectorFactoryFulu
+            .slotSelector(block.getSlot())
+            .getBlobSidecars(indices)
+            .get()
+            .map(ObjectAndMetaData::getData);
+    assertThat(result).hasValue(blobSidecars);
+    verify(blobSidecarReconstructionProviderMock)
+        .reconstructBlobSidecars(any(UInt64.class), anyList());
   }
 
   @Test

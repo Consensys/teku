@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -135,7 +136,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
   /** Unlikely the {@link BlobSchema} to change with upcoming forks */
   @Override
-  public SafeFuture<List<BlobAndProof>> engineGetBlobs(
+  public SafeFuture<List<BlobAndProof>> engineGetBlobsV1(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
     return executionEngineClient
         .getBlobsV1(blobVersionedHashes)
@@ -150,7 +151,28 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
                       blobAndProofV1 ->
                           blobAndProofV1 == null
                               ? null
-                              : blobAndProofV1.asInternalBlobsAndProofs(blobSchema))
+                              : blobAndProofV1.asInternalBlobAndProof(blobSchema))
+                  .toList();
+            });
+  }
+
+  @Override
+  public SafeFuture<List<BlobAndCellProofs>> engineGetBlobsV2(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    return executionEngineClient
+        .getBlobsV2(blobVersionedHashes)
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            response -> {
+              final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+              final BlobSchema blobSchema =
+                  SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobSchema();
+              return response.stream()
+                  .map(
+                      blobAndProofV2 ->
+                          blobAndProofV2 == null
+                              ? null
+                              : blobAndProofV2.asInternalBlobAndProofs(blobSchema))
                   .toList();
             });
   }

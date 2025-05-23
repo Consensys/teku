@@ -45,6 +45,8 @@
         "$ref" : "#/components/schemas/BlockContentsElectra"
       }, {
         "$ref" : "#/components/schemas/BlindedBeaconBlockElectra"
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsFulu"
       } ]
     }
   }

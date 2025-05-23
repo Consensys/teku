@@ -180,14 +180,14 @@ public class ElectraExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final SafeFuture<Response<List<BlobAndProofV1>>> dummyResponse =
         SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(responseData));
     when(executionEngineClient.getBlobsV1(versionedHashes)).thenReturn(dummyResponse);
-    final SafeFuture<List<BlobAndProof>> future = handler.engineGetBlobs(versionedHashes, slot);
+    final SafeFuture<List<BlobAndProof>> future = handler.engineGetBlobsV1(versionedHashes, slot);
     verify(executionEngineClient).getBlobsV1(versionedHashes);
     final BlobSchema blobSchema =
         spec.atSlot(slot).getSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSchema();
     assertThat(future)
         .isCompletedWithValue(
             responseData.stream()
-                .map(blobAndProofV1 -> blobAndProofV1.asInternalBlobsAndProofs(blobSchema))
+                .map(blobAndProofV1 -> blobAndProofV1.asInternalBlobAndProof(blobSchema))
                 .toList());
   }
 
