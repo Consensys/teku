@@ -621,7 +621,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       final BeaconState state,
       final UInt64 epoch,
       final Bytes32 epochSeed,
-      IntList activeValidatorIndices) {
+      final IntList activeValidatorIndices) {
     final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
     final int slotsPerEpoch = specConfigFulu.getSlotsPerEpoch();
     final List<Bytes32> seeds =

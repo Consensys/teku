@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySche
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.state.versions.fulu.ProposerLookahead;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
@@ -45,6 +47,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
   private final DataColumnSidecarsByRangeRequestMessage
           .DataColumnSidecarsByRangeRequestMessageSchema
       dataColumnSidecarsByRangeRequestMessageSchema;
+  private final ProposerLookahead.ProposerLookaheadSchema proposerLookaheadSchema;
 
   public SchemaDefinitionsFulu(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
@@ -58,6 +61,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
     this.dataColumnSidecarsByRangeRequestMessageSchema =
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA);
+    this.proposerLookaheadSchema = schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA);
   }
 
   public static SchemaDefinitionsFulu required(final SchemaDefinitions schemaDefinitions) {
@@ -97,6 +101,10 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
   public DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema
       getDataColumnSidecarsByRangeRequestMessageSchema() {
     return dataColumnSidecarsByRangeRequestMessageSchema;
+  }
+
+  public ProposerLookahead.ProposerLookaheadSchema getProposerLookaheadSchema() {
+    return proposerLookaheadSchema;
   }
 
   @Override

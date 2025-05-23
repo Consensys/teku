@@ -76,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
+import tech.pegasys.teku.spec.datastructures.state.versions.fulu.ProposerLookahead;
 
 public class SchemaTypes {
   // PHASE0
@@ -199,6 +200,8 @@ public class SchemaTypes {
           DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema>
       DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA =
           create("DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA");
+  public static final SchemaId<ProposerLookahead.ProposerLookaheadSchema>
+      PROPOSER_LOOKAHEAD_SCHEMA = create("PROPOSER_LOOKAHEAD_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

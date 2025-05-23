@@ -44,7 +44,7 @@ public interface BeaconStateFulu extends BeaconStateElectra {
 
   static void describeCustomFuluFields(
       final MoreObjects.ToStringHelper stringBuilder, final BeaconStateFulu state) {
-    BeaconStateFulu.describeCustomFuluFields(stringBuilder, state);
+    BeaconStateElectra.describeCustomElectraFields(stringBuilder, state);
     addItems(stringBuilder, "proposer_lookahead", state.getProposerLookahead());
   }
 
