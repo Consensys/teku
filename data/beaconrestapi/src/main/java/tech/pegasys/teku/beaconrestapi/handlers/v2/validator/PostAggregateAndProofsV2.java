@@ -25,7 +25,9 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -36,7 +38,11 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfArrayJsonRequestContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -47,13 +53,17 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
   private final ValidatorDataProvider provider;
 
   public PostAggregateAndProofsV2(
-      final DataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
-    this(provider.getValidatorDataProvider(), schemaDefinitionCache);
+      final DataProvider provider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    this(provider.getValidatorDataProvider(), spec, schemaDefinitionCache);
   }
 
   public PostAggregateAndProofsV2(
-      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(schemaDefinitionCache));
+      final ValidatorDataProvider provider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    super(createMetadata(spec, schemaDefinitionCache));
     this.provider = provider;
   }
 
@@ -75,7 +85,7 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
   }
 
   private static EndpointMetadata createMetadata(
-      final SchemaDefinitionCache schemaDefinitionCache) {
+      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
 
     final BiPredicate<SignedAggregateAndProof, SpecMilestone>
         signedAggregateAndProofSchemaPredicate =
@@ -101,6 +111,24 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedAggregateAndProofSchema);
 
+    final BiFunction<Bytes, Optional<String>, List<SignedAggregateAndProof>>
+        milestoneSpecificOctetStreamParser =
+            (bytes, headerConsensusVersion) ->
+                headerBasedSelector(
+                    schemaDefinitionCache,
+                    headerConsensusVersion,
+                    (milestone, schemaDefinitions) -> {
+                      final SpecConfig specConfig = spec.forMilestone(milestone).getConfig();
+                      return SszListSchema.create(
+                              schemaDefinitionCache
+                                  .getSchemaDefinition(milestone)
+                                  .getSignedAggregateAndProofSchema(),
+                              (long) specConfig.getMaxCommitteesPerSlot()
+                                  * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE)
+                          .sszDeserialize(bytes)
+                          .asList();
+                    });
+
     return EndpointMetadata.post(ROUTE)
         .operationId("publishAggregateAndProofsV2")
         .summary("Publish multiple aggregate and proofs")
@@ -109,7 +137,8 @@ public class PostAggregateAndProofsV2 extends RestApiEndpoint {
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             SerializableTypeDefinition.listOf(signedAggregateAndProofSchemaDefinition),
-            aggregateAndProofBodySelector)
+            aggregateAndProofBodySelector,
+            milestoneSpecificOctetStreamParser)
         .headerRequired(
             ETH_CONSENSUS_VERSION_TYPE.withDescription(
                 "Version of the aggregate and proofs being submitted."))

@@ -264,9 +264,17 @@ public class MatchingDataAttestationGroupV2 {
     checkArgument(
         committeeIndex.isPresent() || !includedValidators.requiresCommitteeBits(),
         "Committee index must be present if committee bits are required");
+
+    // we don't care about committeeIndex in pre-Electra, since attestationData has been already
+    // determined by
+    // attestation_data_root parameter
+    final Optional<UInt64> actualCommitteeIndex =
+        includedValidators.requiresCommitteeBits() ? committeeIndex : Optional.empty();
+
     return StreamSupport.stream(
             spliterator(
-                timeLimitNanos, aggregationProductionCandidatesStreamSupplier(committeeIndex)),
+                timeLimitNanos,
+                aggregationProductionCandidatesStreamSupplier(actualCommitteeIndex)),
             false)
         .map(
             pooledAttestation -> new PooledAttestationWithData(attestationData, pooledAttestation));

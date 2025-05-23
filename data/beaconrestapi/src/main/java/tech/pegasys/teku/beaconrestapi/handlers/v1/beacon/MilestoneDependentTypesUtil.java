@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -95,20 +96,28 @@ public class MilestoneDependentTypesUtil {
       final Map<String, String> headers,
       final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
-    if (!headers.containsKey(HEADER_CONSENSUS_VERSION)) {
+    return headerBasedSelector(
+        schemaDefinitionCache,
+        Optional.ofNullable(headers.get(HEADER_CONSENSUS_VERSION)),
+        (__, schemaDefinitions) -> getSchema.apply(schemaDefinitions).getJsonTypeDefinition());
+  }
+
+  public static <Y> Y headerBasedSelector(
+      final SchemaDefinitionCache schemaDefinitionCache,
+      final Optional<String> headerConsensusVersion,
+      final BiFunction<SpecMilestone, SchemaDefinitions, Y> parser) {
+    if (headerConsensusVersion.isEmpty()) {
       throw new BadRequestException(
           String.format("Missing required header value for (%s)", HEADER_CONSENSUS_VERSION));
     }
     try {
-      final SpecMilestone milestone = SpecMilestone.forName(headers.get(HEADER_CONSENSUS_VERSION));
-      return getSchema
-          .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
-          .getJsonTypeDefinition();
-    } catch (Exception e) {
+      final SpecMilestone milestone = SpecMilestone.forName(headerConsensusVersion.get());
+      return parser.apply(milestone, schemaDefinitionCache.getSchemaDefinition(milestone));
+    } catch (Exception __) {
       throw new BadRequestException(
           String.format(
               "Invalid value for (%s) header: %s",
-              HEADER_CONSENSUS_VERSION, headers.get(HEADER_CONSENSUS_VERSION)));
+              HEADER_CONSENSUS_VERSION, headerConsensusVersion.get()));
     }
   }
 

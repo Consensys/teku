@@ -61,7 +61,7 @@ public class PostAggregateAndProofsV2Test extends AbstractMigratedBeaconHandlerT
     dataStructureUtil = new DataStructureUtil(spec);
     specMilestone = specContext.getSpecMilestone();
     setHandler(
-        new PostAggregateAndProofsV2(validatorDataProvider, new SchemaDefinitionCache(spec)));
+        new PostAggregateAndProofsV2(validatorDataProvider, spec, new SchemaDefinitionCache(spec)));
   }
 
   @TestTemplate

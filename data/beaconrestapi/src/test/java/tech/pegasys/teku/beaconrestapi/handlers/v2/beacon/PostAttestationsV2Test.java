@@ -61,7 +61,7 @@ public class PostAttestationsV2Test extends AbstractMigratedBeaconHandlerTest {
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
     schemaDefinitionCache = new SchemaDefinitionCache(spec);
-    setHandler(new PostAttestationsV2(validatorDataProvider, schemaDefinitionCache));
+    setHandler(new PostAttestationsV2(validatorDataProvider, spec, schemaDefinitionCache));
   }
 
   @TestTemplate

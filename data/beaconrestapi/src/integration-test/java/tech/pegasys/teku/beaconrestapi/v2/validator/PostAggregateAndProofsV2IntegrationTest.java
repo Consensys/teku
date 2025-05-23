@@ -37,10 +37,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -80,6 +82,36 @@ public class PostAggregateAndProofsV2IntegrationTest
         post(
             PostAggregateAndProofsV2.ROUTE,
             JsonUtil.serialize(aggregateAndProofs, aggregateAndProofsListTypeDef),
+            Collections.emptyMap(),
+            Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  @TestTemplate
+  void shouldPostAggregateAndProofsAsSsz() throws Exception {
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
+
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(
+            dataStructureUtil.randomSignedAggregateAndProof(),
+            dataStructureUtil.randomSignedAggregateAndProof());
+
+    final byte[] aggregateAndProofsBytes =
+        SszListSchema.create(
+                spec.getGenesisSchemaDefinitions().getSignedAggregateAndProofSchema(),
+                (long) specConfig.getMaxCommitteesPerSlot()
+                    * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE)
+            .createFromElements(aggregateAndProofs)
+            .sszSerialize()
+            .toArrayUnsafe();
+
+    final Response response =
+        postSsz(
+            PostAggregateAndProofsV2.ROUTE,
+            aggregateAndProofsBytes,
             Collections.emptyMap(),
             Optional.of(specMilestone.name().toLowerCase(Locale.ROOT)));
 
