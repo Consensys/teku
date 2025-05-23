@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class MilestoneBasedBlockFactory implements BlockFactory {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Map<SpecMilestone, BlockFactory> registeredFactories =
       new EnumMap<>(SpecMilestone.class);
@@ -85,7 +88,11 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
             randaoReveal,
             optionalGraffiti,
             requestedBuilderBoostFactor,
-            blockProductionPerformance);
+            blockProductionPerformance)
+        .whenException(
+            error -> {
+              LOG.debug("Error creating unsigned block for slot {}: {}", proposalSlot, error);
+            });
   }
 
   @Override
