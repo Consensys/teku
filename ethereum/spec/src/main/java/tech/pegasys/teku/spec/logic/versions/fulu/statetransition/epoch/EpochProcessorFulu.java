@@ -61,12 +61,13 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
   }
 
   /** process_proposer_lookahead */
+  @Override
   public void processProposerLookahead(final MutableBeaconState state) {
     final MutableBeaconStateFulu stateFulu = MutableBeaconStateFulu.required(state);
-    final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
+    //final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
     final int minSeedLookahead = specConfig.getMinSeedLookahead();
 
-    final int lastEpochStart = stateFulu.getProposerLookahead().size() - slotsPerEpoch;
+    //final int lastEpochStart = stateFulu.getProposerLookahead().size() - slotsPerEpoch;
     final List<UInt64> lastEpochProposers =
         stateAccessorsFulu
             .getBeaconProposerIndices(

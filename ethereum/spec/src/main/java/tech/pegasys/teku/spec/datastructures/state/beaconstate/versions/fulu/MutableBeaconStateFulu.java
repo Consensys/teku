@@ -45,6 +45,7 @@ public interface MutableBeaconStateFulu extends MutableBeaconStateElectra, Beaco
     set(fieldIndex, proposerLookahead);
   }
 
+  @Override
   default SszMutableUInt64List getProposerLookahead() {
     final int index = getSchema().getFieldIndex(PROPOSER_LOOKAHEAD);
     return getAnyByRef(index);

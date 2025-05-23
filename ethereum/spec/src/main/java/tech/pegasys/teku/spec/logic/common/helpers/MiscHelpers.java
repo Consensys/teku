@@ -450,7 +450,7 @@ public class MiscHelpers {
       final BeaconState state,
       final UInt64 epoch,
       final Bytes32 epochSeed,
-      IntList activeValidatorIndices) {
+      final IntList activeValidatorIndices) {
     throw new UnsupportedOperationException("No ProposerLookahead before Fulu");
   }
 
