@@ -84,6 +84,11 @@ public class AnchorPoint extends StateAndBlockSummary {
         SignedBeaconBlock.create(spec, genesisBlock, BLSSignature.empty());
 
     final Bytes32 genesisBlockRoot = genesisBlock.hashTreeRoot();
+    checkArgument(
+        genesisState.getLatestBlockHeader().getBodyRoot().equals(genesisBlock.getBodyRoot()),
+        String.format(
+            "Genesis block root %s does not match genesis state latest block root %s",
+            genesisState.getLatestBlockHeader().getBodyRoot(), genesisBlock.getBodyRoot()));
     final UInt64 genesisEpoch = spec.getCurrentEpoch(genesisState);
     final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
 

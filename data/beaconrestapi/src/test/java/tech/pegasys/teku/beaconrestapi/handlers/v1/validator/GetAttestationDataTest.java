@@ -44,7 +44,7 @@ class GetAttestationDataTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
-    setHandler(new GetAttestationData(validatorDataProvider));
+    setHandler(new GetAttestationData(validatorDataProvider, spec));
   }
 
   @Test

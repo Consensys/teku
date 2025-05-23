@@ -302,6 +302,23 @@ class MatchingDataAttestationGroupV2Test {
   }
 
   @TestTemplate
+  void streamForAggregationProduction_phase0_committeeIndexShouldBeIgnoredAndReturnAggregates(
+      final SpecContext specContext) {
+    specContext.assumeIsNotOneOf(ELECTRA);
+
+    final PooledAttestation att1 =
+        addPooledAttestation(1, 2); // Goes to attestationsByValidatorCount
+    final PooledAttestation att2 = addPooledAttestation(3); // Goes to attestationsByValidatorCount
+    final Attestation expected = aggregateAttestations(toAttestation(att1), toAttestation(att2));
+
+    verifyStreamForAggregationProductionContainsExactly(
+        UInt64.ONE,
+        toPooledAttestationWithData(
+            PooledAttestation.fromValidatableAttestation(
+                ValidatableAttestation.from(spec, expected, committeeSizes))));
+  }
+
+  @TestTemplate
   void streamForAggregationProduction_electra_noCommitteeIndex_throwsException(
       final SpecContext specContext) {
     specContext.assumeElectraActive();
