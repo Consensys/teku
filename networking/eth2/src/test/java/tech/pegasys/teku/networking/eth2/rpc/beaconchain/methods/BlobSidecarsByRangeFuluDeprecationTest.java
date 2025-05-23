@@ -100,8 +100,8 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
 
     // Requests for blobs from slots 9-30 where fulu forked in slot 16. Should return blobs from
     // slots 9-15 (inclusive)
-    UInt64 minSlotExpected = UInt64.valueOf(9);
-    UInt64 maxSlotExpected = UInt64.valueOf(15);
+    final UInt64 minSlotExpected = UInt64.valueOf(9);
+    final UInt64 maxSlotExpected = UInt64.valueOf(15);
     runTestWith(startSlot, count, currentSlot, fuluForkEpoch, minSlotExpected, maxSlotExpected);
   }
 
@@ -116,8 +116,8 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
 
     // Requests for blobs from slots 9-30 where fulu forked in slot 16. Should return blobs from
     // slots 9-15 (inclusive)
-    UInt64 minSlotExpected = UInt64.valueOf(9);
-    UInt64 maxSlotExpected = UInt64.valueOf(15);
+    final UInt64 minSlotExpected = UInt64.valueOf(9);
+    final UInt64 maxSlotExpected = UInt64.valueOf(15);
     runTestWith(startSlot, count, currentSlot, fuluForkEpoch, minSlotExpected, maxSlotExpected);
   }
 
@@ -132,8 +132,28 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(fuluForkEpoch.plus(10)); // slot 96
 
     // Requests for blobs from slots 9-30 where fulu forked in slot 16. Should return no blobs.
-    UInt64 minSlotExpected = UInt64.MAX_VALUE;
-    UInt64 maxSlotExpected = UInt64.ZERO;
+    final UInt64 minSlotExpected = UInt64.MAX_VALUE;
+    final UInt64 maxSlotExpected = UInt64.ZERO;
+    runTestWith(startSlot, count, currentSlot, fuluForkEpoch, minSlotExpected, maxSlotExpected);
+  }
+
+  @Test
+  public void byRangeStartSlotTooOldButRecentEnoughEndSlotShouldSendResponses() {
+    // ELECTRA live since epoch 0, FULU forks at epoch 2
+    // Current slot 72 epoch 9, which is 7 epochs after fulu < 8 epochs configured to preserve blobs
+    // ->
+    // But request start is slot 1, which is too old. Because count=16 the requested range is 1-17
+    // Of these, slots 8-15 are in the range pre-fulu.
+    final UInt64 startSlot = UInt64.ONE; // slot 9
+    final UInt64 count = slotsPerEpoch.times(2); // count = 16
+    // current epoch is fulu fork epoch + 10 (> minEpochsForBlobSidecarsRequests=8)
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(fuluForkEpoch.plus(7)); // slot 72
+
+    // Requests for blobs from slots 1-16 where fulu forked in slot 16. Should return blobs from
+    // slots 8-15.
+    // because 1-7 are too old.
+    final UInt64 minSlotExpected = UInt64.valueOf(8);
+    final UInt64 maxSlotExpected = UInt64.valueOf(15);
     runTestWith(startSlot, count, currentSlot, fuluForkEpoch, minSlotExpected, maxSlotExpected);
   }
 
@@ -245,8 +265,8 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
     Set<UInt64> results = actualSent.stream().map(BlobSidecar::getSlot).collect(Collectors.toSet());
     UInt64 minSlotReceived = results.stream().min(UInt64::compareTo).orElse(UInt64.MAX_VALUE);
     UInt64 maxSlotReceived = results.stream().max(UInt64::compareTo).orElse(UInt64.ZERO);
-    assertEquals(minSlotReceived, minSlotExpected);
-    assertEquals(maxSlotReceived, maxSlotExpected);
+    assertEquals(minSlotExpected, minSlotReceived);
+    assertEquals(maxSlotExpected, maxSlotReceived);
   }
 
   private List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> setupKeyAndHeaderList(
@@ -278,7 +298,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
   private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
     final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> headerAndKeys =
         setupKeyAndHeaderList(startSlot, maxSlot);
-    when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), any(), anyLong()))
+    when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), anyLong()))
         .thenAnswer(
             args ->
                 SafeFuture.completedFuture(
@@ -289,7 +309,9 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
                         .map(Pair::getValue)
                         .filter(
                             key ->
-                                key.getSlot().isLessThanOrEqualTo((UInt64) args.getArguments()[1]))
+                                key.getSlot().isLessThanOrEqualTo((UInt64) args.getArguments()[1])
+                                    && key.getSlot()
+                                        .isGreaterThanOrEqualTo((UInt64) args.getArguments()[0]))
                         .toList()));
     return headerAndKeys.stream()
         .map(this::setUpBlobSidecarDataForKey)

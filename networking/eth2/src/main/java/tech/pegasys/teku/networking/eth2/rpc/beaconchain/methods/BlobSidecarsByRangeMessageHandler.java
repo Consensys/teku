@@ -154,10 +154,15 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              final boolean availabilityRequiredAtStart =
-                  spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
-                      combinedChainDataClient.getStore(), requestEpoch);
-              if (availabilityRequiredAtStart
+              final UInt64 currentEpoch = spec.getCurrentEpoch(combinedChainDataClient.getStore());
+              final UInt64 lowestAllowedBlobSidecarEpoch =
+                  currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests());
+              final UInt64 adjustedStartsSlot =
+                  lowestAllowedBlobSidecarEpoch.isGreaterThan(requestEpoch)
+                      ? spec.computeStartSlotAtEpoch(lowestAllowedBlobSidecarEpoch)
+                      : startSlot;
+              if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+                      combinedChainDataClient.getStore(), requestEpoch)
                   && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotBeforeFulu)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
@@ -171,7 +176,8 @@ public class BlobSidecarsByRangeMessageHandler
                 final UInt64 hotSlotsCount = endSlotBeforeFulu.increment().minusMinZero(startSlot);
 
                 canonicalHotRoots =
-                    combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
+                    combinedChainDataClient.getAncestorRoots(
+                        adjustedStartsSlot, UInt64.ONE, hotSlotsCount);
 
                 // refresh finalized slot to avoid race condition that can occur if we finalize just
                 // before getting hot canonical roots
@@ -183,12 +189,12 @@ public class BlobSidecarsByRangeMessageHandler
               final RequestState initialState =
                   new RequestState(
                       callback,
-                      startSlot,
+                      adjustedStartsSlot,
                       endSlotBeforeFulu,
                       canonicalHotRoots,
                       finalizedSlot,
                       specConfig.getMaxRequestBlobSidecars());
-              if (message.getCount().isZero() || !availabilityRequiredAtStart) {
+              if (message.getCount().isZero()) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendBlobSidecars(initialState);

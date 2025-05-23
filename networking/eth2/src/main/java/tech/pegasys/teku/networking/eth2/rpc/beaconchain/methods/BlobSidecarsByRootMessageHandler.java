@@ -171,6 +171,7 @@ public class BlobSidecarsByRootMessageHandler
    *
    * <ul>
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
+   *   <li>The block root references a block before fulu fork epoch
    * </ul>
    */
   private SafeFuture<Optional<BlobSidecar>> validateMinAndMaxRequestEpoch(
