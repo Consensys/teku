@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -115,7 +114,7 @@ public class BeaconStateSchemaFulu
 
   public SszUInt64ListSchema<?> getProposerLookaheadSchema() {
     return (SszUInt64ListSchema<?>)
-            getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
+        getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
   }
 
   @Override

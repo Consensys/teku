@@ -19,6 +19,8 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToB
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.Bytes;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
@@ -31,9 +33,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import com.google.common.primitives.Bytes;
-import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,7 +50,6 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
@@ -620,23 +618,26 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
   }
 
-  //compute_proposer_indices
+  // compute_proposer_indices
   @Override
   public List<Integer> computeProposerIndices(
-      final BeaconState state, final UInt64 epoch, final Bytes32 epochSeed, IntList activeValidatorIndices) {
+      final BeaconState state,
+      final UInt64 epoch,
+      final Bytes32 epochSeed,
+      IntList activeValidatorIndices) {
     final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
     final int slotsPerEpoch = specConfigFulu.getSlotsPerEpoch();
-    final List<Bytes32> seeds = IntStream.range(0, slotsPerEpoch)
-        .mapToObj(
-            i -> {
-              return Hash.sha256(Bytes.concat(epochSeed.toArray(),uint64ToBytes(startSlot.plus(1)).toArray())
-                      );
-            })
+    final List<Bytes32> seeds =
+        IntStream.range(0, slotsPerEpoch)
+            .mapToObj(
+                i -> {
+                  return Hash.sha256(
+                      Bytes.concat(
+                          epochSeed.toArray(), uint64ToBytes(startSlot.plus(1)).toArray()));
+                })
+            .toList();
+    return seeds.stream()
+        .map(seed -> computeProposerIndex(state, activeValidatorIndices, seed))
         .toList();
-    return seeds.stream().map(seed -> computeProposerIndex(state,activeValidatorIndices, seed)).toList();
   }
-
-
-
-
 }

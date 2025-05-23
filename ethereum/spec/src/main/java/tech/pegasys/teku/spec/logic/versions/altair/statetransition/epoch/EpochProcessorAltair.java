@@ -150,7 +150,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
   @Override
   public void processProposerLookahead(final MutableBeaconState state) {
-    //Nothing to do
+    // Nothing to do
   }
 
   /**
