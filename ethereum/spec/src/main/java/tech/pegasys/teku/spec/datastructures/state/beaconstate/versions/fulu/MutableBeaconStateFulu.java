@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -46,7 +47,7 @@ public interface MutableBeaconStateFulu extends MutableBeaconStateElectra, Beaco
     set(fieldIndex, proposerLookahead);
   }
 
-  default SszMutableList<SszUInt64> getProposerLookahead() {
+  default SszMutableUInt64List getProposerLookahead() {
     final int index = getSchema().getFieldIndex(PROPOSER_LOOKAHEAD);
     return getAnyByRef(index);
   }
