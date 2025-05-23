@@ -26,6 +26,7 @@ import io.libp2p.mux.yamux.YamuxFrame;
 import io.libp2p.mux.yamux.YamuxId;
 import io.libp2p.mux.yamux.YamuxType;
 import io.libp2p.transport.implementation.ConnectionOverNetty;
+import io.libp2p.transport.implementation.NettyTransport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -53,7 +54,7 @@ public class MuxFirewallTest {
   private final ByteBuf data1K = Unpooled.buffer().writeBytes(new byte[1024]);
   private final EmbeddedChannel channel = new EmbeddedChannel();
   private final Connection connectionOverNetty =
-      new ConnectionOverNetty(channel, mock(Transport.class), true);
+      new ConnectionOverNetty(channel, mock(NettyTransport.class), true);
   private final List<String> passedMessages = new ArrayList<>();
 
   @BeforeEach
