@@ -50,11 +50,11 @@ public class SignedBlockContentsSchemaFulu
             FIELD_KZG_PROOFS,
             SszListSchema.create(
                 SszKZGProofSchema.INSTANCE,
-                (long) specConfig.getMaxBlobsPerBlock() * FIELD_ELEMENTS_PER_BLOB)),
+                (long) specConfig.getMaxBlobCommitmentsPerBlock() * FIELD_ELEMENTS_PER_BLOB)),
         namedSchema(
             FIELD_BLOBS,
             SszListSchema.create(
-                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobsPerBlock())));
+                schemaRegistry.get(BLOB_SCHEMA), specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
   @Override
