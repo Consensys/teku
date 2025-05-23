@@ -36,7 +36,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -119,8 +117,6 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 @TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregateAttestationValidatorTest {
 
-  private static final List<BLSKeyPair> VALIDATOR_KEYS =
-      new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 1024);
   private Spec spec;
   private SpecVersion genesisSpec;
   private DataStructureUtil dataStructureUtil;
@@ -154,10 +150,15 @@ class AggregateAttestationValidatorTest {
     signedAggregateAndProofSchema =
         specContext.getSchemaDefinitions().getSignedAggregateAndProofSchema();
     aggregateAndProofSchema = specContext.getSchemaDefinitions().getAggregateAndProofSchema();
-    storageSystem = InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
+    storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(spec)
+            .numberOfValidators(1024)
+            .storageMode(StateStorageMode.ARCHIVE)
+            .build();
 
-    final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
-    chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
+    final ChainBuilder chainBuilder = storageSystem.chainBuilder();
+    chainUpdater = storageSystem.chainUpdater();
     generator = new AggregateGenerator(spec, chainBuilder.getValidatorKeys());
 
     attestationValidator = mock(AttestationValidator.class);

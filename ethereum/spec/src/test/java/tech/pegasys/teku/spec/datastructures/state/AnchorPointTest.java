@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class AnchorPointTest {
@@ -40,5 +41,16 @@ public class AnchorPointTest {
             () -> AnchorPoint.create(spec, checkpoint, blockAndState.getState(), Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Block must be at or prior to the start of the checkpoint epoch");
+  }
+
+  @Test
+  public void shouldDetectInvalidGenesisStateWithMismatchedBlockHeader() {
+    final BeaconState beaconState = dataStructureUtil.genesisBeaconState(12);
+    final BeaconState brokenGenesisState =
+        beaconState.updated(
+            s -> s.setLatestBlockHeader(dataStructureUtil.randomBeaconBlockHeader()));
+    assertThatThrownBy(() -> AnchorPoint.fromGenesisState(spec, brokenGenesisState))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("does not match genesis state latest block root");
   }
 }
