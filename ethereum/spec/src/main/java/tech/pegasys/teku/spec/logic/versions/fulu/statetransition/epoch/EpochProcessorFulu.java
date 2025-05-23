@@ -64,23 +64,28 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
   @Override
   public void processProposerLookahead(final MutableBeaconState state) {
     final MutableBeaconStateFulu stateFulu = MutableBeaconStateFulu.required(state);
-    //final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
+    final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
     final int minSeedLookahead = specConfig.getMinSeedLookahead();
+    final List<UInt64> proposerIndices =
+        stateFulu.getProposerLookahead().asListUnboxed().subList(slotsPerEpoch, (minSeedLookahead+1)*slotsPerEpoch);
 
-    //final int lastEpochStart = stateFulu.getProposerLookahead().size() - slotsPerEpoch;
-    final List<UInt64> lastEpochProposers =
+    final int lastEpochStart = stateFulu.getProposerLookahead().size() - slotsPerEpoch;
+
+    proposerIndices.addAll(
         stateAccessorsFulu
             .getBeaconProposerIndices(
                 state, beaconStateAccessors.getCurrentEpoch(state).plus(minSeedLookahead).plus(1))
             .stream()
             .map(UInt64::valueOf)
-            .toList();
+            .toList());
 
     final ProposerLookahead.ProposerLookaheadSchema proposerLookaheadSchema =
         SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema();
+
     final SszUInt64List proposerLookaheadList =
-        lastEpochProposers.stream()
+            proposerIndices.stream()
             .collect(proposerLookaheadSchema.getLookaheadSchema().collectorUnboxed());
-    stateFulu.getProposerLookahead().appendAll(proposerLookaheadList);
+
+    stateFulu.setProposerLookahead(proposerLookaheadList);
   }
 }
