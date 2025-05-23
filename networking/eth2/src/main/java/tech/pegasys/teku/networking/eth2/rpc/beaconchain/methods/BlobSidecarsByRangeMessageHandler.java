@@ -154,13 +154,6 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              final UInt64 currentEpoch = spec.getCurrentEpoch(combinedChainDataClient.getStore());
-              final UInt64 lowestAllowedBlobSidecarEpoch =
-                  currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests());
-              final UInt64 adjustedStartsSlot =
-                  lowestAllowedBlobSidecarEpoch.isGreaterThan(requestEpoch)
-                      ? spec.computeStartSlotAtEpoch(lowestAllowedBlobSidecarEpoch)
-                      : startSlot;
               if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestEpoch)
                   && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotBeforeFulu)) {
@@ -171,9 +164,18 @@ public class BlobSidecarsByRangeMessageHandler
               UInt64 finalizedSlot =
                   combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
 
+              final UInt64 currentEpoch = spec.getCurrentEpoch(combinedChainDataClient.getStore());
+              final UInt64 lowestAllowedBlobSidecarEpoch =
+                  currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests());
+              final UInt64 adjustedStartsSlot =
+                  lowestAllowedBlobSidecarEpoch.isGreaterThan(requestEpoch)
+                      ? spec.computeStartSlotAtEpoch(lowestAllowedBlobSidecarEpoch)
+                      : startSlot;
+
               final SortedMap<UInt64, Bytes32> canonicalHotRoots;
               if (endSlotBeforeFulu.isGreaterThan(finalizedSlot)) {
-                final UInt64 hotSlotsCount = endSlotBeforeFulu.increment().minusMinZero(startSlot);
+                final UInt64 hotSlotsCount =
+                    endSlotBeforeFulu.increment().minusMinZero(adjustedStartsSlot);
 
                 canonicalHotRoots =
                     combinedChainDataClient.getAncestorRoots(
