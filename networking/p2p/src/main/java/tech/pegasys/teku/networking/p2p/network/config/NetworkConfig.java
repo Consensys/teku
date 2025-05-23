@@ -47,9 +47,12 @@ public class NetworkConfig {
 
   public static final List<String> DEFAULT_P2P_INTERFACE = List.of("0.0.0.0");
   public static final int DEFAULT_P2P_PORT = 9000;
+  public static final int DEFAULT_P2P_QUIC_PORT = DEFAULT_P2P_PORT + 1;
   public static final int DEFAULT_P2P_PORT_IPV6 = 9090;
+  public static final int DEFAULT_P2P_QUIC_PORT_IPV6 = DEFAULT_P2P_PORT_IPV6 + 1;
   public static final boolean DEFAULT_YAMUX_ENABLED = false;
   public static final boolean DEFAULT_STRICT_CONFIG_LOADING_ENABLED = false;
+  public static final boolean DEFAULT_QUIC_ENABLED = false;
 
   private final GossipConfig gossipConfig;
   private final WireLogsConfig wireLogsConfig;
@@ -60,9 +63,14 @@ public class NetworkConfig {
   private final Optional<List<String>> advertisedIps;
   private final int listenPort;
   private final int listenPortIpv6;
+  private final int listenQuicPort;
+  private final int listenQuicPortIpv6;
   private final OptionalInt advertisedPort;
   private final OptionalInt advertisedPortIpv6;
+  private final OptionalInt advertisedQuicPort;
+  private final OptionalInt advertisedQuicPortIpv6;
   private final boolean yamuxEnabled;
+  private final boolean quicEnabled;
 
   private NetworkConfig(
       final boolean isEnabled,
@@ -73,20 +81,30 @@ public class NetworkConfig {
       final Optional<List<String>> advertisedIps,
       final int listenPort,
       final int listenPortIpv6,
+      final int listenQuicPort,
+      final int listenQuicPortIpv6,
       final OptionalInt advertisedPort,
       final OptionalInt advertisedPortIpv6,
-      final boolean yamuxEnabled) {
+      final OptionalInt advertisedQuicPort,
+      final OptionalInt advertisedQuicPortIpv6,
+      final boolean yamuxEnabled,
+      final boolean quicEnabled) {
     this.privateKeySource = privateKeySource;
     this.networkInterfaces = networkInterfaces;
     this.advertisedIps = advertisedIps;
     this.isEnabled = isEnabled;
     this.listenPort = listenPort;
     this.listenPortIpv6 = listenPortIpv6;
+    this.listenQuicPort = listenQuicPort;
+    this.listenQuicPortIpv6 = listenQuicPortIpv6;
     this.advertisedPort = advertisedPort;
     this.advertisedPortIpv6 = advertisedPortIpv6;
+    this.advertisedQuicPort = advertisedQuicPort;
+    this.advertisedQuicPortIpv6 = advertisedQuicPortIpv6;
     this.yamuxEnabled = yamuxEnabled;
     this.gossipConfig = gossipConfig;
     this.wireLogsConfig = wireLogsConfig;
+    this.quicEnabled = quicEnabled;
   }
 
   public static Builder builder() {
@@ -123,6 +141,14 @@ public class NetworkConfig {
     return listenPortIpv6;
   }
 
+  public int getListenQuicPort() {
+    return listenQuicPort;
+  }
+
+  public int getListenQuicPortIpv6() {
+    return listenQuicPortIpv6;
+  }
+
   public int getAdvertisedPort() {
     return advertisedPort.orElse(listenPort);
   }
@@ -131,8 +157,20 @@ public class NetworkConfig {
     return advertisedPortIpv6.orElse(listenPortIpv6);
   }
 
+  public int getAdvertisedQuicPort() {
+    return advertisedQuicPort.orElse(listenQuicPort);
+  }
+
+  public int getAdvertisedQuicPortIpv6() {
+    return advertisedQuicPortIpv6.orElse(listenQuicPortIpv6);
+  }
+
   public boolean isYamuxEnabled() {
     return yamuxEnabled;
+  }
+
+  public boolean isQuicEnabled() {
+    return quicEnabled;
   }
 
   public GossipConfig getGossipConfig() {
@@ -221,9 +259,14 @@ public class NetworkConfig {
     private Optional<List<String>> advertisedIps = Optional.empty();
     private int listenPort = DEFAULT_P2P_PORT;
     private int listenPortIpv6 = DEFAULT_P2P_PORT_IPV6;
+    private int listenQuicPort = DEFAULT_P2P_QUIC_PORT;
+    private int listenQuicPortIpv6 = DEFAULT_P2P_QUIC_PORT_IPV6;
     private OptionalInt advertisedPort = OptionalInt.empty();
     private OptionalInt advertisedPortIpv6 = OptionalInt.empty();
+    private OptionalInt advertisedQuicPort = OptionalInt.empty();
+    private OptionalInt advertisedQuicPortIpv6 = OptionalInt.empty();
     private boolean yamuxEnabled = DEFAULT_YAMUX_ENABLED;
+    private boolean quicEnabled = DEFAULT_QUIC_ENABLED;
 
     private Builder() {}
 
@@ -247,9 +290,14 @@ public class NetworkConfig {
           advertisedIps,
           listenPort,
           listenPortIpv6,
+          listenQuicPort,
+          listenQuicPortIpv6,
           advertisedPort,
           advertisedPortIpv6,
-          yamuxEnabled);
+          advertisedQuicPort,
+          advertisedQuicPortIpv6,
+          yamuxEnabled,
+          quicEnabled);
     }
 
     private Optional<PrivateKeySource> createFileKeySource() {
@@ -347,6 +395,18 @@ public class NetworkConfig {
       return this;
     }
 
+    public Builder listenQuicPort(final int listenQuicPort) {
+      validatePort(listenQuicPort, "--Xp2p-quic-port");
+      this.listenQuicPort = listenQuicPort;
+      return this;
+    }
+
+    public Builder listenQuicPortIpv6(final int listenQuicPortIpv6) {
+      validatePort(listenQuicPortIpv6, "--Xp2p-quic-port-ipv6");
+      this.listenQuicPortIpv6 = listenQuicPortIpv6;
+      return this;
+    }
+
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
       advertisedPort.ifPresent(port -> validatePort(port, "--p2p-advertised-port"));
@@ -361,8 +421,28 @@ public class NetworkConfig {
       return this;
     }
 
+    public Builder advertisedQuicPort(final OptionalInt advertisedQuicPort) {
+      checkNotNull(advertisedQuicPort);
+      advertisedQuicPort.ifPresent(port -> validatePort(port, "--Xp2p-advertised-quic-port"));
+      this.advertisedQuicPort = advertisedQuicPort;
+      return this;
+    }
+
+    public Builder advertisedQuicPortIpv6(final OptionalInt advertisedQuicPortIpv6) {
+      checkNotNull(advertisedQuicPortIpv6);
+      advertisedQuicPortIpv6.ifPresent(
+          port -> validatePort(port, "--Xp2p-advertised-quic-port-ipv6"));
+      this.advertisedQuicPortIpv6 = advertisedQuicPortIpv6;
+      return this;
+    }
+
     public Builder yamuxEnabled(final boolean yamuxEnabled) {
       this.yamuxEnabled = yamuxEnabled;
+      return this;
+    }
+
+    public Builder quicEnabled(final Boolean quicEnabled) {
+      this.quicEnabled = quicEnabled;
       return this;
     }
 
