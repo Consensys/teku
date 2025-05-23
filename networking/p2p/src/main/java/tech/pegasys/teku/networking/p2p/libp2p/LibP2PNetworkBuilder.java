@@ -31,12 +31,14 @@ import io.libp2p.etc.types.ByteArrayExtKt;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.Ping;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
+import io.libp2p.transport.quic.QuicTransport;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.io.IPVersionResolver;
@@ -113,23 +115,45 @@ public class LibP2PNetworkBuilder {
         advertisedIps.size() == 1 || advertisedIps.size() == 2,
         "The configured advertised IPs must be either 1 or 2");
     if (advertisedIps.size() == 1) {
-      advertisedAddresses =
-          Collections.singletonList(
-              MultiaddrUtil.fromInetSocketAddress(
-                  new InetSocketAddress(advertisedIps.get(0), config.getAdvertisedPort()), nodeId));
+      final Multiaddr advertisedAddr =
+          MultiaddrUtil.fromInetSocketAddress(
+              new InetSocketAddress(advertisedIps.getFirst(), config.getAdvertisedPort()), nodeId);
+      if (config.isQuicEnabled()) {
+        final Multiaddr advertisedQuicAddr =
+            MultiaddrUtil.fromInetSocketAddressAsQuic(
+                new InetSocketAddress(advertisedIps.getFirst(), config.getAdvertisedQuicPort()),
+                nodeId);
+        advertisedAddresses = List.of(advertisedAddr, advertisedQuicAddr);
+      } else {
+        advertisedAddresses = Collections.singletonList(advertisedAddr);
+      }
     } else {
       // IPv4 and IPv6 (dual-stack)
       advertisedAddresses =
           advertisedIps.stream()
-              .map(
+              .flatMap(
                   advertisedIp -> {
                     final int advertisedPort =
                         switch (IPVersionResolver.resolve(advertisedIp)) {
                           case IP_V4 -> config.getAdvertisedPort();
                           case IP_V6 -> config.getAdvertisedPortIpv6();
                         };
-                    return MultiaddrUtil.fromInetSocketAddress(
-                        new InetSocketAddress(advertisedIp, advertisedPort), nodeId);
+                    final Multiaddr advertisedAddr =
+                        MultiaddrUtil.fromInetSocketAddress(
+                            new InetSocketAddress(advertisedIp, advertisedPort), nodeId);
+                    if (config.isQuicEnabled()) {
+                      final int advertisedQuicPort =
+                          switch (IPVersionResolver.resolve(advertisedIp)) {
+                            case IP_V4 -> config.getAdvertisedQuicPort();
+                            case IP_V6 -> config.getAdvertisedQuicPortIpv6();
+                          };
+                      final Multiaddr advertisedQuicAddr =
+                          MultiaddrUtil.fromInetSocketAddressAsQuic(
+                              new InetSocketAddress(advertisedIp, advertisedQuicPort), nodeId);
+                      return Stream.of(advertisedAddr, advertisedQuicAddr);
+                    } else {
+                      return Stream.of(advertisedAddr);
+                    }
                   })
               .toList();
     }
@@ -138,8 +162,16 @@ public class LibP2PNetworkBuilder {
 
     final List<Integer> listenPorts =
         advertisedAddresses.size() == 2
-            ? List.of(config.getListenPort(), config.getListenPortIpv6())
-            : List.of(config.getListenPort());
+            ? config.isQuicEnabled()
+                ? List.of(
+                    config.getListenPort(),
+                    config.getListenPortIpv6(),
+                    config.getListenQuicPort(),
+                    config.getListenQuicPortIpv6())
+                : List.of(config.getListenPort(), config.getListenPortIpv6())
+            : config.isQuicEnabled()
+                ? List.of(config.getListenPort(), config.getListenQuicPort())
+                : List.of(config.getListenPort());
 
     return new LibP2PNetwork(
         host.getPrivKey(),
@@ -187,13 +219,20 @@ public class LibP2PNetworkBuilder {
     if (networkInterfaces.size() == 1) {
       final Multiaddr addr =
           MultiaddrUtil.fromInetSocketAddress(
-              new InetSocketAddress(networkInterfaces.get(0), config.getListenPort()));
-      listenAddrs = new String[] {addr.toString()};
+              new InetSocketAddress(networkInterfaces.getFirst(), config.getListenPort()));
+      if (config.isQuicEnabled()) {
+        final Multiaddr quicAddr =
+            MultiaddrUtil.fromInetSocketAddressAsQuic(
+                new InetSocketAddress(networkInterfaces.getFirst(), config.getListenQuicPort()));
+        listenAddrs = new String[] {addr.toString(), quicAddr.toString()};
+      } else {
+        listenAddrs = new String[] {addr.toString()};
+      }
     } else {
       // IPv4 and IPv6 (dual-stack)
       listenAddrs =
           networkInterfaces.stream()
-              .map(
+              .flatMap(
                   networkInterface -> {
                     final int listenPort =
                         switch (IPVersionResolver.resolve(networkInterface)) {
@@ -203,7 +242,19 @@ public class LibP2PNetworkBuilder {
                     final Multiaddr addr =
                         MultiaddrUtil.fromInetSocketAddress(
                             new InetSocketAddress(networkInterface, listenPort));
-                    return addr.toString();
+                    if (config.isQuicEnabled()) {
+                      final int listenQuicPort =
+                          switch (IPVersionResolver.resolve(networkInterface)) {
+                            case IP_V4 -> config.getListenQuicPort();
+                            case IP_V6 -> config.getListenQuicPortIpv6();
+                          };
+                      final Multiaddr quicAddr =
+                          MultiaddrUtil.fromInetSocketAddressAsQuic(
+                              new InetSocketAddress(networkInterface, listenQuicPort));
+                      return Stream.of(addr.toString(), quicAddr.toString());
+                    } else {
+                      return Stream.of(addr.toString());
+                    }
                   })
               .toArray(String[]::new);
     }
@@ -213,6 +264,9 @@ public class LibP2PNetworkBuilder {
         b -> {
           b.getIdentity().setFactory(() -> privKey);
           b.getTransports().add(TcpTransport::new);
+          if (config.isQuicEnabled()) {
+            b.getSecureTransports().add(QuicTransport::Ecdsa);
+          }
           b.getSecureChannels().add(NoiseXXSecureChannel::new);
 
           // Yamux must take precedence during negotiation
