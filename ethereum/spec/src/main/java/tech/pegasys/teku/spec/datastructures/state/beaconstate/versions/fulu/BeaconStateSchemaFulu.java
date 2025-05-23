@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
@@ -56,7 +57,7 @@ public class BeaconStateSchemaFulu
                             * specConfig.getSlotsPerEpoch())));
 
     return Stream.concat(
-            BeaconStateSchemaDeneb.getUniqueFields(specConfig, schemaRegistry).stream(),
+            BeaconStateSchemaElectra.getUniqueFields(specConfig, schemaRegistry).stream(),
             newFields.stream())
         .toList();
   }
@@ -110,6 +111,11 @@ public class BeaconStateSchemaFulu
   public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
     return (SszListSchema<HistoricalSummary, ?>)
         getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
+  }
+
+  public SszUInt64ListSchema<?> getProposerLookaheadSchema() {
+    return (SszUInt64ListSchema<?>)
+            getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
   }
 
   @Override
