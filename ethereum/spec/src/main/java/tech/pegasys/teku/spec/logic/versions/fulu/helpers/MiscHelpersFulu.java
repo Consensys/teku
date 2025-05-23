@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.math.BigDecimal;
@@ -30,6 +31,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import com.google.common.primitives.Bytes;
+import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -614,20 +618,22 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   //compute_proposer_indices
-  public List<UInt64> computeProposerIndices(
-      final BeaconState state, final UInt64 epoch) {
-    final Bytes32 epochSeed = state.getSeed(state,epoch, Domain.BEACON_PROPOSER);
+  @Override
+  public List<Integer> computeProposerIndices(
+      final BeaconState state, final UInt64 epoch, final Bytes32 epochSeed, IntList activeValidatorIndices) {
     final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
     final int slotsPerEpoch = specConfigFulu.getSlotsPerEpoch();
     final List<Bytes32> seeds = IntStream.range(0, slotsPerEpoch)
         .mapToObj(
             i -> {
-              return Hash.sha256(
-                  Hash.sha256(epochSeed,startSlot.plus(i))
+              return Hash.sha256(Bytes.concat(epochSeed.toArray(),uint64ToBytes(startSlot.plus(1)).toArray())
                       );
             })
-        .collect(Collectors.toList());
+        .toList();
+    return seeds.stream().map(seed -> computeProposerIndex(state,activeValidatorIndices, seed)).toList();
   }
+
+
 
 
 }
