@@ -21,3 +21,4 @@
 - Add `/teku/v1/admin/add_peer` endpoint to allow adding static peers via the REST API.
 
 ### Bug Fixes
+ - Added an error if the genesis state has invalid data in its latest block header.

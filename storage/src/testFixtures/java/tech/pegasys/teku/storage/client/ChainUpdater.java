@@ -117,7 +117,7 @@ public class ChainUpdater {
     return initializeGenesis(signDeposits, Optional.of(executionPayloadHeader));
   }
 
-  public SignedBlockAndState initializeGenesis(
+  private SignedBlockAndState initializeGenesis(
       final boolean signDeposits, final Optional<ExecutionPayloadHeader> payloadHeader) {
     final SignedBlockAndState genesis =
         chainBuilder.generateGenesis(UInt64.ZERO, signDeposits, payloadHeader);
