@@ -446,6 +446,10 @@ public class MiscHelpers {
     throw new UnsupportedOperationException("No Blob KZG Commitments before Deneb");
   }
 
+  public List<Integer> computeProposerIndices(final BeaconState state, final UInt64 epoch, final Bytes32 epochSeed, IntList activeValidatorIndices){
+    throw new UnsupportedOperationException("No ProposerLookahead before Fulu");
+  }
+
   public UInt64 getMaxEffectiveBalance(final Validator validator) {
     return specConfig.getMaxEffectiveBalance();
   }
