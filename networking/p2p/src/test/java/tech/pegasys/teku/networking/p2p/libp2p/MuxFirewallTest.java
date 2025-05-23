@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import io.libp2p.core.Connection;
-import io.libp2p.core.transport.Transport;
 import io.libp2p.mux.mplex.MplexFlag;
 import io.libp2p.mux.mplex.MplexFrame;
 import io.libp2p.mux.mplex.MplexId;
