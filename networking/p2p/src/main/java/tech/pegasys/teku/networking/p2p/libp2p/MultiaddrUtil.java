@@ -38,6 +38,16 @@ public class MultiaddrUtil {
     return fromInetSocketAddress(address, "tcp");
   }
 
+  static Multiaddr fromInetSocketAddressAsQuic(final InetSocketAddress address) {
+    final String addrString =
+        String.format(
+            "/%s/%s/udp/%d/quic-v1",
+            protocol(address.getAddress()),
+            address.getAddress().getHostAddress(),
+            address.getPort());
+    return Multiaddr.fromString(addrString);
+  }
+
   static Multiaddr fromInetSocketAddress(final InetSocketAddress address, final String protocol) {
     final String addrString =
         String.format(
@@ -52,6 +62,11 @@ public class MultiaddrUtil {
   public static Multiaddr fromInetSocketAddress(
       final InetSocketAddress address, final NodeId nodeId) {
     return addPeerId(fromInetSocketAddress(address, "tcp"), nodeId);
+  }
+
+  public static Multiaddr fromInetSocketAddressAsQuic(
+      final InetSocketAddress address, final NodeId nodeId) {
+    return addPeerId(fromInetSocketAddressAsQuic(address), nodeId);
   }
 
   private static Multiaddr addPeerId(final Multiaddr addr, final NodeId nodeId) {
