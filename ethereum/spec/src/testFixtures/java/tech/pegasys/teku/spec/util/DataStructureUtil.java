@@ -78,6 +78,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -153,6 +154,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
@@ -207,6 +209,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -1941,6 +1944,22 @@ public final class DataStructureUtil {
         optimisticHead);
   }
 
+  public BeaconState genesisBeaconState(final int validatorCount) {
+    final List<BLSKeyPair> keyPairs = new ArrayList<>();
+    for (int i = 0; i < validatorCount; i++) {
+      keyPairs.add(randomKeyPair());
+    }
+    final List<DepositData> initialDepositData =
+        new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
+            .createDeposits(keyPairs, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
+
+    final List<Deposit> deposits = initialDepositData.stream().map(Deposit::new).toList();
+    final BeaconState initialState =
+        spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
+    return initialState.updated(
+        state -> state.setGenesisTime(new SystemTimeProvider().getTimeInSeconds()));
+  }
+
   public BeaconState randomBeaconState() {
     return randomBeaconState(100, 100);
   }
@@ -2025,6 +2044,9 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {
+    if (slot.isZero()) {
+      return genesisBeaconState(100);
+    }
     return randomBeaconState().updated(state -> state.setSlot(slot));
   }
 
