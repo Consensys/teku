@@ -107,7 +107,7 @@ public class DasCustodySyncTest {
 
   @Test
   void syncFromScratchShouldComplete() {
-    int startSlot = 1000;
+    final int startSlot = 1000;
     for (int slot = 0; slot <= startSlot; slot++) {
       addBlockAndSidecars(slot);
     }
@@ -143,7 +143,7 @@ public class DasCustodySyncTest {
     advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
-    List<DataColumnSlotAndIdentifier> missingColumns =
+    final List<DataColumnSlotAndIdentifier> missingColumns =
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
@@ -154,10 +154,10 @@ public class DasCustodySyncTest {
 
   @Test
   void emptyBlockSeriesShouldNotPreventSyncing() {
-    int startSlot = 1000;
+    final int startSlot = 1000;
 
     for (int slot = 0; slot <= startSlot; slot++) {
-      SignedBeaconBlock block = custodyStand.createBlockWithoutBlobs(slot);
+      final SignedBeaconBlock block = custodyStand.createBlockWithoutBlobs(slot);
       custodyStand.blockResolver.addBlock(block.getMessage());
     }
 
@@ -190,7 +190,7 @@ public class DasCustodySyncTest {
     advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
-    List<DataColumnSlotAndIdentifier> missingColumns =
+    final List<DataColumnSlotAndIdentifier> missingColumns =
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
@@ -198,7 +198,7 @@ public class DasCustodySyncTest {
 
   @Test
   void emptySlotSeriesShouldNotPreventSyncing() {
-    int startSlot = 1000;
+    final int startSlot = 1000;
 
     custodyStand.setCurrentSlot(1000);
     custodyStand.subscribeToSlotEvents(dasCustodySync);
@@ -211,7 +211,7 @@ public class DasCustodySyncTest {
       addBlockAndSidecars(slot);
       custodyStand.incCurrentSlot(1);
       if (slot % epochLength == 0) {
-        int epoch = slot / epochLength;
+        final int epoch = slot / epochLength;
         custodyStand.setFinalizedEpoch(epoch - 2);
       }
       advanceTimeGraduallyUntilAllDone();
@@ -229,7 +229,7 @@ public class DasCustodySyncTest {
 
     printAndResetStats();
 
-    List<DataColumnSlotAndIdentifier> missingColumns =
+    final List<DataColumnSlotAndIdentifier> missingColumns =
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
@@ -239,8 +239,8 @@ public class DasCustodySyncTest {
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
     // TODO-fulu this is too high and needs to be fixed
     // (https://github.com/Consensys/teku/issues/9470)
-    int maxAverageColumnDbReadsPerSlot = 400;
-    int maxAverageBlockDbReadsPerSlot = 400;
+    final int maxAverageColumnDbReadsPerSlot = 400;
+    final int maxAverageBlockDbReadsPerSlot = 400;
 
     custodyStand.setCurrentSlot(0);
     custodyStand.subscribeToSlotEvents(dasCustodySync);
@@ -292,11 +292,11 @@ public class DasCustodySyncTest {
 
     advanceTimeGraduallyUntilAllDone();
 
-    List<DataColumnSidecarRetrieverStub.RetrieveRequest> retrieveRequests_1_0 =
+    final List<DataColumnSidecarRetrieverStub.RetrieveRequest> retrieveRequests_1_0 =
         new ArrayList<>(retrieverStub.requests);
     assertThat(retrieveRequests_1_0).isNotEmpty();
 
-    SignedBeaconBlock block_1_1 = custodyStand.createBlockWithBlobs(1);
+    final SignedBeaconBlock block_1_1 = custodyStand.createBlockWithBlobs(1);
     custodyStand.blockResolver.addBlock(block_1_1.getMessage());
     custodyStand.setCurrentSlot(7);
 
@@ -310,9 +310,9 @@ public class DasCustodySyncTest {
   }
 
   private void addBlockAndSidecars(final int slot) {
-    SignedBeaconBlock block = custodyStand.createBlockWithBlobs(slot);
+    final SignedBeaconBlock block = custodyStand.createBlockWithBlobs(slot);
     custodyStand.blockResolver.addBlock(block.getMessage());
-    List<DataColumnSidecar> columnSidecars = custodyStand.createCustodyColumnSidecars(block);
+    final List<DataColumnSidecar> columnSidecars = custodyStand.createCustodyColumnSidecars(block);
     columnSidecars.forEach(retrieverStub::addReadyColumnSidecar);
   }
 
@@ -323,14 +323,15 @@ public class DasCustodySyncTest {
 
   private void assertCustodyColumnsPresent(final int fromSlot, final int tillSlot) {
     for (int slot = fromSlot; slot < tillSlot; slot++) {
-      UInt64 uSlot = UInt64.valueOf(slot);
-      Optional<BeaconBlock> maybeBlock = custodyStand.blockResolver.getBlockAtSlot(uSlot).join();
+      final UInt64 uSlot = UInt64.valueOf(slot);
+      final Optional<BeaconBlock> maybeBlock =
+          custodyStand.blockResolver.getBlockAtSlot(uSlot).join();
       maybeBlock.ifPresent(
           block -> {
             if (custodyStand.hasBlobs(block)) {
-              Collection<UInt64> colIndexes = custodyStand.getCustodyColumnIndexes(uSlot);
+              final Collection<UInt64> colIndexes = custodyStand.getCustodyColumnIndexes();
               for (UInt64 colIndex : colIndexes) {
-                Optional<DataColumnSidecar> maybeSidecar =
+                final Optional<DataColumnSidecar> maybeSidecar =
                     await(
                         custodyStand.custody.getCustodyDataColumnSidecar(
                             new DataColumnSlotAndIdentifier(

@@ -153,7 +153,7 @@ public class DasCustodyStand {
         .orElse(false);
   }
 
-  public Collection<UInt64> getCustodyColumnIndexes(final UInt64 slot) {
+  public Collection<UInt64> getCustodyColumnIndexes() {
     return custodyGroupCountManager.getCustodyColumnIndices();
   }
 
@@ -163,7 +163,7 @@ public class DasCustodyStand {
 
   public List<DataColumnSidecar> createCustodyColumnSidecars(final SignedBeaconBlock block) {
     if (hasBlobs(block.getBeaconBlock().orElseThrow())) {
-      final Collection<UInt64> custodyColumnIndexes = getCustodyColumnIndexes(block.getSlot());
+      final Collection<UInt64> custodyColumnIndexes = getCustodyColumnIndexes();
       return custodyColumnIndexes.stream()
           .map(colIndex -> createSidecar(block, colIndex.intValue()))
           .toList();
