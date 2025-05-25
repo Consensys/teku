@@ -578,7 +578,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             dataAndValidationResult.cause());
       }
       case INVALID -> {
-        LOG.error("Sidecars validation result: {}", dataAndValidationResult::toLogString);
+        LOG.debug("Sidecars validation result: {}", dataAndValidationResult::toLogString);
         debugDataDumper.saveInvalidSidecars(dataAndValidationResult.data(), block);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             dataAndValidationResult.cause());
