@@ -349,7 +349,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile LateInitDataColumnSidecarCustody dataColumnSidecarCustody =
       new LateInitDataColumnSidecarCustody();
-  protected volatile DasCustodySync dasCustodySync;
+  protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
@@ -459,8 +459,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockManager.start(),
             syncService.start(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)),
-            SafeFuture.fromRunnable(() -> dasCustodySync.start()))
+                () -> {
+                  terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
+                  dasCustodySync.ifPresent(DasCustodySync::start);
+                }))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -493,7 +495,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             timerService.stop(),
             ephemerySlotValidationService.doStop(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
+                () -> {
+                  terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
+                  dasCustodySync.ifPresent(DasCustodySync::stop);
+                }))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -734,22 +739,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
         MinCustodyPeriodSlotCalculator.createFromSpec(spec);
     final int slotsPerEpoch = spec.getGenesisSpec().getSlotsPerEpoch();
 
-    final DataColumnSidecarDbAccessor dbAccessor;
-    {
-      DataColumnSidecarDB sidecarDB =
-          DataColumnSidecarDB.create(
-              combinedChainDataClient,
-              eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
-      dbAccessor =
-          DataColumnSidecarDbAccessor.builder(sidecarDB)
-              .spec(spec)
-              .minCustodyPeriodSlotCalculator(minCustodyPeriodSlotCalculator)
-              .withAutoPrune(
-                  pruneBuilder ->
-                      pruneBuilder.pruneMarginSlots(slotsPerEpoch).prunePeriodSlots(slotsPerEpoch))
-              .build();
-    }
-    CanonicalBlockResolver canonicalBlockResolver =
+    final DataColumnSidecarDB sidecarDB =
+        DataColumnSidecarDB.create(
+            combinedChainDataClient,
+            eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
+    final DataColumnSidecarDbAccessor dbAccessor =
+        DataColumnSidecarDbAccessor.builder(sidecarDB)
+            .spec(spec)
+            .minCustodyPeriodSlotCalculator(minCustodyPeriodSlotCalculator)
+            .withAutoPrune(
+                pruneBuilder ->
+                    pruneBuilder.pruneMarginSlots(slotsPerEpoch).prunePeriodSlots(slotsPerEpoch))
+            .build();
+    final CanonicalBlockResolver canonicalBlockResolver =
         slot ->
             combinedChainDataClient
                 .getBlockAtSlotExact(slot)
@@ -765,62 +767,59 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .getPublisher(CustodyGroupCountChannel.class)
         .onCustodyGroupCountUpdate(totalMyCustodyGroups);
 
-    final DataColumnSidecarCustody custody;
-    {
-      final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
-          new DataColumnSidecarCustodyImpl(
-              spec,
-              canonicalBlockResolver,
-              dbAccessor,
-              minCustodyPeriodSlotCalculator,
-              custodyGroupCountManagerLateInit,
-              totalMyCustodyGroups);
-      eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
-      eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
+    final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
+        new DataColumnSidecarCustodyImpl(
+            spec,
+            canonicalBlockResolver,
+            dbAccessor,
+            minCustodyPeriodSlotCalculator,
+            custodyGroupCountManagerLateInit,
+            totalMyCustodyGroups);
+    eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
-      DasLongPollCustody.GossipWaitTimeoutCalculator gossipWaitTimeoutCalculator =
-          slot -> {
-            Duration slotDuration =
-                Duration.ofSeconds(spec.atSlot(slot).getConfig().getSecondsPerSlot());
-            return slotDuration.dividedBy(3);
-          };
+    final DasLongPollCustody.GossipWaitTimeoutCalculator gossipWaitTimeoutCalculator =
+        slot -> {
+          Duration slotDuration =
+              Duration.ofSeconds(spec.atSlot(slot).getConfig().getSecondsPerSlot());
+          return slotDuration.dividedBy(3);
+        };
 
-      final DasLongPollCustody dasLongPollCustody =
-          new DasLongPollCustody(
-              dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, gossipWaitTimeoutCalculator);
-      eventChannels.subscribe(SlotEventsChannel.class, dasLongPollCustody);
+    final DasLongPollCustody dasLongPollCustody =
+        new DasLongPollCustody(
+            dataColumnSidecarCustodyImpl, operationPoolAsyncRunner, gossipWaitTimeoutCalculator);
+    eventChannels.subscribe(SlotEventsChannel.class, dasLongPollCustody);
 
-      final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
-          new DataColumnSidecarByRootCustodyImpl(
-              dasLongPollCustody,
-              combinedChainDataClient,
-              UInt64.valueOf(slotsPerEpoch)
-                  .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
-      final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
-          new DataColumnSidecarRecoveringCustodyImpl(
-              dataColumnSidecarByRootCustody,
-              operationPoolAsyncRunner,
-              spec,
-              miscHelpersFulu,
-              kzg,
-              dataColumnSidecar ->
-                  eventChannels
-                      .getPublisher(DataColumnSidecarGossipChannel.class)
-                      .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
-              custodyGroupCountManagerLateInit,
-              specConfigFulu.getNumberOfColumns(),
-              specConfigFulu.getNumberOfCustodyGroups(),
-              slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
-              metricsSystem,
-              timeProvider);
-      eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
+    final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
+        new DataColumnSidecarByRootCustodyImpl(
+            dasLongPollCustody,
+            combinedChainDataClient,
+            UInt64.valueOf(slotsPerEpoch)
+                .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
+    final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
+        new DataColumnSidecarRecoveringCustodyImpl(
+            dataColumnSidecarByRootCustody,
+            operationPoolAsyncRunner,
+            spec,
+            miscHelpersFulu,
+            kzg,
+            dataColumnSidecar ->
+                eventChannels
+                    .getPublisher(DataColumnSidecarGossipChannel.class)
+                    .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
+            custodyGroupCountManagerLateInit,
+            specConfigFulu.getNumberOfColumns(),
+            specConfigFulu.getNumberOfCustodyGroups(),
+            slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
+            metricsSystem,
+            timeProvider);
+    eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
 
-      // TODO-fulu fix this hack to resolve the initialization loop Network <--> DAS Custody
-      // (https://github.com/Consensys/teku/issues/9463)
-      this.dataColumnSidecarCustody.init(dataColumnSidecarRecoveringCustody);
+    // TODO-fulu fix this hack to resolve the initialization loop Network <--> DAS Custody
+    // (https://github.com/Consensys/teku/issues/9463)
+    this.dataColumnSidecarCustody.init(dataColumnSidecarRecoveringCustody);
 
-      custody = dataColumnSidecarRecoveringCustody;
-    }
+    final DataColumnSidecarCustody custody = dataColumnSidecarRecoveringCustody;
 
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
@@ -828,26 +827,26 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .onNewValidatedDataColumnSidecar(dataColumnSidecar)
                 .ifExceptionGetsHereRaiseABug());
 
-    DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
+    final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
 
-    BatchDataColumnsByRootReqResp loggingByRootReqResp =
+    final BatchDataColumnsByRootReqResp loggingByRootReqResp =
         new LoggingBatchDataColumnsByRootReqResp(dasPeerManager, dasReqRespLogger);
-    DataColumnReqResp dasRpc =
+    final DataColumnReqResp dasRpc =
         new DataColumnReqRespBatchingImpl(
             loggingByRootReqResp,
             SchemaDefinitionsFulu.required(specVersionFulu.getSchemaDefinitions()));
 
-    MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
+    final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);
-    DasPeerCustodyCountSupplier custodyCountSupplier =
+    final DasPeerCustodyCountSupplier custodyCountSupplier =
         DasPeerCustodyCountSupplier.capped(
             peerCustodyTracker, minCustodyGroupRequirement, maxGroups);
 
     // TODO-fulu NOOP peer searcher should work for interop but needs to be implemented
     // (https://github.com/Consensys/teku/issues/9464)
-    DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
-    DataColumnSidecarRetriever sidecarRetriever =
+    final DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
+    final DataColumnSidecarRetriever sidecarRetriever =
         new SimpleSidecarRetriever(
             spec,
             dasPeerManager,
@@ -856,7 +855,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasRpc,
             operationPoolAsyncRunner,
             Duration.ofSeconds(1));
-    RecoveringSidecarRetriever recoveringSidecarRetriever =
+    final RecoveringSidecarRetriever recoveringSidecarRetriever =
         new RecoveringSidecarRetriever(
             sidecarRetriever,
             kzg,
@@ -870,10 +869,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         (sidecar, remoteOrigin) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
     blockManager.subscribePreImportBlocks(
         (block, remoteOrigin) -> dataColumnSidecarCustody.onNewBlock(block, remoteOrigin));
-    dasCustodySync = new DasCustodySync(custody, recoveringSidecarRetriever);
-    eventChannels.subscribe(SlotEventsChannel.class, dasCustodySync);
+    final DasCustodySync svc = new DasCustodySync(custody, recoveringSidecarRetriever);
+    dasCustodySync = Optional.of(svc);
+    eventChannels.subscribe(SlotEventsChannel.class, svc);
 
-    CurrentSlotProvider currentSlotProvider =
+    final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
     final DasSamplerBasic dasSampler =
         new DasSamplerBasic(
