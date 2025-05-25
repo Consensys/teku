@@ -889,8 +889,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initDasSyncPreSampler() {
-    DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
-    eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
+    if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      final DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
+      eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
+    }
   }
 
   protected void preInitCustodyGroupCountManager() {
