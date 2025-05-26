@@ -70,9 +70,8 @@ public class DasCustodyStand {
 
   private UInt64 currentSlot = UInt64.ZERO;
 
-  public DasCustodyStand(
+  private DasCustodyStand(
       final Spec spec,
-      final UInt64 currentSlot,
       final int totalCustodyGroupCount,
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
@@ -203,7 +202,6 @@ public class DasCustodyStand {
 
   public static class Builder {
     private Spec spec;
-    private UInt64 currentSlot = UInt64.ZERO;
     private UInt256 myNodeId = UInt256.ONE;
     private Integer totalCustodyGroupCount;
     private Optional<Duration> asyncDbDelay = Optional.empty();
@@ -211,11 +209,6 @@ public class DasCustodyStand {
 
     public Builder withSpec(final Spec spec) {
       this.spec = spec;
-      return this;
-    }
-
-    public Builder withCurrentSlot(final UInt64 currentSlot) {
-      this.currentSlot = currentSlot;
       return this;
     }
 
@@ -247,7 +240,7 @@ public class DasCustodyStand {
         totalCustodyGroupCount = configFulu.getCustodyRequirement();
       }
       return new DasCustodyStand(
-          spec, currentSlot, totalCustodyGroupCount, asyncDbDelay, asyncBlockResolverDelay);
+          spec, totalCustodyGroupCount, asyncDbDelay, asyncBlockResolverDelay);
     }
   }
 
