@@ -325,7 +325,6 @@ public class SlotProcessorTest {
             ZERO,
             recentChainData.getHeadSlot(),
             headBlock.getRoot(),
-            headBlock.getParentRoot(),
             justifiedCheckpoint.getEpoch(),
             finalizedCheckpoint.getEpoch(),
             1);
