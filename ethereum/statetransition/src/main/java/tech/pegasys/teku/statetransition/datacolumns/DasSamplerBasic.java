@@ -95,7 +95,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(
-      final UInt64 slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
+      final UInt64 slot, final Bytes32 blockRoot) {
 
     final Set<DataColumnSlotAndIdentifier> requiredColumnIdentifiers =
         new HashSet<>(calculateSamplingColumnIds(slot, blockRoot));

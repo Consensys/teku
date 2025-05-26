@@ -53,7 +53,7 @@ public class DasPreSampler {
 
   private void onNewPreImportBlock(final SignedBeaconBlock block) {
     sampler
-        .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
+        .checkDataAvailability(block.getSlot(), block.getRoot())
         .finish(
             succ ->
                 LOG.debug(

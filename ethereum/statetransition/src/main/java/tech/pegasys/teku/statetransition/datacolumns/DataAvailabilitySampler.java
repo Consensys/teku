@@ -31,8 +31,7 @@ public interface DataAvailabilitySampler {
   DataAvailabilitySampler NOOP =
       new DataAvailabilitySampler() {
         @Override
-        public SafeFuture<List<UInt64>> checkDataAvailability(
-            UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot) {
+        public SafeFuture<List<UInt64>> checkDataAvailability(UInt64 slot, Bytes32 blockRoot) {
           return SafeFuture.completedFuture(List.of());
         }
 
@@ -49,8 +48,7 @@ public interface DataAvailabilitySampler {
    * Schedules availability check. To initiate all scheduled availability checks immediately call
    * the {@link #flush()} method
    */
-  SafeFuture<List<UInt64>> checkDataAvailability(
-      UInt64 slot, Bytes32 blockRoot, Bytes32 parentRoot);
+  SafeFuture<List<UInt64>> checkDataAvailability(UInt64 slot, Bytes32 blockRoot);
 
   /**
    * Immediately initiates sampling. When doing batch sampling it would be more effective to invoke

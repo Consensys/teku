@@ -153,11 +153,12 @@ public class DebugDataFileDumper implements DebugDataDumper {
       return;
     }
 
-    switch (sidecars.getFirst()) {
-      case BlobSidecar ignored -> saveInvalidBlobSidecars((List<BlobSidecar>) sidecars, block);
-      case DataColumnSidecar ignored ->
-          saveInvalidDataColumnSidecars((List<DataColumnSidecar>) sidecars, block);
-      default -> throw new RuntimeException("Unknown sidecar type: " + sidecars.getFirst());
+    if (sidecars.getFirst() instanceof BlobSidecar) {
+      saveInvalidBlobSidecars((List<BlobSidecar>) sidecars, block);
+    } else if (sidecars.getFirst() instanceof DataColumnSidecar) {
+      saveInvalidDataColumnSidecars((List<DataColumnSidecar>) sidecars, block);
+    } else {
+      throw new RuntimeException("Unknown sidecar type: " + sidecars.getFirst());
     }
   }
 

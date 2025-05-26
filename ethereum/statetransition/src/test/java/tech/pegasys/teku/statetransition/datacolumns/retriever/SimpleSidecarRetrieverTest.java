@@ -189,7 +189,7 @@ public class SimpleSidecarRetrieverTest {
 
     final DataColumnSlotAndIdentifier id0 =
         new DataColumnSlotAndIdentifier(UInt64.ONE, Bytes32.ZERO, columnIndex);
-    SafeFuture<DataColumnSidecar> resp0 = simpleSidecarRetriever.retrieve(id0);
+    simpleSidecarRetriever.retrieve(id0).finish(err -> LOG.error("Error retrieving sidecar", err));
 
     advanceTimeGradually(retrieverRound);
 
