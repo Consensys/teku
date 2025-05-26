@@ -129,8 +129,7 @@ public class SimpleSidecarRetriever
             .filter(request -> request.getKey().equals(dataColumnSlotAndIdentifier))
             .filter(request -> !request.getValue().result.isDone())
             .toList();
-    filteredRequests.forEach(
-        requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar, null));
+    filteredRequests.forEach(requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar));
   }
 
   private synchronized List<RequestMatch> matchRequestsAndPeers() {
@@ -198,7 +197,7 @@ public class SimpleSidecarRetriever
       match.request.activeRpcRequest =
           new ActiveRequest(
               reqRespPromise.whenComplete(
-                  (sidecar, err) -> reqRespCompleted(match.request, sidecar, err)),
+                  (sidecar, err) -> reqRespCompleted(match.request, sidecar)),
               match.peer);
     }
 
@@ -218,9 +217,7 @@ public class SimpleSidecarRetriever
 
   @SuppressWarnings("unused")
   private synchronized void reqRespCompleted(
-      final RetrieveRequest request,
-      final DataColumnSidecar maybeResult,
-      final Throwable maybeError) {
+      final RetrieveRequest request, final DataColumnSidecar maybeResult) {
     if (maybeResult != null) {
       pendingRequests.remove(request.columnId);
       request.result.completeAsync(maybeResult, asyncRunner);

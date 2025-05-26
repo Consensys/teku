@@ -64,7 +64,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
       }
       default -> {
         dataAvailabilitySampler
-            .checkDataAvailability(block.getSlot(), block.getRoot(), block.getParentRoot())
+            .checkDataAvailability(block.getSlot(), block.getRoot())
             .finish(
                 sampleIndexes ->
                     validationResult.complete(DataAndValidationResult.validResult(sampleIndexes)),
