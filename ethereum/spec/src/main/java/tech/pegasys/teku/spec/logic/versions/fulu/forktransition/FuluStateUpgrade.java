@@ -13,35 +13,92 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.forktransition;
 
+import kotlin.UInt;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+
+import java.util.List;
+import java.util.stream.Stream;
 
 public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
 
   private final SpecConfigFulu specConfig;
-  private final BeaconStateAccessorsElectra beaconStateAccessors;
+  private final BeaconStateAccessorsFulu beaconStateAccessors;
+  private final SchemaDefinitionsFulu schemaDefinitions;
+
 
   public FuluStateUpgrade(
-      final SpecConfigFulu specConfig, final BeaconStateAccessorsElectra beaconStateAccessors) {
+      final SpecConfigFulu specConfig,
+      final SchemaDefinitionsFulu schemaDefinitions,
+      final BeaconStateAccessorsFulu beaconStateAccessors) {
     this.specConfig = specConfig;
+    this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
   @Override
-  public BeaconStateElectra upgrade(final BeaconState preState) {
+  public BeaconStateFulu upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
     final BeaconStateElectra preStateElectra = BeaconStateElectra.required(preState);
-    return preStateElectra.updatedElectra(
-        state ->
-            state.setFork(
-                new Fork(
-                    preState.getFork().getCurrentVersion(),
-                    specConfig.getFuluForkVersion(),
-                    epoch)));
+
+    return BeaconStateFulu.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
+            .updatedFulu(
+                    state -> {
+                        BeaconStateFields.copyCommonFieldsFromSource(state, preState);
+
+                        state.setCurrentEpochParticipation(preStateElectra.getCurrentEpochParticipation());
+                        state.setPreviousEpochParticipation(preStateElectra.getPreviousEpochParticipation());
+                        state.setCurrentSyncCommittee(preStateElectra.getCurrentSyncCommittee());
+                        state.setNextSyncCommittee(preStateElectra.getNextSyncCommittee());
+                        state.setInactivityScores(preStateElectra.getInactivityScores());
+
+                        state.setFork(
+                                new Fork(
+                                        preState.getFork().getCurrentVersion(),
+                                        specConfig.getFuluForkVersion(),
+                                        epoch));
+
+                        state.setLatestExecutionPayloadHeader(
+                                preStateElectra.getLatestExecutionPayloadHeader());
+                        state.setNextWithdrawalValidatorIndex(
+                                preStateElectra.getNextWithdrawalValidatorIndex());
+                        state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
+                        state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
+                        state.setDepositRequestsStartIndex(
+                                SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
+                        state.setDepositBalanceToConsume(UInt64.ZERO);
+                        state.setExitBalanceToConsume(
+                                beaconStateAccessors.getActivationExitChurnLimit(state));
+                        state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
+                        state.setConsolidationBalanceToConsume(
+                                beaconStateAccessors.getConsolidationChurnLimit(state));
+                        state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
+
+                        final SszUInt64ListSchema<?> schema =  SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema().getPorposerLookaheadSchema();
+
+                        List<UInt64> currentEpochProposerIndices =
+                                beaconStateAccessors.getBeaconProposerIndices(state, epoch)
+                                        .stream()
+                                        .map(UInt64::valueOf)
+                                        .toList();
+                        List<UInt64> nextEpochProposerIndices =
+                                beaconStateAccessors.getBeaconProposerIndices(state, epoch.plus(1))
+                                        .stream()
+                                        .map(UInt64::valueOf)
+                                        .toList();
+
+                        List<UInt64> proposerIndices = Stream.concat(currentEpochProposerIndices.stream(), nextEpochProposerIndices.stream()).toList();
+                        state.setProposerLookahead(proposerIndices.stream().collect(schema.collectorUnboxed()));
+                    });
   }
 }
