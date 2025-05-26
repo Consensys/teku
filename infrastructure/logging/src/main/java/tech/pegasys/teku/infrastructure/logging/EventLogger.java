@@ -257,28 +257,17 @@ public class EventLogger {
       final UInt64 nodeSlot,
       final UInt64 headSlot,
       final Bytes32 bestBlockRoot,
-      final Bytes32 bestBlockParentRoot,
       final UInt64 justifiedCheckpoint,
       final UInt64 finalizedCheckpoint,
       final int numPeers) {
-    final String headBlockRoot;
-    final String bestBlockRootOrParent;
+    String blockRoot = "                                                       ... empty";
     if (nodeSlot.equals(headSlot)) {
-      headBlockRoot = LogFormatter.formatAbbreviatedHashRoot(bestBlockRoot);
-      bestBlockRootOrParent = LogFormatter.formatAbbreviatedHashRoot(bestBlockParentRoot);
-    } else {
-      headBlockRoot = "   ... empty";
-      bestBlockRootOrParent = LogFormatter.formatAbbreviatedHashRoot(bestBlockRoot);
+      blockRoot = LogFormatter.formatHashRoot(bestBlockRoot);
     }
     final String slotEventLog =
         String.format(
-            "Slot Event  *** Slot: %s, Block: %s <~ %s, Justified: %s, Finalized: %s, Peers: %d",
-            nodeSlot,
-            headBlockRoot,
-            bestBlockRootOrParent,
-            justifiedCheckpoint,
-            finalizedCheckpoint,
-            numPeers);
+            "Slot Event  *** Slot: %s, Block: %s, Justified: %s, Finalized: %s, Peers: %d",
+            nodeSlot, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
     info(slotEventLog, Color.WHITE);
   }
 
