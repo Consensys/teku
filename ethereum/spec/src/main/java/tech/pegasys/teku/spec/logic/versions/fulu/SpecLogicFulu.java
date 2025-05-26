@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.Epoch
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
@@ -100,8 +101,8 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     // Helpers
     final PredicatesElectra predicates = new PredicatesElectra(config);
     final MiscHelpersFulu miscHelpers = new MiscHelpersFulu(config, predicates, schemaDefinitions);
-    final BeaconStateAccessorsElectra beaconStateAccessors =
-        new BeaconStateAccessorsElectra(config, predicates, miscHelpers);
+    final BeaconStateAccessorsFulu beaconStateAccessors =
+        new BeaconStateAccessorsFulu(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
         new BeaconStateMutatorsElectra(
             config, miscHelpers, beaconStateAccessors, schemaDefinitions);
@@ -179,7 +180,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
     // State upgrade
-    final FuluStateUpgrade stateUpgrade = new FuluStateUpgrade(config, beaconStateAccessors);
+    final FuluStateUpgrade stateUpgrade = new FuluStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     return new SpecLogicFulu(
         predicates,
