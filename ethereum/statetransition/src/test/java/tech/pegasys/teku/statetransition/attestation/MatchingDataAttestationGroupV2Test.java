@@ -365,7 +365,7 @@ class MatchingDataAttestationGroupV2Test {
 
   // --- Tests for streamForBlockProduction ---
   @TestTemplate
-  public void streamForBlockProduction_electra_shouldSkipSinglesAndReturnAggregates(
+  public void streamForBlockProduction_electra_shouldSkipSinglesAndReturnAggregatesWhenThereAreAggregates(
       final SpecContext specContext) {
     specContext.assumeElectraActive();
     final PooledAttestation bigAttestation = addPooledAttestation(1, 3, 5, 7);
@@ -378,6 +378,20 @@ class MatchingDataAttestationGroupV2Test {
     verifyStreamForBlockProductionContainsExactly(
         toPooledAttestationWithData(bigAttestation),
         toPooledAttestationWithData(mediumAttestation));
+  }
+
+  @TestTemplate
+  public void streamForBlockProduction_electra_shouldConsiderSinglesAndReturnAggregatesWhenThereAreNoAggregates(
+          final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    final PooledAttestation single0 = addPooledAttestation(Optional.of(0), 2);
+    final PooledAttestation single1 = addPooledAttestation(Optional.of(1), 3);
+
+    final Attestation expectedSAAggregate =
+            aggregateAttestations(committeeSizes, toAttestation(single0), toAttestation(single1));
+
+    verifyStreamForBlockProductionContainsExactly(
+            toPooledAttestationWithData(expectedSAAggregate));
   }
 
   @TestTemplate

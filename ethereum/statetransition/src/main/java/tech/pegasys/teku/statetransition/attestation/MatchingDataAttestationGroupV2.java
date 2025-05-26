@@ -414,6 +414,12 @@ public class MatchingDataAttestationGroupV2 {
   }
 
   private Supplier<Stream<PooledAttestation>> blockProductionCandidatesStreamSupplier() {
+    if (attestationsByValidatorCount.isEmpty()) {
+      // there are no aggregates left, which means they have all been included on-chain,
+      // so we can consider the long tail of single attestations that have not reached an aggregator
+      // in time
+      return () -> singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream);
+    }
     return () -> attestationsByValidatorCount.values().stream().flatMap(Set::stream);
   }
 
