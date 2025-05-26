@@ -42,7 +42,7 @@ public class ProposerLookahead extends Container1<ProposerLookahead, SszUInt64Li
       return new ProposerLookahead(this, validatorIndices);
     }
 
-    public SszUInt64ListSchema<?> getLookaheadSchema() {
+    public SszUInt64ListSchema<?> getPorposerLookaheadSchema() {
       return (SszUInt64ListSchema<?>) getFieldSchema0();
     }
   }
