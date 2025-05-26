@@ -190,10 +190,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       if (task.existingColumnIds().size() != columnCount) {
         asyncRunner
             .runAsync(() -> prepareAndInitiateRecovery(task))
-            .exceptionally(
+            .finish(
                 error -> {
                   LOG.error("DataColumnSidecars recovery task {} failed", task, error);
-                  return null;
                 });
       }
     }
