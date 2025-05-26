@@ -633,7 +633,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                 i -> {
                   return Hash.sha256(
                       Bytes.concat(
-                          epochSeed.toArray(), uint64ToBytes(startSlot.plus(1)).toArray()));
+                          epochSeed.toArray(), uint64ToBytes(startSlot.plus(i)).toArray()));
                 })
             .toList();
     return seeds.stream()
