@@ -72,6 +72,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidatorBalances;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidatorIdentities;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
@@ -226,6 +227,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetStateValidator(dataProvider))
             .endpoint(new GetStateValidatorBalances(dataProvider))
             .endpoint(new PostStateValidatorBalances(dataProvider))
+            .endpoint(new PostStateValidatorIdentities(dataProvider))
             .endpoint(new GetStateCommittees(dataProvider))
             .endpoint(new GetStateSyncCommittees(dataProvider))
             .endpoint(new GetStateRandao(dataProvider))
