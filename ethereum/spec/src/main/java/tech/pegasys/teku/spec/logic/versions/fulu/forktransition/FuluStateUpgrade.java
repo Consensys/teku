@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 import java.util.List;
@@ -35,15 +36,18 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
   private final SpecConfigFulu specConfig;
   private final BeaconStateAccessorsFulu beaconStateAccessors;
   private final SchemaDefinitionsFulu schemaDefinitions;
+  private final MiscHelpersFulu miscHelpers;
 
 
   public FuluStateUpgrade(
       final SpecConfigFulu specConfig,
       final SchemaDefinitionsFulu schemaDefinitions,
-      final BeaconStateAccessorsFulu beaconStateAccessors) {
+      final BeaconStateAccessorsFulu beaconStateAccessors,
+      final MiscHelpersFulu miscHelpers) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.miscHelpers = miscHelpers;
   }
 
   @Override
@@ -85,20 +89,7 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
                         state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
 
                         final SszUInt64ListSchema<?> schema =  SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema().getPorposerLookaheadSchema();
-
-                        List<UInt64> currentEpochProposerIndices =
-                                beaconStateAccessors.getBeaconProposerIndices(state, epoch)
-                                        .stream()
-                                        .map(UInt64::valueOf)
-                                        .toList();
-                        List<UInt64> nextEpochProposerIndices =
-                                beaconStateAccessors.getBeaconProposerIndices(state, epoch.plus(1))
-                                        .stream()
-                                        .map(UInt64::valueOf)
-                                        .toList();
-
-                        List<UInt64> proposerIndices = Stream.concat(currentEpochProposerIndices.stream(), nextEpochProposerIndices.stream()).toList();
-                        state.setProposerLookahead(proposerIndices.stream().collect(schema.collectorUnboxed()));
+                        state.setProposerLookahead(miscHelpers.initializeProposerLookahead(preStateElectra, beaconStateAccessors).stream().collect(schema.collectorUnboxed()));
                     });
   }
 }
