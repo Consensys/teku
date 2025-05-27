@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import com.google.common.base.MoreObjects;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -187,7 +188,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (readyToBeRecovered(task)) {
       task.recoveryStarted().set(true);
       if (task.existingColumnIds().size() != columnCount) {
-        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).ifExceptionGetsHereRaiseABug();
+        asyncRunner
+            .runAsync(() -> prepareAndInitiateRecovery(task))
+            .finish(
+                error -> {
+                  LOG.error("DataColumnSidecars recovery task {} failed", task, error);
+                });
       }
     }
   }
@@ -229,7 +235,25 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       AtomicReference<BeaconBlock> block,
       Set<DataColumnSlotAndIdentifier> existingColumnIds,
       AtomicBoolean recoveryStarted,
-      AtomicBoolean timedOut) {}
+      AtomicBoolean timedOut) {
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("block", block.get() == null ? "null" : block.get().toLogString())
+          .add(
+              "existingColumnIds",
+              existingColumnIds.isEmpty()
+                  ? "empty"
+                  : existingColumnIds.stream().findFirst()
+                      + ", "
+                      + existingColumnIds.size()
+                      + " total")
+          .add("recoveryStarted", recoveryStarted)
+          .add("timedOut", timedOut)
+          .toString();
+    }
+  }
 
   private void prepareAndInitiateRecovery(final RecoveryTask task) {
     final SafeFuture<List<DataColumnSidecar>> list =
