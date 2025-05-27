@@ -70,7 +70,6 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   @Override
   void publishBlobSidecars(
       final List<BlobSidecar> blobSidecars,
-      final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
     // No-op for phase 0
   }
@@ -78,7 +77,6 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   @Override
   void publishDataColumnSidecars(
       final List<DataColumnSidecar> dataColumnSidecars,
-      final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
     // No-op for phase 0
   }

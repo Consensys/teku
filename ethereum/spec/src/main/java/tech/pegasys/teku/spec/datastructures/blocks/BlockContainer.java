@@ -20,11 +20,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
- * Interface used to represent both {@link BeaconBlock} and {@link BlockContentsDeneb} and their
+ * Interface used to represent both {@link BeaconBlock}, all BlockContents[Milestone] and their
  * blinded variants: <a
  * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
  */

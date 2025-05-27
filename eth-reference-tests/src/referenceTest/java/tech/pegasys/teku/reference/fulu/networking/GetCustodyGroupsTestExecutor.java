@@ -38,7 +38,7 @@ public class GetCustodyGroupsTestExecutor implements TestExecutor {
     final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
     final List<UInt64> actualResult =
         MiscHelpersFulu.required(spec.miscHelpers())
-            .getCustodyGroups(metaData.getNodeId(), metaData.getCustodySubnetCount());
+            .getCustodyGroups(metaData.getNodeId(), metaData.getCustodyGroupCount());
     assertThat(new HashSet<>(actualResult)).isEqualTo(metaData.getResult());
   }
 
@@ -48,7 +48,7 @@ public class GetCustodyGroupsTestExecutor implements TestExecutor {
     private String nodeId;
 
     @JsonProperty(value = "custody_group_count", required = true)
-    private int custodySubnetCount;
+    private int custodyGroupCount;
 
     @JsonProperty(value = "result", required = true)
     private List<Integer> result;
@@ -57,8 +57,8 @@ public class GetCustodyGroupsTestExecutor implements TestExecutor {
       return UInt256.valueOf(new BigInteger(nodeId));
     }
 
-    public int getCustodySubnetCount() {
-      return custodySubnetCount;
+    public int getCustodyGroupCount() {
+      return custodyGroupCount;
     }
 
     public Set<UInt64> getResult() {

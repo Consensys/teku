@@ -510,6 +510,11 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.FULU);
   }
 
+  // Our current config files contain FULU params.
+  // So all specConfigs created from them will be FULU.
+  // Here we just want to make sure that a given config supports the given milestone
+  // (which useless in theory because they are all FULU)
+
   private static SpecConfigAndParent<? extends SpecConfig> requireAltair(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {
     checkArgument(specConfigAndParent.specConfig().toVersionAltair().isPresent());

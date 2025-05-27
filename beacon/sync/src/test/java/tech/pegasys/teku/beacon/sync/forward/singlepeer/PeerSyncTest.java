@@ -16,6 +16,7 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -614,6 +615,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
     verify(peer, never()).disconnectCleanly(any());
+    verify(peer, never()).disconnectImmediately(any(), anyBoolean());
   }
 
   private void verifyBlobSidecarsAddedToPool(

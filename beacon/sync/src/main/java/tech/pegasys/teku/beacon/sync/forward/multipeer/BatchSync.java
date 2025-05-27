@@ -434,7 +434,7 @@ public class BatchSync implements Sync {
         batch.markAsInvalid();
       }
     } else if (result == BatchImportResult.SERVICE_OFFLINE
-        || result == BatchImportResult.DATA_NOT_YET_AVAILABLE) {
+        || result == BatchImportResult.DATA_NOT_AVAILABLE) {
       if (!scheduledProgressSync) {
         LOG.warn("Unable to import blocks because execution client is offline.");
         asyncRunner

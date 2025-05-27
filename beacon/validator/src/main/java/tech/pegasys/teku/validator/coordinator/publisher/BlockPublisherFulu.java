@@ -20,7 +20,6 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -51,15 +50,13 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
   @Override
   void publishBlobSidecars(
       final List<BlobSidecar> blobSidecars,
-      final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    throw new RuntimeException("Unexpected call in FULU, block " + block.getSlotAndBlockRoot());
+    throw new RuntimeException("Unexpected call to publishBlockSidecars in FULU");
   }
 
   @Override
   void publishDataColumnSidecars(
       final List<DataColumnSidecar> dataColumnSidecars,
-      final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
     // TODO-fulu blockPublishingPerformance (https://github.com/Consensys/teku/issues/9473)
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(

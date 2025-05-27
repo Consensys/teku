@@ -94,8 +94,7 @@ public class AbstractBlockPublisherTest {
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher)
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
     verify(blockPublisher)
         .importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
@@ -132,13 +131,12 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
 
     validationResult.complete(BroadcastValidationResult.SUCCESS);
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher)
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
   }
@@ -173,13 +171,13 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
 
     validationResult.complete(BroadcastValidationResult.CONSENSUS_FAILURE);
 
     verify(blockPublisher, never()).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
 
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(
@@ -214,13 +212,12 @@ public class AbstractBlockPublisherTest {
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
     verify(blockPublisher, never())
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+        .publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
 
     // Complete block publishing
     publishBlockFuture.complete(null);
 
-    verify(blockPublisher)
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
 
     verify(blockPublisher)
         .importBlock(
@@ -245,8 +242,7 @@ public class AbstractBlockPublisherTest {
             SendSignedBlockResult.notImported(FailureReason.FAILED_STATE_TRANSITION.name()));
 
     verify(blockPublisher).publishBlock(signedBlock, BlockPublishingPerformance.NOOP);
-    verify(blockPublisher)
-        .publishBlobSidecars(blobSidecars, signedBlock, BlockPublishingPerformance.NOOP);
+    verify(blockPublisher).publishBlobSidecars(blobSidecars, BlockPublishingPerformance.NOOP);
     verify(blockPublisher)
         .importBlock(
             signedBlock, BroadcastValidationLevel.NOT_REQUIRED, BlockPublishingPerformance.NOOP);
@@ -308,13 +304,11 @@ public class AbstractBlockPublisherTest {
     @Override
     void publishBlobSidecars(
         final List<BlobSidecar> blobSidecars,
-        final SignedBeaconBlock block,
         final BlockPublishingPerformance blockPublishingPerformance) {}
 
     @Override
     void publishDataColumnSidecars(
         final List<DataColumnSidecar> dataColumnSidecars,
-        final SignedBeaconBlock block,
         final BlockPublishingPerformance blockPublishingPerformance) {}
   }
 }

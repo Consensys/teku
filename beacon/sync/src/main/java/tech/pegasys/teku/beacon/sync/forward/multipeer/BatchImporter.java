@@ -90,8 +90,8 @@ public class BatchImporter {
                   return BatchImportResult.IMPORTED_ALL_BLOCKS;
                 } else if (lastBlockImportResult.hasFailedExecutingExecutionPayload()) {
                   return BatchImportResult.SERVICE_OFFLINE;
-                } else if (lastBlockImportResult.isDataNotYetAvailable()) {
-                  return BatchImportResult.DATA_NOT_YET_AVAILABLE;
+                } else if (lastBlockImportResult.isDataNotAvailable()) {
+                  return BatchImportResult.DATA_NOT_AVAILABLE;
                 }
                 LOG.debug(
                     "Failed to import batch {}: {}",
@@ -146,7 +146,7 @@ public class BatchImporter {
     IMPORTED_ALL_BLOCKS,
     IMPORT_FAILED,
     SERVICE_OFFLINE,
-    DATA_NOT_YET_AVAILABLE;
+    DATA_NOT_AVAILABLE;
 
     public boolean isFailure() {
       return this == IMPORT_FAILED;

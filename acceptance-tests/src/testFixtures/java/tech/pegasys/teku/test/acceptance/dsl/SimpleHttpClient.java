@@ -82,7 +82,10 @@ public class SimpleHttpClient {
     headers.forEach(builder::header);
     final Response response = httpClient.newCall(builder.build()).execute();
     final ResponseBody body = response.body();
-    if (!response.isSuccessful()) {
+    if (response.isSuccessful()) {
+      assertThat(body).isNotNull();
+      return Optional.of(body);
+    } else {
       if (response.code() == 404) {
         return Optional.empty();
       } else {
@@ -91,9 +94,6 @@ public class SimpleHttpClient {
             url, response.code(), response.message(), body != null ? body.string() : "null");
         return Optional.empty();
       }
-    } else {
-      assertThat(body).isNotNull();
-      return Optional.of(body);
     }
   }
 

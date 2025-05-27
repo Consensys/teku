@@ -200,10 +200,10 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
 
     if (gossipBlobsAfterBlock) {
       publishBlock(block, blockPublishingPerformance)
-          .always(() -> publishBlobSidecars(blobSidecars.get(), block, blockPublishingPerformance));
+          .always(() -> publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance));
     } else {
       publishBlock(block, blockPublishingPerformance).ifExceptionGetsHereRaiseABug();
-      publishBlobSidecars(blobSidecars.get(), block, blockPublishingPerformance);
+      publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance);
     }
   }
 
@@ -216,11 +216,10 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       publishBlock(block, blockPublishingPerformance)
           .always(
               () ->
-                  publishDataColumnSidecars(
-                      dataColumnSidecars.get(), block, blockPublishingPerformance));
+                  publishDataColumnSidecars(dataColumnSidecars.get(), blockPublishingPerformance));
     } else {
       publishBlock(block, blockPublishingPerformance).ifExceptionGetsHereRaiseABug();
-      publishDataColumnSidecars(dataColumnSidecars.get(), block, blockPublishingPerformance);
+      publishDataColumnSidecars(dataColumnSidecars.get(), blockPublishingPerformance);
     }
   }
 
@@ -236,13 +235,10 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       SignedBeaconBlock block, BlockPublishingPerformance blockPublishingPerformance);
 
   abstract void publishBlobSidecars(
-      List<BlobSidecar> blobSidecars,
-      SignedBeaconBlock block,
-      BlockPublishingPerformance blockPublishingPerformance);
+      List<BlobSidecar> blobSidecars, BlockPublishingPerformance blockPublishingPerformance);
 
   abstract void publishDataColumnSidecars(
       List<DataColumnSidecar> dataColumnSidecars,
-      SignedBeaconBlock block,
       BlockPublishingPerformance blockPublishingPerformance);
 
   private SafeFuture<SendSignedBlockResult> calculateResult(

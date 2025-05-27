@@ -120,7 +120,7 @@ public interface BlockImportResult {
     return false;
   }
 
-  default boolean isDataNotYetAvailable() {
+  default boolean isDataNotAvailable() {
     return false;
   }
 

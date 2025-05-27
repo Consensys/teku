@@ -56,7 +56,7 @@ public class FailedBlockImportResult implements BlockImportResult {
   }
 
   @Override
-  public boolean isDataNotYetAvailable() {
+  public boolean isDataNotAvailable() {
     return failureReason == FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
   }
 

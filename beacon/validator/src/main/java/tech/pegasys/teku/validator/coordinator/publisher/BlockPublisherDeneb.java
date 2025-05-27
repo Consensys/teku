@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -65,7 +64,6 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
   @Override
   void publishBlobSidecars(
       final List<BlobSidecar> blobSidecars,
-      final SignedBeaconBlock block,
       final BlockPublishingPerformance blockPublishingPerformance) {
     blockPublishingPerformance.blobSidecarsPublishingInitiated();
     blobSidecarGossipChannel.publishBlobSidecars(blobSidecars).ifExceptionGetsHereRaiseABug();

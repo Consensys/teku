@@ -513,7 +513,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   /**
-   * Return the sample count if allowing failures.
+   * NOTE: this method was part of the spec for lossy sampling. Not it is only being used on tests
+   * (eventually it will be removed).
+   *
+   * <p>Return the sample count if allowing failures.
    *
    * <p>This helper demonstrates how to calculate the number of columns to query per slot when
    * allowing given number of failures, assuming uniform random selection without replacement.

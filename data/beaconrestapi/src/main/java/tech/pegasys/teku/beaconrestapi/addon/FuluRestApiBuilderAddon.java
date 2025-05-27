@@ -36,7 +36,7 @@ public class FuluRestApiBuilderAddon implements RestApiBuilderAddon {
 
   @Override
   public boolean isEnabled() {
-    return spec.isMilestoneSupported(SpecMilestone.ELECTRA);
+    return spec.isMilestoneSupported(SpecMilestone.FULU);
   }
 
   @Override

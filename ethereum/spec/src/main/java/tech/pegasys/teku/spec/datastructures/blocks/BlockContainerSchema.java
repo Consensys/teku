@@ -14,10 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchemaDeneb;
 
 /**
- * Interface used to represent both {@link BeaconBlockSchema} and {@link BlockContentsSchemaDeneb}
+ * Interface used to represent both {@link BeaconBlockSchema}, all BlockContentsSchema[Milestone]
  * and their blinded variants
  */
 public interface BlockContainerSchema<T extends BlockContainer> extends SszContainerSchema<T> {
