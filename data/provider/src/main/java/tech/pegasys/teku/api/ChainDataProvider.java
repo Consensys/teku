@@ -43,6 +43,7 @@ import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
+import tech.pegasys.teku.api.migrated.StateValidatorIdentity;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.provider.GenesisData;
 import tech.pegasys.teku.api.response.ValidatorStatus;
@@ -303,6 +304,20 @@ public class ChainDataProvider {
       final BeaconState state, final List<String> validators) {
     return getValidatorSelector(state, validators)
         .mapToObj(index -> StateValidatorBalanceData.fromState(state, index))
+        .flatMap(Optional::stream)
+        .toList();
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorIdentity>>>>
+      getStateValidatorIdentities(final String stateIdParam, final List<String> validators) {
+    return fromState(stateIdParam, state -> getValidatorIdentitiesFromState(state, validators));
+  }
+
+  @VisibleForTesting
+  List<StateValidatorIdentity> getValidatorIdentitiesFromState(
+      final BeaconState state, final List<String> validators) {
+    return getValidatorSelector(state, validators)
+        .mapToObj(index -> StateValidatorIdentity.fromState(state, index))
         .flatMap(Optional::stream)
         .toList();
   }

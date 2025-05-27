@@ -18,7 +18,8 @@
 - Added JDK 24 docker image build.
 - Reduced block building time at the first slot of an epoch when a large number of validators are configured.
 - Improved configuration loading to use builtin configurations to default any fields we need that were missing from a passed in configuration.
-- Add `/teku/v1/admin/add_peer` endpoint to allow adding static peers via the REST API.
+- Added `/teku/v1/admin/add_peer` endpoint to allow adding static peers via the REST API.
+- Added `/eth/v1/beacon/states/{state_id}/validator_identities` endpoint to allow querying of validator identities.
 
 ### Bug Fixes
  - Added an error if the genesis state has invalid data in its latest block header.
