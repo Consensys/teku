@@ -50,6 +50,7 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -639,5 +641,22 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return seeds.stream()
         .map(seed -> computeProposerIndex(state, activeValidatorIndices, seed))
         .toList();
+  }
+
+  //initialize_proposer_lookahead
+  public List<UInt64> initializeProposerLookahead(
+      final BeaconStateElectra state, final BeaconStateAccessorsFulu beaconAccessors) {
+    final int minLookaheadSeed = specConfigFulu.getMinSeedLookahead();
+    final UInt64 currentEpoch = computeEpochAtSlot(state.getSlot());
+    List<Integer> proposerIndexes = new ArrayList<>();
+    for (int i = 0; i <= minLookaheadSeed; i++) {
+      UInt64 epoch = currentEpoch.plus(i);
+      Bytes32 seed = beaconAccessors.getSeed(state, epoch, Domain.BEACON_PROPOSER);
+      IntList activeValidatorIndices = beaconAccessors.getActiveValidatorIndices(state, epoch);
+      proposerIndexes.addAll(computeProposerIndices(state, epoch, seed, activeValidatorIndices));
+    }
+    return proposerIndexes.stream()
+            .map(UInt64::valueOf)
+            .collect(Collectors.toList());
   }
 }
