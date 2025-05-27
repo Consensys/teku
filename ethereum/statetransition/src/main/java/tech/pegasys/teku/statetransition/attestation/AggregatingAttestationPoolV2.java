@@ -416,34 +416,34 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
         (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
         aggregates.size());
 
-    if (aggregationTimeLimit > nanosSupplier.getAsLong()) {
-      // we have time left to consider groups containing single attestation only
-      (parallel ? dataHashes.parallelStream() : dataHashes.stream())
-          .flatMap(
-              dataHashSetForSlot ->
-                  streamAggregatesForDataHashesBySlot(
-                      dataHashSetForSlot, // dataHashSetForSlot is expected to be a Concurrent Set
-                      stateAtBlockSlot,
-                      forkChecker,
-                      blockRequiresAttestationsWithCommitteeBits,
-                      aggregationTimeLimit,
-                      true))
-          .filter(
-              attestation -> {
-                if (spec.computeEpochAtSlot(attestation.data().getSlot())
-                    .isLessThan(currentEpoch)) {
-                  final int currentCount = prevEpochCount.getAndIncrement();
-                  return currentCount < previousEpochLimit;
-                }
-                return true;
-              })
-          .forEach(aggregates::add);
-
-      LOG.info(
-          "Aggregation including SA took {} ms. Final produced {} aggregations.",
-          (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
-          aggregates.size());
-    }
+//    if (aggregationTimeLimit > nanosSupplier.getAsLong()) {
+//      // we have time left to consider groups containing single attestation only
+//      (parallel ? dataHashes.parallelStream() : dataHashes.stream())
+//          .flatMap(
+//              dataHashSetForSlot ->
+//                  streamAggregatesForDataHashesBySlot(
+//                      dataHashSetForSlot, // dataHashSetForSlot is expected to be a Concurrent Set
+//                      stateAtBlockSlot,
+//                      forkChecker,
+//                      blockRequiresAttestationsWithCommitteeBits,
+//                      aggregationTimeLimit,
+//                      true))
+//          .filter(
+//              attestation -> {
+//                if (spec.computeEpochAtSlot(attestation.data().getSlot())
+//                    .isLessThan(currentEpoch)) {
+//                  final int currentCount = prevEpochCount.getAndIncrement();
+//                  return currentCount < previousEpochLimit;
+//                }
+//                return true;
+//              })
+//          .forEach(aggregates::add);
+//
+//      LOG.info(
+//          "Aggregation including SA took {} ms. Final produced {} aggregations.",
+//          (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
+//          aggregates.size());
+//    }
 
     /* -- Sorting phase -- */
 
