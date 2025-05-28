@@ -109,7 +109,7 @@ public class P2POptions {
   @Option(
       names = {"--Xp2p-quic-port"},
       paramLabel = "<INTEGER>",
-      description = "P2P QUIC port. The default is '--p2p-port + 1'",
+      description = "P2P QUIC port",
       hidden = true,
       arity = "1")
   private Integer p2pQuicPort = NetworkConfig.DEFAULT_P2P_QUIC_PORT;
@@ -118,7 +118,7 @@ public class P2POptions {
       names = {"--Xp2p-quic-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
-          "P2P IPv6 QUIC port. This port is only used when listening over both IPv4 and IPv6. The default is '--p2p-port-ipv6 + 1'",
+          "P2P IPv6 QUIC port. This port is only used when listening over both IPv4 and IPv6.",
       hidden = true,
       arity = "1")
   private int p2pQuicPortIpv6 = NetworkConfig.DEFAULT_P2P_QUIC_PORT_IPV6;
@@ -531,7 +531,7 @@ public class P2POptions {
                     .lines()
                     .map(String::trim)
                     .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                    .collect(Collectors.toList());
+                    .toList();
             staticPeers.addAll(peersFromUrl);
           }
         } else {
