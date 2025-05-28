@@ -14,6 +14,9 @@
 - Added `--p2p-static-peers-url` option to read static peers from a URL or file
 - Added node epoch and computed slot to the sync committee duties failure message for more context about the failure condition.
 - Updated third party libraries.
+- Added support for multiple entries in graffiti files via YAML configuration, allowing for specific validator graffiti, ordered lists, and random selection from a list.
+
+### Bug Fixes
 - Added an info message on startup for the highest supported milestone and associated epoch.
 - Added JDK 24 docker image build.
 - Reduced block building time at the first slot of an epoch when a large number of validators are configured.
@@ -21,5 +24,3 @@
 - Added `/teku/v1/admin/add_peer` endpoint to allow adding static peers via the REST API.
 - Added `/eth/v1/beacon/states/{state_id}/validator_identities` endpoint to allow querying of validator identities.
 
-### Bug Fixes
- - Added an error if the genesis state has invalid data in its latest block header.

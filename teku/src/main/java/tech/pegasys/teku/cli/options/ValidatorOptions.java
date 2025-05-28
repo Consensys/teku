@@ -30,7 +30,7 @@ import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
-import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
+import tech.pegasys.teku.validator.api.GraffitiParser;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
@@ -179,8 +179,10 @@ public class ValidatorOptions {
               .isLocalSlashingProtectionSynchronizedModeEnabled(
                   isLocalSlashingProtectionSynchronizedEnabled)
               .graffitiProvider(
-                  new FileBackedGraffitiProvider(
-                      Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                  GraffitiParser.loadGraffitiProvider(
+                      Optional.ofNullable(graffiti),
+                      Optional.empty(),
+                      Optional.ofNullable(graffitiFile)))
               .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
               .generateEarlyAttestations(generateEarlyAttestations)
               .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
