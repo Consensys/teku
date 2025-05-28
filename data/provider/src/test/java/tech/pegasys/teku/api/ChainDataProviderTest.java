@@ -563,12 +563,16 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final BeaconState internalState = data.randomBeaconState(8);
     final Validator validator = internalState.getValidators().get(0);
     final StateValidatorIdentity identity =
-        new StateValidatorIdentity(ZERO, validator.getPublicKey(), validator.getActivationEpoch());
+        StateValidatorIdentity.create(
+            ZERO, validator.getPublicKey(), validator.getActivationEpoch());
 
-    assertThat(provider.getValidatorIdentitiesFromState(internalState, emptyList())).hasSize(8);
-    assertThat(provider.getValidatorIdentitiesFromState(internalState, List.of("0")))
-        .hasSize(1)
-        .containsExactly(identity);
+    assertThat(provider.getValidatorIdentitiesFromState(internalState, emptyList()).size())
+        .isEqualTo(8);
+
+    final SszList<StateValidatorIdentity> validatorIdentitiesFromState =
+        provider.getValidatorIdentitiesFromState(internalState, List.of("0"));
+    assertThat(validatorIdentitiesFromState.size()).isEqualTo(1);
+    assertThat(validatorIdentitiesFromState.get(0)).isEqualTo(identity);
   }
 
   @Test

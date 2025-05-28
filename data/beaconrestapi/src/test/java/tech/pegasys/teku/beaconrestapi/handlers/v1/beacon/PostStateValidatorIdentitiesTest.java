@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEP
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.StateValidatorIdentity;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -49,15 +51,10 @@ public class PostStateValidatorIdentitiesTest
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    List<StateValidatorIdentity> stateValidatorIdentities = new ArrayList<>();
-    for (int i = 0; i < 2; i++) {
-      stateValidatorIdentities.add(
-          new StateValidatorIdentity(
-              UInt64.valueOf(i), dataStructureUtil.randomPublicKey(), UInt64.valueOf(i)));
-    }
+    final SszList<StateValidatorIdentity> stateValidatorIdentities = getValidatorsList();
 
-    ObjectAndMetaData<List<StateValidatorIdentity>> responseData =
-        withMetaData(stateValidatorIdentities);
+    final ObjectAndMetaData<List<StateValidatorIdentity>> responseData =
+        withMetaData(stateValidatorIdentities.asList());
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
@@ -67,6 +64,27 @@ public class PostStateValidatorIdentitiesTest
             UTF_8);
 
     assertThat(data).isEqualTo(expected);
+  }
+
+  @Test
+  void metadata_shouldHandle200ssz() throws JsonProcessingException {
+    final SszList<StateValidatorIdentity> stateValidatorIdentities = getValidatorsList();
+
+    final ObjectAndMetaData<SszList<StateValidatorIdentity>> responseData =
+        withMetaData(stateValidatorIdentities);
+
+    final byte[] data = getResponseSszFromMetadata(handler, SC_OK, responseData);
+    assertThat(data).isNotEmpty();
+  }
+
+  private SszList<StateValidatorIdentity> getValidatorsList() {
+    final List<StateValidatorIdentity> stateValidatorIdentities = new ArrayList<>();
+    for (int i = 0; i < 2; i++) {
+      stateValidatorIdentities.add(
+          StateValidatorIdentity.create(
+              UInt64.valueOf(i), dataStructureUtil.randomPublicKey(), UInt64.valueOf(i)));
+    }
+    return StateValidatorIdentity.SSZ_LIST_SCHEMA.createFromElements(stateValidatorIdentities);
   }
 
   @Test
