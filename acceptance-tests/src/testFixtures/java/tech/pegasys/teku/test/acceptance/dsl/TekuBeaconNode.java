@@ -50,7 +50,7 @@ import org.assertj.core.api.ThrowingConsumer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.EventType;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
@@ -100,7 +100,7 @@ public class TekuBeaconNode extends TekuNode {
       final Network network, final TekuDockerVersion version, final TekuNodeConfig tekuNodeConfig) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = tekuNodeConfig;
-    this.spec = SpecFactory.create(config.getNetworkName(), config.getSpecConfigModifier());
+    this.spec = SpecFactory.create(config.getNetworkName(), true, config.getSpecConfigModifier());
     if (config.getConfigMap().containsKey("validator-api-enabled")) {
       container.addExposedPort(VALIDATOR_API_PORT);
     }

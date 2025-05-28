@@ -22,6 +22,7 @@ import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -174,7 +175,7 @@ class ValidatorTypesTest {
     final List<ExternalValidator> externalValidators =
         List.of(
             new ExternalValidator(publicKey1, Optional.empty()),
-            new ExternalValidator(publicKey2, Optional.of(new URL("http://host.com"))));
+            new ExternalValidator(publicKey2, Optional.of(URI.create("http://host.com").toURL())));
     final PostRemoteKeysRequest request = new PostRemoteKeysRequest(externalValidators);
     final Map<String, Object> result =
         JsonTestUtil.parse(JsonUtil.serialize(request, ValidatorTypes.POST_REMOTE_KEYS_REQUEST));
@@ -188,7 +189,7 @@ class ValidatorTypesTest {
             Map.of("pubkey", publicKey1.toString()),
             Map.of(
                 "pubkey", publicKey2.toString(),
-                "url", new URL("http://host.com").toString()));
+                "url", URI.create("http://host.com").toURL().toString()));
   }
 
   @Test
@@ -208,8 +209,7 @@ class ValidatorTypesTest {
                 parse(
                     "{ \"pubkey\": \"0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976\", \"url\": \"/\", \"readonly\": true}",
                     ValidatorTypes.EXTERNAL_VALIDATOR_RESPONSE_TYPE))
-        .hasCauseInstanceOf(IllegalArgumentException.class)
-        .hasRootCauseInstanceOf(MalformedURLException.class);
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -224,7 +224,7 @@ class ValidatorTypesTest {
     BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     checkExternalValidatorStoreRoundTrip(
         publicKey,
-        Optional.of(new URL("http://host.com")),
+        Optional.of(URI.create("http://host.com").toURL()),
         "{\"pubkey\":\"" + publicKey + "\",\"url\":\"http://host.com\"}");
   }
 

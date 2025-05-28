@@ -161,4 +161,8 @@ public enum SpecMilestone {
     checkNotNull(milestoneName, "Milestone name can't be null");
     return SpecMilestone.valueOf(milestoneName.toUpperCase(Locale.ROOT));
   }
+
+  public String lowerCaseName() {
+    return this.name().toLowerCase(Locale.ROOT);
+  }
 }

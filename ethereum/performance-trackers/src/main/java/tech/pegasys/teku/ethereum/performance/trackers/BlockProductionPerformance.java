@@ -75,7 +75,7 @@ public interface BlockProductionPerformance {
         public void prepareProcessHead() {}
 
         @Override
-        public void beaconBlockPrepared() {}
+        public void beaconBlockBodyPrepared() {}
 
         @Override
         public void getStateAtSlot() {}
@@ -102,7 +102,7 @@ public interface BlockProductionPerformance {
         public void getAttestationsForBlock() {}
 
         @Override
-        public void beaconBlockPreparationStarted() {}
+        public void beaconBlockBodyPreparationStarted() {}
       };
 
   void complete();
@@ -113,7 +113,7 @@ public interface BlockProductionPerformance {
 
   void prepareProcessHead();
 
-  void beaconBlockPrepared();
+  void beaconBlockBodyPrepared();
 
   void getStateAtSlot();
 
@@ -131,5 +131,5 @@ public interface BlockProductionPerformance {
 
   void getAttestationsForBlock();
 
-  void beaconBlockPreparationStarted();
+  void beaconBlockBodyPreparationStarted();
 }

@@ -47,6 +47,7 @@ class StoreTransactionUpdates {
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
   private final boolean blobSidecarsEnabled;
+  private final boolean dataColumnSidecarsEnabled;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -61,7 +62,8 @@ class StoreTransactionUpdates {
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
-      final boolean blobSidecarsEnabled) {
+      final boolean blobSidecarsEnabled,
+      final boolean dataColumnSidecarsEnabled) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -87,6 +89,7 @@ class StoreTransactionUpdates {
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
+    this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -104,7 +107,8 @@ class StoreTransactionUpdates {
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
         latestCanonicalBlockRoot,
-        blobSidecarsEnabled);
+        blobSidecarsEnabled,
+        dataColumnSidecarsEnabled);
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {

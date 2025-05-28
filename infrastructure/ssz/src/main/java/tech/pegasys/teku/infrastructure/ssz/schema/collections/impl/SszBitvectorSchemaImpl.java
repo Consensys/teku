@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.ssz.schema.collections.impl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.ssz.schema.json.SszPrimitiveTypeDefinitions.sszSerializedType;
 
+import java.util.BitSet;
 import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -52,6 +53,11 @@ public class SszBitvectorSchemaImpl extends AbstractSszVectorSchema<SszBit, SszB
   @Override
   public SszBitvector ofBits(final int... setBitIndices) {
     return SszBitvectorImpl.ofBits(this, setBitIndices);
+  }
+
+  @Override
+  public SszBitvector wrapBitSet(final int size, final BitSet bitSet) {
+    return SszBitvectorImpl.wrapBitSet(this, size, bitSet);
   }
 
   @Override

@@ -53,6 +53,11 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
     return mapOf(STRING_TYPE, STRING_TYPE, TreeMap::new);
   }
 
+  static DeserializableTypeDefinition<Map<String, Object>> configMap() {
+    return new DeserializableConfigTypeDefinition(
+        Optional.empty(), Optional.empty(), Optional.empty(), TreeMap::new);
+  }
+
   static <TKey, TValue> DeserializableTypeDefinition<Map<TKey, TValue>> mapOf(
       final StringValueTypeDefinition<TKey> keyType,
       final DeserializableTypeDefinition<TValue> valueType,

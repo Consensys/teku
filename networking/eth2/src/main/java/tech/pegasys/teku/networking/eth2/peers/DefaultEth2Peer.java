@@ -28,10 +28,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -39,6 +41,8 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByR
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsByRangeListenerValidatingProxy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsByRootListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcResponseHandler;
@@ -52,7 +56,9 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -60,6 +66,10 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
@@ -68,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -79,19 +90,29 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final MetadataMessagesFactory metadataMessagesFactory;
   private final PeerChainValidator peerChainValidator;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
-  private volatile Optional<UInt64> remoteMetadataSeqNumber = Optional.empty();
-  private volatile Optional<SszBitvector> remoteAttSubnets = Optional.empty();
+  private volatile Optional<MetadataMessage> remoteMetadata = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private final Subscribers<PeerStatusSubscriber> statusSubscribers = Subscribers.create(true);
+  private final Subscribers<PeerMetadataUpdateSubscriber> metadataSubscribers =
+      Subscribers.create(true);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger unansweredPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
   private final RateTracker blobSidecarsRequestTracker;
+  private final RateTracker dataColumnSidecarsRequestTracker;
   private final RateTracker requestTracker;
   private final KZG kzg;
+  private final MetricsSystem metricsSystem;
+  private final TimeProvider timeProvider;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
+  private final Supplier<UInt64> firstSlotSupportingDataColumnSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
+  private final Supplier<DataColumnSidecarsByRootRequestMessageSchema>
+      dataColumnSidecarsByRootRequestMessageSchema;
+  private final Supplier<
+          DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema>
+      dataColumnSidecarsByRangeRequestMessageSchema;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -103,8 +124,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
+      final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
-      final KZG kzg) {
+      final KZG kzg,
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider) {
     super(peer);
     this.spec = spec;
     this.discoveryNodeId = discoveryNodeId;
@@ -114,8 +138,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.peerChainValidator = peerChainValidator;
     this.blockRequestTracker = blockRequestTracker;
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
+    this.dataColumnSidecarsRequestTracker = dataColumnSidecarsRequestTracker;
     this.requestTracker = requestTracker;
     this.kzg = kzg;
+    this.metricsSystem = metricsSystem;
+    this.timeProvider = timeProvider;
     this.firstSlotSupportingBlobSidecarsByRange =
         Suppliers.memoize(
             () -> {
@@ -128,6 +155,24 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsDeneb.required(
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
+    this.firstSlotSupportingDataColumnSidecarsByRange =
+        Suppliers.memoize(
+            () -> {
+              final UInt64 fuluForkEpoch = getSpecConfigFulu().getFuluForkEpoch();
+              return spec.computeStartSlotAtEpoch(fuluForkEpoch);
+            });
+    this.dataColumnSidecarsByRootRequestMessageSchema =
+        Suppliers.memoize(
+            () ->
+                SchemaDefinitionsFulu.required(
+                        spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+                    .getDataColumnSidecarsByRootRequestMessageSchema());
+    this.dataColumnSidecarsByRangeRequestMessageSchema =
+        Suppliers.memoize(
+            () ->
+                SchemaDefinitionsFulu.required(
+                        spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+                    .getDataColumnSidecarsByRangeRequestMessageSchema());
   }
 
   @Override
@@ -157,8 +202,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public void updateMetadataSeqNumber(final UInt64 seqNumber) {
-    Optional<UInt64> curValue = this.remoteMetadataSeqNumber;
-    remoteMetadataSeqNumber = Optional.of(seqNumber);
+    Optional<UInt64> curValue = this.remoteMetadata.map(MetadataMessage::getSeqNumber);
     if (curValue.isEmpty() || seqNumber.compareTo(curValue.get()) > 0) {
       requestMetadata()
           .finish(
@@ -167,8 +211,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   private void updateMetadata(final MetadataMessage metadataMessage) {
-    remoteMetadataSeqNumber = Optional.of(metadataMessage.getSeqNumber());
-    remoteAttSubnets = Optional.of(metadataMessage.getAttnets());
+    this.remoteMetadata = Optional.ofNullable(metadataMessage);
+    metadataSubscribers.forEach(s -> s.onPeerMetadataUpdate(this, metadataMessage));
   }
 
   @Override
@@ -183,13 +227,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public void subscribeMetadataUpdates(final PeerMetadataUpdateSubscriber subscriber) {
+    metadataSubscribers.subscribe(subscriber);
+    remoteMetadata.ifPresent(metadata -> subscriber.onPeerMetadataUpdate(this, metadata));
+  }
+
+  @Override
   public PeerStatus getStatus() {
     return remoteStatus.orElseThrow();
   }
 
   @Override
   public Optional<SszBitvector> getRemoteAttestationSubnets() {
-    return remoteAttSubnets;
+    return remoteMetadata.map(MetadataMessage::getAttnets);
   }
 
   @Override
@@ -258,6 +308,29 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new BlobSidecarsByRootListenerValidatingProxy(
                         this, spec, listener, kzg, blobIdentifiers)))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
+  }
+
+  @Override
+  public SafeFuture<Void> requestDataColumnSidecarsByRoot(
+      final List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
+      final RpcResponseListener<DataColumnSidecar> listener) {
+    return rpcMethods
+        .dataColumnSidecarsByRoot()
+        .map(
+            method ->
+                requestStream(
+                    method,
+                    new DataColumnSidecarsByRootRequestMessage(
+                        dataColumnSidecarsByRootRequestMessageSchema.get(), dataColumnIdentifiers),
+                    new DataColumnSidecarsByRootListenerValidatingProxy(
+                        this,
+                        spec,
+                        listener,
+                        kzg,
+                        metricsSystem,
+                        timeProvider,
+                        dataColumnIdentifiers)))
+        .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRoot"));
   }
 
   @Override
@@ -366,6 +439,56 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestDataColumnSidecarsByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final List<UInt64> columns,
+      final RpcResponseListener<DataColumnSidecar> listener) {
+    return rpcMethods
+        .getDataColumnSidecarsByRange()
+        .map(
+            method -> {
+              final UInt64 firstSupportedSlot = firstSlotSupportingDataColumnSidecarsByRange.get();
+              final DataColumnSidecarsByRangeRequestMessage request;
+
+              if (startSlot.isLessThan(firstSupportedSlot)) {
+                LOG.debug(
+                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
+                    firstSupportedSlot,
+                    startSlot);
+                final UInt64 updatedCount =
+                    count.minusMinZero(firstSupportedSlot.minusMinZero(startSlot));
+                if (updatedCount.isZero()) {
+                  return SafeFuture.COMPLETE;
+                }
+                request =
+                    dataColumnSidecarsByRangeRequestMessageSchema
+                        .get()
+                        .create(firstSupportedSlot, updatedCount, columns);
+              } else {
+                request =
+                    dataColumnSidecarsByRangeRequestMessageSchema
+                        .get()
+                        .create(startSlot, count, columns);
+              }
+              return requestStream(
+                  method,
+                  request,
+                  new DataColumnSidecarsByRangeListenerValidatingProxy(
+                      spec,
+                      this,
+                      listener,
+                      kzg,
+                      metricsSystem,
+                      timeProvider,
+                      request.getStartSlot(),
+                      request.getCount(),
+                      request.getColumns()));
+            })
+        .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRange"));
+  }
+
+  @Override
   public SafeFuture<MetadataMessage> requestMetadata() {
     return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
   }
@@ -397,9 +520,33 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public long getAvailableDataColumnSidecarsRequestCount() {
+    return dataColumnSidecarsRequestTracker.getAvailableObjectCount();
+  }
+
+  @Override
+  public Optional<RequestApproval> approveDataColumnSidecarsRequest(
+      final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
+    return approveObjectsRequest(
+        "data column sidecars",
+        dataColumnSidecarsRequestTracker,
+        dataColumnSidecarsCount,
+        callback);
+  }
+
+  @Override
+  public void adjustDataColumnSidecarsRequest(
+      final RequestApproval dataColumnSidecarsRequest, final long returnedDataColumnSidecarsCount) {
+    adjustObjectsRequest(
+        dataColumnSidecarsRequestTracker,
+        dataColumnSidecarsRequest,
+        returnedDataColumnSidecarsCount);
+  }
+
+  @Override
   public boolean approveRequest() {
     if (requestTracker.approveObjectsRequest(1L).isEmpty()) {
-      LOG.debug("Peer {} disconnected due to request rate limits", getId());
+      LOG.info("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
       return false;
     }
@@ -444,7 +591,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     final Optional<RequestApproval> requestApproval =
         requestTracker.approveObjectsRequest(objectsCount);
     if (requestApproval.isEmpty()) {
-      LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
+      LOG.info("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
@@ -485,6 +632,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   private SpecConfigDeneb getSpecConfigDeneb() {
     return SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
+  }
+
+  private SpecConfigFulu getSpecConfigFulu() {
+    return SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   }
 
   private <T> SafeFuture<T> failWithUnsupportedMethodException(final String method) {

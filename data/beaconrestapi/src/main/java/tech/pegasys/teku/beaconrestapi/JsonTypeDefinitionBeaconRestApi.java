@@ -25,6 +25,7 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.addon.CapellaRestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.addon.DenebRestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.addon.LightClientRestApiBuilderAddon;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.AddPeer;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
@@ -70,6 +71,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidatorBalances;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidatorIdentities;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
@@ -224,6 +226,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetStateValidator(dataProvider))
             .endpoint(new GetStateValidatorBalances(dataProvider))
             .endpoint(new PostStateValidatorBalances(dataProvider))
+            .endpoint(new PostStateValidatorIdentities(dataProvider))
             .endpoint(new GetStateCommittees(dataProvider))
             .endpoint(new GetStateSyncCommittees(dataProvider))
             .endpoint(new GetStateRandao(dataProvider))
@@ -243,7 +246,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetAttestations(dataProvider, spec))
             .endpoint(new GetAttestationsV2(dataProvider, schemaCache))
             .endpoint(new PostAttestation(dataProvider, schemaCache))
-            .endpoint(new PostAttestationsV2(dataProvider, schemaCache))
+            .endpoint(new PostAttestationsV2(dataProvider, spec, schemaCache))
             .endpoint(new GetAttesterSlashings(dataProvider, schemaCache))
             .endpoint(new GetAttesterSlashingsV2(dataProvider, schemaCache))
             .endpoint(new PostAttesterSlashing(dataProvider, schemaCache))
@@ -283,11 +286,11 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostAttesterDuties(dataProvider))
             .endpoint(new GetProposerDuties(dataProvider))
             .endpoint(new GetNewBlockV3(dataProvider, schemaCache))
-            .endpoint(new GetAttestationData(dataProvider))
+            .endpoint(new GetAttestationData(dataProvider, spec))
             .endpoint(new GetAggregateAttestation(dataProvider, spec))
             .endpoint(new GetAggregateAttestationV2(dataProvider, schemaCache))
             .endpoint(new PostAggregateAndProofs(dataProvider, schemaCache))
-            .endpoint(new PostAggregateAndProofsV2(dataProvider, schemaCache))
+            .endpoint(new PostAggregateAndProofsV2(dataProvider, spec, schemaCache))
             .endpoint(new PostSubscribeToBeaconCommitteeSubnet(dataProvider))
             .endpoint(new PostSyncDuties(dataProvider))
             .endpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache))
@@ -322,7 +325,8 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetEth1VotingSummary(dataProvider, eth1DataProvider))
             .endpoint(new GetGlobalValidatorInclusion(dataProvider))
             .endpoint(new GetFinalizedStateSlotBefore(dataProvider))
-            .endpoint(new GetValidatorInclusion(dataProvider));
+            .endpoint(new GetValidatorInclusion(dataProvider))
+            .endpoint(new AddPeer(dataProvider));
 
     builder = applyAddons(builder, config, spec, dataProvider, schemaCache);
     return builder.build();

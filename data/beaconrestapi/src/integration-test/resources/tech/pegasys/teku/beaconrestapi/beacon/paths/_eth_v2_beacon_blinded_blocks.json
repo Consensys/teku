@@ -20,7 +20,7 @@
       "in" : "header",
       "schema" : {
         "type" : "string",
-        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ],
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu" ],
         "description" : "Version of the block being submitted."
       }
     } ],
@@ -55,7 +55,7 @@
     },
     "responses" : {
       "415" : {
-        "description" : "Unsupported media-type supplied",
+        "description" : "Unsupported media type",
         "content" : {
           "application/json" : {
             "schema" : {

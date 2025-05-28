@@ -17,6 +17,7 @@ dependencies {
   referenceTestImplementation project(':infrastructure:async')
   referenceTestImplementation project(':infrastructure:io')
   referenceTestImplementation testFixtures(project(':infrastructure:async'))
+  referenceTestImplementation testFixtures(project(':infrastructure:kzg'))
   referenceTestImplementation testFixtures(project(':infrastructure:metrics'))
   referenceTestImplementation project(':infrastructure:time')
   referenceTestImplementation project(':data:dataexchange')

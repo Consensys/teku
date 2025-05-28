@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
@@ -217,7 +218,7 @@ public class MiscHelpers {
         .toList();
   }
 
-  private UInt64 computeSubscribedSubnet(
+  protected UInt64 computeSubscribedSubnet(
       final UInt256 nodeId, final UInt64 epoch, final int index) {
 
     final int nodeIdPrefix =
@@ -451,6 +452,10 @@ public class MiscHelpers {
 
   public boolean isFormerDepositMechanismDisabled(final BeaconState state) {
     return false;
+  }
+
+  public Optional<MiscHelpersAltair> toVersionAltair() {
+    return Optional.empty();
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {

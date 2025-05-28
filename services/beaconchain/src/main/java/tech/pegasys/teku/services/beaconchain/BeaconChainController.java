@@ -86,6 +86,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSub
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
@@ -123,7 +124,11 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV2;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfilerCSV;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
@@ -135,6 +140,8 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -176,6 +183,7 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -283,6 +291,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
+  // TODO-fulu Add CustodyGroupCountManagerLateInit
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -298,6 +307,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
   protected DebugDataDumper debugDataDumper;
+  protected Path debugDataDirectory;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -342,6 +352,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "Current number of items held for future slots, labelled by type",
             "type");
     this.ephemerySlotValidationService = new EphemerySlotValidationService();
+    this.debugDataDirectory = serviceConfig.getDataDirLayout().getDebugDataDirectory();
   }
 
   @Override
@@ -450,6 +461,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,
+                    eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
                     validatorIsConnectedProvider,
@@ -560,7 +572,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initKzg() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      kzg = KZG.getInstance();
+      kzg = KZG.getInstance(beaconConfig.eth2NetworkConfig().isRustKzgEnabled());
       final String trustedSetupFile =
           beaconConfig
               .eth2NetworkConfig()
@@ -571,7 +583,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                           "Trusted setup should be configured when Deneb is enabled"));
       kzg.loadTrustedSetup(trustedSetupFile);
     } else {
-      kzg = KZG.NOOP;
+      kzg = KZG.DISABLED;
     }
   }
 
@@ -1143,6 +1155,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
+            .dataColumnSidecarCustody(DataColumnSidecarByRootCustody.NOOP)
+            .custodyGroupCountManager(CustodyGroupCountManager.NOOP)
+            .metadataMessagesFactory(new MetadataMessagesFactory())
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
@@ -1199,9 +1214,29 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
+    final Eth2NetworkConfiguration eth2NetworkConfiguration = beaconConfig.eth2NetworkConfig();
+
+    final AggregatingAttestationPoolProfiler profiler =
+        eth2NetworkConfiguration.isAggregatingAttestationPoolProfilingEnabled()
+            ? new AggregatingAttestationPoolProfilerCSV(debugDataDirectory)
+            : AggregatingAttestationPoolProfiler.NOOP;
+
     attestationPool =
-        new AggregatingAttestationPool(
-            spec, recentChainData, metricsSystem, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+        eth2NetworkConfiguration.isAggregatingAttestationPoolV2Enabled()
+            ? new AggregatingAttestationPoolV2(
+                spec,
+                recentChainData,
+                metricsSystem,
+                DEFAULT_MAXIMUM_ATTESTATION_COUNT,
+                profiler,
+                eth2NetworkConfiguration.getAggregatingAttestationPoolV2BlockAggregationTimeLimit(),
+                eth2NetworkConfiguration
+                    .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(),
+                eth2NetworkConfiguration
+                    .isAggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled(),
+                eth2NetworkConfiguration.isAggregatingAttestationPoolV2ParallelEnabled())
+            : new AggregatingAttestationPoolV1(
+                spec, recentChainData, metricsSystem, profiler, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(
         attestationPool::onAttestationsIncludedInBlock);

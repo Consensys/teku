@@ -13,172 +13,81 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
-import org.HdrHistogram.SynchronizedHistogram;
-import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.ExternalSummary;
+import org.hyperledger.besu.plugin.services.metrics.Histogram;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-/**
- * A histogram metric that automatically selects bucket sizes based on simple configuration and the
- * values actually received. Only records values when the metrics system is a {@link
- * PrometheusMetricsSystem}.
- *
- * <p>Backing is an HdrHistogram.
- *
- * @see <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram docs</a>
- */
 public class MetricsHistogram {
-  static final String QUANTILE_LABEL = "quantile";
-  static final double LABEL_50 = 0.5;
-  static final double LABEL_95 = 0.95;
-  static final double LABEL_99 = 0.99;
-  static final double LABEL_1 = 1;
+  private static final double[] DEFAULT_BUCKETS =
+      new double[] {
+        0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0
+      };
 
-  private final Map<List<String>, SynchronizedHistogram> histogramMap = new ConcurrentHashMap<>();
-  private final List<String> labels;
-  private final Optional<Long> highestTrackableValue;
-  private final int numberOfSignificantValueDigits;
+  private final Histogram histogram;
+  private final TimeProvider timeProvider;
 
-  protected MetricsHistogram(
-      final int numberOfSignificantValueDigits,
-      final Optional<Long> highestTrackableValue,
-      final List<String> customLabelsNames) {
-    this.numberOfSignificantValueDigits = numberOfSignificantValueDigits;
-    this.highestTrackableValue = highestTrackableValue;
-    this.labels = Stream.concat(customLabelsNames.stream(), Stream.of(QUANTILE_LABEL)).toList();
-  }
-
-  /**
-   * Create a new histogram metric which auto-resizes to fit any values supplied and maintains at
-   * least {@code numberOfSignificantValueDigits} of precision.
-   *
-   * @param category the metrics category
-   * @param metricsSystem the metrics system to register with
-   * @param name the name of the metric
-   * @param help the help text describing the metric
-   * @param numberOfSignificantValueDigits the number of digits of precision to preserve
-   * @return the new metric
-   */
-  public static MetricsHistogram create(
-      final MetricCategory category,
+  public MetricsHistogram(
       final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final MetricCategory category,
       final String name,
       final String help,
-      final int numberOfSignificantValueDigits,
-      final List<String> customLabelsNames) {
-
-    return createMetric(
-        category,
-        metricsSystem,
-        name,
-        help,
-        numberOfSignificantValueDigits,
-        Optional.empty(),
-        customLabelsNames);
+      final double... buckets) {
+    this.histogram =
+        metricsSystem.createHistogram(
+            category, name, help, buckets.length > 0 ? buckets : DEFAULT_BUCKETS);
+    this.timeProvider = timeProvider;
   }
 
-  /**
-   * Create a new histogram metric with a fixed maximum value, maintaining at least {@code
-   * numberOfSignificantValueDigits} of precision.
-   *
-   * <p>Values above the specified highestTrackableValue will be recorded as being equal to that
-   * value.
-   *
-   * @param category the metrics category
-   * @param metricsSystem the metrics system to register with
-   * @param name the name of the metric
-   * @param help the help text describing the metric
-   * @param numberOfSignificantValueDigits the number of digits of precision to preserve
-   * @param highestTrackableValue the highest value that can be recorded by this histogram
-   * @return the new metric
-   */
-  public static MetricsHistogram create(
-      final MetricCategory category,
+  public MetricsHistogram(
       final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final MetricCategory category,
       final String name,
       final String help,
-      final int numberOfSignificantValueDigits,
-      final long highestTrackableValue,
-      final List<String> customLabelsNames) {
-
-    return createMetric(
-        category,
-        metricsSystem,
-        name,
-        help,
-        numberOfSignificantValueDigits,
-        Optional.of(highestTrackableValue),
-        customLabelsNames);
+      final double[] buckets,
+      final String... labels) {
+    this.histogram =
+        metricsSystem
+            .createLabelledHistogram(
+                category, name, help, buckets.length > 0 ? buckets : DEFAULT_BUCKETS)
+            .labels(labels.length > 0 ? labels : new String[0]);
+    this.timeProvider = timeProvider;
   }
 
-  private static MetricsHistogram createMetric(
-      final MetricCategory category,
-      final MetricsSystem metricsSystem,
-      final String name,
-      final String help,
-      final int numberOfSignificantValueDigits,
-      final Optional<Long> highestTrackableValue,
-      final List<String> customLabelsNames) {
+  public static class Timer implements Closeable {
+    private final Histogram histogram;
+    private final TimeProvider timeProvider;
+    private final UInt64 start;
 
-    final MetricsHistogram histogram =
-        new MetricsHistogram(
-            numberOfSignificantValueDigits, highestTrackableValue, customLabelsNames);
-    if (metricsSystem instanceof PrometheusMetricsSystem) {
-      final String summaryMetricName = category.toString().toLowerCase(Locale.ROOT) + "_" + name;
-      metricsSystem.createSummary(
-          category, summaryMetricName, help, histogram::histogramToCollector);
+    public Timer(final Histogram histogram, final TimeProvider timeProvider) {
+      this.histogram = histogram;
+      this.timeProvider = timeProvider;
+      start = timeProvider.getTimeInMillis();
     }
-    return histogram;
-  }
 
-  public void recordValue(final long value, final String... customLabelValues) {
-    checkArgument(
-        labels.size() == customLabelValues.length + 1,
-        "customLabelsNames and customLabelsValues must have the same size");
+    @Override
+    public void close() throws IOException {
+      histogram.observe(timeProvider.getTimeInMillis().minus(start).doubleValue() / 1000);
+    }
 
-    final SynchronizedHistogram histogram =
-        histogramMap.computeIfAbsent(
-            Arrays.asList(customLabelValues),
-            __ ->
-                highestTrackableValue
-                    .map(aLong -> new SynchronizedHistogram(aLong, numberOfSignificantValueDigits))
-                    .orElseGet(() -> new SynchronizedHistogram(numberOfSignificantValueDigits)));
-
-    if (histogram.isAutoResize()) {
-      histogram.recordValue(value);
-    } else {
-      histogram.recordValue(Math.min(histogram.getHighestTrackableValue(), value));
+    public Runnable closeUnchecked() {
+      return () -> {
+        try {
+          close();
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      };
     }
   }
 
-  protected ExternalSummary histogramToCollector() {
-
-    final List<ExternalSummary.Quantile> quantiles =
-        histogramMap.entrySet().stream()
-            .flatMap(
-                entry ->
-                    Stream.of(
-                        new ExternalSummary.Quantile(
-                            LABEL_50, entry.getValue().getValueAtPercentile(50)),
-                        new ExternalSummary.Quantile(
-                            LABEL_95, entry.getValue().getValueAtPercentile(95)),
-                        new ExternalSummary.Quantile(
-                            LABEL_99, entry.getValue().getValueAtPercentile(99)),
-                        new ExternalSummary.Quantile(
-                            LABEL_1, entry.getValue().getValueAtPercentile(100))))
-            .toList();
-
-    // return sum 0 as we currently don't use it
-    return new ExternalSummary(histogramMap.size(), 0, quantiles);
+  public Timer startTimer() {
+    return new Timer(histogram, timeProvider);
   }
 }

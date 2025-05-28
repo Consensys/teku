@@ -33,6 +33,19 @@ public class SpecConfigLoader {
   private static final Logger LOG = LogManager.getLogger();
   private static final List<String> AVAILABLE_PRESETS =
       List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu");
+  private static final List<String> BUILTIN_NETWORKS =
+      List.of(
+          "chiado",
+          "ephemery",
+          "gnosis",
+          "holesky",
+          "hoodi",
+          "lukso",
+          "less-swift",
+          "mainnet",
+          "minimal",
+          "sepolia",
+          "swift");
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
@@ -52,27 +65,25 @@ public class SpecConfigLoader {
 
   public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
       final String configName,
-      final boolean ignoreUnknownConfigItems,
+      final boolean strictConfigLoadingEnabled,
       final Consumer<SpecConfigBuilder> modifier) {
-    final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(configName, reader, ignoreUnknownConfigItems);
-    return reader.build(modifier);
+    return loadConfig(configName, strictConfigLoadingEnabled, true, modifier);
   }
 
   public static SpecConfigAndParent<? extends SpecConfig> loadRemoteConfig(
-      final Map<String, String> config) {
+      final Map<String, Object> config) {
     final SpecConfigReader reader = new SpecConfigReader();
     if (config.containsKey(SpecConfigReader.PRESET_KEY)) {
       try {
-        applyPreset("remote", reader, true, config.get(SpecConfigReader.PRESET_KEY));
+        applyPreset("remote", reader, true, (String) config.get(SpecConfigReader.PRESET_KEY));
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
     }
     if (config.containsKey(SpecConfigReader.CONFIG_NAME_KEY)) {
-      final String configNameKey = config.get(SpecConfigReader.CONFIG_NAME_KEY);
+      final String configNameKey = (String) config.get(SpecConfigReader.CONFIG_NAME_KEY);
       try {
-        processConfig(configNameKey, reader, true);
+        processConfig(configNameKey, reader, false, true);
       } catch (IllegalArgumentException exception) {
         LOG.debug(
             "Failed to load base configuration from {}, {}",
@@ -84,23 +95,79 @@ public class SpecConfigLoader {
     return reader.build();
   }
 
-  static void processConfig(
-      final String source, final SpecConfigReader reader, final boolean ignoreUnknownConfigItems) {
-    try (final InputStream configFile = loadConfigurationFile(source)) {
-      final Map<String, String> configValues = reader.readValues(configFile);
+  static SpecConfigAndParent<? extends SpecConfig> loadConfig(
+      final String configName,
+      final boolean strictConfigLoadingEnabled,
+      final boolean isIgnoreUnknownConfigItems,
+      final Consumer<SpecConfigBuilder> modifier) {
+    final SpecConfigReader reader = new SpecConfigReader();
+    processConfig(configName, reader, strictConfigLoadingEnabled, isIgnoreUnknownConfigItems);
+    return reader.build(modifier);
+  }
+
+  // A little extra configuration is able to be loaded from builtin configs.
+  // isIgnoreUnknownConfigItems
+  //   - if config in source has entries we don't need, we will silently ignore them
+  // isFailRatherThanDefaultFromBuiltin
+  //   - if configuration requires a key and it's not specified, fail rather than default it.
+  // Presets will be loaded if specified also, this happens after defaulting from config_name
+  private static void processConfig(
+      final String source,
+      final SpecConfigReader reader,
+      final boolean isFailRatherThanDefaultFromBuiltin,
+      final boolean isIgnoreUnknownConfigItems) {
+    try {
+      final Map<String, Object> configValues = readConfigToMap(source, reader);
+
+      if (!BUILTIN_NETWORKS.contains(source)
+          && configValues.containsKey(SpecConfigReader.CONFIG_NAME_KEY)
+          && !isFailRatherThanDefaultFromBuiltin) {
+        final String builtinConfigName =
+            (String) configValues.get(SpecConfigReader.CONFIG_NAME_KEY);
+        if (BUILTIN_NETWORKS.contains(builtinConfigName)) {
+          final Map<String, Object> builtinConfig = readConfigToMap(builtinConfigName, reader);
+          boolean firstError = true;
+          for (final String entry : builtinConfig.keySet()) {
+            if (!configValues.containsKey(entry)) {
+              if (firstError) {
+                firstError = false;
+                LOG.warn(
+                    "Mapping missing values from {} with our builtin config for {}",
+                    source,
+                    builtinConfigName);
+              }
+              LOG.warn("Defaulting {}", entry);
+              configValues.put(entry, builtinConfig.get(entry));
+            }
+          }
+        } else {
+          LOG.debug(
+              "Skipping defaulting config from CONFIG_NAME {}, as this was not found to be builtin",
+              builtinConfigName);
+        }
+      }
       final Optional<String> maybePreset =
-          Optional.ofNullable(configValues.get(SpecConfigReader.PRESET_KEY));
+          Optional.ofNullable((String) configValues.get(SpecConfigReader.PRESET_KEY));
 
       // Legacy config files won't have a preset field
       if (maybePreset.isPresent()) {
         final String preset = maybePreset.get();
-        applyPreset(source, reader, ignoreUnknownConfigItems, preset);
+        applyPreset(source, reader, isIgnoreUnknownConfigItems, preset);
       }
-
-      reader.loadFromMap(configValues, ignoreUnknownConfigItems);
-    } catch (IOException | IllegalArgumentException e) {
+      reader.loadFromMap(configValues, isIgnoreUnknownConfigItems);
+    } catch (IOException e) {
       throw new IllegalArgumentException(
           "Unable to load configuration for network \"" + source + "\": " + e.getMessage(), e);
+    }
+  }
+
+  private static Map<String, Object> readConfigToMap(
+      final String source, final SpecConfigReader reader) {
+    try (final InputStream configFile = loadConfigurationFile(source)) {
+      return reader.readValues(configFile);
+    } catch (IOException | IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          "Unable to load configuration source \"" + source + "\": " + e.getMessage(), e);
     }
   }
 

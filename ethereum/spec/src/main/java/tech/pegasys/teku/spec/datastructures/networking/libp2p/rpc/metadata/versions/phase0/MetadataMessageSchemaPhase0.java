@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -43,7 +44,10 @@ public class MetadataMessageSchemaPhase0
 
   @Override
   public MetadataMessagePhase0 create(
-      final UInt64 seqNumber, final Iterable<Integer> attnets, final Iterable<Integer> syncnets) {
+      final UInt64 seqNumber,
+      final Iterable<Integer> attnets,
+      final Iterable<Integer> syncnets,
+      final Optional<UInt64> custodyGroupCount) {
     return new MetadataMessagePhase0(this, seqNumber, getAttnestSchema().ofBits(attnets));
   }
 

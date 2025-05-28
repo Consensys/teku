@@ -58,10 +58,12 @@ public class SetGasLimit extends RestApiEndpoint {
             .tags(TAG_GAS_LIMIT)
             .pathParam(PARAM_PUBKEY_TYPE)
             .description(
-                "Set the gas limit for an individual validator. This limit will be propagated to the beacon node for use on future block proposals.\n"
-                    + "The beacon node is responsible for informing external block builders of the change.\n"
-                    + "The server may return a 400 status code if no external builder is configured.\n"
-                    + "WARNING: The gas_limit is not used on Phase0 or Altair networks.")
+                """
+                    Set the gas limit for an individual validator. This limit will be propagated to the beacon node for use on future block proposals.
+                    The beacon node is responsible for informing external block builders of the change.
+                    The server may return a 400 status code if no external builder is configured.
+                    WARNING: The gas_limit is not used on Phase0 or Altair networks.
+                    """)
             .requestBodyType(GAS_LIMIT_REQUEST_BODY)
             .response(SC_ACCEPTED, "Success")
             .response(SC_SERVICE_UNAVAILABLE, "Unable to update gas limit at this time")

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -57,6 +60,22 @@ public abstract class BlockProcessorTest {
   void ensureDepositSignatureVerifierHasDefaultValue() {
     assertThat(AbstractBlockProcessor.depositSignatureVerifier)
         .isSameAs(AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER);
+  }
+
+  @Test
+  void blockInvalidHasRootCauseIllegalArgumentException() {
+    final BeaconState preState =
+        dataStructureUtil
+            .randomBeaconState(UInt64.valueOf(1024))
+            .updated(
+                state -> {
+                  state.getValidators().get(1).withSlashed(true);
+                });
+    final MutableBeaconState mutablePreState = (MutableBeaconState) preState.createWritableCopy();
+    final BeaconBlockHeader header =
+        dataStructureUtil.randomBeaconBlockHeader(UInt64.valueOf(1024), UInt64.valueOf(1));
+    assertThatThrownBy(() -> blockProcessor.processBlockHeader(mutablePreState, header))
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -71,7 +70,7 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     assertThat(((BlobSidecarsAndMetaData) request.getResponseBody()).getData())
         .isEqualTo(blobSidecars);
     assertThat(request.getResponseHeaders(ETH_CONSENSUS_VERSION_TYPE.getName()))
-        .isEqualTo(Version.fromMilestone(SpecMilestone.DENEB).name());
+        .isEqualTo(SpecMilestone.DENEB.lowerCaseName());
   }
 
   @Test

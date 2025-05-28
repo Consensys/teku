@@ -25,9 +25,11 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
@@ -62,8 +64,11 @@ class Eth2PeerTest {
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final RateTracker blockRateTracker = mock(RateTracker.class);
   private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
+  private final RateTracker dataColumnSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
   private final KZG kzg = mock(KZG.class);
+  private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
+  private final TimeProvider timeProvider = mock(TimeProvider.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
 
@@ -78,8 +83,11 @@ class Eth2PeerTest {
           peerChainValidator,
           blockRateTracker,
           blobSidecarsRateTracker,
+          dataColumnSidecarsRateTracker,
           rateTracker,
-          kzg);
+          kzg,
+          metricsSystem,
+          timeProvider);
 
   @Test
   void updateStatus_shouldNotUpdateUntilValidationPasses() {

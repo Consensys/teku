@@ -61,9 +61,6 @@ public class SchemaDefinitionCache {
   }
 
   public List<SpecMilestone> getSupportedMilestones() {
-    // TODO-fulu remove filtering up to electra
-    return spec.getForkSchedule().getSupportedMilestones().stream()
-        .filter(specMilestone -> specMilestone.isLessThan(SpecMilestone.FULU))
-        .toList();
+    return spec.getForkSchedule().getSupportedMilestones().stream().toList();
   }
 }

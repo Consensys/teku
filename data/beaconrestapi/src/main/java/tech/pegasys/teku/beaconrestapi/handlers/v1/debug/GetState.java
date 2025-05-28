@@ -57,9 +57,13 @@ public class GetState extends RestApiEndpoint {
             .operationId("getState")
             .summary("Get state")
             .description(
-                "Returns full BeaconState object for given state_id.\n\n"
-                    + "Use Accept header to select `application/octet-stream` if SSZ response type is required.\n\n"
-                    + "__NOTE__: Only phase0 beacon state will be returned in JSON, use `/eth/v2/beacon/states/{state_id}` for altair.")
+                """
+                    Returns full BeaconState object for given state_id.
+
+                    Use Accept header to select `application/octet-stream` if SSZ response type is required.
+
+                    __NOTE__: Only phase0 beacon state will be returned in JSON, use `/eth/v2/beacon/states/{state_id}` for altair.
+                    """)
             .tags(TAG_DEBUG)
             .pathParam(PARAMETER_STATE_ID)
             .response(

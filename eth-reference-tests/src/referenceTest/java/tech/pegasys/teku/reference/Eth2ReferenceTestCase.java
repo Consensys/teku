@@ -24,6 +24,7 @@ import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorBellatrix;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.deneb.merkle_proof.MerkleProofTests;
+import tech.pegasys.teku.reference.fulu.network.NetworkingTests;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
@@ -98,6 +99,15 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
           .build();
 
+  private static final ImmutableMap<String, TestExecutor> FULU_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
+          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
@@ -112,6 +122,7 @@ public abstract class Eth2ReferenceTestCase {
           case TestFork.CAPELLA -> CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.DENEB -> DENEB_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.ELECTRA -> ELECTRA_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.FULU -> FULU_TEST_TYPES.get(testDefinition.getTestType());
           default -> null;
         };
 

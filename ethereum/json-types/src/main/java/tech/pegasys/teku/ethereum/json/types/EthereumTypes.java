@@ -22,12 +22,10 @@ import java.math.BigInteger;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
@@ -95,9 +93,7 @@ public class EthereumTypes {
 
   public static final StringValueTypeDefinition<SpecMilestone> MILESTONE_TYPE =
       new EnumTypeDefinition<>(
-          SpecMilestone.class,
-          milestone -> milestone.name().toLowerCase(Locale.ROOT),
-          Set.of(SpecMilestone.FULU)); // TODO-fulu eventually we remove this ignore
+          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT));
 
   public static final EnumHeaderTypeDefinition<SpecMilestone> ETH_CONSENSUS_HEADER_TYPE =
       new EnumHeaderTypeDefinition.EnumTypeHeaderDefinitionBuilder<>(
@@ -107,8 +103,6 @@ public class EthereumTypes {
           .description(
               "Required in response so client can deserialize returned json or ssz data more effectively.")
           .example("phase0")
-          .excludedEnumerations(
-              Set.of(SpecMilestone.FULU)) // TODO-fulu eventually we remove this ignore
           .build();
 
   public static final BooleanHeaderTypeDefinition ETH_HEADER_EXECUTION_PAYLOAD_BLINDED_TYPE =
@@ -166,7 +160,7 @@ public class EthereumTypes {
       final Function<T, SpecMilestone> milestoneSelector, final T value) {
     return Map.of(
         HEADER_CONSENSUS_VERSION,
-        Version.fromMilestone(milestoneSelector.apply(value)).name(),
+        milestoneSelector.apply(value).lowerCaseName(),
         RestApiConstants.HEADER_CONTENT_DISPOSITION,
         getSszFilename(value));
   }

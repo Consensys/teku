@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,9 @@ import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPoolV1;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 @Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
@@ -91,9 +94,9 @@ public class AggregatingAttestationPoolBenchmark {
 
   record AttestationDataRootAndCommitteeIndex(Bytes32 attestationDataRoot, UInt64 committeeIndex) {}
 
+  private final List<ValidatableAttestation> attestations = new ArrayList<>();
   private BeaconState state;
   private BeaconState newBlockState;
-  private List<ValidatableAttestation> attestations;
   private AggregatingAttestationPool pool;
   private RecentChainData recentChainData;
   private AttestationForkChecker attestationForkChecker;
@@ -106,8 +109,12 @@ public class AggregatingAttestationPoolBenchmark {
         new HashMap<>();
 
     this.pool =
-        new AggregatingAttestationPool(
-            SPEC, recentChainData, new NoOpMetricsSystem(), DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+        new AggregatingAttestationPoolV1(
+            SPEC,
+            recentChainData,
+            new NoOpMetricsSystem(),
+            AggregatingAttestationPoolProfiler.NOOP,
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     this.recentChainData = mock(RecentChainData.class);
 
     try (final FileInputStream fileInputStream = new FileInputStream(STATE_PATH)) {
@@ -175,6 +182,7 @@ public class AggregatingAttestationPoolBenchmark {
               attestation -> {
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
                 pool.add(attestation);
+                attestations.add(attestation);
               });
 
       mostFrequentSingleAttestationDataRootAndCI =
@@ -203,6 +211,19 @@ public class AggregatingAttestationPoolBenchmark {
   public void getAttestationsForBlock(final Blackhole bh) {
     var attestationsForBlock = pool.getAttestationsForBlock(newBlockState, attestationForkChecker);
     bh.consume(attestationsForBlock);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  public void add(final Blackhole bh) {
+    var emptyPool =
+        new AggregatingAttestationPoolV1(
+            SPEC,
+            recentChainData,
+            new NoOpMetricsSystem(),
+            AggregatingAttestationPoolProfiler.NOOP,
+            DEFAULT_MAXIMUM_ATTESTATION_COUNT);
+    attestations.forEach(emptyPool::add);
   }
 
   @Benchmark

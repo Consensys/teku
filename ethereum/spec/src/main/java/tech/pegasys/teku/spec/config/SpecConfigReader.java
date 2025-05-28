@@ -15,9 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.RuntimeJsonMappingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -28,8 +26,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -107,17 +107,17 @@ public class SpecConfigReader {
           .put(Bytes.class, fromString(Bytes::fromHexString))
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
           .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
+          .put(List.class, this::blobScheduleFromList)
           .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
 
   final SpecConfigBuilder configBuilder = SpecConfig.builder();
 
-  public SpecConfigAndParent<? extends SpecConfig> build() {
+  SpecConfigAndParent<? extends SpecConfig> build() {
     return configBuilder.build();
   }
 
-  public SpecConfigAndParent<? extends SpecConfig> build(
-      final Consumer<SpecConfigBuilder> modifier) {
+  SpecConfigAndParent<? extends SpecConfig> build(final Consumer<SpecConfigBuilder> modifier) {
     modifier.accept(configBuilder);
     return build();
   }
@@ -129,16 +129,15 @@ public class SpecConfigReader {
    * @param source The source to read
    * @throws IOException Thrown if an error occurs reading the source
    */
-  public void readAndApply(final InputStream source, final boolean ignoreUnknownConfigItems)
+  void readAndApply(final InputStream source, final boolean ignoreUnknownConfigItems)
       throws IOException {
-    final Map<String, String> rawValues = readValues(source);
+    final Map<String, Object> rawValues = readValues(source);
     loadFromMap(rawValues, ignoreUnknownConfigItems);
   }
 
-  public void loadFromMap(
-      final Map<String, String> rawValues, final boolean ignoreUnknownConfigItems) {
-    final Map<String, String> unprocessedConfig = new HashMap<>(rawValues);
-    final Map<String, String> apiSpecConfig = new HashMap<>(rawValues);
+  void loadFromMap(final Map<String, Object> rawValues, final boolean ignoreUnknownConfigItems) {
+    final Map<String, Object> unprocessedConfig = new HashMap<>(rawValues);
+    final Map<String, Object> apiSpecConfig = new HashMap<>(rawValues);
     // Remove any keys that we're ignoring
     KEYS_TO_IGNORE.forEach(
         key -> {
@@ -240,21 +239,39 @@ public class SpecConfigReader {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public Map<String, String> readValues(final InputStream source) throws IOException {
-    final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+  Map<String, Object> readValues(final InputStream source) throws IOException {
+    final YamlConfigReader reader = new YamlConfigReader();
     try {
-      return (Map<String, String>)
-          mapper
-              .readerFor(
-                  mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
-              .readValues(source)
-              .next();
+      return reader.readValues(source);
     } catch (NoSuchElementException e) {
       throw new IllegalArgumentException("Supplied spec config is empty");
     } catch (RuntimeJsonMappingException e) {
       throw new IllegalArgumentException("Cannot read spec config: " + e.getMessage());
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private Object blobScheduleFromList(final Object o) {
+    final List<BlobSchedule> blobSchedule = new ArrayList<>();
+    final List<?> schedule = (List<?>) o;
+    for (Object entry : schedule) {
+      if (entry instanceof Map) {
+        final Map<String, String> data = (Map<String, String>) entry;
+        if (!data.containsKey("EPOCH")
+            || !data.containsKey("MAX_BLOBS_PER_BLOCK")
+            || data.size() != 2) {
+          throw new IllegalArgumentException("Map does not look like a blob schedule");
+        }
+        blobSchedule.add(
+            new BlobSchedule(
+                UInt64.valueOf(data.get("EPOCH")),
+                Integer.parseInt(data.get("MAX_BLOBS_PER_BLOCK"))));
+
+      } else {
+        throw new IllegalArgumentException("Could not parse entry blob schedule");
+      }
+    }
+    return blobSchedule;
   }
 
   private Stream<Method> streamConfigSetters(final Class<?> builderClass) {

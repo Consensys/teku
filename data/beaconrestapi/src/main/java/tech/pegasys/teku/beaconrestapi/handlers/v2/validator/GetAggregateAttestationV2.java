@@ -28,8 +28,8 @@ import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
+import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -61,12 +61,14 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
             .operationId("getAggregatedAttestationV2")
             .summary("Get aggregated attestation")
             .description(
-                "Aggregates all attestations matching given attestation data root, slot and committee index.\n"
-                    + "A 503 error must be returned if the block identified by the response\n"
-                    + "`beacon_block_root` is optimistic (i.e. the aggregated attestation attests\n"
-                    + "to a block that has not been fully verified by an execution engine).\n"
-                    + "A 404 error must be returned if no attestation is available for the requested\n"
-                    + "`attestation_data_root`.")
+                """
+                    Aggregates all attestations matching given attestation data root, slot and committee index.
+                    A 503 error must be returned if the block identified by the response
+                    `beacon_block_root` is optimistic (i.e. the aggregated attestation attests
+                    to a block that has not been fully verified by an execution engine).
+                    A 404 error must be returned if no attestation is available for the requested
+                    `attestation_data_root`.
+                    """)
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .queryParamRequired(ATTESTATION_DATA_ROOT_PARAMETER)
             .queryParamRequired(SLOT_PARAMETER)
@@ -75,6 +77,7 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                 HttpStatusCodes.SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
+                EthereumTypes.sszResponseType(),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
             .withChainDataResponses()
@@ -99,13 +102,12 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                         attestationAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(attestationAndMetaData.getMilestone()).name());
+                              attestationAndMetaData.getMilestone().lowerCaseName());
                           return AsyncApiResponse.respondOk(attestationAndMetaData);
                         })
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  @SuppressWarnings("unchecked")
   private static SerializableTypeDefinition<ObjectAndMetaData<Attestation>> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
 

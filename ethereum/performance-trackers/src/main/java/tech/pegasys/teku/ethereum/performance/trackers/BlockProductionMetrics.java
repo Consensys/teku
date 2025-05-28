@@ -14,9 +14,9 @@
 package tech.pegasys.teku.ethereum.performance.trackers;
 
 import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance.COMPLETE_LABEL;
+import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.BEACON_BLOCK_BODY_PREPARATION_STARTED;
+import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.BEACON_BLOCK_BODY_PREPARED;
 import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.BEACON_BLOCK_CREATED;
-import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.BEACON_BLOCK_PREPARATION_STARTED;
-import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.BEACON_BLOCK_PREPARED;
 import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.BUILDER_BID_VALIDATED;
 import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.BUILDER_GET_HEADER;
 import static tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl.GET_ATTESTATIONS_FOR_BLOCK;
@@ -70,9 +70,9 @@ public interface BlockProductionMetrics {
             PREPARATION_APPLY_DEFERRED_ATTESTATIONS,
             PREPARATION_PROCESS_HEAD,
             RETRIEVE_STATE,
-            BEACON_BLOCK_PREPARATION_STARTED,
+            BEACON_BLOCK_BODY_PREPARATION_STARTED,
             GET_ATTESTATIONS_FOR_BLOCK,
-            BEACON_BLOCK_PREPARED,
+            BEACON_BLOCK_BODY_PREPARED,
             LOCAL_GET_PAYLOAD,
             BUILDER_GET_HEADER,
             BUILDER_BID_VALIDATED,

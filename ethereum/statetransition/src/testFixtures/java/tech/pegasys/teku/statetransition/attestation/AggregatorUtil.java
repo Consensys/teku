@@ -15,58 +15,49 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 public class AggregatorUtil {
   public static Attestation aggregateAttestations(
       final Attestation firstAttestation, final Attestation... attestations) {
-    SszBitlist aggregateBits = firstAttestation.getAggregationBits();
+    return aggregateAttestations(Optional.empty(), firstAttestation, attestations);
+  }
+
+  public static Attestation aggregateAttestations(
+      final Int2IntMap committeesSize,
+      final Attestation firstAttestation,
+      final Attestation... attestations) {
+    return aggregateAttestations(Optional.of(committeesSize), firstAttestation, attestations);
+  }
+
+  public static Attestation aggregateAttestations(
+      final Optional<Int2IntMap> committeesSize,
+      final Attestation firstAttestation,
+      final Attestation... attestations) {
+    final AttestationBits aggregateBits = AttestationBits.of(firstAttestation, committeesSize);
     final List<BLSSignature> signatures = new ArrayList<>();
     signatures.add(firstAttestation.getAggregateSignature());
 
-    final Supplier<SszBitvector> committeeBitsSupplier;
-    final IntSet participationIndices = new IntOpenHashSet();
-
     for (Attestation attestation : attestations) {
-      aggregateBits = aggregateBits.or(attestation.getAggregationBits());
+      checkState(
+          aggregateBits.aggregateWith(AttestationBits.of(attestation, committeesSize)),
+          "attestations are not aggregatable");
       signatures.add(attestation.getAggregateSignature());
-      if (firstAttestation.getCommitteeBits().isPresent()) {
-        participationIndices.addAll(attestation.getCommitteeBitsRequired().getAllSetBits());
-        checkState(
-            participationIndices.size() == 1,
-            "this test util doesn't support generating cross-committee aggregations");
-      }
-    }
-
-    if (firstAttestation.getCommitteeBits().isPresent()) {
-      committeeBitsSupplier =
-          firstAttestation
-              .getSchema()
-              .getCommitteeBitsSchema()
-              .map(
-                  committeeBitsSchema ->
-                      (Supplier<SszBitvector>)
-                          () -> committeeBitsSchema.ofBits(participationIndices))
-              .orElse(() -> null);
-    } else {
-      committeeBitsSupplier = () -> null;
     }
 
     return firstAttestation
         .getSchema()
         .create(
-            aggregateBits,
+            aggregateBits.getAggregationSszBits(),
             firstAttestation.getData(),
             BLS.aggregate(signatures),
-            committeeBitsSupplier);
+            aggregateBits::getCommitteeSszBits);
   }
 }

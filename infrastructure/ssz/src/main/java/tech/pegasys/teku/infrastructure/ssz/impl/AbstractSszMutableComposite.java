@@ -83,8 +83,8 @@ public abstract class AbstractSszMutableComposite<
     validateChildSchema(index, value);
 
     final SszChildT immutableValue;
-    if (value instanceof SszMutableData) {
-      immutableValue = (SszChildT) ((SszMutableData) value).commitChanges();
+    if (value instanceof final SszMutableData sszMutableData) {
+      immutableValue = (SszChildT) sszMutableData.commitChanges();
     } else {
       immutableValue = value;
     }
