@@ -3,6 +3,7 @@ dependencies {
 
     implementation project(':infrastructure:exceptions')
     implementation project(':infrastructure:io')
+    implementation project(':infrastructure:time')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'io.vertx:vertx-core'

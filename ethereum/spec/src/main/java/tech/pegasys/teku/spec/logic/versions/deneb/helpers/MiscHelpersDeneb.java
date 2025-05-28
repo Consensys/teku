@@ -55,6 +55,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   private final Predicates predicates;
   private final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
   private final BlobSidecarSchema blobSidecarSchema;
+  private final SpecConfigDeneb specConfigDeneb;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -71,6 +72,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
       final Predicates predicates,
       final SchemaDefinitionsDeneb schemaDefinitions) {
     super(specConfig);
+    this.specConfigDeneb = specConfig;
     this.predicates = predicates;
     this.beaconBlockBodySchema =
         (BeaconBlockBodySchemaDeneb<?>) schemaDefinitions.getBeaconBlockBodySchema();
@@ -240,7 +242,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
   }
 
-  public List<Bytes32> computeKzgCommitmentInclusionProof(
+  public List<Bytes32> computeBlobKzgCommitmentInclusionProof(
       final UInt64 blobSidecarIndex, final BeaconBlockBody beaconBlockBody) {
     return MerkleUtil.constructMerkleProof(
         beaconBlockBody.getBackingNode(),
@@ -265,7 +267,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
               index, commitmentsCount));
     }
     final List<Bytes32> kzgCommitmentInclusionProof =
-        computeKzgCommitmentInclusionProof(index, beaconBlockBody);
+        computeBlobKzgCommitmentInclusionProof(index, beaconBlockBody);
     return blobSidecarSchema.create(
         index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }
@@ -286,7 +288,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
             sszKZGCommitment,
             new SszKZGProof(blobAndProof.proof()),
             signedBeaconBlockHeader,
-            computeKzgCommitmentInclusionProof(blobIdentifier.getIndex(), beaconBlockBodyDeneb));
+            computeBlobKzgCommitmentInclusionProof(
+                blobIdentifier.getIndex(), beaconBlockBodyDeneb));
 
     blobSidecar.markSignatureAsValidated();
     blobSidecar.markKzgCommitmentInclusionProofAsValidated();
@@ -313,5 +316,12 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     }
 
     return result;
+  }
+
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+      final UInt64 currentEpoch, final UInt64 epoch) {
+    return currentEpoch
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 }

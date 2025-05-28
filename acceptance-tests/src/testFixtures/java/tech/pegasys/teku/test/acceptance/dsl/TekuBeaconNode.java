@@ -100,7 +100,7 @@ public class TekuBeaconNode extends TekuNode {
       final Network network, final TekuDockerVersion version, final TekuNodeConfig tekuNodeConfig) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = tekuNodeConfig;
-    this.spec = SpecFactory.create(config.getNetworkName(), config.getSpecConfigModifier());
+    this.spec = SpecFactory.create(config.getNetworkName(), true, config.getSpecConfigModifier());
     if (config.getConfigMap().containsKey("validator-api-enabled")) {
       container.addExposedPort(VALIDATOR_API_PORT);
     }

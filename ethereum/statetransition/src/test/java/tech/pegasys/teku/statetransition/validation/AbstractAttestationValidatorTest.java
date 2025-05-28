@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
@@ -23,8 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
@@ -76,17 +73,18 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 abstract class AbstractAttestationValidatorTest {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
-
   protected final Spec spec = createSpec();
   protected final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   protected final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.create()
+          .numberOfValidators(64)
+          .specProvider(spec)
+          .storageMode(StateStorageMode.ARCHIVE)
+          .build();
   protected final RecentChainData recentChainData = storageSystem.recentChainData();
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
-  protected final ChainUpdater chainUpdater =
-      new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
+  protected final ChainBuilder chainBuilder = storageSystem.chainBuilder();
+  protected final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   protected final AttestationGenerator attestationGenerator =
       new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
   protected final AsyncBLSSignatureVerifier signatureVerifier =
@@ -108,7 +106,7 @@ abstract class AbstractAttestationValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    chainUpdater.initializeGenesis(false);
+    storageSystem.chainUpdater().initializeGenesis(false);
   }
 
   public abstract Spec createSpec();

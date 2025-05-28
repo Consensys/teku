@@ -1,14 +1,14 @@
 {
   "data": {
-    "root": "0x127698f65207baf45ec6497931e82df707176d84588b76f6f1e4c4c577de3b94",
+    "root": "0x9042b435b163854b76508411d10bb170123cbe59563b862fac9d25d7493c11a9",
     "canonical": true,
     "header": {
       "message": {
         "slot": "1",
-        "proposer_index": "4666673844721362956",
-        "parent_root": "0x367cbd40ac7318427aadb97345a91fa2e965daf3158d7f1846f1306305f41bef",
-        "state_root": "0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3df23205eabc6d660a75d1f54e",
-        "body_root": "0x5a75dcd745c46d94e1b52a2d5834087ae5fae810fa4d69ee800f3753fc05a4b2"
+        "proposer_index": "4565872325553958186",
+        "parent_root": "0x77d96e3f4a4ad0971596b71d6420b24b4d12a275af3d948b77b438faa484f0d1",
+        "state_root": "0x8afa683fea95afdc0ad91e4937a9c6185315a1076506bd45a4357cc27fe5a75c",
+        "body_root": "0x228e536ac5e8e14792142faf9de3db385988682e71222198cb3a108078b686d7"
       },
       "signature": "0x8ab48d0165e8cc8bfc6804760141896946c3be751af5f16d1a03ead456ebceab88a8168e1da194df56c512edc15ca6350c413cb819d31a7ef69b329d8cb9fa8e5d93ae66289a445f1465d57d97e72d4c0866e48a806df7f58ebcd060e2d03a72"
     }

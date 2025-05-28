@@ -15,71 +15,67 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.statetransition.attestation.utils.AttestationBitsAggregator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 
 /**
  * Builds an aggregate attestation, providing functions to test if an attestation can be added or is
  * made redundant by the current aggregate.
  */
 class AggregateAttestationBuilder {
-  private final Spec spec;
-  private final Set<ValidatableAttestation> includedAttestations = new HashSet<>();
-  private final AttestationData attestationData;
-  private AttestationBitsAggregator currentAggregateBits;
+  private final List<PooledAttestation> includedAttestations = new ArrayList<>();
+  private final boolean accumulateValidatorIndices;
+  private List<UInt64> validatorIndices;
+  private AttestationBits currentAggregateBits;
 
-  AggregateAttestationBuilder(final Spec spec, final AttestationData attestationData) {
-    this.spec = spec;
-    this.attestationData = attestationData;
+  /**
+   * Creates a new AggregateAttestationBuilder.
+   *
+   * @param accumulateValidatorIndices is required to be True when producing aggregation for
+   *     AggregatingAttestationPoolV2 which requires them to calculate rewards. When we deprecate
+   *     AggregatingAttestationPoolV1 we will be able to remove it.
+   */
+  AggregateAttestationBuilder(final boolean accumulateValidatorIndices) {
+    this.accumulateValidatorIndices = accumulateValidatorIndices;
   }
 
-  public boolean isFullyIncluded(final ValidatableAttestation candidate) {
-    return currentAggregateBits != null
-        && currentAggregateBits.isSuperSetOf(candidate.getAttestation());
-  }
-
-  public boolean aggregate(final ValidatableAttestation attestation) {
-
+  public boolean aggregate(final PooledAttestation attestation) {
     if (currentAggregateBits == null) {
       includedAttestations.add(attestation);
-      currentAggregateBits = AttestationBitsAggregator.of(attestation);
+      currentAggregateBits = attestation.bits().copy();
+      if (accumulateValidatorIndices) {
+        validatorIndices = new ArrayList<>(attestation.validatorIndices().orElseThrow());
+      }
       return true;
     }
-    if (currentAggregateBits.aggregateWith(attestation.getAttestation())) {
+    if (currentAggregateBits.aggregateWith(attestation.bits())) {
       includedAttestations.add(attestation);
+      if (accumulateValidatorIndices) {
+        // since we are aggregating only non-intersecting bits,
+        // indices won't overlap too, so we can just add them
+        validatorIndices.addAll(attestation.validatorIndices().orElseThrow());
+      }
       return true;
     }
     return false;
   }
 
-  public ValidatableAttestation buildAggregate() {
+  public PooledAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
-    final SpecVersion specVersion = spec.atSlot(attestationData.getSlot());
-    return ValidatableAttestation.from(
-        spec,
-        specVersion
-            .getSchemaDefinitions()
-            .getAttestationSchema()
-            .create(
-                currentAggregateBits.getAggregationBits(),
-                attestationData,
-                BLS.aggregate(
-                    includedAttestations.stream()
-                        .map(ValidatableAttestation::getAttestation)
-                        .map(Attestation::getAggregateSignature)
-                        .toList()),
-                currentAggregateBits::getCommitteeBits));
+    return new PooledAttestation(
+        currentAggregateBits,
+        Optional.ofNullable(validatorIndices),
+        BLS.aggregate(
+            includedAttestations.stream().map(PooledAttestation::aggregatedSignature).toList()),
+        false);
   }
 
-  public Collection<ValidatableAttestation> getIncludedAttestations() {
+  public Collection<PooledAttestation> getIncludedAttestations() {
     return includedAttestations;
   }
 }

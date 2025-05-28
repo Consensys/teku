@@ -54,6 +54,7 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
+import tech.pegasys.teku.api.migrated.StateValidatorIdentity;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.provider.GenesisData;
 import tech.pegasys.teku.api.response.ValidatorStatus;
@@ -553,6 +554,25 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
             provider.getValidatorBalancesFromState(
                 internalState, List.of("0", "100", "1023", "1024", "1024000")))
         .hasSize(3);
+  }
+
+  @Test
+  public void getValidatorIdentitiesFromState_shouldGetIdentities() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
+    final BeaconState internalState = data.randomBeaconState(8);
+    final Validator validator = internalState.getValidators().get(0);
+    final StateValidatorIdentity identity =
+        StateValidatorIdentity.create(
+            ZERO, validator.getPublicKey(), validator.getActivationEpoch());
+
+    assertThat(provider.getValidatorIdentitiesFromState(internalState, emptyList()).size())
+        .isEqualTo(8);
+
+    final SszList<StateValidatorIdentity> validatorIdentitiesFromState =
+        provider.getValidatorIdentitiesFromState(internalState, List.of("0"));
+    assertThat(validatorIdentitiesFromState.size()).isEqualTo(1);
+    assertThat(validatorIdentitiesFromState.get(0)).isEqualTo(identity);
   }
 
   @Test

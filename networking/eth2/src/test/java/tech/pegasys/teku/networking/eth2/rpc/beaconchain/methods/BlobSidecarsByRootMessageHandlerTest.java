@@ -361,8 +361,9 @@ public class BlobSidecarsByRootMessageHandlerTest {
             .mapToObj(__ -> dataStructureUtil.randomSignedBeaconBlock())
             .toList();
     final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getMaxBlobsPerBlock();
+        spec.getMaxBlobsPerBlockAtSlot(blocks.getFirst().getSlot()).orElseThrow();
+    SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+        .getMaxBlobsPerBlock();
     final List<BlobSidecar> blobSidecars =
         blocks.stream()
             .map(

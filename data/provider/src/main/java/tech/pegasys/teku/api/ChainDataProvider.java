@@ -43,6 +43,7 @@ import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
+import tech.pegasys.teku.api.migrated.StateValidatorIdentity;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.provider.GenesisData;
 import tech.pegasys.teku.api.response.ValidatorStatus;
@@ -305,6 +306,21 @@ public class ChainDataProvider {
         .mapToObj(index -> StateValidatorBalanceData.fromState(state, index))
         .flatMap(Optional::stream)
         .toList();
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<StateValidatorIdentity>>>>
+      getStateValidatorIdentities(final String stateIdParam, final List<String> validators) {
+    return fromState(stateIdParam, state -> getValidatorIdentitiesFromState(state, validators));
+  }
+
+  @VisibleForTesting
+  SszList<StateValidatorIdentity> getValidatorIdentitiesFromState(
+      final BeaconState state, final List<String> validators) {
+    return StateValidatorIdentity.SSZ_LIST_SCHEMA.createFromElements(
+        getValidatorSelector(state, validators)
+            .mapToObj(index -> StateValidatorIdentity.fromState(state, index))
+            .flatMap(Optional::stream)
+            .toList());
   }
 
   public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {

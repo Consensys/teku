@@ -129,15 +129,18 @@ public class SpecConfigBuilder {
   private Integer reorgHeadWeightThreshold = 20;
 
   private Integer reorgParentWeightThreshold = 160;
+  private final DenebBuilder denebBuilder = new DenebBuilder();
+  private final ElectraBuilder electraBuilder = new ElectraBuilder();
+  private final FuluBuilder fuluBuilder = new FuluBuilder();
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
-          .appendBuilder(new DenebBuilder())
-          .appendBuilder(new ElectraBuilder())
-          .appendBuilder(new FuluBuilder());
+          .appendBuilder(denebBuilder)
+          .appendBuilder(electraBuilder)
+          .appendBuilder(fuluBuilder);
 
   public SpecConfigAndParent<SpecConfigFulu> build() {
     builderChain.addOverridableItemsToRawConfig(
@@ -321,7 +324,8 @@ public class SpecConfigBuilder {
               "The specified network configuration had missing or invalid values for constants %s",
               String.join(", ", fieldsFailingValidation)));
     }
-
+    fuluBuilder.validateBlobSchedule(
+        denebBuilder.getBlobSchedule(), electraBuilder.getBlobSchedule());
     builderChain.validate();
   }
 

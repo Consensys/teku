@@ -26,6 +26,7 @@ dependencies {
   implementation project(':storage:api')
 
   implementation 'io.consensys.tuweni:tuweni-units'
+  implementation 'io.libp2p:jvm-libp2p'
 
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
@@ -49,6 +50,7 @@ dependencies {
   testFixturesImplementation project(':infrastructure:time')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
+  testFixturesImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:logging'))
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
