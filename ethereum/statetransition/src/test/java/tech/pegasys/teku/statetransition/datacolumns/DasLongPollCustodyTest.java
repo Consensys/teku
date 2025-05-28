@@ -88,7 +88,7 @@ public class DasLongPollCustodyTest {
   }
 
   private void advanceTimeGradually(final Duration delta) {
-    for (int i = 0; i < delta.toMillis(); i++) {
+    for (long i = 0; i < delta.toMillis(); i++) {
       stubTimeProvider.advanceTimeBy(ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();
     }

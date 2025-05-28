@@ -360,7 +360,7 @@ public class DasCustodySyncTest {
   }
 
   private <T> T await(final CompletableFuture<T> future, final Duration maxWait) {
-    for (int i = 0; i < maxWait.toMillis(); i++) {
+    for (long i = 0; i < maxWait.toMillis(); i++) {
       if (future.isDone()) {
         try {
           return future.get();

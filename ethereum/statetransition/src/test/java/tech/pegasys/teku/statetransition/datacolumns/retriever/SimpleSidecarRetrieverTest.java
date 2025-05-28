@@ -43,11 +43,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 
-@SuppressWarnings({"unused", "JavaCase"})
+@SuppressWarnings({"JavaCase"})
 public class SimpleSidecarRetrieverTest {
   private static final Logger LOG = LogManager.getLogger();
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
@@ -55,8 +54,6 @@ public class SimpleSidecarRetrieverTest {
   final DataColumnPeerSearcherStub dataColumnPeerSearcherStub = new DataColumnPeerSearcherStub();
 
   final Spec spec = TestSpecFactory.createMinimalFulu();
-  final SchemaDefinitionsFulu schemaDefinitionsFulu =
-      SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
   final TestPeerManager testPeerManager = new TestPeerManager();
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
@@ -118,7 +115,7 @@ public class SimpleSidecarRetrieverTest {
   }
 
   private void advanceTimeGradually(final Duration delta) {
-    for (int i = 0; i < delta.toMillis(); i++) {
+    for (long i = 0; i < delta.toMillis(); i++) {
       stubTimeProvider.advanceTimeBy(Duration.ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();
     }
@@ -241,6 +238,7 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("unused")
   void performanceTest() {
     final List<TestPeer> testNodes =
         craftNodeIds()
