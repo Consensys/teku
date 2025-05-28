@@ -34,8 +34,8 @@ public class EpochProcessingTestExecutor implements TestExecutor {
 
   public static final String PRE_OPERATION_STATE_FILENAME = "pre.ssz_snappy";
   public static final String POST_OPERATION_STATE_FILENAME = "post.ssz_snappy";
-  public static final String POST_EPOCH_PROCESSING_STATE_FILENAME = "post_full.ssz_snappy";
-  public static final String PRE_EPOCH_PROCESSING_STATE_FILENAME = "pre_full.ssz_snappy";
+  public static final String PRE_EPOCH_PROCESSING_STATE_FILENAME = "pre_epoch.ssz_snappy";
+  public static final String POST_EPOCH_PROCESSING_STATE_FILENAME = "post_epoch.ssz_snappy";
 
   public static final ImmutableMap<String, TestExecutor> EPOCH_PROCESSING_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
