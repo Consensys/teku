@@ -47,9 +47,9 @@ public class NetworkConfig {
 
   public static final List<String> DEFAULT_P2P_INTERFACE = List.of("0.0.0.0");
   public static final int DEFAULT_P2P_PORT = 9000;
-  public static final int DEFAULT_P2P_QUIC_PORT = DEFAULT_P2P_PORT + 1;
+  public static final int DEFAULT_P2P_QUIC_PORT = 9100;
   public static final int DEFAULT_P2P_PORT_IPV6 = 9090;
-  public static final int DEFAULT_P2P_QUIC_PORT_IPV6 = DEFAULT_P2P_PORT_IPV6 + 1;
+  public static final int DEFAULT_P2P_QUIC_PORT_IPV6 = 9190;
   public static final boolean DEFAULT_YAMUX_ENABLED = false;
   public static final boolean DEFAULT_STRICT_CONFIG_LOADING_ENABLED = false;
   public static final boolean DEFAULT_QUIC_ENABLED = false;
