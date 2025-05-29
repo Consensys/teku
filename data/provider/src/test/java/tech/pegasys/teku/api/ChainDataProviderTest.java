@@ -644,7 +644,12 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   @Test
   public void getValidatorIdentitiesFromState_shouldGetIdentities() {
     final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
+        new ChainDataProvider(
+            spec,
+            recentChainData,
+            combinedChainDataClient,
+            rewardCalculatorMock,
+            mockBlobSidecarReconstructionProvider);
     final BeaconState internalState = data.randomBeaconState(8);
     final Validator validator = internalState.getValidators().get(0);
     final StateValidatorIdentity identity =
