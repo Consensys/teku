@@ -324,18 +324,19 @@ public class ChainDataProvider {
         .toList();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorIdentity>>>>
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<StateValidatorIdentity>>>>
       getStateValidatorIdentities(final String stateIdParam, final List<String> validators) {
     return fromState(stateIdParam, state -> getValidatorIdentitiesFromState(state, validators));
   }
 
   @VisibleForTesting
-  List<StateValidatorIdentity> getValidatorIdentitiesFromState(
+  SszList<StateValidatorIdentity> getValidatorIdentitiesFromState(
       final BeaconState state, final List<String> validators) {
-    return getValidatorSelector(state, validators)
-        .mapToObj(index -> StateValidatorIdentity.fromState(state, index))
-        .flatMap(Optional::stream)
-        .toList();
+    return StateValidatorIdentity.SSZ_LIST_SCHEMA.createFromElements(
+        getValidatorSelector(state, validators)
+            .mapToObj(index -> StateValidatorIdentity.fromState(state, index))
+            .flatMap(Optional::stream)
+            .toList());
   }
 
   public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {
