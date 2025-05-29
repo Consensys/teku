@@ -45,6 +45,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:logging'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:time'))
+  testImplementation testFixtures(project(':infrastructure:kzg'))
 
   integrationTestImplementation testFixtures(project(':ethereum:spec'))
   integrationTestImplementation testFixtures(project(':infrastructure:async'))

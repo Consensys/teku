@@ -48,7 +48,7 @@ public class BlobAndProofV1 {
     this.blob = blob;
   }
 
-  public BlobAndProof asInternalBlobsAndProofs(final BlobSchema blobSchema) {
+  public BlobAndProof asInternalBlobAndProof(final BlobSchema blobSchema) {
     return new BlobAndProof(new Blob(blobSchema, blob), new KZGProof(proof));
   }
 

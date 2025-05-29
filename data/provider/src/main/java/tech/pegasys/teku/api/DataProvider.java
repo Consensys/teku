@@ -31,6 +31,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -116,6 +117,7 @@ public class DataProvider {
     private ForkChoiceNotifier forkChoiceNotifier;
     private boolean isLivenessTrackingEnabled = true;
     private IntSupplier rejectedExecutionSupplier;
+    private BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -217,6 +219,12 @@ public class DataProvider {
       return this;
     }
 
+    public Builder blobSidecarReconstructionProvider(
+        final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider) {
+      this.blobSidecarReconstructionProvider = blobSidecarReconstructionProvider;
+      return this;
+    }
+
     public DataProvider build() {
       final ConfigProvider configProvider = new ConfigProvider(spec);
       final NetworkDataProvider networkDataProvider = new NetworkDataProvider(p2pNetwork);
@@ -237,7 +245,12 @@ public class DataProvider {
               recentChainData,
               spec);
       final ChainDataProvider chainDataProvider =
-          new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);
+          new ChainDataProvider(
+              spec,
+              recentChainData,
+              combinedChainDataClient,
+              rewardCalculator,
+              blobSidecarReconstructionProvider);
       final SyncDataProvider syncDataProvider =
           new SyncDataProvider(syncService, rejectedExecutionSupplier);
       final ValidatorDataProvider validatorDataProvider =

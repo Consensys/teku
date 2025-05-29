@@ -111,6 +111,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> capellaForkEpoch;
   private final Optional<UInt64> denebForkEpoch;
   private final Optional<UInt64> electraForkEpoch;
+  private final Optional<UInt64> fuluForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -149,6 +150,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> capellaForkEpoch,
       final Optional<UInt64> denebForkEpoch,
       final Optional<UInt64> electraForkEpoch,
+      final Optional<UInt64> fuluForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -179,6 +181,7 @@ public class Eth2NetworkConfiguration {
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
     this.electraForkEpoch = electraForkEpoch;
+    this.fuluForkEpoch = fuluForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -277,6 +280,7 @@ public class Eth2NetworkConfiguration {
       case CAPELLA -> capellaForkEpoch;
       case DENEB -> denebForkEpoch;
       case ELECTRA -> electraForkEpoch;
+      case FULU -> fuluForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -401,6 +405,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
+        && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
         && Objects.equals(trustedSetup, that.trustedSetup)
@@ -425,6 +430,7 @@ public class Eth2NetworkConfiguration {
         capellaForkEpoch,
         denebForkEpoch,
         electraForkEpoch,
+        fuluForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
         trustedSetup,
@@ -580,6 +586,7 @@ public class Eth2NetworkConfiguration {
           capellaForkEpoch,
           denebForkEpoch,
           electraForkEpoch,
+          fuluForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
