@@ -61,7 +61,7 @@ public class DasPreSampler {
                     block.getSlot(),
                     block.getRoot()),
             err ->
-                LOG.info(
+                LOG.debug(
                     "DasPreSampler: error pre-sampling block {} ({}): {}",
                     block.getSlot(),
                     block.getRoot(),

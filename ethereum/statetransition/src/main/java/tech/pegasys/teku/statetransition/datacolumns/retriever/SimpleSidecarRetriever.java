@@ -93,7 +93,7 @@ public class SimpleSidecarRetriever
     if (!started) {
       started = true;
       asyncRunner.runWithFixedDelay(
-          this::nextRound, roundPeriod, err -> LOG.info("Unexpected error", err));
+          this::nextRound, roundPeriod, err -> LOG.debug("Unexpected error", err));
     }
   }
 

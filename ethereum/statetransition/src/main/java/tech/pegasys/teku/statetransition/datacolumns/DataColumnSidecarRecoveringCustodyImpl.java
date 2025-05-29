@@ -125,7 +125,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   public void onSlot(final UInt64 slot) {
     if (!isActiveSuperNode(slot)) {
       if (custodyGroupCountManager.getCustodyGroupSyncedCount() == groupCount) {
-        LOG.info(
+        LOG.debug(
             "Number of required custody groups reached maximum custody groups. Activating super node reconstruction.");
         isSuperNode.set(true);
       } else {
@@ -266,7 +266,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private void initiateRecovery(
       final BeaconBlock block, final SafeFuture<List<DataColumnSidecar>> list) {
-    LOG.info("Starting data columns sidecars recovery for block: {}", block.getSlotAndBlockRoot());
+    LOG.debug("Starting data columns sidecars recovery for block: {}", block.getSlotAndBlockRoot());
 
     final MetricsHistogram.Timer timer = dataAvailabilityReconstructionTimeSeconds.startTimer();
 
@@ -295,7 +295,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                             .ifExceptionGetsHereRaiseABug();
                         dataColumnSidecarPublisher.accept(dataColumnSidecar);
                       });
-              LOG.info(
+              LOG.debug(
                   "Data column sidecars recovery finished for block: {}",
                   block.getSlotAndBlockRoot());
             })

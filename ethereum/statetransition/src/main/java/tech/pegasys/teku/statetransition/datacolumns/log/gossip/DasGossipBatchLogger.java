@@ -47,7 +47,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
     asyncRunner.runWithFixedDelay(
         this::logBatchedEvents,
         Duration.ofSeconds(1),
-        err -> LOG.info("DasGossipBatchLogger error: {}", err.toString()));
+        err -> LOG.debug("DasGossipBatchLogger error: {}", err.toString()));
   }
 
   interface Event {
@@ -136,7 +136,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
               msAgoString(errEvents),
               blockIdString(blockId));
       default ->
-          LOG.info(
+          LOG.debug(
               "Error publishing {} data columns ({}) by gossip {} for block {}: {}",
               errEvents.size(),
               columnIndexesString(errEvents),
@@ -168,7 +168,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
               ? ""
               : "unsubscribed: " + StringifyUtil.toIntRangeStringWithSize(unsubscribedSubnets);
       String maybeDelim = subscribedSubnets.isEmpty() || unsubscribedSubnets.isEmpty() ? "" : ", ";
-      LOG.info(
+      LOG.debug(
           "Data column gossip subnets subscriptions changed: "
               + subscribeString
               + maybeDelim
