@@ -143,7 +143,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     if (oldCustodyGroupSyncedCount == custodyGroupSyncedCount) {
       return;
     }
-    LOG.info("Synced custody group count updated to {}.", custodyGroupSyncedCount);
+    LOG.debug("Synced custody group count updated to {}.", custodyGroupSyncedCount);
     custodyGroupCountChannel.onCustodyGroupCountSynced(custodyGroupSyncedCount);
     custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
   }
@@ -159,7 +159,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private synchronized void updateCustodyGroupCount(final int newCustodyGroupCount) {
     final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
     if (oldCustodyGroupCount != newCustodyGroupCount) {
-      LOG.info(
+      LOG.debug(
           "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
       custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount);
       custodyGroupCountGauge.set(newCustodyGroupCount);

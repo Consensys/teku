@@ -198,7 +198,7 @@ public class DataColumnSidecarGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldIgnoreWhenParentIsNotAvailable_slot() {
+  void shouldIgnoreWhenParentIsNotAvailableSlot() {
     when(gossipValidationHelper.getSlotForBlockRoot(blockParentRoot)).thenReturn(Optional.empty());
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))

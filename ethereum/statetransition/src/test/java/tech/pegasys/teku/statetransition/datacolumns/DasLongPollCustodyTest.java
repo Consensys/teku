@@ -171,7 +171,7 @@ public class DasLongPollCustodyTest {
   }
 
   @Test
-  void testEmptyIsNotRetrunedImmediatelyAtBeginningOfCurrentSlot() {
+  void testEmptyIsNotReturnedImmediatelyAtBeginningOfCurrentSlot() {
     custody.onSlot(UInt64.valueOf(9));
     advanceTimeGradually(currentSlotTimeout.plusMillis(100));
 

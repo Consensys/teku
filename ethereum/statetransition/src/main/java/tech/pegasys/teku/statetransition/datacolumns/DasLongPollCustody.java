@@ -82,9 +82,9 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
   @Override
   public SafeFuture<Boolean> hasCustodyDataColumnSidecar(
       final DataColumnSlotAndIdentifier columnId) {
-    SafeFuture<Optional<Boolean>> pendingFuture =
+    final SafeFuture<Optional<Boolean>> pendingFuture =
         addPendingRequest(columnId).thenApply(maybeSidecar -> maybeSidecar.map(__ -> true));
-    SafeFuture<Optional<Boolean>> existingFuture =
+    final SafeFuture<Optional<Boolean>> existingFuture =
         delegate
             .hasCustodyDataColumnSidecar(columnId)
             .thenApply(doesExist -> doesExist ? Optional.of(true) : Optional.empty());
@@ -106,7 +106,8 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
 
   @Override
   public void onSlot(final UInt64 slot) {
-    Duration waitPeriodForCurrentSlot = gossipWaitTimeoutCalculator.getGossipWaitTimeout(slot);
+    final Duration waitPeriodForCurrentSlot =
+        gossipWaitTimeoutCalculator.getGossipWaitTimeout(slot);
     asyncRunner
         .runAfterDelay(
             () -> pendingRequests.setNoWaitSlot(slot.increment()), waitPeriodForCurrentSlot)

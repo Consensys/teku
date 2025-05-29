@@ -61,14 +61,14 @@ public class DasCustodySyncTest {
           .withAsyncDb(ofMillis(1))
           .withAsyncBlockResolver(ofMillis(2))
           .build();
-  final int maxSyncRequests = 32;
   final int minSyncRequests = 8;
+  final int maxSyncRequests = 32;
   final DataColumnSidecarRetrieverStub retrieverStub = new DataColumnSidecarRetrieverStub();
   final DataColumnSidecarRetriever asyncRetriever =
       new DelayedDataColumnSidecarRetriever(
           retrieverStub, custodyStand.stubAsync.getStubAsyncRunner(), ofMillis(0));
   final DasCustodySync dasCustodySync =
-      new DasCustodySync(custodyStand.custody, asyncRetriever, maxSyncRequests, minSyncRequests);
+      new DasCustodySync(custodyStand.custody, asyncRetriever, minSyncRequests, maxSyncRequests);
 
   final int epochLength = spec.slotsPerEpoch(UInt64.ZERO);
 

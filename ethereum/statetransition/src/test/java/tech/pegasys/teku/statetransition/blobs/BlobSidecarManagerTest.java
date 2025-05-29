@@ -199,7 +199,7 @@ public class BlobSidecarManagerTest {
   }
 
   @Test
-  void createAvailabilityChecker_shouldReturnANotRequiredAvailabilityCheckerWhenBlockIsPreDeneb() {
+  void createAvailabilityChecker_shouldReturnANoOpAvailabilityCheckerWhenBlockIsPreDeneb() {
     final Spec spec = TestSpecFactory.createMainnetCapella();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();

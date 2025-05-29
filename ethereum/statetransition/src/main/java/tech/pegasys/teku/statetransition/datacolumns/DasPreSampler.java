@@ -40,7 +40,7 @@ public class DasPreSampler {
     final List<SignedBeaconBlock> blocksToSample =
         blocks.stream().filter(this::isSamplingRequired).toList();
 
-    LOG.info(
+    LOG.debug(
         "DasPreSampler: requesting pre-sample for {} (of {} received) blocks: {}",
         blocksToSample.size(),
         blocks.size(),

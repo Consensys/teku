@@ -454,7 +454,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final AvailabilityChecker<?> availabilityChecker;
     if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      LOG.trace("Created DAS availabilityChecker for slot {}", block.getSlot());
+      LOG.debug("Created DAS availabilityChecker for slot {}", block.getSlot());
       availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
     } else {
       availabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
@@ -483,9 +483,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .getAvailabilityCheckResult()
             .thenPeek(
                 result -> {
-                  LOG.trace(
-                      "Availability check slot {} result: {}",
+                  LOG.debug(
+                      "Availability check for slot: {}, block_root: {} result: {}",
                       block.getSlot(),
+                      block.getRoot(),
                       result.toLogString());
                   blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
                   // consensus validation is completed when DA check is completed

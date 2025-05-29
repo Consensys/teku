@@ -1580,7 +1580,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.nodeId =
         p2pNetwork
             .getDiscoveryNodeId()
-            .orElseThrow(() -> new InvalidConfigurationException("NodeID is required"));
+            .orElseThrow(
+                () ->
+                    new InvalidConfigurationException(
+                        "Failed to get NodeId from Discovery System"));
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {

@@ -36,12 +36,15 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
 public class DasCustodySync implements SlotEventsChannel {
+
   private static final Logger LOG = LogManager.getLogger();
+  public static final int MAX_PENDING_COLUMN_REQUESTS = 10 * 1024;
+  public static final int MIN_PENDING_COLUMN_REQUESTS = 2 * 1024;
 
   private final DataColumnSidecarCustody custody;
   private final DataColumnSidecarRetriever retriever;
-  private final int maxPendingColumnRequests;
   private final int minPendingColumnRequests;
+  private final int maxPendingColumnRequests;
 
   private final Map<DataColumnSlotAndIdentifier, PendingRequest> pendingRequests =
       new ConcurrentHashMap<>();
@@ -53,17 +56,17 @@ public class DasCustodySync implements SlotEventsChannel {
   public DasCustodySync(
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final int maxPendingColumnRequests,
-      final int minPendingColumnRequests) {
+      final int minPendingColumnRequests,
+      final int maxPendingColumnRequests) {
     this.custody = custody;
     this.retriever = retriever;
-    this.maxPendingColumnRequests = maxPendingColumnRequests;
     this.minPendingColumnRequests = minPendingColumnRequests;
+    this.maxPendingColumnRequests = maxPendingColumnRequests;
   }
 
   public DasCustodySync(
       final DataColumnSidecarCustody custody, final DataColumnSidecarRetriever retriever) {
-    this(custody, retriever, 10 * 1024, 2 * 1024);
+    this(custody, retriever, MIN_PENDING_COLUMN_REQUESTS, MAX_PENDING_COLUMN_REQUESTS);
   }
 
   private void onRequestComplete(final PendingRequest request, final DataColumnSidecar response) {

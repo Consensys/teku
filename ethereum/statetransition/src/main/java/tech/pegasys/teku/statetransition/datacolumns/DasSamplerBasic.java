@@ -117,14 +117,14 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
           final Set<DataColumnSlotAndIdentifier> missingColumn =
               Sets.difference(requiredColumnIdentifiers, columnsInCustody);
 
-          if (LOG.isInfoEnabled()) {
+          if (LOG.isDebugEnabled()) {
             final List<Integer> existingColumnIndexes =
                 Sets.intersection(requiredColumnIdentifiers, columnsInCustody).stream()
                     .map(it -> it.columnIndex().intValue())
                     .sorted()
                     .toList();
 
-            LOG.info(
+            LOG.debug(
                 "checkDataAvailability(): got {} (of {}) columns from custody (or received by Gossip) for block {} ({}), columns: {}",
                 existingColumnIndexes.size(),
                 requiredColumnIdentifiers.size(),
@@ -138,7 +138,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                   .thenPeek(
                       retrievedColumns -> {
                         if (!retrievedColumns.isEmpty()) {
-                          LOG.info(
+                          LOG.debug(
                               "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                               retrievedColumns.size(),
                               requiredColumnIdentifiers.size(),

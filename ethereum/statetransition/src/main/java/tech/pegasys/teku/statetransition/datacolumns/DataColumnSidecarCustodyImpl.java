@@ -156,7 +156,7 @@ public class DataColumnSidecarCustodyImpl
       // implement in future invalidating current custody as number of required groups have
       // increased (https://github.com/Consensys/teku/issues/9468)
       if (groupCount > oldGroupCount) {
-        LOG.info("Custody group count changed from {} to {}", oldGroupCount, groupCount);
+        LOG.debug("Custody group count changed from {} to {}", oldGroupCount, groupCount);
         final UInt64 minCustodyPeriodSlot =
             minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
         db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
@@ -193,7 +193,7 @@ public class DataColumnSidecarCustodyImpl
                           //  non-finalized epochs could be still not synced with up-to-date custody
                           // (https://github.com/Consensys/teku/issues/9469)
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
-                            LOG.info(
+                            LOG.debug(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());
                             custodyGroupCountManager.setCustodyGroupSyncedCount(
                                 totalCustodyGroupCount.get());

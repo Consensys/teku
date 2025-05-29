@@ -226,7 +226,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
               .toList();
     }
 
-    LOG.info(
+    LOG.debug(
         "Publishing {} data column sidecars for {}",
         myCustodySidecars.size(),
         recoveryTask.getSlotAndBlockRoot());
@@ -367,7 +367,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                   versionedHashes.size(),
                   blobAndCellProofsList.size());
 
-              LOG.info(
+              LOG.debug(
                   "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
                   slotAndBlockRoot.getSlot());
               publishRecoveredDataColumnSidecars(recoveryTask, blobAndCellProofsList);
@@ -375,7 +375,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   private void logLocalElBlobsLookupFailure(final Throwable error) {
-    LOG.warn("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
+    LOG.debug("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
   }
 
   record RecoveryTask(
