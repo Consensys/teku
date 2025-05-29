@@ -42,10 +42,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   private final int minSyncCommitteeParticipants;
   private final int updateTimeout;
 
-  // Light client
-  private final int syncCommitteeBranchLength;
-  private final int finalityBranchLength;
-
   public SpecConfigAltairImpl(
       final SpecConfig specConfig,
       final UInt64 inactivityPenaltyQuotientAltair,
@@ -58,9 +54,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
       final int minSyncCommitteeParticipants,
-      final int updateTimeout,
-      final int syncCommitteeBranchLength,
-      final int finalityBranchLength) {
+      final int updateTimeout) {
     super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
@@ -73,8 +67,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
     this.altairForkEpoch = altairForkEpoch;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.updateTimeout = updateTimeout;
-    this.syncCommitteeBranchLength = syncCommitteeBranchLength;
-    this.finalityBranchLength = finalityBranchLength;
   }
 
   public static SpecConfigAltair required(final SpecConfig specConfig) {
@@ -143,16 +135,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   }
 
   @Override
-  public int getSyncCommitteeBranchLength() {
-    return syncCommitteeBranchLength;
-  }
-
-  @Override
-  public int getFinalityBranchLength() {
-    return finalityBranchLength;
-  }
-
-  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }
@@ -181,9 +163,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
         && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
         && Objects.equals(altairForkVersion, that.altairForkVersion)
-        && Objects.equals(altairForkEpoch, that.altairForkEpoch)
-        && syncCommitteeBranchLength == that.syncCommitteeBranchLength
-        && finalityBranchLength == that.finalityBranchLength;
+        && Objects.equals(altairForkEpoch, that.altairForkEpoch);
   }
 
   @Override
@@ -199,8 +179,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         epochsPerSyncCommitteePeriod,
         altairForkVersion,
         altairForkEpoch,
-        minSyncCommitteeParticipants,
-        syncCommitteeBranchLength,
-        finalityBranchLength);
+        minSyncCommitteeParticipants);
   }
 }
