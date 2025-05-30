@@ -181,7 +181,8 @@ public class SpecLogicFulu extends AbstractSpecLogic {
     final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
     // State upgrade
-    final FuluStateUpgrade stateUpgrade = new FuluStateUpgrade(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+    final FuluStateUpgrade stateUpgrade =
+        new FuluStateUpgrade(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
 
     return new SpecLogicFulu(
         predicates,

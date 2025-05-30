@@ -643,7 +643,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
-  //initialize_proposer_lookahead
+  // initialize_proposer_lookahead
   public List<UInt64> initializeProposerLookahead(
       final BeaconStateElectra state, final BeaconStateAccessorsFulu beaconAccessors) {
     final int minLookaheadSeed = specConfigFulu.getMinSeedLookahead();
@@ -655,8 +655,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       IntList activeValidatorIndices = beaconAccessors.getActiveValidatorIndices(state, epoch);
       proposerIndexes.addAll(computeProposerIndices(state, epoch, seed, activeValidatorIndices));
     }
-    return proposerIndexes.stream()
-            .map(UInt64::valueOf)
-            .collect(Collectors.toList());
+    return proposerIndexes.stream().map(UInt64::valueOf).collect(Collectors.toList());
   }
 }

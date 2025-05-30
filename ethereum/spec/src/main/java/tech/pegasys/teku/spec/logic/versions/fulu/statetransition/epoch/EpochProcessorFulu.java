@@ -68,8 +68,10 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     final int minSeedLookahead = specConfig.getMinSeedLookahead();
 
     final List<UInt64> proposerIndices =
-        stateFulu.getProposerLookahead().asListUnboxed()
-                .subList(slotsPerEpoch, (minSeedLookahead+1) * slotsPerEpoch);
+        stateFulu
+            .getProposerLookahead()
+            .asListUnboxed()
+            .subList(slotsPerEpoch, (minSeedLookahead + 1) * slotsPerEpoch);
 
     proposerIndices.addAll(
         stateAccessorsFulu
@@ -83,7 +85,7 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
         SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema();
 
     final SszUInt64List proposerLookaheadList =
-            proposerIndices.stream()
+        proposerIndices.stream()
             .collect(proposerLookaheadSchema.getPorposerLookaheadSchema().collectorUnboxed());
 
     stateFulu.setProposerLookahead(proposerLookaheadList);
