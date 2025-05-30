@@ -66,10 +66,10 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     final MutableBeaconStateFulu stateFulu = MutableBeaconStateFulu.required(state);
     final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
     final int minSeedLookahead = specConfig.getMinSeedLookahead();
-    final List<UInt64> proposerIndices =
-        stateFulu.getProposerLookahead().asListUnboxed().subList(slotsPerEpoch, (minSeedLookahead+1)*slotsPerEpoch);
 
-    //final int lastEpochStart = stateFulu.getProposerLookahead().size() - slotsPerEpoch;
+    final List<UInt64> proposerIndices =
+        stateFulu.getProposerLookahead().asListUnboxed()
+                .subList(slotsPerEpoch, (minSeedLookahead+1) * slotsPerEpoch);
 
     proposerIndices.addAll(
         stateAccessorsFulu
