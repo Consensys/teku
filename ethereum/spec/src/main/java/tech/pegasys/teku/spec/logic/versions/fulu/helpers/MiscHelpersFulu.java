@@ -16,8 +16,11 @@ package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.Bytes;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
@@ -47,6 +50,7 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
@@ -64,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -613,5 +618,43 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return currentEpoch
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
+  // compute_proposer_indices
+  @Override
+  public List<Integer> computeProposerIndices(
+      final BeaconState state,
+      final UInt64 epoch,
+      final Bytes32 epochSeed,
+      final IntList activeValidatorIndices) {
+    final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
+    final int slotsPerEpoch = specConfigFulu.getSlotsPerEpoch();
+    final List<Bytes32> seeds =
+        IntStream.range(0, slotsPerEpoch)
+            .mapToObj(
+                i -> {
+                  return Hash.sha256(
+                      Bytes.concat(
+                          epochSeed.toArray(), uint64ToBytes(startSlot.plus(i)).toArray()));
+                })
+            .toList();
+    return seeds.stream()
+        .map(seed -> computeProposerIndex(state, activeValidatorIndices, seed))
+        .toList();
+  }
+
+  // initialize_proposer_lookahead
+  public List<UInt64> initializeProposerLookahead(
+      final BeaconStateElectra state, final BeaconStateAccessorsFulu beaconAccessors) {
+    final int minLookaheadSeed = specConfigFulu.getMinSeedLookahead();
+    final UInt64 currentEpoch = computeEpochAtSlot(state.getSlot());
+    List<Integer> proposerIndexes = new ArrayList<>();
+    for (int i = 0; i <= minLookaheadSeed; i++) {
+      UInt64 epoch = currentEpoch.plus(i);
+      Bytes32 seed = beaconAccessors.getSeed(state, epoch, Domain.BEACON_PROPOSER);
+      IntList activeValidatorIndices = beaconAccessors.getActiveValidatorIndices(state, epoch);
+      proposerIndexes.addAll(computeProposerIndices(state, epoch, seed, activeValidatorIndices));
+    }
+    return proposerIndexes.stream().map(UInt64::valueOf).collect(Collectors.toList());
   }
 }

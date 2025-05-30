@@ -1992,7 +1992,8 @@ public final class DataStructureUtil {
       case BELLATRIX -> stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
-      case ELECTRA, FULU -> stateBuilderElectra(validatorCount, numItemsInSszLists);
+      case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
+      case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
     };
   }
 
@@ -2041,6 +2042,11 @@ public final class DataStructureUtil {
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderElectra.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderFulu stateBuilderFulu(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderFulu.create(this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {
