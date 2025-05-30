@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch.EpochProcessorFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class SpecLogicFulu extends AbstractSpecLogic {
@@ -138,8 +139,8 @@ public class SpecLogicFulu extends AbstractSpecLogic {
             predicates,
             miscHelpers,
             beaconStateAccessors);
-    final EpochProcessorElectra epochProcessor =
-        new EpochProcessorElectra(
+    final EpochProcessorFulu epochProcessor =
+        new EpochProcessorFulu(
             config,
             miscHelpers,
             beaconStateAccessors,
