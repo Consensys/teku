@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-
-import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Disabled;
@@ -54,9 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -86,8 +83,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
           predicates,
           schemaDefinitionsFulu);
   final BeaconStateAccessorsFulu beaconStateAccessors =
-          new BeaconStateAccessorsFulu(
-                  spec.getGenesisSpecConfig(), predicates, miscHelpersFulu);
+      new BeaconStateAccessorsFulu(spec.getGenesisSpecConfig(), predicates, miscHelpersFulu);
 
   @ParameterizedTest(name = "{0} allowed failure(s)")
   @MethodSource("getExtendedSampleCountFixtures")
@@ -285,12 +281,13 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final Bytes32 epochSeed = Bytes32.random();
     final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
     final List<Integer> activeValidatorIndices =
-            IntStream.range(0, 10).boxed().collect(Collectors.toList());
+        IntStream.range(0, 10).boxed().collect(Collectors.toList());
 
     final IntList activeValidatorIndicesIntList =
-            IntList.of(activeValidatorIndices.stream().mapToInt(Integer::intValue).toArray());
+        IntList.of(activeValidatorIndices.stream().mapToInt(Integer::intValue).toArray());
 
-    List<Integer> proposerIndices = miscHelpersFulu.computeProposerIndices(
+    List<Integer> proposerIndices =
+        miscHelpersFulu.computeProposerIndices(
             state, epoch, epochSeed, activeValidatorIndicesIntList);
 
     assertThat(proposerIndices).hasSize(slotsPerEpoch);

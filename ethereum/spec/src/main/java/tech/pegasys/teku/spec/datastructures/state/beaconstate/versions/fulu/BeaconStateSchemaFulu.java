@@ -118,19 +118,19 @@ public class BeaconStateSchemaFulu
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
     return (SszListSchema<PendingDeposit, ?>)
-            getChildSchema(getFieldIndex(BeaconStateFields.PENDING_DEPOSITS));
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_DEPOSITS));
   }
 
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
     return (SszListSchema<PendingPartialWithdrawal, ?>)
-            getChildSchema(getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS));
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS));
   }
 
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
     return (SszListSchema<PendingConsolidation, ?>)
-            getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
   }
 
   public SszUInt64ListSchema<?> getProposerLookaheadSchema() {

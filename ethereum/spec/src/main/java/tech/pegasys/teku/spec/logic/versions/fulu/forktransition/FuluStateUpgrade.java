@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.forktransition;
 
-import kotlin.UInt;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -28,16 +27,12 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFu
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
-import java.util.List;
-import java.util.stream.Stream;
-
 public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
 
   private final SpecConfigFulu specConfig;
   private final BeaconStateAccessorsFulu beaconStateAccessors;
   private final SchemaDefinitionsFulu schemaDefinitions;
   private final MiscHelpersFulu miscHelpers;
-
 
   public FuluStateUpgrade(
       final SpecConfigFulu specConfig,
@@ -56,40 +51,47 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
     final BeaconStateElectra preStateElectra = BeaconStateElectra.required(preState);
 
     return BeaconStateFulu.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
-            .updatedFulu(
-                    state -> {
-                        BeaconStateFields.copyCommonFieldsFromSource(state, preState);
+        .updatedFulu(
+            state -> {
+              BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-                        state.setCurrentEpochParticipation(preStateElectra.getCurrentEpochParticipation());
-                        state.setPreviousEpochParticipation(preStateElectra.getPreviousEpochParticipation());
-                        state.setCurrentSyncCommittee(preStateElectra.getCurrentSyncCommittee());
-                        state.setNextSyncCommittee(preStateElectra.getNextSyncCommittee());
-                        state.setInactivityScores(preStateElectra.getInactivityScores());
+              state.setCurrentEpochParticipation(preStateElectra.getCurrentEpochParticipation());
+              state.setPreviousEpochParticipation(preStateElectra.getPreviousEpochParticipation());
+              state.setCurrentSyncCommittee(preStateElectra.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateElectra.getNextSyncCommittee());
+              state.setInactivityScores(preStateElectra.getInactivityScores());
 
-                        state.setFork(
-                                new Fork(
-                                        preState.getFork().getCurrentVersion(),
-                                        specConfig.getFuluForkVersion(),
-                                        epoch));
+              state.setFork(
+                  new Fork(
+                      preState.getFork().getCurrentVersion(),
+                      specConfig.getFuluForkVersion(),
+                      epoch));
 
-                        state.setLatestExecutionPayloadHeader(
-                                preStateElectra.getLatestExecutionPayloadHeader());
-                        state.setNextWithdrawalValidatorIndex(
-                                preStateElectra.getNextWithdrawalValidatorIndex());
-                        state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
-                        state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
-                        state.setDepositRequestsStartIndex(
-                                SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
-                        state.setDepositBalanceToConsume(UInt64.ZERO);
-                        state.setExitBalanceToConsume(
-                                beaconStateAccessors.getActivationExitChurnLimit(state));
-                        state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
-                        state.setConsolidationBalanceToConsume(
-                                beaconStateAccessors.getConsolidationChurnLimit(state));
-                        state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
+              state.setLatestExecutionPayloadHeader(
+                  preStateElectra.getLatestExecutionPayloadHeader());
+              state.setNextWithdrawalValidatorIndex(
+                  preStateElectra.getNextWithdrawalValidatorIndex());
+              state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
+              state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
+              state.setDepositRequestsStartIndex(
+                  SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
+              state.setDepositBalanceToConsume(UInt64.ZERO);
+              state.setExitBalanceToConsume(
+                  beaconStateAccessors.getActivationExitChurnLimit(state));
+              state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
+              state.setConsolidationBalanceToConsume(
+                  beaconStateAccessors.getConsolidationChurnLimit(state));
+              state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
 
-                        final SszUInt64ListSchema<?> schema =  SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema().getPorposerLookaheadSchema();
-                        state.setProposerLookahead(miscHelpers.initializeProposerLookahead(preStateElectra, beaconStateAccessors).stream().collect(schema.collectorUnboxed()));
-                    });
+              final SszUInt64ListSchema<?> schema =
+                  SchemaDefinitionsFulu.required(schemaDefinitions)
+                      .getProposerLookaheadSchema()
+                      .getPorposerLookaheadSchema();
+              state.setProposerLookahead(
+                  miscHelpers
+                      .initializeProposerLookahead(preStateElectra, beaconStateAccessors)
+                      .stream()
+                      .collect(schema.collectorUnboxed()));
+            });
   }
 }

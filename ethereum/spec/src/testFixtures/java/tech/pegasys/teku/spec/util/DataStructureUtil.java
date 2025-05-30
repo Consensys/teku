@@ -2046,8 +2046,7 @@ public final class DataStructureUtil {
 
   public BeaconStateBuilderFulu stateBuilderFulu(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
-    return BeaconStateBuilderFulu.create(
-        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+    return BeaconStateBuilderFulu.create(this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {

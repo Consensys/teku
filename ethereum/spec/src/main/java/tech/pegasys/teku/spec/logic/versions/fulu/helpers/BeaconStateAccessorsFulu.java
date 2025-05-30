@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,7 +46,8 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     final int lookAheadIndex = requestedSlot.mod(configFulu.getSlotsPerEpoch()).intValue();
 
-    final int proposer = state
+    final int proposer =
+        state
             .toVersionFulu()
             .orElseThrow()
             .getProposerLookahead()
@@ -55,10 +55,7 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
             .get(lookAheadIndex)
             .intValue();
 
-    LOG.debug(
-        "getBeaconProposerIndex: requestedSlot={}, proposer={}",
-        requestedSlot,
-            proposer);
+    LOG.debug("getBeaconProposerIndex: requestedSlot={}, proposer={}", requestedSlot, proposer);
     return proposer;
   }
 
