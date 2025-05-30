@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SC
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 
@@ -28,6 +29,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.BeaconBlockBodyBuilderFulu;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
@@ -41,6 +46,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
   private final DataColumnsByRootIdentifierSchema dataColumnsByRootIdentifierSchema;
   private final MatrixEntrySchema matrixEntrySchema;
+  private final ExecutionPayloadAndBlobsCellBundleSchema executionPayloadAndBlobsCellBundleSchema;
 
   private final DataColumnSidecarsByRootRequestMessageSchema
       dataColumnSidecarsByRootRequestMessageSchema;
@@ -57,6 +63,8 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     this.dataColumnsByRootIdentifierSchema =
         schemaRegistry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA);
     this.matrixEntrySchema = schemaRegistry.get(MATRIX_ENTRY_SCHEMA);
+    this.executionPayloadAndBlobsCellBundleSchema =
+        schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA);
     this.dataColumnSidecarsByRootRequestMessageSchema =
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
     this.dataColumnSidecarsByRangeRequestMessageSchema =
@@ -71,6 +79,13 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
         SchemaDefinitionsFulu.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsFulu) schemaDefinitions;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
+    return new BeaconBlockBodyBuilderFulu(
+        getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
+        getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
   }
 
   public CellSchema getCellSchema() {
@@ -91,6 +106,15 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
 
   public MatrixEntrySchema getMatrixEntrySchema() {
     return matrixEntrySchema;
+  }
+
+  public ExecutionPayloadAndBlobsCellBundleSchema getExecutionPayloadAndBlobsCellBundleSchema() {
+    return executionPayloadAndBlobsCellBundleSchema;
+  }
+
+  @Override
+  public BuilderPayloadSchema<?> getBuilderPayloadSchema() {
+    return getExecutionPayloadAndBlobsCellBundleSchema();
   }
 
   public DataColumnSidecarsByRootRequestMessageSchema

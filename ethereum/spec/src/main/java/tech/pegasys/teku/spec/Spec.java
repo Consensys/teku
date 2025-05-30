@@ -964,6 +964,12 @@ public class Spec {
         .orElse(false);
   }
 
+  public UInt64 blobSidecarsAvailabilityDeprecationSlot() {
+    return getSpecConfigFulu()
+        .map(maybeConfig -> computeStartSlotAtEpoch(maybeConfig.getFuluForkEpoch()))
+        .orElse(UInt64.MAX_VALUE);
+  }
+
   /**
    * This method is used to setup caches and limits during the initialization of the node. We
    * normally increase the blobs with each fork, but in case we will decrease them, let's consider

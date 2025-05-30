@@ -92,6 +92,12 @@
     } ],
     "requestBody" : {
       "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        },
         "application/json" : {
           "schema" : {
             "type" : "array",
@@ -109,6 +115,16 @@
       }
     },
     "responses" : {
+      "415" : {
+        "description" : "Unsupported media type",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
       "200" : {
         "description" : "Attestations are stored in pool and broadcast on appropriate subnet",
         "content" : { }

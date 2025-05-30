@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes;
+import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -76,6 +77,7 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                 HttpStatusCodes.SC_OK,
                 "Request successful",
                 getResponseType(schemaDefinitionCache),
+                EthereumTypes.sszResponseType(),
                 ETH_CONSENSUS_HEADER_TYPE)
             .withNotFoundResponse()
             .withChainDataResponses()
@@ -106,7 +108,6 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  @SuppressWarnings("unchecked")
   private static SerializableTypeDefinition<ObjectAndMetaData<Attestation>> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
 

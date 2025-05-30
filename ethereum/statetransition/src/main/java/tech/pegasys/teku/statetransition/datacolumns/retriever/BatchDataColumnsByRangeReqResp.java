@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 
-// TODO-fulu Bring concrete implementation
 public interface BatchDataColumnsByRangeReqResp {
 
   AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRange(

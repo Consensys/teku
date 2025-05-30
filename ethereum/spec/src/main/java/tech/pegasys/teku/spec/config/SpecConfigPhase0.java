@@ -93,7 +93,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int secondsPerEth1Block;
 
   // Fork Choice
-  private final int safeSlotsToUpdateJustified;
   private final int proposerScoreBoost;
 
   // Deposit Contract
@@ -168,7 +167,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxDeposits,
       final int maxVoluntaryExits,
       final int secondsPerEth1Block,
-      final int safeSlotsToUpdateJustified,
       final int proposerScoreBoost,
       final long depositChainId,
       final long depositNetworkId,
@@ -236,7 +234,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxDeposits = maxDeposits;
     this.maxVoluntaryExits = maxVoluntaryExits;
     this.secondsPerEth1Block = secondsPerEth1Block;
-    this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     this.proposerScoreBoost = proposerScoreBoost;
     this.depositChainId = depositChainId;
     this.depositNetworkId = depositNetworkId;
@@ -518,11 +515,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getSafeSlotsToUpdateJustified() {
-    return safeSlotsToUpdateJustified;
-  }
-
-  @Override
   public int getReorgMaxEpochsSinceFinalization() {
     return reorgMaxEpochsSinceFinalization;
   }
@@ -671,7 +663,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
         && secondsPerEth1Block == that.secondsPerEth1Block
-        && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
@@ -754,7 +745,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxDeposits,
         maxVoluntaryExits,
         secondsPerEth1Block,
-        safeSlotsToUpdateJustified,
         proposerScoreBoost,
         depositChainId,
         depositNetworkId,

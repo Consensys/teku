@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 public class GetAttestationData extends RestApiEndpoint {
@@ -51,11 +53,11 @@ public class GetAttestationData extends RestApiEndpoint {
               "data", AttestationData.SSZ_SCHEMA.getJsonTypeDefinition(), Function.identity())
           .build();
 
-  public GetAttestationData(final DataProvider provider) {
-    this(provider.getValidatorDataProvider());
+  public GetAttestationData(final DataProvider provider, final Spec spec) {
+    this(provider.getValidatorDataProvider(), spec);
   }
 
-  public GetAttestationData(final ValidatorDataProvider provider) {
+  public GetAttestationData(final ValidatorDataProvider provider, final Spec spec) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("produceAttestationData")
@@ -66,8 +68,14 @@ public class GetAttestationData extends RestApiEndpoint {
             .queryParam(
                 COMMITTEE_INDEX_PARAMETER.withDescription(
                     "`UInt64` The committee index for which an attestation data should be created."))
-            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(
+                SC_OK,
+                "Request successful",
+                RESPONSE_TYPE,
+                EthereumTypes.sszResponseType(
+                    attestationData -> spec.atSlot(attestationData.getSlot()).getMilestone()))
             .withNotFoundResponse()
+            .withNotAcceptedResponse()
             .withChainDataResponses()
             .build());
     this.provider = provider;

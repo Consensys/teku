@@ -136,7 +136,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Optional<UInt64> custodyGroupCount,
       final DasReqRespLogger dasLogger) {
 
-    // FIXME: we have no guarantee here that it's synced already
+    // TODO-fulu: we have no guarantee here that it's synced already
+    // (https://github.com/Consensys/teku/issues/9461)
     custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);

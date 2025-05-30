@@ -302,6 +302,23 @@ class MatchingDataAttestationGroupV2Test {
   }
 
   @TestTemplate
+  void streamForAggregationProduction_phase0_committeeIndexShouldBeIgnoredAndReturnAggregates(
+      final SpecContext specContext) {
+    specContext.assumeIsNotOneOf(ELECTRA);
+
+    final PooledAttestation att1 =
+        addPooledAttestation(1, 2); // Goes to attestationsByValidatorCount
+    final PooledAttestation att2 = addPooledAttestation(3); // Goes to attestationsByValidatorCount
+    final Attestation expected = aggregateAttestations(toAttestation(att1), toAttestation(att2));
+
+    verifyStreamForAggregationProductionContainsExactly(
+        UInt64.ONE,
+        toPooledAttestationWithData(
+            PooledAttestation.fromValidatableAttestation(
+                ValidatableAttestation.from(spec, expected, committeeSizes))));
+  }
+
+  @TestTemplate
   void streamForAggregationProduction_electra_noCommitteeIndex_throwsException(
       final SpecContext specContext) {
     specContext.assumeElectraActive();
@@ -770,12 +787,13 @@ class MatchingDataAttestationGroupV2Test {
 
   private List<UInt64> validatorBitToValidatorIndex(final AttestationBits bits) {
     if (!bits.requiresCommitteeBits()) {
-      return validatorBitToValidatorIndex(bits.getAggregationBits().getAllSetBits().toIntArray());
+      return validatorBitToValidatorIndex(
+          bits.getAggregationSszBits().getAllSetBits().toIntArray());
     }
 
     // only 2 committees are supported
     assertThat(committeeSizes.keySet()).isEqualTo(Set.of(0, 1));
-    final IntList committeeBits = bits.getCommitteeBits().getAllSetBits();
+    final IntList committeeBits = bits.getCommitteeSszBits().getAllSetBits();
     assertThat(committeeBits.size()).isLessThanOrEqualTo(2);
 
     final List<UInt64> result = new ArrayList<>();
@@ -784,14 +802,18 @@ class MatchingDataAttestationGroupV2Test {
       result.addAll(
           validatorBitToValidatorIndex(
               Optional.of(0),
-              bits.getAggregationBits().getAsBitSet(0, committeeSizes.get(0)).stream().toArray()));
+              bits.getAggregationSszBits().getAsBitSet(0, committeeSizes.get(0)).stream()
+                  .toArray()));
       offset = committeeSizes.get(0);
     }
     if (committeeBits.contains(1)) {
       result.addAll(
           validatorBitToValidatorIndex(
               Optional.of(1),
-              bits.getAggregationBits().getAsBitSet(offset, committeeSizes.get(1) + offset).stream()
+              bits
+                  .getAggregationSszBits()
+                  .getAsBitSet(offset, committeeSizes.get(1) + offset)
+                  .stream()
                   .toArray()));
     }
 
@@ -800,10 +822,10 @@ class MatchingDataAttestationGroupV2Test {
 
   private Attestation toAttestation(final PooledAttestation pooledAttestation) {
     return attestationSchema.create(
-        pooledAttestation.bits().getAggregationBits(),
+        pooledAttestation.bits().getAggregationSszBits(),
         attestationData,
         pooledAttestation.aggregatedSignature(),
-        pooledAttestation.bits()::getCommitteeBits); // Supplier for committee bits
+        pooledAttestation.bits()::getCommitteeSszBits); // Supplier for committee bits
   }
 
   private PooledAttestationWithData toPooledAttestationWithData(

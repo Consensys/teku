@@ -21,9 +21,9 @@ public record PooledAttestationWithData(AttestationData data, PooledAttestation 
 
   public Attestation toAttestation(final AttestationSchema<Attestation> attestationSchema) {
     return attestationSchema.create(
-        pooledAttestation.bits().getAggregationBits(),
+        pooledAttestation.bits().getAggregationSszBits(),
         data,
         pooledAttestation.aggregatedSignature(),
-        pooledAttestation.bits()::getCommitteeBits);
+        pooledAttestation.bits()::getCommitteeSszBits);
   }
 }

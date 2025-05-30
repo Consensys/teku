@@ -141,7 +141,7 @@ public class RewardBasedAttestationSorter {
     }
 
     final long initializationEnded = System.nanoTime();
-    LOG.info("Initialization took {} ms.", (initializationEnded - start) / 1_000_000);
+    LOG.info("Sorting initialization took {} ms.", (initializationEnded - start) / 1_000_000);
 
     while (true) {
       final PooledAttestationWithRewardInfo bestAttestation = attestationQueue.poll();

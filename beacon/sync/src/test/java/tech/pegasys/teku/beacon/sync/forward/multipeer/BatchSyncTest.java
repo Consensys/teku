@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.StubBatchFactory;
@@ -73,6 +74,8 @@ class BatchSyncTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
 
   private final SyncSource syncSource = mock(SyncSource.class);
+  private final SyncPreImportBlockChannel syncPreImportBlockChannel =
+      mock(SyncPreImportBlockChannel.class);
   private final BatchImporter batchImporter = mock(BatchImporter.class);
   private final StubBatchFactory batches = new StubBatchFactory(eventThread, true);
 
@@ -93,7 +96,8 @@ class BatchSyncTest {
           BATCH_SIZE.intValue(),
           5,
           commonAncestor,
-          timeProvider);
+          timeProvider,
+          syncPreImportBlockChannel);
 
   @BeforeEach
   void setUp() {

@@ -63,6 +63,13 @@ public class SpecConfigLoader {
     return loadConfig(configName, true, modifier);
   }
 
+  public static SpecConfigAndParent<? extends SpecConfig> loadConfig(
+      final String configName,
+      final boolean strictConfigLoadingEnabled,
+      final Consumer<SpecConfigBuilder> modifier) {
+    return loadConfig(configName, strictConfigLoadingEnabled, true, modifier);
+  }
+
   public static SpecConfigAndParent<? extends SpecConfig> loadRemoteConfig(
       final Map<String, Object> config) {
     final SpecConfigReader reader = new SpecConfigReader();
@@ -76,7 +83,7 @@ public class SpecConfigLoader {
     if (config.containsKey(SpecConfigReader.CONFIG_NAME_KEY)) {
       final String configNameKey = (String) config.get(SpecConfigReader.CONFIG_NAME_KEY);
       try {
-        processConfig(configNameKey, reader, true);
+        processConfig(configNameKey, reader, false, true);
       } catch (IllegalArgumentException exception) {
         LOG.debug(
             "Failed to load base configuration from {}, {}",
@@ -90,26 +97,31 @@ public class SpecConfigLoader {
 
   static SpecConfigAndParent<? extends SpecConfig> loadConfig(
       final String configName,
-      final boolean isForgiving,
+      final boolean strictConfigLoadingEnabled,
+      final boolean isIgnoreUnknownConfigItems,
       final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(configName, reader, isForgiving);
+    processConfig(configName, reader, strictConfigLoadingEnabled, isIgnoreUnknownConfigItems);
     return reader.build(modifier);
   }
 
   // A little extra configuration is able to be loaded from builtin configs.
-  // isForgiving
+  // isIgnoreUnknownConfigItems
   //   - if config in source has entries we don't need, we will silently ignore them
-  //   - if `CONFIG_NAME` is set in config, and we're missing fields, we will copy them
+  // isFailRatherThanDefaultFromBuiltin
+  //   - if configuration requires a key and it's not specified, fail rather than default it.
   // Presets will be loaded if specified also, this happens after defaulting from config_name
   private static void processConfig(
-      final String source, final SpecConfigReader reader, final boolean isForgiving) {
+      final String source,
+      final SpecConfigReader reader,
+      final boolean isFailRatherThanDefaultFromBuiltin,
+      final boolean isIgnoreUnknownConfigItems) {
     try {
       final Map<String, Object> configValues = readConfigToMap(source, reader);
 
       if (!BUILTIN_NETWORKS.contains(source)
           && configValues.containsKey(SpecConfigReader.CONFIG_NAME_KEY)
-          && isForgiving) {
+          && !isFailRatherThanDefaultFromBuiltin) {
         final String builtinConfigName =
             (String) configValues.get(SpecConfigReader.CONFIG_NAME_KEY);
         if (BUILTIN_NETWORKS.contains(builtinConfigName)) {
@@ -140,9 +152,9 @@ public class SpecConfigLoader {
       // Legacy config files won't have a preset field
       if (maybePreset.isPresent()) {
         final String preset = maybePreset.get();
-        applyPreset(source, reader, isForgiving, preset);
+        applyPreset(source, reader, isIgnoreUnknownConfigItems, preset);
       }
-      reader.loadFromMap(configValues, isForgiving);
+      reader.loadFromMap(configValues, isIgnoreUnknownConfigItems);
     } catch (IOException e) {
       throw new IllegalArgumentException(
           "Unable to load configuration for network \"" + source + "\": " + e.getMessage(), e);

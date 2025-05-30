@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.block;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
@@ -874,7 +875,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     try {
       action.run();
     } catch (ArithmeticException | IllegalArgumentException | IndexOutOfBoundsException e) {
-      LOG.warn("Failed to process block", e);
+      if (Throwables.getRootCause(e) instanceof IllegalArgumentException) {
+        LOG.warn("Failed to process block: {}", e.getMessage());
+      } else {
+        LOG.warn("Failed to process block", e);
+      }
       throw new BlockProcessingException(e);
     }
   }
