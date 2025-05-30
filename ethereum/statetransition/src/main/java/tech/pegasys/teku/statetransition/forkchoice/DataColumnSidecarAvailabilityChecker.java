@@ -47,19 +47,19 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    LOG.info("Starting data availability check for slot {}", block.getSlot());
+    LOG.debug("Starting data availability check for slot {}", block.getSlot());
     switch (dataAvailabilitySampler.checkSamplingEligibility(block.getMessage())) {
       case NOT_REQUIRED_BEFORE_FULU -> {
         validationResult.complete(DataAndValidationResult.notRequired());
-        LOG.info("Availability check for slot {} NOT_REQUIRED, Fulu not started", block.getSlot());
+        LOG.debug("Availability check for slot {} NOT_REQUIRED, Fulu not started", block.getSlot());
       }
       case NOT_REQUIRED_OLD_EPOCH -> {
         validationResult.complete(DataAndValidationResult.notRequired());
-        LOG.info("Availability check for slot {} NOT_REQUIRED, epoch too old ", block.getSlot());
+        LOG.debug("Availability check for slot {} NOT_REQUIRED, epoch too old ", block.getSlot());
       }
       case NOT_REQUIRED_NO_BLOBS -> {
         validationResult.complete(DataAndValidationResult.notRequired());
-        LOG.info(
+        LOG.debug(
             "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
       }
       default -> {
