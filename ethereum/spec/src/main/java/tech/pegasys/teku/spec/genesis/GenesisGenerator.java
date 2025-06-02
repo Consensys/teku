@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.Mut
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class GenesisGenerator {
 
@@ -145,15 +146,19 @@ public class GenesisGenerator {
       keyCache.values().intStream().forEach(this::processActivation);
     }
 
-//    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-//      List<UInt64> proposerLookahead = IntStream.range(0, specConfig.getMinSeedLookahead()+1) )
-//
-//      MutableBeaconStateFulu.required(state)
-//              .setProposerLookahead(
-//                  SszUInt64List.create(
-//                      genesisSpec.getConfig().getMinSeedLookahead() + 1,
-//                      genesisSpec.getConfig().getSlotsPerEpoch()));
-//    }
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+
+      final SchemaDefinitionsFulu schemaDefinitionsFulu =
+              SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
+
+      final List<UInt64> proposerLookahead = IntStream.range(0, (specConfig.getMinSeedLookahead()+1) *specConfig.getSlotsPerEpoch())
+          .mapToObj( __-> UInt64.valueOf(0))
+          .toList();
+
+      MutableBeaconStateFulu.required(state)
+              .setProposerLookahead(
+                      proposerLookahead.stream().collect(schemaDefinitionsFulu.getProposerLookaheadSchema().getPorposerLookaheadSchema().collectorUnboxed()));
+    }
   }
 
   private void processActivation(final Deposit deposit) {
