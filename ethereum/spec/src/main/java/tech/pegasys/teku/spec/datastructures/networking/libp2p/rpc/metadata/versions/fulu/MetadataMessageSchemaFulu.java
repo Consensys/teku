@@ -48,7 +48,7 @@ public class MetadataMessageSchemaFulu
     return new MetadataMessageFulu(
         this,
         seqNumber,
-        getAttnestSchema().ofBits(attnets),
+        getAttnetsSchema().ofBits(attnets),
         getSyncnetsSchema().ofBits(syncnets),
         custodyGroupCount.orElse(UInt64.ZERO));
   }
@@ -63,7 +63,7 @@ public class MetadataMessageSchemaFulu
     return new MetadataMessageFulu(this, node);
   }
 
-  private SszBitvectorSchema<SszBitvector> getAttnestSchema() {
+  private SszBitvectorSchema<SszBitvector> getAttnetsSchema() {
     return (SszBitvectorSchema<SszBitvector>) getFieldSchema1();
   }
 

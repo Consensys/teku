@@ -29,6 +29,7 @@ public interface KZG {
   int BYTES_PER_G2 = 96;
   int CELLS_PER_EXT_BLOB = 128;
   int FIELD_ELEMENTS_PER_BLOB = 4096;
+  int FIELD_ELEMENTS_PER_EXT_BLOB = 8192;
 
   static KZG getInstance(final boolean rustKzgEnabled) {
     return rustKzgEnabled ? RustKZG.getInstance() : CKZG4844.getInstance();
