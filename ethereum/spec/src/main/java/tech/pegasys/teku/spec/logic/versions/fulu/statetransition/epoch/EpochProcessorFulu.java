@@ -74,9 +74,10 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
             .asListUnboxed()
             .subList(slotsPerEpoch, (minSeedLookahead + 1) * slotsPerEpoch);
 
-    List<UInt64> lastEpochProposerIndices = stateAccessorsFulu
+    List<UInt64> lastEpochProposerIndices =
+        stateAccessorsFulu
             .getBeaconProposerIndices(
-                    state, beaconStateAccessors.getCurrentEpoch(state).plus(minSeedLookahead).plus(1))
+                state, beaconStateAccessors.getCurrentEpoch(state).plus(minSeedLookahead).plus(1))
             .stream()
             .map(UInt64::valueOf)
             .toList();
