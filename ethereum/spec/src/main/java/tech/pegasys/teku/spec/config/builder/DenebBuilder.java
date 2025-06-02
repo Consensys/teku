@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.BlobSchedule;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -70,12 +70,12 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         specConfigAndParent);
   }
 
-  public Optional<BlobSchedule> getBlobSchedule() {
+  public Optional<BlobScheduleEntry> getBlobSchedule() {
     if (denebForkEpoch == null || maxBlobsPerBlock == null) {
       LOG.debug("denebForkEpoch = {}, maxBlobsPerBlock = {}", denebForkEpoch, maxBlobsPerBlock);
       return Optional.empty();
     }
-    return Optional.of(new BlobSchedule(denebForkEpoch, maxBlobsPerBlock));
+    return Optional.of(new BlobScheduleEntry(denebForkEpoch, maxBlobsPerBlock));
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
