@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import static tech.pegasys.teku.infrastructure.collections.LimitedMap.createSynchronizedNatural;
+
 import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.ChannelVisitor;
 import io.libp2p.core.Connection;
@@ -32,6 +34,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.FutureUtil;
+import tech.pegasys.teku.infrastructure.time.ContextThrottler;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Adds additional upfront verification of connections.
@@ -47,6 +51,10 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
   private final int remoteParallelOpenStreamsLimit;
   private final Supplier<Long> currentTimeSupplier;
 
+  private static final long THROTTLE_DELAY_MILLIS = 10_000;
+  private static final int CONTEXT_CACHE_SIZE = 200;
+  private final ContextThrottler<Logger, ExceptionContext> logThrottle;
+
   public MuxFirewall(
       final int remoteOpenStreamsRateLimit, final int remoteParallelOpenStreamsLimit) {
     this(remoteOpenStreamsRateLimit, remoteParallelOpenStreamsLimit, System::currentTimeMillis);
@@ -60,6 +68,11 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
     this.remoteOpenStreamsRateLimit = remoteOpenStreamsRateLimit;
     this.remoteParallelOpenStreamsLimit = remoteParallelOpenStreamsLimit;
     this.currentTimeSupplier = currentTimeSupplier;
+    this.logThrottle =
+        new ContextThrottler<>(
+            LOG,
+            UInt64.valueOf(THROTTLE_DELAY_MILLIS),
+            createSynchronizedNatural(CONTEXT_CACHE_SIZE));
   }
 
   protected void remoteParallelOpenStreamLimitExceeded(final MuxFirewallHandler peerMplexHandler) {
@@ -115,7 +128,18 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
         remoteOpenedStreamIds.remove(muxFrame.getId());
       }
       if (!blockFrame) {
-        ctx.fireChannelRead(msg);
+        try {
+          ctx.fireChannelRead(msg);
+        } catch (final Throwable e) {
+          if (LOG.isDebugEnabled()) {
+            logThrottle.invoke(
+                UInt64.valueOf(currentTimeSupplier.get()),
+                new ExceptionContext(ctx, e.getClass()),
+                l -> l.debug("Exception while processing channel read", e));
+          } else {
+            throw e;
+          }
+        }
       }
     }
 
@@ -195,6 +219,9 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
     }
     throw new IllegalArgumentException("Unsupported type of mux frame: " + msg.getClass());
   }
+
+  private record ExceptionContext(
+      ChannelHandlerContext ctx, Class<? extends Throwable> causeType) {}
 
   private interface MuxFrame {
     MuxId getId();
