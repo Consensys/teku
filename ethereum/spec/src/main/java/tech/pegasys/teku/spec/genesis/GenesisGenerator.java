@@ -21,13 +21,11 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -149,15 +147,21 @@ public class GenesisGenerator {
     if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
 
       final SchemaDefinitionsFulu schemaDefinitionsFulu =
-              SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
+          SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
 
-      final List<UInt64> proposerLookahead = IntStream.range(0, (specConfig.getMinSeedLookahead()+1) *specConfig.getSlotsPerEpoch())
-          .mapToObj( __-> UInt64.valueOf(0))
-          .toList();
+      final List<UInt64> proposerLookahead =
+          IntStream.range(0, (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())
+              .mapToObj(__ -> UInt64.valueOf(0))
+              .toList();
 
       MutableBeaconStateFulu.required(state)
-              .setProposerLookahead(
-                      proposerLookahead.stream().collect(schemaDefinitionsFulu.getProposerLookaheadSchema().getPorposerLookaheadSchema().collectorUnboxed()));
+          .setProposerLookahead(
+              proposerLookahead.stream()
+                  .collect(
+                      schemaDefinitionsFulu
+                          .getProposerLookaheadSchema()
+                          .getPorposerLookaheadSchema()
+                          .collectorUnboxed()));
     }
   }
 
