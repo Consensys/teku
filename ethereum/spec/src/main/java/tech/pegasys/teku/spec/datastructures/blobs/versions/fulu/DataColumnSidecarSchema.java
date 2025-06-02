@@ -104,7 +104,7 @@ public class DataColumnSidecarSchema
       final UInt64 index,
       final DataColumn dataColumn,
       final SszList<SszKZGCommitment> sszKzgCommitments,
-      final SszList<SszKZGProof> sszKkzgProofs,
+      final SszList<SszKZGProof> sszKzgProofs,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final List<Bytes32> kzgCommitmentsInclusionProof) {
     return new DataColumnSidecar(
@@ -112,7 +112,7 @@ public class DataColumnSidecarSchema
         index,
         dataColumn,
         sszKzgCommitments,
-        sszKkzgProofs,
+        sszKzgProofs,
         signedBeaconBlockHeader,
         kzgCommitmentsInclusionProof);
   }
