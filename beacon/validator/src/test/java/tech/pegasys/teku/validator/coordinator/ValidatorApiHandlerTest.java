@@ -1225,7 +1225,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void shouldReportPerformanceWhenAttestationIsIgnored() {
+  public void shouldNotReportPerformanceWhenAttestationIsIgnored() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.addAttestation(any(), any()))
         .thenReturn(completedFuture(InternalValidationResult.IGNORE));
@@ -1233,8 +1233,8 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSignedAttestations(List.of(attestation));
     verify(attestationManager)
         .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty());
-    verify(performanceTracker).saveProducedAttestation(attestation);
-    verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
+    verifyNoInteractions(performanceTracker);
+    verifyNoInteractions(dutyMetrics);
     assertThat(result).isCompletedWithValue(emptyList());
   }
 
