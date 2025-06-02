@@ -23,15 +23,15 @@ import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
 
 public class SszKZGProofPropertyTest {
   @Property
-  void roundTrip(@ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof sszKZGProof)
+  void roundTrip(@ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof sszKzgProof)
       throws JsonProcessingException {
-    assertRoundTrip(sszKZGProof);
+    assertRoundTrip(sszKzgProof);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof sszKZGProof,
+      @ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof sszKzgProof,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(sszKZGProof, seed);
+    assertDeserializeMutatedThrowsExpected(sszKzgProof, seed);
   }
 }
