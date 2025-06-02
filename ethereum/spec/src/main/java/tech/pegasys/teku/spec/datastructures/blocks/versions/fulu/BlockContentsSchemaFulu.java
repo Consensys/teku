@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.fulu;
 
-import static tech.pegasys.teku.kzg.KZG.FIELD_ELEMENTS_PER_BLOB;
+import static tech.pegasys.teku.kzg.KZG.FIELD_ELEMENTS_PER_EXT_BLOB;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 
@@ -46,7 +46,7 @@ public class BlockContentsSchemaFulu
             FIELD_KZG_PROOFS,
             SszListSchema.create(
                 SszKZGProofSchema.INSTANCE,
-                (long) specConfig.getMaxBlobCommitmentsPerBlock() * FIELD_ELEMENTS_PER_BLOB)),
+                (long) specConfig.getMaxBlobCommitmentsPerBlock() * FIELD_ELEMENTS_PER_EXT_BLOB)),
         namedSchema(
             FIELD_BLOBS,
             SszListSchema.create(
