@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,7 +19,6 @@ import ethereum.cryptography.CellsAndProofs;
 import ethereum.cryptography.LibEthKZG;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -97,14 +96,13 @@ final class RustKZG implements KZG {
       throws KZGException {
     try {
       final byte[][] blobsBytes = new byte[blobs.size()][];
-      IntStream.range(0, blobs.size())
-          .forEach(index -> blobsBytes[index] = blobs.get(index).toArrayUnsafe());
       final byte[][] commitmentsBytes = new byte[kzgCommitments.size()][];
-      IntStream.range(0, kzgCommitments.size())
-          .forEach(index -> commitmentsBytes[index] = kzgCommitments.get(index).toArrayUnsafe());
       final byte[][] proofsBytes = new byte[kzgProofs.size()][];
-      IntStream.range(0, kzgProofs.size())
-          .forEach(index -> proofsBytes[index] = kzgProofs.get(index).toArrayUnsafe());
+      for (int i = 0; i < blobs.size(); i++) {
+        blobsBytes[i] = blobs.get(i).toArrayUnsafe();
+        commitmentsBytes[i] = kzgCommitments.get(i).toArrayUnsafe();
+        proofsBytes[i] = kzgProofs.get(i).toArrayUnsafe();
+      }
       return library.verifyBlobKzgProofBatch(blobsBytes, commitmentsBytes, proofsBytes);
     } catch (final Exception ex) {
       throw new KZGException(
