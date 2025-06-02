@@ -308,7 +308,7 @@ public abstract class KZGAbstractTest {
     assertThat(cells).isEqualTo(cellAndProofs.stream().map(KZGCellAndProof::cell).toList());
   }
 
-  private List<Bytes> getSampleBlobs(final int count) {
+  List<Bytes> getSampleBlobs(final int count) {
     return IntStream.range(0, count).mapToObj(__ -> getSampleBlob()).collect(Collectors.toList());
   }
 
@@ -349,11 +349,11 @@ public abstract class KZGAbstractTest {
         .collect(Collectors.toList());
   }
 
-  private KZGCommitment getSampleCommitment() {
+  KZGCommitment getSampleCommitment() {
     return kzg.blobToKzgCommitment(getSampleBlob());
   }
 
-  private KZGProof getSampleProof() {
+  KZGProof getSampleProof() {
     return kzg.computeBlobKzgProof(getSampleBlob(), getSampleCommitment());
   }
 
