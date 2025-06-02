@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch;
 
+import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -67,19 +68,21 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
     final int minSeedLookahead = specConfig.getMinSeedLookahead();
 
-    final List<UInt64> proposerIndices =
+    final List<UInt64> proposerIndicesToShifted =
         stateFulu
             .getProposerLookahead()
             .asListUnboxed()
             .subList(slotsPerEpoch, (minSeedLookahead + 1) * slotsPerEpoch);
 
-    proposerIndices.addAll(
-        stateAccessorsFulu
+    List<UInt64> lastEpochProposerIndices = stateAccessorsFulu
             .getBeaconProposerIndices(
-                state, beaconStateAccessors.getCurrentEpoch(state).plus(minSeedLookahead).plus(1))
+                    state, beaconStateAccessors.getCurrentEpoch(state).plus(minSeedLookahead).plus(1))
             .stream()
             .map(UInt64::valueOf)
-            .toList());
+            .toList();
+
+    final List<UInt64> proposerIndices = new ArrayList<>(proposerIndicesToShifted);
+    proposerIndices.addAll(lastEpochProposerIndices);
 
     final ProposerLookahead.ProposerLookaheadSchema proposerLookaheadSchema =
         SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema();
