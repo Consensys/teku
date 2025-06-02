@@ -227,6 +227,6 @@ public class BeaconStateBuilderFulu
         schema.getPendingConsolidationsSchema().createFromElements(List.of());
     this.proposerLookahead =
         dataStructureUtil.randomSszUInt64List(
-            schema.getProposerLookaheadSchema(), defaultItemsInSSZLists);
+            schema.getProposerLookaheadSchema(), schema.getProposerLookaheadSchema().getMaxLength());
   }
 }
