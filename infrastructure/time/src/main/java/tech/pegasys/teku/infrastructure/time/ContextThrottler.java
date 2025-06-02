@@ -30,16 +30,16 @@ public class ContextThrottler<TResource, TContext> {
   // The wrapped resource can be invoked at most once every throttling period for matching context
   private final TResource resource;
   private final UInt64 throttlingPeriod;
-  private final Map<TContext, AtomicReference<UInt64>> contextCache;
+  private final Map<TContext, AtomicReference<UInt64>> contextLastInvocation;
 
   public ContextThrottler(
       final TResource resource,
       final UInt64 throttlingPeriod,
-      final Map<TContext, AtomicReference<UInt64>> contextCache) {
+      final Map<TContext, AtomicReference<UInt64>> contextLastInvocation) {
     checkNotNull(throttlingPeriod, "Missing throttling period");
     this.resource = resource;
     this.throttlingPeriod = throttlingPeriod;
-    this.contextCache = contextCache;
+    this.contextLastInvocation = contextLastInvocation;
   }
 
   public void invoke(
@@ -51,16 +51,18 @@ public class ContextThrottler<TResource, TContext> {
   }
 
   /**
-   * If the event at the current time should be throttled, does not update lastInvoked for provided
-   * context and returns false. Otherwise, updates lastInvoked for that context and returns true.
+   * If the event at the current time should be throttled, does not update lastInvocation for
+   * provided context and returns false. Otherwise, updates lastInvocation for that context and
+   * returns true.
    *
    * @param currentTime The current time
-   * @param context Invokation context
+   * @param context Invocation context
    * @return True if lastInvoked was updated (event should not be throttled), false otherwise
    */
   private boolean updateLastInvoked(final UInt64 currentTime, final TContext context) {
     final AtomicReference<UInt64> oldTime =
-        contextCache.computeIfAbsent(context, __ -> new AtomicReference<>(UInt64.MAX_VALUE));
+        contextLastInvocation.computeIfAbsent(
+            context, __ -> new AtomicReference<>(UInt64.MAX_VALUE));
     if (oldTime.compareAndSet(UInt64.MAX_VALUE, currentTime)) {
       // first appearance in cache
       return true;
