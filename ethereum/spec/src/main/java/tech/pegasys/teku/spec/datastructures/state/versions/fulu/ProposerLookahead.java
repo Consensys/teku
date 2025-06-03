@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.datastructures.state.versions.fulu;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container1;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema1;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -31,7 +29,7 @@ public class ProposerLookahead extends Container1<ProposerLookahead, SszUInt64Ve
           "ProposerLookahead",
           namedSchema(
               "validator_indices",
-                  SszUInt64VectorSchema.create(
+              SszUInt64VectorSchema.create(
                   (long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())));
     }
 
