@@ -17,9 +17,15 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
+
+import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 
@@ -36,7 +42,7 @@ public interface BeaconStateFulu extends BeaconStateElectra {
   private static <T extends SszData> void addItems(
       final MoreObjects.ToStringHelper stringBuilder,
       final String keyPrefix,
-      final SszList<T> items) {
+      final SszCollection<T> items) {
     for (int i = 0; i < items.size(); i++) {
       stringBuilder.add(keyPrefix + "[" + i + "]", items.get(i));
     }
@@ -64,7 +70,7 @@ public interface BeaconStateFulu extends BeaconStateElectra {
     return Optional.of(this);
   }
 
-  default SszUInt64List getProposerLookahead() {
+  default SszUInt64Vector getProposerLookahead() {
     final int index = getSchema().getFieldIndex(PROPOSER_LOOKAHEAD);
     return getAny(index);
   }

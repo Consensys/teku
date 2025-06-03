@@ -61,7 +61,7 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
 
   public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
     final Bytes32 seed = Hash.sha256(getSeed(state, epoch, Domain.BEACON_PROPOSER));
-    IntList indices = getActiveValidatorIndices(state, epoch);
+    final IntList indices = getActiveValidatorIndices(state, epoch);
     return miscHelpers.computeProposerIndices(state, epoch, seed, indices);
   }
 

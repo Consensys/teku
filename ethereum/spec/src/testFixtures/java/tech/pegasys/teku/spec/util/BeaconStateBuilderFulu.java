@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -58,7 +59,7 @@ public class BeaconStateBuilderFulu
   private SszList<PendingDeposit> pendingDeposits;
   private SszList<PendingPartialWithdrawal> pendingPartialWithdrawals;
   private SszList<PendingConsolidation> pendingConsolidations;
-  private SszUInt64List proposerLookahead;
+  private SszUInt64Vector proposerLookahead;
 
   protected BeaconStateBuilderFulu(
       final SpecVersion spec,
@@ -161,7 +162,7 @@ public class BeaconStateBuilderFulu
     return this;
   }
 
-  public BeaconStateBuilderFulu proposerLookahead(final SszUInt64List proposerLookahead) {
+  public BeaconStateBuilderFulu proposerLookahead(final SszUInt64Vector proposerLookahead) {
     checkNotNull(proposerLookahead);
     this.proposerLookahead = proposerLookahead;
     return this;
@@ -226,7 +227,7 @@ public class BeaconStateBuilderFulu
     this.pendingConsolidations =
         schema.getPendingConsolidationsSchema().createFromElements(List.of());
     this.proposerLookahead =
-        dataStructureUtil.randomSszUInt64List(
+        dataStructureUtil.randomSszUInt64Vector(
             schema.getProposerLookaheadSchema(),
             schema.getProposerLookaheadSchema().getMaxLength());
   }
