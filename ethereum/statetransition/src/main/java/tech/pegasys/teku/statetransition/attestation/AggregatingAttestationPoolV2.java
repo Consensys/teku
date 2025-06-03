@@ -559,18 +559,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     }
   }
 
-  private void parallelOrSequentialRun(final Runnable action) {
-    if (customThreadPool.isEmpty()) {
-      action.run();
-    } else {
-      try {
-        customThreadPool.get().submit(action).get();
-      } catch (final InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
   private PooledAttestationWithRewardInfo fillUpAttestation(
       final PooledAttestationWithRewardInfo attestationWithRewards, final long timeLimitNanos) {
     if (nanosSupplier.getAsLong() > timeLimitNanos) {
