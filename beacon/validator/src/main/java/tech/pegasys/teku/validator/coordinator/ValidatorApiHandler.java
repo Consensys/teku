@@ -592,6 +592,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 // the converted attestation.
                 // The conversion happens during processing and is saved in the validatable
                 // attestation.
+                // In some cases we could still have a non-converted SingleAttestation with a
+                // SAVE_FOR_FUTURE validation result (i.e. SingleAttestation received in a multi BNs
+                // setup). It will be ignored by the PerformanceTracker
                 final Attestation convertedAttestation = validatableAttestation.getAttestation();
                 dutyMetrics.onAttestationPublished(convertedAttestation.getData().getSlot());
                 performanceTracker.saveProducedAttestation(convertedAttestation);
