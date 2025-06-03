@@ -37,6 +37,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV4;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV5;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
@@ -166,10 +167,10 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
 
   @Test
   void electraMilestoneMethodIsNotSupportedInDeneb() {
-    final Spec capellaSpec = TestSpecFactory.createMinimalDeneb();
+    final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
-        new MilestoneBasedEngineJsonRpcMethodsResolver(capellaSpec, executionEngineClient);
+        new MilestoneBasedEngineJsonRpcMethodsResolver(denebSpec, executionEngineClient);
 
     assertThatThrownBy(
             () ->
@@ -204,10 +205,10 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   @MethodSource("fuluMethods")
   void shouldProvideExpectedMethodsForFulu(
       final EngineApiMethod method, final Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
-    final Spec electraSpec = TestSpecFactory.createMinimalFulu();
+    final Spec fuluSpec = TestSpecFactory.createMinimalFulu();
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
-        new MilestoneBasedEngineJsonRpcMethodsResolver(electraSpec, executionEngineClient);
+        new MilestoneBasedEngineJsonRpcMethodsResolver(fuluSpec, executionEngineClient);
 
     final EngineJsonRpcMethod<Object> providedMethod =
         engineMethodsResolver.getMethod(method, () -> SpecMilestone.FULU, Object.class);
@@ -218,15 +219,15 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
   private static Stream<Arguments> fuluMethods() {
     return Stream.of(
         arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV4.class),
-        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV4.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV5.class),
         arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
   @Test
   void getsCapabilities() {
     final Spec spec =
-        TestSpecFactory.createMinimalWithCapellaDenebAndElectraForkEpoch(
-            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3));
+        TestSpecFactory.createMinimalWithCapellaDenebElectraAndFuluForkEpoch(
+            UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4));
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
         new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
@@ -245,6 +246,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_getPayloadV3",
             "engine_forkchoiceUpdatedV3",
             "engine_newPayloadV4",
-            "engine_getPayloadV4");
+            "engine_getPayloadV4",
+            "engine_getPayloadV5");
   }
 }

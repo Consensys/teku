@@ -90,7 +90,7 @@ public class Eth2IncomingRequestHandler<
           .ifPresent(request -> handleRequest(peer, request, createResponseCallback(rpcStream)));
     } catch (RpcException e) {
       createResponseCallback(rpcStream).completeWithErrorResponse(e);
-      LOG.debug("RPC Request stream closed prematurely", e);
+      LOG.debug("RPC Request stream closed prematurely {}", protocolId, e);
     }
   }
 

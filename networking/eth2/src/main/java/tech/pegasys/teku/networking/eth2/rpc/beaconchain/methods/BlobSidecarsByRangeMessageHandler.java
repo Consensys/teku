@@ -86,7 +86,8 @@ public class BlobSidecarsByRangeMessageHandler
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
 
     final SpecConfigDeneb specConfig =
-        SpecConfigDeneb.required(spec.atSlot(request.getMaxSlot()).getConfig());
+        SpecConfigDeneb.required(
+            spec.atSlot(getEndSlotBeforeFulu(request.getMaxSlot())).getConfig());
 
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(request.getMaxSlot()).orElseThrow();
@@ -112,6 +113,10 @@ public class BlobSidecarsByRangeMessageHandler
     return Optional.empty();
   }
 
+  private UInt64 getEndSlotBeforeFulu(final UInt64 maxSlot) {
+    return spec.blobSidecarsAvailabilityDeprecationSlot().safeDecrement().min(maxSlot);
+  }
+
   @Override
   public void onIncomingMessage(
       final String protocolId,
@@ -126,11 +131,13 @@ public class BlobSidecarsByRangeMessageHandler
         peer.getId(),
         message.getCount(),
         startSlot);
+    final UInt64 endSlotBeforeFulu = getEndSlotBeforeFulu(endSlot);
 
-    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
+    final SpecConfigDeneb specConfig =
+        SpecConfigDeneb.required(spec.atSlot(endSlotBeforeFulu).getConfig());
     final int requestedCount =
-        calculateRequestedCount(message, spec.getMaxBlobsPerBlockAtSlot(endSlot).orElseThrow());
-
+        calculateRequestedCount(
+            message, spec.getMaxBlobsPerBlockAtSlot(endSlotBeforeFulu).orElseThrow());
     final Optional<RequestApproval> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
 
@@ -149,7 +156,7 @@ public class BlobSidecarsByRangeMessageHandler
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
               if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestEpoch)
-                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlot)) {
+                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotBeforeFulu)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
               }
@@ -157,12 +164,22 @@ public class BlobSidecarsByRangeMessageHandler
               UInt64 finalizedSlot =
                   combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
 
+              final UInt64 currentEpoch = spec.getCurrentEpoch(combinedChainDataClient.getStore());
+              final UInt64 lowestAllowedBlobSidecarEpoch =
+                  currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests());
+              final UInt64 adjustedStartsSlot =
+                  lowestAllowedBlobSidecarEpoch.isGreaterThan(requestEpoch)
+                      ? spec.computeStartSlotAtEpoch(lowestAllowedBlobSidecarEpoch)
+                      : startSlot;
+
               final SortedMap<UInt64, Bytes32> canonicalHotRoots;
-              if (endSlot.isGreaterThan(finalizedSlot)) {
-                final UInt64 hotSlotsCount = endSlot.increment().minusMinZero(startSlot);
+              if (endSlotBeforeFulu.isGreaterThan(finalizedSlot)) {
+                final UInt64 hotSlotsCount =
+                    endSlotBeforeFulu.increment().minusMinZero(adjustedStartsSlot);
 
                 canonicalHotRoots =
-                    combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
+                    combinedChainDataClient.getAncestorRoots(
+                        adjustedStartsSlot, UInt64.ONE, hotSlotsCount);
 
                 // refresh finalized slot to avoid race condition that can occur if we finalize just
                 // before getting hot canonical roots
@@ -174,8 +191,8 @@ public class BlobSidecarsByRangeMessageHandler
               final RequestState initialState =
                   new RequestState(
                       callback,
-                      startSlot,
-                      endSlot,
+                      adjustedStartsSlot,
+                      endSlotBeforeFulu,
                       canonicalHotRoots,
                       finalizedSlot,
                       specConfig.getMaxRequestBlobSidecars());

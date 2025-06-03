@@ -16,6 +16,7 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -47,6 +48,9 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -549,6 +553,69 @@ public class PeerSyncTest extends AbstractSyncTest {
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
     verify(peer, never()).disconnectCleanly(any());
+  }
+
+  @Test
+  void sync_blobSidecarsWhenEndSlotInEpochBeforeFulu() {
+    final UInt64 fuluEpoch = UInt64.valueOf(101);
+    final Spec spec =
+        TestSpecFactory.createMinimalFulu(
+            builder ->
+                builder
+                    .denebBuilder(denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch))
+                    .electraBuilder(
+                        electraBuilder -> electraBuilder.electraForkEpoch(denebForkEpoch))
+                    .fuluBuilder(fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluEpoch)));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any()))
+        .thenAnswer(
+            args -> {
+              final UInt64 slot = args.getArgument(0);
+              if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+                return true;
+              }
+              return false;
+            });
+
+    final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
+
+    withDenebPeerHeadSlot();
+
+    final SafeFuture<Void> blocksRequestFuture = new SafeFuture<>();
+    final SafeFuture<Void> blobSidecarsRequestFuture = new SafeFuture<>();
+
+    when(peer.requestBlocksByRange(any(), any(), any())).thenReturn(blocksRequestFuture);
+    when(peer.requestBlobSidecarsByRange(any(), any(), any()))
+        .thenReturn(blobSidecarsRequestFuture);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+
+    assertThat(syncFuture).isNotDone();
+
+    // update the chain with the peer finalized epoch to ensure next time the sync completes
+    when(recentChainData.getFinalizedEpoch()).thenReturn(denebPeerFinalizedEpoch);
+
+    final UInt64 slotsPerEpochMinimal = UInt64.valueOf(8);
+    final UInt64 denebLastSlot = denebFirstSlot.plus(slotsPerEpochMinimal);
+    assertThat(spec.atSlot(denebLastSlot).getMilestone().equals(SpecMilestone.FULU)).isTrue();
+    assertThat(denebPeerSlotsAhead.isGreaterThan(slotsPerEpochMinimal)).isTrue();
+
+    verify(peer).requestBlobSidecarsByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
+
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot =
+        completeRequestWithBlobSidecarsAtSlots(
+            blobSidecarsRequestFuture, denebSecondSlot, slotsPerEpochMinimal);
+
+    verify(peer).requestBlocksByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
+
+    completeRequestWithBlocksAtSlots(blocksRequestFuture, denebSecondSlot, denebPeerSlotsAhead);
+
+    verifyBlobSidecarsAddedToPool(denebSecondSlot, slotsPerEpochMinimal, blobSidecarsBySlot);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncFuture).isCompleted();
+    verify(peer, never()).disconnectCleanly(any());
+    verify(peer, never()).disconnectImmediately(any(), anyBoolean());
   }
 
   private void verifyBlobSidecarsAddedToPool(

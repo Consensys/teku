@@ -25,8 +25,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -34,13 +34,14 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * Performs complete data availability check <a
  * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
  */
-public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAvailabilityChecker {
+public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityChecker<BlobSidecar> {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
   private final KZG kzg;
 
-  private final SafeFuture<BlobSidecarsAndValidationResult> validationResult = new SafeFuture<>();
+  private final SafeFuture<DataAndValidationResult<BlobSidecar>> validationResult =
+      new SafeFuture<>();
 
   private final Duration waitForTrackerCompletionTimeout;
 
@@ -82,19 +83,23 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                 ExceptionUtil.getCause(error, TimeoutException.class)
                     .map(
                         timeoutException -> {
+                          final SafeFuture<DataAndValidationResult<BlobSidecar>> result;
                           if (isBlockOutsideDataAvailabilityWindow()) {
-                            return SafeFuture.completedFuture(
-                                BlobSidecarsAndValidationResult.NOT_REQUIRED);
+                            result =
+                                SafeFuture.completedFuture(DataAndValidationResult.notRequired());
+                          } else {
+                            result =
+                                SafeFuture.completedFuture(
+                                    DataAndValidationResult.notAvailable(timeoutException));
                           }
-                          return SafeFuture.completedFuture(
-                              BlobSidecarsAndValidationResult.notAvailable(timeoutException));
+                          return result;
                         })
                     .orElseGet(() -> SafeFuture.failedFuture(error)))
         .propagateTo(validationResult);
     return true;
   }
 
-  private BlobSidecarsAndValidationResult validateCompletedBlobSidecars() {
+  private DataAndValidationResult<BlobSidecar> validateCompletedBlobSidecars() {
     final MiscHelpers miscHelpers =
         spec.atSlot(blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot()).miscHelpers();
     final List<BlobSidecar> blobSidecars =
@@ -103,26 +108,26 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
     try {
       if (!miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
-        return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
+        return DataAndValidationResult.invalidResult(blobSidecars);
       }
 
       miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, block);
     } catch (final Exception ex) {
-      return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, ex);
+      return DataAndValidationResult.invalidResult(blobSidecars, ex);
     }
 
     if (!miscHelpers.verifyBlobSidecarBlockHeaderSignatureViaValidatedSignedBlock(
         blobSidecars, block)) {
-      return BlobSidecarsAndValidationResult.invalidResult(
+      return DataAndValidationResult.invalidResult(
           blobSidecars,
           new IllegalStateException("Blob sidecars block header does not match signed block"));
     }
 
-    return BlobSidecarsAndValidationResult.validResult(blobSidecars);
+    return DataAndValidationResult.validResult(blobSidecars);
   }
 
   @Override
-  public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
+  public SafeFuture<DataAndValidationResult<BlobSidecar>> getAvailabilityCheckResult() {
     return validationResult;
   }
 

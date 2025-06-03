@@ -83,12 +83,6 @@ HYSTERESIS_DOWNWARD_MULTIPLIER: 1
 HYSTERESIS_UPWARD_MULTIPLIER: 5
 
 
-# Fork Choice
-# ---------------------------------------------------------------
-# 2**1 (= 1)
-SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 2
-
-
 # Validator
 # ---------------------------------------------------------------
 # [customized] process deposits more quickly, but insecure
@@ -206,11 +200,6 @@ DOMAIN_DEPOSIT: 0x03000000
 DOMAIN_VOLUNTARY_EXIT: 0x04000000
 DOMAIN_SELECTION_PROOF: 0x05000000
 DOMAIN_AGGREGATE_AND_PROOF: 0x06000000
-
-
-# Light client
-# ---------------------------------------------------------------
-SYNC_COMMITTEE_BRANCH_LENGTH: 5
 
 
 # Mainnet preset - Bellatrix

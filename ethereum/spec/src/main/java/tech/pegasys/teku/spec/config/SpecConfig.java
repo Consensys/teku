@@ -161,8 +161,6 @@ public interface SpecConfig extends NetworkingSpecConfig {
   int getMaxVoluntaryExits();
 
   // Misc
-  int getSafeSlotsToUpdateJustified();
-
   int getReorgMaxEpochsSinceFinalization();
 
   int getReorgHeadWeightThreshold();

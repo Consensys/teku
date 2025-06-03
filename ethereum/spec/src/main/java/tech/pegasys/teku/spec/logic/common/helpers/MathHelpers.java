@@ -151,4 +151,9 @@ public class MathHelpers {
     }
     return Integer.MAX_VALUE;
   }
+
+  public static int floorLog2(final int n) {
+    checkArgument(n >= 0, "Cannot calculate floorLog2 of negative number");
+    return 31 - Integer.numberOfLeadingZeros(n);
+  }
 }

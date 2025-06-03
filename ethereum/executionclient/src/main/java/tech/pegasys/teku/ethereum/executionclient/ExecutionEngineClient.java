@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobAndProofV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV4Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV5Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -51,6 +53,8 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<GetPayloadV3Response>> getPayloadV3(Bytes8 payloadId);
 
   SafeFuture<Response<GetPayloadV4Response>> getPayloadV4(Bytes8 payloadId);
+
+  SafeFuture<Response<GetPayloadV5Response>> getPayloadV5(Bytes8 payloadId);
 
   SafeFuture<Response<PayloadStatusV1>> newPayloadV1(ExecutionPayloadV1 executionPayload);
 
@@ -81,4 +85,6 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(ClientVersionV1 clientVersion);
 
   SafeFuture<Response<List<BlobAndProofV1>>> getBlobsV1(List<VersionedHash> blobVersionedHashes);
+
+  SafeFuture<Response<List<BlobAndProofV2>>> getBlobsV2(List<VersionedHash> blobVersionedHashes);
 }

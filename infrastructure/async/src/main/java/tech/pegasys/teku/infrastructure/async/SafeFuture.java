@@ -17,16 +17,20 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
 
@@ -138,7 +142,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
+  protected static <U> void propagateResult(
+      final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
         (result, error) -> {
           if (error != null) {
@@ -308,6 +313,34 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void ifExceptionGetsHereRaiseABug() {
     ifExceptionGetsHereRaiseABug(this);
+  }
+
+  public SafeFuture<Void> ignoreCancelException() {
+    return ignoreExceptions(CancellationException.class);
+  }
+
+  @SafeVarargs
+  public final SafeFuture<Void> ignoreExceptions(final Class<? extends Throwable>... errors) {
+    return this.exceptionally(
+            err -> {
+              if (ExceptionUtil.hasCause(err, errors)) {
+                return null;
+              } else {
+                switch (err) {
+                  case RuntimeException exception -> throw exception;
+                  default -> throw new CompletionException(err);
+                }
+              }
+            })
+        .thenApply(__ -> null);
+  }
+
+  public void completeAsync(final T value, final AsyncRunner asyncRunner) {
+    asyncRunner.runAsync(() -> complete(value)).ifExceptionGetsHereRaiseABug();
+  }
+
+  public void completeExceptionallyAsync(final Throwable exception, final AsyncRunner asyncRunner) {
+    asyncRunner.runAsync(() -> completeExceptionally(exception)).ifExceptionGetsHereRaiseABug();
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {
@@ -627,6 +660,34 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public SafeFuture<T> orTimeout(final long timeout, final TimeUnit unit) {
     return (SafeFuture<T>) super.orTimeout(timeout, unit);
+  }
+
+  /** Schedules future timeout on the specified {@link AsyncRunner} */
+  public SafeFuture<T> orTimeout(final AsyncRunner async, final long timeout, final TimeUnit unit) {
+    return orTimeout(async, Duration.of(timeout, unit.toChronoUnit()));
+  }
+
+  /** Schedules future timeout on the specified {@link AsyncRunner} */
+  public SafeFuture<T> orTimeout(final AsyncRunner async, final Duration timeout) {
+    if (!isDone()) {
+      SafeFuture<Void> timeoutInterruptor =
+          async.runAfterDelay(
+              () -> {
+                if (!SafeFuture.this.isDone()) {
+                  SafeFuture.this.completeExceptionally(new TimeoutException());
+                }
+              },
+              timeout);
+
+      return this.whenComplete(
+          (__, ex) -> {
+            if (ex == null && !timeoutInterruptor.isDone()) {
+              timeoutInterruptor.cancel(false);
+            }
+          });
+    } else {
+      return this;
+    }
   }
 
   /**

@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient;
 
+import static tech.pegasys.teku.spec.constants.LightClientConstants.CURRENT_SYNC_COMMITTEE_GINDEX;
+
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class LightClientBootstrapSchema
     extends ContainerSchema3<
@@ -32,7 +35,7 @@ public class LightClientBootstrapSchema
             "current_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
             "current_sync_committee_branch",
-            SszBytes32VectorSchema.create(specConfigAltair.getSyncCommitteeBranchLength())));
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(CURRENT_SYNC_COMMITTEE_GINDEX))));
   }
 
   public LightClientBootstrap create(

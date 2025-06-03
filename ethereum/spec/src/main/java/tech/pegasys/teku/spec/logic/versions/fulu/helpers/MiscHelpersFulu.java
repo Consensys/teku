@@ -122,7 +122,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   // get_max_blobs_per_block
   public int getMaxBlobsPerBlock(final UInt64 epoch) {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
+    checkArgument(!blobSchedule.isEmpty(), "Blob schedule not correctly defined.");
 
     final Optional<BlobSchedule> maybeSchedule =
         blobSchedule.stream()
@@ -138,7 +138,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public int getHighestMaxBlobsPerBlockFromSchedule() {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
+    checkArgument(!blobSchedule.isEmpty(), "Blob schedule not correctly defined.");
     return blobSchedule.stream()
         .max(Comparator.comparing(BlobSchedule::maxBlobsPerBlock))
         .map(BlobSchedule::maxBlobsPerBlock)
@@ -513,7 +513,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   /**
-   * Return the sample count if allowing failures.
+   * NOTE: this method was part of the spec for lossy sampling. Not it is only being used on tests
+   * (eventually it will be removed).
+   *
+   * <p>Return the sample count if allowing failures.
    *
    * <p>This helper demonstrates how to calculate the number of columns to query per slot when
    * allowing given number of failures, assuming uniform random selection without replacement.
