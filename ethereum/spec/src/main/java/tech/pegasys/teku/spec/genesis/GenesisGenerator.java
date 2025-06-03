@@ -18,8 +18,13 @@ import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_REQU
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Vector;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -150,10 +155,10 @@ public class GenesisGenerator {
       final SchemaDefinitionsFulu schemaDefinitionsFulu =
           SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
 
-      final List<UInt64> proposerLookahead =
+      final Collection<UInt64> proposerLookahead =
           IntStream.range(0, (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())
               .mapToObj(__ -> UInt64.valueOf(0))
-              .toList();
+              .collect(Collectors.toCollection(ArrayList::new));
 
       MutableBeaconStateFulu.required(state)
           .setProposerLookahead(
