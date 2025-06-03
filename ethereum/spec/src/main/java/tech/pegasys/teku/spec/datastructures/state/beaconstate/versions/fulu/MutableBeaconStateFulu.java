@@ -16,13 +16,7 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
 import java.util.Optional;
-
-import tech.pegasys.teku.infrastructure.ssz.SszVector;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;

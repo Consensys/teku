@@ -389,14 +389,14 @@ public final class DataStructureUtil {
   }
 
   public SszUInt64Vector randomSszUInt64Vector(
-          final SszUInt64VectorSchema<?> schema, final long numItems) {
+      final SszUInt64VectorSchema<?> schema, final long numItems) {
     return randomSszUInt64Vector(schema, numItems, this::randomUInt64);
   }
 
   public SszUInt64Vector randomSszUInt64Vector(
-          final SszUInt64VectorSchema<?> schema,
-          final long numItems,
-          final Supplier<UInt64> valueGenerator) {
+      final SszUInt64VectorSchema<?> schema,
+      final long numItems,
+      final Supplier<UInt64> valueGenerator) {
     return Stream.generate(valueGenerator).limit(numItems).collect(schema.collectorUnboxed());
   }
 
