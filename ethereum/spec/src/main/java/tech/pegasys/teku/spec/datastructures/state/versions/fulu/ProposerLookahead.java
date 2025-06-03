@@ -13,23 +13,28 @@
 
 package tech.pegasys.teku.spec.datastructures.state.versions.fulu;
 
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container1;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema1;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
-public class ProposerLookahead extends Container1<ProposerLookahead, SszUInt64List> {
+public class ProposerLookahead extends Container1<ProposerLookahead, SszUInt64Vector> {
 
   public static class ProposerLookaheadSchema
-      extends ContainerSchema1<ProposerLookahead, SszUInt64List> {
+      extends ContainerSchema1<ProposerLookahead, SszUInt64Vector> {
     public ProposerLookaheadSchema(final SpecConfigFulu specConfig) {
       super(
           "ProposerLookahead",
           namedSchema(
               "validator_indices",
-              SszUInt64ListSchema.create(
+              SszVectorSchema.create(SszPrimitiveSchemas.UINT64_SCHEMA,
                   (long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())));
     }
 
@@ -38,12 +43,12 @@ public class ProposerLookahead extends Container1<ProposerLookahead, SszUInt64Li
       return new ProposerLookahead(this, node);
     }
 
-    public ProposerLookahead create(final SszUInt64List validatorIndices) {
+    public ProposerLookahead create(final SszUInt64Vector validatorIndices) {
       return new ProposerLookahead(this, validatorIndices);
     }
 
-    public SszUInt64ListSchema<?> getPorposerLookaheadSchema() {
-      return (SszUInt64ListSchema<?>) getFieldSchema0();
+    public SszUInt64VectorSchema<?> getPorposerLookaheadSchema() {
+      return (SszUInt64VectorSchema<?>) getFieldSchema0();
     }
   }
 
@@ -53,11 +58,11 @@ public class ProposerLookahead extends Container1<ProposerLookahead, SszUInt64Li
   }
 
   private ProposerLookahead(
-      final ProposerLookahead.ProposerLookaheadSchema type, final SszUInt64List validatorIndices) {
+      final ProposerLookahead.ProposerLookaheadSchema type, final SszUInt64Vector validatorIndices) {
     super(type, validatorIndices);
   }
 
-  public SszUInt64List getValidatorIndices() {
+  public SszUInt64Vector getValidatorIndices() {
     return getField0();
   }
 }

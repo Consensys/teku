@@ -21,6 +21,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -122,7 +123,7 @@ public class BeaconStateTestBuilder {
     return this;
   }
 
-  public BeaconStateTestBuilder proposerLookahead(final SszUInt64List proposerLookahead) {
+  public BeaconStateTestBuilder proposerLookahead(final SszUInt64Vector proposerLookahead) {
     final SpecVersion specVersion = dataStructureUtil.getSpec().atSlot(slot);
     MutableBeaconStateFulu.required(
             (MutableBeaconState)

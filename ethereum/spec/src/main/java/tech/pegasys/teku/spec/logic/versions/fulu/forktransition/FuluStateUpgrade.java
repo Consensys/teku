@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.fulu.forktransition;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -83,7 +84,7 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
                   beaconStateAccessors.getConsolidationChurnLimit(state));
               state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
 
-              final SszUInt64ListSchema<?> schema =
+              final SszUInt64VectorSchema<?> schema =
                   SchemaDefinitionsFulu.required(schemaDefinitions)
                       .getProposerLookaheadSchema()
                       .getPorposerLookaheadSchema();

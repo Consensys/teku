@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -133,8 +134,8 @@ public class BeaconStateSchemaFulu
         getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
   }
 
-  public SszUInt64ListSchema<?> getProposerLookaheadSchema() {
-    return (SszUInt64ListSchema<?>)
+  public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
+    return (SszUInt64VectorSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
   }
 

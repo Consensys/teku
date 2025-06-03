@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -88,7 +89,7 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     final ProposerLookahead.ProposerLookaheadSchema proposerLookaheadSchema =
         SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema();
 
-    final SszUInt64List proposerLookaheadList =
+    final SszUInt64Vector proposerLookaheadList =
         proposerIndices.stream()
             .collect(proposerLookaheadSchema.getPorposerLookaheadSchema().collectorUnboxed());
 
