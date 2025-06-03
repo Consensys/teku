@@ -417,7 +417,6 @@ public class MatchingDataAttestationGroupV2 {
       // There are no aggregates left, which means they have all been included on-chain,
       // so we can consider the long tail of single attestations that have not reached an aggregator
       // in time
-      System.out.println("SA only attestation group: " + attestationData);
       return () -> singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream);
     }
     return Stream::empty;
