@@ -75,7 +75,7 @@ public class DataColumnSidecar
       final UInt64 index,
       final DataColumn dataColumn,
       final SszList<SszKZGCommitment> sszKzgCommitments,
-      final SszList<SszKZGProof> sszKkzgProofs,
+      final SszList<SszKZGProof> sszKzgProofs,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final List<Bytes32> kzgCommitmentsInclusionProof) {
     super(
@@ -83,7 +83,7 @@ public class DataColumnSidecar
         SszUInt64.of(index),
         dataColumn,
         sszKzgCommitments,
-        sszKkzgProofs,
+        sszKzgProofs,
         signedBeaconBlockHeader,
         schema
             .getKzgCommitmentsInclusionProofSchema()
