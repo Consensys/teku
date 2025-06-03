@@ -20,8 +20,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
-import tech.pegasys.teku.spec.datastructures.state.versions.fulu.ProposerLookahead;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.Epoch
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class EpochProcessorFulu extends EpochProcessorElectra {
   private final BeaconStateAccessorsFulu stateAccessorsFulu;
@@ -85,12 +84,12 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     final List<UInt64> proposerIndices = new ArrayList<>(proposerIndicesToShifted);
     proposerIndices.addAll(lastEpochProposerIndices);
 
-    final ProposerLookahead.ProposerLookaheadSchema proposerLookaheadSchema =
-        SchemaDefinitionsFulu.required(schemaDefinitions).getProposerLookaheadSchema();
-
     final SszUInt64Vector proposerLookaheadList =
         proposerIndices.stream()
-            .collect(proposerLookaheadSchema.getPorposerLookaheadSchema().collectorUnboxed());
+            .collect(
+                BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
+                    .getProposerLookaheadSchema()
+                    .collectorUnboxed());
 
     stateFulu.setProposerLookahead(proposerLookaheadList);
   }
