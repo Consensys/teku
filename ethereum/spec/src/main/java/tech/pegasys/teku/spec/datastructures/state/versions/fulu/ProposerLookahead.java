@@ -31,8 +31,7 @@ public class ProposerLookahead extends Container1<ProposerLookahead, SszUInt64Ve
           "ProposerLookahead",
           namedSchema(
               "validator_indices",
-              SszVectorSchema.create(
-                  SszPrimitiveSchemas.UINT64_SCHEMA,
+                  SszUInt64VectorSchema.create(
                   (long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())));
     }
 
