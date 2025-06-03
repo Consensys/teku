@@ -95,6 +95,12 @@ final class RustKZG implements KZG {
       final List<KZGProof> kzgProofs)
       throws KZGException {
     try {
+      if (blobs.size() != kzgCommitments.size() || kzgProofs.size() != kzgCommitments.size()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Number of blobs(%d), commitments(%d) and proofs(%d) do not match",
+                blobs.size(), kzgCommitments.size(), kzgProofs.size()));
+      }
       final byte[][] blobsBytes = new byte[blobs.size()][];
       final byte[][] commitmentsBytes = new byte[kzgCommitments.size()][];
       final byte[][] proofsBytes = new byte[kzgProofs.size()][];

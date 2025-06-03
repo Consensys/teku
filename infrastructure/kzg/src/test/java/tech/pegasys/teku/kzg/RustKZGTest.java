@@ -92,7 +92,7 @@ public final class RustKZGTest extends KZGAbstractTest {
                     .cause()
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageMatching(
-                        "function verifyBlobKzgProofBatch has thrown an exception, with reason: EIP4844\\(Verifier\\(BatchVerificationInputsMustHaveSameLength \\{ blobs_len: \\d+, commitments_len: \\d+, proofs_len: \\d+ }\\)\\)"));
+                        "Number of blobs\\(\\d+\\), commitments\\(\\d+\\) and proofs\\(\\d+\\) do not match"));
   }
 
   @SuppressWarnings("JavaCase")
