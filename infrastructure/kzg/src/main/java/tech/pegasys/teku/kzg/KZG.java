@@ -32,7 +32,7 @@ public interface KZG {
   int FIELD_ELEMENTS_PER_EXT_BLOB = 8192;
 
   static KZG getInstance(final boolean rustKzgEnabled) {
-    return rustKzgEnabled ? RustWithCKZG.getInstance() : CKZG4844.getInstance();
+    return rustKzgEnabled ? RustKZG.getInstance() : CKZG4844.getInstance();
   }
 
   KZG DISABLED =
