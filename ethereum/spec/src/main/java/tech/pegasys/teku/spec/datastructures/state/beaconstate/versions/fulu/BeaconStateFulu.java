@@ -17,15 +17,9 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.SszVector;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 

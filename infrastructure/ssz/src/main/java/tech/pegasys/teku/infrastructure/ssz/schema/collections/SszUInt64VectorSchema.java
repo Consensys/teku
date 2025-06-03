@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszUInt64ListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszUInt64VectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
