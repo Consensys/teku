@@ -55,7 +55,7 @@ public class BeaconStateSchemaFulu
                 PROPOSER_LOOKAHEAD_FIELD_INDEX,
                 BeaconStateFields.PROPOSER_LOOKAHEAD,
                 () ->
-                    SszUInt64ListSchema.create(
+                    SszUInt64VectorSchema.create(
                         (long) (specConfig.getMinSeedLookahead() + 1)
                             * specConfig.getSlotsPerEpoch())));
 

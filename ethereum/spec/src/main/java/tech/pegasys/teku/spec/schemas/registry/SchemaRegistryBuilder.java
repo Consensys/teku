@@ -62,7 +62,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
@@ -159,7 +158,6 @@ import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSu
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit.PendingDepositSchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal.PendingPartialWithdrawalSchema;
-import tech.pegasys.teku.spec.datastructures.state.versions.fulu.ProposerLookahead;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryBuilder {
@@ -230,8 +228,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createMatrixEntrySchemaProvider())
         .addProvider(createDataColumnSidecarsByRootRequestMessageSchemaProvider())
         .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider())
-        .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider())
-        .addProvider(createPorposerLookaheadSchemaProvider());
+        .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -814,15 +811,6 @@ public class SchemaRegistryBuilder {
                 new MetadataMessageSchemaAltair(specConfig.getNetworkingConfig()))
         .withCreator(
             FULU, (registry, specConfig, schemaName) -> new MetadataMessageSchemaFulu(specConfig))
-        .build();
-  }
-
-  private static SchemaProvider<?> createPorposerLookaheadSchemaProvider() {
-    return providerBuilder(PROPOSER_LOOKAHEAD_SCHEMA)
-        .withCreator(
-            FULU,
-            (registry, specConfig, schemaName) ->
-                new ProposerLookahead.ProposerLookaheadSchema(SpecConfigFulu.required(specConfig)))
         .build();
   }
 
