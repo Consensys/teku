@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.builder.versions.fulu;
 
-import static tech.pegasys.teku.kzg.KZG.FIELD_ELEMENTS_PER_BLOB;
+import static tech.pegasys.teku.kzg.KZG.FIELD_ELEMENTS_PER_EXT_BLOB;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_KZG_COMMITMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SCHEMA;
 
@@ -44,7 +44,7 @@ public class BlobsBundleSchemaFulu
             "proofs",
             SszListSchema.create(
                 SszKZGProofSchema.INSTANCE,
-                (long) specConfig.getMaxBlobCommitmentsPerBlock() * FIELD_ELEMENTS_PER_BLOB)),
+                (long) specConfig.getMaxBlobCommitmentsPerBlock() * FIELD_ELEMENTS_PER_EXT_BLOB)),
         namedSchema(
             "blobs",
             SszListSchema.create(

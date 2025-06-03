@@ -175,6 +175,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && Objects.equals(fieldElementsPerExtBlob, that.fieldElementsPerExtBlob)
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
         && Objects.equals(balancePerAdditionalCustodyGroup, that.balancePerAdditionalCustodyGroup)
+        && Objects.equals(blobSchedule, that.blobSchedule)
         && numberOfColumns == that.numberOfColumns
         && numberOfCustodyGroups == that.numberOfCustodyGroups
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
@@ -202,6 +203,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         maxRequestDataColumnSidecars,
         validatorCustodyRequirement,
         samplesPerSlot,
-        balancePerAdditionalCustodyGroup);
+        balancePerAdditionalCustodyGroup,
+        blobSchedule);
   }
 }
