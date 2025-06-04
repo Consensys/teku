@@ -644,10 +644,11 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       final BeaconStateElectra state, final BeaconStateAccessorsFulu beaconAccessors) {
     final UInt64 currentEpoch = computeEpochAtSlot(state.getSlot());
     return IntStream.rangeClosed(0, specConfigFulu.getMinSeedLookahead())
-        .boxed()
         .flatMap(
-            i -> beaconAccessors.getBeaconProposerIndices(state, currentEpoch.plus(i)).stream())
-        .map(UInt64::valueOf)
+            i ->
+                beaconAccessors.getBeaconProposerIndices(state, currentEpoch.plus(i)).stream()
+                    .mapToInt(Integer::intValue))
+        .mapToObj(UInt64::valueOf)
         .toList();
   }
 }
