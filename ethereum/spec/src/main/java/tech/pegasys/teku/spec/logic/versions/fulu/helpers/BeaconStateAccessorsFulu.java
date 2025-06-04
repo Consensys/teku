@@ -17,21 +17,19 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
 public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
   private final SpecConfigFulu configFulu;
-  private static final Logger LOG = LogManager.getLogger();
 
   public BeaconStateAccessorsFulu(
       final SpecConfig config,
@@ -44,12 +42,11 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
   @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     final int lookaheadIndex = requestedSlot.mod(configFulu.getSlotsPerEpoch()).intValue();
-
-    final long proposer =
-        state.toVersionFulu().orElseThrow().getProposerLookahead().get(lookaheadIndex).longValue();
-
-    LOG.debug("getBeaconProposerIndex: requestedSlot={}, proposer={}", requestedSlot, proposer);
-    return Math.toIntExact(proposer);
+    return BeaconStateFulu.required(state)
+        .getProposerLookahead()
+        .get(lookaheadIndex)
+        .get()
+        .intValue();
   }
 
   public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
