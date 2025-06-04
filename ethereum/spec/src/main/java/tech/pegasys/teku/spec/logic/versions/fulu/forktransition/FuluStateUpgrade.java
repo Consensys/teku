@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.versions.fulu.forktransition;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -74,14 +73,12 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
                   preStateElectra.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
-              state.setDepositRequestsStartIndex(
-                  preStateElectra.getDepositRequestsStartIndex());
+              state.setDepositRequestsStartIndex(preStateElectra.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(preStateElectra.getDepositBalanceToConsume());
-              state.setExitBalanceToConsume(
-                      preStateElectra.getExitBalanceToConsume());
+              state.setExitBalanceToConsume(preStateElectra.getExitBalanceToConsume());
               state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
               state.setConsolidationBalanceToConsume(
-                      preStateElectra.getConsolidationBalanceToConsume());
+                  preStateElectra.getConsolidationBalanceToConsume());
               state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
               state.setPendingDeposits(preStateElectra.getPendingDeposits());
               state.setPendingPartialWithdrawals(preStateElectra.getPendingPartialWithdrawals());
