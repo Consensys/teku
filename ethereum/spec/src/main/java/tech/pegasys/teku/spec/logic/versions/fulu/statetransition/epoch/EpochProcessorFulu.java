@@ -75,7 +75,7 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
                 stateFulu.getProposerLookahead().size() - slotsPerEpoch,
                 stateFulu.getProposerLookahead().size());
 
-    List<UInt64> lastEpochProposerIndices =
+    final List<UInt64> lastEpochProposerIndices =
         stateAccessorsFulu
             .getBeaconProposerIndices(
                 stateFulu,
