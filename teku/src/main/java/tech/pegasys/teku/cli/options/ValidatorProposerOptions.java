@@ -105,9 +105,10 @@ public class ValidatorProposerOptions {
       names = {"--validators-proposer-blinded-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Use blinded blocks when in block production duties",
+      description = "This option is deprecated and will be removed in future versions.",
       fallbackValue = "true",
       arity = "0..1")
+  @Deprecated
   private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
 
   public void configure(final TekuConfiguration.Builder builder) {

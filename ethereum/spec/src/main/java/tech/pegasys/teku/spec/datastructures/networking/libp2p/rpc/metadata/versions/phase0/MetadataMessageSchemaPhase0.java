@@ -48,7 +48,7 @@ public class MetadataMessageSchemaPhase0
       final Iterable<Integer> attnets,
       final Iterable<Integer> syncnets,
       final Optional<UInt64> custodyGroupCount) {
-    return new MetadataMessagePhase0(this, seqNumber, getAttnestSchema().ofBits(attnets));
+    return new MetadataMessagePhase0(this, seqNumber, getAttnetsSchema().ofBits(attnets));
   }
 
   @Override
@@ -56,7 +56,7 @@ public class MetadataMessageSchemaPhase0
     return new MetadataMessagePhase0(this);
   }
 
-  private SszBitvectorSchema<SszBitvector> getAttnestSchema() {
+  private SszBitvectorSchema<SszBitvector> getAttnetsSchema() {
     return (SszBitvectorSchema<SszBitvector>) getFieldSchema1();
   }
 }

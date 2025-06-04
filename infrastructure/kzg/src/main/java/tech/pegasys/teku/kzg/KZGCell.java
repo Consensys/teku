@@ -19,9 +19,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 public record KZGCell(Bytes bytes) {
-
-  static final KZGCell ZERO = new KZGCell(Bytes.wrap(new byte[BYTES_PER_CELL]));
-
   static List<KZGCell> splitBytes(final Bytes bytes) {
     return CKZG4844Utils.bytesChunked(bytes, BYTES_PER_CELL).stream().map(KZGCell::new).toList();
   }

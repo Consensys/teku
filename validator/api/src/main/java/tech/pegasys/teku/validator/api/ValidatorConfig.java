@@ -687,7 +687,6 @@ public class ValidatorConfig {
       validateExternalSignerKeystoreAndPasswordFileConfig();
       validateExternalSignerTruststoreAndPasswordFileConfig();
       validateExternalSignerURLScheme();
-      validateValidatorsRegistrationAndBlindedBlocks();
       return new ValidatorConfig(
           validatorKeys,
           validatorExternalSignerPublicKeySources,
@@ -805,14 +804,6 @@ public class ValidatorConfig {
                   validatorExternalSignerUrl);
           throw new InvalidConfigurationException(errorMessage);
         }
-      }
-    }
-
-    private void validateValidatorsRegistrationAndBlindedBlocks() {
-      if (validatorsRegistrationDefaultEnabled && !blindedBlocksEnabled) {
-        LOG.info(
-            "'--validators-builder-registration-default-enabled' requires '--validators-proposer-blinded-blocks-enabled', enabling it");
-        blindedBlocksEnabled = true;
       }
     }
 

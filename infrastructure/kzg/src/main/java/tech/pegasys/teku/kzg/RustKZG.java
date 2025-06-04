@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,7 +33,6 @@ import org.apache.tuweni.bytes.Bytes48;
 final class RustKZG implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int NUMBER_OF_THREADS = 1;
 
   @SuppressWarnings("NonFinalStaticField")
   private static RustKZG instance;
@@ -54,7 +53,7 @@ final class RustKZG implements KZG {
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     if (!initialized) {
       try {
-        this.library = new LibEthKZG(true, NUMBER_OF_THREADS);
+        this.library = new LibEthKZG(true);
         this.initialized = true;
         LOG.info("Loaded LibPeerDASKZG library");
       } catch (final Exception ex) {
@@ -80,7 +79,13 @@ final class RustKZG implements KZG {
   public boolean verifyBlobKzgProof(
       final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
       throws KZGException {
-    throw new RuntimeException("LibPeerDASKZG library doesn't support verifyBlobKzgProof");
+    try {
+      return library.verifyBlobKzgProof(
+          blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe(), kzgProof.toArrayUnsafe());
+    } catch (final Exception ex) {
+      throw new KZGException(
+          "Failed to verify blob and commitment against KZG proof " + kzgProof, ex);
+    }
   }
 
   @Override
@@ -89,18 +94,49 @@ final class RustKZG implements KZG {
       final List<KZGCommitment> kzgCommitments,
       final List<KZGProof> kzgProofs)
       throws KZGException {
-    throw new RuntimeException("LibPeerDASKZG library doesn't support verifyBlobKzgProofBatch");
+    try {
+      if (blobs.size() != kzgCommitments.size() || kzgProofs.size() != kzgCommitments.size()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Number of blobs(%d), commitments(%d) and proofs(%d) do not match",
+                blobs.size(), kzgCommitments.size(), kzgProofs.size()));
+      }
+      final byte[][] blobsBytes = new byte[blobs.size()][];
+      final byte[][] commitmentsBytes = new byte[kzgCommitments.size()][];
+      final byte[][] proofsBytes = new byte[kzgProofs.size()][];
+      for (int i = 0; i < blobs.size(); i++) {
+        blobsBytes[i] = blobs.get(i).toArrayUnsafe();
+        commitmentsBytes[i] = kzgCommitments.get(i).toArrayUnsafe();
+        proofsBytes[i] = kzgProofs.get(i).toArrayUnsafe();
+      }
+      return library.verifyBlobKzgProofBatch(blobsBytes, commitmentsBytes, proofsBytes);
+    } catch (final Exception ex) {
+      throw new KZGException(
+          "Failed to verify blobs and commitments against KZG proofs " + kzgProofs, ex);
+    }
   }
 
   @Override
   public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-    throw new RuntimeException("LibPeerDASKZG library doesn't support blobToKzgCommitment");
+    try {
+      final byte[] commitmentBytes = library.blobToKZGCommitment(blob.toArrayUnsafe());
+      return KZGCommitment.fromArray(commitmentBytes);
+    } catch (final Exception ex) {
+      throw new KZGException("Failed to produce KZG commitment from blob", ex);
+    }
   }
 
   @Override
   public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
       throws KZGException {
-    throw new RuntimeException("LibPeerDASKZG library doesn't support computeBlobKzgProof");
+    try {
+      final byte[] proof =
+          library.computeBlobKzgProof(blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe());
+      return KZGProof.fromArray(proof);
+    } catch (final Exception ex) {
+      throw new KZGException(
+          "Failed to compute KZG proof for blob with commitment " + kzgCommitment, ex);
+    }
   }
 
   @Override
