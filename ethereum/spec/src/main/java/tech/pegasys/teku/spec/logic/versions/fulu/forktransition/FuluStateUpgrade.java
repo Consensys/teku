@@ -75,14 +75,17 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
               state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
               state.setDepositRequestsStartIndex(
-                  SpecConfigElectra.UNSET_DEPOSIT_REQUESTS_START_INDEX);
-              state.setDepositBalanceToConsume(UInt64.ZERO);
+                  preStateElectra.getDepositRequestsStartIndex());
+              state.setDepositBalanceToConsume(preStateElectra.getDepositBalanceToConsume());
               state.setExitBalanceToConsume(
-                  beaconStateAccessors.getActivationExitChurnLimit(state));
+                      preStateElectra.getExitBalanceToConsume());
               state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
               state.setConsolidationBalanceToConsume(
-                  beaconStateAccessors.getConsolidationChurnLimit(state));
+                      preStateElectra.getConsolidationBalanceToConsume());
               state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
+              state.setPendingDeposits(preStateElectra.getPendingDeposits());
+              state.setPendingPartialWithdrawals(preStateElectra.getPendingPartialWithdrawals());
+              state.setPendingDeposits(preStateElectra.getPendingDeposits());
 
               final SszUInt64VectorSchema<?> proposerLookaheadSchema =
                   BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
