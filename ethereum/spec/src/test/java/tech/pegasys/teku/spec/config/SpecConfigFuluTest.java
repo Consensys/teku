@@ -96,9 +96,9 @@ public class SpecConfigFuluTest {
                       fb.fuluForkEpoch(fuluEpoch)
                           .blobSchedule(
                               List.of(
-                                  new BlobSchedule(UInt64.valueOf(269568), 6),
-                                  new BlobSchedule(UInt64.valueOf(364032), 9),
-                                  new BlobSchedule(fuluEpoch, maxBlobsPerBlock))));
+                                  new BlobScheduleEntry(UInt64.valueOf(269568), 6),
+                                  new BlobScheduleEntry(UInt64.valueOf(364032), 9),
+                                  new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))));
             });
     final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
 
@@ -173,7 +173,7 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomUInt64(32000000000L),
         List.of(
-            new BlobSchedule(
+            new BlobScheduleEntry(
                 dataStructureUtil.randomEpoch(), dataStructureUtil.randomPositiveInt(64)))) {};
   }
 }
