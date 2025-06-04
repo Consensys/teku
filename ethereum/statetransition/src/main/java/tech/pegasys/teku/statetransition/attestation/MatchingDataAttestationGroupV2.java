@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -66,7 +67,7 @@ public class MatchingDataAttestationGroupV2 {
 
   // Use Concurrent collections and lock for thread safety
   private final ConcurrentNavigableMap<Integer, Set<PooledAttestation>>
-      attestationsByValidatorCount =
+      aggregatedAttestationsByValidatorCount =
           new ConcurrentSkipListMap<>(
               Comparator.reverseOrder()); // Most validators first, thread-safe map
 
@@ -135,16 +136,21 @@ public class MatchingDataAttestationGroupV2 {
 
   public PooledAttestationWithData fillUpAggregation(
       final PooledAttestationWithData attestation, final long timeLimitNanos) {
+    if (aggregatedAttestationsByValidatorCount.isEmpty()) {
+      // this attestation comes from aggregating single attestations,
+      // so we can't fillUp with the same attestations we used to generate it
+      return attestation;
+    }
 
     final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(true);
 
     builder.aggregate(attestation.pooledAttestation());
 
     final Iterator<PooledAttestation> singleAttestationTimeLimitedIterator =
-        new TimeLimitingIterator<>(
-            nanosSupplier,
-            timeLimitNanos,
+        timeLimitingIterator(
             singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream).iterator(),
+            timeLimitNanos,
+            nanosSupplier,
             __ -> LOG.info("Time limit reached, while fillingUp single attestation"));
 
     while (singleAttestationTimeLimitedIterator.hasNext()) {
@@ -191,7 +197,7 @@ public class MatchingDataAttestationGroupV2 {
     }
 
     final Set<PooledAttestation> attestations =
-        attestationsByValidatorCount.computeIfAbsent(
+        aggregatedAttestationsByValidatorCount.computeIfAbsent(
             attestation.bits().getBitCount(), __ -> ConcurrentHashMap.newKeySet());
 
     // .add() on the ConcurrentHashMap.KeySetView is thread-safe
@@ -239,18 +245,24 @@ public class MatchingDataAttestationGroupV2 {
     } finally {
       readLock.unlock();
     }
-    return new AggregatingIterator(
-        timeLimitNanos, nanosSupplier, includedValidatorsCopy, candidatesStreamSupplier);
+    return timeLimitingIterator(
+        new AggregatingIterator(
+            timeLimitNanos, nanosSupplier, includedValidatorsCopy, candidatesStreamSupplier),
+        timeLimitNanos,
+        nanosSupplier,
+        __ -> LOG.info("Time limit reached, skipping aggregation"));
   }
 
-  public Stream<PooledAttestationWithData> streamForBlockProduction(final long timeLimitNanos) {
+  public Stream<PooledAttestationWithData> streamAggregatesForBlockProduction(
+      final long timeLimitNanos) {
     return StreamSupport.stream(
             spliterator(timeLimitNanos, blockProductionAggregatesCandidatesStreamSupplier()), false)
         .map(
             pooledAttestation -> new PooledAttestationWithData(attestationData, pooledAttestation));
   }
 
-  public Stream<PooledAttestationWithData> streamForBlockProductionSA(final long timeLimitNanos) {
+  public Stream<PooledAttestationWithData> streamSingleAttestationsForBlockProduction(
+      final long timeLimitNanos) {
     return StreamSupport.stream(
             spliterator(timeLimitNanos, blockProductionSingleAttestationCandidatesStreamSupplier()),
             false)
@@ -306,11 +318,12 @@ public class MatchingDataAttestationGroupV2 {
    * @return true if this group is empty.
    */
   public boolean isEmpty() {
-    return attestationsByValidatorCount.isEmpty() && singleAttestationsByCommitteeIndex.isEmpty();
+    return aggregatedAttestationsByValidatorCount.isEmpty()
+        && singleAttestationsByCommitteeIndex.isEmpty();
   }
 
   public int size() {
-    return attestationsByValidatorCount.values().stream().mapToInt(Set::size).sum()
+    return aggregatedAttestationsByValidatorCount.values().stream().mapToInt(Set::size).sum()
         + singleAttestationsByCommitteeIndex.values().stream().mapToInt(Set::size).sum();
   }
 
@@ -346,7 +359,7 @@ public class MatchingDataAttestationGroupV2 {
       // Calculate size *before* removal for accurate delta.
       final int sizeBefore = size();
 
-      attestationsByValidatorCount
+      aggregatedAttestationsByValidatorCount
           .entrySet()
           .removeIf(entry -> pruneSupersededPooledAttestations(entry.getValue()));
 
@@ -413,7 +426,7 @@ public class MatchingDataAttestationGroupV2 {
 
   private Supplier<Stream<PooledAttestation>>
       blockProductionSingleAttestationCandidatesStreamSupplier() {
-    if (attestationsByValidatorCount.isEmpty()) {
+    if (aggregatedAttestationsByValidatorCount.isEmpty()) {
       // There are no aggregates left, which means they have all been included on-chain,
       // so we can consider the long tail of single attestations that have not reached an aggregator
       // in time
@@ -423,7 +436,7 @@ public class MatchingDataAttestationGroupV2 {
   }
 
   private Supplier<Stream<PooledAttestation>> blockProductionAggregatesCandidatesStreamSupplier() {
-    return () -> attestationsByValidatorCount.values().stream().flatMap(Set::stream);
+    return () -> aggregatedAttestationsByValidatorCount.values().stream().flatMap(Set::stream);
   }
 
   private Supplier<Stream<PooledAttestation>> aggregationProductionCandidatesStreamSupplier(
@@ -436,7 +449,7 @@ public class MatchingDataAttestationGroupV2 {
               .getOrDefault(maybeCommitteeIndex.get().intValue(), Set.of())
               .stream();
     }
-    return () -> attestationsByValidatorCount.values().stream().flatMap(Set::stream);
+    return () -> aggregatedAttestationsByValidatorCount.values().stream().flatMap(Set::stream);
   }
 
   private Supplier<Stream<PooledAttestation>> apiRequestCandidatesStreamSupplier(
@@ -444,7 +457,7 @@ public class MatchingDataAttestationGroupV2 {
     if (!requiresCommitteeBits) {
       // in pre-electra mode this group has been already checked against committee index
       // so we can just stream everything (single attestations don't exist)
-      return () -> attestationsByValidatorCount.values().stream().flatMap(Set::stream);
+      return () -> aggregatedAttestationsByValidatorCount.values().stream().flatMap(Set::stream);
     }
 
     // post electra we need a committee matcher if the committee index is specified
@@ -470,7 +483,7 @@ public class MatchingDataAttestationGroupV2 {
                   singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream));
       // stream aggregates first and then single attestations
       return Stream.concat(
-          attestationsByValidatorCount.values().stream()
+          aggregatedAttestationsByValidatorCount.values().stream()
               .flatMap(Set::stream)
               .filter(committeeMatcher),
           singleAttestationsStream);
@@ -519,21 +532,28 @@ public class MatchingDataAttestationGroupV2 {
     }
 
     private Iterator<PooledAttestation> getRemainingAttestations() {
-      final Iterator<PooledAttestation> iterator =
+      return timeLimitingIterator(
           candidatesStreamSupplier
               .get()
               .filter(candidate -> !includedValidators.isSuperSetOf(candidate.bits()))
-              .iterator();
-
-      if (timeLimitNanos == Long.MAX_VALUE) {
-        return iterator;
-      }
-
-      return new TimeLimitingIterator<>(
-          nanosSupplier,
+              .iterator(),
           timeLimitNanos,
-          iterator,
-          __ -> LOG.info("Time limit reached, skipping aggregation"));
+          nanosSupplier,
+          // let's log timelimit reached only on the outer iterator
+          __ -> {});
     }
+  }
+
+  private static Iterator<PooledAttestation> timeLimitingIterator(
+      final Iterator<PooledAttestation> iterator,
+      final long timeLimitNanos,
+      final LongSupplier nanosSupplier,
+      final LongConsumer onTimeLimit) {
+
+    if (timeLimitNanos == Long.MAX_VALUE) {
+      return iterator;
+    }
+
+    return new TimeLimitingIterator<>(nanosSupplier, timeLimitNanos, iterator, onTimeLimit);
   }
 }
