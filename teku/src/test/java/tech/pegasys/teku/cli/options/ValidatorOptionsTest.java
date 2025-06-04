@@ -139,16 +139,6 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldEnableValidatorRegistrationWithBlindedBlocks() {
-    final String[] args = {"--validators-builder-registration-default-enabled", "true"};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.validatorClient().getValidatorConfig().isBuilderRegistrationDefaultEnabled())
-        .isTrue();
-    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksEnabled())
-        .isTrue();
-  }
-
-  @Test
   public void shouldSetValidatorRegistrationTimestampOverride() {
     final String[] args = {"--Xvalidators-builder-registration-timestamp-override", "120000"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);

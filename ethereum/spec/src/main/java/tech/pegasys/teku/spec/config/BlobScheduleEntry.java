@@ -15,4 +15,4 @@ package tech.pegasys.teku.spec.config;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record BlobSchedule(UInt64 epoch, int maxBlobsPerBlock) {}
+public record BlobScheduleEntry(UInt64 epoch, int maxBlobsPerBlock) {}
