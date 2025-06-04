@@ -229,8 +229,6 @@ public class SchemaRegistryBuilder {
         .addProvider(createDataColumnSidecarsByRootRequestMessageSchemaProvider())
         .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider())
         .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider());
-        .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider())
-        .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
