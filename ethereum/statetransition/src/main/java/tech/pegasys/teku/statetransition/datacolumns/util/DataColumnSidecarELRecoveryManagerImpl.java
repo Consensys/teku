@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
@@ -92,6 +93,9 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final KZG kzg;
 
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
+  private final Counter getBlobsV2RequestsCounter;
+  private final Counter getBlobsV2ResponsesCounter;
+  private final MetricsHistogram getBlobsV2RuntimeSeconds;
 
   private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
 
@@ -120,6 +124,27 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.dataColumnSidecarComputationTimeSeconds =
         DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
+    this.getBlobsV2RequestsCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "engine_getBlobsV2_requests_total",
+            "Total number of engine_getBlobsV2 requests sent");
+    this.getBlobsV2ResponsesCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "engine_getBlobsV2_responses_total",
+            "Total number of engine_getBlobsV2 successful responses received");
+    this.getBlobsV2RuntimeSeconds =
+        new MetricsHistogram(
+            metricsSystem,
+            timeProvider,
+            TekuMetricCategory.BEACON,
+            "engine_getBlobsV2_runtime_seconds",
+            "Full runtime of engine_getBlobsV2 requests",
+            new double[] {
+              0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
+              7.5, 10.0
+            });
     this.miscHelpersFuluSupplier =
         () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
@@ -349,6 +374,9 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                             .getKZGCommitment()))
             .toList();
 
+    getBlobsV2RequestsCounter.inc();
+    final MetricsHistogram.Timer timer = getBlobsV2RuntimeSeconds.startTimer();
+
     return executionLayer
         .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
         .thenAccept(
@@ -367,11 +395,13 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                   versionedHashes.size(),
                   blobAndCellProofsList.size());
 
+              getBlobsV2ResponsesCounter.inc();
               LOG.debug(
                   "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
                   slotAndBlockRoot.getSlot());
               publishRecoveredDataColumnSidecars(recoveryTask, blobAndCellProofsList);
-            });
+            })
+        .alwaysRun(timer.closeUnchecked());
   }
 
   private void logLocalElBlobsLookupFailure(final Throwable error) {
