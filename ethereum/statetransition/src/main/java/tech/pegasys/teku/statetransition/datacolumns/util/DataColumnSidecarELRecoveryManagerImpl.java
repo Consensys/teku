@@ -379,6 +379,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
     return executionLayer
         .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
+        .whenComplete((result, error) -> timer.closeUnchecked())
         .thenAccept(
             blobAndCellProofsList -> {
               LOG.debug("Found {} blobs", blobAndCellProofsList.size());
@@ -400,8 +401,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                   "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
                   slotAndBlockRoot.getSlot());
               publishRecoveredDataColumnSidecars(recoveryTask, blobAndCellProofsList);
-            })
-        .alwaysRun(timer.closeUnchecked());
+            });
   }
 
   private void logLocalElBlobsLookupFailure(final Throwable error) {
