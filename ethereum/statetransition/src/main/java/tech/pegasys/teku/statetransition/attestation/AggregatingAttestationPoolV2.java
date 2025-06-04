@@ -28,8 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
@@ -83,7 +81,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
   private final long maxBlockAggregationTimeNanos;
   private final long maxTotalBlockAggregationTimeMillis;
   private final boolean earlyDropSingleAttestations;
-  private final Optional<ForkJoinPool> customThreadPool;
 
   private final LongSupplier nanosSupplier;
 
@@ -115,21 +112,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     this.earlyDropSingleAttestations = earlyDropSingleAttestations;
     this.nanosSupplier = System::nanoTime;
     this.rewardBasedAttestationSorterFactory = RewardBasedAttestationSorterFactory.DEFAULT;
-
-    if (parallel) {
-      final int numberOfCores = Runtime.getRuntime().availableProcessors();
-      // Use half of available cores, no more than 4 threads
-      final int parallelism = Math.max(1, Math.min(numberOfCores / 2, 4));
-
-      if (parallelism == 1) {
-        // not enough cores to run in parallel, no thread pool needed
-        this.customThreadPool = Optional.empty();
-      } else {
-        this.customThreadPool = Optional.of(new ForkJoinPool(parallelism));
-      }
-    } else {
-      this.customThreadPool = Optional.empty();
-    }
   }
 
   @VisibleForTesting
@@ -156,7 +138,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     this.maxTotalBlockAggregationTimeMillis =
         maxTotalBlockAggregationTimeMillis * 1_000_000L; // Integer.MAX_VALUE * 1_000_000L
     this.earlyDropSingleAttestations = false;
-    this.customThreadPool = Optional.empty();
     this.nanosSupplier = nanosSupplier;
     this.rewardBasedAttestationSorterFactory = rewardBasedAttestationSorterFactory;
   }
@@ -383,6 +364,8 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     final SszListSchema<Attestation, ?> attestationsSchema =
         schemaDefinitions.getBeaconBlockBodySchema().getAttestationsSchema();
 
+    final int blockAttestationCapacity = Math.toIntExact(attestationsSchema.getMaxLength());
+
     final AttestationSchema<Attestation> attestationSchema =
         schemaDefinitions.getAttestationSchema();
 
@@ -397,51 +380,18 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
     /* -- Aggregation phase -- */
 
-    var dataHashes =
-        dataHashBySlot
-            // We can immediately skip any attestations from the block slot or later
-            .headMap(stateAtBlockSlot.getSlot(), false)
-            .descendingMap() // Safe view
-            .values();
+    final List<PooledAttestationWithData> aggregates = new ArrayList<>(blockAttestationCapacity);
 
-    List<PooledAttestationWithData> aggregates = new ArrayList<>();
-
-    // Sequential stream over SLOTS to maintain order
-    for (Set<Bytes> dataHashSetForSlot : dataHashes) {
-
-      // Use parallelOrSequentialCollect for processing WITHIN a slot
-      List<PooledAttestationWithData> attestationsFromThisSlot =
-          parallelOrSequentialCollect(
-              () -> // This will use customThreadPool if present
-              streamAggregatesForDataHashesBySlot( // This method now uses
-                          // dataHashSetForSlot.parallelStream()
-                          dataHashSetForSlot,
-                          stateAtBlockSlot,
-                          forkChecker,
-                          blockRequiresAttestationsWithCommitteeBits,
-                          aggregationTimeLimit, // Pass the overall end time
-                          false // aggregates, not single attestations
-                          )
-                      .filter( // This filter now operates on the parallel stream from
-                          // streamAggregatesForDataHashesBySlot
-                          attestation -> {
-                            if (spec.computeEpochAtSlot(attestation.data().getSlot())
-                                .isLessThan(currentEpoch)) {
-                              // This is now less racy for inter-slot precedence.
-                              // For intra-slot (if multiple old-epoch attestations in this slot),
-                              // the order of increment is non-deterministic due to the inner
-                              // parallelStream,
-                              // but they all belong to the *current slot being processed
-                              // sequentially*.
-                              final int currentCount = prevEpochCount.getAndIncrement();
-                              return currentCount < previousEpochLimit;
-                            }
-                            return true;
-                          })
-                      .toList()); // Collect results for this slot
-
-      aggregates.addAll(attestationsFromThisSlot);
-    }
+    computeAggregation(
+        stateAtBlockSlot,
+        forkChecker,
+        blockRequiresAttestationsWithCommitteeBits,
+        currentEpoch,
+        previousEpochLimit,
+        aggregationTimeLimit,
+        prevEpochCount,
+        false,
+        aggregates);
 
     LOG.info(
         "Aggregation phase took {} ms. Produced {} aggregations.",
@@ -451,42 +401,16 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     if (aggregationTimeLimit > nanosSupplier.getAsLong()) {
       // we have time left to consider groups containing single attestation only
 
-      // Sequential stream over SLOTS to maintain order
-      for (Set<Bytes> dataHashSetForSlot : dataHashes) {
-
-        // Use parallelOrSequentialCollect for processing WITHIN a slot
-        List<PooledAttestationWithData> attestationsFromThisSlot =
-            parallelOrSequentialCollect(
-                () -> // This will use customThreadPool if present
-                streamAggregatesForDataHashesBySlot( // This method now uses
-                            // dataHashSetForSlot.parallelStream()
-                            dataHashSetForSlot,
-                            stateAtBlockSlot,
-                            forkChecker,
-                            blockRequiresAttestationsWithCommitteeBits,
-                            aggregationTimeLimit, // Pass the overall end time
-                            true // aggregates, not single attestations
-                            )
-                        .filter( // This filter now operates on the parallel stream from
-                            // streamAggregatesForDataHashesBySlot
-                            attestation -> {
-                              if (spec.computeEpochAtSlot(attestation.data().getSlot())
-                                  .isLessThan(currentEpoch)) {
-                                // This is now less racy for inter-slot precedence.
-                                // For intra-slot (if multiple old-epoch attestations in this slot),
-                                // the order of increment is non-deterministic due to the inner
-                                // parallelStream,
-                                // but they all belong to the *current slot being processed
-                                // sequentially*.
-                                final int currentCount = prevEpochCount.getAndIncrement();
-                                return currentCount < previousEpochLimit;
-                              }
-                              return true;
-                            })
-                        .toList()); // Collect results for this slot
-
-        aggregates.addAll(attestationsFromThisSlot);
-      }
+      computeAggregation(
+          stateAtBlockSlot,
+          forkChecker,
+          blockRequiresAttestationsWithCommitteeBits,
+          currentEpoch,
+          previousEpochLimit,
+          aggregationTimeLimit,
+          prevEpochCount,
+          true,
+          aggregates);
 
       LOG.info(
           "Aggregation including SA took {} ms. Final produced {} aggregations.",
@@ -497,8 +421,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     /* -- Sorting phase -- */
 
     final List<PooledAttestationWithRewardInfo> sortedAggregates =
-        rewardBasedAttestationSorter.sort(
-            aggregates, Math.toIntExact(attestationsSchema.getMaxLength()));
+        rewardBasedAttestationSorter.sort(aggregates, blockAttestationCapacity);
 
     /* -- FillUp phase -- */
 
@@ -510,28 +433,24 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
                     distintPredicate.test(aggregate) ? Optional.of(aggregate) : Optional.empty());
 
     final List<Optional<PooledAttestationWithRewardInfo>> filledUpAggregates =
-        parallelOrSequentialCollect(
-            () ->
-                (customThreadPool.isPresent()
-                        ? toBeFilledUpAggregates.parallel()
-                        : toBeFilledUpAggregates)
-                    .peek(
-                        maybeAttestation ->
-                            maybeAttestation.ifPresent(
-                                attestation ->
-                                    aggregatingAttestationPoolProfiler.onPreFillUp(
-                                        stateAtBlockSlot, attestation)))
-                    .map(
-                        maybeAttestation ->
-                            maybeAttestation.map(
-                                attestation -> fillUpAttestation(attestation, totalTimeLimitNanos)))
-                    .peek(
-                        maybeAttestation ->
-                            maybeAttestation.ifPresent(
-                                attestation ->
-                                    aggregatingAttestationPoolProfiler.onPostFillUp(
-                                        stateAtBlockSlot, attestation)))
-                    .toList());
+        toBeFilledUpAggregates
+            .peek(
+                maybeAttestation ->
+                    maybeAttestation.ifPresent(
+                        attestation ->
+                            aggregatingAttestationPoolProfiler.onPreFillUp(
+                                stateAtBlockSlot, attestation)))
+            .map(
+                maybeAttestation ->
+                    maybeAttestation.map(
+                        attestation -> fillUpAttestation(attestation, totalTimeLimitNanos)))
+            .peek(
+                maybeAttestation ->
+                    maybeAttestation.ifPresent(
+                        attestation ->
+                            aggregatingAttestationPoolProfiler.onPostFillUp(
+                                stateAtBlockSlot, attestation)))
+            .toList();
 
     /* -- Final conversion phase -- */
 
@@ -547,16 +466,47 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     return result;
   }
 
-  private <T> T parallelOrSequentialCollect(final Supplier<T> collection) {
-    if (customThreadPool.isEmpty()) {
-      return collection.get();
-    } else {
-      try {
-        return customThreadPool.get().submit(collection::get).get();
-      } catch (final InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    }
+  private void computeAggregation(
+      final BeaconState stateAtBlockSlot,
+      final AttestationForkChecker forkChecker,
+      final boolean blockRequiresAttestationsWithCommitteeBits,
+      final UInt64 currentEpoch,
+      final int previousEpochLimit,
+      final long aggregationTimeLimit,
+      final AtomicInteger prevEpochCount,
+      final boolean singleAttestationsOnlyAggregate,
+      final List<PooledAttestationWithData> destinationAggregates) {
+    dataHashBySlot
+        .headMap(stateAtBlockSlot.getSlot(), false)
+        .descendingMap() // Safe view
+        .values()
+        .stream()
+        .flatMap(
+            dataHashSetForSlot ->
+                streamAggregatesForDataHashesBySlot(
+                    dataHashSetForSlot,
+                    stateAtBlockSlot,
+                    forkChecker,
+                    blockRequiresAttestationsWithCommitteeBits,
+                    aggregationTimeLimit, // Pass the overall end time
+                    singleAttestationsOnlyAggregate // aggregates, not single attestations
+                    ))
+        .filter( // This filter now operates on the parallel stream from
+            // streamAggregatesForDataHashesBySlot
+            attestation -> {
+              if (spec.computeEpochAtSlot(attestation.data().getSlot()).isLessThan(currentEpoch)) {
+                // This is now less racy for inter-slot precedence.
+                // For intra-slot (if multiple old-epoch attestations in this slot),
+                // the order of increment is non-deterministic due to the inner
+                // parallelStream,
+                // but they all belong to the *current slot being processed
+                // sequentially*.
+                final int currentCount = prevEpochCount.getAndIncrement();
+                return currentCount < previousEpochLimit;
+              }
+              return true;
+            })
+        .forEach(destinationAggregates::add);
   }
 
   private PooledAttestationWithRewardInfo fillUpAttestation(
@@ -585,24 +535,20 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final long baseAggregationTimeLimitNanos,
       final boolean singleAttestations) {
 
-    return parallelOrSequentialCollect(
-        () ->
-            (customThreadPool.isPresent()
-                    ? dataHashSetForSlot.parallelStream()
-                    : dataHashSetForSlot.stream())
-                .map(attestationGroupByDataHash::get)
-                .filter(Objects::nonNull)
-                .filter(group -> group.isValid(stateAtBlockSlot, spec))
-                .filter(forkChecker::areAttestationsFromCorrectForkV2)
-                .flatMap(
-                    group ->
-                        singleAttestations
-                            ? group.streamForBlockProductionSA(baseAggregationTimeLimitNanos)
-                            : group.streamForBlockProduction(baseAggregationTimeLimitNanos))
-                .filter(
-                    attestation ->
-                        attestation.pooledAttestation().bits().requiresCommitteeBits()
-                            == blockRequiresAttestationsWithCommitteeBits));
+    return dataHashSetForSlot.stream()
+        .map(attestationGroupByDataHash::get)
+        .filter(Objects::nonNull)
+        .filter(group -> group.isValid(stateAtBlockSlot, spec))
+        .filter(forkChecker::areAttestationsFromCorrectForkV2)
+        .flatMap(
+            group ->
+                singleAttestations
+                    ? group.streamForBlockProductionSA(baseAggregationTimeLimitNanos)
+                    : group.streamForBlockProduction(baseAggregationTimeLimitNanos))
+        .filter(
+            attestation ->
+                attestation.pooledAttestation().bits().requiresCommitteeBits()
+                    == blockRequiresAttestationsWithCommitteeBits);
   }
 
   @Override
