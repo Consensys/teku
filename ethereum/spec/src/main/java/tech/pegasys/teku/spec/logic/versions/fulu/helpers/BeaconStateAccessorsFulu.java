@@ -43,19 +43,13 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
 
   @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
-    final int lookAheadIndex = requestedSlot.mod(configFulu.getSlotsPerEpoch()).intValue();
+    final int lookaheadIndex = requestedSlot.mod(configFulu.getSlotsPerEpoch()).intValue();
 
-    final int proposer =
-        state
-            .toVersionFulu()
-            .orElseThrow()
-            .getProposerLookahead()
-            .asListUnboxed()
-            .get(lookAheadIndex)
-            .intValue();
+    final long proposer =
+        state.toVersionFulu().orElseThrow().getProposerLookahead().get(lookaheadIndex).longValue();
 
     LOG.debug("getBeaconProposerIndex: requestedSlot={}, proposer={}", requestedSlot, proposer);
-    return proposer;
+    return Math.toIntExact(proposer);
   }
 
   public List<Integer> getBeaconProposerIndices(final BeaconState state, final UInt64 epoch) {
