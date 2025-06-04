@@ -50,7 +50,6 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
