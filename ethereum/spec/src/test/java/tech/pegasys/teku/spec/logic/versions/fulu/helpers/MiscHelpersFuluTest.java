@@ -280,8 +280,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final UInt64 epoch = UInt64.ONE;
     final Bytes32 epochSeed = Bytes32.random();
     final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
-    final List<Integer> activeValidatorIndices =
-        IntStream.range(0, 10).boxed().collect(Collectors.toList());
+    final List<Integer> activeValidatorIndices = IntStream.range(0, 10).boxed().toList();
 
     final IntList activeValidatorIndicesIntList =
         IntList.of(activeValidatorIndices.stream().mapToInt(Integer::intValue).toArray());
