@@ -540,12 +540,6 @@ public class MatchingDataAttestationGroupV2 {
         }
       }
 
-      remainingAttestations.forEachRemaining(
-          candidate -> {
-            if (builder.aggregate(candidate)) {
-              includedValidators.or(candidate.bits());
-            }
-          });
       return builder.buildAggregate();
     }
 
