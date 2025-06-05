@@ -282,6 +282,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       .collect(Collectors.toUnmodifiableSet());
               final List<DataColumnSidecar> recoveredSidecars =
                   miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
+              timer.closeUnchecked();
               totalDataAvailabilityReconstructedColumns.inc(
                   recoveredSidecars.size() - sidecars.size());
               recoveredSidecars.stream()
@@ -299,7 +300,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   "Data column sidecars recovery finished for block: {}",
                   block.getSlotAndBlockRoot());
             })
-        .alwaysRun(timer.closeUnchecked())
         .ifExceptionGetsHereRaiseABug();
   }
 
