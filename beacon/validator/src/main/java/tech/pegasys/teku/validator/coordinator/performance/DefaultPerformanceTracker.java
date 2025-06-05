@@ -449,7 +449,6 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void saveProducedAttestation(final Attestation attestation) {
     final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
     final Set<Attestation> attestationsInEpoch =

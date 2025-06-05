@@ -580,7 +580,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     final ValidatableAttestation validatableAttestation =
         ValidatableAttestation.fromValidator(spec, attestation);
