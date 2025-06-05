@@ -84,15 +84,12 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
               state.setPendingPartialWithdrawals(preStateElectra.getPendingPartialWithdrawals());
               state.setPendingDeposits(preStateElectra.getPendingDeposits());
 
-              final SszUInt64VectorSchema<?> proposerLookaheadSchema =
-                  BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
-                      .getProposerLookaheadSchema();
-
               state.setProposerLookahead(
-                  miscHelpers
-                      .initializeProposerLookahead(preStateElectra, beaconStateAccessors)
-                      .stream()
-                      .collect(proposerLookaheadSchema.collectorUnboxed()));
+                  BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
+                      .getProposerLookaheadSchema()
+                      .of(
+                          miscHelpers.initializeProposerLookahead(
+                              preStateElectra, beaconStateAccessors)));
             });
   }
 }
