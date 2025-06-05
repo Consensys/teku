@@ -125,7 +125,8 @@ public class SpecConfigFuluTest {
     assertThat(
             MiscHelpersFulu.required(fuluSpec.forMilestone(SpecMilestone.FULU).miscHelpers())
                 .getMaxBlobsPerBlock(fuluEpoch))
-        .isEqualTo(SpecConfigFulu.required(fuluSpec.getSpecConfig(fuluEpoch)).getMaxBlobsPerBlock());
+        .isEqualTo(
+            SpecConfigFulu.required(fuluSpec.getSpecConfig(fuluEpoch)).getMaxBlobsPerBlock());
   }
 
   @Test
