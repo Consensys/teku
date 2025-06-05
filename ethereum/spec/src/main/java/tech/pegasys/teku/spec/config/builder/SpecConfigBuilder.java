@@ -321,8 +321,6 @@ public class SpecConfigBuilder {
               "The specified network configuration had missing or invalid values for constants %s",
               String.join(", ", fieldsFailingValidation)));
     }
-    fuluBuilder.validateBlobSchedule(
-        denebBuilder.getBlobSchedule(), electraBuilder.getBlobSchedule());
     builderChain.validate();
   }
 

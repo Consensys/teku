@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -184,23 +183,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     }
 
     validateConstants();
-  }
-
-  public void validateBlobSchedule(
-      final Optional<BlobScheduleEntry> denebSchedule,
-      final Optional<BlobScheduleEntry> electraSchedule) {
-    denebSchedule.ifPresent(
-        schedule -> {
-          if (!blobSchedule.contains(schedule)) {
-            blobSchedule.add(schedule);
-          }
-        });
-    electraSchedule.ifPresent(
-        schedule -> {
-          if (!blobSchedule.contains(schedule)) {
-            blobSchedule.add(schedule);
-          }
-        });
   }
 
   @Override
