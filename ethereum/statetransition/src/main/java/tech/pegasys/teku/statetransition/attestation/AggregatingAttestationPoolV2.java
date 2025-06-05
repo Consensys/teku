@@ -96,8 +96,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final AggregatingAttestationPoolProfiler aggregatingAttestationPoolProfiler,
       final int maxBlockAggregationTimeMillis,
       final int maxTotalBlockAggregationTimeMillis,
-      final boolean earlyDropSingleAttestations,
-      final boolean parallel) {
+      final boolean earlyDropSingleAttestations) {
     super(spec, recentChainData);
     this.sizeGauge =
         SettableGauge.create(
