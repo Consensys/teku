@@ -122,27 +122,23 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   // get_max_blobs_per_block
   public int getMaxBlobsPerBlock(final UInt64 epoch) {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedule not correctly defined.");
-
     final Optional<BlobScheduleEntry> maybeSchedule =
         blobSchedule.stream()
             .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
             .max(Comparator.comparing(BlobScheduleEntry::epoch));
-
     final int maxBlobs =
         maybeSchedule
             .map(BlobScheduleEntry::maxBlobsPerBlock)
-            .orElseGet(() -> blobSchedule.getFirst().maxBlobsPerBlock());
+            .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
     LOG.debug("Max blobs at epoch {} found to be {}", epoch, maxBlobs);
     return maxBlobs;
   }
 
   public int getHighestMaxBlobsPerBlockFromSchedule() {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedule not correctly defined.");
     return blobSchedule.stream()
         .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
         .map(BlobScheduleEntry::maxBlobsPerBlock)
-        .orElseGet(() -> blobSchedule.getLast().maxBlobsPerBlock());
+        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
   }
 
   private UInt256 incrementByModule(final UInt256 n) {

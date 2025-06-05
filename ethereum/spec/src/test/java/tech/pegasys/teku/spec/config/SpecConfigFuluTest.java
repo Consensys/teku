@@ -110,7 +110,7 @@ public class SpecConfigFuluTest {
                 .toVersionFulu()
                 .orElseThrow()
                 .getMaxBlobsPerBlock(fuluEpoch))
-        .isEqualTo(maxBlobsPerBlock);
+        .isEqualTo(9);
   }
 
   @Test
