@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.coordinator.performance;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -25,7 +24,7 @@ public interface PerformanceTracker extends SlotEventsChannel {
 
   void start(UInt64 nodeStartSlot);
 
-  SafeFuture<Void> saveProducedAttestation(Attestation attestation);
+  void saveProducedAttestation(Attestation attestation);
 
   void saveProducedBlock(SlotAndBlockRoot slotAndBlockRoot);
 

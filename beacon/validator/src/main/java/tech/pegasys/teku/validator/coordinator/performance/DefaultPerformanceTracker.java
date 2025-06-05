@@ -437,10 +437,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public SafeFuture<Void> saveProducedAttestation(final Attestation attestation) {
+  public void saveProducedAttestation(final Attestation attestation) {
     if (attestation.isSingleAttestation()) {
       final SingleAttestation singleAttestation = attestation.toSingleAttestationRequired();
-      return combinedChainDataClient
+      combinedChainDataClient
           .getStateAtSlotExact(singleAttestation.getData().getSlot())
           .thenAccept(
               maybeState -> {
@@ -467,7 +467,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
                 return null;
               });
     } else {
-      return SafeFuture.fromRunnable(() -> addAttestationToEpoch(attestation));
+      addAttestationToEpoch(attestation);
     }
   }
 
