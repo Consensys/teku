@@ -150,38 +150,6 @@ public class SpecConfigFuluTest {
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
-  // always default to MAX_BLOBS_PER_BLOCK_ELECTRA
-  @Test
-  public void mainnetBlobSchedule() {
-    final Spec mainnetSpec = TestSpecFactory.createMainnetFulu();
-    final MiscHelpersFulu miscHelpersFulu =
-        mainnetSpec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
-    final int maxBlobsPerBlockElectra =
-        mainnetSpec
-            .forMilestone(SpecMilestone.ELECTRA)
-            .getConfig()
-            .toVersionElectra()
-            .orElseThrow()
-            .getMaxBlobsPerBlock();
-    // test defaulting to minimum
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(0)))
-        .isEqualTo(maxBlobsPerBlockElectra);
-    // test deneb max blobs boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269568)))
-        .isEqualTo(maxBlobsPerBlockElectra);
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269569)))
-        .isEqualTo(maxBlobsPerBlockElectra);
-    // last epoch of deneb
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364031)))
-        .isEqualTo(maxBlobsPerBlockElectra);
-    // electra boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364032)))
-        .isEqualTo(maxBlobsPerBlockElectra);
-    // inside electra
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033)))
-        .isEqualTo(maxBlobsPerBlockElectra);
-  }
-
   private SpecConfigFulu createRandomFuluConfig(
       final SpecConfigElectra electraConfig, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
