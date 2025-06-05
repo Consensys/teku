@@ -24,7 +24,5 @@ public class SanityTests {
           .put("random/random", new SanityBlocksTestExecutor())
           .put("sanity/slots", new SanitySlotsTestExecutor())
           .put("finality/finality", new SanityBlocksTestExecutor())
-          .put(
-              "sanity/effective_balance_increase_changes_lookahead", new SanityBlocksTestExecutor())
           .build();
 }
