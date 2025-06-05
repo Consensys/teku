@@ -64,27 +64,28 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
   @Override
   public void processProposerLookahead(final MutableBeaconState state) {
     final MutableBeaconStateFulu stateFulu = MutableBeaconStateFulu.required(state);
-    final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
-    final int minSeedLookahead = specConfig.getMinSeedLookahead();
 
-    final List<UInt64> proposerIndicesToShifted =
+    // Shift out proposers in the first epoch
+    final List<UInt64> proposerIndicesToShiftOut =
         stateFulu
             .getProposerLookahead()
             .asListUnboxed()
-            .subList(
-                stateFulu.getProposerLookahead().size() - slotsPerEpoch,
-                stateFulu.getProposerLookahead().size());
+            .subList(specConfig.getSlotsPerEpoch(), stateFulu.getProposerLookahead().size());
 
+    // Fill in the last epoch with new proposer indices
     final List<UInt64> lastEpochProposerIndices =
         stateAccessorsFulu
             .getBeaconProposerIndices(
                 stateFulu,
-                beaconStateAccessors.getCurrentEpoch(stateFulu).plus(minSeedLookahead).plus(1))
+                beaconStateAccessors
+                    .getCurrentEpoch(stateFulu)
+                    .plus(specConfig.getMinSeedLookahead())
+                    .plus(1))
             .stream()
             .map(UInt64::valueOf)
             .toList();
 
-    final List<UInt64> proposerIndices = new ArrayList<>(proposerIndicesToShifted);
+    final List<UInt64> proposerIndices = new ArrayList<>(proposerIndicesToShiftOut);
     proposerIndices.addAll(lastEpochProposerIndices);
 
     final SszUInt64Vector proposerLookaheadList =
