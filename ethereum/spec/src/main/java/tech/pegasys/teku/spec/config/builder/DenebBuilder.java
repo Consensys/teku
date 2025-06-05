@@ -20,11 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -32,7 +29,6 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigDenebImpl;
 
 public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecConfigDeneb> {
-  private static final Logger LOG = LogManager.getLogger();
   private Bytes4 denebForkVersion;
   private UInt64 denebForkEpoch;
 
@@ -68,14 +64,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
             blobSidecarSubnetCount,
             epochsStoreBlobs),
         specConfigAndParent);
-  }
-
-  public Optional<BlobScheduleEntry> getBlobSchedule() {
-    if (denebForkEpoch == null || maxBlobsPerBlock == null) {
-      LOG.debug("denebForkEpoch = {}, maxBlobsPerBlock = {}", denebForkEpoch, maxBlobsPerBlock);
-      return Optional.empty();
-    }
-    return Optional.of(new BlobScheduleEntry(denebForkEpoch, maxBlobsPerBlock));
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
