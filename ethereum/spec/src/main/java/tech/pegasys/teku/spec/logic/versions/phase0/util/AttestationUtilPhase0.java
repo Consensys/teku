@@ -22,6 +22,8 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -59,6 +61,12 @@ public class AttestationUtilPhase0 extends AttestationUtil {
       return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
     }
     return Optional.empty();
+  }
+
+  @Override
+  public Attestation convertSingleAttestationToAggregated(
+      final BeaconState state, final SingleAttestation singleAttestation) {
+    throw new UnsupportedOperationException("No Single Attestations before Electra");
   }
 
   protected boolean isFromFarFuture(
