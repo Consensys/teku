@@ -379,7 +379,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
     return executionLayer
         .engineGetBlobAndCellProofsList(versionedHashes, slotAndBlockRoot.getSlot())
-        .whenComplete((result, error) -> timer.closeUnchecked())
+        .whenComplete((result, error) -> timer.closeUnchecked().run())
         .thenAccept(
             blobAndCellProofsList -> {
               LOG.debug("Found {} blobs", blobAndCellProofsList.size());
