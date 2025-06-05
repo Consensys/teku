@@ -363,7 +363,7 @@ class MatchingDataAttestationGroupV2Test {
     verifyStreamForAggregationProductionContainsExactly(UInt64.ZERO); // Expect empty
   }
 
-  // --- Tests for streamForBlockProduction ---
+  // --- Tests for streamAggregatesForBlockProduction ---
   @TestTemplate
   public void
       streamAggregatesForBlockProduction_electra_shouldSkipSinglesAndReturnAggregatesWhenThereAreAggregates(
@@ -379,21 +379,6 @@ class MatchingDataAttestationGroupV2Test {
     verifyStreamAggregatesForBlockProductionContainsExactly(
         toPooledAttestationWithData(bigAttestation),
         toPooledAttestationWithData(mediumAttestation));
-  }
-
-  @TestTemplate
-  public void
-      streamAggregatesForBlockProduction_electra_shouldConsiderSinglesAndReturnAggregatesWhenThereAreNoAggregates(
-          final SpecContext specContext) {
-    specContext.assumeElectraActive();
-    final PooledAttestation single0 = addPooledAttestation(Optional.of(0), 2);
-    final PooledAttestation single1 = addPooledAttestation(Optional.of(1), 3);
-
-    final Attestation expectedSAAggregate =
-        aggregateAttestations(committeeSizes, toAttestation(single0), toAttestation(single1));
-
-    verifyStreamAggregatesForBlockProductionContainsExactly(
-        toPooledAttestationWithData(expectedSAAggregate));
   }
 
   @TestTemplate
@@ -416,6 +401,36 @@ class MatchingDataAttestationGroupV2Test {
                 ValidatableAttestation.from(spec, expected, committeeSizes))));
   }
 
+  // --- Tests for streamStreamSingleAttestationsForBlockProduction ---
+
+  @TestTemplate
+  public void
+      streamStreamSingleAttestationsForBlockProduction_electra_shouldConsiderSinglesAndReturnAggregatesWhenThereAreNoAggregates(
+          final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    final PooledAttestation single0 = addPooledAttestation(Optional.of(0), 2);
+    final PooledAttestation single1 = addPooledAttestation(Optional.of(1), 3);
+
+    final Attestation expectedSAAggregate =
+        aggregateAttestations(committeeSizes, toAttestation(single0), toAttestation(single1));
+
+    verifyStreamSingleAttestationsForBlockProductionContainsExactly(
+        toPooledAttestationWithData(expectedSAAggregate));
+  }
+
+  @TestTemplate
+  public void
+      streamStreamSingleAttestationsForBlockProduction_electra_shouldNotConsiderSinglesAndReturnAggregatesWhenThereAreAggregates(
+          final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    addPooledAttestation(Optional.of(0), 3, 4);
+
+    addPooledAttestation(Optional.of(0), 2);
+    addPooledAttestation(Optional.of(1), 3);
+
+    verifyStreamSingleAttestationsForBlockProductionContainsExactly();
+  }
+
   // --- Tests for fillUpAggregation ---
   @TestTemplate
   void fillUp_noSingleAttestations_returnsOriginal(final SpecContext specContext) {
@@ -435,7 +450,7 @@ class MatchingDataAttestationGroupV2Test {
         addPooledAttestation(Optional.of(1), 4); // This single has committee_bits=1
 
     final PooledAttestation initialAgg =
-        createPooledAttestation(Optional.of(0), 1, 2); // Initial agg is for C0
+        addPooledAttestation(Optional.of(0), 1, 2); // Initial agg is for C0
     final PooledAttestationWithData initial = toPooledAttestationWithData(initialAgg);
 
     final PooledAttestationWithData result = group.fillUpAggregation(initial, Long.MAX_VALUE);
@@ -484,7 +499,7 @@ class MatchingDataAttestationGroupV2Test {
     final PooledAttestation single1 = addPooledAttestation(Optional.of(0), 3);
     addPooledAttestation(Optional.of(1), 4);
 
-    final PooledAttestation initialAgg = createPooledAttestation(Optional.of(0), 1, 2);
+    final PooledAttestation initialAgg = addPooledAttestation(Optional.of(0), 1, 2);
     final PooledAttestationWithData initial = toPooledAttestationWithData(initialAgg);
 
     when(nanoSupplier.getAsLong())
@@ -497,6 +512,22 @@ class MatchingDataAttestationGroupV2Test {
         aggregateAttestations(committeeSizes, toAttestation(initialAgg), toAttestation(single1));
 
     assertThat(result).isEqualTo(toPooledAttestationWithData(expectedWithSingle1));
+  }
+
+  @TestTemplate
+  void fillUp_shouldNotFillupIfNoAggregatesArePresent(final SpecContext specContext) {
+    specContext.assumeElectraActive();
+    addPooledAttestation(Optional.of(0), 3);
+    addPooledAttestation(Optional.of(1), 4);
+
+    final PooledAttestation initialAgg = createPooledAttestation(Optional.of(0), 1, 2);
+    final PooledAttestationWithData initial = toPooledAttestationWithData(initialAgg);
+
+    final PooledAttestationWithData result = group.fillUpAggregation(initial, Long.MAX_VALUE);
+
+    final Attestation expectedInitial = toAttestation(initialAgg);
+
+    assertThat(result).isEqualTo(toPooledAttestationWithData(expectedInitial));
   }
 
   @TestTemplate
@@ -684,6 +715,15 @@ class MatchingDataAttestationGroupV2Test {
     assertThat(
             group
                 .streamAggregatesForBlockProduction(Long.MAX_VALUE)
+                .map(this::toPooledAttestationWithDataWithSortedValidatorIndices))
+        .containsExactly(expectedAttestations);
+  }
+
+  void verifyStreamSingleAttestationsForBlockProductionContainsExactly(
+      final PooledAttestationWithData... expectedAttestations) {
+    assertThat(
+            group
+                .streamSingleAttestationsForBlockProduction(Long.MAX_VALUE)
                 .map(this::toPooledAttestationWithDataWithSortedValidatorIndices))
         .containsExactly(expectedAttestations);
   }

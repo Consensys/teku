@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BooleanSupplier;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
@@ -245,12 +246,8 @@ public class MatchingDataAttestationGroupV2 {
     } finally {
       readLock.unlock();
     }
-    return timeLimitingIterator(
-        new AggregatingIterator(
-            timeLimitNanos, nanosSupplier, includedValidatorsCopy, candidatesStreamSupplier),
-        timeLimitNanos,
-        nanosSupplier,
-        __ -> LOG.info("Time limit reached, skipping aggregation"));
+    return new AggregatingIterator(
+        timeLimitNanos, nanosSupplier, includedValidatorsCopy, candidatesStreamSupplier);
   }
 
   public Stream<PooledAttestationWithData> streamAggregatesForBlockProduction(
@@ -493,8 +490,8 @@ public class MatchingDataAttestationGroupV2 {
   private static class AggregatingIterator implements Iterator<PooledAttestation> {
     private final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier;
     private final AttestationBits includedValidators;
-    private final long timeLimitNanos;
-    private final LongSupplier nanosSupplier;
+
+    private final BooleanSupplier timeLimitReachedChecker;
 
     private Iterator<PooledAttestation> remainingAttestations;
 
@@ -503,8 +500,11 @@ public class MatchingDataAttestationGroupV2 {
         final LongSupplier nanosSupplier,
         final AttestationBits includedValidatorsCopy,
         final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
-      this.timeLimitNanos = timeLimitNanos;
-      this.nanosSupplier = nanosSupplier;
+      if (timeLimitNanos == Long.MAX_VALUE) {
+        timeLimitReachedChecker = () -> false;
+      } else {
+        timeLimitReachedChecker = () -> nanosSupplier.getAsLong() > timeLimitNanos;
+      }
       this.candidatesStreamSupplier = candidatesStreamSupplier;
       this.includedValidators = includedValidatorsCopy;
       this.remainingAttestations = getRemainingAttestations();
@@ -512,6 +512,11 @@ public class MatchingDataAttestationGroupV2 {
 
     @Override
     public boolean hasNext() {
+      if (timeLimitReachedChecker.getAsBoolean()) {
+        LOG.info("Time limit reached, skipping aggregation");
+        return false;
+      }
+
       if (!remainingAttestations.hasNext()) {
         remainingAttestations = getRemainingAttestations();
       }
@@ -521,6 +526,19 @@ public class MatchingDataAttestationGroupV2 {
     @Override
     public PooledAttestation next() {
       final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(true);
+
+      while (remainingAttestations.hasNext()) {
+        final PooledAttestation candidate = remainingAttestations.next();
+        if (builder.aggregate(candidate)) {
+          includedValidators.or(candidate.bits());
+        }
+        if (timeLimitReachedChecker.getAsBoolean()) {
+          // we want at least one candidate to be aggregated
+          // If we hit the time limit, stop aggregating
+          LOG.info("Time limit reached, skipping remaining aggregation");
+          break;
+        }
+      }
 
       remainingAttestations.forEachRemaining(
           candidate -> {
@@ -532,15 +550,15 @@ public class MatchingDataAttestationGroupV2 {
     }
 
     private Iterator<PooledAttestation> getRemainingAttestations() {
-      return timeLimitingIterator(
-          candidatesStreamSupplier
-              .get()
-              .filter(candidate -> !includedValidators.isSuperSetOf(candidate.bits()))
-              .iterator(),
-          timeLimitNanos,
-          nanosSupplier,
-          // let's log timelimit reached only on the outer iterator
-          __ -> {});
+      // We cant use timeLimitingIterator because we can call hasNext()
+      // multiple times and we need to be consistent otherwise we may end up
+      // calling with AggregateAttestationBuilder.buildAggregate()
+      // without any previous aggregate(candidate) call, which breaks the class.
+      // Thus, we must handle timeout in next() method directly
+      return candidatesStreamSupplier
+          .get()
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.bits()))
+          .iterator();
     }
   }
 
