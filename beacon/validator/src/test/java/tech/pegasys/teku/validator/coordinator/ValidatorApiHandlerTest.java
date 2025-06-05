@@ -1225,7 +1225,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void shouldNotReportPerformanceWhenAttestationIsIgnored() {
+  public void shouldReportPerformanceWhenAttestationIsIgnored() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.addAttestation(any(), any()))
         .thenReturn(completedFuture(InternalValidationResult.IGNORE));
@@ -1233,8 +1233,22 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSignedAttestations(List.of(attestation));
     verify(attestationManager)
         .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty());
-    verifyNoInteractions(performanceTracker);
-    verifyNoInteractions(dutyMetrics);
+    verify(performanceTracker).saveProducedAttestation(attestation);
+    verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
+    assertThat(result).isCompletedWithValue(emptyList());
+  }
+
+  @Test
+  public void shouldReportPerformanceWhenAttestationIsSavedForTheFuture() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(any(), any()))
+        .thenReturn(completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    verify(attestationManager)
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty());
+    verify(performanceTracker).saveProducedAttestation(attestation);
+    verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
     assertThat(result).isCompletedWithValue(emptyList());
   }
 

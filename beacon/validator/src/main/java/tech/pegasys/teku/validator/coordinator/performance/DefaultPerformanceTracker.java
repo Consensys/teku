@@ -43,14 +43,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -431,15 +436,46 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void saveProducedAttestation(final Attestation attestation) {
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public SafeFuture<Void> saveProducedAttestation(final Attestation attestation) {
     if (attestation.isSingleAttestation()) {
-      LOG.debug("Single attestation is not supported. AttestationData: {}", attestation.getData());
-      return;
+      final SingleAttestation singleAttestation = attestation.toSingleAttestationRequired();
+      return combinedChainDataClient
+          .getStateAtSlotExact(singleAttestation.getData().getSlot())
+          .thenAccept(
+              maybeState -> {
+                if (maybeState.isEmpty()) {
+                  LOG.debug(
+                      "State unavailable to convert Single attestation. AttestationData: {}",
+                      attestation.getData());
+                } else {
+                  final BeaconState state = maybeState.get();
+                  final SszBitlist singleAttestationAggregationBits =
+                      getSingleAttestationAggregationBits(state, singleAttestation);
+                  final Attestation convertedAttestation =
+                      convertSingleAttestationToAggregated(
+                          singleAttestation, singleAttestationAggregationBits);
+                  addAttestationToEpoch(convertedAttestation);
+                }
+              })
+          .exceptionally(
+              throwable -> {
+                LOG.warn(
+                    "Unable to convert SingleAttestation. AttestationData: {}",
+                    singleAttestation.getData(),
+                    throwable);
+                return null;
+              });
+    } else {
+      return SafeFuture.fromRunnable(() -> addAttestationToEpoch(attestation));
     }
-    final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
+  }
+
+  private void addAttestationToEpoch(final Attestation convertedAttestation) {
+    final UInt64 epoch = spec.computeEpochAtSlot(convertedAttestation.getData().getSlot());
     final Set<Attestation> attestationsInEpoch =
         producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    attestationsInEpoch.add(attestation);
+    attestationsInEpoch.add(convertedAttestation);
   }
 
   @Override
@@ -469,6 +505,53 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @Override
   public void saveProducedSyncCommitteeMessage(final SyncCommitteeMessage message) {
     syncCommitteePerformanceTracker.saveProducedSyncCommitteeMessage(message);
+  }
+
+  public SszBitlist getSingleAttestationAggregationBits(
+      final BeaconState state, final SingleAttestation singleAttestation) {
+    final SpecVersion specVersion = spec.atSlot(singleAttestation.getData().getSlot());
+    final IntList committee =
+        specVersion
+            .beaconStateAccessors()
+            .getBeaconCommittee(
+                state,
+                singleAttestation.getData().getSlot(),
+                singleAttestation.getFirstCommitteeIndex());
+
+    final int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
+    final int validatorCommitteeBit = committee.indexOf(validatorIndex);
+
+    checkArgument(
+        validatorCommitteeBit >= 0,
+        "Validator index %s is not part of the committee %s",
+        validatorIndex,
+        singleAttestation.getFirstCommitteeIndex());
+
+    return SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+        .toVersionElectra()
+        .orElseThrow()
+        .getAttestationSchema()
+        .createAggregationBitsOf(committee.size(), validatorCommitteeBit);
+  }
+
+  public Attestation convertSingleAttestationToAggregated(
+      final SingleAttestation singleAttestation,
+      final SszBitlist singleAttestationAggregationBits) {
+    final AttestationElectraSchema attestationElectraSchema =
+        spec.atSlot(singleAttestation.getData().getSlot())
+            .getSchemaDefinitions()
+            .getAttestationSchema()
+            .toVersionElectra()
+            .orElseThrow();
+
+    return attestationElectraSchema.create(
+        singleAttestationAggregationBits,
+        singleAttestation.getData(),
+        singleAttestation.getAggregateSignature(),
+        attestationElectraSchema
+            .getCommitteeBitsSchema()
+            .orElseThrow()
+            .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
   }
 
   static long getPercentage(final long numerator, final long denominator) {

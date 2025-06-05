@@ -580,6 +580,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     final ValidatableAttestation validatableAttestation =
         ValidatableAttestation.fromValidator(spec, attestation);
@@ -587,14 +588,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .addAttestation(validatableAttestation, Optional.empty())
         .thenPeek(
             result -> {
-              if (!result.isNotProcessable()) {
+              if (!result.isReject()) {
                 // When saving the attestation in performance tracker, we want to make sure we save
                 // the converted attestation.
                 // The conversion happens during processing and is saved in the validatable
                 // attestation.
                 // In some cases we could still have a non-converted SingleAttestation with a
-                // SAVE_FOR_FUTURE validation result (i.e. SingleAttestation received in a multi BNs
-                // setup). It will be ignored by the PerformanceTracker
+                // SAVE_FOR_FUTURE or IGNORE validation result. It will be converted by the
+                // PerformanceTracker
                 final Attestation convertedAttestation = validatableAttestation.getAttestation();
                 dutyMetrics.onAttestationPublished(convertedAttestation.getData().getSlot());
                 performanceTracker.saveProducedAttestation(convertedAttestation);
