@@ -324,11 +324,8 @@ public abstract class AttestationUtil {
       performSlotInclusionGossipValidation(
           Attestation attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
 
-  public abstract SszBitlist getSingleAttestationAggregationBits(
-      final BeaconState state, final SingleAttestation singleAttestation);
-
   public abstract Attestation convertSingleAttestationToAggregated(
-      final SingleAttestation singleAttestation, final SszBitlist singleAttestationAggregationBits);
+      final BeaconState state, final SingleAttestation singleAttestation);
 
   public enum SlotInclusionGossipValidationResult {
     IGNORE,

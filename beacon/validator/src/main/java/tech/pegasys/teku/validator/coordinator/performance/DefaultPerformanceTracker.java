@@ -43,7 +43,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -383,10 +382,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       final SingleAttestation singleAttestation = attestation.toSingleAttestationRequired();
       final AttestationUtil attestationUtil =
           spec.atSlot(singleAttestation.getData().getSlot()).getAttestationUtil();
-      final SszBitlist singleAttestationAggregationBits =
-          attestationUtil.getSingleAttestationAggregationBits(state, singleAttestation);
-      return attestationUtil.convertSingleAttestationToAggregated(
-          singleAttestation, singleAttestationAggregationBits);
+      return attestationUtil.convertSingleAttestationToAggregated(state, singleAttestation);
     }
     return attestation;
   }

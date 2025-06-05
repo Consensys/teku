@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -65,15 +64,8 @@ public class AttestationUtilPhase0 extends AttestationUtil {
   }
 
   @Override
-  public SszBitlist getSingleAttestationAggregationBits(
-      final BeaconState state, final SingleAttestation singleAttestation) {
-    throw new UnsupportedOperationException("No Single Attestations before Electra");
-  }
-
-  @Override
   public Attestation convertSingleAttestationToAggregated(
-      final SingleAttestation singleAttestation,
-      final SszBitlist singleAttestationAggregationBits) {
+      final BeaconState state, final SingleAttestation singleAttestation) {
     throw new UnsupportedOperationException("No Single Attestations before Electra");
   }
 
