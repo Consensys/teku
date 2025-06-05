@@ -50,7 +50,6 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
@@ -628,33 +627,28 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       final Bytes32 epochSeed,
       final IntList activeValidatorIndices) {
     final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
-    final int slotsPerEpoch = specConfigFulu.getSlotsPerEpoch();
-    final List<Bytes32> seeds =
-        IntStream.range(0, slotsPerEpoch)
-            .mapToObj(
-                i -> {
-                  return Hash.sha256(
+    return IntStream.range(0, specConfigFulu.getSlotsPerEpoch())
+        .mapToObj(
+            i -> {
+              final Bytes32 seed =
+                  Hash.sha256(
                       Bytes.concat(
                           epochSeed.toArray(), uint64ToBytes(startSlot.plus(i)).toArray()));
-                })
-            .toList();
-    return seeds.stream()
-        .map(seed -> computeProposerIndex(state, activeValidatorIndices, seed))
+              return computeProposerIndex(state, activeValidatorIndices, seed);
+            })
         .toList();
   }
 
   // initialize_proposer_lookahead
   public List<UInt64> initializeProposerLookahead(
       final BeaconStateElectra state, final BeaconStateAccessorsFulu beaconAccessors) {
-    final int minLookaheadSeed = specConfigFulu.getMinSeedLookahead();
     final UInt64 currentEpoch = computeEpochAtSlot(state.getSlot());
-    List<Integer> proposerIndexes = new ArrayList<>();
-    for (int i = 0; i <= minLookaheadSeed; i++) {
-      UInt64 epoch = currentEpoch.plus(i);
-      Bytes32 seed = beaconAccessors.getSeed(state, epoch, Domain.BEACON_PROPOSER);
-      IntList activeValidatorIndices = beaconAccessors.getActiveValidatorIndices(state, epoch);
-      proposerIndexes.addAll(computeProposerIndices(state, epoch, seed, activeValidatorIndices));
-    }
-    return proposerIndexes.stream().map(UInt64::valueOf).collect(Collectors.toList());
+    return IntStream.rangeClosed(0, specConfigFulu.getMinSeedLookahead())
+        .flatMap(
+            i ->
+                beaconAccessors.getBeaconProposerIndices(state, currentEpoch.plus(i)).stream()
+                    .mapToInt(Integer::intValue))
+        .mapToObj(UInt64::valueOf)
+        .toList();
   }
 }
