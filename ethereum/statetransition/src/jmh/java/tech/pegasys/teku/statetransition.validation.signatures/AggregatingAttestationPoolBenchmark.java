@@ -43,7 +43,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -158,13 +157,10 @@ public class AggregatingAttestationPoolBenchmark {
                 var validatableAttestation = ValidatableAttestation.from(SPEC, attestation);
 
                 if (attestation.isSingleAttestation()) {
-                  final SszBitlist singleAttestationAggregationBits =
-                      attestationUtil.getSingleAttestationAggregationBits(
-                          state, (SingleAttestation) attestation);
 
                   final Attestation convertedAttestation =
                       attestationUtil.convertSingleAttestationToAggregated(
-                          (SingleAttestation) attestation, singleAttestationAggregationBits);
+                          state, (SingleAttestation) attestation);
 
                   validatableAttestation.convertToAggregatedFormatFromSingleAttestation(
                       convertedAttestation);
