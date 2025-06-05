@@ -155,8 +155,8 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         .thenReturn(
             0L, // first call to get now
             1_000_000L, // 1 ms, first aggregation time check (outer iterator)
-            1_500_000L, // 1.5 ms, second aggregation time check (inner iterator)
-            3_000_000L // 3 ms, third aggregation time (outer iterator) - this is the limit
+            1_500_000L, // 1.5 ms, first aggregation time check (inner iterator)
+            3_000_000L // 3 ms, second aggregation time (outer iterator) - this is the limit
             );
 
     final int maxBlockAggregationTimeMillis = 2; // less than 3 ms
