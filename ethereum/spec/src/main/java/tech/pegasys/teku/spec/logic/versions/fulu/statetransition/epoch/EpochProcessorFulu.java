@@ -85,16 +85,12 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
             .map(UInt64::valueOf)
             .toList();
 
-    final List<UInt64> proposerIndices = new ArrayList<>(proposerIndicesToShiftOut);
-    proposerIndices.addAll(lastEpochProposerIndices);
+    final List<UInt64> proposerLookahead = new ArrayList<>(proposerIndicesToShiftOut);
+    proposerLookahead.addAll(lastEpochProposerIndices);
 
-    final SszUInt64Vector proposerLookaheadList =
-        proposerIndices.stream()
-            .collect(
-                BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
-                    .getProposerLookaheadSchema()
-                    .collectorUnboxed());
-
-    stateFulu.setProposerLookahead(proposerLookaheadList);
+    stateFulu.setProposerLookahead(
+        BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
+            .getProposerLookaheadSchema()
+            .of(proposerLookahead));
   }
 }
