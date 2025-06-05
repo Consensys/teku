@@ -50,8 +50,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(SszGenericTests.SSZ_GENERIC_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
-          // TODO: remove
-          .put("sanity/effective_balance_increase_changes_lookahead", TestExecutor.IGNORE_TESTS)
           .put("slashing-protection-interchange", new SlashingProtectionInterchangeTestExecutor())
           .put("light_client/single_merkle_proof", TestExecutor.IGNORE_TESTS)
           .put("light_client/sync", TestExecutor.IGNORE_TESTS)
