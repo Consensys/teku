@@ -301,6 +301,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   "Data column sidecars recovery finished for block: {}",
                   block.getSlotAndBlockRoot());
             })
+        .alwaysRun(timer.closeUnchecked())
         .ifExceptionGetsHereRaiseABug();
   }
 
