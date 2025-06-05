@@ -979,8 +979,7 @@ public class Spec {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
 
-    // once blob schedule is fully defined back to deneb,
-    // this function will just be able to query the blob_schedule
+    // query the blob_schedule after FULU
     if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
       return forMilestone(FULU)
           .miscHelpers()
