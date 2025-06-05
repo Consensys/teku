@@ -47,7 +47,7 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.spec.config.BlobSchedule;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -100,7 +100,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   @SuppressWarnings("unused")
   private final SchemaDefinitionsFulu schemaDefinitions;
 
-  private final List<BlobSchedule> blobSchedule;
+  private final List<BlobScheduleEntry> blobSchedule;
 
   public MiscHelpersFulu(
       final SpecConfigFulu specConfigFulu,
@@ -115,7 +115,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.schemaDefinitions = SchemaDefinitionsFulu.required(schemaDefinitions);
     this.blobSchedule =
         specConfigFulu.getBlobSchedule().stream()
-            .sorted(Comparator.comparing(BlobSchedule::epoch))
+            .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
             .toList();
   }
 
@@ -128,14 +128,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public int getMaxBlobsPerBlock(final UInt64 epoch) {
     checkArgument(!blobSchedule.isEmpty(), "Blob schedule not correctly defined.");
 
-    final Optional<BlobSchedule> maybeSchedule =
+    final Optional<BlobScheduleEntry> maybeSchedule =
         blobSchedule.stream()
             .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
-            .max(Comparator.comparing(BlobSchedule::epoch));
+            .max(Comparator.comparing(BlobScheduleEntry::epoch));
 
     final int maxBlobs =
         maybeSchedule
-            .map(BlobSchedule::maxBlobsPerBlock)
+            .map(BlobScheduleEntry::maxBlobsPerBlock)
             .orElseGet(() -> blobSchedule.getFirst().maxBlobsPerBlock());
     LOG.debug("Max blobs at epoch {} found to be {}", epoch, maxBlobs);
     return maxBlobs;
@@ -144,8 +144,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public int getHighestMaxBlobsPerBlockFromSchedule() {
     checkArgument(!blobSchedule.isEmpty(), "Blob schedule not correctly defined.");
     return blobSchedule.stream()
-        .max(Comparator.comparing(BlobSchedule::maxBlobsPerBlock))
-        .map(BlobSchedule::maxBlobsPerBlock)
+        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
+        .map(BlobScheduleEntry::maxBlobsPerBlock)
         .orElseGet(() -> blobSchedule.getLast().maxBlobsPerBlock());
   }
 
