@@ -186,6 +186,24 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
   @Override
   public Attestation convertSingleAttestationToAggregated(
       final BeaconState state, final SingleAttestation singleAttestation) {
+    final AttestationElectraSchema attestationElectraSchema =
+        schemaDefinitions.getAttestationSchema().toVersionElectra().orElseThrow();
+    final SszBitlist singleAttestationAggregationBits =
+        getSingleAttestationAggregationBits(state, singleAttestation, attestationElectraSchema);
+    return attestationElectraSchema.create(
+        singleAttestationAggregationBits,
+        singleAttestation.getData(),
+        singleAttestation.getAggregateSignature(),
+        attestationElectraSchema
+            .getCommitteeBitsSchema()
+            .orElseThrow()
+            .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
+  }
+
+  private SszBitlist getSingleAttestationAggregationBits(
+      final BeaconState state,
+      final SingleAttestation singleAttestation,
+      final AttestationElectraSchema attestationElectraSchema) {
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(
             state,
@@ -201,20 +219,8 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         validatorIndex,
         singleAttestation.getFirstCommitteeIndex());
 
-    final AttestationElectraSchema attestationElectraSchema =
-        schemaDefinitions.getAttestationSchema().toVersionElectra().orElseThrow();
-
-    final SszBitlist singleAttestationAggregationBits =
-        attestationElectraSchema.createAggregationBitsOf(committee.size(), validatorCommitteeBit);
-
-    return attestationElectraSchema.create(
-        singleAttestationAggregationBits,
-        singleAttestation.getData(),
-        singleAttestation.getAggregateSignature(),
-        attestationElectraSchema
-            .getCommitteeBitsSchema()
-            .orElseThrow()
-            .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
+    return attestationElectraSchema.createAggregationBitsOf(
+        committee.size(), validatorCommitteeBit);
   }
 
   private SafeFuture<AttestationProcessingResult> validateSingleAttestationSignature(
