@@ -205,7 +205,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final TestDefinition testDefinition, final BeaconState result)
       throws SlotProcessingException, EpochProcessingException {
     final Spec spec = testDefinition.getSpec();
-    if(shouldSkipProgressiveBalancesVerification(spec, result)) {
+    if (shouldSkipProgressiveBalancesVerification(spec, result)) {
       // Skip verification if progressive balances are not used
       return;
     }
@@ -217,13 +217,17 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     assertTotalBalances(spec, nextEpochState);
   }
 
-  private boolean shouldSkipProgressiveBalancesVerification(final Spec spec, final BeaconState state) {
-    if(spec.atSlot(state.getSlot()).getMilestone() == SpecMilestone.PHASE0) {
+  private boolean shouldSkipProgressiveBalancesVerification(
+      final Spec spec, final BeaconState state) {
+    if (spec.atSlot(state.getSlot()).getMilestone() == SpecMilestone.PHASE0) {
       // Progressive balances not used in Phase0
       return true;
     }
 
-    if(spec.atSlot(state.getSlot()).beaconStateAccessors().getActiveValidatorIndices(state, spec.getCurrentEpoch(state)).isEmpty()) {
+    if (spec.atSlot(state.getSlot())
+        .beaconStateAccessors()
+        .getActiveValidatorIndices(state, spec.getCurrentEpoch(state))
+        .isEmpty()) {
       // No active validators, we can't check, epoch transition will break
       return true;
     }
