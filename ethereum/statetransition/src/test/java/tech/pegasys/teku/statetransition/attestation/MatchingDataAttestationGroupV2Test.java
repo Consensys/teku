@@ -502,9 +502,9 @@ class MatchingDataAttestationGroupV2Test {
     final PooledAttestation initialAgg = addPooledAttestation(Optional.of(0), 1, 2);
     final PooledAttestationWithData initial = toPooledAttestationWithData(initialAgg);
 
-    when(nanoSupplier.getAsLong())
-        .thenReturn(timeLimitNanos - 10) // first Aggregation attempt on time
-        .thenReturn(timeLimitNanos + 10); // second Aggregation after time limit
+    // the first fillup is immediately done, only the second is subject to time limit,
+    // so setup the time to be in the future from the beginning
+    when(nanoSupplier.getAsLong()).thenReturn(timeLimitNanos + 10);
 
     final PooledAttestationWithData result = group.fillUpAggregation(initial, timeLimitNanos);
 
