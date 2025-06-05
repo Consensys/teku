@@ -148,23 +148,22 @@ public class GenesisGenerator {
       keyCache.values().intStream().forEach(this::processActivation);
     }
 
+    // Process proposer lookahead
     if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
 
       final SchemaDefinitionsFulu schemaDefinitionsFulu =
           SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
 
-      final Collection<UInt64> proposerLookahead =
+      final List<UInt64> proposerLookahead =
           IntStream.range(0, (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())
               .mapToObj(__ -> UInt64.valueOf(0))
-              .collect(Collectors.toCollection(ArrayList::new));
+              .toList();
 
       MutableBeaconStateFulu.required(state)
           .setProposerLookahead(
-              proposerLookahead.stream()
-                  .collect(
-                      BeaconStateSchemaFulu.required(schemaDefinitionsFulu.getBeaconStateSchema())
-                          .getProposerLookaheadSchema()
-                          .collectorUnboxed()));
+              BeaconStateSchemaFulu.required(schemaDefinitionsFulu.getBeaconStateSchema())
+                  .getProposerLookaheadSchema()
+                  .of(proposerLookahead));
     }
   }
 
