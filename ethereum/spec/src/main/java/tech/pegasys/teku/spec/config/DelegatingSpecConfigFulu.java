@@ -54,7 +54,7 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   }
 
   @Override
-  public List<BlobSchedule> getBlobSchedule() {
+  public List<BlobScheduleEntry> getBlobSchedule() {
     return delegate.getBlobSchedule();
   }
 
