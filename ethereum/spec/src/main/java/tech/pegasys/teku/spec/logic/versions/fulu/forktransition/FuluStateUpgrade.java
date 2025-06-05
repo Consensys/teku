@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.forktransition;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
