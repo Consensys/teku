@@ -46,16 +46,14 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -330,28 +328,29 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     for (final Attestation sentAttestation : producedAttestations) {
-      final Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
-      final UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
-      if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
+      final Attestation attestation = convertSingleAttestation(state, sentAttestation);
+      final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
+      final UInt64 attestationSlot = attestation.getData().getSlot();
+      if (!slotAndBitlistsByAttestationDataHash.containsKey(attestationDataHash)) {
         continue;
       }
       final NavigableMap<UInt64, AttestationBits> slotAndBitlists =
-          slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
+          slotAndBitlistsByAttestationDataHash.get(attestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
-        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation)) {
-          inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
+        if (slotAndBitlists.get(slot).isSuperSetOf(attestation)) {
+          inclusionDistances.add(slot.minus(attestationSlot).intValue());
           break;
         }
       }
 
       // Check if the attestation had correct target
-      final Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
+      final Bytes32 attestationTargetRoot = attestation.getData().getTarget().getRoot();
       if (attestationTargetRoot.equals(spec.getBlockRoot(state, analyzedEpoch))) {
         correctTargetCount++;
 
         // Check if the attestation had correct head block root
-        final Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeaconBlockRoot();
-        if (attestationHeadBlockRoot.equals(spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
+        final Bytes32 attestationHeadBlockRoot = attestation.getData().getBeaconBlockRoot();
+        if (attestationHeadBlockRoot.equals(spec.getBlockRootAtSlot(state, attestationSlot))) {
           correctHeadBlockCount++;
         }
       }
@@ -376,6 +375,20 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             correctHeadBlockCount)
         : AttestationPerformance.empty(
             analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
+  }
+
+  private Attestation convertSingleAttestation(
+      final BeaconState state, final Attestation attestation) {
+    if (attestation.isSingleAttestation()) {
+      final SingleAttestation singleAttestation = attestation.toSingleAttestationRequired();
+      final AttestationUtil attestationUtil =
+          spec.atSlot(singleAttestation.getData().getSlot()).getAttestationUtil();
+      final SszBitlist singleAttestationAggregationBits =
+          attestationUtil.getSingleAttestationAggregationBits(state, singleAttestation);
+      return attestationUtil.convertSingleAttestationToAggregated(
+          singleAttestation, singleAttestationAggregationBits);
+    }
+    return attestation;
   }
 
   private Optional<Int2IntMap> getCommitteesSize(
@@ -438,44 +451,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public void saveProducedAttestation(final Attestation attestation) {
-    if (attestation.isSingleAttestation()) {
-      final SingleAttestation singleAttestation = attestation.toSingleAttestationRequired();
-      combinedChainDataClient
-          .getStateAtSlotExact(singleAttestation.getData().getSlot())
-          .thenAccept(
-              maybeState -> {
-                if (maybeState.isEmpty()) {
-                  LOG.debug(
-                      "State unavailable to convert Single attestation. AttestationData: {}",
-                      attestation.getData());
-                } else {
-                  final BeaconState state = maybeState.get();
-                  final SszBitlist singleAttestationAggregationBits =
-                      getSingleAttestationAggregationBits(state, singleAttestation);
-                  final Attestation convertedAttestation =
-                      convertSingleAttestationToAggregated(
-                          singleAttestation, singleAttestationAggregationBits);
-                  addAttestationToEpoch(convertedAttestation);
-                }
-              })
-          .exceptionally(
-              throwable -> {
-                LOG.warn(
-                    "Unable to convert SingleAttestation. AttestationData: {}",
-                    singleAttestation.getData(),
-                    throwable);
-                return null;
-              });
-    } else {
-      addAttestationToEpoch(attestation);
-    }
-  }
-
-  private void addAttestationToEpoch(final Attestation convertedAttestation) {
-    final UInt64 epoch = spec.computeEpochAtSlot(convertedAttestation.getData().getSlot());
+    final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
     final Set<Attestation> attestationsInEpoch =
         producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    attestationsInEpoch.add(convertedAttestation);
+    attestationsInEpoch.add(attestation);
   }
 
   @Override
@@ -505,53 +484,6 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @Override
   public void saveProducedSyncCommitteeMessage(final SyncCommitteeMessage message) {
     syncCommitteePerformanceTracker.saveProducedSyncCommitteeMessage(message);
-  }
-
-  public SszBitlist getSingleAttestationAggregationBits(
-      final BeaconState state, final SingleAttestation singleAttestation) {
-    final SpecVersion specVersion = spec.atSlot(singleAttestation.getData().getSlot());
-    final IntList committee =
-        specVersion
-            .beaconStateAccessors()
-            .getBeaconCommittee(
-                state,
-                singleAttestation.getData().getSlot(),
-                singleAttestation.getFirstCommitteeIndex());
-
-    final int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
-    final int validatorCommitteeBit = committee.indexOf(validatorIndex);
-
-    checkArgument(
-        validatorCommitteeBit >= 0,
-        "Validator index %s is not part of the committee %s",
-        validatorIndex,
-        singleAttestation.getFirstCommitteeIndex());
-
-    return SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
-        .toVersionElectra()
-        .orElseThrow()
-        .getAttestationSchema()
-        .createAggregationBitsOf(committee.size(), validatorCommitteeBit);
-  }
-
-  public Attestation convertSingleAttestationToAggregated(
-      final SingleAttestation singleAttestation,
-      final SszBitlist singleAttestationAggregationBits) {
-    final AttestationElectraSchema attestationElectraSchema =
-        spec.atSlot(singleAttestation.getData().getSlot())
-            .getSchemaDefinitions()
-            .getAttestationSchema()
-            .toVersionElectra()
-            .orElseThrow();
-
-    return attestationElectraSchema.create(
-        singleAttestationAggregationBits,
-        singleAttestation.getData(),
-        singleAttestation.getAggregateSignature(),
-        attestationElectraSchema
-            .getCommitteeBitsSchema()
-            .orElseThrow()
-            .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
   }
 
   static long getPercentage(final long numerator, final long denominator) {

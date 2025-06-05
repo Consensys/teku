@@ -187,6 +187,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             });
   }
 
+  @Override
   public Attestation convertSingleAttestationToAggregated(
       final SingleAttestation singleAttestation,
       final SszBitlist singleAttestationAggregationBits) {
@@ -226,6 +227,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         signatureVerifier);
   }
 
+  @Override
   public SszBitlist getSingleAttestationAggregationBits(
       final BeaconState state, final SingleAttestation singleAttestation) {
     final IntList committee =
