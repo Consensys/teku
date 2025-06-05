@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch;
 
 import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
