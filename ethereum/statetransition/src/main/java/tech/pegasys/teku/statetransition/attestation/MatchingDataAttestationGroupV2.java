@@ -32,7 +32,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
-import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -47,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
-import tech.pegasys.teku.statetransition.attestation.utils.TimeLimitingIterator;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -143,19 +141,25 @@ public class MatchingDataAttestationGroupV2 {
       return attestation;
     }
 
+    final BooleanSupplier timeLimitReachedChecker =
+        createTimeLimitChecker(nanosSupplier, timeLimitNanos);
+
     final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(true);
 
     builder.aggregate(attestation.pooledAttestation());
 
     final Iterator<PooledAttestation> singleAttestationTimeLimitedIterator =
-        timeLimitingIterator(
-            singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream).iterator(),
-            timeLimitNanos,
-            nanosSupplier,
-            __ -> LOG.info("Time limit reached, while fillingUp single attestation"));
+        singleAttestationsByCommitteeIndex.values().stream().flatMap(Set::stream).iterator();
 
     while (singleAttestationTimeLimitedIterator.hasNext()) {
       builder.aggregate(singleAttestationTimeLimitedIterator.next());
+
+      if (timeLimitReachedChecker.getAsBoolean()) {
+        // we want at least one candidate to be aggregated
+        // If we hit the time limit, stop aggregating
+        LOG.info("Time limit reached, while fillingUp single attestation");
+        break;
+      }
     }
 
     return new PooledAttestationWithData(attestationData, builder.buildAggregate());
@@ -500,11 +504,7 @@ public class MatchingDataAttestationGroupV2 {
         final LongSupplier nanosSupplier,
         final AttestationBits includedValidatorsCopy,
         final Supplier<Stream<PooledAttestation>> candidatesStreamSupplier) {
-      if (timeLimitNanos == Long.MAX_VALUE) {
-        timeLimitReachedChecker = () -> false;
-      } else {
-        timeLimitReachedChecker = () -> nanosSupplier.getAsLong() > timeLimitNanos;
-      }
+      this.timeLimitReachedChecker = createTimeLimitChecker(nanosSupplier, timeLimitNanos);
       this.candidatesStreamSupplier = candidatesStreamSupplier;
       this.includedValidators = includedValidatorsCopy;
       this.remainingAttestations = getRemainingAttestations();
@@ -544,11 +544,6 @@ public class MatchingDataAttestationGroupV2 {
     }
 
     private Iterator<PooledAttestation> getRemainingAttestations() {
-      // We cant use timeLimitingIterator because we can call hasNext()
-      // multiple times and we need to be consistent otherwise we may end up
-      // calling with AggregateAttestationBuilder.buildAggregate()
-      // without any previous aggregate(candidate) call, which breaks the class.
-      // Thus, we must handle timeout in next() method directly
       return candidatesStreamSupplier
           .get()
           .filter(candidate -> !includedValidators.isSuperSetOf(candidate.bits()))
@@ -556,16 +551,11 @@ public class MatchingDataAttestationGroupV2 {
     }
   }
 
-  private static Iterator<PooledAttestation> timeLimitingIterator(
-      final Iterator<PooledAttestation> iterator,
-      final long timeLimitNanos,
-      final LongSupplier nanosSupplier,
-      final LongConsumer onTimeLimit) {
-
+  private static BooleanSupplier createTimeLimitChecker(
+      final LongSupplier nanosSupplier, final long timeLimitNanos) {
     if (timeLimitNanos == Long.MAX_VALUE) {
-      return iterator;
+      return () -> false;
     }
-
-    return new TimeLimitingIterator<>(nanosSupplier, timeLimitNanos, iterator, onTimeLimit);
+    return () -> nanosSupplier.getAsLong() > timeLimitNanos;
   }
 }
