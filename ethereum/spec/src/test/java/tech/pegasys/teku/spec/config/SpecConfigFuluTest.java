@@ -90,16 +90,15 @@ public class SpecConfigFuluTest {
     final SpecConfigAndParent<?> specConfigAndParent =
         SpecConfigLoader.loadConfig(
             "mainnet",
-            b -> {
-              b.fuluBuilder(
-                  fb ->
-                      fb.fuluForkEpoch(fuluEpoch)
-                          .blobSchedule(
-                              List.of(
-                                  new BlobScheduleEntry(UInt64.valueOf(269568), 6),
-                                  new BlobScheduleEntry(UInt64.valueOf(364032), 9),
-                                  new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))));
-            });
+            b ->
+                b.fuluBuilder(
+                    fb ->
+                        fb.fuluForkEpoch(fuluEpoch)
+                            .blobSchedule(
+                                List.of(
+                                    new BlobScheduleEntry(UInt64.valueOf(269568), 6),
+                                    new BlobScheduleEntry(UInt64.valueOf(364032), 9),
+                                    new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock)))));
     final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
 
     // max blobs per block in fulu will start out at the same as electra
@@ -110,7 +109,23 @@ public class SpecConfigFuluTest {
                 .toVersionFulu()
                 .orElseThrow()
                 .getMaxBlobsPerBlock(fuluEpoch))
-        .isEqualTo(9);
+        .isEqualTo(maxBlobsPerBlock);
+  }
+
+  @Test
+  public void maxBlobsFuluEpochDefaultsToMaxBlobsPerBlockElectraWhenBlobScheduleIsNotConfigured() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final SpecConfigAndParent<?> specConfigAndParent =
+        SpecConfigLoader.loadConfig(
+            "mainnet",
+            b -> b.fuluBuilder(fb -> fb.fuluForkEpoch(fuluEpoch).blobSchedule(List.of())));
+    final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
+
+    // max blobs per block will default to MAX_BLOBS_PER_BLOCK_ELECTRA if blob schedule is empty
+    assertThat(
+            MiscHelpersFulu.required(fuluSpec.forMilestone(SpecMilestone.FULU).miscHelpers())
+                .getMaxBlobsPerBlock(fuluEpoch))
+        .isEqualTo(SpecConfigFulu.required(fuluSpec.getSpecConfig(fuluEpoch)).getMaxBlobsPerBlock());
   }
 
   @Test
@@ -134,22 +149,36 @@ public class SpecConfigFuluTest {
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
+  // always default to MAX_BLOBS_PER_BLOCK_ELECTRA
   @Test
   public void mainnetBlobSchedule() {
     final Spec mainnetSpec = TestSpecFactory.createMainnetFulu();
     final MiscHelpersFulu miscHelpersFulu =
         mainnetSpec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+    final int maxBlobsPerBlockElectra =
+        mainnetSpec
+            .forMilestone(SpecMilestone.ELECTRA)
+            .getConfig()
+            .toVersionElectra()
+            .orElseThrow()
+            .getMaxBlobsPerBlock();
     // test defaulting to minimum
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(0))).isEqualTo(6);
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(0)))
+        .isEqualTo(maxBlobsPerBlockElectra);
     // test deneb max blobs boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269568))).isEqualTo(6);
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269569))).isEqualTo(6);
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269568)))
+        .isEqualTo(maxBlobsPerBlockElectra);
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269569)))
+        .isEqualTo(maxBlobsPerBlockElectra);
     // last epoch of deneb
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364031))).isEqualTo(6);
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364031)))
+        .isEqualTo(maxBlobsPerBlockElectra);
     // electra boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364032))).isEqualTo(9);
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364032)))
+        .isEqualTo(maxBlobsPerBlockElectra);
     // inside electra
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033))).isEqualTo(9);
+    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033)))
+        .isEqualTo(maxBlobsPerBlockElectra);
   }
 
   private SpecConfigFulu createRandomFuluConfig(
