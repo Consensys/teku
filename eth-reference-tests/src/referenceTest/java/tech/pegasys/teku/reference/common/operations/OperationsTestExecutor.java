@@ -210,8 +210,12 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     }
     final Spec spec = testDefinition.getSpec();
     assertTotalBalances(spec, result);
-    final UInt64 firstSlotOfNextEpoch =
-        spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(result.getSlot()).plus(1));
+    final UInt64 nextEpoch = spec.computeEpochAtSlot(result.getSlot()).plus(1);
+    if (spec.getActiveValidatorIndices(result, nextEpoch).isEmpty()) {
+      // No need to verify progressive balances for next epoch if no active validators
+      return;
+    }
+    final UInt64 firstSlotOfNextEpoch = spec.computeStartSlotAtEpoch(nextEpoch);
     final BeaconState nextEpochState = spec.processSlots(result, firstSlotOfNextEpoch);
     assertTotalBalances(spec, nextEpochState);
   }
