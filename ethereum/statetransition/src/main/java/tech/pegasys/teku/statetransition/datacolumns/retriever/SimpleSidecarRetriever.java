@@ -137,6 +137,7 @@ public class SimpleSidecarRetriever
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()
         .filter(entry -> entry.getValue().activeRpcRequest == null)
+        .sorted(Comparator.comparing(entry -> entry.getKey().slot()))
         .flatMap(
             entry -> {
               RetrieveRequest request = entry.getValue();
@@ -191,8 +192,7 @@ public class SimpleSidecarRetriever
     final List<RequestMatch> matches = matchRequestsAndPeers();
     for (final RequestMatch match : matches) {
       final SafeFuture<DataColumnSidecar> reqRespPromise =
-          reqResp.requestDataColumnSidecar(
-              match.peer.nodeId, match.request.columnId.toDataColumnIdentifier());
+          reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
       match.request().onPeerRequest(match.peer().nodeId);
       match.request.activeRpcRequest =
           new ActiveRequest(
