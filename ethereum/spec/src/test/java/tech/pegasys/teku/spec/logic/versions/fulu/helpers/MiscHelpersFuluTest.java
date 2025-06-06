@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -75,13 +75,15 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
                           .samplesPerSlot(16)));
   private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConfig();
   private final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
-  private final SchemaDefinitionsElectra schemaDefinitionsElectra =
-      SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
+  private final SchemaDefinitionsFulu schemaDefinitionsFulu =
+      SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
   private final MiscHelpersFulu miscHelpersFulu =
       new MiscHelpersFulu(
           spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
           predicates,
-          schemaDefinitionsElectra);
+          schemaDefinitionsFulu);
+  final BeaconStateAccessorsFulu beaconStateAccessors =
+      new BeaconStateAccessorsFulu(spec.getGenesisSpecConfig(), predicates, miscHelpersFulu);
 
   @ParameterizedTest(name = "{0} allowed failure(s)")
   @MethodSource("getExtendedSampleCountFixtures")
@@ -162,14 +164,14 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         new MiscHelpersFulu(
             spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             predicatesMock,
-            schemaDefinitionsElectra);
+            schemaDefinitionsFulu);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final DataColumnSidecar dataColumnSidecar =
-        SchemaDefinitionsFulu.required(schemaDefinitionsElectra)
+        SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
             .getDataColumnSidecarSchema()
             .create(
                 UInt64.ZERO,
-                SchemaDefinitionsFulu.required(schemaDefinitionsElectra)
+                SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
                     .getDataColumnSchema()
                     .create(List.of()),
                 List.of(),
@@ -204,19 +206,19 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final Spec specMainnet = TestSpecFactory.createMainnetFulu();
     final PredicatesElectra predicatesMainnet =
         new PredicatesElectra(specMainnet.getGenesisSpecConfig());
-    final SchemaDefinitionsElectra schemaDefinitionsElectraMainnet =
-        SchemaDefinitionsElectra.required(specMainnet.getGenesisSchemaDefinitions());
+    final SchemaDefinitionsFulu schemaDefinitionsFuluMainnet =
+        SchemaDefinitionsFulu.required(specMainnet.getGenesisSchemaDefinitions());
     final MiscHelpersFulu miscHelpersFuluMainnet =
         new MiscHelpersFulu(
             specMainnet.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             predicatesMainnet,
-            schemaDefinitionsElectraMainnet);
+            schemaDefinitionsFuluMainnet);
     final DataColumnSidecar dataColumnSidecar =
-        SchemaDefinitionsFulu.required(schemaDefinitionsElectraMainnet)
+        SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
             .getDataColumnSidecarSchema()
             .create(
                 UInt64.ZERO,
-                SchemaDefinitionsFulu.required(schemaDefinitionsElectraMainnet)
+                SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
                     .getDataColumnSchema()
                     .create(List.of()),
                 List.of(),
@@ -269,6 +271,25 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     assertEquals(
         UInt64.valueOf(expectedValidatorCustodyCount),
         miscHelpersFulu.getValidatorsCustodyRequirement(state, validatorIndicesSet));
+  }
+
+  @Test
+  public void computeProposerIndices_returnsListWithSlotsPerEpochSize() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final UInt64 epoch = UInt64.ONE;
+    final Bytes32 epochSeed = Bytes32.random();
+    final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
+    final List<Integer> activeValidatorIndices = IntStream.range(0, 10).boxed().toList();
+
+    final IntList activeValidatorIndicesIntList =
+        IntList.of(activeValidatorIndices.stream().mapToInt(Integer::intValue).toArray());
+
+    List<Integer> proposerIndices =
+        miscHelpersFulu.computeProposerIndices(
+            state, epoch, epochSeed, activeValidatorIndicesIntList);
+
+    assertThat(proposerIndices).hasSize(slotsPerEpoch);
   }
 
   static Stream<Arguments> getExtendedSampleCountFixtures() throws IOException {
