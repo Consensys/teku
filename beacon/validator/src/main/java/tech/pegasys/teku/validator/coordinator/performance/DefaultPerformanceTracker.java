@@ -49,8 +49,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.statetransition.attestation.utils.AttestationBits;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -325,28 +327,29 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     for (final Attestation sentAttestation : producedAttestations) {
-      final Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
-      final UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
-      if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
+      final Attestation attestation = convertSingleAttestation(state, sentAttestation);
+      final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
+      final UInt64 attestationSlot = attestation.getData().getSlot();
+      if (!slotAndBitlistsByAttestationDataHash.containsKey(attestationDataHash)) {
         continue;
       }
       final NavigableMap<UInt64, AttestationBits> slotAndBitlists =
-          slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
+          slotAndBitlistsByAttestationDataHash.get(attestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
-        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation)) {
-          inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
+        if (slotAndBitlists.get(slot).isSuperSetOf(attestation)) {
+          inclusionDistances.add(slot.minus(attestationSlot).intValue());
           break;
         }
       }
 
       // Check if the attestation had correct target
-      final Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
+      final Bytes32 attestationTargetRoot = attestation.getData().getTarget().getRoot();
       if (attestationTargetRoot.equals(spec.getBlockRoot(state, analyzedEpoch))) {
         correctTargetCount++;
 
         // Check if the attestation had correct head block root
-        final Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeaconBlockRoot();
-        if (attestationHeadBlockRoot.equals(spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
+        final Bytes32 attestationHeadBlockRoot = attestation.getData().getBeaconBlockRoot();
+        if (attestationHeadBlockRoot.equals(spec.getBlockRootAtSlot(state, attestationSlot))) {
           correctHeadBlockCount++;
         }
       }
@@ -371,6 +374,17 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             correctHeadBlockCount)
         : AttestationPerformance.empty(
             analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
+  }
+
+  private Attestation convertSingleAttestation(
+      final BeaconState state, final Attestation attestation) {
+    if (attestation.isSingleAttestation()) {
+      final SingleAttestation singleAttestation = attestation.toSingleAttestationRequired();
+      final AttestationUtil attestationUtil =
+          spec.atSlot(singleAttestation.getData().getSlot()).getAttestationUtil();
+      return attestationUtil.convertSingleAttestationToAggregated(state, singleAttestation);
+    }
+    return attestation;
   }
 
   private Optional<Int2IntMap> getCommitteesSize(
@@ -432,10 +446,6 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void saveProducedAttestation(final Attestation attestation) {
-    if (attestation.isSingleAttestation()) {
-      LOG.warn("Single attestation is not supported");
-      return;
-    }
     final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
     final Set<Attestation> attestationsInEpoch =
         producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
