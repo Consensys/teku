@@ -243,7 +243,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     int sizeForPruningCheck = currentActualSize; // Use the size calculated at the start of onSlot
     while (dataHashBySlot.size() > 1 && sizeForPruningCheck > maximumAttestationCount) {
       LOG.trace(
-          "V2 Attestation cache at {} (pre-prune estimate) exceeds {}. Pruning...",
+          "Attestation cache at {} (pre-prune estimate) exceeds {}. Pruning...",
           sizeForPruningCheck,
           maximumAttestationCount);
       final UInt64 oldestSlot = dataHashBySlot.firstKey();
@@ -291,7 +291,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     }
 
     LOG.trace(
-        "V2 Pruning attestations before slot {}. Slots to remove: {}",
+        "Pruning attestations before slot {}. Slots to remove: {}",
         firstValidAttestationSlot,
         slotsToRemove.size());
 
@@ -408,10 +408,10 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
         false,
         aggregates);
 
-    LOG.info(
+    LOG.debug(
         "Aggregation phase took {} ms. Produced {} aggregations.",
-        (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
-        aggregates.size());
+        () -> (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
+        aggregates::size);
 
     if (aggregationTimeLimit > nanosSupplier.getAsLong()) {
       // we have time left to consider groups containing single attestation only
@@ -425,10 +425,10 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
           true,
           aggregates);
 
-      LOG.info(
+      LOG.debug(
           "Aggregation including SA took {} ms. Final produced {} aggregations.",
-          (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
-          aggregates.size());
+          () -> (nanosSupplier.getAsLong() - nowNanos) / 1_000_000,
+          aggregates::size);
     }
 
     /* -- Sorting phase -- */
@@ -473,8 +473,9 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
             .map(a -> a.getAttestation().toAttestation(attestationSchema))
             .collect(attestationsSchema.collector());
 
-    LOG.info(
-        "getAttestationsForBlock took {} ms.", (nanosSupplier.getAsLong() - nowNanos) / 1_000_000);
+    LOG.debug(
+        "getAttestationsForBlock took {} ms.",
+        () -> (nanosSupplier.getAsLong() - nowNanos) / 1_000_000);
 
     return result;
   }
@@ -508,7 +509,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
   private PooledAttestationWithRewardInfo fillUpAttestation(
       final PooledAttestationWithRewardInfo attestationWithRewards, final long timeLimitNanos) {
     if (nanosSupplier.getAsLong() > timeLimitNanos) {
-      LOG.info("Time limit reached, skipping fillUpAttestation");
+      LOG.debug("Time limit reached, skipping fillUpAttestation");
       return attestationWithRewards;
     }
 
