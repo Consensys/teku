@@ -152,6 +152,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
@@ -384,6 +385,10 @@ public class SchemaRegistryBuilder {
             ELECTRA,
             (registry, specConfig, schemaName) ->
                 BeaconStateSchemaElectra.create(SpecConfigElectra.required(specConfig), registry))
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                BeaconStateSchemaFulu.create(SpecConfigFulu.required(specConfig), registry))
         .build();
   }
 

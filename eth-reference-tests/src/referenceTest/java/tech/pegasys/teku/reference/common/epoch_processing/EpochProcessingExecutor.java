@@ -47,6 +47,7 @@ public class EpochProcessingExecutor {
       case INACTIVITY_UPDATES -> processInactivityUpdates(state);
       case PENDING_DEPOSITS -> processPendingDeposits(state);
       case PENDING_CONSOLIDATIONS -> processPendingConsolidations(state);
+      case PROPOSER_LOOKAHEAD -> epochProcessor.processProposerLookahead(state);
       default ->
           throw new UnsupportedOperationException(
               "Attempted to execute unknown operation type: " + operation);

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -27,7 +28,9 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -116,6 +119,15 @@ public class BeaconStateTestBuilder {
             .withActivationEpoch(UInt64.ZERO)
             .withExitEpoch(FAR_FUTURE_EPOCH.minus(1)));
     balances.add(balance);
+    return this;
+  }
+
+  public BeaconStateTestBuilder proposerLookahead(final SszUInt64Vector proposerLookahead) {
+    final SpecVersion specVersion = dataStructureUtil.getSpec().atSlot(slot);
+    MutableBeaconStateFulu.required(
+            (MutableBeaconState)
+                specVersion.getSchemaDefinitions().getBeaconStateSchema().createEmpty())
+        .setProposerLookahead(proposerLookahead);
     return this;
   }
 

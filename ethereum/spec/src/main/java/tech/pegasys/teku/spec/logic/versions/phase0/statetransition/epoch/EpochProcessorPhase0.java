@@ -100,4 +100,9 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   public void processPendingConsolidations(final MutableBeaconState state) {
     // Nothing to do
   }
+
+  @Override
+  public void processProposerLookahead(final MutableBeaconState state) {
+    // Nothing to do
+  }
 }

@@ -11,23 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.common.epoch_processing;
+package tech.pegasys.teku.infrastructure.ssz.collections;
 
-public enum EpochOperation {
-  PROCESS_SLASHINGS,
-  PROCESS_REGISTRY_UPDATES,
-  PROCESS_REWARDS_AND_PENALTIES,
-  PROCESS_JUSTIFICATION_AND_FINALIZATION,
-  PROCESS_EFFECTIVE_BALANCE_UPDATES,
-  PROCESS_PARTICIPATION_FLAG_UPDATES,
-  PROCESS_SLASHINGS_RESET,
-  PROCESS_ETH1_DATA_RESET,
-  PROCESS_RANDAO_MIXES_RESET,
-  PROCESS_HISTORICAL_ROOTS_UPDATE,
-  SYNC_COMMITTEE_UPDATES,
-  PROCESS_HISTORICAL_SUMMARIES_UPDATE,
-  PENDING_DEPOSITS,
-  PENDING_CONSOLIDATIONS,
-  INACTIVITY_UPDATES,
-  PROPOSER_LOOKAHEAD
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+public interface SszMutableUInt64Vector
+    extends SszMutablePrimitiveVector<UInt64, SszUInt64>, SszUInt64Vector {
+
+  @Override
+  SszUInt64Vector commitChanges();
 }

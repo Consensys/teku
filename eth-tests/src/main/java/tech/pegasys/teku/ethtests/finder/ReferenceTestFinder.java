@@ -29,7 +29,6 @@ public class ReferenceTestFinder {
   // Can be overridden with -Dteku.ref-test-module.override-root="<path>"
   private static final Path TEST_PATH_FROM_MODULE =
       Path.of("src", "referenceTest", "resources", "consensus-spec-tests", "tests");
-  // TODO: re-add Fulu in https://github.com/Consensys/teku/pull/9501
   private static final List<String> SUPPORTED_FORKS =
       List.of(
           TestFork.PHASE0,
@@ -37,7 +36,8 @@ public class ReferenceTestFinder {
           TestFork.BELLATRIX,
           TestFork.CAPELLA,
           TestFork.DENEB,
-          TestFork.ELECTRA);
+          TestFork.ELECTRA,
+          TestFork.FULU);
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {

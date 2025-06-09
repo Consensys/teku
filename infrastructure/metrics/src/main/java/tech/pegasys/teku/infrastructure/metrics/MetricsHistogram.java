@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.metrics;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Histogram;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -64,16 +65,19 @@ public class MetricsHistogram {
     private final Histogram histogram;
     private final TimeProvider timeProvider;
     private final UInt64 start;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public Timer(final Histogram histogram, final TimeProvider timeProvider) {
       this.histogram = histogram;
       this.timeProvider = timeProvider;
-      start = timeProvider.getTimeInMillis();
+      this.start = timeProvider.getTimeInMillis();
     }
 
     @Override
     public void close() throws IOException {
-      histogram.observe(timeProvider.getTimeInMillis().minus(start).doubleValue() / 1000);
+      if (closed.compareAndSet(false, true)) {
+        histogram.observe(timeProvider.getTimeInMillis().minus(start).doubleValue() / 1000);
+      }
     }
 
     public Runnable closeUnchecked() {
