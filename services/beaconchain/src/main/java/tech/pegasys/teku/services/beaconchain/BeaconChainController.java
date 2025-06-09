@@ -1576,6 +1576,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
+    eventChannels.subscribe(
+        CustodyGroupCountChannel.class,
+        CustodyGroupCountChannel.createCustodyGroupCountSyncedSubscriber(
+            cgcSynced ->
+                p2pNetwork
+                    .getDiscoveryNetwork()
+                    .ifPresent(
+                        discoveryNetwork ->
+                            discoveryNetwork.setDASTotalCustodySubnetCount(cgcSynced))));
 
     this.nodeId =
         p2pNetwork
