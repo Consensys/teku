@@ -158,10 +158,10 @@ public abstract class BeaconStateAccessors {
 
   public Bytes32 getSeed(final BeaconState state, final UInt64 epoch, final Bytes4 domainType)
       throws IllegalArgumentException {
-    UInt64 randaoIndex =
+    final UInt64 randaoIndex =
         epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
-    Bytes32 mix = getRandaoMix(state, randaoIndex);
-    Bytes epochBytes = uint64ToBytes(epoch);
+    final Bytes32 mix = getRandaoMix(state, randaoIndex);
+    final Bytes epochBytes = uint64ToBytes(epoch);
     return Hash.sha256(domainType.getWrappedBytes(), epochBytes, mix);
   }
 

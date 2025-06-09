@@ -11,29 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.attestation.utils;
+package tech.pegasys.teku.infrastructure.ssz.collections;
 
-import java.util.Iterator;
-import java.util.function.LongConsumer;
-import java.util.function.LongSupplier;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record TimeLimitingIterator<T>(
-    LongSupplier nanosSupplier, long timeLimitNanos, Iterator<T> delegate, LongConsumer onTimeLimit)
-    implements Iterator<T> {
+public interface SszMutableUInt64Vector
+    extends SszMutablePrimitiveVector<UInt64, SszUInt64>, SszUInt64Vector {
 
   @Override
-  public boolean hasNext() {
-    if (nanosSupplier.getAsLong() <= timeLimitNanos) {
-      return delegate.hasNext();
-    }
-
-    onTimeLimit.accept(timeLimitNanos);
-
-    return false;
-  }
-
-  @Override
-  public T next() {
-    return delegate.next();
-  }
+  SszUInt64Vector commitChanges();
 }

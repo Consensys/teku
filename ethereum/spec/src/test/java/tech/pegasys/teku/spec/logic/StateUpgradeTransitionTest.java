@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
@@ -96,8 +97,7 @@ public class StateUpgradeTransitionTest {
           }
           case FULU -> {
             beforeBeaconStateClass = BeaconStateElectra.class;
-            afterBeaconStateClass = BeaconStateElectra.class;
-            // TODO-fulu eventually we should have a BeaconStateFulu class
+            afterBeaconStateClass = BeaconStateFulu.class;
             yield TestSpecFactory.createMinimalWithFuluForkEpoch(milestoneTransitionEpoch);
           }
         };

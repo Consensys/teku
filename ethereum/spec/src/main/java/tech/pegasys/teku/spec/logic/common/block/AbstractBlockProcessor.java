@@ -251,6 +251,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconState state,
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier) {
+    // this fetches the block proposer index hence we pass the block slot and not only the state
     final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state, block.getSlot());
     final Optional<BLSPublicKey> proposerPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, UInt64.valueOf(proposerIndex));

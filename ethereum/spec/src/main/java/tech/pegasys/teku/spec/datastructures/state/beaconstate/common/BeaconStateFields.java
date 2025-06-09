@@ -78,7 +78,9 @@ public enum BeaconStateFields implements SszFieldName {
   EARLIEST_CONSOLIDATION_EPOCH,
   PENDING_DEPOSITS,
   PENDING_PARTIAL_WITHDRAWALS,
-  PENDING_CONSOLIDATIONS;
+  PENDING_CONSOLIDATIONS,
+  // Fulu fields
+  PROPOSER_LOOKAHEAD;
 
   private final String sszFieldName;
 

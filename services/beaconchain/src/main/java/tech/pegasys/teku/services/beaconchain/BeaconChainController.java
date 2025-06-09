@@ -1620,8 +1620,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eth2NetworkConfiguration
                     .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(),
                 eth2NetworkConfiguration
-                    .isAggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled(),
-                eth2NetworkConfiguration.isAggregatingAttestationPoolV2ParallelEnabled())
+                    .isAggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled())
             : new AggregatingAttestationPoolV1(
                 spec, recentChainData, metricsSystem, profiler, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
