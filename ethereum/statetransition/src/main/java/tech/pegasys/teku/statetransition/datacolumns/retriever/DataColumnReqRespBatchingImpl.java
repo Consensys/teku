@@ -50,7 +50,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
       final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
-    RequestEntry entry = new RequestEntry(nodeId, columnIdentifier, new SafeFuture<>());
+    final RequestEntry entry = new RequestEntry(nodeId, columnIdentifier, new SafeFuture<>());
     bufferedRequests.add(entry);
     return entry.promise();
   }
@@ -62,7 +62,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     while ((request = bufferedRequests.poll()) != null) {
       byNodes.computeIfAbsent(request.nodeId, __ -> new ArrayList<>()).add(request);
     }
-    for (Map.Entry<UInt256, List<RequestEntry>> entry : byNodes.entrySet()) {
+    for (final Map.Entry<UInt256, List<RequestEntry>> entry : byNodes.entrySet()) {
       flushForNode(entry.getKey(), entry.getValue());
     }
   }
