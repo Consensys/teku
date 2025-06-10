@@ -490,7 +490,7 @@ public class EventSubscriptionManagerTest {
     asyncRunner.executeQueuedActions();
   }
 
-  private void triggerDataColumnSidecarEvent(){
+  private void triggerDataColumnSidecarEvent() {
     manager.onNewDataColumnSidecar(sampleDataColumnSidecar);
     asyncRunner.executeQueuedActions();
   }
