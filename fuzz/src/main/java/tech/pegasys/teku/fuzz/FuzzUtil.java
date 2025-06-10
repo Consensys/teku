@@ -81,28 +81,34 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disableBls) {
-    spec =
+    this(
         useMainnetConfig
             ? TestSpecFactory.createMainnetFulu()
-            : TestSpecFactory.createMinimalFulu();
-    specVersion = spec.forMilestone(SpecMilestone.FULU);
-    beaconBlockBodySchema =
+            : TestSpecFactory.createMinimalFulu(),
+        SpecMilestone.FULU,
+        disableBls);
+  }
+
+  public FuzzUtil(final Spec spec, final SpecMilestone specMilestone, final boolean disableBls) {
+    this.spec = spec;
+    this.specVersion = spec.forMilestone(specMilestone);
+    this.beaconBlockBodySchema =
         (BeaconBlockBodySchemaElectra<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(disableBls);
     this.signatureVerifier = disableBls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
 
     final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
-    final SchemaDefinitionsFulu schemaDefinitionsElectra =
+    final SchemaDefinitionsFulu schemaDefinitionsFulu =
         SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
     final SpecConfigFulu specConfig = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
     final MiscHelpersFulu miscHelpersFulu =
-        new MiscHelpersFulu(specConfig, predicates, schemaDefinitionsElectra);
+        new MiscHelpersFulu(specConfig, predicates, schemaDefinitionsFulu);
     final BeaconStateAccessorsFulu stateAccessorsFulu =
         new BeaconStateAccessorsFulu(specConfig, predicates, miscHelpersFulu);
-    stateMutatorsElectra =
+    this.stateMutatorsElectra =
         new BeaconStateMutatorsElectra(
-            specConfig, miscHelpersFulu, stateAccessorsFulu, schemaDefinitionsElectra);
+            specConfig, miscHelpersFulu, stateAccessorsFulu, schemaDefinitionsFulu);
   }
 
   public static void initialize(final boolean disableBls) {

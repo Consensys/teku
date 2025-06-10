@@ -69,9 +69,9 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 class FuzzUtilTest {
 
-  // TODO-fulu Upgrade to use Fulu state/block etc.
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
-  private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
+  private final SpecMilestone specMilestone = SpecMilestone.FULU;
+  private final Spec spec = TestSpecFactory.createMinimal(specMilestone);
+  private final SpecVersion specVersion = spec.forMilestone(specMilestone);
   private final SchemaDefinitionsFulu schemaDefinitions =
       SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions());
   private final BeaconBlockSchema beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
@@ -95,7 +95,7 @@ class FuzzUtilTest {
   @Test
   @SuppressWarnings("unchecked")
   public void fuzzAttestation_minimal() throws JsonProcessingException {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/attestation/pyspec_tests/one_basic_attestation");
@@ -123,7 +123,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzAttesterSlashing_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/attester_slashing/pyspec_tests/basic_surround");
@@ -148,7 +148,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzBlock_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir = Path.of("minimal/sanity/blocks/pyspec_tests/attestation");
     final SignedBeaconBlock block0 =
@@ -175,7 +175,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzBlockHeader_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/block_header/pyspec_tests/basic_block_header");
@@ -195,7 +195,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzDeposit_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/deposit/pyspec_tests/top_up__max_effective_balance");
@@ -215,7 +215,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzProposerSlashing_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir = Path.of("minimal/operations/proposer_slashing/pyspec_tests/basic");
     final ProposerSlashing data =
@@ -235,7 +235,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzVoluntaryExit_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir = Path.of("minimal/operations/voluntary_exit/pyspec_tests/basic");
     final SignedVoluntaryExit data =
@@ -255,7 +255,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzSyncAggregate_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     BeaconBlockBodySchemaAltair<?> beaconBlockBodySchema =
         (BeaconBlockBodySchemaAltair<?>)
@@ -283,7 +283,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzExecutionPayload_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     BeaconBlockBodySchemaElectra<?> beaconBlockBodySchema =
         (BeaconBlockBodySchemaElectra<?>)
@@ -309,7 +309,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzBlsToExecutionChange_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/bls_to_execution_change/pyspec_tests/success/");
@@ -333,7 +333,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzDepositRequest_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of(
@@ -360,7 +360,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzWithdrawalRequest_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of("minimal/operations/withdrawal_request/pyspec_tests/basic_withdrawal_request/");
@@ -386,7 +386,7 @@ class FuzzUtilTest {
 
   @Test
   public void fuzzConsolidationRequest_minimal() {
-    final FuzzUtil fuzzUtil = new FuzzUtil(false, true);
+    final FuzzUtil fuzzUtil = new FuzzUtil(spec, specMilestone, true);
 
     final Path testCaseDir =
         Path.of(
