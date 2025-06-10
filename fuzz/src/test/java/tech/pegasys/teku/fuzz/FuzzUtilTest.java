@@ -63,20 +63,20 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 class FuzzUtilTest {
 
   // TODO-fulu Upgrade to use Fulu state/block etc.
-  private final Spec spec = TestSpecFactory.createMinimalElectra();
-  private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
-  private final SchemaDefinitionsElectra schemaDefinitions =
-      SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions());
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
+  private final SchemaDefinitionsFulu schemaDefinitions =
+      SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions());
   private final BeaconBlockSchema beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
-  private final BeaconStateSchemaElectra beaconStateSchema =
-      BeaconStateSchemaElectra.required(schemaDefinitions.getBeaconStateSchema());
+  private final BeaconStateSchemaFulu beaconStateSchema =
+      BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema());
   private final SignedBeaconBlockSchema signedBeaconBlockSchema =
       schemaDefinitions.getSignedBeaconBlockSchema();
 
@@ -102,9 +102,9 @@ class FuzzUtilTest {
     final Attestation data =
         loadSsz(
             testCaseDir.resolve("attestation.ssz_snappy"),
-            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions().getAttestationSchema());
+            spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions().getAttestationSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
-    final BeaconStateElectra postState =
+    final BeaconStateFulu postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
     final AttestationFuzzInput input = new AttestationFuzzInput(spec, preState, data);
@@ -112,10 +112,10 @@ class FuzzUtilTest {
     final Optional<Bytes> result = fuzzUtil.fuzzAttestation(rawInput).map(Bytes::wrap);
 
     assertThat(result).isNotEmpty();
-    final BeaconStateElectra resultState =
-        BeaconStateElectra.required(spec.deserializeBeaconState(result.get()));
-    DeserializableTypeDefinition<BeaconStateElectra> t =
-        (DeserializableTypeDefinition<BeaconStateElectra>)
+    final BeaconStateFulu resultState =
+        BeaconStateFulu.required(spec.deserializeBeaconState(result.get()));
+    DeserializableTypeDefinition<BeaconStateFulu> t =
+        (DeserializableTypeDefinition<BeaconStateFulu>)
             resultState.getSchema().getJsonTypeDefinition();
     assertThat(JsonUtil.prettySerialize(resultState, t))
         .isEqualTo(JsonUtil.prettySerialize(postState, t));
@@ -130,7 +130,7 @@ class FuzzUtilTest {
     final AttesterSlashing data =
         loadSsz(
             testCaseDir.resolve("attester_slashing.ssz_snappy"),
-            spec.forMilestone(SpecMilestone.ELECTRA)
+            spec.forMilestone(SpecMilestone.FULU)
                 .getSchemaDefinitions()
                 .getAttesterSlashingSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
@@ -316,7 +316,7 @@ class FuzzUtilTest {
     final SignedBlsToExecutionChange data =
         loadSsz(
             testCaseDir.resolve("address_change.ssz_snappy"),
-            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+            SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
                 .getSignedBlsToExecutionChangeSchema());
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
     final BeaconState postState =
@@ -341,7 +341,7 @@ class FuzzUtilTest {
     final DepositRequest data =
         loadSsz(
             testCaseDir.resolve("deposit_request.ssz_snappy"),
-            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+            SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
                 .getExecutionRequestsSchema()
                 .getDepositRequestsSchema()
                 .getElementSchema());
@@ -367,7 +367,7 @@ class FuzzUtilTest {
     final WithdrawalRequest data =
         loadSsz(
             testCaseDir.resolve("withdrawal_request.ssz_snappy"),
-            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+            SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
                 .getExecutionRequestsSchema()
                 .getWithdrawalRequestsSchema()
                 .getElementSchema());
@@ -394,7 +394,7 @@ class FuzzUtilTest {
     final ConsolidationRequest data =
         loadSsz(
             testCaseDir.resolve("consolidation_request.ssz_snappy"),
-            SchemaDefinitionsElectra.required(specVersion.getSchemaDefinitions())
+            SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
                 .getExecutionRequestsSchema()
                 .getConsolidationRequestsSchema()
                 .getElementSchema());
