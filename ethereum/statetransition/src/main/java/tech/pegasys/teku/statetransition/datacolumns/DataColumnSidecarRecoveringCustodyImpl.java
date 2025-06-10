@@ -276,12 +276,14 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   "Recovery for block: {}. DatacolumnSidecars found: {}",
                   block.getSlotAndBlockRoot(),
                   sidecars.size());
+              final List<DataColumnSidecar> recoveredSidecars =
+                  miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
+              timer.closeUnchecked();
+
               final Set<UInt64> existingSidecarsIndices =
                   sidecars.stream()
                       .map(DataColumnSidecar::getIndex)
                       .collect(Collectors.toUnmodifiableSet());
-              final List<DataColumnSidecar> recoveredSidecars =
-                  miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
               totalDataAvailabilityReconstructedColumns.inc(
                   recoveredSidecars.size() - sidecars.size());
               recoveredSidecars.stream()

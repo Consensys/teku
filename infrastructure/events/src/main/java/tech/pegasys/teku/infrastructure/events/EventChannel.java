@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.joining;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -99,6 +100,7 @@ class EventChannel<T> {
     final String illegalMethods =
         Stream.of(channelInterface.getMethods())
             .filter(method -> !isReturnTypeAllowed(method) || method.getExceptionTypes().length > 0)
+            .filter(method -> !Modifier.isStatic(method.getModifiers()))
             .map(Method::getName)
             .collect(joining(", "));
     checkArgument(

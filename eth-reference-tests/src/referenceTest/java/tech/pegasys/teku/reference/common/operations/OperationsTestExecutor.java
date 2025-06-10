@@ -204,16 +204,35 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void verifyProgressiveBalances(
       final TestDefinition testDefinition, final BeaconState result)
       throws SlotProcessingException, EpochProcessingException {
-    if (testDefinition.getSpec().atSlot(result.getSlot()).getMilestone() == SpecMilestone.PHASE0) {
-      // Progressive balances not used in Phase0
+    final Spec spec = testDefinition.getSpec();
+    if (shouldSkipProgressiveBalancesVerification(spec, result)) {
+      // Skip verification if progressive balances are not used
       return;
     }
-    final Spec spec = testDefinition.getSpec();
+
     assertTotalBalances(spec, result);
-    final UInt64 firstSlotOfNextEpoch =
-        spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(result.getSlot()).plus(1));
+    final UInt64 nextEpoch = spec.computeEpochAtSlot(result.getSlot()).plus(1);
+    final UInt64 firstSlotOfNextEpoch = spec.computeStartSlotAtEpoch(nextEpoch);
     final BeaconState nextEpochState = spec.processSlots(result, firstSlotOfNextEpoch);
     assertTotalBalances(spec, nextEpochState);
+  }
+
+  private boolean shouldSkipProgressiveBalancesVerification(
+      final Spec spec, final BeaconState state) {
+    if (spec.atSlot(state.getSlot()).getMilestone() == SpecMilestone.PHASE0) {
+      // Progressive balances not used in Phase0
+      return true;
+    }
+
+    if (spec.atSlot(state.getSlot())
+        .beaconStateAccessors()
+        .getActiveValidatorIndices(state, spec.getCurrentEpoch(state))
+        .isEmpty()) {
+      // No active validators, we can't check, epoch transition will break
+      return true;
+    }
+
+    return false;
   }
 
   private void assertTotalBalances(final Spec spec, final BeaconState state) {
