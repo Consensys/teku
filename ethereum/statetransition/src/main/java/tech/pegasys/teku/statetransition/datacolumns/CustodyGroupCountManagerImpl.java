@@ -105,7 +105,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     }
 
     combinedChainDataClient
-        .getStateAtSlotExact(slot.safeDecrement())
+        .getBestFinalizedState()
         .thenAccept(
             maybeState -> {
               if (maybeState.isPresent()) {
