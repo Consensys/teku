@@ -58,7 +58,8 @@ public class NodeDataProviderTest {
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
-  private final DataColumnSidecarManager dataColumnSidecarManager = mock(DataColumnSidecarManager.class);
+  private final DataColumnSidecarManager dataColumnSidecarManager =
+      mock(DataColumnSidecarManager.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final ActiveValidatorChannel validatorChannel = mock(ActiveValidatorChannel.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
