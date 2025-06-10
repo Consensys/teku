@@ -141,7 +141,8 @@ public class RewardBasedAttestationSorter {
     }
 
     final long initializationEnded = System.nanoTime();
-    LOG.info("Sorting initialization took {} ms.", (initializationEnded - start) / 1_000_000);
+    LOG.debug(
+        "Sorting initialization took {} ms.", () -> (initializationEnded - start) / 1_000_000);
 
     while (true) {
       final PooledAttestationWithRewardInfo bestAttestation = attestationQueue.poll();
@@ -149,7 +150,8 @@ public class RewardBasedAttestationSorter {
 
       // we reached the limit or there are no more attestations to process
       if (finalSortedAttestations.size() >= maxAttestations || attestationQueue.isEmpty()) {
-        LOG.info("Sorting took: {} ms", (System.nanoTime() - initializationEnded) / 1_000_000);
+        LOG.debug(
+            "Sorting took: {} ms", () -> (System.nanoTime() - initializationEnded) / 1_000_000);
         return finalSortedAttestations;
       }
 
