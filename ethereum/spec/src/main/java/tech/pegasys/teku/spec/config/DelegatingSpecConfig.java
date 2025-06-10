@@ -283,11 +283,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getSafeSlotsToUpdateJustified() {
-    return specConfig.getSafeSlotsToUpdateJustified();
-  }
-
-  @Override
   public int getReorgMaxEpochsSinceFinalization() {
     return specConfig.getReorgMaxEpochsSinceFinalization();
   }

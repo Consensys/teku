@@ -35,6 +35,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
+import tech.pegasys.teku.api.datacolumnselector.DataColumnSidecarSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -79,6 +81,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -88,6 +91,7 @@ public class ChainDataProvider {
   private final BlockSelectorFactory blockSelectorFactory;
   private final StateSelectorFactory stateSelectorFactory;
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory;
+  private final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory;
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final RecentChainData recentChainData;
@@ -97,14 +101,17 @@ public class ChainDataProvider {
       final Spec spec,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
-      final RewardCalculator rewardCalculator) {
+      final RewardCalculator rewardCalculator,
+      final BlobSidecarReconstructionProvider blobSidecarReconstructionProvider) {
     this(
         spec,
         recentChainData,
         combinedChainDataClient,
         new BlockSelectorFactory(spec, combinedChainDataClient),
         new StateSelectorFactory(spec, combinedChainDataClient),
-        new BlobSidecarSelectorFactory(spec, combinedChainDataClient),
+        new BlobSidecarSelectorFactory(
+            spec, combinedChainDataClient, blobSidecarReconstructionProvider),
+        new DataColumnSidecarSelectorFactory(combinedChainDataClient),
         rewardCalculator);
   }
 
@@ -116,6 +123,7 @@ public class ChainDataProvider {
       final BlockSelectorFactory blockSelectorFactory,
       final StateSelectorFactory stateSelectorFactory,
       final BlobSidecarSelectorFactory blobSidecarSelectorFactory,
+      final DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory,
       final RewardCalculator rewardCalculator) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -123,6 +131,7 @@ public class ChainDataProvider {
     this.blockSelectorFactory = blockSelectorFactory;
     this.stateSelectorFactory = stateSelectorFactory;
     this.blobSidecarSelectorFactory = blobSidecarSelectorFactory;
+    this.dataColumnSidecarSelectorFactory = dataColumnSidecarSelectorFactory;
     this.rewardCalculator = rewardCalculator;
   }
 
@@ -199,6 +208,13 @@ public class ChainDataProvider {
         .getBlobSidecars(indices)
         .thenApply(
             maybeBlobSideCarsMetaData -> maybeBlobSideCarsMetaData.map(ObjectAndMetaData::getData));
+  }
+
+  public SafeFuture<Optional<List<DataColumnSidecar>>> getDataColumnSidecars(
+      final String blockIdParam, final List<UInt64> indices) {
+    return dataColumnSidecarSelectorFactory
+        .createSelectorForBlockId(blockIdParam)
+        .getDataColumnSidecars(indices);
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {
@@ -308,18 +324,19 @@ public class ChainDataProvider {
         .toList();
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorIdentity>>>>
+  public SafeFuture<Optional<ObjectAndMetaData<SszList<StateValidatorIdentity>>>>
       getStateValidatorIdentities(final String stateIdParam, final List<String> validators) {
     return fromState(stateIdParam, state -> getValidatorIdentitiesFromState(state, validators));
   }
 
   @VisibleForTesting
-  List<StateValidatorIdentity> getValidatorIdentitiesFromState(
+  SszList<StateValidatorIdentity> getValidatorIdentitiesFromState(
       final BeaconState state, final List<String> validators) {
-    return getValidatorSelector(state, validators)
-        .mapToObj(index -> StateValidatorIdentity.fromState(state, index))
-        .flatMap(Optional::stream)
-        .toList();
+    return StateValidatorIdentity.SSZ_LIST_SCHEMA.createFromElements(
+        getValidatorSelector(state, validators)
+            .mapToObj(index -> StateValidatorIdentity.fromState(state, index))
+            .flatMap(Optional::stream)
+            .toList());
   }
 
   public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {

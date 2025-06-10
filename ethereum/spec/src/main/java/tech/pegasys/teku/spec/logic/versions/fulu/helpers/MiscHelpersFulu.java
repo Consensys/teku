@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.Bytes;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
@@ -30,8 +32,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -44,7 +44,7 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.spec.config.BlobSchedule;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -75,7 +76,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
   private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
-  private static final Logger LOG = LogManager.getLogger();
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -96,7 +96,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   @SuppressWarnings("unused")
   private final SchemaDefinitionsFulu schemaDefinitions;
 
-  private final List<BlobSchedule> blobSchedule;
+  private final List<BlobScheduleEntry> blobSchedule;
 
   public MiscHelpersFulu(
       final SpecConfigFulu specConfigFulu,
@@ -111,7 +111,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.schemaDefinitions = SchemaDefinitionsFulu.required(schemaDefinitions);
     this.blobSchedule =
         specConfigFulu.getBlobSchedule().stream()
-            .sorted(Comparator.comparing(BlobSchedule::epoch))
+            .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
             .toList();
   }
 
@@ -122,27 +122,20 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   // get_max_blobs_per_block
   public int getMaxBlobsPerBlock(final UInt64 epoch) {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
-
-    final Optional<BlobSchedule> maybeSchedule =
+    final Optional<BlobScheduleEntry> maybeSchedule =
         blobSchedule.stream()
             .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
-            .max(Comparator.comparing(BlobSchedule::epoch));
-
-    final int maxBlobs =
-        maybeSchedule
-            .map(BlobSchedule::maxBlobsPerBlock)
-            .orElseGet(() -> blobSchedule.getFirst().maxBlobsPerBlock());
-    LOG.debug("Max blobs at epoch {} found to be {}", epoch, maxBlobs);
-    return maxBlobs;
+            .max(Comparator.comparing(BlobScheduleEntry::epoch));
+    return maybeSchedule
+        .map(BlobScheduleEntry::maxBlobsPerBlock)
+        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
   }
 
   public int getHighestMaxBlobsPerBlockFromSchedule() {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
     return blobSchedule.stream()
-        .max(Comparator.comparing(BlobSchedule::maxBlobsPerBlock))
-        .map(BlobSchedule::maxBlobsPerBlock)
-        .orElseGet(() -> blobSchedule.getLast().maxBlobsPerBlock());
+        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
+        .map(BlobScheduleEntry::maxBlobsPerBlock)
+        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
   }
 
   private UInt256 incrementByModule(final UInt256 n) {
@@ -513,7 +506,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   /**
-   * Return the sample count if allowing failures.
+   * NOTE: this method was part of the spec for lossy sampling. Not it is only being used on tests
+   * (eventually it will be removed).
+   *
+   * <p>Return the sample count if allowing failures.
    *
    * <p>This helper demonstrates how to calculate the number of columns to query per slot when
    * allowing given number of failures, assuming uniform random selection without replacement.
@@ -610,5 +606,38 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return currentEpoch
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
+  // compute_proposer_indices
+  @Override
+  public List<Integer> computeProposerIndices(
+      final BeaconState state,
+      final UInt64 epoch,
+      final Bytes32 epochSeed,
+      final IntList activeValidatorIndices) {
+    final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
+    return IntStream.range(0, specConfigFulu.getSlotsPerEpoch())
+        .mapToObj(
+            i -> {
+              final Bytes32 seed =
+                  Hash.sha256(
+                      Bytes.concat(
+                          epochSeed.toArray(), uint64ToBytes(startSlot.plus(i)).toArray()));
+              return computeProposerIndex(state, activeValidatorIndices, seed);
+            })
+        .toList();
+  }
+
+  // initialize_proposer_lookahead
+  public List<UInt64> initializeProposerLookahead(
+      final BeaconStateElectra state, final BeaconStateAccessorsFulu beaconAccessors) {
+    final UInt64 currentEpoch = computeEpochAtSlot(state.getSlot());
+    return IntStream.rangeClosed(0, specConfigFulu.getMinSeedLookahead())
+        .flatMap(
+            i ->
+                beaconAccessors.getBeaconProposerIndices(state, currentEpoch.plus(i)).stream()
+                    .mapToInt(Integer::intValue))
+        .mapToObj(UInt64::valueOf)
+        .toList();
   }
 }

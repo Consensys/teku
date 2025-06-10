@@ -37,7 +37,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   private final int minEpochsForDataColumnSidecarsRequests;
   private final int maxRequestDataColumnSidecars;
   private final UInt64 balancePerAdditionalCustodyGroup;
-  private final List<BlobSchedule> blobSchedule;
+  private final List<BlobScheduleEntry> blobSchedule;
 
   public SpecConfigFuluImpl(
       final SpecConfigElectra specConfig,
@@ -55,7 +55,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final int minEpochsForDataColumnSidecarsRequests,
       final int maxRequestDataColumnSidecars,
       final UInt64 balancePerAdditionalCustodyGroup,
-      final List<BlobSchedule> blobSchedule) {
+      final List<BlobScheduleEntry> blobSchedule) {
     super(specConfig);
     this.fuluForkVersion = fuluForkVersion;
     this.fuluForkEpoch = fuluForkEpoch;
@@ -95,7 +95,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   }
 
   @Override
-  public List<BlobSchedule> getBlobSchedule() {
+  public List<BlobScheduleEntry> getBlobSchedule() {
     return blobSchedule;
   }
 
@@ -175,6 +175,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && Objects.equals(fieldElementsPerExtBlob, that.fieldElementsPerExtBlob)
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
         && Objects.equals(balancePerAdditionalCustodyGroup, that.balancePerAdditionalCustodyGroup)
+        && Objects.equals(blobSchedule, that.blobSchedule)
         && numberOfColumns == that.numberOfColumns
         && numberOfCustodyGroups == that.numberOfCustodyGroups
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
@@ -202,6 +203,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         maxRequestDataColumnSidecars,
         validatorCustodyRequirement,
         samplesPerSlot,
-        balancePerAdditionalCustodyGroup);
+        balancePerAdditionalCustodyGroup,
+        blobSchedule);
   }
 }

@@ -98,7 +98,15 @@ public class BlockProductionDuty implements Duty {
             signedBlockContainer ->
                 validatorDutyMetrics.record(
                     () -> sendBlock(signedBlockContainer), this, ValidatorDutyMetricsSteps.SEND))
-        .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
+        .exceptionally(
+            error -> {
+              LOG.debug(
+                  "Block production error for validator {} at slot {}: {}",
+                  validator.getPublicKey().toAbbreviatedString(),
+                  slot,
+                  error);
+              return DutyResult.forError(validator.getPublicKey(), error);
+            });
   }
 
   private SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {

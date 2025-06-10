@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 
-// TODO-fulu Bring concrete implementation
 public interface BatchDataColumnsByRootReqResp {
 
   AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(

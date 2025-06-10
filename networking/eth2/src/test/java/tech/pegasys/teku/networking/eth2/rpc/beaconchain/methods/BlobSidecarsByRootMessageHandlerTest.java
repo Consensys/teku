@@ -282,7 +282,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
             blobIdentifiers.get(0).getBlockRoot());
   }
 
@@ -319,7 +319,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
             blobIdentifiers.get(0).getBlockRoot());
   }
 

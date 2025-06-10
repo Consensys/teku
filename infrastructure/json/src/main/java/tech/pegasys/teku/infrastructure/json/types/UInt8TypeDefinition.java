@@ -18,14 +18,25 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Optional;
 
-class UInt8TypeDefinition extends PrimitiveTypeDefinition<Byte> {
+public class UInt8TypeDefinition extends PrimitiveTypeDefinition<Byte> {
+  private final Optional<String> description;
+
+  public UInt8TypeDefinition() {
+    this.description = Optional.empty();
+  }
+
+  public UInt8TypeDefinition(final String description) {
+    this.description = Optional.of(description);
+  }
 
   @Override
   public void serializeOpenApiTypeFields(final JsonGenerator gen) throws IOException {
     gen.writeStringField("type", "string");
     gen.writeStringField("example", "1");
-    gen.writeStringField("description", "unsigned 8 bit integer, max value 255");
+    gen.writeStringField(
+        "description", description.orElse("unsigned 8 bit integer, max value 255"));
     gen.writeStringField("format", "uint8");
   }
 
@@ -49,5 +60,10 @@ class UInt8TypeDefinition extends PrimitiveTypeDefinition<Byte> {
     final int value = Integer.parseUnsignedInt(valueAsString, 10);
     checkArgument(0 <= value && value <= 255, "Value %s is outside range for uint8", value);
     return (byte) value;
+  }
+
+  @Override
+  public PrimitiveTypeDefinition<Byte> withDescription(final String description) {
+    return new UInt8TypeDefinition(description);
   }
 }

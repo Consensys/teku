@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -308,7 +308,7 @@ public abstract class KZGAbstractTest {
     assertThat(cells).isEqualTo(cellAndProofs.stream().map(KZGCellAndProof::cell).toList());
   }
 
-  private List<Bytes> getSampleBlobs(final int count) {
+  List<Bytes> getSampleBlobs(final int count) {
     return IntStream.range(0, count).mapToObj(__ -> getSampleBlob()).collect(Collectors.toList());
   }
 
@@ -349,11 +349,11 @@ public abstract class KZGAbstractTest {
         .collect(Collectors.toList());
   }
 
-  private KZGCommitment getSampleCommitment() {
+  KZGCommitment getSampleCommitment() {
     return kzg.blobToKzgCommitment(getSampleBlob());
   }
 
-  private KZGProof getSampleProof() {
+  KZGProof getSampleProof() {
     return kzg.computeBlobKzgProof(getSampleBlob(), getSampleCommitment());
   }
 

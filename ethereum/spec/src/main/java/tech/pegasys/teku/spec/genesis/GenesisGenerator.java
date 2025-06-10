@@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -41,9 +42,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class GenesisGenerator {
 
@@ -139,6 +143,24 @@ public class GenesisGenerator {
 
       // Process activations
       keyCache.values().intStream().forEach(this::processActivation);
+    }
+
+    // Process proposer lookahead
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+
+      final SchemaDefinitionsFulu schemaDefinitionsFulu =
+          SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());
+
+      final List<UInt64> proposerLookahead =
+          IntStream.range(0, (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch())
+              .mapToObj(__ -> UInt64.valueOf(0))
+              .toList();
+
+      MutableBeaconStateFulu.required(state)
+          .setProposerLookahead(
+              BeaconStateSchemaFulu.required(schemaDefinitionsFulu.getBeaconStateSchema())
+                  .getProposerLookaheadSchema()
+                  .of(proposerLookahead));
     }
   }
 
