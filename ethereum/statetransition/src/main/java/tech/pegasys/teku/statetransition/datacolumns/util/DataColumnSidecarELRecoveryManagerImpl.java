@@ -141,9 +141,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
             TekuMetricCategory.BEACON,
             "engine_getBlobsV2_request_duration_seconds",
             "Duration of engine_getBlobsV2 requests",
-            new double[] {
-              0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10.0
-            });
+            new double[] {0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0, 10.0});
     this.miscHelpersFuluSupplier =
         () -> MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }
