@@ -218,7 +218,8 @@ public class NodeDataProvider {
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
   }
 
-  public void subscribeToValidDataColumnSidecars(final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener) {
+  public void subscribeToValidDataColumnSidecars(
+      final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener) {
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(listener);
   }
 

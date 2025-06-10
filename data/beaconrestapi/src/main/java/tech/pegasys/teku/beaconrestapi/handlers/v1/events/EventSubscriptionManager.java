@@ -101,8 +101,7 @@ public class EventSubscriptionManager
     nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
     nodeDataProvider.subscribeToForkChoiceUpdatedResult(this::onForkChoiceUpdatedResult);
     nodeDataProvider.subscribeToValidDataColumnSidecars(
-        (dataColumnSidecar, remoteOrigin) ->
-            onNewDataColumnSidecar(dataColumnSidecar));
+        (dataColumnSidecar, remoteOrigin) -> onNewDataColumnSidecar(dataColumnSidecar));
   }
 
   public void registerClient(final SseClient sseClient) {
