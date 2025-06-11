@@ -361,7 +361,7 @@ public class MiscHelpers {
     return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
   }
 
-  private Bytes32 computeForkDataRoot(
+  protected Bytes32 computeForkDataRoot(
       final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
