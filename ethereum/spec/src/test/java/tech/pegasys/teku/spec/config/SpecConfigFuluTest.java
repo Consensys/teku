@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -84,7 +85,7 @@ public class SpecConfigFuluTest {
   }
 
   @Test
-  public void maxBlobsFuluEpoch() {
+  public void blobParametersFuluEpoch() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
     final int maxBlobsPerBlock = 512;
     final SpecConfigAndParent<?> specConfigAndParent =
@@ -108,12 +109,13 @@ public class SpecConfigFuluTest {
                 .miscHelpers()
                 .toVersionFulu()
                 .orElseThrow()
-                .getMaxBlobsPerBlock(fuluEpoch))
-        .isEqualTo(maxBlobsPerBlock);
+                .getBlobParameters(fuluEpoch))
+        .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
   }
 
   @Test
-  public void maxBlobsFuluEpochDefaultsToMaxBlobsPerBlockElectraWhenBlobScheduleIsNotConfigured() {
+  public void
+      blobParametersFuluEpochDefaultsToElectraBlobParametersWhenBlobScheduleIsNotConfigured() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
     final SpecConfigAndParent<?> specConfigAndParent =
         SpecConfigLoader.loadConfig(
@@ -124,9 +126,11 @@ public class SpecConfigFuluTest {
     // max blobs per block will default to MAX_BLOBS_PER_BLOCK_ELECTRA if blob schedule is empty
     assertThat(
             MiscHelpersFulu.required(fuluSpec.forMilestone(SpecMilestone.FULU).miscHelpers())
-                .getMaxBlobsPerBlock(fuluEpoch))
+                .getBlobParameters(fuluEpoch))
         .isEqualTo(
-            SpecConfigFulu.required(fuluSpec.getSpecConfig(fuluEpoch)).getMaxBlobsPerBlock());
+            new BlobParameters(
+                fuluEpoch,
+                SpecConfigFulu.required(fuluSpec.getSpecConfig(fuluEpoch)).getMaxBlobsPerBlock()));
   }
 
   @Test
