@@ -152,14 +152,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   // compute_fork_digest
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
-
     final Bytes4 forkVersion = computeForkVersion(epoch);
     final BlobParameters blobParameters = getBlobParameters(epoch);
     final Bytes4 baseDigest = super.computeForkDigest(forkVersion, genesisValidatorsRoot);
-    System.out.println("base digest: " + baseDigest.toHexString());
     return computeForkDigestInternal(baseDigest, blobParameters);
   }
 
+  @VisibleForTesting
   Bytes4 computeForkDigestInternal(final Bytes4 baseDigest, final BlobParameters blobParameters) {
 
     final Bytes32 blobParametersHash = BlobParameters.hash(blobParameters);
@@ -168,21 +167,21 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.getWrappedBytes().xor(hashSnippet.getWrappedBytes()));
   }
 
-  public int getHighestMaxBlobsPerBlockFromSchedule() {
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromSchedule() {
     return blobSchedule.stream()
         .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
-        .map(BlobScheduleEntry::maxBlobsPerBlock)
-        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
+        .map(BlobScheduleEntry::maxBlobsPerBlock);
   }
 
   public BlobParameters getBlobParameters(final UInt64 epoch) {
     return blobSchedule.stream()
-        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
+        .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
+        .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
+        .findFirst()
         .map(BlobParameters::fromBlobSchedule)
         .orElse(
             new BlobParameters(
-                specConfigFulu.getElectraForkEpoch(),
-                specConfigFulu.toVersionElectra().orElseThrow().getMaxBlobsPerBlock()));
+                specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
   }
 
   private UInt256 incrementByModule(final UInt256 n) {
