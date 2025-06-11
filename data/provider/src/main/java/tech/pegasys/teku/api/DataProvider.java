@@ -227,6 +227,12 @@ public class DataProvider {
       return this;
     }
 
+    public Builder dataColumnSidecarManager(
+        final DataColumnSidecarManager dataColumnSidecarManager) {
+      this.dataColumnSidecarManager = dataColumnSidecarManager;
+      return this;
+    }
+
     public DataProvider build() {
       final ConfigProvider configProvider = new ConfigProvider(spec);
       final NetworkDataProvider networkDataProvider = new NetworkDataProvider(p2pNetwork);
