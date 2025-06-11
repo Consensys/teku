@@ -172,13 +172,13 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         TestSpecFactory.createMinimalFulu(
             builder ->
                 builder
-                    .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(9)))
+                    .electraBuilder(
+                        eb -> eb.electraForkEpoch(UInt64.valueOf(9)).maxBlobsPerBlockElectra(9))
                     .fuluBuilder(
                         fb ->
                             fb.fuluForkEpoch(UInt64.valueOf(100))
                                 .blobSchedule(
                                     List.of(
-                                        new BlobScheduleEntry(UInt64.valueOf(9), 9),
                                         new BlobScheduleEntry(UInt64.valueOf(100), 100),
                                         new BlobScheduleEntry(UInt64.valueOf(150), 175),
                                         new BlobScheduleEntry(UInt64.valueOf(200), 200),
@@ -187,6 +187,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
 
     return Stream.of(
         Arguments.of(spec, UInt64.valueOf(100), "0x44a571e8"),
+        Arguments.of(spec, UInt64.valueOf(101), "0x44a571e8"),
         Arguments.of(spec, UInt64.valueOf(150), "0x1171afca"),
         Arguments.of(spec, UInt64.valueOf(200), "0x427a30ab"),
         Arguments.of(spec, UInt64.valueOf(250), "0xd5310ef1"),
