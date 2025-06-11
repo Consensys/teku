@@ -121,17 +121,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
-  // get_max_blobs_per_block
-  public int getMaxBlobsPerBlock(final UInt64 epoch) {
-    final Optional<BlobScheduleEntry> maybeSchedule =
-        blobSchedule.stream()
-            .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
-            .max(Comparator.comparing(BlobScheduleEntry::epoch));
-    return maybeSchedule
-        .map(BlobScheduleEntry::maxBlobsPerBlock)
-        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
-  }
-
   // compute_fork_version
   public Bytes4 computeForkVersion(final UInt64 epoch) {
     if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())) {
@@ -154,17 +143,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Bytes4 forkVersion = computeForkVersion(epoch);
     final BlobParameters blobParameters = getBlobParameters(epoch);
-    final Bytes4 baseDigest = super.computeForkDigest(forkVersion, genesisValidatorsRoot);
-    return computeForkDigestInternal(baseDigest, blobParameters);
-  }
-
-  @VisibleForTesting
-  Bytes4 computeForkDigestInternal(final Bytes4 baseDigest, final BlobParameters blobParameters) {
-
-    final Bytes32 blobParametersHash = BlobParameters.hash(blobParameters);
-    final Bytes4 hashSnippet = new Bytes4(blobParametersHash.slice(0, 4));
-
-    return new Bytes4(baseDigest.getWrappedBytes().xor(hashSnippet.getWrappedBytes()));
+    final Bytes32 baseDigest = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
+    // Bitmask digest with hash of blob parameters
+    return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
   public Optional<Integer> getHighestMaxBlobsPerBlockFromSchedule() {
@@ -173,12 +154,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .map(BlobScheduleEntry::maxBlobsPerBlock);
   }
 
+  // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
     return blobSchedule.stream()
         .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
         .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
         .findFirst()
-        .map(BlobParameters::fromBlobSchedule)
+        .map(BlobParameters::fromBlobScheduleEntry)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));

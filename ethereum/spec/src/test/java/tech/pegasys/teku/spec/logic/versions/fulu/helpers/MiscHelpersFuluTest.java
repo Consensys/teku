@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGAbstractBenchmark;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -84,8 +85,6 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
           spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
           predicates,
           schemaDefinitionsFulu);
-  final BeaconStateAccessorsFulu beaconStateAccessors =
-      new BeaconStateAccessorsFulu(spec.getGenesisSpecConfig(), predicates, miscHelpersFulu);
 
   @ParameterizedTest(name = "{0} allowed failure(s)")
   @MethodSource("getExtendedSampleCountFixtures")
@@ -157,39 +156,42 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @ParameterizedTest
-  @MethodSource("getFuluDigestScenarios")
+  @MethodSource("getComputeForkDigestFuluScenarios")
   public void computeForkDigestFuluTest(
-      final String baseDigest,
-      final UInt64 epoch,
-      final int blobsPerBlock,
-      final String expectedValue) {
-
-    final Bytes4 digest =
-        miscHelpersFulu.computeForkDigestInternal(
-            Bytes4.fromHexString(baseDigest), new BlobParameters(epoch, blobsPerBlock));
-
-    assertThat(digest).isEqualTo(Bytes4.fromHexString(expectedValue));
+      final Spec spec, final long epoch, final String expectedValue) {
+    assertThat(
+            MiscHelpersFulu.required(spec.atEpoch(UInt64.valueOf(epoch)).miscHelpers())
+                .computeForkDigest(Bytes32.ZERO, UInt64.valueOf(epoch)))
+        .isEqualTo(Bytes4.fromHexString(expectedValue));
   }
 
-  public static Stream<Arguments> getFuluDigestScenarios() {
-    // max would be 4096 - MAX_BLOB_COMMITMENTS_PER_BLOCK
-    // this is little endian currently
+  // Scenarios from
+  // https://github.com/ethereum/consensus-specs/blob/dev/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
+  public static Stream<Arguments> getComputeForkDigestFuluScenarios() {
+    final Spec spec =
+        TestSpecFactory.createMinimalFulu(
+            b ->
+                b.electraBuilder(
+                        eb -> eb.electraForkEpoch(UInt64.valueOf(9)).maxBlobsPerBlockElectra(9))
+                    .fuluBuilder(
+                        fb ->
+                            fb.fuluForkEpoch(UInt64.valueOf(100))
+                                .blobSchedule(
+                                    List.of(
+                                        new BlobScheduleEntry(UInt64.valueOf(100), 100),
+                                        new BlobScheduleEntry(UInt64.valueOf(150), 175),
+                                        new BlobScheduleEntry(UInt64.valueOf(200), 200),
+                                        new BlobScheduleEntry(UInt64.valueOf(250), 275),
+                                        new BlobScheduleEntry(UInt64.valueOf(300), 300)))));
+
     return Stream.of(
-        Arguments.of("ffffffff", ZERO, 4096, "5f1958f6"),
-        Arguments.of("00000000", ZERO, 4095, "64d0cb3e"),
-        Arguments.of("00000000", ZERO, 4096, "a0e6a709"),
-        Arguments.of("06000000", ZERO, 4095, "62d0cb3e"),
-        Arguments.of("06000000", ZERO, 255, "3a03a4ed"),
-        Arguments.of("06000000", ZERO, 64, "4e3ce2f0"),
-        Arguments.of("06000000", ZERO, 86, "af4d0222"),
-        // EF unit test values
-        // fork version: 05000001 genesis validators root 00x32 would give base digest of 97b2c268
-        Arguments.of("97b2c268", UInt64.valueOf(9), 9, "39f8e7c3"),
-        // fork version: 05000001, genesis validators root of 03x32 would give base digest of
-        // 0e38e75e
-        Arguments.of("0e38e75e", UInt64.valueOf(9), 9, "a072c2f5"),
-        // fork version: 05000001 genesis validators root 00x32 would give base digest of 9eb2e7f0
-        Arguments.of("9eb2e7f0", UInt64.valueOf(100), 100, "44a571e8"));
+        Arguments.of(spec, 100, "44a571e8"),
+        Arguments.of(spec, 101, "44a571e8"),
+        Arguments.of(spec, 150, "1171afca"),
+        Arguments.of(spec, 200, "427a30ab"),
+        Arguments.of(spec, 250, "d5310ef1"),
+        Arguments.of(spec, 299, "d5310ef1"),
+        Arguments.of(spec, 300, "51d229f7"));
   }
 
   @Test

@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPay
 import tech.pegasys.teku.spec.propertytest.suppliers.builder.ExecutionPayloadAndBlobsBundleSupplier;
 
 public class ExecutionPayloadAndBlobsBundlePropertyTest {
-  @Property
+  @Property(tries = 100)
   void roundTrip(
       @ForAll(supplier = ExecutionPayloadAndBlobsBundleSupplier.class)
           final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle)
@@ -31,7 +31,7 @@ public class ExecutionPayloadAndBlobsBundlePropertyTest {
     assertRoundTrip(executionPayloadAndBlobsBundle);
   }
 
-  @Property
+  @Property(tries = 100)
   void deserializeMutated(
       @ForAll(supplier = ExecutionPayloadAndBlobsBundleSupplier.class)
           final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle,
