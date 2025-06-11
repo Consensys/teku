@@ -19,7 +19,9 @@ import static tech.pegasys.teku.spec.config.Constants.BUILDER_CALL_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.EL_ENGINE_BLOCK_EXECUTION_TIMEOUT;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -135,8 +137,18 @@ public class ExecutionLayerService extends Service {
       final BuilderCircuitBreaker builderCircuitBreaker) {
     EVENT_LOG.executionLayerStubEnabled();
 
+    final String[] endpointWithAdditionalConfigs = config.getEngineEndpoint().split(":");
+    final List<String> additionalConfigs =
+        IntStream.range(1, endpointWithAdditionalConfigs.length)
+            .mapToObj(i -> endpointWithAdditionalConfigs[i])
+            .toList();
+
     return new ExecutionLayerManagerStub(
-        config.getSpec(), serviceConfig.getTimeProvider(), true, builderCircuitBreaker);
+        config.getSpec(),
+        serviceConfig.getTimeProvider(),
+        true,
+        additionalConfigs,
+        builderCircuitBreaker);
   }
 
   private static ExecutionLayerManager createRealExecutionLayerManager(
