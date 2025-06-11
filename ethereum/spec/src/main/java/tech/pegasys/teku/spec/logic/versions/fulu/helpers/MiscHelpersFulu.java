@@ -121,17 +121,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
-  // get_max_blobs_per_block
-  public int getMaxBlobsPerBlock(final UInt64 epoch) {
-    final Optional<BlobScheduleEntry> maybeSchedule =
-        blobSchedule.stream()
-            .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
-            .max(Comparator.comparing(BlobScheduleEntry::epoch));
-    return maybeSchedule
-        .map(BlobScheduleEntry::maxBlobsPerBlock)
-        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
-  }
-
   // compute_fork_version
   public Bytes4 computeForkVersion(final UInt64 epoch) {
     if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())) {
@@ -173,6 +162,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .map(BlobScheduleEntry::maxBlobsPerBlock);
   }
 
+  // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
     return blobSchedule.stream()
         .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
