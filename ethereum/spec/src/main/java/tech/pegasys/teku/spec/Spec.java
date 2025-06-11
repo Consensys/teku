@@ -981,15 +981,10 @@ public class Spec {
 
     // query the blob_schedule after FULU
     if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
-      final Optional<Integer> maybeHighestMaxBlobsPerBlockFromSchedule =
-          forMilestone(FULU)
-              .miscHelpers()
-              .toVersionFulu()
-              .flatMap(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromSchedule);
-      // only use if the schedule is available
-      if (maybeHighestMaxBlobsPerBlockFromSchedule.isPresent()) {
-        return maybeHighestMaxBlobsPerBlockFromSchedule;
-      }
+      return forMilestone(FULU)
+          .miscHelpers()
+          .toVersionFulu()
+          .map(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromSchedule);
     }
 
     final Optional<Integer> maybeHighestMaxBlobsPerBlock =
