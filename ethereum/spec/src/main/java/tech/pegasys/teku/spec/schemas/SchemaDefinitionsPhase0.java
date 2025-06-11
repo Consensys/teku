@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -55,6 +57,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
       beaconStateSchema;
   private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
   private final MetadataMessageSchema<?> metadataMessageSchema;
+  private final StatusMessageSchema<?> statusMessageSchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
 
@@ -69,6 +72,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.beaconStateSchema = schemaRegistry.get(BEACON_STATE_SCHEMA);
     this.beaconBlockBodySchema = schemaRegistry.get(BEACON_BLOCK_BODY_SCHEMA);
     this.metadataMessageSchema = schemaRegistry.get(METADATA_MESSAGE_SCHEMA);
+    this.statusMessageSchema = schemaRegistry.get(STATUS_MESSAGE_SCHEMA);
     this.beaconBlockSchema = schemaRegistry.get(BEACON_BLOCK_SCHEMA);
     this.signedBeaconBlockSchema = schemaRegistry.get(SIGNED_BEACON_BLOCK_SCHEMA);
   }
@@ -166,6 +170,11 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   @Override
   public MetadataMessageSchema<?> getMetadataMessageSchema() {
     return metadataMessageSchema;
+  }
+
+  @Override
+  public StatusMessageSchema<?> getStatusMessageSchema() {
+    return statusMessageSchema;
   }
 
   @Override

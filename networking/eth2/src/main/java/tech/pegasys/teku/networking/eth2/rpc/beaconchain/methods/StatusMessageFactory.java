@@ -16,7 +16,8 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -29,7 +30,7 @@ public class StatusMessageFactory {
     this.recentChainData = recentChainData;
   }
 
-  public Optional<StatusMessage> createStatusMessage() {
+  public Optional<StatusMessage> createStatusMessage(final StatusMessageSchema<?> schema) {
     if (recentChainData.isPreForkChoice()) {
       // We don't have chainhead information, so we can't generate an accurate status message
       return Optional.empty();
@@ -39,8 +40,10 @@ public class StatusMessageFactory {
     final MinimalBeaconBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
 
+    // TODO-9539: hook up logic to include earliest available slot
+
     return Optional.of(
-        new StatusMessage(
+        schema.create(
             forkInfo.getForkDigest(recentChainData.getSpec()),
             // Genesis finalized root is always ZERO because it's taken from the state and the
             // genesis block is calculated from the state so the state can't contain the actual
@@ -48,6 +51,7 @@ public class StatusMessageFactory {
             finalizedCheckpoint.getEpoch().isZero() ? Bytes32.ZERO : finalizedCheckpoint.getRoot(),
             finalizedCheckpoint.getEpoch(),
             chainHead.getRoot(),
-            chainHead.getSlot()));
+            chainHead.getSlot(),
+            Optional.empty()));
   }
 }
