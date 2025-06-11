@@ -42,6 +42,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -57,6 +58,8 @@ public class NodeDataProviderTest {
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
+  private final DataColumnSidecarManager dataColumnSidecarManager =
+      mock(DataColumnSidecarManager.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final ActiveValidatorChannel validatorChannel = mock(ActiveValidatorChannel.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
@@ -93,6 +96,7 @@ public class NodeDataProviderTest {
             proposersDataManager,
             forkChoiceNotifier,
             recentChainData,
+            dataColumnSidecarManager,
             spec);
   }
 
@@ -216,6 +220,7 @@ public class NodeDataProviderTest {
             proposersDataManager,
             forkChoiceNotifier,
             recentChainData,
+            dataColumnSidecarManager,
             specMock);
     return specMock;
   }
