@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,8 +39,9 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final Spec spec,
       final TimeProvider timeProvider,
       final boolean enableTransitionEmulation,
+      final List<String> additionalConfigs,
       final BuilderCircuitBreaker builderCircuitBreaker) {
-    super(spec, timeProvider, enableTransitionEmulation);
+    super(spec, timeProvider, additionalConfigs, enableTransitionEmulation);
     this.builderCircuitBreaker = builderCircuitBreaker;
   }
 
