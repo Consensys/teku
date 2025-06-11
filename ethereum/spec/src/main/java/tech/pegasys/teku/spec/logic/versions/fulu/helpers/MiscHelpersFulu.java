@@ -176,8 +176,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public BlobParameters getBlobParameters(final UInt64 epoch) {
     return blobSchedule.stream()
+        .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
         .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
-        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
+        .findFirst()
         .map(BlobParameters::fromBlobSchedule)
         .orElse(
             new BlobParameters(
