@@ -117,19 +117,20 @@ public class SpecConfigFuluTest {
   public void
       blobParametersFuluEpochDefaultsToElectraBlobParametersWhenBlobScheduleIsNotConfigured() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final UInt64 electraEpoch = UInt64.valueOf(364032);
+
     final SpecConfigAndParent<?> specConfigAndParent =
         SpecConfigLoader.loadConfig(
             "mainnet",
             b -> b.fuluBuilder(fb -> fb.fuluForkEpoch(fuluEpoch).blobSchedule(List.of())));
     final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
-
     // max blobs per block will default to MAX_BLOBS_PER_BLOCK_ELECTRA if blob schedule is empty
     assertThat(
             MiscHelpersFulu.required(fuluSpec.forMilestone(SpecMilestone.FULU).miscHelpers())
                 .getBlobParameters(fuluEpoch))
         .isEqualTo(
             new BlobParameters(
-                fuluEpoch,
+                electraEpoch,
                 SpecConfigFulu.required(fuluSpec.getSpecConfig(fuluEpoch)).getMaxBlobsPerBlock()));
   }
 
