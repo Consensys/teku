@@ -47,6 +47,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public static final String SYNC_COMMITTEE_SUBNET_ENR_FIELD = "syncnets";
   public static final String DAS_CUSTODY_GROUP_COUNT_ENR_FIELD = "cgc";
   public static final String ETH2_ENR_FIELD = "eth2";
+  public static final String NEXT_FORK_DIGEST_ENR_FIELD = "nfd";
 
   private final Spec spec;
   private final P2PNetwork<P> p2pNetwork;

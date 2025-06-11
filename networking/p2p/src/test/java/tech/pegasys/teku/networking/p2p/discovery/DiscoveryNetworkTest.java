@@ -310,6 +310,7 @@ class DiscoveryNetworkTest {
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
             .getDefault(),
         syncCommitteeSubnets,
+        Optional.empty(),
         Optional.empty());
   }
 

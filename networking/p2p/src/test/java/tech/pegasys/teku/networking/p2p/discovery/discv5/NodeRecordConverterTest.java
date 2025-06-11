@@ -81,6 +81,7 @@ class NodeRecordConverterTest {
             Optional.empty(),
             ATTNETS,
             SYNCNETS,
+            Optional.empty(),
             Optional.empty());
     assertThat(CONVERTER.convertToDiscoveryPeer(nodeRecord, false, SCHEMA_DEFINITIONS))
         .contains(expectedPeer);
@@ -124,6 +125,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -159,6 +161,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -188,6 +191,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -209,6 +213,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -231,6 +236,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 persistentSubnets,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -253,6 +259,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 ATT_SUBNET_SCHEMA.getDefault(),
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -275,6 +282,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 ATTNETS,
                 syncnets,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -299,6 +307,7 @@ class NodeRecordConverterTest {
                 ENR_FORK_ID,
                 ATTNETS,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -321,6 +330,7 @@ class NodeRecordConverterTest {
                 Optional.of(enrForkId),
                 ATTNETS,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -342,6 +352,7 @@ class NodeRecordConverterTest {
                 Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -362,7 +373,8 @@ class NodeRecordConverterTest {
                 Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
-                Optional.of(csc)));
+                Optional.of(csc),
+                Optional.empty()));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(
