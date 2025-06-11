@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo8Bytes;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,10 +25,7 @@ import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 public record BlobParameters(UInt64 epoch, int maxBlobsPerBlock) {
   /** used in {@link MiscHelpersFulu#computeForkDigest(Bytes32, UInt64)} */
   public Bytes32 hash() {
-    final Bytes epochBytes = uint64ToBytes(epoch);
-    final Bytes maxBlobsPerBlockBytes = uint64ToBytes(UInt64.valueOf(maxBlobsPerBlock));
-    final Bytes concat = Bytes.wrap(epochBytes, maxBlobsPerBlockBytes);
-    return Hash.sha256(concat);
+    return Hash.sha256(Bytes.wrap(uint64ToBytes(epoch), uintTo8Bytes(maxBlobsPerBlock)));
   }
 
   static BlobParameters fromBlobSchedule(final BlobScheduleEntry blobScheduleEntry) {
