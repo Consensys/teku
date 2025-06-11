@@ -162,6 +162,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .map(BlobScheduleEntry::maxBlobsPerBlock);
   }
 
+  // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
     return blobSchedule.stream()
         .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
