@@ -158,10 +158,10 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   @ParameterizedTest
   @MethodSource("getComputeForkDigestFuluScenarios")
   public void computeForkDigestFuluTest(
-      final Spec spec, final UInt64 epoch, final String expectedValue) {
+      final Spec spec, final long epoch, final String expectedValue) {
     assertThat(
-            MiscHelpersFulu.required(spec.atEpoch(epoch).miscHelpers())
-                .computeForkDigest(Bytes32.ZERO, epoch))
+            MiscHelpersFulu.required(spec.atEpoch(UInt64.valueOf(epoch)).miscHelpers())
+                .computeForkDigest(Bytes32.ZERO, UInt64.valueOf(epoch)))
         .isEqualTo(Bytes4.fromHexString(expectedValue));
   }
 
@@ -170,9 +170,8 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   public static Stream<Arguments> getComputeForkDigestFuluScenarios() {
     final Spec spec =
         TestSpecFactory.createMinimalFulu(
-            builder ->
-                builder
-                    .electraBuilder(
+            b ->
+                b.electraBuilder(
                         eb -> eb.electraForkEpoch(UInt64.valueOf(9)).maxBlobsPerBlockElectra(9))
                     .fuluBuilder(
                         fb ->
@@ -186,13 +185,13 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
                                         new BlobScheduleEntry(UInt64.valueOf(300), 300)))));
 
     return Stream.of(
-        Arguments.of(spec, UInt64.valueOf(100), "0x44a571e8"),
-        Arguments.of(spec, UInt64.valueOf(101), "0x44a571e8"),
-        Arguments.of(spec, UInt64.valueOf(150), "0x1171afca"),
-        Arguments.of(spec, UInt64.valueOf(200), "0x427a30ab"),
-        Arguments.of(spec, UInt64.valueOf(250), "0xd5310ef1"),
-        Arguments.of(spec, UInt64.valueOf(299), "0xd5310ef1"),
-        Arguments.of(spec, UInt64.valueOf(300), "0x51d229f7"));
+        Arguments.of(spec, 100, "44a571e8"),
+        Arguments.of(spec, 101, "44a571e8"),
+        Arguments.of(spec, 150, "1171afca"),
+        Arguments.of(spec, 200, "427a30ab"),
+        Arguments.of(spec, 250, "d5310ef1"),
+        Arguments.of(spec, 299, "d5310ef1"),
+        Arguments.of(spec, 300, "51d229f7"));
   }
 
   @Test
