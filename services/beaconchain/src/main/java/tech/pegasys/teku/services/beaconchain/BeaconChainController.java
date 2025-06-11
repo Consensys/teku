@@ -1138,6 +1138,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .proposersDataManager(proposersDataManager)
             .forkChoiceNotifier(forkChoiceNotifier)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
+            .dataColumnSidecarManager(dataColumnSidecarManager)
             .build();
   }
 

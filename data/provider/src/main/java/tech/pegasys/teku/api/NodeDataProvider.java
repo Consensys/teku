@@ -41,6 +41,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.NewBlobSidecarSubscriber;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -67,6 +68,7 @@ public class NodeDataProvider {
   private final ProposersDataManager proposersDataManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final RecentChainData recentChainData;
+  private final DataColumnSidecarManager dataColumnSidecarManager;
   private final Spec spec;
 
   public NodeDataProvider(
@@ -83,6 +85,7 @@ public class NodeDataProvider {
       final ProposersDataManager proposersDataManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final RecentChainData recentChainData,
+      final DataColumnSidecarManager dataColumnSidecarManager,
       final Spec spec) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
@@ -97,6 +100,7 @@ public class NodeDataProvider {
     this.proposersDataManager = proposersDataManager;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.recentChainData = recentChainData;
+    this.dataColumnSidecarManager = dataColumnSidecarManager;
     this.spec = spec;
   }
 
@@ -212,6 +216,11 @@ public class NodeDataProvider {
 
   public void subscribeToReceivedBlobSidecar(final NewBlobSidecarSubscriber listener) {
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
+  }
+
+  public void subscribeToValidDataColumnSidecars(
+      final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener) {
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(listener);
   }
 
   public void subscribeToAttesterSlashing(

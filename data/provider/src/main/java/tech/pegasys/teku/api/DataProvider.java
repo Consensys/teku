@@ -27,6 +27,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -118,6 +119,7 @@ public class DataProvider {
     private boolean isLivenessTrackingEnabled = true;
     private IntSupplier rejectedExecutionSupplier;
     private BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
+    private DataColumnSidecarManager dataColumnSidecarManager;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -225,6 +227,12 @@ public class DataProvider {
       return this;
     }
 
+    public Builder dataColumnSidecarManager(
+        final DataColumnSidecarManager dataColumnSidecarManager) {
+      this.dataColumnSidecarManager = dataColumnSidecarManager;
+      return this;
+    }
+
     public DataProvider build() {
       final ConfigProvider configProvider = new ConfigProvider(spec);
       final NetworkDataProvider networkDataProvider = new NetworkDataProvider(p2pNetwork);
@@ -243,6 +251,7 @@ public class DataProvider {
               proposersDataManager,
               forkChoiceNotifier,
               recentChainData,
+              dataColumnSidecarManager,
               spec);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(

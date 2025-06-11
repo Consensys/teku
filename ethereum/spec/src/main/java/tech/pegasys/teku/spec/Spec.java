@@ -1132,7 +1132,9 @@ public class Spec {
       default -> {
         final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
         return Optional.of(
-            specVersion.miscHelpers().toVersionFulu().orElseThrow().getMaxBlobsPerBlock(epoch));
+            MiscHelpersFulu.required(specVersion.miscHelpers())
+                .getBlobParameters(epoch)
+                .maxBlobsPerBlock());
       }
     }
   }
