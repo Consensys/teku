@@ -31,6 +31,7 @@ import org.ethereum.beacon.discovery.schema.IdentitySchemaInterpreter;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -85,9 +86,10 @@ public class NodeRecordConverter {
             bytes -> UInt64.fromBytes(bytes).intValue());
     final Optional<Bytes4> nextForkDigest =
         parseField(
-            nodeRecord,
-            NEXT_FORK_DIGEST_ENR_FIELD,
-            bytes -> SszPrimitiveSchemas.BYTES4_SCHEMA.sszDeserialize(bytes).get());
+                nodeRecord,
+                NEXT_FORK_DIGEST_ENR_FIELD,
+                SszPrimitiveSchemas.BYTES4_SCHEMA::sszDeserialize)
+            .map(SszBytes4::get);
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
