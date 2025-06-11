@@ -156,6 +156,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final Bytes4 forkVersion = computeForkVersion(epoch);
     final BlobParameters blobParameters = getBlobParameters(epoch);
     final Bytes4 baseDigest = super.computeForkDigest(forkVersion, genesisValidatorsRoot);
+    System.out.println("base digest: " + baseDigest.toHexString());
     return computeForkDigestInternal(baseDigest, blobParameters);
   }
 
@@ -176,12 +177,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public BlobParameters getBlobParameters(final UInt64 epoch) {
     return blobSchedule.stream()
-        .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
         .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
         .map(BlobParameters::fromBlobSchedule)
         .orElse(
             new BlobParameters(
-                specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
+                specConfigFulu.getElectraForkEpoch(),
+                specConfigFulu.toVersionElectra().orElseThrow().getMaxBlobsPerBlock()));
   }
 
   private UInt256 incrementByModule(final UInt256 n) {
