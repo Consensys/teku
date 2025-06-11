@@ -155,6 +155,53 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @Test
+  @Disabled("Benchmark")
+  public void benchmarkVerifyDataColumnSidecarKzgProof() {
+    final Spec spec = TestSpecFactory.createMainnetFulu();
+    final int numberOfRounds = 25;
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SchemaDefinitionsFulu schemaDefinitionsFulu =
+        SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
+    final MiscHelpersFulu miscHelpersFulu =
+        new MiscHelpersFulu(
+            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
+            predicates,
+            schemaDefinitionsFulu);
+    final List<Blob> blobs =
+        IntStream.range(0, 72).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg());
+    final List<SszKZGCommitment> kzgCommitments =
+        blobs.stream()
+            .map(blob -> getKzg().blobToKzgCommitment(blob.getBytes()))
+            .map(SszKZGCommitment::new)
+            .toList();
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema();
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
+            blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
+    final List<DataColumnSidecar> dataColumnSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
+    final List<Integer> runTimes = new ArrayList<>();
+    System.out.printf("Running verifyDataColumnSidecarKzgProof with %s blobs\n", blobs.size());
+    for (int i = 0; i < numberOfRounds; i++) {
+      final long start = System.currentTimeMillis();
+      dataColumnSidecars.stream()
+          .parallel()
+          .forEach(
+              dataColumnSidecar ->
+                  miscHelpersFulu.verifyDataColumnSidecarKzgProof(getKzg(), dataColumnSidecar));
+      final long end = System.currentTimeMillis();
+      runTimes.add((int) (end - start));
+    }
+    printStats(runTimes);
+  }
+
+  @Test
   public void emptyInclusionProof_shouldFailValidation() {
     final PredicatesElectra predicatesMock = mock(PredicatesElectra.class);
     when(predicatesMock.toVersionElectra()).thenReturn(Optional.of(predicatesMock));
