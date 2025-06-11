@@ -28,7 +28,7 @@ public record BlobParameters(UInt64 epoch, int maxBlobsPerBlock) {
     return Hash.sha256(Bytes.wrap(uint64ToBytes(epoch), uintTo8Bytes(maxBlobsPerBlock)));
   }
 
-  static BlobParameters fromBlobSchedule(final BlobScheduleEntry blobScheduleEntry) {
+  static BlobParameters fromBlobScheduleEntry(final BlobScheduleEntry blobScheduleEntry) {
     return new BlobParameters(blobScheduleEntry.epoch(), blobScheduleEntry.maxBlobsPerBlock());
   }
 }

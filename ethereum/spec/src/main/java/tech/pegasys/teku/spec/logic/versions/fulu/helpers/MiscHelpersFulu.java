@@ -160,7 +160,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
         .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
         .findFirst()
-        .map(BlobParameters::fromBlobSchedule)
+        .map(BlobParameters::fromBlobScheduleEntry)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
