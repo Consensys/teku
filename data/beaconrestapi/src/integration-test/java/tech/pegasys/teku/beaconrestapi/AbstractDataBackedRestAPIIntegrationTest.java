@@ -142,7 +142,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
-  protected final DataColumnSidecarManager dataColumnSidecarManager = mock(DataColumnSidecarManager.class);
+  protected final DataColumnSidecarManager dataColumnSidecarManager =
+      mock(DataColumnSidecarManager.class);
   private StorageSystem storageSystem;
 
   protected RecentChainData recentChainData;
