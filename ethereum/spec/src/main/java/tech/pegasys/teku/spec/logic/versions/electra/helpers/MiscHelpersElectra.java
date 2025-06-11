@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -53,6 +54,14 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
         SchemaDefinitionsDeneb.required(schemaDefinitions));
     this.specConfigElectra = SpecConfigElectra.required(specConfig);
     this.predicatesElectra = PredicatesElectra.required(predicates);
+  }
+
+  @Override
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfigElectra.getElectraForkEpoch())) {
+      return specConfigElectra.getElectraForkVersion();
+    }
+    return super.computeForkVersion(epoch);
   }
 
   public static MiscHelpersElectra required(final MiscHelpers miscHelpers) {

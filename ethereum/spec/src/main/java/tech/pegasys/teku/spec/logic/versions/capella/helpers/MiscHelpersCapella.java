@@ -13,15 +13,27 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella.helpers;
 
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 
 public class MiscHelpersCapella extends MiscHelpersBellatrix {
+  private final SpecConfigCapella specConfigCapella;
 
   public MiscHelpersCapella(final SpecConfigCapella specConfig) {
     super(specConfig);
+    this.specConfigCapella = SpecConfigCapella.required(specConfig);
+  }
+
+  @Override
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfigCapella.getCapellaForkEpoch())) {
+      return specConfigCapella.getCapellaForkVersion();
+    }
+    return super.computeForkVersion(epoch);
   }
 
   @Override

@@ -17,13 +17,16 @@ import static tech.pegasys.teku.spec.constants.ParticipationFlags.indexToFlag;
 
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class MiscHelpersAltair extends MiscHelpers {
 
+  private final SpecConfigAltair specConfigAltair;
   public static final List<UInt64> PARTICIPATION_FLAG_WEIGHTS =
       List.of(
           IncentivizationWeights.TIMELY_SOURCE_WEIGHT,
@@ -32,6 +35,15 @@ public class MiscHelpersAltair extends MiscHelpers {
 
   public MiscHelpersAltair(final SpecConfig specConfig) {
     super(specConfig);
+    this.specConfigAltair = SpecConfigAltair.required(specConfig);
+  }
+
+  @Override
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfigAltair.getAltairForkEpoch())) {
+      return specConfigAltair.getAltairForkVersion();
+    }
+    return super.computeForkVersion(epoch);
   }
 
   /**
