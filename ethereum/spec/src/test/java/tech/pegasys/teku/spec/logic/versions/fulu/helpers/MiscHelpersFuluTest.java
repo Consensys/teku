@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGAbstractBenchmark;
 import tech.pegasys.teku.spec.Spec;
@@ -73,7 +75,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
                           .validatorCustodyRequirement(8)
                           .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .samplesPerSlot(16)));
-  private final SpecConfig specConfig = spec.atSlot(UInt64.ZERO).getConfig();
+  private final SpecConfig specConfig = spec.atSlot(ZERO).getConfig();
   private final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
@@ -154,6 +156,42 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     printStats(runTimes);
   }
 
+  @ParameterizedTest
+  @MethodSource("getFuluDigestScenarios")
+  public void computeForkDigestFuluTest(
+      final String baseDigest,
+      final UInt64 epoch,
+      final int blobsPerBlock,
+      final String expectedValue) {
+
+    final Bytes4 digest =
+        miscHelpersFulu.computeForkDigestInternal(
+            Bytes4.fromHexString(baseDigest), new BlobParameters(epoch, blobsPerBlock));
+
+    assertThat(digest).isEqualTo(Bytes4.fromHexString(expectedValue));
+  }
+
+  public static Stream<Arguments> getFuluDigestScenarios() {
+    // max would be 4096 - MAX_BLOB_COMMITMENTS_PER_BLOCK
+    // this is little endian currently
+    return Stream.of(
+        Arguments.of("ffffffff", ZERO, 4096, "5f1958f6"),
+        Arguments.of("00000000", ZERO, 4095, "64d0cb3e"),
+        Arguments.of("00000000", ZERO, 4096, "a0e6a709"),
+        Arguments.of("06000000", ZERO, 4095, "62d0cb3e"),
+        Arguments.of("06000000", ZERO, 255, "3a03a4ed"),
+        Arguments.of("06000000", ZERO, 64, "4e3ce2f0"),
+        Arguments.of("06000000", ZERO, 86, "af4d0222"),
+        // EF unit test values
+        // fork version: 05000001 genesis validators root 00x32 would give base digest of 97b2c268
+        Arguments.of("97b2c268", UInt64.valueOf(9), 9, "39f8e7c3"),
+        // fork version: 05000001, genesis validators root of 03x32 would give base digest of
+        // 0e38e75e
+        Arguments.of("0e38e75e", UInt64.valueOf(9), 9, "a072c2f5"),
+        // fork version: 05000001 genesis validators root 00x32 would give base digest of 9eb2e7f0
+        Arguments.of("9eb2e7f0", UInt64.valueOf(100), 100, "44a571e8"));
+  }
+
   @Test
   @Disabled("Benchmark")
   public void benchmarkVerifyDataColumnSidecarKzgProof() {
@@ -217,7 +255,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
             .getDataColumnSidecarSchema()
             .create(
-                UInt64.ZERO,
+                ZERO,
                 SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
                     .getDataColumnSchema()
                     .create(List.of()),
@@ -264,7 +302,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
             .getDataColumnSidecarSchema()
             .create(
-                UInt64.ZERO,
+                ZERO,
                 SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
                     .getDataColumnSchema()
                     .create(List.of()),

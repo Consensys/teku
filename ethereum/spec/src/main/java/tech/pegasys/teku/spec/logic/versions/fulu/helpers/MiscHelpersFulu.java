@@ -34,6 +34,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -131,11 +132,57 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
   }
 
+  // compute_fork_version
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())) {
+      return specConfigFulu.getFuluForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getElectraForkEpoch())) {
+      return specConfigFulu.getElectraForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getDenebForkEpoch())) {
+      return specConfigFulu.getDenebForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getCapellaForkEpoch())) {
+      return specConfigFulu.getCapellaForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getBellatrixForkEpoch())) {
+      return specConfigFulu.getBellatrixForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getAltairForkEpoch())) {
+      return specConfigFulu.getAltairForkVersion();
+    }
+    return specConfigFulu.getGenesisForkVersion();
+  }
+
+  // compute_fork_digest
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+
+    final Bytes4 forkVersion = computeForkVersion(epoch);
+    final BlobParameters blobParameters = getBlobParameters(epoch);
+    final Bytes4 baseDigest = super.computeForkDigest(forkVersion, genesisValidatorsRoot);
+    System.out.println("base digest: " + baseDigest.toHexString());
+    return computeForkDigestInternal(baseDigest, blobParameters);
+  }
+
+  Bytes4 computeForkDigestInternal(final Bytes4 baseDigest, final BlobParameters blobParameters) {
+
+    final Bytes32 blobParametersHash = BlobParameters.hash(blobParameters);
+    final Bytes4 hashSnippet = new Bytes4(blobParametersHash.slice(0, 4));
+
+    return new Bytes4(baseDigest.getWrappedBytes().xor(hashSnippet.getWrappedBytes()));
+  }
+
   public int getHighestMaxBlobsPerBlockFromSchedule() {
     return blobSchedule.stream()
         .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
         .map(BlobScheduleEntry::maxBlobsPerBlock)
         .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
+  }
+
+  public BlobParameters getBlobParameters(final UInt64 epoch) {
+    return blobSchedule.stream()
+        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
+        .map(BlobParameters::fromBlobSchedule)
+        .orElse(
+            new BlobParameters(
+                specConfigFulu.getElectraForkEpoch(),
+                specConfigFulu.toVersionElectra().orElseThrow().getMaxBlobsPerBlock()));
   }
 
   private UInt256 incrementByModule(final UInt256 n) {

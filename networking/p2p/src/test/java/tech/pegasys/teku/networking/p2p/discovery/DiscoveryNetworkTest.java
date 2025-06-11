@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.NEXT_FORK_DIGEST_ENR_FIELD;
 
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
@@ -292,11 +294,19 @@ class DiscoveryNetworkTest {
   }
 
   @ParameterizedTest
-  @MethodSource("getCscFixtures")
-  public void cscIsCorrectlyEncoded(final String hexString, final Integer csc) {
-    discoveryNetwork.setDASTotalCustodySubnetCount(csc);
+  @MethodSource("getCgcFixtures")
+  public void cgcIsCorrectlyEncoded(final String hexString, final Integer cgc) {
+    discoveryNetwork.setDASTotalCustodySubnetCount(cgc);
     verify(discoveryService)
         .updateCustomENRField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
+  }
+
+  @Test
+  public void nfdIsCorrectlyEncoded() {
+    final Bytes4 nfd = Bytes4.fromHexString("abcdef12");
+    discoveryNetwork.setNextForkDigest(nfd);
+    verify(discoveryService)
+        .updateCustomENRField(NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nfd).sszSerialize());
   }
 
   public DiscoveryPeer createDiscoveryPeer(final Optional<EnrForkId> maybeForkId) {
@@ -310,6 +320,7 @@ class DiscoveryNetworkTest {
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
             .getDefault(),
         syncCommitteeSubnets,
+        Optional.empty(),
         Optional.empty());
   }
 
@@ -322,7 +333,7 @@ class DiscoveryNetworkTest {
             "57467522110468688239177851250859789869070302005900722885377252304169193209346"));
   }
 
-  private static Stream<Arguments> getCscFixtures() {
+  private static Stream<Arguments> getCgcFixtures() {
     return Stream.of(
         Arguments.of("0x", 0),
         Arguments.of("0x80", 128),
