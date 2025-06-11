@@ -143,17 +143,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Bytes4 forkVersion = computeForkVersion(epoch);
     final BlobParameters blobParameters = getBlobParameters(epoch);
-    final Bytes4 baseDigest = super.computeForkDigest(forkVersion, genesisValidatorsRoot);
-    return computeForkDigestInternal(baseDigest, blobParameters);
-  }
-
-  @VisibleForTesting
-  Bytes4 computeForkDigestInternal(final Bytes4 baseDigest, final BlobParameters blobParameters) {
-
-    final Bytes32 blobParametersHash = BlobParameters.hash(blobParameters);
-    final Bytes4 hashSnippet = new Bytes4(blobParametersHash.slice(0, 4));
-
-    return new Bytes4(baseDigest.getWrappedBytes().xor(hashSnippet.getWrappedBytes()));
+    final Bytes32 baseDigest = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
+    // Bitmask digest with hash of blob parameters
+    return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
   public Optional<Integer> getHighestMaxBlobsPerBlockFromSchedule() {

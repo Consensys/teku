@@ -22,16 +22,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 
 public record BlobParameters(UInt64 epoch, int maxBlobsPerBlock) {
-  static BlobParameters fromBlobSchedule(final BlobScheduleEntry blobScheduleEntry) {
-    return new BlobParameters(blobScheduleEntry.epoch(), blobScheduleEntry.maxBlobsPerBlock());
-  }
-
-  // used in computeForkDigestInternal
-  static Bytes32 hash(final BlobParameters blobParameters) {
-    final Bytes epochBytes = uint64ToBytes(blobParameters.epoch());
-    final Bytes maxBlobsPerBlockBytes =
-        uint64ToBytes(UInt64.valueOf(blobParameters.maxBlobsPerBlock()));
+  /** used in {@link MiscHelpersFulu#computeForkDigest(Bytes32, UInt64)} */
+  public Bytes32 hash() {
+    final Bytes epochBytes = uint64ToBytes(epoch);
+    final Bytes maxBlobsPerBlockBytes = uint64ToBytes(UInt64.valueOf(maxBlobsPerBlock));
     final Bytes concat = Bytes.wrap(epochBytes, maxBlobsPerBlockBytes);
     return Hash.sha256(concat);
+  }
+
+  static BlobParameters fromBlobSchedule(final BlobScheduleEntry blobScheduleEntry) {
+    return new BlobParameters(blobScheduleEntry.epoch(), blobScheduleEntry.maxBlobsPerBlock());
   }
 }
