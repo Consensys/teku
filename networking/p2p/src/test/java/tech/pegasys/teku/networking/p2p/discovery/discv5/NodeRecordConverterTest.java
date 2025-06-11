@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.NEXT_FORK_DIGEST_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
 import java.net.InetAddress;
@@ -35,7 +36,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.spec.Spec;
@@ -358,7 +361,7 @@ class NodeRecordConverterTest {
 
   @ParameterizedTest
   @MethodSource("getCgcFixtures")
-  public void shouldDecodeCgcCorrectly(final String hexString, final Integer csc) {
+  public void shouldDecodeCgcCorrectly(final String hexString, final Integer cgc) {
     assertThat(
             convertNodeRecordWithFields(
                 false,
@@ -373,8 +376,29 @@ class NodeRecordConverterTest {
                 Optional.empty(),
                 ATTNETS,
                 SYNCNETS,
-                Optional.of(csc),
+                Optional.of(cgc),
                 Optional.empty()));
+  }
+
+  @Test
+  public void shouldDecodeNfdCorrectly() {
+    final Bytes4 nfd = Bytes4.fromHexString("abcdef12");
+    assertThat(
+            convertNodeRecordWithFields(
+                false,
+                new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
+                new EnrField(EnrField.TCP, 1234),
+                new EnrField(NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nfd).sszSerialize())))
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY,
+                NODE_ID,
+                new InetSocketAddress("127.0.0.1", 1234),
+                Optional.empty(),
+                ATTNETS,
+                SYNCNETS,
+                Optional.empty(),
+                Optional.of(nfd)));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(
