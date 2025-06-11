@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 
-public record BlobParameters(UInt64 epoch, int maxBlobsPerBlock) {
+record BlobParameters(UInt64 epoch, int maxBlobsPerBlock) {
   static BlobParameters fromBlobSchedule(final BlobScheduleEntry blobScheduleEntry) {
     return new BlobParameters(blobScheduleEntry.epoch(), blobScheduleEntry.maxBlobsPerBlock());
   }
