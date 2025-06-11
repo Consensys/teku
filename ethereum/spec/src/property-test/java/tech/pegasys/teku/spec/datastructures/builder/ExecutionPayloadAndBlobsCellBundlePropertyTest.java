@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayl
 import tech.pegasys.teku.spec.propertytest.suppliers.builder.ExecutionPayloadAndBlobsCellBundleSupplier;
 
 public class ExecutionPayloadAndBlobsCellBundlePropertyTest {
-    @Property(tries = 100)
+  @Property(tries = 100)
   void roundTrip(
       @ForAll(supplier = ExecutionPayloadAndBlobsCellBundleSupplier.class)
           final ExecutionPayloadAndBlobsCellBundle executionPayloadAndBlobsCellBundle)
@@ -31,7 +31,7 @@ public class ExecutionPayloadAndBlobsCellBundlePropertyTest {
     assertRoundTrip(executionPayloadAndBlobsCellBundle);
   }
 
-    @Property(tries = 100)
+  @Property(tries = 100)
   void deserializeMutated(
       @ForAll(supplier = ExecutionPayloadAndBlobsCellBundleSupplier.class)
           final ExecutionPayloadAndBlobsCellBundle executionPayloadAndBlobsCellBundle,

@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPay
 import tech.pegasys.teku.spec.propertytest.suppliers.builder.ExecutionPayloadAndBlobsBundleSupplier;
 
 public class ExecutionPayloadAndBlobsBundlePropertyTest {
-    @Property(tries = 100)
+  @Property(tries = 100)
   void roundTrip(
       @ForAll(supplier = ExecutionPayloadAndBlobsBundleSupplier.class)
           final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle)
