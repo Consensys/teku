@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
 import io.libp2p.core.pubsub.PubsubSubscription;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;

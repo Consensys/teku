@@ -105,7 +105,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   }
 
   @Override
-  protected ForkInfo getForkInfo(Bytes32 genesisValidatorsRoot) {
+  protected ForkInfo getForkInfo(final Bytes32 genesisValidatorsRoot) {
     return maybeBpo
         .map(
             bpo ->
