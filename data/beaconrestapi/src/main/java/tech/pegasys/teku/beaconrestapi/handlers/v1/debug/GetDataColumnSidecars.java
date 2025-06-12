@@ -82,7 +82,8 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
             getSszResponseType(),
             ETH_CONSENSUS_HEADER_TYPE)
         .withNotFoundResponse()
-        .withChainDataResponses()
+        .withInternalErrorResponse()
+        .withNotAcceptedResponse()
         .build();
   }
 
@@ -115,10 +116,12 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
             .getJsonTypeDefinition();
     return SerializableTypeDefinition.<DataColumnSidecarsAndMetaData>object()
         .name("GetDataColumnSidecarsResponse")
-        .withOptionalField("version", MILESTONE_TYPE, (b) -> Optional.of(b.getMilestone()))
-        .withOptionalField(
-            EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, (b) -> Optional.of(b.isExecutionOptimistic()))
-        .withOptionalField(FINALIZED, BOOLEAN_TYPE, (b) -> Optional.of(b.isFinalized()))
+        .withField("version", MILESTONE_TYPE, DataColumnSidecarsAndMetaData::getMilestone)
+        .withField(
+            EXECUTION_OPTIMISTIC,
+            BOOLEAN_TYPE,
+            DataColumnSidecarsAndMetaData::isExecutionOptimistic)
+        .withField(FINALIZED, BOOLEAN_TYPE, DataColumnSidecarsAndMetaData::isFinalized)
         .withField("data", listOf(dataColumnSidecarType), DataColumnSidecarsAndMetaData::getData)
         .build();
   }

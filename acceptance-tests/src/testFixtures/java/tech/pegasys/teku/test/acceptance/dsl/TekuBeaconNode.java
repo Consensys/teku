@@ -686,7 +686,7 @@ public class TekuBeaconNode extends TekuNode {
 
   public int getDataColumnSidecarCount(final String blockId) throws IOException {
     final String result =
-        httpClient.get(getRestApiUrl(), "/teku/v1/beacon/data_column_sidecars/" + blockId);
+        httpClient.get(getRestApiUrl(), "/eth/v1/debug/beacon/data_column_sidecars/" + blockId);
     final JsonNode jsonNode = OBJECT_MAPPER.readTree(result);
     return jsonNode.get("data").size();
   }

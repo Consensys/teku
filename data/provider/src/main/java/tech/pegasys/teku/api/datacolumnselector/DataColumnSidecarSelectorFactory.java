@@ -159,10 +159,6 @@ public class DataColumnSidecarSelectorFactory
   private Optional<DataColumnSidecarsAndMetaData> addMetaData(
       final Optional<List<DataColumnSidecar>> maybeDataColumnSidecarList,
       final SlotAndBlockRoot slotAndBlockRoot) {
-    if (maybeDataColumnSidecarList.isEmpty()) {
-      return Optional.empty();
-    }
-
     final UInt64 slot = slotAndBlockRoot.getSlot();
     final Bytes32 blockRoot = slotAndBlockRoot.getBlockRoot();
     final Optional<ChainHead> maybeChainHead = client.getChainHead();
@@ -172,7 +168,7 @@ public class DataColumnSidecarSelectorFactory
 
     if (maybeChainHead.isPresent()) {
       ChainHead chainHead = maybeChainHead.get();
-      isOptimistic = chainHead.isOptimistic() || client.isOptimisticBlock(blockRoot);
+      isOptimistic = client.isOptimisticBlock(blockRoot);
       isCanonical = client.isCanonicalBlock(slot, blockRoot, chainHead.getRoot());
     } else {
       // If there's no chain head, we assume the block is not optimistic and not canonical
