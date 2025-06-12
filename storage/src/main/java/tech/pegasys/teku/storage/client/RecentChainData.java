@@ -518,7 +518,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                               .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
                             return spec.getBpo(currentEpoch)
                                 .map(
-                                    bpo ->
+                                    __ ->
                                         new ForkInfo(
                                             fork,
                                             validatorsRoot,
@@ -537,7 +537,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
               if (spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
                 return spec.getBpo(epoch)
                     .map(
-                        bpo ->
+                        __ ->
                             new ForkInfo(
                                 getFork(epoch),
                                 validatorsRoot,
