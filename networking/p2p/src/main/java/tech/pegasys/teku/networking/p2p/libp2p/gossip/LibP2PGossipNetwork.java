@@ -72,7 +72,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
-    LOG.trace("Subscribe to topic: {}", topic);
+    LOG.info("Subscribe to topic: {}", topic);
     topicHandlers.add(topic, topicHandler);
     final Topic libP2PTopic = new Topic(topic);
     final GossipHandler gossipHandler =
