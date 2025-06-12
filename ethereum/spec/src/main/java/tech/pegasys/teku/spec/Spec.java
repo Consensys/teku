@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -250,6 +252,18 @@ public class Spec {
    */
   public List<ForkAndSpecMilestone> getEnabledMilestones() {
     return forkSchedule.getActiveMilestones();
+  }
+
+  public Optional<BlobScheduleEntry> getBpo(final UInt64 epoch) {
+    return atEpoch(epoch)
+        .getConfig()
+        .toVersionFulu()
+        .flatMap(
+            specConfigFulu ->
+                specConfigFulu.getBlobSchedule().stream()
+                    .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
+                    .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
+                    .findFirst());
   }
 
   /**
@@ -501,6 +515,11 @@ public class Spec {
     return atForkVersion(currentVersion)
         .miscHelpers()
         .computeForkDigest(currentVersion, genesisValidatorsRoot);
+  }
+
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    return MiscHelpersFulu.required(atEpoch(epoch).miscHelpers())
+        .computeForkDigest(genesisValidatorsRoot, epoch);
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
