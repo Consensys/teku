@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
   private final DasGossipLogger dasGossipLogger;
@@ -97,6 +100,18 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     this.dasGossipLogger = dasGossipLogger;
     this.maybeBpo = maybeBpo;
+  }
+
+  @Override
+  public void startGossip(Bytes32 genesisValidatorsRoot, boolean isOptimisticHead) {
+    maybeBpo.ifPresent(
+        bpo ->
+            LOG.info(
+                "Starting gossip for new BPO fork: epoch {}, max blobs per block {}, fork digest {}",
+                bpo.epoch(),
+                bpo.maxBlobsPerBlock(),
+                spec.computeForkDigest(genesisValidatorsRoot, bpo.epoch())));
+    super.startGossip(genesisValidatorsRoot, isOptimisticHead);
   }
 
   @Override

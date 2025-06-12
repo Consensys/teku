@@ -107,8 +107,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public final void startGossip(
-      final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
+  public void startGossip(final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
     if (gossipManagers.isEmpty()) {
       final ForkInfo forkInfo = getForkInfo(genesisValidatorsRoot);
       addGossipManagers(forkInfo);
