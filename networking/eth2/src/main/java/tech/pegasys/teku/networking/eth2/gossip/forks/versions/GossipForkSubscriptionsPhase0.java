@@ -46,7 +46,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   private final List<GossipManager> gossipManagers = new ArrayList<>();
-  private final Fork fork;
+  protected final Fork fork;
   protected final Spec spec;
   protected final AsyncRunner asyncRunner;
   protected final MetricsSystem metricsSystem;
@@ -110,7 +110,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   public final void startGossip(
       final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
     if (gossipManagers.isEmpty()) {
-      final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
+      final ForkInfo forkInfo = getForkInfo(genesisValidatorsRoot);
       addGossipManagers(forkInfo);
     }
     gossipManagers.stream()
@@ -203,6 +203,10 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             attesterSlashingProcessor,
             debugDataDumper);
     addGossipManager(attesterSlashingGossipManager);
+  }
+
+  protected ForkInfo getForkInfo(final Bytes32 genesisValidatorsRoot) {
+    return new ForkInfo(fork, genesisValidatorsRoot);
   }
 
   protected void addGossipManagers(final ForkInfo forkInfo) {
