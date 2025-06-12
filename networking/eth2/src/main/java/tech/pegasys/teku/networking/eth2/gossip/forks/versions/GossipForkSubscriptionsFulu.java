@@ -13,15 +13,19 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -38,12 +42,13 @@ import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-// Capella because we don't need blobSidecar subscriptions
 public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra {
 
   private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
+  private final DasGossipLogger dasGossipLogger;
+  private final Optional<BlobScheduleEntry> maybeBpo;
+
   private DataColumnSidecarGossipManager dataColumnSidecarGossipManager;
-  public DasGossipLogger dasGossipLogger;
 
   public GossipForkSubscriptionsFulu(
       final Fork fork,
@@ -68,7 +73,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
       final DebugDataDumper debugDataDumper,
-      final DasGossipLogger dasGossipLogger) {
+      final DasGossipLogger dasGossipLogger,
+      final Optional<BlobScheduleEntry> maybeBpo) {
     super(
         fork,
         spec,
@@ -90,6 +96,24 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
         debugDataDumper);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     this.dasGossipLogger = dasGossipLogger;
+    this.maybeBpo = maybeBpo;
+  }
+
+  @Override
+  public UInt64 getActivationEpoch() {
+    return maybeBpo.map(BlobScheduleEntry::epoch).orElseGet(super::getActivationEpoch);
+  }
+
+  @Override
+  protected ForkInfo getForkInfo(Bytes32 genesisValidatorsRoot) {
+    return maybeBpo
+        .map(
+            bpo ->
+                new ForkInfo(
+                    fork,
+                    genesisValidatorsRoot,
+                    spec.computeForkDigest(genesisValidatorsRoot, bpo.epoch())))
+        .orElseGet(() -> super.getForkInfo(genesisValidatorsRoot));
   }
 
   @Override

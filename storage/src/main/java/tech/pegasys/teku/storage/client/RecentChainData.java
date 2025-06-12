@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -266,6 +267,18 @@ public abstract class RecentChainData implements StoreUpdateHandler {
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      // BPO
+      SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+          .getBlobSchedule()
+          .forEach(
+              bpo -> {
+                final SpecMilestone milestone = spec.atEpoch(bpo.epoch()).getMilestone();
+                final Bytes4 forkDigest =
+                    spec.computeForkDigest(genesisValidatorsRoot, bpo.epoch());
+                this.forkDigestToMilestone.put(forkDigest, milestone);
+              });
+    }
 
     // Update the ValidatorIndexCache latest finalized index to the anchor state
     BeaconStateCache.getTransitionCaches(anchorState)
@@ -495,13 +508,44 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return genesisData
         .map(GenesisData::getGenesisValidatorsRoot)
         .flatMap(
-            validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
+            validatorsRoot ->
+                getCurrentFork()
+                    .map(
+                        fork -> {
+                          final UInt64 currentEpoch = getCurrentEpoch().orElseThrow();
+                          if (spec.atEpoch(currentEpoch)
+                              .getMilestone()
+                              .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+                            return spec.getBpo(currentEpoch)
+                                .map(
+                                    bpo ->
+                                        new ForkInfo(
+                                            fork,
+                                            validatorsRoot,
+                                            spec.computeForkDigest(validatorsRoot, currentEpoch)))
+                                .orElse(new ForkInfo(fork, validatorsRoot));
+                          }
+                          return new ForkInfo(fork, validatorsRoot);
+                        }));
   }
 
   public Optional<ForkInfo> getForkInfo(final UInt64 epoch) {
     return genesisData
         .map(GenesisData::getGenesisValidatorsRoot)
-        .map(validatorsRoot -> new ForkInfo(getFork(epoch), validatorsRoot));
+        .map(
+            validatorsRoot -> {
+              if (spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+                return spec.getBpo(epoch)
+                    .map(
+                        bpo ->
+                            new ForkInfo(
+                                getFork(epoch),
+                                validatorsRoot,
+                                spec.computeForkDigest(validatorsRoot, epoch)))
+                    .orElse(new ForkInfo(getFork(epoch), validatorsRoot));
+              }
+              return new ForkInfo(getFork(epoch), validatorsRoot);
+            });
   }
 
   /** Retrieves the block chosen by fork choice to build and attest on */

@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.context;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
@@ -49,6 +50,16 @@ class ForkDigestRpcContextCodec<TPayload extends SszData>
   public Bytes encodeContext(final TPayload responsePayload) {
     final UInt64 slot = payloadContext.getSlotFromPayload(responsePayload);
     final SpecMilestone specMilestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      final UInt64 epoch = spec.computeEpochAtSlot(slot);
+      // only if BPO exists
+      if (spec.getBpo(epoch).isPresent()) {
+        final Bytes32 genesisValidatorsRoot =
+            recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot();
+        // TODO: very hacky, cache this
+        return spec.computeForkDigest(genesisValidatorsRoot, epoch).getWrappedBytes();
+      }
+    }
     return recentChainData
         .getForkDigestByMilestone(specMilestone)
         .map(Bytes4::getWrappedBytes)
