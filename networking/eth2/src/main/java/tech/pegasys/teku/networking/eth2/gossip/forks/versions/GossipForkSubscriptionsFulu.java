@@ -103,7 +103,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   }
 
   @Override
-  public void startGossip(Bytes32 genesisValidatorsRoot, boolean isOptimisticHead) {
+  public void startGossip(final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
     maybeBpo.ifPresent(
         bpo ->
             LOG.info(
