@@ -15,23 +15,29 @@ package tech.pegasys.teku.api.datacolumnselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
+import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarSelectorFactory
     extends AbstractSelectorFactory<DataColumnSidecarSelector> {
 
-  public DataColumnSidecarSelectorFactory(final CombinedChainDataClient client) {
+  private final Spec spec;
+
+  public DataColumnSidecarSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
     super(client);
+    this.spec = spec;
   }
 
   @Override
@@ -42,12 +48,28 @@ public class DataColumnSidecarSelectorFactory
             .thenCompose(
                 maybeSlot -> {
                   if (maybeSlot.isPresent()) {
-                    return getDataColumnSidecars(maybeSlot.get(), indices);
+                    final SlotAndBlockRoot slotAndBlockRoot =
+                        new SlotAndBlockRoot(maybeSlot.get(), blockRoot);
+                    return getDataColumnSidecars(maybeSlot.get(), indices)
+                        .thenApply(
+                            dataColumnSidecars ->
+                                addMetaData(dataColumnSidecars, slotAndBlockRoot));
                   }
                   return client
                       .getBlockByBlockRoot(blockRoot)
                       .thenCompose(
-                          maybeBlock -> getDataColumnSidecarsForBlock(maybeBlock, indices));
+                          maybeBlock -> {
+                            if (maybeBlock.isEmpty()) {
+                              return SafeFuture.completedFuture(Optional.empty());
+                            }
+                            final SignedBeaconBlock block = maybeBlock.get();
+                            final SlotAndBlockRoot slotAndBlockRoot =
+                                new SlotAndBlockRoot(block.getSlot(), blockRoot);
+                            return getDataColumnSidecarsForBlock(maybeBlock, indices)
+                                .thenApply(
+                                    dataColumnSidecars ->
+                                        addMetaData(dataColumnSidecars, slotAndBlockRoot));
+                          });
                 });
   }
 
@@ -56,7 +78,13 @@ public class DataColumnSidecarSelectorFactory
     return indices ->
         client
             .getChainHead()
-            .map(head -> getDataColumnSidecars(head.getSlot(), indices))
+            .map(
+                head ->
+                    getDataColumnSidecars(head.getSlot(), indices)
+                        .thenApply(
+                            dataColumnSidecars ->
+                                addMetaData(
+                                    dataColumnSidecars, head.getSlot(), head.isOptimistic())))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
@@ -66,7 +94,16 @@ public class DataColumnSidecarSelectorFactory
         client
             .getBlockAtSlotExact(GENESIS_SLOT)
             .thenCompose(
-                maybeGenesisBlock -> getDataColumnSidecarsForBlock(maybeGenesisBlock, indices));
+                maybeGenesisBlock ->
+                    getDataColumnSidecarsForBlock(maybeGenesisBlock, indices)
+                        .thenApply(
+                            dataColumnSidecars ->
+                                addMetaData(
+                                    dataColumnSidecars,
+                                    GENESIS_SLOT,
+                                    false,
+                                    true,
+                                    client.isFinalized(GENESIS_SLOT))));
   }
 
   @Override
@@ -74,13 +111,25 @@ public class DataColumnSidecarSelectorFactory
     return indices ->
         client
             .getLatestFinalized()
-            .map(anchorPoint -> getDataColumnSidecars(anchorPoint.getSlot(), indices))
+            .map(
+                anchorPoint ->
+                    getDataColumnSidecars(anchorPoint.getSlot(), indices)
+                        .thenApply(
+                            dataColumnSidecars ->
+                                addMetaData(
+                                    dataColumnSidecars,
+                                    anchorPoint.getSlot(),
+                                    client.isChainHeadOptimistic())))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Override
   public DataColumnSidecarSelector slotSelector(final UInt64 slot) {
-    return indices -> getDataColumnSidecars(slot, indices);
+    return indices ->
+        getDataColumnSidecars(slot, indices)
+            .thenApply(
+                dataColumnSidecars ->
+                    addMetaData(dataColumnSidecars, slot, client.isChainHeadOptimistic()));
   }
 
   private SafeFuture<Optional<List<DataColumnSidecar>>> getDataColumnSidecarsForBlock(
@@ -94,14 +143,68 @@ public class DataColumnSidecarSelectorFactory
       return SafeFuture.completedFuture(Optional.empty());
     }
     if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+      return SafeFuture.completedFuture(Optional.empty());
     }
     final SignedBeaconBlock block = maybeBlock.get();
-    return getDataColumnSidecars(block.getSlot(), indices);
+    final UInt64 slot = block.getSlot();
+
+    return client.getDataColumnSidecars(slot, indices).thenApply(Optional::of);
   }
 
   private SafeFuture<Optional<List<DataColumnSidecar>>> getDataColumnSidecars(
       final UInt64 slot, final List<UInt64> indices) {
     return client.getDataColumnSidecars(slot, indices).thenApply(Optional::of);
+  }
+
+  private Optional<DataColumnSidecarsAndMetaData> addMetaData(
+      final Optional<List<DataColumnSidecar>> maybeDataColumnSidecarList,
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    if (maybeDataColumnSidecarList.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final UInt64 slot = slotAndBlockRoot.getSlot();
+    final Bytes32 blockRoot = slotAndBlockRoot.getBlockRoot();
+    final Optional<ChainHead> maybeChainHead = client.getChainHead();
+    final boolean isFinalized = client.isFinalized(slot);
+    boolean isOptimistic;
+    boolean isCanonical = false;
+
+    if (maybeChainHead.isPresent()) {
+      ChainHead chainHead = maybeChainHead.get();
+      isOptimistic = chainHead.isOptimistic() || client.isOptimisticBlock(blockRoot);
+      isCanonical = client.isCanonicalBlock(slot, blockRoot, chainHead.getRoot());
+    } else {
+      // If there's no chain head, we assume the block is not optimistic and not canonical
+      isOptimistic = client.isOptimisticBlock(blockRoot);
+    }
+    return addMetaData(maybeDataColumnSidecarList, slot, isOptimistic, isCanonical, isFinalized);
+  }
+
+  private Optional<DataColumnSidecarsAndMetaData> addMetaData(
+      final Optional<List<DataColumnSidecar>> maybeDataColumnSidecarList,
+      final UInt64 slot,
+      final boolean isOptimistic) {
+    if (maybeDataColumnSidecarList.isEmpty()) {
+      return Optional.empty();
+    }
+    return addMetaData(
+        maybeDataColumnSidecarList, slot, isOptimistic, true, client.isFinalized(slot));
+  }
+
+  private Optional<DataColumnSidecarsAndMetaData> addMetaData(
+      final Optional<List<DataColumnSidecar>> maybeDataColumnSidecars,
+      final UInt64 slot,
+      final boolean isOptimistic,
+      final boolean isCanonical,
+      final boolean isFinalized) {
+    return maybeDataColumnSidecars.map(
+        dataColumnSidecars ->
+            new DataColumnSidecarsAndMetaData(
+                dataColumnSidecars,
+                spec.atSlot(slot).getMilestone(),
+                isOptimistic,
+                isCanonical,
+                isFinalized));
   }
 }

@@ -60,7 +60,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -69,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrate
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -111,7 +111,7 @@ public class ChainDataProvider {
         new StateSelectorFactory(spec, combinedChainDataClient),
         new BlobSidecarSelectorFactory(
             spec, combinedChainDataClient, blobSidecarReconstructionProvider),
-        new DataColumnSidecarSelectorFactory(combinedChainDataClient),
+        new DataColumnSidecarSelectorFactory(spec, combinedChainDataClient),
         rewardCalculator);
   }
 
@@ -210,7 +210,7 @@ public class ChainDataProvider {
             maybeBlobSideCarsMetaData -> maybeBlobSideCarsMetaData.map(ObjectAndMetaData::getData));
   }
 
-  public SafeFuture<Optional<List<DataColumnSidecar>>> getDataColumnSidecars(
+  public SafeFuture<Optional<DataColumnSidecarsAndMetaData>> getDataColumnSidecars(
       final String blockIdParam, final List<UInt64> indices) {
     return dataColumnSidecarSelectorFactory
         .createSelectorForBlockId(blockIdParam)
