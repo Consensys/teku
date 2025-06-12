@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.fulu;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -54,7 +55,8 @@ public class StatusMessageSchemaFulu
       final Bytes32 headRoot,
       final UInt64 headSlot,
       final Optional<UInt64> earliestAvailableSlot) {
-    // TODO-9539: handle earliestAvailableSlot is empty
+
+    Preconditions.checkArgument(earliestAvailableSlot.isPresent());
     return new StatusMessageFulu(
         this,
         forkDigest,

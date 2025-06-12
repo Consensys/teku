@@ -201,14 +201,15 @@ public class BeaconChainMethods {
       final RpcEncoding rpcEncoding) {
     final StatusMessageHandler messageHandler =
         new StatusMessageHandler(spec, statusMessageFactory);
-    final SszSchema<StatusMessage> requestType =
+    final SszSchema<StatusMessage> phase0StatusSchema =
         SszSchema.as(
             StatusMessage.class,
             spec.forMilestone(SpecMilestone.PHASE0)
                 .getSchemaDefinitions()
                 .getStatusMessageSchema());
     final boolean expectResponse = true;
-    final RpcContextCodec<?, StatusMessage> phase0ContextCodec = RpcContextCodec.noop(requestType);
+    final RpcContextCodec<?, StatusMessage> phase0ContextCodec =
+        RpcContextCodec.noop(phase0StatusSchema);
 
     final SingleProtocolEth2RpcMethod<StatusMessage, StatusMessage> v1Method =
         new SingleProtocolEth2RpcMethod<>(
@@ -216,7 +217,7 @@ public class BeaconChainMethods {
             BeaconChainMethodIds.STATUS,
             1,
             rpcEncoding,
-            requestType,
+            phase0StatusSchema,
             expectResponse,
             phase0ContextCodec,
             messageHandler,
@@ -249,7 +250,7 @@ public class BeaconChainMethods {
       versionedMethods.add(v2Method);
 
       return VersionedEth2RpcMethod.create(
-          rpcEncoding, requestType, expectResponse, versionedMethods);
+          rpcEncoding, phase0StatusSchema, expectResponse, versionedMethods);
     } else {
       return v1Method;
     }

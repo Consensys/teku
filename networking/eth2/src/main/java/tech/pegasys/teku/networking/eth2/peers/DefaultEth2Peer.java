@@ -264,10 +264,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<PeerStatus> sendStatus() {
-    // TODO-9539 We can't assume schema will always be similar to genesis
-    final Optional<StatusMessage> statusMessage =
-        statusMessageFactory.createStatusMessage(
-            spec.getGenesisSchemaDefinitions().getStatusMessageSchema());
+    final Optional<StatusMessage> statusMessage = statusMessageFactory.createStatusMessage();
     if (statusMessage.isEmpty()) {
       final Exception error =
           new IllegalStateException("Unable to generate local status message. Node is not ready.");

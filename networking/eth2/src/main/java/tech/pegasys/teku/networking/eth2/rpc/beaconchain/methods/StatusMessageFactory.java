@@ -30,6 +30,11 @@ public class StatusMessageFactory {
     this.recentChainData = recentChainData;
   }
 
+  public Optional<StatusMessage> createStatusMessage() {
+    return createStatusMessage(
+        recentChainData.getCurrentSpec().getSchemaDefinitions().getStatusMessageSchema());
+  }
+
   public Optional<StatusMessage> createStatusMessage(final StatusMessageSchema<?> schema) {
     if (recentChainData.isPreForkChoice()) {
       // We don't have chainhead information, so we can't generate an accurate status message
@@ -52,6 +57,6 @@ public class StatusMessageFactory {
             finalizedCheckpoint.getEpoch(),
             chainHead.getRoot(),
             chainHead.getSlot(),
-            Optional.empty()));
+            Optional.ofNullable(recentChainData.getHeadSlot())));
   }
 }
