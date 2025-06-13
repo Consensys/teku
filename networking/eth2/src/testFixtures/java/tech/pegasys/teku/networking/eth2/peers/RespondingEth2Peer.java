@@ -337,6 +337,12 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
+      final Eth2RpcMethod<I, O> method, final Function<String, I> request) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  }
+
+  @Override
   public Optional<RequestApproval> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return Optional.of(
