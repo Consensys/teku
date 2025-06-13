@@ -169,12 +169,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkSyncCommitteeSubnetsSubscription =
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
-    }
 
-    gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
+    }
+    gossipForkManager.configureGossipForEpoch(currentEpoch);
     if (allTopicsFilterEnabled) {
       setAllTopicScoring();
     }
