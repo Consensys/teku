@@ -518,7 +518,14 @@ public class Spec {
   }
 
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
-    return MiscHelpersFulu.required(atEpoch(epoch).miscHelpers())
+    if (getForkSchedule().getHighestSupportedMilestone().isLessThan(FULU)) {
+      throw new IllegalArgumentException(
+          "Cannot call computeForkDigest in this way if fulu is not supported.");
+    }
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionFulu()
+        .orElse(forMilestone(FULU).miscHelpers().toVersionFulu().orElseThrow())
         .computeForkDigest(genesisValidatorsRoot, epoch);
   }
 
