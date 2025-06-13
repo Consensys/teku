@@ -31,8 +31,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 
 public class ErrorConditionsIntegrationTest {
 
@@ -81,7 +80,7 @@ public class ErrorConditionsIntegrationTest {
   }
 
   // Deliberately doesn't serialize to a valid STATUS message.
-  private static class InvalidStatusMessage extends StatusMessagePhase0 {
+  private static class InvalidStatusMessage extends StatusMessage {
 
     public InvalidStatusMessage(final Bytes4 forkVersion) {
       super(forkVersion, Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, UInt64.ZERO);

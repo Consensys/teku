@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -66,8 +65,6 @@ public interface SchemaDefinitions {
   SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema();
 
   MetadataMessageSchema<?> getMetadataMessageSchema();
-
-  StatusMessageSchema<?> getStatusMessageSchema();
 
   SszBitvectorSchema<SszBitvector> getAttnetsENRFieldSchema();
 

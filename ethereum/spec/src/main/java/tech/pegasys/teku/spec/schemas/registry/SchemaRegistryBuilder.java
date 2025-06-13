@@ -69,7 +69,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_C
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SYNCNETS_ENR_FIELD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.WITHDRAWAL_SCHEMA;
@@ -138,8 +137,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsBy
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.fulu.StatusMessageSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessageSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
@@ -186,7 +183,6 @@ public class SchemaRegistryBuilder {
         .addProvider(createSignedBeaconBlockSchemaProvider())
         .addProvider(createBeaconStateSchemaProvider())
         .addProvider(createMetadataMessageSchemaProvider())
-        .addProvider(createStatusMessageSchemaProvider())
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -815,13 +811,6 @@ public class SchemaRegistryBuilder {
                 new MetadataMessageSchemaAltair(specConfig.getNetworkingConfig()))
         .withCreator(
             FULU, (registry, specConfig, schemaName) -> new MetadataMessageSchemaFulu(specConfig))
-        .build();
-  }
-
-  private static SchemaProvider<?> createStatusMessageSchemaProvider() {
-    return providerBuilder(STATUS_MESSAGE_SCHEMA)
-        .withCreator(PHASE0, (registry, specConfig, schemaName) -> new StatusMessageSchemaPhase0())
-        .withCreator(FULU, (registry, specConfig, schemaName) -> new StatusMessageSchemaFulu())
         .build();
   }
 

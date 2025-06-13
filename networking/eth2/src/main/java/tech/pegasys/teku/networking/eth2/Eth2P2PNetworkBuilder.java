@@ -164,8 +164,7 @@ public class Eth2P2PNetworkBuilder {
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     if (statusMessageFactory == null) {
-      statusMessageFactory =
-          new StatusMessageFactory(spec, combinedChainDataClient.getRecentChainData());
+      statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }
 
     final Optional<UInt64> dasTotalCustodyGroupCount =

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,8 +74,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -265,9 +264,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<PeerStatus> sendStatus() {
-    final Optional<Function<String, StatusMessage>> statusMessage =
-        statusMessageFactory.createStatusMessage();
-
+    final Optional<StatusMessage> statusMessage = statusMessageFactory.createStatusMessage();
     if (statusMessage.isEmpty()) {
       final Exception error =
           new IllegalStateException("Unable to generate local status message. Node is not ready.");
@@ -408,8 +405,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
-                    "Requesting blob sidecars from slot {} instead of slot {} because the request is spanning the "
-                        + "Deneb fork transition",
+                    "Requesting blob sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
                     firstSupportedSlot,
                     startSlot);
                 final UInt64 updatedCount =
@@ -457,8 +453,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
-                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning "
-                        + "the Deneb fork transition",
+                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
                     firstSupportedSlot,
                     startSlot);
                 final UInt64 updatedCount =
@@ -581,15 +576,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .thenCompose(__ -> responseHandler.getResult());
   }
 
-  @Override
-  public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
-      final Eth2RpcMethod<I, O> method, final Function<String, I> requestFn) {
-    final Eth2RpcResponseHandler<O, O> responseHandler =
-        Eth2RpcResponseHandler.expectSingleResponse();
-    return sendEth2Request(method, requestFn, responseHandler)
-        .thenCompose(__ -> responseHandler.getResult());
-  }
-
   private void adjustObjectsRequest(
       final RateTracker requestTracker,
       final RequestApproval requestApproval,
@@ -636,21 +622,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     outstandingRequests.incrementAndGet();
 
     return this.sendRequest(method, request, responseHandler)
-        .thenPeek(
-            ctrl ->
-                ctrl.getRequiredOutgoingRequestHandler()
-                    .handleInitialPayloadSent(ctrl.getRpcStream()))
-        .thenCompose(ctrl -> ctrl.getRequiredOutgoingRequestHandler().getCompletedFuture())
-        .alwaysRun(outstandingRequests::decrementAndGet);
-  }
-
-  private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendEth2Request(
-      final Eth2RpcMethod<I, O> method,
-      final Function<String, I> requestFn,
-      final Eth2RpcResponseHandler<O, ?> responseHandler) {
-    outstandingRequests.incrementAndGet();
-
-    return this.sendRequest(method, requestFn, responseHandler)
         .thenPeek(
             ctrl ->
                 ctrl.getRequiredOutgoingRequestHandler()

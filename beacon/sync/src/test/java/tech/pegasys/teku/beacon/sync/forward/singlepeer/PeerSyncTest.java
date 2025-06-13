@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
@@ -71,7 +71,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
-          new StatusMessagePhase0(
+          new StatusMessage(
               Bytes4.leftPad(Bytes.EMPTY),
               Bytes32.ZERO,
               PEER_FINALIZED_EPOCH,
@@ -643,7 +643,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     final UInt64 headSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).plus(2L * slotsPerEpoch);
     final PeerStatus peerStatus =
         PeerStatus.fromStatusMessage(
-            new StatusMessagePhase0(
+            new StatusMessage(
                 Bytes4.leftPad(Bytes.EMPTY),
                 Bytes32.ZERO,
                 finalizedEpoch,

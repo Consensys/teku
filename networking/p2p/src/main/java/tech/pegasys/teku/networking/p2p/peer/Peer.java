@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.p2p.peer;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.PeerClientType;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -53,20 +52,9 @@ public interface Peer {
 
   <TOutgoingHandler extends RpcRequestHandler, TRequest, RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler);
-
-  default <
-          TOutgoingHandler extends RpcRequestHandler,
-          TRequest,
-          RespHandler extends RpcResponseHandler<?>>
-      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final Function<String, TRequest> requestFn,
-          final RespHandler responseHandler) {
-    throw new IllegalStateException("Not supported");
-  }
 
   boolean connectionInitiatedLocally();
 

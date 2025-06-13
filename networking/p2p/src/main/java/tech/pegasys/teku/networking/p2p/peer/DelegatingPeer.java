@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.p2p.peer;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
@@ -66,18 +65,6 @@ public class DelegatingPeer implements Peer {
           final TRequest request,
           final RespHandler responseHandler) {
     return peer.sendRequest(rpcMethod, request, responseHandler);
-  }
-
-  @Override
-  public <
-          TOutgoingHandler extends RpcRequestHandler,
-          TRequest,
-          RespHandler extends RpcResponseHandler<?>>
-      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final Function<String, TRequest> requestFn,
-          final RespHandler responseHandler) {
-    return peer.sendRequest(rpcMethod, requestFn, responseHandler);
   }
 
   @Override

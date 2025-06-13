@@ -247,7 +247,7 @@ public class Eth2P2PNetworkFactory {
                 attestationSubnetService,
                 syncCommitteeSubnetService,
                 rpcEncoding,
-                new StatusMessageFactory(spec, recentChainData),
+                new StatusMessageFactory(recentChainData),
                 requiredCheckpoint,
                 eth2RpcPingInterval,
                 eth2RpcOutstandingPingThreshold,

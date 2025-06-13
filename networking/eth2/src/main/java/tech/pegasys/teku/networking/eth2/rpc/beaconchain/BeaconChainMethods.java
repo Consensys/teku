@@ -62,8 +62,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage.EmptyMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
@@ -141,7 +141,7 @@ public class BeaconChainMethods {
       final RpcEncoding rpcEncoding,
       final DasReqRespLogger dasLogger) {
     return new BeaconChainMethods(
-        createStatus(spec, asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
+        createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
         createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
         createBeaconBlocksByRoot(
             spec, metricsSystem, asyncRunner, recentChainData, peerLookup, rpcEncoding),
@@ -194,66 +194,23 @@ public class BeaconChainMethods {
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
-      final Spec spec,
       final AsyncRunner asyncRunner,
       final StatusMessageFactory statusMessageFactory,
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
-    final StatusMessageHandler messageHandler =
-        new StatusMessageHandler(spec, statusMessageFactory);
-    final SszSchema<StatusMessage> phase0StatusSchema =
-        SszSchema.as(
-            StatusMessage.class,
-            spec.forMilestone(SpecMilestone.PHASE0)
-                .getSchemaDefinitions()
-                .getStatusMessageSchema());
-    final boolean expectResponse = true;
-    final RpcContextCodec<?, StatusMessage> phase0ContextCodec =
-        RpcContextCodec.noop(phase0StatusSchema);
-
-    final SingleProtocolEth2RpcMethod<StatusMessage, StatusMessage> v1Method =
-        new SingleProtocolEth2RpcMethod<>(
-            asyncRunner,
-            BeaconChainMethodIds.STATUS,
-            1,
-            rpcEncoding,
-            phase0StatusSchema,
-            expectResponse,
-            phase0ContextCodec,
-            messageHandler,
-            peerLookup);
-
-    final List<SingleProtocolEth2RpcMethod<StatusMessage, StatusMessage>> versionedMethods =
-        new ArrayList<>();
-    versionedMethods.add(v1Method);
-
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final SszSchema<StatusMessage> fuluStatusSchema =
-          SszSchema.as(
-              StatusMessage.class,
-              spec.forMilestone(SpecMilestone.FULU)
-                  .getSchemaDefinitions()
-                  .getStatusMessageSchema());
-      final RpcContextCodec<?, StatusMessage> fuluContextCodec =
-          RpcContextCodec.noop(fuluStatusSchema);
-      final SingleProtocolEth2RpcMethod<StatusMessage, StatusMessage> v2Method =
-          new SingleProtocolEth2RpcMethod<>(
-              asyncRunner,
-              BeaconChainMethodIds.STATUS,
-              2,
-              rpcEncoding,
-              fuluStatusSchema,
-              expectResponse,
-              fuluContextCodec,
-              messageHandler,
-              peerLookup);
-      versionedMethods.add(v2Method);
-
-      return VersionedEth2RpcMethod.create(
-          rpcEncoding, phase0StatusSchema, expectResponse, versionedMethods);
-    } else {
-      return v1Method;
-    }
+    final StatusMessageHandler statusHandler = new StatusMessageHandler(statusMessageFactory);
+    final RpcContextCodec<?, StatusMessage> contextCodec =
+        RpcContextCodec.noop(StatusMessage.SSZ_SCHEMA);
+    return new SingleProtocolEth2RpcMethod<>(
+        asyncRunner,
+        BeaconChainMethodIds.STATUS,
+        1,
+        rpcEncoding,
+        StatusMessage.SSZ_SCHEMA,
+        true,
+        contextCodec,
+        statusHandler,
+        peerLookup);
   }
 
   private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
