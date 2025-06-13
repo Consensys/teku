@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -122,6 +123,9 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request);
+
+  <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
+      final Eth2RpcMethod<I, O> method, final Function<String, I> request);
 
   Optional<RequestApproval> approveBlocksRequest(
       ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
