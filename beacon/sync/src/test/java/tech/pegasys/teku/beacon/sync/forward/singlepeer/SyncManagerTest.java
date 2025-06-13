@@ -41,7 +41,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncManagerTest {
@@ -54,7 +54,7 @@ public class SyncManagerTest {
   private final UInt64 peerHeadSlot = UInt64.valueOf(spec.getSlotsPerEpoch(UInt64.ZERO) * 5L);
   private final PeerStatus peerStatus =
       PeerStatus.fromStatusMessage(
-          new StatusMessagePhase0(
+          new StatusMessage(
               Bytes4.leftPad(Bytes.EMPTY),
               Bytes32.ZERO,
               PEER_FINALIZED_EPOCH,

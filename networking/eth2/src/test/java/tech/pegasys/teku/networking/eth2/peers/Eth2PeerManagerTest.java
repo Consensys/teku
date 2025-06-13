@@ -61,7 +61,7 @@ public class Eth2PeerManagerTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Eth2PeerFactory eth2PeerFactory = mock(Eth2PeerFactory.class);
   private final StatusMessageFactory statusMessageFactory =
-      new StatusMessageFactory(spec, recentChainData);
+      new StatusMessageFactory(recentChainData);
 
   private final Map<Peer, Eth2Peer> eth2Peers = new HashMap<>();
 

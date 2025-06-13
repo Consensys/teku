@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -32,20 +31,13 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 
 class StatusMessageHandlerTest {
 
-  // TODO-9539: add test cases for StatusV2
-
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
-
   private static final StatusMessage REMOTE_STATUS =
-      new StatusMessagePhase0(
+      new StatusMessage(
           Bytes4.rightPad(Bytes.of(4)),
           Bytes32.fromHexStringLenient("0x11"),
           UInt64.ZERO,
@@ -53,7 +45,7 @@ class StatusMessageHandlerTest {
           UInt64.ZERO);
   private static final PeerStatus PEER_STATUS = PeerStatus.fromStatusMessage(REMOTE_STATUS);
   private static final StatusMessage LOCAL_STATUS =
-      new StatusMessagePhase0(
+      new StatusMessage(
           Bytes4.rightPad(Bytes.of(4)),
           Bytes32.fromHexStringLenient("0x22"),
           UInt64.ZERO,
@@ -71,19 +63,17 @@ class StatusMessageHandlerTest {
           1,
           RpcEncoding.createSszSnappyEncoding(
               TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize()));
-  private final StatusMessageHandler handler = new StatusMessageHandler(spec, statusMessageFactory);
+  private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @BeforeEach
   public void setUp() {
-    when(statusMessageFactory.createStatusMessage(any(StatusMessageSchema.class)))
-        .thenReturn(Optional.of(LOCAL_STATUS));
+    when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
     when(peer.approveRequest()).thenReturn(true);
   }
 
   @Test
   public void shouldReturnLocalStatus() {
-    when(statusMessageFactory.createStatusMessage(any(StatusMessageSchema.class)))
-        .thenReturn(Optional.of(LOCAL_STATUS));
+    when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
     handler.onIncomingMessage(protocolId, peer, REMOTE_STATUS, callback);
 
     verify(peer).updateStatus(PEER_STATUS);
@@ -93,8 +83,7 @@ class StatusMessageHandlerTest {
 
   @Test
   public void shouldRespondWithErrorIfStatusUnavailable() {
-    when(statusMessageFactory.createStatusMessage(any(StatusMessageSchema.class)))
-        .thenReturn(Optional.empty());
+    when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.empty());
     handler.onIncomingMessage(protocolId, peer, REMOTE_STATUS, callback);
 
     verify(peer).updateStatus(PEER_STATUS);

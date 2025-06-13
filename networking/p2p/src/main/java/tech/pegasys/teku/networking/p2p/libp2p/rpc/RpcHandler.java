@@ -31,9 +31,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -56,7 +56,6 @@ public class RpcHandler<
         TRequest,
         TRespHandler extends RpcResponseHandler<?>>
     implements ProtocolBinding<Controller<TOutgoingHandler>> {
-
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration STREAM_INITIALIZE_TIMEOUT = Duration.ofSeconds(5);
@@ -76,9 +75,14 @@ public class RpcHandler<
   }
 
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-      final Connection connection,
-      final Function<String, TRequest> requestFn,
-      final TRespHandler responseHandler) {
+      final Connection connection, final TRequest request, final TRespHandler responseHandler) {
+    final Bytes initialPayload;
+    try {
+      initialPayload = rpcMethod.encodeRequest(request);
+    } catch (Exception e) {
+      return SafeFuture.failedFuture(e);
+    }
+
     final Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
     final Interruptor timeoutInterruptor =
@@ -105,19 +109,12 @@ public class RpcHandler<
                       (controller, protocolId) -> {
                         final TOutgoingHandler handler =
                             rpcMethod.createOutgoingRequestHandler(
-                                protocolId, requestFn.apply(protocolId), responseHandler);
+                                protocolId, request, responseHandler);
                         controller.setOutgoingRequestHandler(handler);
                         return controller;
                       })
                   .orInterrupt(closeInterruptor, timeoutInterruptor)
-                  .thenWaitFor(
-                      controller ->
-                          protocolIdFuture.thenCompose(
-                              protocolId ->
-                                  controller
-                                      .getRpcStream()
-                                      .writeBytes(
-                                          rpcMethod.encodeRequest(requestFn.apply(protocolId)))))
+                  .thenWaitFor(controller -> controller.getRpcStream().writeBytes(initialPayload))
                   .orInterrupt(closeInterruptor, timeoutInterruptor)
                   // closing the stream in case of any errors or interruption
                   .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join()));
@@ -128,11 +125,6 @@ public class RpcHandler<
                 throw new PeerDisconnectedException(err);
               }
             });
-  }
-
-  public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-      final Connection connection, final TRequest request, final TRespHandler responseHandler) {
-    return sendRequest(connection, (__) -> request, responseHandler);
   }
 
   private void closeStreamAbruptly(final Stream stream) {

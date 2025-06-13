@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
@@ -159,20 +158,14 @@ public abstract class AbstractSyncTest {
 
   protected PeerStatus withPeerHeadSlot(
       final UInt64 peerHeadSlot, final UInt64 peerFinalizedEpoch, final Bytes32 peerHeadBlockRoot) {
-
-    final StatusMessage statusMessage =
-        spec.atSlot(peerHeadSlot)
-            .getSchemaDefinitions()
-            .getStatusMessageSchema()
-            .create(
+    final PeerStatus peerStatus =
+        PeerStatus.fromStatusMessage(
+            new StatusMessage(
                 Bytes4.leftPad(Bytes.EMPTY),
                 Bytes32.ZERO,
                 peerFinalizedEpoch,
                 peerHeadBlockRoot,
-                peerHeadSlot,
-                Optional.empty());
-
-    final PeerStatus peerStatus = PeerStatus.fromStatusMessage(statusMessage);
+                peerHeadSlot));
 
     when(peer.getStatus()).thenReturn(peerStatus);
     return peerStatus;

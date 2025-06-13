@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessageSchemaPhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -142,12 +142,7 @@ public class SszSnappyGossipEncodingTest {
   @Test
   public void decode_rejectMessageLongerThanValidLength() {
     assertThatThrownBy(
-            () ->
-                decode(
-                    topicName,
-                    encoding,
-                    Bytes.wrap(new byte[512]),
-                    new StatusMessageSchemaPhase0()))
+            () -> decode(topicName, encoding, Bytes.wrap(new byte[512]), StatusMessage.SSZ_SCHEMA))
         .isInstanceOf(DecodingException.class);
   }
 }

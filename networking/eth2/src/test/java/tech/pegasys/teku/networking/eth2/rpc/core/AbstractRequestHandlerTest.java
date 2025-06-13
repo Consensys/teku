@@ -71,7 +71,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             CustodyGroupCountManager.NOOP,
             recentChainData,
             new NoOpMetricsSystem(),
-            new StatusMessageFactory(spec, recentChainData),
+            new StatusMessageFactory(recentChainData),
             new MetadataMessagesFactory(),
             getRpcEncoding(),
             DasReqRespLogger.NOOP);
