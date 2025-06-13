@@ -68,7 +68,7 @@ public class LibP2PPeerTest {
                   final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
                       new SafeFuture<>();
                   when(rpcHandler.sendRequest(connection, null, null)).thenReturn(future);
-                  libP2PPeer.sendRequest(rpcMethod, null, null);
+                  libP2PPeer.sendRequest(rpcMethod, (Object) null, null);
                   return future;
                 })
             .toList();
@@ -77,7 +77,7 @@ public class LibP2PPeerTest {
         .thenReturn(SafeFuture.completedFuture(mock(RpcStreamController.class)));
 
     final SafeFuture<RpcStreamController<RpcRequestHandler>> throttledRequest =
-        libP2PPeer.sendRequest(rpcMethod, null, null);
+        libP2PPeer.sendRequest(rpcMethod, (Object) null, null);
 
     // completed request should be throttled
     assertThat(throttledRequest).isNotDone();

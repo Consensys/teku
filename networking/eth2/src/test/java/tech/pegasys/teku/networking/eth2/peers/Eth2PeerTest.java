@@ -190,7 +190,7 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRoot()).thenReturn(Optional.of(blobSidecarsByRootMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(Object.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     final List<BlobIdentifier> blobIdentifiers =
@@ -220,7 +220,7 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRoot()).thenReturn(Optional.of(blobSidecarsByRootMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(Object.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
@@ -249,7 +249,7 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(Object.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     final SpecConfigDeneb specConfigDeneb =
@@ -286,7 +286,7 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(Object.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(13), __ -> SafeFuture.COMPLETE);
@@ -316,12 +316,12 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(Object.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(7), __ -> SafeFuture.COMPLETE);
 
-    verify(delegate, never()).sendRequest(any(), any(), any());
+    verify(delegate, never()).sendRequest(any(), any(Object.class), any());
   }
 
   private PeerStatus randomPeerStatus() {

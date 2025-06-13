@@ -229,6 +229,26 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  public <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest,
+          RespHandler extends RpcResponseHandler<?>>
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final Function<String, TRequest> request,
+          final RespHandler responseHandler) {
+    @SuppressWarnings("unchecked")
+    final ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
+    if (rpcHandler == null) {
+      throw new IllegalArgumentException(
+          "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
+    }
+
+    return rpcHandler.sendRequest(connection, request, responseHandler);
+  }
+
+  @Override
   public boolean connectionInitiatedLocally() {
     return connection.isInitiator();
   }
@@ -264,6 +284,15 @@ public class LibP2PPeer implements Peer {
     private ThrottlingRpcHandler(
         final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
       this.delegate = delegate;
+    }
+
+    @SuppressWarnings("unused")
+    private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+        final Connection connection,
+        final Function<String, TRequest> requestFn,
+        final TRespHandler responseHandler) {
+      return requestsQueue.queueTask(
+          () -> delegate.sendRequest(connection, requestFn, responseHandler));
     }
 
     private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(

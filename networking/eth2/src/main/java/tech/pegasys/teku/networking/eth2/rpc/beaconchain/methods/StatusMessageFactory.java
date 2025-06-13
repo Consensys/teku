@@ -14,7 +14,12 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
@@ -24,15 +29,33 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class StatusMessageFactory {
 
+  private final Spec spec;
   private final RecentChainData recentChainData;
 
-  public StatusMessageFactory(final RecentChainData recentChainData) {
+  public StatusMessageFactory(final Spec spec, final RecentChainData recentChainData) {
+    this.spec = spec;
     this.recentChainData = recentChainData;
   }
 
-  public Optional<StatusMessage> createStatusMessage() {
-    return createStatusMessage(
-        recentChainData.getCurrentSpec().getSchemaDefinitions().getStatusMessageSchema());
+  public Optional<Function<String, StatusMessage>> createStatusMessage() {
+    final Function<String, StatusMessage> fn =
+        (protocolId) -> {
+          final int protocolVersion = BeaconChainMethodIds.extractStatusVersion(protocolId);
+          final SpecMilestone milestone =
+              switch (protocolVersion) {
+                case 1 -> SpecMilestone.PHASE0;
+                case 2 -> SpecMilestone.FULU;
+                default ->
+                    throw new IllegalStateException(
+                        "Unexpected protocol version: " + protocolVersion);
+              };
+          final StatusMessageSchema<?> schema =
+              spec.forMilestone(milestone).getSchemaDefinitions().getStatusMessageSchema();
+
+          return createStatusMessage(schema).orElseThrow();
+        };
+
+    return Optional.of(fn);
   }
 
   public Optional<StatusMessage> createStatusMessage(final StatusMessageSchema<?> schema) {
@@ -45,7 +68,9 @@ public class StatusMessageFactory {
     final MinimalBeaconBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
 
-    // TODO-9539: hook up logic to include earliest available slot
+    // TODO-9539: hook up logic to include earliest available slot (verify)
+    final UInt64 latestFinalizedSlot =
+        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch());
 
     return Optional.of(
         schema.create(
@@ -57,6 +82,6 @@ public class StatusMessageFactory {
             finalizedCheckpoint.getEpoch(),
             chainHead.getRoot(),
             chainHead.getSlot(),
-            Optional.ofNullable(recentChainData.getHeadSlot())));
+            Optional.ofNullable(latestFinalizedSlot)));
   }
 }
