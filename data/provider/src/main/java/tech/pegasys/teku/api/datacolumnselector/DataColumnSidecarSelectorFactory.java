@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.datacolumnselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -143,7 +144,7 @@ public class DataColumnSidecarSelectorFactory
       return SafeFuture.completedFuture(Optional.empty());
     }
     if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
+      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
     final SignedBeaconBlock block = maybeBlock.get();
     final UInt64 slot = block.getSlot();
@@ -163,17 +164,11 @@ public class DataColumnSidecarSelectorFactory
     final Bytes32 blockRoot = slotAndBlockRoot.getBlockRoot();
     final Optional<ChainHead> maybeChainHead = client.getChainHead();
     final boolean isFinalized = client.isFinalized(slot);
-    boolean isOptimistic;
-    boolean isCanonical = false;
-
-    if (maybeChainHead.isPresent()) {
-      ChainHead chainHead = maybeChainHead.get();
-      isOptimistic = client.isOptimisticBlock(blockRoot);
-      isCanonical = client.isCanonicalBlock(slot, blockRoot, chainHead.getRoot());
-    } else {
-      // If there's no chain head, we assume the block is not optimistic and not canonical
-      isOptimistic = client.isOptimisticBlock(blockRoot);
-    }
+    final boolean isOptimistic = client.isOptimisticBlock(blockRoot);
+    final boolean isCanonical =
+        maybeChainHead
+            .map(chainHead -> client.isCanonicalBlock(slot, blockRoot, chainHead.getRoot()))
+            .orElse(false);
     return addMetaData(maybeDataColumnSidecarList, slot, isOptimistic, isCanonical, isFinalized);
   }
 
