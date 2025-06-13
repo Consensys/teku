@@ -28,6 +28,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -252,6 +254,18 @@ public class Spec {
    */
   public List<ForkAndSpecMilestone> getEnabledMilestones() {
     return forkSchedule.getActiveMilestones();
+  }
+
+  public Optional<BlobScheduleEntry> getBpo(final UInt64 epoch) {
+    return atEpoch(epoch)
+        .getConfig()
+        .toVersionFulu()
+        .flatMap(
+            specConfigFulu ->
+                specConfigFulu.getBlobSchedule().stream()
+                    .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
+                    .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
+                    .findFirst());
   }
 
   /**
@@ -494,6 +508,46 @@ public class Spec {
     return atForkVersion(currentVersion)
         .miscHelpers()
         .computeForkDigest(currentVersion, genesisValidatorsRoot);
+  }
+
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    if (getForkSchedule().getHighestSupportedMilestone().isLessThan(FULU)) {
+      throw new IllegalArgumentException(
+          "Cannot call computeForkDigest in this way if fulu is not supported.");
+    }
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionFulu()
+        .orElse(forMilestone(FULU).miscHelpers().toVersionFulu().orElseThrow())
+        .computeForkDigest(genesisValidatorsRoot, epoch);
+  }
+
+  public Optional<Bytes4> computeNextForkDigest(
+      final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    final Optional<BlobScheduleEntry> maybeNextBpo =
+        getSpecConfigFulu().orElseThrow().getBlobSchedule().stream()
+            .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
+            .filter(entry -> epoch.isLessThan(entry.epoch()))
+            .findFirst();
+    final Optional<Fork> maybeNextFork = getForkSchedule().getNextFork(epoch);
+    if (maybeNextFork.isPresent()) {
+      // Compare epochs of next fork and next BPO epoch
+      final Fork nextFork = maybeNextFork.get();
+      return maybeNextBpo
+          .map(
+              nextBpo -> {
+                if (nextBpo.epoch().isLessThan(nextFork.getEpoch())) {
+                  return computeForkDigest(genesisValidatorsRoot, nextBpo.epoch());
+                }
+                return computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot);
+              })
+          .or(
+              () ->
+                  Optional.of(
+                      computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot)));
+    }
+    // use next BPO if exists
+    return maybeNextBpo.map(bpo -> computeForkDigest(genesisValidatorsRoot, bpo.epoch()));
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {

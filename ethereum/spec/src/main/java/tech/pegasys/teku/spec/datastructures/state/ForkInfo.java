@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -25,10 +26,19 @@ import tech.pegasys.teku.spec.Spec;
 public class ForkInfo {
   private final Fork fork;
   private final Bytes32 genesisValidatorsRoot;
+  private final Optional<Bytes4> precomputedForkDigest;
 
   public ForkInfo(final Fork fork, final Bytes32 genesisValidatorsRoot) {
     this.fork = fork;
     this.genesisValidatorsRoot = genesisValidatorsRoot;
+    this.precomputedForkDigest = Optional.empty();
+  }
+
+  public ForkInfo(
+      final Fork fork, final Bytes32 genesisValidatorsRoot, final Bytes4 precomputedForkDigest) {
+    this.fork = fork;
+    this.genesisValidatorsRoot = genesisValidatorsRoot;
+    this.precomputedForkDigest = Optional.of(precomputedForkDigest);
   }
 
   public Fork getFork() {
@@ -40,7 +50,8 @@ public class ForkInfo {
   }
 
   public Bytes4 getForkDigest(final Spec spec) {
-    return spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
+    return precomputedForkDigest.orElseGet(
+        () -> spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot));
   }
 
   /**
