@@ -522,8 +522,7 @@ public class Eth2P2PNetworkFactory {
                 signedBlsToExecutionChangeProcessor,
                 dataColumnSidecarOperationProcessor,
                 debugDataDumper,
-                DasGossipLogger.NOOP,
-                Optional.empty());
+                DasGossipLogger.NOOP);
       };
     }
 
