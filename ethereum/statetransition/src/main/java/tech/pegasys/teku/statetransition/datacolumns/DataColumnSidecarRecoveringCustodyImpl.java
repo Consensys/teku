@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import io.vertx.core.impl.ConcurrentHashSet;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -177,7 +177,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
           block.getSlotAndBlockRoot(),
           new RecoveryTask(
               new AtomicReference<>(block),
-              new ConcurrentHashSet<>(),
+              new HashSet<>(),
               new AtomicBoolean(false),
               new AtomicBoolean(false)));
     }
@@ -302,12 +302,10 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       existing.existingColumnIds().add(identifier);
       maybeStartRecovery(existing);
     } else {
-      final ConcurrentHashSet<DataColumnSlotAndIdentifier> identifiers = new ConcurrentHashSet<>();
-      identifiers.add(identifier);
       final RecoveryTask recoveryTask =
           new RecoveryTask(
               new AtomicReference<>(null),
-              identifiers,
+              new HashSet<>(List.of(identifier)),
               new AtomicBoolean(false),
               new AtomicBoolean(false));
       recoveryTasks.put(identifier.getSlotAndBlockRoot(), recoveryTask);
