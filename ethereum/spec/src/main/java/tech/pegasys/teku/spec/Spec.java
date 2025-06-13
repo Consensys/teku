@@ -522,6 +522,34 @@ public class Spec {
         .computeForkDigest(genesisValidatorsRoot, epoch);
   }
 
+  public Optional<Bytes4> computeNextForkDigest(
+      final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    final Optional<BlobScheduleEntry> maybeNextBpo =
+        getSpecConfigFulu().orElseThrow().getBlobSchedule().stream()
+            .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
+            .filter(entry -> epoch.isLessThan(entry.epoch()))
+            .findFirst();
+    final Optional<Fork> maybeNextFork = getForkSchedule().getNextFork(epoch);
+    if (maybeNextFork.isPresent()) {
+      // Compare epochs of next fork and next BPO epoch
+      final Fork nextFork = maybeNextFork.get();
+      return maybeNextBpo
+          .map(
+              nextBpo -> {
+                if (nextBpo.epoch().isLessThan(nextFork.getEpoch())) {
+                  return computeForkDigest(genesisValidatorsRoot, nextBpo.epoch());
+                }
+                return computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot);
+              })
+          .or(
+              () ->
+                  Optional.of(
+                      computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot)));
+    }
+    // use next BPO if exists
+    return maybeNextBpo.map(bpo -> computeForkDigest(genesisValidatorsRoot, bpo.epoch()));
+  }
+
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
