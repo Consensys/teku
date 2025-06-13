@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.addon;
 
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.RestApiBuilderAddon;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDataColumnSidecars;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetDataColumnSidecars;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;

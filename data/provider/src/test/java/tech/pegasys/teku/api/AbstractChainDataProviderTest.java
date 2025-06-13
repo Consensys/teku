@@ -113,7 +113,7 @@ public abstract class AbstractChainDataProviderTest {
             new BlobSidecarSelectorFactory(
                 spec, mockCombinedChainDataClient, mockBlobSidecarReconstructionProvider));
     this.dataColumnSidecarSelectorFactory =
-        spy(new DataColumnSidecarSelectorFactory(mockCombinedChainDataClient));
+        spy(new DataColumnSidecarSelectorFactory(spec, mockCombinedChainDataClient));
     final ChainDataProvider provider =
         new ChainDataProvider(
             spec,

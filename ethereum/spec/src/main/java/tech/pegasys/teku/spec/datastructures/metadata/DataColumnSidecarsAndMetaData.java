@@ -11,14 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.datacolumnselector;
+package tech.pegasys.teku.spec.datastructures.metadata;
 
 import java.util.List;
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 
-public interface DataColumnSidecarSelector {
-  SafeFuture<Optional<DataColumnSidecarsAndMetaData>> getDataColumnSidecars(List<UInt64> indices);
+public class DataColumnSidecarsAndMetaData extends ObjectAndMetaData<List<DataColumnSidecar>> {
+
+  public DataColumnSidecarsAndMetaData(
+      final List<DataColumnSidecar> data,
+      final SpecMilestone milestone,
+      final boolean executionOptimistic,
+      final boolean canonical,
+      final boolean finalized) {
+    super(data, milestone, executionOptimistic, canonical, finalized);
+  }
 }
