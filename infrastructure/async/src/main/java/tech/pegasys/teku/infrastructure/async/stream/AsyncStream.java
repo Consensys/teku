@@ -19,6 +19,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,6 +28,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /** Similar to {@link Stream} but may perform async operations */
@@ -47,10 +50,22 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
   }
 
   static <T> AsyncStream<T> create(final Stream<T> stream) {
-    return create(stream.iterator());
+    return create(stream.toList().iterator());
   }
 
   static <T> AsyncStream<T> create(final Iterator<T> iterator) {
+    return new SyncToAsyncIteratorImpl<>(
+        StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false)
+            .toList()
+            .iterator());
+  }
+
+  /**
+   * Creates Async stream which is not thread-safe. Be sure to guarantee thread safety on provided
+   * iterator by yourself, otherwise you may encounter concurrency issues
+   */
+  static <T> AsyncStream<T> createUnsafe(final Iterator<T> iterator) {
     return new SyncToAsyncIteratorImpl<>(iterator);
   }
 
