@@ -56,7 +56,7 @@ class ForkDigestRpcContextCodec<TPayload extends SszData>
       if (spec.getBpo(epoch).isPresent()) {
         final Bytes32 genesisValidatorsRoot =
             recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot();
-        // TODO: berlininterop-devnet-2
+        // TODO: HACK berlininterop-devnet-2
         return spec.computeForkDigest(genesisValidatorsRoot, epoch).getWrappedBytes();
       }
     }
