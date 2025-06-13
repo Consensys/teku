@@ -529,14 +529,19 @@ public class Spec {
         .computeForkDigest(genesisValidatorsRoot, epoch);
   }
 
-  // TODO: berlininterop-devnet-2
+  // TODO: HACK berlininterop-devnet-2
   public Optional<Bytes4> computeNextForkDigest(
       final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Optional<BlobScheduleEntry> maybeNextBpo =
-        getSpecConfigFulu().orElseThrow().getBlobSchedule().stream()
-            .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
-            .filter(entry -> epoch.isLessThan(entry.epoch()))
-            .findFirst();
+        atEpoch(epoch)
+            .getConfig()
+            .toVersionFulu()
+            .flatMap(
+                specConfigFulu ->
+                    specConfigFulu.getBlobSchedule().stream()
+                        .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
+                        .filter(entry -> epoch.isLessThan(entry.epoch()))
+                        .findFirst());
     final Optional<Fork> maybeNextFork = getForkSchedule().getNextFork(epoch);
     if (maybeNextFork.isPresent()) {
       // Compare epochs of next fork and next BPO epoch
