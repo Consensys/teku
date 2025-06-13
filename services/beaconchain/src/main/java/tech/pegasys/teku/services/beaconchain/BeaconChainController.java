@@ -130,7 +130,6 @@ import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
@@ -181,8 +180,8 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
-import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRootReqResp;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRangeReqResp;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
@@ -830,12 +829,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
 
-    final BatchDataColumnsByRootReqResp loggingByRootReqResp =
-        new LoggingBatchDataColumnsByRootReqResp(dasPeerManager, dasReqRespLogger);
-    final DataColumnReqResp dasRpc =
-        new DataColumnReqRespBatchingImpl(
-            loggingByRootReqResp,
-            SchemaDefinitionsFulu.required(specVersionFulu.getSchemaDefinitions()));
+    final BatchDataColumnsByRangeReqResp loggingByRangeReqResp =
+        new LoggingBatchDataColumnsByRangeReqResp(dasPeerManager, dasReqRespLogger);
+    final DataColumnReqResp dasRpc = new DataColumnReqRespBatchingImpl(loggingByRangeReqResp);
 
     final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);

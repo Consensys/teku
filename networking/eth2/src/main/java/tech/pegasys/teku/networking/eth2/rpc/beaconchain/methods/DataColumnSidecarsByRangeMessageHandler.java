@@ -39,9 +39,7 @@ import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -62,7 +60,6 @@ public class DataColumnSidecarsByRangeMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
   private final SpecConfigFulu specConfigFulu;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
@@ -70,12 +67,10 @@ public class DataColumnSidecarsByRangeMessageHandler
   private final DasReqRespLogger dasLogger;
 
   public DataColumnSidecarsByRangeMessageHandler(
-      final Spec spec,
       final SpecConfigFulu specConfigFulu,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final DasReqRespLogger dasLogger) {
-    this.spec = spec;
     this.specConfigFulu = specConfigFulu;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
@@ -136,86 +131,52 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     requestCounter.labels("ok").inc();
     totalDataColumnSidecarsRequestedCounter.inc(message.getCount().longValue());
-    final SafeFuture<Optional<UInt64>> earliestDataColumnSidecarSlotFuture =
-        combinedChainDataClient.getEarliestDataColumnSidecarSlot();
-    final SafeFuture<Optional<UInt64>> firstIncompleteSlotFuture =
-        combinedChainDataClient.getFirstCustodyIncompleteSlot();
-    SafeFuture.collectAll(earliestDataColumnSidecarSlotFuture, firstIncompleteSlotFuture)
-        .thenCompose(
-            slotOptionals -> {
-              final Optional<UInt64> earliestSidecarSlot = slotOptionals.get(0);
-              final Optional<UInt64> firstIncompleteSlot = slotOptionals.get(1);
-              final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              if (spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
-                      combinedChainDataClient.getStore(), requestEpoch)
-                  && !checkDataColumnSidecarsAreAvailable(
-                      earliestSidecarSlot, firstIncompleteSlot, endSlot)) {
-                return SafeFuture.failedFuture(
-                    new ResourceUnavailableException(
-                        "Requested data column sidecars are not available."));
-              }
 
-              UInt64 finalizedSlot =
-                  combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
+    UInt64 finalizedSlot = combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
 
-              final SortedMap<UInt64, Bytes32> canonicalHotRoots;
-              if (endSlot.isGreaterThan(finalizedSlot)) {
-                final UInt64 hotSlotsCount = endSlot.increment().minusMinZero(startSlot);
+    final SortedMap<UInt64, Bytes32> canonicalHotRoots;
+    if (endSlot.isGreaterThan(finalizedSlot)) {
+      canonicalHotRoots =
+          combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, message.getCount());
 
-                canonicalHotRoots =
-                    combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
-
-                // refresh finalized slot to avoid race condition that can occur if we finalize just
-                // before getting hot canonical roots
-                finalizedSlot = combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
-              } else {
-                canonicalHotRoots = ImmutableSortedMap.of();
-              }
-
-              final RequestState initialState =
-                  new RequestState(
-                      responseCallbackWithLogging,
-                      specConfigFulu.getMaxRequestDataColumnSidecars(),
-                      startSlot,
-                      endSlot,
-                      columns,
-                      canonicalHotRoots,
-                      finalizedSlot);
-              if (initialState.isComplete()) {
-                return SafeFuture.completedFuture(initialState);
-              }
-              return sendDataColumnSidecars(initialState);
-            })
-        .finish(
-            requestState -> {
-              final int sentDataColumnSidecars = requestState.sentDataColumnSidecars.get();
-              if (sentDataColumnSidecars != requestedCount) {
-                peer.adjustDataColumnSidecarsRequest(
-                    dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecars);
-              }
-              responseCallbackWithLogging.completeSuccessfully();
-            },
-            error -> {
-              peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
-              handleProcessingRequestError(error, responseCallbackWithLogging);
-            });
-    ;
-  }
-
-  private boolean checkDataColumnSidecarsAreAvailable(
-      final Optional<UInt64> earliestAvailableSidecarSlotOptional,
-      final Optional<UInt64> firstIncompleteSlotOptional,
-      final UInt64 requestSlot) {
-    if (earliestAvailableSidecarSlotOptional.isPresent()) {
-      if (earliestAvailableSidecarSlotOptional.get().isLessThanOrEqualTo(requestSlot)) {
-        return true;
-      }
-      return firstIncompleteSlotOptional
-          .map(firstIncompleteSlot -> firstIncompleteSlot.isGreaterThan(requestSlot))
-          .orElse(false);
+      // refresh finalized slot to avoid race condition that can occur if we finalize just
+      // before getting hot canonical roots
+      finalizedSlot = combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
     } else {
-      return false;
+      canonicalHotRoots = ImmutableSortedMap.of();
     }
+
+    final RequestState initialState =
+        new RequestState(
+            responseCallbackWithLogging,
+            specConfigFulu.getMaxRequestDataColumnSidecars(),
+            startSlot,
+            endSlot,
+            columns,
+            canonicalHotRoots,
+            finalizedSlot);
+
+    final SafeFuture<RequestState> response;
+    if (initialState.isComplete()) {
+      response = SafeFuture.completedFuture(initialState);
+    } else {
+      response = sendDataColumnSidecars(initialState);
+    }
+
+    response.finish(
+        requestState -> {
+          final int sentDataColumnSidecars = requestState.sentDataColumnSidecars.get();
+          if (sentDataColumnSidecars != requestedCount) {
+            peer.adjustDataColumnSidecarsRequest(
+                dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecars);
+          }
+          responseCallbackWithLogging.completeSuccessfully();
+        },
+        error -> {
+          peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
+          handleProcessingRequestError(error, responseCallbackWithLogging);
+        });
+    ;
   }
 
   private SafeFuture<RequestState> sendDataColumnSidecars(final RequestState requestState) {
