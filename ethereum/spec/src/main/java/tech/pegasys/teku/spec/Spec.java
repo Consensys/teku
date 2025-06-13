@@ -533,9 +533,7 @@ public class Spec {
   public Optional<Bytes4> computeNextForkDigest(
       final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Optional<BlobScheduleEntry> maybeNextBpo =
-        atEpoch(epoch)
-            .getConfig()
-            .toVersionFulu()
+        getSpecConfigFulu()
             .flatMap(
                 specConfigFulu ->
                     specConfigFulu.getBlobSchedule().stream()
