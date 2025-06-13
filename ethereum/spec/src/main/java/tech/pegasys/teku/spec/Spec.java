@@ -529,6 +529,7 @@ public class Spec {
         .computeForkDigest(genesisValidatorsRoot, epoch);
   }
 
+  // TODO: berlininterop-devnet-2
   public Optional<Bytes4> computeNextForkDigest(
       final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Optional<BlobScheduleEntry> maybeNextBpo =
