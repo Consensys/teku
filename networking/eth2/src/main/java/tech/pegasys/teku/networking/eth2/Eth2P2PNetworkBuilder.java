@@ -41,6 +41,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFuluBpo;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -400,8 +401,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
-              dasGossipLogger,
-              Optional.empty());
+              dasGossipLogger);
     };
   }
 
@@ -411,7 +411,7 @@ public class Eth2P2PNetworkBuilder {
       final GossipEncoding gossipEncoding,
       final BlobScheduleEntry bpo) {
     if (forkAndSpecMilestone.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return new GossipForkSubscriptionsFulu(
+      return new GossipForkSubscriptionsFuluBpo(
           forkAndSpecMilestone.getFork(),
           spec,
           asyncRunner,
@@ -432,7 +432,7 @@ public class Eth2P2PNetworkBuilder {
           dataColumnSidecarOperationProcessor,
           debugDataDumper,
           dasGossipLogger,
-          Optional.of(bpo));
+          bpo);
     }
     throw new IllegalStateException(
         "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
