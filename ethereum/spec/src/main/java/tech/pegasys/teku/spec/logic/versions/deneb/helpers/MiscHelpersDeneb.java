@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
@@ -65,6 +66,14 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
                 new IllegalArgumentException(
                     "Expected Deneb misc helpers but got: "
                         + miscHelpers.getClass().getSimpleName()));
+  }
+
+  @Override
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfigDeneb.getDenebForkEpoch())) {
+      return specConfigDeneb.getDenebForkVersion();
+    }
+    return super.computeForkVersion(epoch);
   }
 
   public MiscHelpersDeneb(

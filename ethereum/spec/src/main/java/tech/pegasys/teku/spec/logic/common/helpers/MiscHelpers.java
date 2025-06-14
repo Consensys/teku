@@ -273,6 +273,10 @@ public class MiscHelpers {
     return IntList.of(indices);
   }
 
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    return specConfig.getGenesisForkVersion();
+  }
+
   public void shuffleList(final int[] input, final Bytes32 seed) {
 
     int listSize = input.length;
