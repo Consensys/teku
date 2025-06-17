@@ -1,7 +1,7 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-- The `--validators-proposer-blinded-blocks-enabled` is deprecated and will be removed. It's not used anymore and should be removed from the config.
+- The `--validators-proposer-blinded-blocks-enabled` is deprecated and will be removed. It's not used anymore and should be removed from any configs.
 
 ## Current Releases
 
@@ -12,5 +12,6 @@
 
 ### Additions and Improvements
 - Added `/eth/v1/beacon/states/{state_id}/validator_identities` endpoint to allow querying of validator identities.
+- Increase the default gas limit (`--validators-builder-registration-default-gas-limit`) to 45 million
 
 ### Bug Fixes
