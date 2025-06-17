@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.Duty;
-import tech.pegasys.teku.validator.client.duties.InclusionListCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.InclusionListProductionDuty;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -35,20 +34,15 @@ public class InclusionListDutyLoader
   private final Function<Bytes32, SlotBasedScheduledDuties<InclusionListProductionDuty, Duty>>
       scheduledDutiesFactory;
 
-  @SuppressWarnings("unused")
-  private final InclusionListCommitteeSubscriptions inclusionListCommitteeSubscriptions;
-
   protected InclusionListDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final Function<Bytes32, SlotBasedScheduledDuties<InclusionListProductionDuty, Duty>>
           scheduledDutiesFactory,
       final OwnedValidators validators,
-      final ValidatorIndexProvider validatorIndexProvider,
-      final InclusionListCommitteeSubscriptions inclusionListCommitteeSubscriptions) {
+      final ValidatorIndexProvider validatorIndexProvider) {
     super(validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.scheduledDutiesFactory = scheduledDutiesFactory;
-    this.inclusionListCommitteeSubscriptions = inclusionListCommitteeSubscriptions;
   }
 
   @Override
