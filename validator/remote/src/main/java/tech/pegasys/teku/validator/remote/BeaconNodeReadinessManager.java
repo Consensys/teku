@@ -241,7 +241,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
                   "{} is NOT ready to accept requests because the syncing status request failed: {}",
                   beaconNodeApiEndpoint,
                   throwable);
-              return ReadinessWithErrorTimestamp.error(timeProvider.getTimeInMillis());
+              return ReadinessWithErrorTimestamp.errored(timeProvider.getTimeInMillis());
             })
         .thenAccept(
             readinessStatus -> {
@@ -285,7 +285,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   private enum Readiness {
-    ERROR(-1),
+    ERRORED(-1),
     NOT_READY(0),
     READY_OPTIMISTIC(1),
     READY_NOT_ENOUGH_PEERS(2),
@@ -304,8 +304,8 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
 
   private record ReadinessWithErrorTimestamp(
       Readiness readiness, Optional<UInt64> lastErrorTimestamp) {
-    static ReadinessWithErrorTimestamp error(final UInt64 errorTimestamp) {
-      return new ReadinessWithErrorTimestamp(Readiness.ERROR, Optional.of(errorTimestamp));
+    static ReadinessWithErrorTimestamp errored(final UInt64 errorTimestamp) {
+      return new ReadinessWithErrorTimestamp(Readiness.ERRORED, Optional.of(errorTimestamp));
     }
 
     static final ReadinessWithErrorTimestamp READY =
