@@ -17,6 +17,7 @@ import com.google.common.base.Preconditions;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -117,6 +118,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
+            serviceConfig.getTimeProvider(),
             primaryValidatorApi,
             failoverValidatorApis,
             ValidatorLogger.VALIDATOR_LOGGER,
@@ -140,7 +142,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             beaconNodeReadinessManager,
             primaryValidatorApi,
             failoverValidatorApis,
-            okHttpClient,
+            createOkHttpClientForStreamFromClient(okHttpClient),
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApi),
@@ -193,9 +195,13 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
         .toList();
   }
 
+  private static OkHttpClient createOkHttpClientForStreamFromClient(final OkHttpClient client) {
+    return client.newBuilder().callTimeout(Duration.ZERO).readTimeout(READ_TIMEOUT).build();
+  }
+
   public static OkHttpClient createOkHttpClient(final List<HttpUrl> endpoints) {
     final OkHttpClient.Builder httpClientBuilder =
-        new OkHttpClient.Builder().readTimeout(READ_TIMEOUT);
+        new OkHttpClient.Builder().callTimeout(10, TimeUnit.SECONDS);
     if (endpoints.size() > 1) {
       OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(endpoints, httpClientBuilder);
     } else {

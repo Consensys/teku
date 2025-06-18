@@ -29,6 +29,7 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
@@ -63,8 +64,11 @@ public class BeaconNodeReadinessManagerTest {
   private final BeaconNodeReadinessChannel beaconNodeReadinessChannel =
       mock(BeaconNodeReadinessChannel.class);
 
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
+
   private final BeaconNodeReadinessManager beaconNodeReadinessManager =
       new BeaconNodeReadinessManager(
+          timeProvider,
           beaconNodeApi,
           List.of(failoverBeaconNodeApi),
           validatorLogger,
@@ -217,6 +221,7 @@ public class BeaconNodeReadinessManagerTest {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
+            timeProvider,
             primaryBeaconNodeApi,
             List.of(
                 syncingFailover,

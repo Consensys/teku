@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.remote;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
-import java.time.Duration;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -47,10 +48,15 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 public class BeaconNodeReadinessManager extends Service implements ValidatorTimingChannel {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration SYNCING_STATUS_CALL_TIMEOUT = Duration.ofSeconds(10);
   private static final UInt64 MIN_REQUIRED_CONNECTED_PEER_COUNT = UInt64.valueOf(50);
-  private final Map<RemoteValidatorApiChannel, ReadinessStatus> readinessStatusCache =
+  private static final UInt64 ERRORED_SECONDARY_READINESS_CHECK_INTERVAL_DELAY_MS =
+      UInt64.valueOf(60_000);
+
+  private final Map<RemoteValidatorApiChannel, ReadinessWithErrorTimestamp> readinessStatusCache =
       Maps.newConcurrentMap();
+
+  private final Map<RemoteValidatorApiChannel, SafeFuture<Void>> inflightReadinessCheckFutures =
+      Collections.synchronizedMap(Maps.newHashMap());
 
   private final AtomicBoolean latestPrimaryNodeReadiness = new AtomicBoolean(true);
 
@@ -58,12 +64,15 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   private final List<? extends RemoteValidatorApiChannel> failoverBeaconNodeApis;
   private final ValidatorLogger validatorLogger;
   private final BeaconNodeReadinessChannel beaconNodeReadinessChannel;
+  private final TimeProvider timeProvider;
 
   public BeaconNodeReadinessManager(
+      final TimeProvider timeProvider,
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
       final List<? extends RemoteValidatorApiChannel> failoverBeaconNodeApis,
       final ValidatorLogger validatorLogger,
       final BeaconNodeReadinessChannel beaconNodeReadinessChannel) {
+    this.timeProvider = timeProvider;
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
     this.validatorLogger = validatorLogger;
@@ -71,17 +80,15 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   public boolean isReady(final RemoteValidatorApiChannel beaconNodeApi) {
-    final ReadinessStatus readinessStatus =
-        readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
+    final ReadinessWithErrorTimestamp readinessStatus =
+        readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessWithErrorTimestamp.READY);
     return readinessStatus.isReady();
   }
 
-  public ReadinessStatus getReadinessStatus(final RemoteValidatorApiChannel beaconNodeApi) {
-    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY);
-  }
-
   public int getReadinessStatusWeight(final RemoteValidatorApiChannel beaconNodeApi) {
-    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessStatus.READY).weight;
+    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessWithErrorTimestamp.READY)
+        .readiness
+        .weight;
   }
 
   public Iterator<? extends RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
@@ -91,7 +98,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   public SafeFuture<Void> performPrimaryReadinessCheck() {
-    return performReadinessCheck(primaryBeaconNodeApi, true);
+    return performReadinessCheckWithInflightCheck(primaryBeaconNodeApi, true);
   }
 
   @Override
@@ -155,12 +162,51 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   private SafeFuture<Void> performFailoverReadinessCheck(final RemoteValidatorApiChannel failover) {
-    return performReadinessCheck(failover, false);
+    return performReadinessCheckWithInflightCheck(failover, false);
+  }
+
+  private SafeFuture<Void> performReadinessCheckWithInflightCheck(
+      final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
+    return inflightReadinessCheckFutures.compute(
+        beaconNodeApi,
+        (__, future) -> {
+          if (future != null && !future.isDone()) {
+            LOG.debug("Readiness check for {} is already in progress", beaconNodeApi.getEndpoint());
+            return future; // Return the existing future if it's already in progress
+          }
+          return performReadinessCheck(beaconNodeApi, isPrimaryNode);
+        });
+  }
+
+  private boolean isTimeToPerformReadinessCheck(
+      final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
+    if (isPrimaryNode) {
+      return true; // Primary node readiness check is always performed
+    }
+
+    final Optional<UInt64> lastErrorTimestamp =
+        Optional.ofNullable(readinessStatusCache.get(beaconNodeApi))
+            .flatMap(ReadinessWithErrorTimestamp::lastErrorTimestamp);
+    if (lastErrorTimestamp.isEmpty()) {
+      return true; // No error recorded, so we can check readiness
+    }
+    final UInt64 currentTime = timeProvider.getTimeInMillis();
+    return currentTime.isGreaterThanOrEqualTo(
+        lastErrorTimestamp.get().plus(ERRORED_SECONDARY_READINESS_CHECK_INTERVAL_DELAY_MS));
   }
 
   private SafeFuture<Void> performReadinessCheck(
       final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     final HttpUrl beaconNodeApiEndpoint = beaconNodeApi.getEndpoint();
+
+    LOG.debug("Performing beacon node readiness check for {}", beaconNodeApiEndpoint);
+    if (!isTimeToPerformReadinessCheck(beaconNodeApi, isPrimaryNode)) {
+      LOG.info(
+          "Skipping readiness check for {} as it was already checked recently",
+          beaconNodeApiEndpoint);
+      return SafeFuture.COMPLETE;
+    }
+
     return beaconNodeApi
         .getSyncingStatus()
         .thenCombine(
@@ -171,25 +217,24 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
                     "{} is ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
                 final boolean optimistic = syncingStatus.getIsOptimistic().orElse(false);
                 if (optimistic) {
-                  return ReadinessStatus.READY_OPTIMISTIC;
+                  return ReadinessWithErrorTimestamp.READY_OPTIMISTIC;
                 }
                 if (!hasEnoughConnectedPeers(peerCount)) {
-                  return ReadinessStatus.READY_NOT_ENOUGH_PEERS;
+                  return ReadinessWithErrorTimestamp.READY_NOT_ENOUGH_PEERS;
                 }
-                return ReadinessStatus.READY;
+                return ReadinessWithErrorTimestamp.READY;
               }
               LOG.debug(
                   "{} is NOT ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
-              return ReadinessStatus.NOT_READY;
+              return ReadinessWithErrorTimestamp.NOT_READY;
             })
-        .orTimeout(SYNCING_STATUS_CALL_TIMEOUT)
         .exceptionally(
             throwable -> {
               LOG.debug(
-                  String.format(
-                      "%s is NOT ready to accept requests because the syncing status request failed: %s",
-                      beaconNodeApiEndpoint, throwable));
-              return ReadinessStatus.NOT_READY;
+                  "{} is NOT ready to accept requests because the syncing status request failed: {}",
+                  beaconNodeApiEndpoint,
+                  throwable);
+              return ReadinessWithErrorTimestamp.error(timeProvider.getTimeInMillis());
             })
         .thenAccept(
             readinessStatus -> {
@@ -232,7 +277,8 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     }
   }
 
-  public enum ReadinessStatus {
+  private enum Readiness {
+    ERROR(-1),
     NOT_READY(0),
     READY_OPTIMISTIC(1),
     READY_NOT_ENOUGH_PEERS(2),
@@ -240,12 +286,32 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
 
     private final int weight;
 
-    ReadinessStatus(final int weight) {
+    Readiness(final int weight) {
       this.weight = weight;
     }
 
     boolean isReady() {
       return this.weight > 0;
+    }
+  }
+
+  private record ReadinessWithErrorTimestamp(
+      Readiness readiness, Optional<UInt64> lastErrorTimestamp) {
+    static ReadinessWithErrorTimestamp error(final UInt64 errorTimestamp) {
+      return new ReadinessWithErrorTimestamp(Readiness.ERROR, Optional.of(errorTimestamp));
+    }
+
+    static final ReadinessWithErrorTimestamp READY =
+        new ReadinessWithErrorTimestamp(Readiness.READY, Optional.empty());
+    static final ReadinessWithErrorTimestamp NOT_READY =
+        new ReadinessWithErrorTimestamp(Readiness.NOT_READY, Optional.empty());
+    static final ReadinessWithErrorTimestamp READY_OPTIMISTIC =
+        new ReadinessWithErrorTimestamp(Readiness.READY_OPTIMISTIC, Optional.empty());
+    static final ReadinessWithErrorTimestamp READY_NOT_ENOUGH_PEERS =
+        new ReadinessWithErrorTimestamp(Readiness.READY_NOT_ENOUGH_PEERS, Optional.empty());
+
+    public boolean isReady() {
+      return readiness.isReady();
     }
   }
 }

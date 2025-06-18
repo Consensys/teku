@@ -361,6 +361,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions = new ConcurrentHashMap<>();
     final List<SafeFuture<T>> failoverResponses =
         failoverDelegates.stream()
+            .filter(beaconNodeReadinessManager::isReady)
             .map(
                 failover ->
                     runRequest(failover, request, method)
@@ -490,6 +491,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final RemoteValidatorApiChannel delegate,
       final ValidatorApiChannelRequest<T> request,
       final String method) {
+    LOG.info("runRequest {} to {}", method, delegate.getEndpoint());
     return request
         .run(delegate)
         .handleComposed(
