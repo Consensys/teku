@@ -145,6 +145,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {}
 
+  @SuppressWarnings("ReferenceComparison")
   private ReadinessWithErrorTimestamp getReadiness(final RemoteValidatorApiChannel beaconNodeApi) {
     return readinessStatusCache.computeIfAbsent(
         beaconNodeApi,
