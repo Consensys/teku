@@ -59,7 +59,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
   void isForCurrentSlot_shouldRejectOutsideLowerBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
+        spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement().longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isFalse();
@@ -69,7 +69,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
   void isForCurrentSlot_shouldAcceptLowerBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
+        spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         slotStartTimeMillis.minus(maximumGossipClockDisparity).longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isTrue();
@@ -79,7 +79,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
   void isForCurrentSlot_shouldAcceptUpperBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 nextSlotStartTimeMillis =
-        spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
+        spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isTrue();
@@ -89,7 +89,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
   void isForCurrentSlot_shouldRejectOutsideUpperBound() {
     final UInt64 slot = UInt64.valueOf(1000);
     final UInt64 nextSlotStartTimeMillis =
-        spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
+        spec.computeTimeAtSlot(slot.increment(), recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
         nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment().longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isFalse();
