@@ -13,15 +13,21 @@
 
 package tech.pegasys.teku.infrastructure.async.stream;
 
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class SyncToAsyncIteratorImpl<T> extends AsyncIterator<T> {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Iterator<T> iterator;
+  private final StackTraceElement[] stackTraceElements;
   private AsyncStreamHandler<T> callback;
 
   SyncToAsyncIteratorImpl(final Iterator<T> iterator) {
+    this.stackTraceElements = Thread.currentThread().getStackTrace();
     this.iterator = iterator;
   }
 
@@ -57,6 +63,14 @@ class SyncToAsyncIteratorImpl<T> extends AsyncIterator<T> {
         }
       }
     } catch (Throwable e) {
+      if (e instanceof ConcurrentModificationException) {
+        final Exception stackTraceException =
+            new Exception("SyncToAsyncIteratorImpl stack trace holder");
+        stackTraceException.setStackTrace(stackTraceElements);
+        LOG.error(
+            "ConcurrentModificationException in SyncToAsyncIteratorImpl", stackTraceException);
+      }
+
       callback.onError(e);
     }
   }

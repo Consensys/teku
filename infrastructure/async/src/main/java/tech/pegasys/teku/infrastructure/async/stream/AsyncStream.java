@@ -43,14 +43,14 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
 
   @SafeVarargs
   static <T> AsyncStream<T> of(final T... elements) {
-    return create(List.of(elements).iterator());
+    return createUnsafe(List.of(elements).iterator());
   }
 
-  static <T> AsyncStream<T> create(final Stream<T> stream) {
-    return create(stream.iterator());
-  }
-
-  static <T> AsyncStream<T> create(final Iterator<T> iterator) {
+  /**
+   * Creates Async stream which is not thread-safe. Be sure to guarantee thread safety on provided
+   * iterator by using concurrent-friendly iterator, otherwise you may encounter concurrency issues.
+   */
+  static <T> AsyncStream<T> createUnsafe(final Iterator<T> iterator) {
     return new SyncToAsyncIteratorImpl<>(iterator);
   }
 
