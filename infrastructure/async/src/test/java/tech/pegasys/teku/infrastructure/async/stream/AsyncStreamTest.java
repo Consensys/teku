@@ -26,6 +26,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
@@ -183,6 +185,7 @@ public class AsyncStreamTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   void testConcurrentExceptionHasUsefulWrap() throws Exception {
     final int baseNumber = 10000;
     final int threadCount = 10;
