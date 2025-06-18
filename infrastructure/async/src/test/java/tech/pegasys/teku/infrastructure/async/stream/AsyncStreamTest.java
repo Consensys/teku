@@ -209,7 +209,7 @@ public class AsyncStreamTest {
                 for (int j = start; j < start + perThreadIncrement; j++) {
                   ints.add(j);
                   try {
-                    Thread.sleep(5);
+                    Thread.sleep(2);
                   } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                   }
