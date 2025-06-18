@@ -80,15 +80,11 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   public boolean isReady(final RemoteValidatorApiChannel beaconNodeApi) {
-    final ReadinessWithErrorTimestamp readinessStatus =
-        readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessWithErrorTimestamp.READY);
-    return readinessStatus.isReady();
+    return getReadiness(beaconNodeApi).isReady();
   }
 
   public int getReadinessStatusWeight(final RemoteValidatorApiChannel beaconNodeApi) {
-    return readinessStatusCache.getOrDefault(beaconNodeApi, ReadinessWithErrorTimestamp.READY)
-        .readiness
-        .weight;
+    return getReadiness(beaconNodeApi).readiness.weight;
   }
 
   public Iterator<? extends RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
@@ -149,6 +145,17 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {}
 
+  private ReadinessWithErrorTimestamp getReadiness(final RemoteValidatorApiChannel beaconNodeApi) {
+    return readinessStatusCache.computeIfAbsent(
+        beaconNodeApi,
+        beacon -> {
+          if (beacon == primaryBeaconNodeApi) {
+            return ReadinessWithErrorTimestamp.READY;
+          }
+          return ReadinessWithErrorTimestamp.NOT_READY;
+        });
+  }
+
   private SafeFuture<Void> performReadinessCheckAgainstAllNodes() {
     // no readiness check needed when no failovers are configured
     if (failoverBeaconNodeApis.isEmpty()) {
@@ -201,7 +208,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
 
     LOG.debug("Performing beacon node readiness check for {}", beaconNodeApiEndpoint);
     if (!isTimeToPerformReadinessCheck(beaconNodeApi, isPrimaryNode)) {
-      LOG.info(
+      LOG.debug(
           "Skipping readiness check for {} as it was already checked recently",
           beaconNodeApiEndpoint);
       return SafeFuture.COMPLETE;

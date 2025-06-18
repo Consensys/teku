@@ -491,15 +491,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final RemoteValidatorApiChannel delegate,
       final ValidatorApiChannelRequest<T> request,
       final String method) {
-    LOG.info("runRequest {} to {}", method, delegate.getEndpoint());
+    LOG.trace("runRequest {} to {}", method, delegate.getEndpoint());
     return request
         .run(delegate)
         .handleComposed(
             (response, throwable) -> {
               if (throwable != null) {
-                LOG.trace(
-                    String.format("Request (%s) to %s failed", method, delegate.getEndpoint()),
-                    throwable);
+                LOG.debug("Request ({}) to {} failed", method, delegate.getEndpoint(), throwable);
                 recordFailedRequest(delegate, method);
                 return SafeFuture.failedFuture(throwable);
               }
