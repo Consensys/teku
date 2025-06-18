@@ -193,7 +193,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
 
     // mock store
     when(store.getGenesisTime()).thenReturn(genesisTime);
-    when(store.getTimeSeconds()).thenReturn(spec.getSlotStartTime(currentSlot, genesisTime));
+    when(store.getTimeSeconds()).thenReturn(spec.computeTimeAtSlot(currentSlot, genesisTime));
 
     final UInt64 latestFinalizedSlot =
         spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(currentSlot).minus(1));
@@ -202,7 +202,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
 
-    when(store.getTimeSeconds()).thenReturn(spec.getSlotStartTime(currentSlot, genesisTime));
+    when(store.getTimeSeconds()).thenReturn(spec.computeTimeAtSlot(currentSlot, genesisTime));
 
     final BlobSidecarsByRangeMessageHandler handler =
         new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);

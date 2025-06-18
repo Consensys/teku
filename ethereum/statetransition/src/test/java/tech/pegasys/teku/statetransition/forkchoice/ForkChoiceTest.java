@@ -1069,7 +1069,7 @@ class ForkChoiceTest {
   @Test
   void prepareForBlockProduction_NotYetInProposalSlotShouldRunOnTickWhenWithinTolerance() {
     final UInt64 newTime =
-        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+        spec.computeTimeMillisAtSlot(ONE, recentChainData.getGenesisTimeMillis())
             .minusMinZero(BLOCK_CREATION_TOLERANCE_MS - 100);
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
@@ -1084,7 +1084,7 @@ class ForkChoiceTest {
   @Test
   void prepareForBlockProduction_NotYetInProposalSlotShouldNotRunOnTickWhenOutOfTolerance() {
     final UInt64 newTime =
-        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+        spec.computeTimeMillisAtSlot(ONE, recentChainData.getGenesisTimeMillis())
             .minusMinZero(BLOCK_CREATION_TOLERANCE_MS + 100);
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
@@ -1284,7 +1284,7 @@ class ForkChoiceTest {
 
     // Should apply at start of next slot.
     forkChoice.onTick(
-        spec.getSlotStartTimeMillis(currentSlot.plus(1), recentChainData.getGenesisTimeMillis()),
+        spec.computeTimeMillisAtSlot(currentSlot.plus(1), recentChainData.getGenesisTimeMillis()),
         Optional.empty());
     processHead(currentSlot.plus(1));
 

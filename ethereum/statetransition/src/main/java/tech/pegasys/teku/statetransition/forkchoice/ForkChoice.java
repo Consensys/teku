@@ -909,7 +909,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   SafeFuture<Void> prepareForBlockProduction(
       final UInt64 slot, final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 currentTime = recentChainData.getStore().getTimeInMillis();
     // We haven't yet transitioned into this slot but will do very soon, so make it happen now
     if (!currentTime

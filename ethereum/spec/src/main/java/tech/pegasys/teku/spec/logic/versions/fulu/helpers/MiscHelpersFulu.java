@@ -25,7 +25,6 @@ import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -71,7 +69,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
@@ -88,32 +86,24 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
-  @SuppressWarnings("unused")
-  private final SpecConfigFulu specConfigFulu;
-
-  @SuppressWarnings("unused")
   private final Predicates predicates;
-
-  @SuppressWarnings("unused")
-  private final SchemaDefinitionsFulu schemaDefinitions;
-
-  private final List<BlobScheduleEntry> blobSchedule;
+  private final SpecConfigFulu specConfigFulu;
+  private final SchemaDefinitionsFulu schemaDefinitionsFulu;
+  private final BlobSchedule blobSchedule;
 
   public MiscHelpersFulu(
-      final SpecConfigFulu specConfigFulu,
-      final Predicates predicates,
-      final SchemaDefinitions schemaDefinitions) {
+      final SpecConfigFulu specConfig,
+      final PredicatesElectra predicates,
+      final SchemaDefinitionsFulu schemaDefinitions,
+      final BlobSchedule blobSchedule) {
     super(
-        SpecConfigElectra.required(specConfigFulu),
+        SpecConfigElectra.required(specConfig),
         predicates,
         SchemaDefinitionsElectra.required(schemaDefinitions));
     this.predicates = predicates;
-    this.specConfigFulu = specConfigFulu;
-    this.schemaDefinitions = SchemaDefinitionsFulu.required(schemaDefinitions);
-    this.blobSchedule =
-        specConfigFulu.getBlobSchedule().stream()
-            .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
-            .toList();
+    this.specConfigFulu = specConfig;
+    this.schemaDefinitionsFulu = schemaDefinitions;
+    this.blobSchedule = blobSchedule;
   }
 
   @Override
@@ -142,25 +132,20 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   // compute_fork_digest
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Bytes4 forkVersion = computeForkVersion(epoch);
-    final BlobParameters blobParameters = getBlobParameters(epoch);
     final Bytes32 baseDigest = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
+    final BlobParameters blobParameters = getBlobParameters(epoch);
     // Bitmask digest with hash of blob parameters
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
   public Optional<Integer> getHighestMaxBlobsPerBlockFromSchedule() {
-    return blobSchedule.stream()
-        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
-        .map(BlobScheduleEntry::maxBlobsPerBlock);
+    return blobSchedule.getHighestMaxBlobsPerBlock();
   }
 
   // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return blobSchedule.stream()
-        .sorted(Comparator.comparing(BlobScheduleEntry::epoch).reversed())
-        .filter(entry -> epoch.isGreaterThanOrEqualTo(entry.epoch()))
-        .findFirst()
-        .map(BlobParameters::fromBlobScheduleEntry)
+    return blobSchedule
+        .getBlobParameters(epoch)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
@@ -293,7 +278,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public int getBlockBodyKzgCommitmentsGeneralizedIndex() {
     return (int)
-        BeaconBlockBodySchemaElectra.required(schemaDefinitions.getBeaconBlockBodySchema())
+        BeaconBlockBodySchemaElectra.required(schemaDefinitionsFulu.getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsGeneralizedIndex();
   }
 
@@ -353,7 +338,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
                 row.add(
-                    schemaDefinitions
+                    schemaDefinitionsFulu
                         .getMatrixEntrySchema()
                         .create(
                             kzgCellAndProofs.get(cellIndex).cell(),
@@ -377,7 +362,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCells.size(); ++cellIndex) {
                 row.add(
-                    schemaDefinitions
+                    schemaDefinitionsFulu
                         .getMatrixEntrySchema()
                         .create(
                             kzgCells.get(cellIndex),
@@ -426,9 +411,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       return Collections.emptyList();
     }
 
-    final DataColumnSchema dataColumnSchema = schemaDefinitions.getDataColumnSchema();
+    final DataColumnSchema dataColumnSchema = schemaDefinitionsFulu.getDataColumnSchema();
     final DataColumnSidecarSchema dataColumnSidecarSchema =
-        schemaDefinitions.getDataColumnSidecarSchema();
+        schemaDefinitionsFulu.getDataColumnSidecarSchema();
     final SszListSchema<SszKZGProof, ?> kzgProofsSchema =
         dataColumnSidecarSchema.getKzgProofsSchema();
 
@@ -472,7 +457,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                     IntStream.range(0, sideCar.getDataColumn().size())
                         .mapToObj(
                             rowIndex ->
-                                schemaDefinitions
+                                schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
                                         sideCar.getDataColumn().get(rowIndex),
@@ -521,7 +506,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               return IntStream.range(0, kzgCellAndProofs.size())
                   .mapToObj(
                       kzgCellAndProofIndex ->
-                          schemaDefinitions
+                          schemaDefinitionsFulu
                               .getMatrixEntrySchema()
                               .create(
                                   kzgCellAndProofs.get(kzgCellAndProofIndex).cell(),

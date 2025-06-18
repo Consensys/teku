@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -51,9 +50,6 @@ import tech.pegasys.teku.spec.util.RandomChainBuilder;
 import tech.pegasys.teku.spec.util.RandomChainBuilderForkChoiceStrategy;
 
 class ForkChoiceUtilTest {
-
-  private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
-  private static final UInt64 GENESIS_TIME_MILLIS = GENESIS_TIME.times(1000L);
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RandomChainBuilder chainBuilder = new RandomChainBuilder(dataStructureUtil);
@@ -61,9 +57,6 @@ class ForkChoiceUtilTest {
       new RandomChainBuilderForkChoiceStrategy(chainBuilder);
 
   private final ForkChoiceUtil forkChoiceUtil = spec.getGenesisSpec().getForkChoiceUtil();
-  private final UInt64 slot50Time =
-      GENESIS_TIME.plus(spec.getGenesisSpecConfig().getSecondsPerSlot() * 50L);
-  private final UInt64 slot50TimeMillis = secondsToMillis(slot50Time);
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() {
@@ -165,66 +158,6 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  public void getCurrentSlot_shouldGetZeroAtGenesis() {
-    assertThat(forkChoiceUtil.getCurrentSlot(GENESIS_TIME, GENESIS_TIME)).isEqualTo(UInt64.ZERO);
-  }
-
-  @Test
-  public void getCurrentSlotForMillis_shouldGetZeroAtGenesisMillis() {
-    assertThat(forkChoiceUtil.getCurrentSlotForMillis(GENESIS_TIME_MILLIS, GENESIS_TIME_MILLIS))
-        .isEqualTo(UInt64.ZERO);
-  }
-
-  @Test
-  public void getCurrentSlot_shouldGetNonZeroPastGenesis() {
-    assertThat(forkChoiceUtil.getCurrentSlot(slot50Time, GENESIS_TIME))
-        .isEqualTo(UInt64.valueOf(50L));
-  }
-
-  @Test
-  public void getCurrentSlotForMillis_shouldGetNonZeroPastGenesisMillis() {
-    assertThat(forkChoiceUtil.getCurrentSlotForMillis(slot50TimeMillis, GENESIS_TIME_MILLIS))
-        .isEqualTo(UInt64.valueOf(50L));
-  }
-
-  @Test
-  public void getCurrentSlot_shouldGetZeroPriorToGenesis() {
-    assertThat(forkChoiceUtil.getCurrentSlot(GENESIS_TIME.minus(1), GENESIS_TIME))
-        .isEqualTo(UInt64.ZERO);
-  }
-
-  @Test
-  public void getCurrentSlotForMillis_shouldGetZeroPriorToGenesisMillis() {
-    assertThat(
-            forkChoiceUtil.getCurrentSlotForMillis(
-                GENESIS_TIME_MILLIS.minus(1000), GENESIS_TIME_MILLIS))
-        .isEqualTo(UInt64.ZERO);
-  }
-
-  @Test
-  public void getSlotStartTime_shouldGetGenesisTimeForBlockZero() {
-    assertThat(forkChoiceUtil.getSlotStartTime(UInt64.ZERO, GENESIS_TIME)).isEqualTo(GENESIS_TIME);
-  }
-
-  @Test
-  public void getSlotStartTimeMillis_shouldGetGenesisTimeForBlockZeroMillis() {
-    assertThat(forkChoiceUtil.getSlotStartTimeMillis(UInt64.ZERO, GENESIS_TIME_MILLIS))
-        .isEqualTo(GENESIS_TIME_MILLIS);
-  }
-
-  @Test
-  public void getSlotStartTime_shouldGetCorrectTimePastGenesis() {
-    assertThat(forkChoiceUtil.getSlotStartTime(UInt64.valueOf(50L), GENESIS_TIME))
-        .isEqualTo(slot50Time);
-  }
-
-  @Test
-  public void getSlotStartTimeMillis_shouldGetCorrectTimePastGenesisMillis() {
-    assertThat(forkChoiceUtil.getSlotStartTimeMillis(UInt64.valueOf(50L), GENESIS_TIME_MILLIS))
-        .isEqualTo(slot50TimeMillis);
-  }
-
-  @Test
   void onTick_shouldExitImmediatelyWhenCurrentTimeIsBeforeGenesisTime() {
     final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTimeMillis()).thenReturn(UInt64.valueOf(3000000));
@@ -275,7 +208,7 @@ class ForkChoiceUtilTest {
 
     // Transition straight to epoch 3
     final UInt64 finalMillis =
-        spec.getSlotStartTimeMillis(
+        spec.computeTimeMillisAtSlot(
             spec.computeStartSlotAtEpoch(UInt64.valueOf(3)), store.getGenesisTimeMillis());
     forkChoiceUtil.onTick(store, finalMillis);
     assertThat(store.getTimeInMillis()).isEqualTo(finalMillis);
@@ -391,7 +324,7 @@ class ForkChoiceUtilTest {
 
     final UInt64 genesisTime = UInt64.valueOf(1982239L);
     when(store.getTimeSeconds())
-        .thenReturn(spec.getSlotStartTime(UInt64.valueOf(currentSlot), genesisTime));
+        .thenReturn(spec.computeTimeAtSlot(UInt64.valueOf(currentSlot), genesisTime));
     when(store.getGenesisTime()).thenReturn(genesisTime);
     return store;
   }
