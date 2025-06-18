@@ -177,26 +177,27 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     return inflightReadinessCheckFutures.compute(
         beaconNodeApi,
-        (__, future) -> {
+        (beacon, future) -> {
           if (future != null && !future.isDone()) {
             LOG.debug("Readiness check for {} is already in progress", beaconNodeApi.getEndpoint());
-            return future; // Return the existing future if it's already in progress
+            return future;
           }
-          return performReadinessCheck(beaconNodeApi, isPrimaryNode);
+          return performReadinessCheck(beacon, isPrimaryNode);
         });
   }
 
   private boolean isTimeToPerformReadinessCheck(
       final RemoteValidatorApiChannel beaconNodeApi, final boolean isPrimaryNode) {
     if (isPrimaryNode) {
-      return true; // Primary node readiness check is always performed
+      return true;
     }
 
     final Optional<UInt64> lastErrorTimestamp =
         Optional.ofNullable(readinessStatusCache.get(beaconNodeApi))
             .flatMap(ReadinessWithErrorTimestamp::lastErrorTimestamp);
     if (lastErrorTimestamp.isEmpty()) {
-      return true; // No error recorded, so we can check readiness
+      // not previously errored, so we can perform the check
+      return true;
     }
     final UInt64 currentTime = timeProvider.getTimeInMillis();
     return currentTime.isGreaterThanOrEqualTo(
