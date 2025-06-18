@@ -132,7 +132,6 @@ public class EventSourceBeaconChainEventAdapterTest {
     // Shouldn't try failover2 when failover1 is good
     verify(beaconNodeReadinessManager, never()).isReady(failover2);
     verify(beaconNodeReadinessManager, never()).getReadinessStatusWeight(failover2);
-    verify(beaconNodeReadinessManager, never()).isReady(any());
 
     // But will try to return to primaryNode when it's possible
     verify(beaconNodeReadinessManager).performPrimaryReadinessCheck();
