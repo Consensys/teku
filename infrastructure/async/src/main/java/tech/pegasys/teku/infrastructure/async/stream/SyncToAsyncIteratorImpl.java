@@ -27,7 +27,7 @@ class SyncToAsyncIteratorImpl<T> extends AsyncIterator<T> {
   private AsyncStreamHandler<T> callback;
 
   SyncToAsyncIteratorImpl(final Iterator<T> iterator) {
-    stackTraceElements = Thread.currentThread().getStackTrace();
+    this.stackTraceElements = Thread.currentThread().getStackTrace();
     this.iterator = iterator;
   }
 
