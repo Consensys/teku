@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor.depositSignatureVerifier;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
@@ -152,13 +153,35 @@ public class MiscHelpers {
     return computeStartSlotAtEpoch(epoch.plus(1)).minusMinZero(1);
   }
 
+  // this doesn't appear to be in spec, but named consistently with compute_timestamp_at_slot
   public UInt64 computeSlotAtTime(final UInt64 genesisTime, final UInt64 currentTime) {
+    if (currentTime.isLessThan(genesisTime)) {
+      return UInt64.ZERO;
+    }
     return currentTime.minusMinZero(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
   }
 
+  public UInt64 computeSlotAtTimeMillis(
+      final UInt64 genesisTimeMillis, final UInt64 currentTimeMillis) {
+    if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
+      return UInt64.ZERO;
+    }
+    return currentTimeMillis
+        .minus(genesisTimeMillis)
+        .dividedBy(secondsToMillis(specConfig.getSecondsPerSlot()));
+  }
+
+  // compute_time_at_slot, spec function takes state, but otherwise the same.
   public UInt64 computeTimeAtSlot(final UInt64 genesisTime, final UInt64 slot) {
     final UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
     return genesisTime.plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
+  }
+
+  // compute_time_at_slot - milliseconds version
+  public UInt64 computeTimeMillisAtSlot(final UInt64 genesisTimeMillis, final UInt64 slot) {
+    final UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
+    return genesisTimeMillis.plus(
+        slotsSinceGenesis.times(secondsToMillis(specConfig.getSecondsPerSlot())));
   }
 
   public boolean isSlotAtNthEpochBoundary(

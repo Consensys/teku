@@ -122,7 +122,7 @@ public class SlotProcessor {
     }
 
     final UInt64 calculatedSlot =
-        spec.getCurrentSlotForMillis(currentTimeMillis, genesisTimeMillis);
+        spec.getCurrentSlotFromTimeMillis(currentTimeMillis, genesisTimeMillis);
     // tolerate 1 slot difference, not more
     if (calculatedSlot.isGreaterThan(nodeSlot.getValue().plus(ONE))) {
       eventLog.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
@@ -131,7 +131,7 @@ public class SlotProcessor {
 
     final UInt64 epoch = spec.computeEpochAtSlot(nodeSlot.getValue());
     final UInt64 nodeSlotStartTimeMillis =
-        spec.getSlotStartTimeMillis(nodeSlot.getValue(), genesisTimeMillis);
+        spec.computeTimeMillisAtSlot(nodeSlot.getValue(), genesisTimeMillis);
 
     if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
@@ -205,7 +205,7 @@ public class SlotProcessor {
 
   boolean isNextSlotDue(final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
     final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTimeMillis(nodeSlot.getValue(), genesisTimeMillis);
+        spec.computeTimeMillisAtSlot(nodeSlot.getValue(), genesisTimeMillis);
     return currentTimeMillis.isGreaterThanOrEqualTo(slotStartTimeMillis);
   }
 
@@ -239,7 +239,7 @@ public class SlotProcessor {
       return false;
     }
     final UInt64 nextEpochStartTimeMillis =
-        spec.getSlotStartTimeMillis(firstSlotOfNextEpoch, genesisTimeMillis);
+        spec.computeTimeMillisAtSlot(firstSlotOfNextEpoch, genesisTimeMillis);
     final UInt64 earliestTimeInMillis =
         nextEpochStartTimeMillis.minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
     final boolean processingDueForSlot =

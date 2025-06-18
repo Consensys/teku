@@ -115,7 +115,7 @@ public class BlobSidecarsByRootFuluDeprecationTest {
     // current epoch is deneb fork epoch + 1
     when(store.getTimeSeconds())
         .thenReturn(
-            spec.getSlotStartTime(
+            spec.computeTimeAtSlot(
                 fuluForkEpoch.increment().times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
   }
 

@@ -63,11 +63,7 @@ public class Eth1VotingPeriod {
 
   private UInt64 getVotingPeriodStartTime(final UInt64 slot, final UInt64 genesisTime) {
     final UInt64 eth1VotingPeriodStartSlot = computeVotingPeriodStartSlot(slot);
-    return computeTimeAtSlot(eth1VotingPeriodStartSlot, genesisTime);
-  }
-
-  private UInt64 computeTimeAtSlot(final UInt64 slot, final UInt64 genesisTime) {
-    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
+    return spec.computeTimeAtSlot(eth1VotingPeriodStartSlot, genesisTime);
   }
 
   public UInt64 getCacheDurationInSeconds() {
