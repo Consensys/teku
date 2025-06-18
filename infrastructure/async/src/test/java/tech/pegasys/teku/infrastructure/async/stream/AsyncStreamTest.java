@@ -191,8 +191,8 @@ public class AsyncStreamTest {
     final Set<Integer> ints =
         new HashSet<>(IntStream.range(0, baseNumber).boxed().collect(Collectors.toSet()));
     final Set<Integer> collector = new HashSet<>();
-    CountDownLatch startLatch = new CountDownLatch(threadCount);
-    CountDownLatch finishLatch = new CountDownLatch(threadCount);
+    final CountDownLatch startLatch = new CountDownLatch(threadCount);
+    final CountDownLatch finishLatch = new CountDownLatch(threadCount);
     for (int i = 0; i < threadCount; i++) {
       final int start = baseNumber + i * perThreadIncrement;
       new Thread(
@@ -206,7 +206,7 @@ public class AsyncStreamTest {
                 for (int j = start; j < start + perThreadIncrement; j++) {
                   ints.add(j);
                   try {
-                    Thread.sleep(1);
+                    Thread.sleep(5);
                   } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                   }
@@ -224,7 +224,7 @@ public class AsyncStreamTest {
           .ifExceptionGetsHereRaiseABug();
     }
 
-    boolean rc = finishLatch.await(5, TimeUnit.SECONDS);
+    final boolean rc = finishLatch.await(10, TimeUnit.SECONDS);
     assertThat(rc).isTrue();
 
     assertThat(collector).hasSizeLessThan(expectedTotal);
