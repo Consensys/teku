@@ -216,7 +216,7 @@ public class AsyncStreamTest {
     final LogCaptor logCaptorCopy;
     try (LogCaptor logCaptor = LogCaptor.forClass(AsyncStreamTest.class)) {
       logCaptorCopy = logCaptor;
-      AsyncStream.create(ints.iterator())
+      AsyncStream.createUnsafe(ints.iterator())
           .map(i -> i)
           .forEach(collector::add)
           .ifExceptionGetsHereRaiseABug();
@@ -231,5 +231,55 @@ public class AsyncStreamTest {
         .contains("SyncToAsyncIteratorImpl stack trace holder", "AsyncStreamTest.java:");
     final String logString = logCaptorCopy.getErrorLogs().get(0);
     assertThat(logString).contains("ConcurrentModificationException");
+  }
+
+  @Test
+  void testConcurrentIsSafeWithCreate() throws Exception {
+    final int baseNumber = 10000;
+    final int threadCount = 10;
+    final int perThreadIncrement = 1000;
+    final int expectedTotal = baseNumber + threadCount * perThreadIncrement;
+    final Set<Integer> ints =
+        new HashSet<>(IntStream.range(0, baseNumber).boxed().collect(Collectors.toSet()));
+    final Set<Integer> collector = new HashSet<>();
+    CountDownLatch startLatch = new CountDownLatch(threadCount);
+    CountDownLatch finishLatch = new CountDownLatch(threadCount);
+    for (int i = 0; i < threadCount; i++) {
+      final int start = baseNumber + i * perThreadIncrement;
+      new Thread(
+              () -> {
+                startLatch.countDown();
+                try {
+                  startLatch.await();
+                } catch (InterruptedException e) {
+                  throw new RuntimeException(e);
+                }
+                for (int j = start; j < start + perThreadIncrement; j++) {
+                  ints.add(j);
+                  System.out.printf("Adding %d", j);
+                  try {
+                    Thread.sleep(1);
+                  } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                  }
+                }
+                finishLatch.countDown();
+              })
+          .start();
+    }
+    final LogCaptor logCaptorCopy;
+    try (LogCaptor logCaptor = LogCaptor.forClass(AsyncStreamTest.class)) {
+      logCaptorCopy = logCaptor;
+      AsyncStream.create(ints.stream())
+          .map(i -> i)
+          .forEach(collector::add)
+          .ifExceptionGetsHereRaiseABug();
+    }
+
+    boolean rc = finishLatch.await(5, TimeUnit.SECONDS);
+    assertThat(rc).isTrue();
+
+    assertThat(collector).hasSizeLessThan(expectedTotal);
+    assertThat(logCaptorCopy.getThrowable(0)).isEmpty();
   }
 }
