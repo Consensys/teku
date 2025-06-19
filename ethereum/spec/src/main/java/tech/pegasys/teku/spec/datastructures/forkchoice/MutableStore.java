@@ -70,6 +70,8 @@ public interface MutableStore extends ReadOnlyStore {
 
   void putInclusionList(InclusionList inclusionList);
 
+  void putUnsatisfiedInclusionListBlock(Bytes32 blockRoot);
+
   void putEquivocatedInclusionList(InclusionList equivocatedInclusionList);
 
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);

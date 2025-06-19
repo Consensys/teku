@@ -75,6 +75,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   Optional<InclusionList> maybeInclusionList = Optional.empty();
+  Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot = Optional.empty();
   Optional<InclusionList> maybeEquivocatedInclusionList = Optional.empty();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
@@ -112,6 +113,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void putInclusionList(final InclusionList inclusionList) {
     this.maybeInclusionList = Optional.of(inclusionList);
+  }
+
+  @Override
+  public void putUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
+    this.maybeUnsatisfiedInclusionListBlockRoot = Optional.of(blockRoot);
   }
 
   @Override
