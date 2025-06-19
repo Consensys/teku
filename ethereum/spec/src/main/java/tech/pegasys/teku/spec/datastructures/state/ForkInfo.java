@@ -34,6 +34,7 @@ public class ForkInfo {
     this.precomputedForkDigest = Optional.empty();
   }
 
+  // TODO: berlinterop-devnet-2 The whole idea is not ideal, best to refactor the whole thing
   public ForkInfo(
       final Fork fork, final Bytes32 genesisValidatorsRoot, final Bytes4 precomputedForkDigest) {
     this.fork = fork;

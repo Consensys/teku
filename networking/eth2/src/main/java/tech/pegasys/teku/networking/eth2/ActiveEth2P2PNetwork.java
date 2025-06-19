@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -174,9 +173,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
-      final Bytes32 genesisValidatorsRoot =
-          recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot();
-      spec.computeNextForkDigest(genesisValidatorsRoot, currentEpoch)
+      recentChainData
+          .getNextForkDigest(currentEpoch)
           .ifPresent(
               nextForkDigest -> {
                 LOG.info("Setting nfd in ENR to: {}", nextForkDigest);
@@ -410,7 +408,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     currentForkInfo = forkInfo;
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-    discoveryNetwork.setForkInfo(forkInfo, nextFork);
+    final Optional<Bytes4> nextForkDigest =
+        recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
+    discoveryNetwork.setForkInfo(forkInfo, nextFork, nextForkDigest);
   }
 
   @Override
