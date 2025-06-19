@@ -51,6 +51,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Optional<InclusionList> maybeInclusionList;
+  private final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot;
   private final Optional<InclusionList> maybeEquivocatedInclusionList;
   private final Optional<Bytes32> maybeLatestCanonicalBlockRoot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
@@ -78,6 +79,7 @@ class StoreTransactionUpdatesFactory {
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
     maybeInclusionList = tx.maybeInclusionList;
+    maybeUnsatisfiedInclusionListBlockRoot = tx.maybeUnsatisfiedInclusionListBlockRoot;
     maybeEquivocatedInclusionList = tx.maybeEquivocatedInclusionList;
   }
 
@@ -263,6 +265,7 @@ class StoreTransactionUpdatesFactory {
         prunedHotBlockRoots,
         stateRoots,
         maybeInclusionList,
+        maybeUnsatisfiedInclusionListBlockRoot,
         maybeEquivocatedInclusionList,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,

@@ -45,6 +45,7 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots;
   private final Optional<InclusionList> maybeInclusionList;
+  private final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot;
   private final Optional<InclusionList> maybeEquivocatedInclusionList;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
@@ -63,6 +64,7 @@ class StoreTransactionUpdates {
       final Map<Bytes32, UInt64> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final Optional<InclusionList> maybeInclusionList,
+      final Optional<Bytes32> maybeUnsatisfiedInclusionListBlockRoot,
       final Optional<InclusionList> maybeEquivocatedInclusionList,
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
@@ -91,6 +93,7 @@ class StoreTransactionUpdates {
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.stateRoots = stateRoots;
     this.maybeInclusionList = maybeInclusionList;
+    this.maybeUnsatisfiedInclusionListBlockRoot = maybeUnsatisfiedInclusionListBlockRoot;
     this.maybeEquivocatedInclusionList = maybeEquivocatedInclusionList;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
@@ -128,6 +131,7 @@ class StoreTransactionUpdates {
     store.cacheStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     store.cacheBlobSidecars(blobSidecars);
     maybeInclusionList.ifPresent(store::cacheInclusionList);
+    maybeUnsatisfiedInclusionListBlockRoot.ifPresent(store::cacheUnsatisfiedInclusionListBlock);
     maybeEquivocatedInclusionList.ifPresent(store::cacheInclusionListEquivocator);
     if (optimisticTransitionBlockRootSet) {
       store.cacheFinalizedOptimisticTransitionPayload(

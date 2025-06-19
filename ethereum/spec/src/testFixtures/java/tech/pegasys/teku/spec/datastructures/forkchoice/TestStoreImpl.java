@@ -332,6 +332,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public void putUnsatisfiedInclusionListBlock(final Bytes32 blockRoot) {
+    // NO-OP
+  }
+
+  @Override
   public void putEquivocatedInclusionList(final InclusionList equivocatedInclusionList) {
     // NO-OP
   }
