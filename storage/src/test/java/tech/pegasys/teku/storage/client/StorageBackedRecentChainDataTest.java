@@ -33,7 +33,6 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -43,7 +42,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
-import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubChainHeadChannel;
@@ -62,7 +60,6 @@ public class StorageBackedRecentChainDataTest {
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final VoteUpdateChannel voteUpdateChannel = mock(VoteUpdateChannel.class);
-  private final SidecarUpdateChannel sidecarUpdateChannel = mock(SidecarUpdateChannel.class);
   private final FinalizedCheckpointChannel finalizedCheckpointChannel =
       new StubFinalizedCheckpointChannel();
   private final ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
@@ -84,13 +81,11 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             storeConfig,
             asyncRunner,
-            new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,
@@ -136,13 +131,11 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             storeConfig,
             asyncRunner,
-            new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,
@@ -191,13 +184,11 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             StoreConfig.createDefault(),
             asyncRunner,
-            new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,
@@ -242,13 +233,11 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             StoreConfig.createDefault(),
             asyncRunner,
-            new SystemTimeProvider(),
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,
