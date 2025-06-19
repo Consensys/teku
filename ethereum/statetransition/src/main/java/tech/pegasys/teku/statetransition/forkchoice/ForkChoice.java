@@ -636,6 +636,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
+    // TODO EIP7808 check the fork choice logic
+    if (payloadResult.hasInvalidInclusionList()) {
+      final StoreTransaction transaction = recentChainData.startStoreTransaction();
+      transaction.putUnsatisfiedInclusionListBlock(block.getRoot());
+      transaction.commit().join();
+      return BlockImportResult.FAILED_TO_INCLUDE_INCLUSION_LIST_IN_EXECUTION_PAYLOAD;
+    }
+
     LOG.debug("blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
 
     switch (blobSidecarsAndValidationResult.getValidationResult()) {
