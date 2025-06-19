@@ -107,7 +107,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     }
 
     final AsyncStream<DataColumnSidecar> responseStream =
-        AsyncStream.create(byRangeRequests.stream())
+        AsyncStream.createUnsafe(byRangeRequests.iterator())
             .flatMap(
                 byRangeRequest ->
                     byRangeRpc.requestDataColumnSidecarsByRange(
