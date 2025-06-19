@@ -119,7 +119,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     recentChainData.initializeFromAnchorPoint(
         AnchorPoint.fromInitialBlockAndState(
             spec, new SignedBlockAndState(anchorBlock, anchorState)),
-        spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
+        spec.computeTimeAtSlot(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
