@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -99,7 +100,9 @@ public class ActiveEth2P2PNetworkTest {
 
     final ForkInfo expectedFork =
         new ForkInfo(phase0Fork, genesis.getState().getGenesisValidatorsRoot());
-    verify(discoveryNetwork).setForkInfo(expectedFork, Optional.of(altairFork), Optional.empty());
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork, Optional.of(altairFork), Optional.of(Bytes4.fromHexString("0x41249021")));
   }
 
   @Test
@@ -112,7 +115,9 @@ public class ActiveEth2P2PNetworkTest {
     // Verify updates at startup
     verify(discoveryNetwork).start();
     ForkInfo expectedFork = new ForkInfo(phase0Fork, genesisValidatorsRoot);
-    verify(discoveryNetwork).setForkInfo(expectedFork, Optional.of(altairFork), Optional.empty());
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork, Optional.of(altairFork), Optional.of(Bytes4.fromHexString("0x41249021")));
 
     // Process epoch 1 - we shouldn't update fork info here
     network.onEpoch(UInt64.ONE);
