@@ -167,7 +167,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     this.enrForkId = Optional.of(enrForkId);
   }
 
-  public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
+  public void setForkInfo(
+      final ForkInfo currentForkInfo,
+      final Optional<Fork> nextForkInfo,
+      final Optional<Bytes4> nextForkDigest) {
     // If no future fork is planned, set next_fork_version = current_fork_version to signal this
     final Bytes4 nextVersion =
         nextForkInfo
@@ -182,14 +185,9 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     final Bytes encodedEnrForkId = enrForkId.sszSerialize();
 
     discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
-
-    // TODO: HACK berlininterop-devnet-2
-    final Bytes4 nextForkDigest =
-        spec.computeNextForkDigest(
-                currentForkInfo.getGenesisValidatorsRoot(), currentForkInfo.getFork().getEpoch())
-            .orElse(Bytes4.ZERO);
     discoveryService.updateCustomENRField(
-        NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nextForkDigest).sszSerialize());
+        NEXT_FORK_DIGEST_ENR_FIELD,
+        SszBytes4.of(nextForkDigest.orElse(Bytes4.ZERO)).sszSerialize());
 
     this.enrForkId = Optional.of(enrForkId);
   }
