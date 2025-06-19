@@ -196,7 +196,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public UInt64 computeTimeAtSlot(final UInt64 slot) {
-    return genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot)));
+    return spec.atSlot(slot).miscHelpers().computeTimeAtSlot(genesisTime, slot);
   }
 
   @VisibleForTesting
