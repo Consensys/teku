@@ -123,17 +123,15 @@ public class EventSourceBeaconChainEventAdapterTest {
 
     eventSourceBeaconChainEventAdapter.currentBeaconNodeUsedForEventStreaming = failover1;
 
-    when(beaconNodeReadinessManager.getReadinessStatus(failover1))
-        .thenReturn(BeaconNodeReadinessManager.ReadinessStatus.READY);
+    when(beaconNodeReadinessManager.isReady(failover1)).thenReturn(true);
     final SafeFuture<SyncingStatus> someFuture = new SafeFuture<>();
     when(primaryNode.getSyncingStatus()).thenReturn(someFuture);
     eventSourceBeaconChainEventAdapter.onFailoverNodeNotReady(failover1);
 
-    verify(beaconNodeReadinessManager).getReadinessStatus(failover1);
+    verify(beaconNodeReadinessManager).isReady(failover1);
     // Shouldn't try failover2 when failover1 is good
-    verify(beaconNodeReadinessManager, never()).getReadinessStatus(failover2);
+    verify(beaconNodeReadinessManager, never()).isReady(failover2);
     verify(beaconNodeReadinessManager, never()).getReadinessStatusWeight(failover2);
-    verify(beaconNodeReadinessManager, never()).isReady(any());
 
     // But will try to return to primaryNode when it's possible
     verify(beaconNodeReadinessManager).performPrimaryReadinessCheck();
