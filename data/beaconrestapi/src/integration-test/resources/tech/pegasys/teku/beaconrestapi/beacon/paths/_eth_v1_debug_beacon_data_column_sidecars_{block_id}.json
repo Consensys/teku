@@ -1,7 +1,7 @@
 {
   "get" : {
-    "tags" : [ "Beacon" ],
-    "operationId" : "getDataColumnSidecars",
+    "tags" : [ "Debug" ],
+    "operationId" : "getDebugDataColumnSidecars",
     "summary" : "Get data column sidecars",
     "description" : "Retrieves data column sidecars for a given block id.\n    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\n    If the `indices` parameter is specified, only the data column sidecars with the specified indices will be returned. There are no guarantees\n    for the returned data column sidecars in terms of ordering.",
     "parameters" : [ {
@@ -29,6 +29,17 @@
     "responses" : {
       "200" : {
         "description" : "Request successful",
+        "headers" : {
+          "Eth-Consensus-Version" : {
+            "description" : "Required in response so client can deserialize returned json or ssz data more effectively.",
+            "required" : true,
+            "schema" : {
+              "type" : "string",
+              "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu" ],
+              "example" : "phase0"
+            }
+          }
+        },
         "content" : {
           "application/json" : {
             "schema" : {
@@ -53,8 +64,8 @@
           }
         }
       },
-      "400" : {
-        "description" : "The request could not be processed, check the response for more information.",
+      "500" : {
+        "description" : "Internal server error",
         "content" : {
           "application/json" : {
             "schema" : {
@@ -63,8 +74,18 @@
           }
         }
       },
-      "500" : {
-        "description" : "Internal server error",
+      "406" : {
+        "description" : "Not acceptable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
         "content" : {
           "application/json" : {
             "schema" : {

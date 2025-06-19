@@ -25,6 +25,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
@@ -47,6 +48,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public static final String SYNC_COMMITTEE_SUBNET_ENR_FIELD = "syncnets";
   public static final String DAS_CUSTODY_GROUP_COUNT_ENR_FIELD = "cgc";
   public static final String ETH2_ENR_FIELD = "eth2";
+  public static final String NEXT_FORK_DIGEST_ENR_FIELD = "nfd";
 
   private final Spec spec;
   private final P2PNetwork<P> p2pNetwork;
@@ -146,6 +148,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     }
     discoveryService.updateCustomENRField(
         DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.ofUnsignedInt(count).trimLeadingZeros());
+  }
+
+  public void setNextForkDigest(final Bytes4 nextForkDigest) {
+    discoveryService.updateCustomENRField(
+        NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nextForkDigest).sszSerialize());
   }
 
   public void setPreGenesisForkInfo() {

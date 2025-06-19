@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition;
 
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
 public interface CustodyGroupCountChannel extends VoidReturningChannelInterface {
@@ -25,6 +26,19 @@ public interface CustodyGroupCountChannel extends VoidReturningChannelInterface 
         @Override
         public void onCustodyGroupCountSynced(final int groupCount) {}
       };
+
+  static CustodyGroupCountChannel createCustodyGroupCountSyncedSubscriber(
+      final Consumer<Integer> custodyGroupCountSyncedSubscriber) {
+    return new CustodyGroupCountChannel() {
+      @Override
+      public void onCustodyGroupCountUpdate(final int groupCount) {}
+
+      @Override
+      public void onCustodyGroupCountSynced(final int groupCount) {
+        custodyGroupCountSyncedSubscriber.accept(groupCount);
+      }
+    };
+  }
 
   void onCustodyGroupCountUpdate(int groupCount);
 

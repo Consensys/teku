@@ -144,7 +144,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
                     new IllegalStateException(
                         "Failed to retrieve execution payload hash from beacon block root"));
 
-    final UInt64 timestamp = spec.getSlotStartTime(blockSlot, recentChainData.getGenesisTime());
+    final UInt64 timestamp = spec.computeTimeAtSlot(blockSlot, recentChainData.getGenesisTime());
     if (forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
       return forkChoiceUpdateData.getExecutionPayloadContext();
     } else if (parentExecutionHash.isZero() && !forkChoiceUpdateData.hasTerminalBlockHash()) {

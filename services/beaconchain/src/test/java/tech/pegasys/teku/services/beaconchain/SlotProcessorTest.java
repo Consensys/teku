@@ -106,7 +106,7 @@ public class SlotProcessorTest {
   @Test
   public void isNextSlotDue_shouldDetectNextSlotIsNotDue() {
     slotProcessor.setCurrentSlot(desiredSlot.plus(ONE));
-    final UInt64 currentTime = spec.getSlotStartTime(desiredSlot, genesisTime);
+    final UInt64 currentTime = spec.computeTimeAtSlot(desiredSlot, genesisTime);
     assertThat(slotProcessor.isNextSlotDue(currentTime, genesisTime)).isFalse();
   }
 
@@ -114,7 +114,7 @@ public class SlotProcessorTest {
   public void isNextSlotDue_shouldDetectNextSlotIsDue() {
     slotProcessor.setCurrentSlot(desiredSlot);
     final UInt64 currentTimeMillis =
-        spec.getSlotStartTimeMillis(desiredSlot.plus(ONE), genesisTimeMillis);
+        spec.computeTimeMillisAtSlot(desiredSlot.plus(ONE), genesisTimeMillis);
     assertThat(slotProcessor.isNextSlotDue(currentTimeMillis, genesisTimeMillis)).isTrue();
   }
 
@@ -415,9 +415,9 @@ public class SlotProcessorTest {
     UInt64 currentSlot = UInt64.valueOf(slotsPerEpoch - 2);
     slotProcessor.setCurrentSlot(currentSlot);
     final UInt64 nextEpochSlotMinusTwo =
-        secondsToMillis(spec.getSlotStartTime(currentSlot, genesisTime));
+        secondsToMillis(spec.computeTimeAtSlot(currentSlot, genesisTime));
     final UInt64 nextEpochSlotMinusOne =
-        secondsToMillis(spec.getSlotStartTime(currentSlot.plus(1), genesisTime));
+        secondsToMillis(spec.computeTimeAtSlot(currentSlot.plus(1), genesisTime));
 
     // Progress through to end of initial epoch
     slotProcessor.onTick(nextEpochSlotMinusTwo, Optional.empty());

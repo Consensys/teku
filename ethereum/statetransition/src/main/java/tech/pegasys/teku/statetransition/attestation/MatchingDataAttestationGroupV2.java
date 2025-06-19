@@ -157,7 +157,7 @@ public class MatchingDataAttestationGroupV2 {
       if (timeLimitReachedChecker.getAsBoolean()) {
         // we want at least one candidate to be aggregated
         // If we hit the time limit, stop aggregating
-        LOG.info("Time limit reached, while fillingUp single attestation");
+        LOG.debug("Time limit reached, while fillingUp single attestation");
         break;
       }
     }
@@ -513,7 +513,7 @@ public class MatchingDataAttestationGroupV2 {
     @Override
     public boolean hasNext() {
       if (timeLimitReachedChecker.getAsBoolean()) {
-        LOG.info("Time limit reached, skipping aggregation");
+        LOG.debug("Time limit reached, skipping aggregation");
         return false;
       }
 
@@ -535,7 +535,7 @@ public class MatchingDataAttestationGroupV2 {
         if (timeLimitReachedChecker.getAsBoolean()) {
           // we want at least one candidate to be aggregated
           // If we hit the time limit, stop aggregating
-          LOG.info("Time limit reached, skipping remaining aggregation");
+          LOG.debug("Time limit reached, skipping remaining aggregation");
           break;
         }
       }

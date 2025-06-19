@@ -319,7 +319,7 @@ jobs:
       - capture_test_results
 
   propertyTests:
-    parallelism: 1
+    parallelism: 4
     executor: medium_plus_executor
     steps:
       - prepare

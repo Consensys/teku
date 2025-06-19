@@ -94,6 +94,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
+            serviceConfig.getTimeProvider(),
             dutiesProviderPrimaryValidatorApiChannel,
             dutiesProviderFailoverValidatorApiChannel,
             ValidatorLogger.VALIDATOR_LOGGER,

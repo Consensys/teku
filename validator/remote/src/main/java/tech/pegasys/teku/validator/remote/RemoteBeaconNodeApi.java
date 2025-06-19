@@ -46,7 +46,9 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   private static final Logger LOG = LogManager.getLogger();
 
   /** Time until we timeout the event stream if no events are received. */
-  public static final Duration READ_TIMEOUT = Duration.ofSeconds(60);
+  public static final Duration EVENT_STREAM_READ_TIMEOUT = Duration.ofSeconds(60);
+
+  public static final Duration REST_CALL_TIMEOUT = Duration.ofSeconds(10);
 
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
@@ -117,6 +119,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
+            serviceConfig.getTimeProvider(),
             primaryValidatorApi,
             failoverValidatorApis,
             ValidatorLogger.VALIDATOR_LOGGER,
@@ -140,7 +143,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             beaconNodeReadinessManager,
             primaryValidatorApi,
             failoverValidatorApis,
-            okHttpClient,
+            createOkHttpClientForStreamFromClient(okHttpClient),
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApi),
@@ -193,9 +196,18 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
         .toList();
   }
 
+  private static OkHttpClient createOkHttpClientForStreamFromClient(final OkHttpClient client) {
+    // call timeout must be disabled for event streams, we use read timeout instead
+    return client
+        .newBuilder()
+        .callTimeout(Duration.ZERO)
+        .readTimeout(EVENT_STREAM_READ_TIMEOUT)
+        .build();
+  }
+
   public static OkHttpClient createOkHttpClient(final List<HttpUrl> endpoints) {
     final OkHttpClient.Builder httpClientBuilder =
-        new OkHttpClient.Builder().readTimeout(READ_TIMEOUT);
+        new OkHttpClient.Builder().callTimeout(REST_CALL_TIMEOUT);
     if (endpoints.size() > 1) {
       OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(endpoints, httpClientBuilder);
     } else {

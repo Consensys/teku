@@ -19,7 +19,7 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'io.consensys.tuweni:tuweni-bytes'
-  implementation 'io.consensys.tuweni:tuweni-crypto'
+  implementation project(":infrastructure:crypto")
 
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.junit.jupiter:junit-jupiter-engine'

@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 import static org.apache.tuweni.bytes.Bytes.concatenate;
-import static org.apache.tuweni.crypto.Hash.sha2_256;
 
 import java.security.GeneralSecurityException;
 import java.util.Objects;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.bls.keystore.model.Crypto;
 import tech.pegasys.teku.bls.keystore.model.Kdf;
 import tech.pegasys.teku.bls.keystore.model.KdfParam;
 import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 /**
  * BLS Key Store implementation EIP-2335
@@ -140,7 +140,7 @@ public class KeyStore {
       final Bytes decryptionKey, final Bytes cipherMessage) {
     // aes-128-ctr needs first 16 bytes for its key. The 2nd 16 bytes are used to create checksum
     final Bytes dkSliceSecondHalf = decryptionKey.slice(16, 16);
-    return sha2_256(concatenate(dkSliceSecondHalf, cipherMessage));
+    return Hash.sha256(concatenate(dkSliceSecondHalf, cipherMessage));
   }
 
   private static Bytes applyCipherFunction(
