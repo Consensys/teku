@@ -14,4 +14,4 @@
 - Added `/eth/v1/beacon/states/{state_id}/validator_identities` endpoint to allow querying of validator identities.
 
 ### Bug Fixes
-- Fixed validator client missing duties when secondary beacon nodes are not responsive. Happens only for single process validator clients configured with multiple `--beacon-node-api-endpoints`.
+- Fixed validator client missing duties when secondary beacon nodes are not responsive. Happens only for validator clients configured with multiple `--beacon-node-api-endpoints`.
