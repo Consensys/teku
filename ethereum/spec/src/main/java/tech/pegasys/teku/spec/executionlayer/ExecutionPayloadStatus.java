@@ -15,7 +15,8 @@ package tech.pegasys.teku.spec.executionlayer;
 
 public enum ExecutionPayloadStatus {
   VALID(Validity.VALID),
-  INVALID_INCLUSION_LIST(Validity.INVALID),
+  // TODO EIP7805 check the invalid inclusion list flow in for choice
+  INVALID_INCLUSION_LIST(Validity.NOT_VALIDATED),
   INVALID(Validity.INVALID),
   SYNCING(Validity.NOT_VALIDATED),
   ACCEPTED(Validity.NOT_VALIDATED);
