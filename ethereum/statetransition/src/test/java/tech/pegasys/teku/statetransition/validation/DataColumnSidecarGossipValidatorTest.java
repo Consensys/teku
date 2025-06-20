@@ -180,6 +180,73 @@ public class DataColumnSidecarGossipValidatorTest {
   }
 
   @TestTemplate
+  void shouldRejectIfDataColumnSidecarHasInvalidIndex(final SpecContext specContext) {
+    final DataColumnSidecar invalidIndex =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(),
+            UInt64.valueOf(specContext.getSpec().getNumberOfDataColumns().orElseThrow())
+                .increment());
+    SafeFutureAssert.assertThatSafeFuture(validator.validate(invalidIndex))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .orElseThrow()
+                        .contains("DataColumnSidecar has invalid index"));
+  }
+
+  @TestTemplate
+  void shouldRejectIfDataColumnSidecarHasNoKzgCommitments() {
+    final DataColumnSidecar emptyKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+            dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
+    SafeFutureAssert.assertThatSafeFuture(validator.validate(emptyKzgCommitments))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .orElseThrow()
+                        .contains("DataColumnSidecar has no kzg commitments"));
+  }
+
+  @TestTemplate
+  void shouldRejectIfDataColumnAndKzgCommitmentsMismatch() {
+    final DataColumnSidecar mismatchingDataColumnKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGCommitments(10),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    SafeFutureAssert.assertThatSafeFuture(validator.validate(mismatchingDataColumnKzgCommitments))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .orElseThrow()
+                        .contains(
+                            "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes"));
+  }
+
+  @TestTemplate
+  void shouldRejectIfDataColumnAndKzgProofsMismatch() {
+    final DataColumnSidecar invalidDataColumnKzgProofs =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGProofs(10),
+            dataStructureUtil.randomKZGCommitments(5),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    SafeFutureAssert.assertThatSafeFuture(validator.validate(invalidDataColumnKzgProofs))
+        .isCompletedWithValueMatching(
+            result ->
+                result.isReject()
+                    && result
+                        .getDescription()
+                        .orElseThrow()
+                        .contains(
+                            "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes"));
+  }
+
+  @TestTemplate
   void shouldIgnoreWhenParentIsNotAvailable_blockRoot() {
     when(gossipValidationHelper.isBlockAvailable(blockParentRoot)).thenReturn(false);
 
