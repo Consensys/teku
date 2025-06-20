@@ -31,12 +31,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 
@@ -124,6 +126,16 @@ public class BlockGossipValidator {
 
     if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
       return completedFuture(reject("Parent block is after child block."));
+    }
+
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
+        block.getMessage().getBody().getOptionalBlobKzgCommitments();
+    if (blobKzgCommitments.isPresent()) {
+      if (blobKzgCommitments.get().size()
+          > spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow()) {
+        LOG.trace("BlockValidator: Block has too many kzg commitments.");
+        return completedFuture(reject("Block has too many kzg commitments."));
+      }
     }
 
     return gossipValidationHelper
