@@ -117,7 +117,9 @@ public class PeerManager implements ConnectionHandler {
   }
 
   public SafeFuture<Peer> connect(final MultiaddrPeerAddress peer, final Network network) {
-    return pendingConnections.computeIfAbsent(peer.getId(), __ -> doConnect(peer, network));
+    return pendingConnections
+        .computeIfAbsent(peer.getId(), __ -> doConnect(peer, network))
+        .whenComplete((result, error) -> pendingConnections.remove(peer.getId()));
   }
 
   private SafeFuture<Peer> doConnect(final MultiaddrPeerAddress peer, final Network network) {
@@ -146,8 +148,7 @@ public class PeerManager implements ConnectionHandler {
               return connectedPeer;
             })
         .exceptionallyCompose(this::handleConcurrentConnectionInitiation)
-        .catchAndRethrow(error -> reputationManager.reportInitiatedConnectionFailed(peer))
-        .whenComplete((result, error) -> pendingConnections.remove(peer.getId()));
+        .catchAndRethrow(error -> reputationManager.reportInitiatedConnectionFailed(peer));
   }
 
   private CompletionStage<Peer> handleConcurrentConnectionInitiation(final Throwable error) {
