@@ -257,9 +257,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private boolean isInHistoricBlockRoots(
       final BeaconState state, final SlotAndBlockRoot producedBlock) {
     LOG.debug(
-        "Checking if block {} is in historic block roots {} of the state {}",
+        "Checking if block {} is in historic block roots of the state {}",
         producedBlock,
-        state.getBlockRoots(),
         state.hashTreeRoot());
     return producedBlock.getSlot().isLessThan(state.getSlot())
         && spec.getBlockRootAtSlot(state, producedBlock.getSlot())
