@@ -84,6 +84,10 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
     return flatMap(e -> AsyncStream.create(mapper.apply(e)));
   }
 
+  default AsyncStream<T> merge(final AsyncStream<T> other) {
+    return transform(sourceCallback -> new MergeStreamHandler<>(sourceCallback, other));
+  }
+
   // slicing
 
   default AsyncStream<T> slice(final AsyncStreamSlicer<T> slicer) {
