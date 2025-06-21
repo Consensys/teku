@@ -47,12 +47,16 @@ class ForkDigestRpcContextCodec<TPayload extends SszData>
 
   @Override
   public Bytes encodeContext(final TPayload responsePayload) {
-    final UInt64 slot = payloadContext.getSlotFromPayload(responsePayload);
-    final SpecMilestone specMilestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
-    return recentChainData
-        .getForkDigestByMilestone(specMilestone)
-        .map(Bytes4::getWrappedBytes)
-        .orElseThrow();
+    final UInt64 epoch =
+        spec.computeEpochAtSlot(payloadContext.getSlotFromPayload(responsePayload));
+    return spec.getBpoFork(epoch)
+        .flatMap(recentChainData::getForkDigestByBpoFork)
+        .orElseGet(
+            () -> {
+              final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(epoch);
+              return recentChainData.getForkDigestByMilestone(milestone).orElseThrow();
+            })
+        .getWrappedBytes();
   }
 
   @Override

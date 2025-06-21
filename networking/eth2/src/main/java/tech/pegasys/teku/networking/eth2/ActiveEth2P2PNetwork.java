@@ -169,12 +169,19 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkSyncCommitteeSubnetsSubscription =
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
+      recentChainData
+          .getNextForkDigest(currentEpoch)
+          .ifPresent(
+              nextForkDigest -> {
+                LOG.info("Setting nfd in ENR to: {}", nextForkDigest);
+                discoveryNetwork.setNextForkDigest(nextForkDigest);
+              });
     }
-
-    gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
+    gossipForkManager.configureGossipForEpoch(currentEpoch);
     if (allTopicsFilterEnabled) {
       setAllTopicScoring();
     }
@@ -401,7 +408,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     currentForkInfo = forkInfo;
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-    discoveryNetwork.setForkInfo(forkInfo, nextFork);
+    final Optional<Bytes4> nextForkDigest =
+        recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
+    discoveryNetwork.setForkInfo(forkInfo, nextFork, nextForkDigest);
   }
 
   @Override

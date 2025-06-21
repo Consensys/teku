@@ -182,7 +182,7 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfo_noFutureForkScheduled() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
@@ -194,7 +194,7 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfo_futureForkScheduled() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.of(nextFork));
+    discoveryNetwork.setForkInfo(currentForkInfo, Optional.of(nextFork), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
@@ -205,7 +205,7 @@ class DiscoveryNetworkTest {
   @Test
   @SuppressWarnings("unchecked")
   public void setForkInfoShouldAddPredicateToConnectionManager() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
@@ -237,7 +237,7 @@ class DiscoveryNetworkTest {
   @Test
   @SuppressWarnings("unchecked")
   public void shouldNotConnectToPeerWithNoEnrForkId() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(

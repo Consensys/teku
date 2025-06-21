@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -21,12 +22,12 @@ import java.util.TreeMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
-/** A helper class to navigate the blob schedule in an efficient manner */
-public class BlobSchedule {
+/** A helper class to navigate the BPO schedule in an efficient manner */
+public class BpoForkSchedule {
 
   private final NavigableMap<UInt64, BlobParameters> epochToBlobParameters = new TreeMap<>();
 
-  public BlobSchedule(final SpecConfigFulu specConfig) {
+  public BpoForkSchedule(final SpecConfigFulu specConfig) {
     specConfig
         .getBlobSchedule()
         .forEach(
@@ -36,19 +37,19 @@ public class BlobSchedule {
                     BlobParameters.fromBlobScheduleEntry(blobScheduleEntry)));
   }
 
-  public Optional<BlobParameters> getBlobParameters(final UInt64 epoch) {
+  public Optional<BlobParameters> getBpoFork(final UInt64 epoch) {
     return Optional.ofNullable(epochToBlobParameters.floorEntry(epoch)).map(Map.Entry::getValue);
   }
 
-  @SuppressWarnings("unused")
-  public Optional<BlobParameters> getNextBlobParameters(final UInt64 epoch) {
+  public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
     return Optional.ofNullable(epochToBlobParameters.ceilingEntry(epoch.plus(1)))
         .map(Map.Entry::getValue);
   }
 
   public Optional<Integer> getHighestMaxBlobsPerBlock() {
-    return Optional.ofNullable(epochToBlobParameters.lastEntry())
-        .map(entry -> entry.getValue().maxBlobsPerBlock());
+    return epochToBlobParameters.values().stream()
+        .max(Comparator.comparing(BlobParameters::maxBlobsPerBlock))
+        .map(BlobParameters::maxBlobsPerBlock);
   }
 
   @Override
@@ -59,7 +60,7 @@ public class BlobSchedule {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final BlobSchedule that = (BlobSchedule) o;
+    final BpoForkSchedule that = (BpoForkSchedule) o;
     return Objects.equals(epochToBlobParameters, that.epochToBlobParameters);
   }
 
