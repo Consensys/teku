@@ -68,15 +68,12 @@ public class SpecConfigElectraTest {
                   b.denebBuilder(
                       eb ->
                           eb.maxBlobsPerBlock(4)
+                              .maxRequestBlocksDeneb(10)
                               // target blobs is calculated in deneb
-                              .blobSidecarSubnetCount(8)
-                              .maxRequestBlobSidecars(16));
+                              .blobSidecarSubnetCount(8));
 
                   b.electraBuilder(
-                      eb ->
-                          eb.maxBlobsPerBlockElectra(8)
-                              .blobSidecarSubnetCountElectra(10)
-                              .maxRequestBlobSidecarsElectra(13));
+                      eb -> eb.maxBlobsPerBlockElectra(8).blobSidecarSubnetCountElectra(10));
                 });
 
     final SpecConfigDeneb denebConfig =
@@ -87,11 +84,11 @@ public class SpecConfigElectraTest {
 
     assertThat(denebConfig.getMaxBlobsPerBlock()).isEqualTo(4);
     assertThat(denebConfig.getBlobSidecarSubnetCount()).isEqualTo(8);
-    assertThat(denebConfig.getMaxRequestBlobSidecars()).isEqualTo(16);
+    assertThat(denebConfig.getMaxRequestBlobSidecars()).isEqualTo(4 * 10);
 
     assertThat(electraConfig.getMaxBlobsPerBlock()).isEqualTo(8);
     assertThat(electraConfig.getBlobSidecarSubnetCount()).isEqualTo(10);
-    assertThat(electraConfig.getMaxRequestBlobSidecars()).isEqualTo(13);
+    assertThat(electraConfig.getMaxRequestBlobSidecars()).isEqualTo(8 * 10);
   }
 
   @Test
@@ -137,7 +134,6 @@ public class SpecConfigElectraTest {
         dataStructureUtil.randomPositiveInt(8),
         dataStructureUtil.randomPositiveInt(16),
         dataStructureUtil.randomPositiveInt(8),
-        dataStructureUtil.randomPositiveInt(1024),
         dataStructureUtil.randomPositiveInt(8)) {};
   }
 }

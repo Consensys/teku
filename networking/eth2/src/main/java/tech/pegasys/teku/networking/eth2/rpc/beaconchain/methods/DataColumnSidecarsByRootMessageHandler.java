@@ -37,6 +37,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
@@ -61,6 +63,7 @@ public class DataColumnSidecarsByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final SpecConfigFulu specConfigFulu;
   private final CombinedChainDataClient combinedChainDataClient;
   private final DataColumnSidecarByRootCustody dataColumnSidecarCustody;
   private final CustodyGroupCountManager custodyGroupCountManager;
@@ -81,6 +84,8 @@ public class DataColumnSidecarsByRootMessageHandler
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
     this.dasLogger = dasLogger;
+    this.specConfigFulu =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     this.requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -125,8 +130,20 @@ public class DataColumnSidecarsByRootMessageHandler
     final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
         new LoggingResponseCallback<>(responseCallback, responseLogger);
 
+    final int requestedCount =
+        message.stream().map(identifier -> identifier.getColumns().size()).reduce(0, Integer::sum);
+    if (requestedCount > specConfigFulu.getMaxRequestDataColumnSidecars()) {
+      requestCounter.labels("count_too_big").inc();
+      responseCallbackWithLogging.completeWithErrorResponse(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Only a maximum of %s data column sidecars can be requested per request. Requested: %s",
+                  specConfigFulu.getMaxRequestDataColumnSidecars(), requestedCount)));
+      return;
+    }
     final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
-        peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, message.size());
+        peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
 
     if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -134,7 +151,7 @@ public class DataColumnSidecarsByRootMessageHandler
     }
 
     requestCounter.labels("ok").inc();
-    totalDataColumnSidecarsRequestedCounter.inc(message.size());
+    totalDataColumnSidecarsRequestedCounter.inc(requestedCount);
 
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
@@ -166,7 +183,7 @@ public class DataColumnSidecarsByRootMessageHandler
         .thenApply(list -> list.stream().filter(isSent -> isSent).count())
         .thenAccept(
             sentDataColumnSidecarsCount -> {
-              if (sentDataColumnSidecarsCount != message.size()) {
+              if (sentDataColumnSidecarsCount != requestedCount) {
                 peer.adjustDataColumnSidecarsRequest(
                     dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecarsCount);
               }

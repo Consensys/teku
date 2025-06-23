@@ -77,11 +77,6 @@ public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
   }
 
   @Override
-  public int getMaxRequestBlobSidecars() {
-    return specConfigDeneb.getMaxRequestBlobSidecars();
-  }
-
-  @Override
   public int getMinEpochsForBlobSidecarsRequests() {
     return specConfigDeneb.getMinEpochsForBlobSidecarsRequests();
   }

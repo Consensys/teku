@@ -116,7 +116,7 @@ public class DataColumnSidecarsByRangeMessageHandler
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
-                  "Only a maximum of %s blob sidecars can be requested per request. Requested: %s",
+                  "Only a maximum of %s data column sidecars can be requested per request. Requested: %s",
                   specConfigFulu.getMaxRequestDataColumnSidecars(), requestedCount)));
       return;
     }

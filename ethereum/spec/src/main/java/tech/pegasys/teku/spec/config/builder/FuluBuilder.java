@@ -45,7 +45,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer validatorCustodyRequirement;
   private Integer samplesPerSlot;
   private Integer minEpochsForDataColumnSidecarsRequests;
-  private Integer maxRequestDataColumnSidecars;
   private UInt64 balancePerAdditionalCustodyGroup;
   private final List<BlobScheduleEntry> blobSchedule = new ArrayList<>();
 
@@ -69,7 +68,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             validatorCustodyRequirement,
             samplesPerSlot,
             minEpochsForDataColumnSidecarsRequests,
-            maxRequestDataColumnSidecars,
             balancePerAdditionalCustodyGroup,
             blobSchedule),
         specConfigAndParent);
@@ -157,12 +155,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
-  public FuluBuilder maxRequestDataColumnSidecars(final Integer maxRequestDataColumnSidecars) {
-    checkNotNull(maxRequestDataColumnSidecars);
-    this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
-    return this;
-  }
-
   public FuluBuilder balancePerAdditionalCustodyGroup(
       final UInt64 balancePerAdditionalCustodyGroup) {
     checkNotNull(balancePerAdditionalCustodyGroup);
@@ -201,7 +193,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     constants.put("fieldElementsPerExtBlob", fieldElementsPerExtBlob);
     constants.put("kzgCommitmentsInclusionProofDepth", kzgCommitmentsInclusionProofDepth);
     constants.put("minEpochsForDataColumnSidecarsRequests", minEpochsForDataColumnSidecarsRequests);
-    constants.put("maxRequestDataColumnSidecars", maxRequestDataColumnSidecars);
     constants.put("balancePerAdditionalCustodyGroup", balancePerAdditionalCustodyGroup);
 
     return constants;

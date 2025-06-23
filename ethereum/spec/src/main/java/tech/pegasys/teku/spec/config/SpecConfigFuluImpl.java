@@ -35,7 +35,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   private final UInt64 fieldElementsPerExtBlob;
   private final UInt64 kzgCommitmentsInclusionProofDepth;
   private final int minEpochsForDataColumnSidecarsRequests;
-  private final int maxRequestDataColumnSidecars;
   private final UInt64 balancePerAdditionalCustodyGroup;
   private final List<BlobScheduleEntry> blobSchedule;
 
@@ -53,7 +52,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final int validatorCustodyRequirement,
       final int samplesPerSlot,
       final int minEpochsForDataColumnSidecarsRequests,
-      final int maxRequestDataColumnSidecars,
       final UInt64 balancePerAdditionalCustodyGroup,
       final List<BlobScheduleEntry> blobSchedule) {
     super(specConfig);
@@ -69,7 +67,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.validatorCustodyRequirement = validatorCustodyRequirement;
     this.samplesPerSlot = samplesPerSlot;
     this.minEpochsForDataColumnSidecarsRequests = minEpochsForDataColumnSidecarsRequests;
-    this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
     this.balancePerAdditionalCustodyGroup = balancePerAdditionalCustodyGroup;
     this.blobSchedule = blobSchedule;
   }
@@ -141,7 +138,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
 
   @Override
   public int getMaxRequestDataColumnSidecars() {
-    return maxRequestDataColumnSidecars;
+    return getMaxRequestBlocksDeneb() * getNumberOfColumns();
   }
 
   @Override
@@ -181,7 +178,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
         && custodyRequirement == that.custodyRequirement
         && minEpochsForDataColumnSidecarsRequests == that.minEpochsForDataColumnSidecarsRequests
-        && maxRequestDataColumnSidecars == that.maxRequestDataColumnSidecars
         && validatorCustodyRequirement == that.validatorCustodyRequirement
         && samplesPerSlot == that.samplesPerSlot;
   }
@@ -200,7 +196,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         fieldElementsPerExtBlob,
         kzgCommitmentsInclusionProofDepth,
         minEpochsForDataColumnSidecarsRequests,
-        maxRequestDataColumnSidecars,
         validatorCustodyRequirement,
         samplesPerSlot,
         balancePerAdditionalCustodyGroup,

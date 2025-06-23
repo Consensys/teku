@@ -38,7 +38,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Integer maxBlobsPerBlock;
   private Integer kzgCommitmentInclusionProofDepth;
   private Integer maxRequestBlocksDeneb;
-  private Integer maxRequestBlobSidecars;
   private Integer minEpochsForBlobSidecarsRequests;
   private Integer blobSidecarSubnetCount;
   private Optional<Integer> epochsStoreBlobs = Optional.empty();
@@ -59,7 +58,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
             maxBlobsPerBlock,
             kzgCommitmentInclusionProofDepth,
             maxRequestBlocksDeneb,
-            maxRequestBlobSidecars,
             minEpochsForBlobSidecarsRequests,
             blobSidecarSubnetCount,
             epochsStoreBlobs),
@@ -111,11 +109,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     return this;
   }
 
-  public DenebBuilder maxRequestBlobSidecars(final Integer maxRequestBlobSidecars) {
-    this.maxRequestBlobSidecars = maxRequestBlobSidecars;
-    return this;
-  }
-
   public DenebBuilder minEpochsForBlobSidecarsRequests(
       final Integer minEpochsForBlobSidecarsRequests) {
     this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
@@ -159,7 +152,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     constants.put("maxBlobsPerBlock", maxBlobsPerBlock);
     constants.put("kzgCommitmentInclusionProofDepth", kzgCommitmentInclusionProofDepth);
     constants.put("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
-    constants.put("maxRequestBlobSidecars", maxRequestBlobSidecars);
     constants.put("minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
     constants.put("blobSidecarSubnetCount", blobSidecarSubnetCount);
 

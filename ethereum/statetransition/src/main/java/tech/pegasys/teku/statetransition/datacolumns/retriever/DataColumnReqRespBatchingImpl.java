@@ -133,6 +133,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
                         byRangeRequest.end().increment().minus(byRangeRequest.start()).intValue(),
                         new ArrayList<>(byRangeRequest.columns())));
 
+    // We don't need to rate-limit column-size of each request, as it's already done in retriever
     byRootStream.merge(byRangeStream).consume(createResponseHandler(nodeRequests));
   }
 

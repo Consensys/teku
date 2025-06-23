@@ -59,5 +59,10 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
   int getEpochsStoreBlobs();
 
   @Override
+  default int getMaxRequestBlobSidecars() {
+    return getMaxRequestBlocksDeneb() * getMaxBlobsPerBlock();
+  }
+
+  @Override
   Optional<SpecConfigDeneb> toVersionDeneb();
 }

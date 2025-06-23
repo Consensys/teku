@@ -173,7 +173,6 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(8192),
-        dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomUInt64(32000000000L),
         List.of(
             new BlobScheduleEntry(
