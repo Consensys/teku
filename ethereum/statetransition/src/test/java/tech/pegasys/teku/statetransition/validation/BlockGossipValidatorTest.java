@@ -367,6 +367,9 @@ public class BlockGossipValidatorTest {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
+    final Integer maxBlobsPerBlock =
+        specContext.getSpec().getMaxBlobsPerBlockAtSlot(nextSlot).orElseThrow();
+
     final SignedBlockAndState signedBlockAndState =
         storageSystem
             .chainBuilder()
@@ -379,18 +382,15 @@ public class BlockGossipValidatorTest {
                     .setKzgCommitments(
                         specContext
                             .getDataStructureUtil()
-                            .randomBlobKzgCommitments(
-                                specContext
-                                        .getSpec()
-                                        .getMaxBlobsPerBlockAtSlot(nextSlot)
-                                        .orElseThrow()
-                                    + 1)));
+                            .randomBlobKzgCommitments(maxBlobsPerBlock + 1)));
 
     assertThat(blockGossipValidator.validate(signedBlockAndState.getBlock(), true))
         .isCompletedWithValueMatching(
             result ->
-                result.isReject()
-                    && result.getDescription().orElseThrow().contains("too many kzg commitments"));
+                result.equals(
+                    InternalValidationResult.reject(
+                        "Block has %d kzg commitments, max allowed %d",
+                        maxBlobsPerBlock + 1, maxBlobsPerBlock)));
   }
 
   private void assertResultIsAccept(

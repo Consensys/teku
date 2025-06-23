@@ -130,11 +130,20 @@ public class BlockGossipValidator {
 
     final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments();
-    if (blobKzgCommitments.isPresent()
-        && blobKzgCommitments.get().size()
-            > spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow()) {
-      LOG.trace("BlockValidator: Block has too many kzg commitments.");
-      return completedFuture(reject("Block has too many kzg commitments."));
+    if (blobKzgCommitments.isPresent()) {
+      final Integer maxBlobsPerBlock =
+          spec.getMaxBlobsPerBlockAtSlot(block.getSlot()).orElseThrow();
+      final int blobKzgCommitmentsCount = blobKzgCommitments.get().size();
+      if (blobKzgCommitmentsCount > maxBlobsPerBlock) {
+        LOG.trace(
+            "BlockValidator: Block has {} kzg commitments, max allowed {}",
+            blobKzgCommitmentsCount,
+            maxBlobsPerBlock);
+        return completedFuture(
+            reject(
+                "Block has %d kzg commitments, max allowed %d",
+                blobKzgCommitmentsCount, maxBlobsPerBlock));
+      }
     }
 
     return gossipValidationHelper
