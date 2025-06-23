@@ -41,18 +41,13 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public boolean aggregateWith(final AttestationBits other) {
-    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+  public boolean aggregateWith(final PooledAttestation other) {
+    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other.bits());
     if (aggregationBits.intersects(otherPhase0.aggregationBits)) {
       return false;
     }
     aggregationBits = aggregationBits.or(otherPhase0.aggregationBits);
     return true;
-  }
-
-  @Override
-  public boolean aggregateWith(final PooledAttestation other) {
-    return aggregateWith(other.bits());
   }
 
   @Override

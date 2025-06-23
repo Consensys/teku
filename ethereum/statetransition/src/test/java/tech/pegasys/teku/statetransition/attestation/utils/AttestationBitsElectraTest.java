@@ -73,7 +73,7 @@ public class AttestationBitsElectraTest {
      012 <- committee 1 indices
      011 <- bits
     */
-    final AttestationBits attestation = createAttestation(List.of(1), 1, 2).bits();
+    final PooledAttestation attestation = createAttestation(List.of(1), 1, 2);
 
     final AttestationBits aggregator =
         AttestationBits.fromEmptyFromAttestationSchema(

@@ -111,12 +111,6 @@ class AttestationBitsElectra implements AttestationBits {
   }
 
   @Override
-  public boolean aggregateWith(final AttestationBits other) {
-    final AttestationBitsElectra otherElectra = requiresElectra(other);
-    return performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, true);
-  }
-
-  @Override
   public boolean aggregateWith(final PooledAttestation other) {
     final AttestationBitsElectra otherElectra = requiresElectra(other.bits());
 

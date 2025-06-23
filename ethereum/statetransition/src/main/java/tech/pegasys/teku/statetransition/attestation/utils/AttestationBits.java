@@ -62,8 +62,6 @@ public interface AttestationBits {
 
   void or(AttestationBits other);
 
-  boolean aggregateWith(AttestationBits other);
-
   boolean aggregateWith(PooledAttestation other);
 
   void or(Attestation other);
