@@ -237,6 +237,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(blobParametersToForkDigest.get(blobParameters));
   }
 
+  // TODO: berlinterop-devnet-2 optimize
+  public Optional<BlobParameters> getBpoForkByForkDigest(final Bytes4 forkDigest) {
+    return blobParametersToForkDigest.entrySet().stream()
+        .filter(entry -> entry.getValue().equals(forkDigest))
+        .findFirst()
+        .map(Map.Entry::getKey);
+  }
+
   public boolean isPreGenesis() {
     return this.store == null;
   }
@@ -266,8 +274,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .forEach(
             forkAndMilestone -> {
               final Fork fork = forkAndMilestone.getFork();
-              final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-              final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
+              final Bytes4 forkDigest;
+              if (forkAndMilestone.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+                forkDigest =
+                    spec.computeForkDigest(
+                        genesisValidatorsRoot, forkAndMilestone.getFork().getEpoch());
+              } else {
+                forkDigest =
+                    spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
+              }
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });
@@ -488,8 +503,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
 
-  // TODO: berlininterop-devnet-2 good method to use when refactoring
-  @SuppressWarnings("unused")
   public Bytes4 getForkDigest(final UInt64 epoch) {
     return spec.getBpoFork(epoch)
         .flatMap(this::getForkDigestByBpoFork)
@@ -535,7 +548,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec.getForkSchedule().getFork(epoch);
   }
 
-  // TODO: berlinterop-devnet-2
   /**
    * Returns the fork info that applies based on the current slot as calculated from the current
    * time, regardless of where the sync progress is up to.
@@ -554,34 +566,20 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                           if (spec.atEpoch(currentEpoch)
                               .getMilestone()
                               .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                            return spec.getBpoFork(currentEpoch)
-                                .map(
-                                    __ ->
-                                        new ForkInfo(
-                                            fork,
-                                            validatorsRoot,
-                                            spec.computeForkDigest(validatorsRoot, currentEpoch)))
-                                .orElse(new ForkInfo(fork, validatorsRoot));
+                            return new ForkInfo(fork, validatorsRoot, getForkDigest(currentEpoch));
+                          } else {
+                            return new ForkInfo(fork, validatorsRoot);
                           }
-                          return new ForkInfo(fork, validatorsRoot);
                         }));
   }
 
-  // TODO: berlinterop-devnet-2
   public Optional<ForkInfo> getForkInfo(final UInt64 epoch) {
     return genesisData
         .map(GenesisData::getGenesisValidatorsRoot)
         .map(
             validatorsRoot -> {
               if (spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                return spec.getBpoFork(epoch)
-                    .map(
-                        __ ->
-                            new ForkInfo(
-                                getFork(epoch),
-                                validatorsRoot,
-                                spec.computeForkDigest(validatorsRoot, epoch)))
-                    .orElse(new ForkInfo(getFork(epoch), validatorsRoot));
+                return new ForkInfo(getFork(epoch), validatorsRoot, getForkDigest(epoch));
               }
               return new ForkInfo(getFork(epoch), validatorsRoot);
             });

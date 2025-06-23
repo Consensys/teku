@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -50,6 +51,10 @@ public class BpoForkSchedule {
     return epochToBlobParameters.values().stream()
         .max(Comparator.comparing(BlobParameters::maxBlobsPerBlock))
         .map(BlobParameters::maxBlobsPerBlock);
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    return epochToBlobParameters.values();
   }
 
   @Override

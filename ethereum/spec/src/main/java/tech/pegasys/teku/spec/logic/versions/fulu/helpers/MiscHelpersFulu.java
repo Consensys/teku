@@ -158,6 +158,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return bpoForkSchedule.getHighestMaxBlobsPerBlock();
   }
 
+  public Collection<BlobParameters> getBpoForks() {
+    return bpoForkSchedule.getBpoForks();
+  }
+
   private UInt256 incrementByModule(final UInt256 n) {
     if (n.equals(UInt256.MAX_VALUE)) {
       return UInt256.ZERO;

@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -39,6 +42,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
   private final DasGossipLogger dasGossipLogger;
@@ -90,6 +94,24 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
         debugDataDumper);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     this.dasGossipLogger = dasGossipLogger;
+  }
+
+  @Override
+  public void startGossip(final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
+    if (getActivationEpoch().equals(fork.getEpoch())) {
+      LOG.info(
+          "Starting gossip for Fulu fork (fork digest: {}) scheduled at epoch {}",
+          recentChainData.getForkDigest(fork.getEpoch()),
+          fork.getEpoch());
+    }
+    super.startGossip(genesisValidatorsRoot, isOptimisticHead);
+  }
+
+  // TODO: berlinterop-devnet-2 hacky
+  @Override
+  protected ForkInfo getForkInfo(final Bytes32 genesisValidatorsRoot) {
+    return new ForkInfo(
+        fork, genesisValidatorsRoot, recentChainData.getForkDigest(fork.getEpoch()));
   }
 
   @Override

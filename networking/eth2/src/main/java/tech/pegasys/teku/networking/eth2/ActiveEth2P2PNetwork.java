@@ -177,7 +177,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
           .getNextForkDigest(currentEpoch)
           .ifPresent(
               nextForkDigest -> {
-                LOG.info("Setting nfd in ENR to: {}", nextForkDigest);
+                LOG.info("Setting nfd in ENR to: {}", nextForkDigest.toUnprefixedHexString());
                 discoveryNetwork.setNextForkDigest(nextForkDigest);
               });
     }
@@ -408,8 +408,16 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     currentForkInfo = forkInfo;
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
+    // TODO: berlinterop-devnet-2 very hacky
+    final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
     final Optional<Bytes4> nextForkDigest =
-        recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
+        recentChainData
+            .getBpoForkByForkDigest(forkDigest)
+            .flatMap(
+                bpo -> {
+                  return recentChainData.getNextForkDigest(bpo.epoch());
+                })
+            .or(() -> recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch()));
     discoveryNetwork.setForkInfo(forkInfo, nextFork, nextForkDigest);
   }
 

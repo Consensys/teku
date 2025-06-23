@@ -98,7 +98,7 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
   public void startGossip(final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
     LOG.info(
         "Starting gossip for BPO fork (fork digest: {}) scheduled at epoch {} with {} max blobs per block",
-        spec.computeForkDigest(genesisValidatorsRoot, bpo.epoch()),
+        recentChainData.getForkDigest(bpo.epoch()),
         bpo.epoch(),
         bpo.maxBlobsPerBlock());
     super.startGossip(genesisValidatorsRoot, isOptimisticHead);
@@ -111,7 +111,6 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
 
   @Override
   protected ForkInfo getForkInfo(final Bytes32 genesisValidatorsRoot) {
-    return new ForkInfo(
-        fork, genesisValidatorsRoot, spec.computeForkDigest(genesisValidatorsRoot, bpo.epoch()));
+    return new ForkInfo(fork, genesisValidatorsRoot, recentChainData.getForkDigest(bpo.epoch()));
   }
 }

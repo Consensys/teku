@@ -21,12 +21,14 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
@@ -51,6 +53,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
     return allowed;
   }
 
+  // TODO: berlinterop-devnet-2 this is very hacky
   private Set<String> computeRelevantTopics(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
@@ -63,15 +66,27 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
         .forEach(
             futureFork -> {
               final SpecVersion futureSpecVersion = spec.atEpoch(futureFork.getEpoch());
-              final Bytes4 futureForkDigest =
-                  futureSpecVersion
-                      .miscHelpers()
-                      .computeForkDigest(
-                          futureFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot());
+              final Bytes4 futureForkDigest = recentChainData.getForkDigest(futureFork.getEpoch());
               topics.addAll(
                   getAllTopics(
                       gossipEncoding, futureForkDigest, spec, futureSpecVersion.getMilestone()));
             });
+    final UInt64 forkOrBpoEpoch =
+        recentChainData
+            .getBpoForkByForkDigest(forkDigest)
+            .map(BlobParameters::epoch)
+            .orElse(forkInfo.getFork().getEpoch());
+    spec.getBpoForks().stream()
+        .filter(bpo -> bpo.epoch().isGreaterThan(forkOrBpoEpoch))
+        .forEach(
+            futureBpo -> {
+              final SpecVersion futureSpecVersion = spec.atEpoch(futureBpo.epoch());
+              final Bytes4 futureForkDigest = recentChainData.getForkDigest(futureBpo.epoch());
+              topics.addAll(
+                  getAllTopics(
+                      gossipEncoding, futureForkDigest, spec, futureSpecVersion.getMilestone()));
+            });
+    LOG.info("Eth2 relevant topics: {}", topics);
     return topics;
   }
 }
