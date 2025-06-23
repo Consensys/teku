@@ -49,7 +49,7 @@ public class AggregatorUtil {
       checkState(
           aggregateBits.aggregateWith(
               new PooledAttestation(
-                  AttestationBits.of(attestation, committeesSize), null, null, false)),
+                  AttestationBits.of(attestation, committeesSize), Optional.empty(), null, false)),
           "attestations are not aggregatable");
       signatures.add(attestation.getAggregateSignature());
     }
