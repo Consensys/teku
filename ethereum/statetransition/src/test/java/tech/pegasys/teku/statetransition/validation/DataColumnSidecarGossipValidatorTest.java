@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -40,9 +41,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -118,27 +117,13 @@ public class DataColumnSidecarGossipValidatorTest {
     when(miscHelpersFulu.verifyDataColumnSidecarKzgProof(any(), any(DataColumnSidecar.class)))
         .thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(any())).thenReturn(true);
+    when(miscHelpersFulu.verifyDataColumnSidecar(any(), anyInt())).thenReturn(true);
   }
 
   @TestTemplate
   void shouldAccept() {
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-  }
-
-  @TestTemplate
-  void shouldRejectWhenIndexIsTooBig(final SpecContext specContext) {
-    final DataStructureUtil dataStructureUtil = specContext.getDataStructureUtil();
-    final BeaconBlockHeader blockHeader =
-        new BeaconBlockHeader(
-            slot, proposerIndex, blockParentRoot, dataStructureUtil.randomBytes32(), blockRoot);
-    dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecar(
-            new SignedBeaconBlockHeader(blockHeader, dataStructureUtil.randomSignature()),
-            UInt64.valueOf(specContext.getSpec().getNumberOfDataColumns().orElseThrow()));
-
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @TestTemplate
@@ -180,70 +165,13 @@ public class DataColumnSidecarGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldRejectIfDataColumnSidecarHasInvalidIndex(final SpecContext specContext) {
-    final DataColumnSidecar invalidIndex =
-        dataStructureUtil.randomDataColumnSidecar(
-            dataStructureUtil.randomSignedBeaconBlockHeader(),
-            UInt64.valueOf(specContext.getSpec().getNumberOfDataColumns().orElseThrow())
-                .increment());
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(invalidIndex))
+  void shouldRejectInvalidDataColumnSidecar() {
+    when(miscHelpersFulu.verifyDataColumnSidecar(any(), anyInt())).thenReturn(false);
+    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(
             result ->
-                result.isReject()
-                    && result
-                        .getDescription()
-                        .orElseThrow()
-                        .contains("DataColumnSidecar has invalid index"));
-  }
-
-  @TestTemplate
-  void shouldRejectIfDataColumnSidecarHasNoKzgCommitments() {
-    final DataColumnSidecar emptyKzgCommitments =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
-            dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(emptyKzgCommitments))
-        .isCompletedWithValueMatching(
-            result ->
-                result.isReject()
-                    && result
-                        .getDescription()
-                        .orElseThrow()
-                        .contains("DataColumnSidecar has no kzg commitments"));
-  }
-
-  @TestTemplate
-  void shouldRejectIfDataColumnAndKzgCommitmentsMismatch() {
-    final DataColumnSidecar mismatchingDataColumnKzgCommitments =
-        dataStructureUtil.randomDataColumnSidecar(
-            dataStructureUtil.randomKZGCommitments(10),
-            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(mismatchingDataColumnKzgCommitments))
-        .isCompletedWithValueMatching(
-            result ->
-                result.isReject()
-                    && result
-                        .getDescription()
-                        .orElseThrow()
-                        .contains(
-                            "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes"));
-  }
-
-  @TestTemplate
-  void shouldRejectIfDataColumnAndKzgProofsMismatch() {
-    final DataColumnSidecar invalidDataColumnKzgProofs =
-        dataStructureUtil.randomDataColumnSidecar(
-            dataStructureUtil.randomKZGProofs(10),
-            dataStructureUtil.randomKZGCommitments(5),
-            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(invalidDataColumnKzgProofs))
-        .isCompletedWithValueMatching(
-            result ->
-                result.isReject()
-                    && result
-                        .getDescription()
-                        .orElseThrow()
-                        .contains(
-                            "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes"));
+                result.equals(
+                    InternalValidationResult.reject("DataColumnSidecar has invalid structure")));
   }
 
   @TestTemplate

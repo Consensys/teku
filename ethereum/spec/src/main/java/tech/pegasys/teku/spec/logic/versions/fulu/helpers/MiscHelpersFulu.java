@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -74,6 +76,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
+  private static final Logger LOG = LogManager.getLogger();
   private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
@@ -233,17 +236,32 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .min(specConfigFulu.getNumberOfCustodyGroups());
   }
 
+  public boolean verifyDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar, final int numberOfColumns) {
+    if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
+      LOG.trace(
+          "DataColumnSidecar has invalid index {}. Should be less than {}. It will be dropped",
+          dataColumnSidecar.getIndex(),
+          numberOfColumns);
+      return false;
+    }
+    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
+      LOG.trace("DataColumnSidecar has no kzg commitments. It will be dropped");
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
+        || dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes. It will be dropped");
+      return false;
+    }
+    return true;
+  }
+
   public boolean verifyDataColumnSidecarKzgProof(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
     final int dataColumns = specConfigFulu.getNumberOfColumns();
     if (dataColumnSidecar.getIndex().isGreaterThanOrEqualTo(dataColumns)) {
-      return false;
-    }
-
-    // Number of rows is the same for cells, commitments, proofs
-    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
-        || dataColumnSidecar.getSszKZGCommitments().size()
-            != dataColumnSidecar.getSszKZGProofs().size()) {
       return false;
     }
 

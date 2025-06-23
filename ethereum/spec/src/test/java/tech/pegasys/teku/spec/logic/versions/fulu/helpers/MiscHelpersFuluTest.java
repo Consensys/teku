@@ -165,6 +165,52 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         .isEqualTo(Bytes4.fromHexString(expectedValue));
   }
 
+  @Test
+  public void shouldRejectDataColumnSideCarWhenIndexTooBig() {
+    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
+    final DataColumnSidecar invalidIndex =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(),
+            UInt64.valueOf(numberOfColumns).increment());
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidIndex, numberOfColumns)).isFalse();
+  }
+
+  @Test
+  public void shouldRejectIfDataColumnAndKzgCommitmentsMismatch() {
+    final DataColumnSidecar mismatchingDataColumnKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGCommitments(10),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    assertThat(
+            miscHelpersFulu.verifyDataColumnSidecar(
+                mismatchingDataColumnKzgCommitments, spec.getNumberOfDataColumns().orElseThrow()))
+        .isFalse();
+  }
+
+  @Test
+  void shouldRejectIfDataColumnSidecarHasNoKzgCommitments() {
+    final DataColumnSidecar emptyKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+            dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
+    assertThat(
+            miscHelpersFulu.verifyDataColumnSidecar(
+                emptyKzgCommitments, spec.getNumberOfDataColumns().orElseThrow()))
+        .isFalse();
+  }
+
+  @Test
+  public void shouldRejectIfDataColumnAndKzgProofsMismatch() {
+    final DataColumnSidecar invalidDataColumnKzgProofs =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGProofs(10),
+            dataStructureUtil.randomKZGCommitments(5),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    assertThat(
+            miscHelpersFulu.verifyDataColumnSidecar(
+                invalidDataColumnKzgProofs, spec.getNumberOfDataColumns().orElseThrow()))
+        .isFalse();
+  }
+
   // Scenarios from
   // https://github.com/ethereum/consensus-specs/blob/dev/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
   public static Stream<Arguments> getComputeForkDigestFuluScenarios() {

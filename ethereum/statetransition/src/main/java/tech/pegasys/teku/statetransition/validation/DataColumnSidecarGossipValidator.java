@@ -191,15 +191,6 @@ public class DataColumnSidecarGossipValidator {
 
     totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
-    /*
-     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
-     */
-    if (!isFirstValidForSlotProposerIndexAndColumnIndex(dataColumnSidecar, blockHeader)) {
-      LOG.trace(
-          "DataColumnSidecar is not the first valid for its slot and index. It will be dropped");
-      return completedFuture(InternalValidationResult.IGNORE);
-    }
-
     final Optional<Integer> maybeNumberOfColumns = spec.getNumberOfDataColumns();
     if (maybeNumberOfColumns.isEmpty()) {
       return completedFuture(reject("DataColumnSidecar's slot is pre-Fulu"));
@@ -209,17 +200,18 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar).
      */
     final Integer numberOfColumns = maybeNumberOfColumns.get();
-    if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
-      return completedFuture(reject("DataColumnSidecar has invalid index"));
+    if (!miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar, numberOfColumns)) {
+      return completedFuture(reject("DataColumnSidecar has invalid structure"));
     }
-    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
-      return completedFuture(reject("DataColumnSidecar has no kzg commitments"));
-    }
-    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
-        || dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
-      return completedFuture(
-          reject(
-              "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes"));
+
+    /*
+     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
+     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
+     */
+    if (!isFirstValidForSlotProposerIndexAndColumnIndex(dataColumnSidecar, blockHeader)) {
+      LOG.trace(
+          "DataColumnSidecar is not the first valid for its slot and index. It will be dropped");
+      return completedFuture(InternalValidationResult.IGNORE);
     }
 
     /*
