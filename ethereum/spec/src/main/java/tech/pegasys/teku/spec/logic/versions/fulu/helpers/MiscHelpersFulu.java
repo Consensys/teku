@@ -249,10 +249,19 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       LOG.trace("DataColumnSidecar has no kzg commitments");
       return false;
     }
-    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
-        || dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
+    if (dataColumnSidecar.getDataColumn().size()
+        != dataColumnSidecar.getSszKZGCommitments().size()) {
       LOG.trace(
-          "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes");
+          "DataColumnSidecar has unequal data column ({}) and kzg commitments ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGCommitments().size());
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg proofs ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGProofs().size());
       return false;
     }
     return true;
