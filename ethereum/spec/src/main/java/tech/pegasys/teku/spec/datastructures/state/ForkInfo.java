@@ -34,7 +34,7 @@ public class ForkInfo {
     this.precomputedForkDigest = Optional.empty();
   }
 
-  // TODO: berlinterop-devnet-2 The whole idea is not ideal, best to refactor the whole thing
+  // TODO: berlinterop-devnet-2 The whole idea is very messy and unintuitive, needs refactor!
   public ForkInfo(
       final Fork fork, final Bytes32 genesisValidatorsRoot, final Bytes4 precomputedForkDigest) {
     this.fork = fork;
@@ -75,7 +75,8 @@ public class ForkInfo {
     }
     final ForkInfo forkInfo = (ForkInfo) o;
     return Objects.equals(fork, forkInfo.fork)
-        && Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot);
+        && Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot)
+        && Objects.equals(precomputedForkDigest, forkInfo.precomputedForkDigest);
   }
 
   public static SerializableTypeDefinition<ForkInfo> getJsonTypeDefinition() {
@@ -87,7 +88,7 @@ public class ForkInfo {
 
   @Override
   public int hashCode() {
-    return Objects.hash(fork, genesisValidatorsRoot);
+    return Objects.hash(fork, genesisValidatorsRoot, precomputedForkDigest);
   }
 
   @Override
@@ -95,6 +96,7 @@ public class ForkInfo {
     return MoreObjects.toStringHelper(this)
         .add("fork", fork)
         .add("genesisValidatorsRoot", genesisValidatorsRoot)
+        .add("precomputedForkDigest", precomputedForkDigest)
         .toString();
   }
 }

@@ -26,6 +26,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -265,6 +267,13 @@ public class Spec {
       return Optional.empty();
     }
     return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getNextBpoFork(epoch);
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    if (!isMilestoneSupported(FULU)) {
+      return Collections.emptyList();
+    }
+    return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getBpoForks();
   }
 
   /**
@@ -520,15 +529,12 @@ public class Spec {
 
   // compute_fork_digest Fulu
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
-    if (!isMilestoneSupported(FULU)) {
-      throw new IllegalStateException(
-          "Shouldn't invoke modified compute_fork_digest before Fulu has been scheduled");
-    }
     return atEpoch(epoch)
         .miscHelpers()
         .toVersionFulu()
-        .orElse(MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()))
-        .computeForkDigest(genesisValidatorsRoot, epoch);
+        .map(miscHelpersFulu -> miscHelpersFulu.computeForkDigest(genesisValidatorsRoot, epoch))
+        // backwards compatibility (just in case we call this method for an epoch before Fulu)
+        .orElseGet(() -> computeForkDigest(fork(epoch).getCurrentVersion(), genesisValidatorsRoot));
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
