@@ -240,19 +240,19 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       final DataColumnSidecar dataColumnSidecar, final int numberOfColumns) {
     if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
       LOG.trace(
-          "DataColumnSidecar has invalid index {}. Should be less than {}. It will be dropped",
+          "DataColumnSidecar has invalid index {}. Should be less than {}",
           dataColumnSidecar.getIndex(),
           numberOfColumns);
       return false;
     }
     if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
-      LOG.trace("DataColumnSidecar has no kzg commitments. It will be dropped");
+      LOG.trace("DataColumnSidecar has no kzg commitments");
       return false;
     }
     if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
         || dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
       LOG.trace(
-          "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes. It will be dropped");
+          "DataColumnSidecar has mismatching data column and kzg commitments or kzg proofs sizes");
       return false;
     }
     return true;
