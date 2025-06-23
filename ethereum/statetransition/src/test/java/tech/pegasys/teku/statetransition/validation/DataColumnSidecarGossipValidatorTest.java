@@ -64,7 +64,6 @@ public class DataColumnSidecarGossipValidatorTest {
   private UInt64 slot;
   private UInt64 index;
   private UInt64 proposerIndex;
-  private Bytes32 blockRoot;
   private Bytes32 blockParentRoot;
 
   private DataColumnSidecar dataColumnSidecar;
@@ -92,7 +91,6 @@ public class DataColumnSidecarGossipValidatorTest {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(slot.longValue(), blockParentRoot);
     proposerIndex = signedBeaconBlock.getProposerIndex();
-    blockRoot = signedBeaconBlock.getRoot();
 
     dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(signedBeaconBlock, index);
