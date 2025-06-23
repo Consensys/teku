@@ -107,19 +107,15 @@ public class MatchingDataAttestationGroupV2 {
   private final Lock readLock = lock.readLock();
   private final Lock writeLock = lock.writeLock();
 
-  private final boolean earlyDropSingleAttestations;
-
   public MatchingDataAttestationGroupV2(
       final Spec spec,
       final LongSupplier nanosSupplier,
       final AttestationData attestationData,
-      final Optional<Int2IntMap> committeesSize,
-      final boolean earlyDropSingleAttestations) {
+      final Optional<Int2IntMap> committeesSize) {
     this.spec = spec;
     this.attestationData = attestationData;
     this.committeesSize = committeesSize;
     this.includedValidators = createEmptyAttestationBits();
-    this.earlyDropSingleAttestations = earlyDropSingleAttestations;
     this.nanosSupplier = nanosSupplier;
   }
 
@@ -177,7 +173,7 @@ public class MatchingDataAttestationGroupV2 {
       final PooledAttestation attestation, final Optional<Bytes32> committeeShufflingSeed) {
     readLock.lock();
     try {
-      if (includedValidators.isSuperSetOf(attestation.bits())) {
+      if (includedValidators.isSuperSetOf(attestation)) {
         return false;
       }
     } finally {
@@ -206,24 +202,7 @@ public class MatchingDataAttestationGroupV2 {
             attestation.bits().getBitCount(), __ -> ConcurrentHashMap.newKeySet());
 
     // .add() on the ConcurrentHashMap.KeySetView is thread-safe
-    final boolean added = attestations.add(attestation);
-
-    if (earlyDropSingleAttestations && added && attestation.bits().requiresCommitteeBits()) {
-
-      attestation
-          .bits()
-          .streamCommitteeIndices()
-          .forEach(
-              committeeIndex -> {
-                final Set<PooledAttestation> singleAttestations =
-                    singleAttestationsByCommitteeIndex.get(committeeIndex);
-                if (singleAttestations != null) {
-                  singleAttestations.removeIf(sa -> attestation.bits().isSuperSetOf(sa.bits()));
-                }
-              });
-    }
-
-    return added;
+    return attestations.add(attestation);
   }
 
   /**
@@ -375,7 +354,7 @@ public class MatchingDataAttestationGroupV2 {
   }
 
   private boolean pruneSupersededPooledAttestations(final Set<PooledAttestation> candidates) {
-    candidates.removeIf(candidate -> includedValidators.isSuperSetOf(candidate.bits()));
+    candidates.removeIf(candidate -> includedValidators.isSuperSetOf(candidate));
     return candidates.isEmpty();
   }
 
@@ -546,7 +525,7 @@ public class MatchingDataAttestationGroupV2 {
     private Iterator<PooledAttestation> getRemainingAttestations() {
       return candidatesStreamSupplier
           .get()
-          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.bits()))
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate))
           .iterator();
     }
   }

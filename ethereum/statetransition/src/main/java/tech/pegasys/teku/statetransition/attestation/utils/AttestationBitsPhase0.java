@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 class AttestationBitsPhase0 implements AttestationBits {
   private SszBitlist aggregationBits;
@@ -50,6 +51,11 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
+  public boolean aggregateWith(final PooledAttestation other) {
+    return aggregateWith(other.bits());
+  }
+
+  @Override
   public void or(final Attestation other) {
     aggregationBits = aggregationBits.or(other.getAggregationBits());
   }
@@ -60,8 +66,8 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public boolean isSuperSetOf(final AttestationBits other) {
-    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+  public boolean isSuperSetOf(final PooledAttestation other) {
+    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other.bits());
     return aggregationBits.isSuperSetOf(otherPhase0.aggregationBits);
   }
 
