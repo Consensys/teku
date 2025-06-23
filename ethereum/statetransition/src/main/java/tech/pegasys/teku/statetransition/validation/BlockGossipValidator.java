@@ -82,6 +82,12 @@ public class BlockGossipValidator {
   private SafeFuture<InternalValidationResult> internalValidate(
       final SignedBeaconBlock block, final boolean markAsReceived) {
 
+    /*
+     * [IGNORE] The block is from a slot greater than the latest finalized slot -- i.e. validate that
+     * signed_beacon_block.message.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
+     * (a client MAY choose to validate and store such blocks for additional purposes
+     * -- e.g. slashing detection, archive nodes, etc).
+     */
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
       LOG.trace("BlockValidator: Block is too old. It will be dropped");
       return completedFuture(InternalValidationResult.IGNORE);
@@ -95,6 +101,11 @@ public class BlockGossipValidator {
       return completedFuture(intermediateValidationResult);
     }
 
+    /*
+     * [IGNORE] The block is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance)
+     * -- i.e. validate that signed_beacon_block.message.slot <= current_slot
+     * (a client MAY queue future blocks for processing at the appropriate slot).
+     */
     if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
       LOG.trace("BlockValidator: Block is from the future. It will be saved for future processing");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
@@ -105,16 +116,27 @@ public class BlockGossipValidator {
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
+    /*
+     * [REJECT] The block's parent (defined by block.parent_root) passes validation.
+     */
     if (!gossipValidationHelper.isBlockAvailable(block.getParentRoot())) {
       LOG.trace("Block parent is not available. It will be saved for future processing");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
+    /*
+     * [REJECT] The current finalized_checkpoint is an ancestor of block
+     * -- i.e. get_checkpoint_block(store, block.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root
+     */
     if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
         block.getSlot(), block.getParentRoot())) {
       return completedFuture(reject("Block does not descend from finalized checkpoint"));
     }
 
+    /*
+     * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)
+     * (a client MAY queue blocks for processing once the parent block is retrieved).
+     */
     final Optional<UInt64> maybeParentBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
     if (maybeParentBlockSlot.isEmpty()) {
@@ -122,12 +144,18 @@ public class BlockGossipValidator {
           "BlockValidator: Parent block does not exist. It will be saved for future processing");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
-    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
+    /*
+     * [REJECT] The block is from a higher slot than its parent.
+     */
+    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
     if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
       return completedFuture(reject("Parent block is after child block."));
     }
 
+    /*
+     * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer
+     */
     final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments();
     if (blobKzgCommitments.isPresent()) {
@@ -157,6 +185,13 @@ public class BlockGossipValidator {
               }
               final BeaconState postState = maybePostState.get();
 
+              /*
+               * [REJECT] The block is proposed by the expected proposer_index for the block's slot in the context
+               * of the current shuffling (defined by parent_root/slot).
+               * If the proposer_index cannot immediately be verified against the expected shuffling,
+               * the block MAY be queued for later processing while proposers for the block's branch are calculated
+               * -- in such a case do not REJECT, instead IGNORE this message.
+               */
               if (!gossipValidationHelper.isProposerTheExpectedProposer(
                   block.getProposerIndex(), block.getSlot(), postState)) {
                 return reject(
@@ -172,6 +207,10 @@ public class BlockGossipValidator {
                   return reject("Missing execution payload");
                 }
 
+                /*
+                 * [REJECT] The block's execution payload timestamp is correct with respect to the slot
+                 * -- i.e. execution_payload.timestamp == compute_time_at_slot(state, block.slot)
+                 */
                 if (executionPayload
                         .get()
                         .getTimestamp()
@@ -182,6 +221,9 @@ public class BlockGossipValidator {
                 }
               }
 
+              /*
+               * [REJECT] The proposer signature, signed_beacon_block.signature, is valid with respect to the proposer_index pubkey.
+               */
               if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
                 return reject("Block signature is invalid");
               }
@@ -196,6 +238,9 @@ public class BlockGossipValidator {
 
   private InternalValidationResult equivocationCheckResultToInternalValidationResult(
       final EquivocationCheckResult equivocationCheckResult) {
+    /*
+     * [IGNORE] The block is the first block with valid signature received for the proposer for the slot, signed_beacon_block.message.slot
+     */
     return switch (equivocationCheckResult) {
       case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
       case EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER ->
