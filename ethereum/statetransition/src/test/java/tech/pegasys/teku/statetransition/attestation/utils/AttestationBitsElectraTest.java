@@ -282,6 +282,31 @@ public class AttestationBitsElectraTest {
   }
 
   @Test
+  void aggregateSingleAttestationFillUp_DisjointedCommitteeBitsVariation() {
+    /*
+     0123 <- committee 2 indices
+     0001 <- bits
+    */
+    final AttestationBits attestation = createAttestation(List.of(2), 3).bits();
+
+    /*
+     01 <- committee 0 indices
+     01 <- bits
+    */
+    final PooledAttestation otherAttestation = createAttestation(List.of(0), 1);
+
+    assertThat(attestation.aggregateWith(otherAttestation)).isTrue();
+
+    /*
+     01|2345 <- committee 0 and 2 indices
+     01|0001 <- bits
+    */
+
+    assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 2);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(1, 5);
+  }
+
+  @Test
   void orSingleAttestationFillUp() {
     /*
      01|234 <- committee 0 and 1 indices
@@ -372,19 +397,19 @@ public class AttestationBitsElectraTest {
 
     /*
      01 <- committee 0 indices
-     01 <- bits
+     11 <- bits
     */
-    final PooledAttestation otherAttestation = createAttestation(List.of(0), 1);
+    final PooledAttestation otherAttestation = createAttestation(List.of(0), 0, 1);
 
     assertThat(attestation.aggregateWith(otherAttestation)).isTrue();
 
     /*
      01|2345 <- committee 0 and 2 indices
-     01|0001 <- bits
+     11|0001 <- bits
     */
 
     assertThat(attestation.getCommitteeSszBits().streamAllSetBits()).containsExactly(0, 2);
-    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(1, 5);
+    assertThat(attestation.getAggregationSszBits().streamAllSetBits()).containsExactly(0, 1, 5);
   }
 
   @Test
