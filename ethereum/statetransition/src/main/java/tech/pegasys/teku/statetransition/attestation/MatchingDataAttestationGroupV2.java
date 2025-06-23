@@ -193,7 +193,7 @@ public class MatchingDataAttestationGroupV2 {
     if (attestation.isSingleAttestation()) {
       final Set<PooledAttestation> singleAttestations =
           singleAttestationsByCommitteeIndex.computeIfAbsent(
-              attestation.bits().getFirstCommitteeIndex(), __ -> ConcurrentHashMap.newKeySet());
+              attestation.bits().getSingleCommitteeIndex(), __ -> ConcurrentHashMap.newKeySet());
       return singleAttestations.add(attestation);
     }
 

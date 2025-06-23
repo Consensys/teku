@@ -86,7 +86,10 @@ public interface AttestationBits {
 
   boolean isFromCommittee(int committeeIndex);
 
-  int getFirstCommitteeIndex();
+  /**
+   * This is supposed to be called only for single committee attestation bits committee attestation.
+   */
+  int getSingleCommitteeIndex();
 
   IntStream streamCommitteeIndices();
 

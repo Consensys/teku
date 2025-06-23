@@ -121,9 +121,9 @@ class AttestationBitsElectra implements AttestationBits {
     final AttestationBitsElectra otherElectra = requiresElectra(other.bits());
 
     if (other.isSingleAttestation()) {
-      final int committeeBit = otherElectra.getFirstCommitteeIndex();
+      final int committeeBit = otherElectra.getSingleCommitteeIndex();
       final int aggregationBit =
-          otherElectra.committeeAggregationBitsMap.get(committeeBit).nextSetBit(0);
+          otherElectra.committeeAggregationBitsMap.get(committeeBit).length() - 1;
       return aggregateWithSingleAttestation(committeeBit, aggregationBit);
     } else {
       return performMerge(
@@ -251,9 +251,9 @@ class AttestationBitsElectra implements AttestationBits {
   public boolean isSuperSetOf(final PooledAttestation other) {
     final AttestationBitsElectra otherElectra = requiresElectra(other.bits());
     if (other.isSingleAttestation()) {
-      final int committeeBit = otherElectra.getFirstCommitteeIndex();
+      final int committeeBit = otherElectra.getSingleCommitteeIndex();
       final int aggregationBit =
-          otherElectra.committeeAggregationBitsMap.get(committeeBit).nextSetBit(0);
+          otherElectra.committeeAggregationBitsMap.get(committeeBit).length() - 1;
       return isSuperSetOfSingleAttestation(committeeBit, aggregationBit);
     } else {
       return isSuperSetOf(
@@ -399,8 +399,8 @@ class AttestationBitsElectra implements AttestationBits {
   }
 
   @Override
-  public int getFirstCommitteeIndex() {
-    return committeeBits.nextSetBit(0);
+  public int getSingleCommitteeIndex() {
+    return committeeBits.length() - 1;
   }
 
   @Override
