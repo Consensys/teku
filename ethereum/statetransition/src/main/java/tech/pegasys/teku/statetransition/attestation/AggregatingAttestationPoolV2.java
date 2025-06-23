@@ -210,10 +210,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
             dataHash,
             __ ->
                 new MatchingDataAttestationGroupV2(
-                    spec,
-                    nanosSupplier,
-                    attestationData,
-                    committeesSize)); // Pass spec, data, committeesSize
+                    spec, nanosSupplier, attestationData, committeesSize));
 
     return Optional.of(attestationGroup);
   }
