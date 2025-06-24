@@ -237,4 +237,21 @@ public class AsyncStreamTest {
     final String logString = logCaptorCopy.getErrorLogs().get(0);
     assertThat(logString).contains("ConcurrentModificationException");
   }
+
+  @Test
+  void checkMerge() {
+    assertThat(
+            AsyncStream.of(0, 1, 2)
+                .takeUntil(i -> i == 0, false)
+                .merge(AsyncStream.of(3))
+                .toList()
+                .join())
+        .containsExactlyInAnyOrder(3);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of(3)).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2, 3);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of()).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of(2)).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2, 2);
+  }
 }
