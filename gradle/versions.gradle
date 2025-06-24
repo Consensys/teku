@@ -107,6 +107,7 @@ dependencyManagement {
     dependencySet(group: 'org.bouncycastle', version: '1.80') {
       entry 'bcprov-jdk18on'
       entry 'bcpkix-jdk18on'
+      entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
     }
 
     dependencySet(group: 'org.junit.jupiter', version: '5.11.4') {

@@ -31,17 +31,18 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class LibP2PPeerTest {
 
   private final Connection connection = mock(Connection.class);
 
   @SuppressWarnings("unchecked")
-  private final RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<Void>> rpcHandler =
+  private final RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<Void>> rpcHandler =
       mock(RpcHandler.class);
 
   @SuppressWarnings("unchecked")
-  private final RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<Void>> rpcMethod =
+  private final RpcMethod<RpcRequestHandler, RpcRequest, RpcResponseHandler<Void>> rpcMethod =
       mock(RpcMethod.class);
 
   private LibP2PPeer libP2PPeer;
