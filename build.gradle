@@ -647,11 +647,49 @@ tasks.register("dockerDistUntar") {
   }
 }
 
-def dockerImage = "consensys/teku"
 def dockerJdkVariants = [ "jdk21", "jdk24" ]
 def dockerBuildDir = "build/docker-teku/"
+def localDockerImage = "local/teku"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
+
+task localDocker {
+  dependsOn dockerDistUntar
+  def dockerBuildVersion = 'develop'
+  doLast {
+    def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
+    def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+    copy {
+      from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
+      into(dockerBuildDir)
+    }
+    exec {
+      def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+      workingDir dockerBuildDir
+      executable executableAndArg[0]
+      args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+    }
+    // tag the "default" (which is the variant in the zero position)
+    exec {
+      executable executableAndArg[0]
+      args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
+    }
+  }
+}
+
+task localDockerClean {
+  def dockerBuildVersion = 'develop'
+  def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
+  def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+  doLast {
+    exec {
+      executable executableAndArg[0]
+      args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+    }
+  }
+}
+
+def dockerImage = "consensys/teku"
 
 task distDocker  {
   dependsOn dockerDistUntar

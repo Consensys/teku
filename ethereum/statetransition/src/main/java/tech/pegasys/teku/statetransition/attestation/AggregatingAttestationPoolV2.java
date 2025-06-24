@@ -80,7 +80,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
   private final long maxBlockAggregationTimeNanos;
   private final long maxTotalBlockAggregationTimeMillis;
-  private final boolean earlyDropSingleAttestations;
 
   private final LongSupplier nanosSupplier;
 
@@ -95,8 +94,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final int maximumAttestationCount,
       final AggregatingAttestationPoolProfiler aggregatingAttestationPoolProfiler,
       final int maxBlockAggregationTimeMillis,
-      final int maxTotalBlockAggregationTimeMillis,
-      final boolean earlyDropSingleAttestations) {
+      final int maxTotalBlockAggregationTimeMillis) {
     super(spec, recentChainData);
     this.sizeGauge =
         SettableGauge.create(
@@ -108,7 +106,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     this.aggregatingAttestationPoolProfiler = aggregatingAttestationPoolProfiler;
     this.maxBlockAggregationTimeNanos = maxBlockAggregationTimeMillis * 1_000_000L;
     this.maxTotalBlockAggregationTimeMillis = maxTotalBlockAggregationTimeMillis * 1_000_000L;
-    this.earlyDropSingleAttestations = earlyDropSingleAttestations;
     this.nanosSupplier = System::nanoTime;
     this.rewardBasedAttestationSorterFactory = RewardBasedAttestationSorterFactory.DEFAULT;
   }
@@ -136,7 +133,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
         maxBlockAggregationTimeMillis * 1_000_000L; // Integer.MAX_VALUE * 1_000_000L
     this.maxTotalBlockAggregationTimeMillis =
         maxTotalBlockAggregationTimeMillis * 1_000_000L; // Integer.MAX_VALUE * 1_000_000L
-    this.earlyDropSingleAttestations = false;
     this.nanosSupplier = nanosSupplier;
     this.rewardBasedAttestationSorterFactory = rewardBasedAttestationSorterFactory;
   }
@@ -214,11 +210,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
             dataHash,
             __ ->
                 new MatchingDataAttestationGroupV2(
-                    spec,
-                    nanosSupplier,
-                    attestationData,
-                    committeesSize,
-                    earlyDropSingleAttestations)); // Pass spec, data, committeesSize
+                    spec, nanosSupplier, attestationData, committeesSize));
 
     return Optional.of(attestationGroup);
   }

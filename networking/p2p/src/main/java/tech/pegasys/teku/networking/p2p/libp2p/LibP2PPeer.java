@@ -44,6 +44,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -211,7 +212,7 @@ public class LibP2PPeer implements Peer {
   @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
-          TRequest,
+          TRequest extends RpcRequest,
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
@@ -253,7 +254,7 @@ public class LibP2PPeer implements Peer {
 
   private static class ThrottlingRpcHandler<
       TOutgoingHandler extends RpcRequestHandler,
-      TRequest,
+      TRequest extends RpcRequest,
       TRespHandler extends RpcResponseHandler<?>> {
 
     private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
