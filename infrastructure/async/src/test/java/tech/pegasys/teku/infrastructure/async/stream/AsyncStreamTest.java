@@ -246,9 +246,12 @@ public class AsyncStreamTest {
                 .merge(AsyncStream.of(3))
                 .toList()
                 .join())
-        .contains(3);
+        .containsExactlyInAnyOrder(3);
     assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of(3)).toList().join())
-        .contains(0, 1, 2, 3);
-    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of()).toList().join()).contains(0, 1, 2);
+        .containsExactlyInAnyOrder(0, 1, 2, 3);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of()).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of(2)).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2, 2);
   }
 }
