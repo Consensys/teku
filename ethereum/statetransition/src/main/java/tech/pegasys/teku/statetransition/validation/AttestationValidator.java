@@ -102,21 +102,6 @@ public class AttestationValidator {
               data.getSlot(), data.getTarget().getEpoch()));
     }
 
-    final UInt64 genesisTime = recentChainData.getGenesisTime();
-    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
-
-    final Optional<SlotInclusionGossipValidationResult> slotInclusionGossipValidationResult =
-        spec.atSlot(data.getSlot())
-            .getAttestationUtil()
-            .performSlotInclusionGossipValidation(attestation, genesisTime, currentTimeMillis);
-
-    if (slotInclusionGossipValidationResult.isPresent()) {
-      return switch (slotInclusionGossipValidationResult.get()) {
-        case IGNORE -> completedFuture(InternalValidationResultWithState.ignore());
-        case SAVE_FOR_FUTURE -> completedFuture(InternalValidationResultWithState.saveForFuture());
-      };
-    }
-
     if (attestation.requiresCommitteeBits()) {
       // [REJECT] len(committee_indices) == 1, where committee_indices =
       // get_committee_indices(attestation)
@@ -134,6 +119,21 @@ public class AttestationValidator {
             InternalValidationResultWithState.reject(
                 "Rejecting attestation because attestation data index must be 0"));
       }
+    }
+
+    final UInt64 genesisTime = recentChainData.getGenesisTime();
+    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
+
+    final Optional<SlotInclusionGossipValidationResult> slotInclusionGossipValidationResult =
+        spec.atSlot(data.getSlot())
+            .getAttestationUtil()
+            .performSlotInclusionGossipValidation(attestation, genesisTime, currentTimeMillis);
+
+    if (slotInclusionGossipValidationResult.isPresent()) {
+      return switch (slotInclusionGossipValidationResult.get()) {
+        case IGNORE -> completedFuture(InternalValidationResultWithState.ignore());
+        case SAVE_FOR_FUTURE -> completedFuture(InternalValidationResultWithState.saveForFuture());
+      };
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
