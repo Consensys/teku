@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
 public class RespondingEth2Peer implements Eth2Peer {
+
   private static final MockNodeIdGenerator ID_GENERATOR = new MockNodeIdGenerator();
   private static final Bytes4 FORK_DIGEST = Bytes4.fromHexString("0x11223344");
 
@@ -447,11 +448,11 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
-          TRequest,
+          TRequest extends RpcRequest,
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final TRequest tRequest,
+          final TRequest request,
           final RespHandler responseHandler) {
     return null;
   }
@@ -496,6 +497,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   public static class PendingRequest<ResponseT, HandlerT> {
+
     private final SafeFuture<ResponseT> future = new SafeFuture<>();
     private final PendingRequestHandler<ResponseT, HandlerT> requestHandler;
 
