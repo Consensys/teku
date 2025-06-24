@@ -117,13 +117,6 @@ public class AttestationValidator {
       };
     }
 
-    // The block being voted for (attestation.data.beacon_block_root) passes validation.
-    // It must pass validation to be in the store.
-    // If it's not in the store, it may not have been processed yet so save for future.
-    if (!recentChainData.containsBlock(data.getBeaconBlockRoot())) {
-      return completedFuture(InternalValidationResultWithState.saveForFuture());
-    }
-
     if (attestation.requiresCommitteeBits()) {
       // [REJECT] len(committee_indices) == 1, where committee_indices =
       // get_committee_indices(attestation)
@@ -132,13 +125,22 @@ public class AttestationValidator {
             InternalValidationResultWithState.reject(
                 "Rejecting attestation because committee bits count is not 1"));
       }
+    }
 
+    if (attestation.isSingleAttestation() || attestation.requiresCommitteeBits()) {
       // [REJECT] attestation.data.index == 0
       if (!attestation.getData().getIndex().isZero()) {
         return SafeFuture.completedFuture(
             InternalValidationResultWithState.reject(
                 "Rejecting attestation because attestation data index must be 0"));
       }
+    }
+
+    // The block being voted for (attestation.data.beacon_block_root) passes validation.
+    // It must pass validation to be in the store.
+    // If it's not in the store, it may not have been processed yet so save for future.
+    if (!recentChainData.containsBlock(data.getBeaconBlockRoot())) {
+      return completedFuture(InternalValidationResultWithState.saveForFuture());
     }
 
     return stateSelector
