@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 public interface AttestationBits {
   static AttestationBits fromEmptyFromAttestationSchema(
@@ -61,13 +62,13 @@ public interface AttestationBits {
 
   void or(AttestationBits other);
 
-  boolean aggregateWith(AttestationBits other);
+  boolean aggregateWith(PooledAttestation other);
 
   void or(Attestation other);
 
   boolean isSuperSetOf(Attestation other);
 
-  boolean isSuperSetOf(AttestationBits other);
+  boolean isSuperSetOf(PooledAttestation other);
 
   SszBitlist getAggregationSszBits();
 
@@ -83,7 +84,10 @@ public interface AttestationBits {
 
   boolean isFromCommittee(int committeeIndex);
 
-  int getFirstCommitteeIndex();
+  /**
+   * This is supposed to be called only for single committee attestation bits committee attestation.
+   */
+  int getSingleCommitteeIndex();
 
   IntStream streamCommitteeIndices();
 

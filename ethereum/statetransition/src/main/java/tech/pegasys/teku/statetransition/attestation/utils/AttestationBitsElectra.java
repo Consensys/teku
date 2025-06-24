@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 class AttestationBitsElectra implements AttestationBits {
 
@@ -110,9 +111,18 @@ class AttestationBitsElectra implements AttestationBits {
   }
 
   @Override
-  public boolean aggregateWith(final AttestationBits other) {
-    final AttestationBitsElectra otherElectra = requiresElectra(other);
-    return performMerge(otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, true);
+  public boolean aggregateWith(final PooledAttestation other) {
+    final AttestationBitsElectra otherElectra = requiresElectra(other.bits());
+
+    if (other.isSingleAttestation()) {
+      final int committeeBit = otherElectra.getSingleCommitteeIndex();
+      final int aggregationBit =
+          otherElectra.committeeAggregationBitsMap.get(committeeBit).length() - 1;
+      return aggregateWithSingleAttestation(committeeBit, aggregationBit);
+    } else {
+      return performMerge(
+          otherElectra.committeeBits, otherElectra.committeeAggregationBitsMap, true);
+    }
   }
 
   @Override
@@ -131,6 +141,34 @@ class AttestationBitsElectra implements AttestationBits {
       clonedMap.put(entry.getIntKey(), (BitSet) entry.getValue().clone());
     }
     return clonedMap;
+  }
+
+  private boolean aggregateWithSingleAttestation(
+      final int otherCommitteeBit, final int otherAggregationBit) {
+    final BitSet thisAggregationBitsForCommittee =
+        committeeAggregationBitsMap.get(otherCommitteeBit);
+
+    if (thisAggregationBitsForCommittee != null
+        && thisAggregationBitsForCommittee.get(otherAggregationBit)) {
+      // Intersection found, cannot merge
+      return false;
+    }
+
+    if (thisAggregationBitsForCommittee != null) {
+      // committee present, just add the aggregation bit
+      thisAggregationBitsForCommittee.set(otherAggregationBit);
+    } else {
+      // committee is not present, set the committee bit and create a new BitSet for aggregation
+      // bits
+
+      this.committeeBits.set(otherCommitteeBit);
+      final BitSet newAggregationBits = new BitSet(committeesSize.get(otherCommitteeBit));
+      newAggregationBits.set(otherAggregationBit);
+      committeeAggregationBitsMap.put(otherCommitteeBit, newAggregationBits);
+    }
+
+    invalidateCache();
+    return true;
   }
 
   private boolean performMerge(
@@ -204,10 +242,29 @@ class AttestationBitsElectra implements AttestationBits {
   }
 
   @Override
-  public boolean isSuperSetOf(final AttestationBits other) {
-    final AttestationBitsElectra otherElectra = requiresElectra(other);
+  public boolean isSuperSetOf(final PooledAttestation other) {
+    final AttestationBitsElectra otherElectra = requiresElectra(other.bits());
+    if (other.isSingleAttestation()) {
+      final int committeeBit = otherElectra.getSingleCommitteeIndex();
+      final int aggregationBit =
+          otherElectra.committeeAggregationBitsMap.get(committeeBit).length() - 1;
+      return isSuperSetOfSingleAttestation(committeeBit, aggregationBit);
+    } else {
+      return isSuperSetOf(
+          otherElectra.committeeBits, () -> otherElectra.committeeAggregationBitsMap);
+    }
+  }
 
-    return isSuperSetOf(otherElectra.committeeBits, () -> otherElectra.committeeAggregationBitsMap);
+  private boolean isSuperSetOfSingleAttestation(
+      final int otherCommitteeBit, final int otherAggregationBit) {
+    final BitSet thisAggregationBitsForCommittee =
+        committeeAggregationBitsMap.get(otherCommitteeBit);
+
+    if (thisAggregationBitsForCommittee == null) {
+      return false; // No bits for this committee
+    }
+
+    return thisAggregationBitsForCommittee.get(otherAggregationBit);
   }
 
   private boolean isSuperSetOf(
@@ -336,8 +393,8 @@ class AttestationBitsElectra implements AttestationBits {
   }
 
   @Override
-  public int getFirstCommitteeIndex() {
-    return committeeBits.nextSetBit(0);
+  public int getSingleCommitteeIndex() {
+    return committeeBits.length() - 1;
   }
 
   @Override
