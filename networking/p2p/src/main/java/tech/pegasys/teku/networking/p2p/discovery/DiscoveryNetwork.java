@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
@@ -170,6 +171,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public void setForkInfo(
       final ForkInfo currentForkInfo,
       final Optional<Fork> nextForkInfo,
+      final Optional<BlobParameters> nextBpoFork,
       final Optional<Bytes4> nextForkDigest) {
     // If no future fork is planned, set next_fork_version = current_fork_version to signal this
     final Bytes4 nextVersion =
@@ -177,8 +179,16 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .map(Fork::getCurrentVersion)
             .orElse(currentForkInfo.getFork().getCurrentVersion());
     // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
+    // TODO: berlinterop-devnet-2 hacky way of setting next_fork_epoch
     final UInt64 nextForkEpoch =
-        nextForkInfo.map(Fork::getEpoch).orElse(SpecConfig.FAR_FUTURE_EPOCH);
+        nextForkInfo
+            .map(
+                nextFork ->
+                    nextBpoFork
+                        .map(BlobParameters::epoch)
+                        .filter(nextBpoEpoch -> nextBpoEpoch.isLessThan(nextFork.getEpoch()))
+                        .orElse(nextFork.getEpoch()))
+            .orElse(SpecConfig.FAR_FUTURE_EPOCH);
 
     final Bytes4 forkDigest = currentForkInfo.getForkDigest(spec);
     final EnrForkId enrForkId = new EnrForkId(forkDigest, nextVersion, nextForkEpoch);

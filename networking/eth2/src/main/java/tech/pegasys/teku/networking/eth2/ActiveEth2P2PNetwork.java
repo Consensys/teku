@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -413,12 +414,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     final Optional<Bytes4> nextForkDigest =
         recentChainData
             .getBpoForkByForkDigest(forkDigest)
-            .flatMap(
-                bpo -> {
-                  return recentChainData.getNextForkDigest(bpo.epoch());
-                })
+            .flatMap(bpo -> recentChainData.getNextForkDigest(bpo.epoch()))
             .or(() -> recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch()));
-    discoveryNetwork.setForkInfo(forkInfo, nextFork, nextForkDigest);
+    final Optional<BlobParameters> nextBpoFork =
+        recentChainData
+            .getBpoForkByForkDigest(forkDigest)
+            .flatMap(bpo -> spec.getNextBpoFork(bpo.epoch()));
+    discoveryNetwork.setForkInfo(forkInfo, nextFork, nextBpoFork, nextForkDigest);
   }
 
   @Override

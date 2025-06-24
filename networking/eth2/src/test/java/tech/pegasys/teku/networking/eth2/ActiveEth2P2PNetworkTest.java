@@ -95,21 +95,24 @@ public class ActiveEth2P2PNetworkTest {
   @Test
   public void start_setsGossipFork() {
     setupForkInfo();
-    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any());
+    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any());
     assertThat(network.start()).isCompleted();
 
     final ForkInfo expectedFork =
         new ForkInfo(phase0Fork, genesis.getState().getGenesisValidatorsRoot());
     verify(discoveryNetwork)
         .setForkInfo(
-            expectedFork, Optional.of(altairFork), Optional.of(Bytes4.fromHexString("0x41249021")));
+            expectedFork,
+            Optional.of(altairFork),
+            Optional.empty(),
+            Optional.of(Bytes4.fromHexString("0x41249021")));
   }
 
   @Test
   public void onEpoch_shouldUpdateDiscoveryNetworkForkInfo() {
     setupForkInfo();
     // Start network
-    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any());
+    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any());
     assertThat(network.start()).isCompleted();
 
     // Verify updates at startup
@@ -117,7 +120,10 @@ public class ActiveEth2P2PNetworkTest {
     ForkInfo expectedFork = new ForkInfo(phase0Fork, genesisValidatorsRoot);
     verify(discoveryNetwork)
         .setForkInfo(
-            expectedFork, Optional.of(altairFork), Optional.of(Bytes4.fromHexString("0x41249021")));
+            expectedFork,
+            Optional.of(altairFork),
+            Optional.empty(),
+            Optional.of(Bytes4.fromHexString("0x41249021")));
 
     // Process epoch 1 - we shouldn't update fork info here
     network.onEpoch(UInt64.ONE);
@@ -128,7 +134,8 @@ public class ActiveEth2P2PNetworkTest {
     // At the altair upgrade epoch, we should update fork info
     network.onEpoch(altairForkEpoch);
     expectedFork = new ForkInfo(altairFork, genesisValidatorsRoot);
-    verify(discoveryNetwork).setForkInfo(expectedFork, Optional.empty(), Optional.empty());
+    verify(discoveryNetwork)
+        .setForkInfo(expectedFork, Optional.empty(), Optional.empty(), Optional.empty());
 
     // Processing altair again shouldn't cause any updates
     network.onEpoch(altairForkEpoch);
