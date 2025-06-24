@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -115,35 +114,13 @@ public class DataColumnSidecarGossipValidatorTest {
     when(miscHelpersFulu.verifyDataColumnSidecarKzgProof(any(), any(DataColumnSidecar.class)))
         .thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(any())).thenReturn(true);
-    when(miscHelpersFulu.verifyDataColumnSidecar(any(), anyInt())).thenReturn(true);
+    when(miscHelpersFulu.verifyDataColumnSidecar(any())).thenReturn(true);
   }
 
   @TestTemplate
   void shouldAccept() {
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-  }
-
-  @TestTemplate
-  void shouldRejectWhenSlotIsNotFulu() {
-    final Spec mockedSpec = mock(Spec.class);
-    when(mockedSpec.getNumberOfDataColumns()).thenReturn(Optional.empty());
-    final SpecVersion mockedSpecVersion = mock(SpecVersion.class);
-    when(mockedSpec.getGenesisSpec()).thenReturn(mockedSpecVersion);
-    when(mockedSpecVersion.getSlotsPerEpoch()).thenReturn(1);
-
-    validator =
-        DataColumnSidecarGossipValidator.create(
-            mockedSpec,
-            invalidBlocks,
-            gossipValidationHelper,
-            miscHelpersFulu,
-            kzg,
-            metricsSystemStub,
-            stubTimeProvider);
-
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @TestTemplate
@@ -164,7 +141,7 @@ public class DataColumnSidecarGossipValidatorTest {
 
   @TestTemplate
   void shouldRejectInvalidDataColumnSidecar() {
-    when(miscHelpersFulu.verifyDataColumnSidecar(any(), anyInt())).thenReturn(false);
+    when(miscHelpersFulu.verifyDataColumnSidecar(any())).thenReturn(false);
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(
             result ->

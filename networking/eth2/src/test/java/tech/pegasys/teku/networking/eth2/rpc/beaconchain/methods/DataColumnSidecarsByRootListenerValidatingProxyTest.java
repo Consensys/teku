@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -134,6 +136,39 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         .hasMessageContaining(
             DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                 .DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER
+                .describe());
+  }
+
+  @Test
+  void dataColumnSidecarFailsValidation() {
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
+    final DataColumnsByRootIdentifier dataColumnIdentifier = schema.create(block1.getRoot(), ZERO);
+    listenerWrapper =
+        new DataColumnSidecarsByRootListenerValidatingProxy(
+            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
+
+    final DataColumnSidecar dataColumnSidecar =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+            block1, dataColumnIdentifier.getColumns().getFirst());
+    final DataColumnSidecar dataColumnSidecarModified =
+        SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+            .getDataColumnSidecarSchema()
+            .create(
+                dataColumnSidecar.getIndex(),
+                dataColumnSidecar.getDataColumn(),
+                Collections.emptyList(), // replacing to empty commitments
+                dataColumnSidecar.getSszKZGProofs().stream().map(SszKZGProof::getKZGProof).toList(),
+                dataColumnSidecar.getSignedBeaconBlockHeader(),
+                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed());
+
+    final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecarModified);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                .DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED
                 .describe());
   }
 

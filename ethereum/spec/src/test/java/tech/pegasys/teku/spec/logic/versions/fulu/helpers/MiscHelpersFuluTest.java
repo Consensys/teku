@@ -172,7 +172,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(),
             UInt64.valueOf(numberOfColumns).increment());
-    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidIndex, numberOfColumns)).isFalse();
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidIndex)).isFalse();
   }
 
   @Test
@@ -181,9 +181,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomKZGCommitments(10),
             dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
-    assertThat(
-            miscHelpersFulu.verifyDataColumnSidecar(
-                mismatchingDataColumnKzgCommitments, spec.getNumberOfDataColumns().orElseThrow()))
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(mismatchingDataColumnKzgCommitments))
         .isFalse();
   }
 
@@ -192,10 +190,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final DataColumnSidecar emptyKzgCommitments =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
             dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
-    assertThat(
-            miscHelpersFulu.verifyDataColumnSidecar(
-                emptyKzgCommitments, spec.getNumberOfDataColumns().orElseThrow()))
-        .isFalse();
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(emptyKzgCommitments)).isFalse();
   }
 
   @Test
@@ -205,10 +200,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
             dataStructureUtil.randomKZGProofs(10),
             dataStructureUtil.randomKZGCommitments(5),
             dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
-    assertThat(
-            miscHelpersFulu.verifyDataColumnSidecar(
-                invalidDataColumnKzgProofs, spec.getNumberOfDataColumns().orElseThrow()))
-        .isFalse();
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidDataColumnKzgProofs)).isFalse();
   }
 
   // Scenarios from

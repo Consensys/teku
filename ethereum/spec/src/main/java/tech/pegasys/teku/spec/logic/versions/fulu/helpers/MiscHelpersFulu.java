@@ -236,8 +236,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .min(specConfigFulu.getNumberOfCustodyGroups());
   }
 
-  public boolean verifyDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar, final int numberOfColumns) {
+  public boolean verifyDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+    final int numberOfColumns = specConfigFulu.getNumberOfColumns();
+
     if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
       LOG.trace(
           "DataColumnSidecar has invalid index {}. Should be less than {}",
@@ -269,10 +270,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public boolean verifyDataColumnSidecarKzgProof(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
-    final int dataColumns = specConfigFulu.getNumberOfColumns();
-    if (dataColumnSidecar.getIndex().isGreaterThanOrEqualTo(dataColumns)) {
-      return false;
-    }
 
     final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getDataColumn().size())

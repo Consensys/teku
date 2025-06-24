@@ -191,21 +191,14 @@ public class DataColumnSidecarGossipValidator {
 
     totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
-    final Optional<Integer> maybeNumberOfColumns = spec.getNumberOfDataColumns();
-    if (maybeNumberOfColumns.isEmpty()) {
-      return completedFuture(reject("DataColumnSidecar's slot is pre-Fulu"));
-    }
-
     /*
      * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar).
      */
-    final Integer numberOfColumns = maybeNumberOfColumns.get();
-    if (!miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar, numberOfColumns)) {
+    if (!miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar)) {
       return completedFuture(reject("DataColumnSidecar has invalid structure"));
     }
 
     /*
-     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
      */
     if (!isFirstValidForSlotProposerIndexAndColumnIndex(dataColumnSidecar, blockHeader)) {
