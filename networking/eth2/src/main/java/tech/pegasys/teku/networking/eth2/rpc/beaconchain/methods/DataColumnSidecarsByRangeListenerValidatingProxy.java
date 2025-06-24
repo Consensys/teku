@@ -81,6 +81,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                 peer, DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
           }
 
+          verifyValidity(dataColumnSidecar);
           try (MetricsHistogram.Timer ignored =
               dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
             verifyInclusionProof(dataColumnSidecar);
