@@ -96,8 +96,11 @@ public class DasCustodyStand {
             .orElse(this.db);
 
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
-
-    this.custodyGroupCountManager = createCustodyGroupCountManager(totalCustodyGroupCount);
+    final SpecConfigFulu configFulu =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+    final int sampleGroupCount = Math.max(totalCustodyGroupCount, configFulu.getSamplesPerSlot());
+    this.custodyGroupCountManager =
+        createCustodyGroupCountManager(totalCustodyGroupCount, sampleGroupCount);
     this.custody =
         new DataColumnSidecarCustodyImpl(
             spec,
@@ -245,7 +248,7 @@ public class DasCustodyStand {
   }
 
   public static CustodyGroupCountManager createCustodyGroupCountManager(
-      final int custodyGroupCount) {
+      final int custodyGroupCount, final int sampleGroupCount) {
     return new CustodyGroupCountManager() {
       @Override
       public int getCustodyGroupCount() {
@@ -255,6 +258,11 @@ public class DasCustodyStand {
       @Override
       public List<UInt64> getCustodyColumnIndices() {
         return IntStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
+      }
+
+      @Override
+      public List<UInt64> getCustodyColumnIndicesForSampling() {
+        return IntStream.range(0, sampleGroupCount).mapToObj(UInt64::valueOf).toList();
       }
 
       @Override

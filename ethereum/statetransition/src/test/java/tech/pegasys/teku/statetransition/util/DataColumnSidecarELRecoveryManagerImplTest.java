@@ -70,7 +70,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   @SuppressWarnings("unchecked")
   final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher = mock(Consumer.class);
 
-  final CustodyGroupCountManager custodyGroupCountManager = createCustodyGroupCountManager(4);
+  final CustodyGroupCountManager custodyGroupCountManager = createCustodyGroupCountManager(4, 8);
 
   private final DataColumnSidecarELRecoveryManager dataColumnSidecarELRecoveryManager =
       new PoolFactory(metricsSystem)
