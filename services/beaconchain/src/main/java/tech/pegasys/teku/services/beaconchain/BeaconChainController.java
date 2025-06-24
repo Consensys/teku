@@ -181,7 +181,9 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
+import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataColumnsByRootReqResp;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
@@ -830,12 +832,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
 
+    final BatchDataColumnsByRangeReqResp loggingByRangeReqResp =
+        new LoggingBatchDataColumnsByRangeReqResp(dasPeerManager, dasReqRespLogger);
     final BatchDataColumnsByRootReqResp loggingByRootReqResp =
         new LoggingBatchDataColumnsByRootReqResp(dasPeerManager, dasReqRespLogger);
+    final SchemaDefinitionsFulu schemaDefinitionsFulu =
+        SchemaDefinitionsFulu.required(specVersionFulu.getSchemaDefinitions());
+
     final DataColumnReqResp dasRpc =
         new DataColumnReqRespBatchingImpl(
+            loggingByRangeReqResp,
             loggingByRootReqResp,
-            SchemaDefinitionsFulu.required(specVersionFulu.getSchemaDefinitions()));
+            () -> spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch().increment()),
+            schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema());
 
     final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
     p2pNetwork.subscribeConnect(peerCustodyTracker);
@@ -1632,9 +1641,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 profiler,
                 eth2NetworkConfiguration.getAggregatingAttestationPoolV2BlockAggregationTimeLimit(),
                 eth2NetworkConfiguration
-                    .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(),
-                eth2NetworkConfiguration
-                    .isAggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled())
+                    .getAggregatingAttestationPoolV2TotalBlockAggregationTimeLimit())
             : new AggregatingAttestationPoolV1(
                 spec, recentChainData, metricsSystem, profiler, DEFAULT_MAXIMUM_ATTESTATION_COUNT);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
