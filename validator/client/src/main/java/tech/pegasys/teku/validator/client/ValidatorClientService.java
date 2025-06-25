@@ -410,11 +410,7 @@ public class ValidatorClientService extends Service {
               .load(validatorConfig.getSentryNodeConfigurationFile().get());
       beaconNodeApi =
           SentryBeaconNodeApi.create(
-              services,
-              validatorConfig,
-              asyncRunner,
-              validatorClientConfiguration.getSpec(),
-              sentryNodesConfig);
+              services, validatorConfig, validatorClientConfiguration.getSpec(), sentryNodesConfig);
     }
 
     return beaconNodeApi;
