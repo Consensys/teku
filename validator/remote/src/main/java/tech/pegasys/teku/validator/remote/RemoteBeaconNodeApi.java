@@ -82,13 +82,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final HttpUrl primaryEndpoint = remoteBeaconNodeEndpoints.getPrimaryEndpoint();
     final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
 
-    final int remoteNodeCount = failoverEndpoints.size() + 1; // +1 for the primary endpoint
+    final int apiMaxThreads =
+        calculateAPIMaxThreads(failoverEndpoints.size() + 1); // +1 for the primary endpoint
 
     final AsyncRunner asyncRunner =
         services.createAsyncRunner(
-            "validatorBeaconAPI",
-            calculateMainAPIMaxThreads(remoteNodeCount),
-            MAX_API_EXECUTOR_QUEUE_SIZE);
+            "validatorBeaconAPI", apiMaxThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
 
     final AsyncRunner readinessAsyncRunner;
     if (failoverEndpoints.isEmpty()) {
@@ -98,9 +97,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       // block the critical path of the validator operations.
       readinessAsyncRunner =
           services.createAsyncRunner(
-              "validatorBeaconAPIReadiness",
-              calculateReadinessAPIMaxThreads(remoteNodeCount),
-              MAX_API_EXECUTOR_QUEUE_SIZE);
+              "validatorBeaconAPIReadiness", apiMaxThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
     }
 
     final RemoteValidatorApiChannel primaryValidatorApi =
@@ -187,12 +184,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
         beaconChainEventAdapter, validatorApi, beaconNodeReadinessManager);
   }
 
-  public static int calculateMainAPIMaxThreads(final int remoteNodeCount) {
+  public static int calculateAPIMaxThreads(final int remoteNodeCount) {
     return Math.max(5, remoteNodeCount * 2);
-  }
-
-  public static int calculateReadinessAPIMaxThreads(final int remoteNodeCount) {
-    return Math.max(2, remoteNodeCount);
   }
 
   @Override
