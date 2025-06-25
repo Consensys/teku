@@ -503,6 +503,15 @@ public class Spec {
         .computeForkDigest(currentVersion, genesisValidatorsRoot);
   }
 
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionFulu()
+        .map(miscHelpersFulu -> miscHelpersFulu.computeForkDigest(genesisValidatorsRoot, epoch))
+        // backwards compatibility for milestones before Fulu
+        .orElseGet(() -> computeForkDigest(fork(epoch).getCurrentVersion(), genesisValidatorsRoot));
+  }
+
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }

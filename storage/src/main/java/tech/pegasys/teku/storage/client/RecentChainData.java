@@ -267,9 +267,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .getActiveMilestones()
         .forEach(
             forkAndMilestone -> {
-              final Fork fork = forkAndMilestone.getFork();
               final Bytes4 forkDigest =
-                  spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
+                  spec.computeForkDigest(
+                      genesisValidatorsRoot, forkAndMilestone.getFork().getEpoch());
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });
