@@ -86,7 +86,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final AsyncRunner asyncRunner =
         services.createAsyncRunner(
-            "validator-beacon-api",
+            "validatorBeaconAPI",
             calculateMainAPIMaxThreads(remoteNodeCount),
             MAX_API_EXECUTOR_QUEUE_SIZE);
 
@@ -98,7 +98,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       // block the critical path of the validator operations.
       readinessAsyncRunner =
           services.createAsyncRunner(
-              "validator-beacon-api-readiness",
+              "validatorBeaconAPIReadiness",
               calculateReadinessAPIMaxThreads(remoteNodeCount),
               MAX_API_EXECUTOR_QUEUE_SIZE);
     }

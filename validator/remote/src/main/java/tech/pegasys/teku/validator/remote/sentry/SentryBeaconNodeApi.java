@@ -83,13 +83,13 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
 
     final AsyncRunner asyncRunner =
         services.createAsyncRunner(
-            "validator-beacon-api",
+            "validatorBeaconAPI",
             calculateMainAPIMaxThreads(remoteNodeCount),
             MAX_API_EXECUTOR_QUEUE_SIZE);
 
     final AsyncRunner readinessAsyncRunner =
         services.createAsyncRunner(
-            "validator-beacon-api-readiness",
+            "validatorBeaconAPIReadiness",
             calculateReadinessAPIMaxThreads(remoteNodeCount),
             MAX_API_EXECUTOR_QUEUE_SIZE);
 
