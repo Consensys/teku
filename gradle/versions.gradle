@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.19.0'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.19.0'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.19.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.19.1'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.1'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.37.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.39.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -18,7 +18,7 @@ dependencyManagement {
 
     dependency 'org.yaml:snakeyaml:2.4'
 
-    dependency 'org.jsoup:jsoup:1.20.1'
+    dependency 'org.jsoup:jsoup:1.21.1'
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
 
@@ -29,7 +29,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.7'
 
-    dependencySet(group: 'io.javalin', version: '6.6.0') {
+    dependencySet(group: 'io.javalin', version: '6.7.0') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
@@ -37,15 +37,15 @@ dependencyManagement {
     dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.15'
     dependency 'io.consensys.protocols:jc-kzg-4844:2.1.1'
-    dependency 'io.github.crate-crypto:java-eth-kzg:0.7.0'
+    dependency 'io.github.crate-crypto:java-eth-kzg:0.7.1'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.1.20'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.2.0'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.30') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.34') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
@@ -53,16 +53,16 @@ dependencyManagement {
     }
 
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.21.0'
+    dependency 'org.webjars:swagger-ui:5.25.2'
 
     dependency 'org.thymeleaf:thymeleaf:3.1.3.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.179'
-    dependencySet(group: 'com.github.oshi', version: '6.8.1') {
+    dependency 'io.github.classgraph:classgraph:4.8.180'
+    dependencySet(group: 'com.github.oshi', version: '6.8.2') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.2.0.Final') {
+    dependencySet(group: 'io.netty', version: '4.2.2.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
@@ -73,13 +73,13 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.7.5'
+    dependency 'io.projectreactor:reactor-core:3.7.7'
 
-    dependency 'it.unimi.dsi:fastutil:8.5.15'
+    dependency 'it.unimi.dsi:fastutil:8.5.16'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'io.consensys.tuweni', version: '2.7.0') {
+    dependencySet(group: 'io.consensys.tuweni', version: '2.7.1') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
       entry 'tuweni-ssz'
@@ -91,7 +91,7 @@ dependencyManagement {
     dependency 'commons-io:commons-io:2.19.0'
     dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.24.3') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.25.0') {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'
@@ -104,13 +104,13 @@ dependencyManagement {
 
     dependency 'org.awaitility:awaitility:4.3.0'
 
-    dependencySet(group: 'org.bouncycastle', version: '1.80') {
+    dependencySet(group: 'org.bouncycastle', version: '1.81') {
       entry 'bcprov-jdk18on'
       entry 'bcpkix-jdk18on'
       entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
     }
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.11.4') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.13.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
@@ -118,7 +118,7 @@ dependencyManagement {
 
     dependency 'net.java.dev.jna:jna:5.17.0'
 
-    dependencySet(group: 'org.mockito', version: '5.15.2') {
+    dependencySet(group: 'org.mockito', version: '5.18.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -128,7 +128,7 @@ dependencyManagement {
       entry 'jmh-generator-annprocess'
     }
     dependency 'org.quartz-scheduler:quartz:2.5.0'
-    dependency 'org.rocksdb:rocksdbjni:10.0.1'
+    dependency 'org.rocksdb:rocksdbjni:10.2.1'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.3.1'
@@ -142,20 +142,20 @@ dependencyManagement {
 
     dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
 
-    dependency 'io.prometheus:prometheus-metrics-bom:1.3.5'
+    dependency 'io.prometheus:prometheus-metrics-bom:1.3.8'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.4.1') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '25.6.0') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '25.4.1') {
+    dependencySet(group: 'org.hyperledger.besu', version: '25.6.0') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.20.4') {
+    dependencySet(group: 'org.testcontainers', version: '1.21.2') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -179,6 +179,6 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.9.2'
+    dependency 'net.jqwik:jqwik:1.9.3'
   }
 }
