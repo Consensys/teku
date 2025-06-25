@@ -64,9 +64,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   }
 
   public static BeaconNodeApi create(
-      final ServiceConfig serviceConfig,
+      final ServiceConfig services,
       final ValidatorConfig validatorConfig,
-      final AsyncRunner asyncRunner,
       final Spec spec,
       final List<URI> beaconNodeApiEndpoints) {
     Preconditions.checkArgument(
@@ -81,6 +80,21 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final HttpUrl primaryEndpoint = remoteBeaconNodeEndpoints.getPrimaryEndpoint();
     final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
 
+    final AsyncRunner asyncRunner =
+        services.createAsyncRunnerWithMaxQueueSize(
+            "validator-beacon-api", validatorConfig.getExecutorMaxQueueSize());
+
+    final AsyncRunner readinessAsyncRunner;
+    if (failoverEndpoints.isEmpty()) {
+      readinessAsyncRunner = asyncRunner;
+    } else {
+      // Use a separate async runner for the readiness-related api calls, so that they do not
+      // block the critical path of the validator operations.
+      readinessAsyncRunner =
+          services.createAsyncRunnerWithMaxQueueSize(
+              "validator-beacon-api-readiness", validatorConfig.getExecutorMaxQueueSize());
+    }
+
     final RemoteValidatorApiChannel primaryValidatorApi =
         RemoteValidatorApiHandler.create(
             primaryEndpoint,
@@ -89,6 +103,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             validatorConfig.isValidatorClientUseSszBlocksEnabled(),
             validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
             asyncRunner,
+            readinessAsyncRunner,
             validatorConfig.isAttestationsV2ApisEnabled());
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
@@ -101,11 +116,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
                         validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
                         asyncRunner,
+                        readinessAsyncRunner,
                         validatorConfig.isAttestationsV2ApisEnabled()))
             .toList();
 
-    final EventChannels eventChannels = serviceConfig.getEventChannels();
-    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+    final EventChannels eventChannels = services.getEventChannels();
+    final MetricsSystem metricsSystem = services.getMetricsSystem();
 
     if (!failoverEndpoints.isEmpty()) {
       LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
@@ -119,7 +135,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
-            serviceConfig.getTimeProvider(),
+            services.getTimeProvider(),
             primaryValidatorApi,
             failoverValidatorApis,
             ValidatorLogger.VALIDATOR_LOGGER,
@@ -147,8 +163,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApi),
-                new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
-                serviceConfig.getTimeProvider(),
+                new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
+                services.getTimeProvider(),
                 validatorTimingChannel,
                 spec),
             validatorTimingChannel,

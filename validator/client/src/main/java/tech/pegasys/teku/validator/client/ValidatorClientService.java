@@ -395,7 +395,6 @@ public class ValidatorClientService extends Service {
                       RemoteBeaconNodeApi.create(
                           services,
                           validatorConfig,
-                          asyncRunner,
                           validatorClientConfiguration.getSpec(),
                           beaconNodeApiEndpoints))
               .orElseGet(
