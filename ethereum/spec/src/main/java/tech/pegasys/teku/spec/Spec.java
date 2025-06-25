@@ -105,6 +105,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BpoForkSchedule;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
@@ -985,13 +986,14 @@ public class Spec {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
 
-    // query the blob_schedule after FULU
+    // query the blob_schedule after Fulu
     if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
       final Optional<Integer> maybeHighestMaxBlobsPerBlockFromBpoForkSchedule =
           forMilestone(FULU)
               .miscHelpers()
               .toVersionFulu()
-              .flatMap(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromBpoForkSchedule);
+              .map(MiscHelpersFulu::getBpoForkSchedule)
+              .flatMap(BpoForkSchedule::getHighestMaxBlobsPerBlock);
       // only use blob_schedule if it is present
       if (maybeHighestMaxBlobsPerBlockFromBpoForkSchedule.isPresent()) {
         return maybeHighestMaxBlobsPerBlockFromBpoForkSchedule;

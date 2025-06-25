@@ -141,8 +141,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
-    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
+  public BpoForkSchedule getBpoForkSchedule() {
+    return bpoForkSchedule;
   }
 
   // get_blob_parameters
