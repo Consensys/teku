@@ -69,15 +69,21 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         peerSubnetSubscriptionsFactory.create(network);
     final int peersRequiredForPeerCount =
         targetPeerCountRange.getPeersToAdd(network.getPeerCount());
+    LOG.debug("peersRequiredForPeerCount from targetPeerCountRange: {}", peersRequiredForPeerCount);
     final int randomlySelectedPeerCount = getCurrentRandomlySelectedPeerCount(network, peerPools);
     final int randomlySelectedPeersToAdd =
         targetPeerCountRange.getRandomlySelectedPeersToAdd(randomlySelectedPeerCount);
 
     final int peersRequiredForSubnets = peerSubnetSubscriptions.getSubscribersRequired();
+    LOG.debug(
+        "randomlySelectedPeersToAdd: {}, peersRequiredForSubnets: {}",
+        randomlySelectedPeerCount,
+        peersRequiredForSubnets);
     final int scoreBasedPeersToAdd =
         Math.max(peersRequiredForPeerCount - randomlySelectedPeerCount, peersRequiredForSubnets);
+    LOG.debug("scoreBasedPeersToAdd: {}", scoreBasedPeersToAdd);
     final int maxPeersToAdd = scoreBasedPeersToAdd + randomlySelectedPeersToAdd;
-    LOG.trace("Connecting to up to {} known peers", maxPeersToAdd);
+    LOG.debug("Connecting to up to {} known peers", maxPeersToAdd);
     if (maxPeersToAdd == 0) {
       return emptyList();
     }
