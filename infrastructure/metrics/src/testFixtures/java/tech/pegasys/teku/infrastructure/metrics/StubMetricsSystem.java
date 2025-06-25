@@ -250,7 +250,6 @@ public class StubMetricsSystem implements MetricsSystem {
     }
   }
 
-  @SuppressWarnings("removal") // remove when deprecated LabelledGauge is removed
   public static class LabelledSuppliedNoOpMetric
       implements LabelledSuppliedMetric, LabelledSuppliedSummary {
     /** The Label count. */
