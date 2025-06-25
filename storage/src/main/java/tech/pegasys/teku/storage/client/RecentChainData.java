@@ -496,6 +496,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
   }
 
+  /**
+   * @return fork digest based on the current time, not head block
+   */
   public Optional<Bytes4> getCurrentForkDigest() {
     return getCurrentEpoch().map(this::getForkDigest);
   }

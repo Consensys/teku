@@ -92,13 +92,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   private final Predicates predicates;
   private final SpecConfigFulu specConfigFulu;
   private final SchemaDefinitionsFulu schemaDefinitionsFulu;
-  private final BlobSchedule blobSchedule;
+  private final BpoForkSchedule bpoForkSchedule;
 
   public MiscHelpersFulu(
       final SpecConfigFulu specConfig,
       final PredicatesElectra predicates,
       final SchemaDefinitionsFulu schemaDefinitions,
-      final BlobSchedule blobSchedule) {
+      final BpoForkSchedule bpoForkSchedule) {
     super(
         SpecConfigElectra.required(specConfig),
         predicates,
@@ -106,7 +106,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.predicates = predicates;
     this.specConfigFulu = specConfig;
     this.schemaDefinitionsFulu = schemaDefinitions;
-    this.blobSchedule = blobSchedule;
+    this.bpoForkSchedule = bpoForkSchedule;
   }
 
   @Override
@@ -141,14 +141,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public Optional<Integer> getHighestMaxBlobsPerBlockFromSchedule() {
-    return blobSchedule.getHighestMaxBlobsPerBlock();
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
   }
 
   // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return blobSchedule
-        .getBlobParameters(epoch)
+    return bpoForkSchedule
+        .getBpoFork(epoch)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));

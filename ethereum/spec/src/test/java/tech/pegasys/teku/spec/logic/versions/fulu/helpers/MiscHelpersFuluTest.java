@@ -82,9 +82,9 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
   private final SpecConfigFulu specConfigFulu =
       SpecConfigFulu.required(spec.getGenesisSpecConfig());
-  private final BlobSchedule blobSchedule = new BlobSchedule(specConfigFulu);
+  private final BpoForkSchedule bpoForkSchedule = new BpoForkSchedule(specConfigFulu);
   private final MiscHelpersFulu miscHelpersFulu =
-      new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu, blobSchedule);
+      new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu, bpoForkSchedule);
 
   @ParameterizedTest(name = "{0} allowed failure(s)")
   @MethodSource("getExtendedSampleCountFixtures")
@@ -241,9 +241,9 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
         SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
     final SpecConfigFulu specConfigFulu = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
-    final BlobSchedule blobSchedule = new BlobSchedule(specConfigFulu);
+    final BpoForkSchedule bpoForkSchedule = new BpoForkSchedule(specConfigFulu);
     final MiscHelpersFulu miscHelpersFulu =
-        new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu, blobSchedule);
+        new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu, bpoForkSchedule);
     final List<Blob> blobs =
         IntStream.range(0, 72).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
     final List<List<MatrixEntry>> extendedMatrix =
@@ -285,7 +285,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     when(predicatesMock.isValidMerkleBranch(any(), any(), anyInt(), anyInt(), any()))
         .thenReturn(true);
     final MiscHelpersFulu miscHelpersFuluWithMockPredicates =
-        new MiscHelpersFulu(specConfigFulu, predicatesMock, schemaDefinitionsFulu, blobSchedule);
+        new MiscHelpersFulu(specConfigFulu, predicatesMock, schemaDefinitionsFulu, bpoForkSchedule);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final DataColumnSidecar dataColumnSidecar =
         SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
@@ -327,13 +327,13 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         SchemaDefinitionsFulu.required(specMainnet.getGenesisSchemaDefinitions());
     final SpecConfigFulu specConfigFuluMainnet =
         specMainnet.getGenesisSpecConfig().toVersionFulu().orElseThrow();
-    final BlobSchedule blobScheduleMainnet = new BlobSchedule(specConfigFulu);
+    final BpoForkSchedule bpoForkScheduleMainnet = new BpoForkSchedule(specConfigFulu);
     final MiscHelpersFulu miscHelpersFuluMainnet =
         new MiscHelpersFulu(
             specConfigFuluMainnet,
             predicatesMainnet,
             schemaDefinitionsFuluMainnet,
-            blobScheduleMainnet);
+            bpoForkScheduleMainnet);
     final DataColumnSidecar dataColumnSidecar =
         SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
             .getDataColumnSidecarSchema()
