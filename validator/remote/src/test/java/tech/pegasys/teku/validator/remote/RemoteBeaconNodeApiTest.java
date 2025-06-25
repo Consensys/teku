@@ -19,8 +19,6 @@ import static org.mockito.Mockito.mock;
 import java.net.URI;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -30,7 +28,6 @@ class RemoteBeaconNodeApiTest {
 
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final ValidatorConfig validatorConfig = mock(ValidatorConfig.class);
-  private final AsyncRunner asyncRunner = new StubAsyncRunner();
   private final Spec spec = TestSpecFactory.createMinimalAltair();
 
   @Test
@@ -38,11 +35,7 @@ class RemoteBeaconNodeApiTest {
     assertThatThrownBy(
             () ->
                 RemoteBeaconNodeApi.create(
-                    serviceConfig,
-                    validatorConfig,
-                    asyncRunner,
-                    spec,
-                    List.of(new URI("notvalid"))))
+                    serviceConfig, validatorConfig, spec, List.of(new URI("notvalid"))))
         .hasMessageContaining("Failed to convert remote api endpoint");
   }
 }
