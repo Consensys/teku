@@ -83,7 +83,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private final HttpUrl endpoint;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
-  private final AsyncRunner readinessAsyncRunner;
+  private final AsyncRunner readinessAsyncRunner; // getPeerCount and getSyncingStatus will use this
   private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(

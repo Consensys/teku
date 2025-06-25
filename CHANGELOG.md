@@ -15,6 +15,7 @@
 - Several improvements on how validator client handles multiple beacon nodes:
   - reduced timeout for beacon node API calls down to 10 seconds
   - improved handling of unresponsive\unreachable beacon nodes.
+  - dedicated thread pools for beacon node API calls
 
 ### Bug Fixes
 - Fixed validator client missing duties when secondary beacon nodes are not responsive. Happens only for validator clients configured with multiple `--beacon-node-api-endpoints`.
