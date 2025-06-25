@@ -1132,8 +1132,7 @@ public class Spec {
         return Optional.empty();
       }
       case DENEB, ELECTRA -> {
-        return Optional.of(
-            specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
+        return Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
       }
       default -> {
         final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
