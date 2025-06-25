@@ -167,9 +167,12 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final List<Peer> randomlySelectedPeers =
         peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());
     final int randomlySelectedPeerCount = randomlySelectedPeers.size();
+    LOG.debug("selectPeersToDisconnect, randomlySelectedPeerCount: {}", randomlySelectedPeerCount);
 
     final int currentPeerCount = network.getPeerCount();
+    LOG.debug("selectPeersToDisconnect, currentPeerCount: {}", currentPeerCount);
     final int peersToDrop = targetPeerCountRange.getPeersToDrop(currentPeerCount);
+    LOG.debug("selectPeersToDisconnect, peersToDrop: {}", peersToDrop);
     if (peersToDrop == 0) {
       return emptyList();
     }

@@ -14,8 +14,13 @@
 package tech.pegasys.teku.networking.p2p.connection;
 
 import com.google.common.base.Preconditions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TargetPeerRange {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final int lowerBound;
   private final int upperBound;
   private final int minimumRandomlySelectedPeerCount;
@@ -29,10 +34,16 @@ public class TargetPeerRange {
   }
 
   public int getPeersToAdd(final int currentPeerCount) {
+    LOG.debug(
+        "getPeersToAdd: currentPeerCount: {}, lowerBound: {}, upperBound: {}",
+        currentPeerCount,
+        lowerBound,
+        upperBound);
     return currentPeerCount < lowerBound ? upperBound - currentPeerCount : 0;
   }
 
   public int getPeersToDrop(final int currentPeerCount) {
+    LOG.debug("getPeersToDrop: currentPeerCount: {}, upperBound: {}", upperBound, lowerBound);
     return currentPeerCount > upperBound ? currentPeerCount - upperBound : 0;
   }
 
@@ -48,6 +59,11 @@ public class TargetPeerRange {
     if (totalPeersToDrop == 0) {
       return 0;
     }
+    LOG.debug(
+        "getRandomlySelectedPeersToDrop, currentRandomlySelectedPeerCount: {}, minimumRandomlySelectedPeerCount: {}, minimumRandomlySelectedPeerCount: {}",
+        currentRandomlySelectedPeerCount,
+        minimumRandomlySelectedPeerCount,
+        totalPeersToDrop);
     return currentRandomlySelectedPeerCount > minimumRandomlySelectedPeerCount
         ? Math.min(
             currentRandomlySelectedPeerCount - minimumRandomlySelectedPeerCount, totalPeersToDrop)
