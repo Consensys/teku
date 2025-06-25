@@ -43,7 +43,7 @@ public class TargetPeerRange {
   }
 
   public int getPeersToDrop(final int currentPeerCount) {
-    LOG.debug("getPeersToDrop: currentPeerCount: {}, upperBound: {}", upperBound, lowerBound);
+    LOG.debug("getPeersToDrop: currentPeerCount: {}, upperBound: {}", currentPeerCount, upperBound);
     return currentPeerCount > upperBound ? currentPeerCount - upperBound : 0;
   }
 
