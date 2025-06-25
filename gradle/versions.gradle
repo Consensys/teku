@@ -110,7 +110,7 @@ dependencyManagement {
       entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
     }
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.13.2') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.11.4') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
