@@ -1136,7 +1136,7 @@ public class Spec {
             specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
       }
       default -> {
-        final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+        final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
         return Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())
                 .getBlobParameters(epoch)
