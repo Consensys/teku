@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -473,10 +472,6 @@ public class CombinedChainDataClient {
   public UInt64 getHeadEpoch() {
     final UInt64 headSlot = getHeadSlot();
     return spec.computeEpochAtSlot(headSlot);
-  }
-
-  public Optional<ForkInfo> getCurrentForkInfo() {
-    return recentChainData.getCurrentForkInfo();
   }
 
   public Optional<Bytes4> getCurrentForkDigest() {

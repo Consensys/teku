@@ -80,16 +80,11 @@ class Eth2GossipTopicFilterTest {
     recentChainData = spy(storageSystem.recentChainData());
     filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
 
-    final List<Fork> forks = spec.getForkSchedule().getForks();
     currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
 
+    final List<Fork> forks = spec.getForkSchedule().getForks();
     final Fork nextFork = forks.get(1);
-    nextForkDigest =
-        spec.atEpoch(nextFork.getEpoch())
-            .miscHelpers()
-            .computeForkDigest(
-                nextFork.getCurrentVersion(),
-                recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
+    nextForkDigest = recentChainData.getForkDigest(nextFork.getEpoch());
   }
 
   @TestTemplate

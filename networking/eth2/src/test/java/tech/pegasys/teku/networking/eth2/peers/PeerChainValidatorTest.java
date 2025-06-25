@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -38,25 +37,19 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class PeerChainValidatorTest {
   private final Spec spec = TestSpecFactory.createDefault();
-  private final List<Fork> forks = spec.getForkSchedule().getForks();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final CombinedChainDataClient combinedChainData = mock(CombinedChainDataClient.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
 
-  private final ForkInfo remoteForkInfo =
-      new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
-  private final Bytes4 remoteFork = dataStructureUtil.randomBytes4();
-  private final ForkInfo otherForkInfo =
-      new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
+  private final Bytes4 remoteForkDigest = dataStructureUtil.randomBytes4();
+  private final Bytes4 otherForkDigest = dataStructureUtil.randomBytes4();
 
   private final UInt64 remoteFinalizedEpoch = UInt64.valueOf(10L);
   private final UInt64 earlierEpoch = UInt64.valueOf(8L);
@@ -374,11 +367,11 @@ public class PeerChainValidatorTest {
   }
 
   private void forksMatch() {
-    when(combinedChainData.getCurrentForkInfo()).thenReturn(Optional.of(remoteForkInfo));
+    when(combinedChainData.getCurrentForkDigest()).thenReturn(Optional.of(remoteForkDigest));
   }
 
   private void forksDontMatch() {
-    when(combinedChainData.getCurrentForkInfo()).thenReturn(Optional.of(otherForkInfo));
+    when(combinedChainData.getCurrentForkDigest()).thenReturn(Optional.of(otherForkDigest));
   }
 
   private void finalizedCheckpointsMatch() {
@@ -516,7 +509,7 @@ public class PeerChainValidatorTest {
 
     final PeerStatus status =
         new PeerStatus(
-            remoteFork,
+            remoteForkDigest,
             remoteFinalizedCheckpoint.getRoot(),
             remoteFinalizedCheckpoint.getEpoch(),
             headRoot,
