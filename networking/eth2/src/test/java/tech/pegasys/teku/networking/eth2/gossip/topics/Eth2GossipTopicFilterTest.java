@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -52,7 +51,7 @@ class Eth2GossipTopicFilterTest {
   private Spec spec;
   private SpecMilestone currentSpecMilestone;
   private SpecMilestone nextSpecMilestone;
-  private ForkInfo currentForkInfo;
+  private Bytes4 currentForkDigest;
   private Eth2GossipTopicFilter filter;
   private Bytes4 nextForkDigest;
 
@@ -82,7 +81,7 @@ class Eth2GossipTopicFilterTest {
     filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
 
     final List<Fork> forks = spec.getForkSchedule().getForks();
-    currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
+    currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
 
     final Fork nextFork = forks.get(1);
     nextForkDigest =
@@ -182,11 +181,11 @@ class Eth2GossipTopicFilterTest {
   }
 
   private String getTopicName(final GossipTopicName name) {
-    return GossipTopics.getTopic(currentForkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(currentForkDigest, name, SSZ_SNAPPY);
   }
 
   private String getTopicName(final String name) {
-    return GossipTopics.getTopic(currentForkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(currentForkDigest, name, SSZ_SNAPPY);
   }
 
   private String getNextForkTopicName(final GossipTopicName name) {

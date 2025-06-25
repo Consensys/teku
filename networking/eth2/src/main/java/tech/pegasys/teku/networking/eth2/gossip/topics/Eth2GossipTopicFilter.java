@@ -54,10 +54,10 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
   private Set<String> computeRelevantTopics(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
-    final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
-    final SpecMilestone specMilestone =
+    final Bytes4 forkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
+    final SpecMilestone milestone =
         recentChainData.getMilestoneByForkDigest(forkDigest).orElseThrow();
-    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, specMilestone);
+    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, milestone);
     spec.getForkSchedule().getForks().stream()
         .filter(fork -> fork.getEpoch().isGreaterThan(forkInfo.getFork().getEpoch()))
         .forEach(

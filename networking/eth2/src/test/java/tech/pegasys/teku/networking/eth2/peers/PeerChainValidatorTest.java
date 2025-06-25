@@ -54,7 +54,7 @@ public class PeerChainValidatorTest {
 
   private final ForkInfo remoteForkInfo =
       new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
-  private final Bytes4 remoteFork = remoteForkInfo.getForkDigest(spec);
+  private final Bytes4 remoteFork = dataStructureUtil.randomBytes4();
   private final ForkInfo otherForkInfo =
       new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
 
