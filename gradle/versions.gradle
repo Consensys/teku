@@ -34,7 +34,7 @@ dependencyManagement {
       entry 'javalin-rendering'
     }
 
-    dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p:develop'
     dependency 'tech.pegasys:jblst:0.3.12'
     dependency 'io.consensys.protocols:jc-kzg-4844:2.1.1'
     dependency 'io.github.crate-crypto:java-eth-kzg:0.7.0'
@@ -162,7 +162,7 @@ dependencyManagement {
 
     // discovery includes tuweni libraries under a different name so version resolution doesn't work
     // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:25.4.0') {
+    dependency('tech.pegasys.discovery:discovery:develop') {
       exclude 'io.consensys.tuweni:bytes'
       exclude 'io.consensys.tuweni:crypto'
       exclude 'io.consensys.tuweni:units'
