@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.MAX_API_EXECUTOR_QUEUE_SIZE;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.calculateMainAPIMaxThreads;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.calculateReadinessAPIMaxThreads;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -75,13 +79,19 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final RemoteBeaconNodeEndpoints dutiesProviderHttpClient =
         new RemoteBeaconNodeEndpoints(dutiesProviderNodeConfig.getEndpointsAsURIs());
 
+    final int remoteNodeCount = dutiesProviderNodeConfig.getEndpointsAsURIs().size();
+
     final AsyncRunner asyncRunner =
-        services.createAsyncRunnerWithMaxQueueSize(
-            "validator-beacon-api", validatorConfig.getExecutorMaxQueueSize());
+        services.createAsyncRunner(
+            "validator-beacon-api",
+            calculateMainAPIMaxThreads(remoteNodeCount),
+            MAX_API_EXECUTOR_QUEUE_SIZE);
 
     final AsyncRunner readinessAsyncRunner =
-        services.createAsyncRunnerWithMaxQueueSize(
-            "validator-beacon-api-readiness", validatorConfig.getExecutorMaxQueueSize());
+        services.createAsyncRunner(
+            "validator-beacon-api-readiness",
+            calculateReadinessAPIMaxThreads(remoteNodeCount),
+            MAX_API_EXECUTOR_QUEUE_SIZE);
 
     final RemoteValidatorApiChannel dutiesProviderPrimaryValidatorApiChannel =
         createPrimaryValidatorApiChannel(

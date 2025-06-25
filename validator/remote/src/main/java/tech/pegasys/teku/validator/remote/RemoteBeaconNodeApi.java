@@ -50,6 +50,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
   public static final Duration REST_CALL_TIMEOUT = Duration.ofSeconds(10);
 
+  public static final int MAX_API_EXECUTOR_QUEUE_SIZE = 5000;
+
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -80,9 +82,13 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final HttpUrl primaryEndpoint = remoteBeaconNodeEndpoints.getPrimaryEndpoint();
     final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
 
+    final int remoteNodeCount = failoverEndpoints.size() + 1; // +1 for the primary endpoint
+
     final AsyncRunner asyncRunner =
-        services.createAsyncRunnerWithMaxQueueSize(
-            "validator-beacon-api", validatorConfig.getExecutorMaxQueueSize());
+        services.createAsyncRunner(
+            "validator-beacon-api",
+            calculateMainAPIMaxThreads(remoteNodeCount),
+            MAX_API_EXECUTOR_QUEUE_SIZE);
 
     final AsyncRunner readinessAsyncRunner;
     if (failoverEndpoints.isEmpty()) {
@@ -91,8 +97,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       // Use a separate async runner for the readiness-related api calls, so that they do not
       // block the critical path of the validator operations.
       readinessAsyncRunner =
-          services.createAsyncRunnerWithMaxQueueSize(
-              "validator-beacon-api-readiness", validatorConfig.getExecutorMaxQueueSize());
+          services.createAsyncRunner(
+              "validator-beacon-api-readiness",
+              calculateReadinessAPIMaxThreads(remoteNodeCount),
+              MAX_API_EXECUTOR_QUEUE_SIZE);
     }
 
     final RemoteValidatorApiChannel primaryValidatorApi =
@@ -177,6 +185,14 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     return new RemoteBeaconNodeApi(
         beaconChainEventAdapter, validatorApi, beaconNodeReadinessManager);
+  }
+
+  public static int calculateMainAPIMaxThreads(final int remoteNodeCount) {
+    return Math.max(5, remoteNodeCount * 2);
+  }
+
+  public static int calculateReadinessAPIMaxThreads(final int remoteNodeCount) {
+    return Math.max(2, remoteNodeCount);
   }
 
   @Override

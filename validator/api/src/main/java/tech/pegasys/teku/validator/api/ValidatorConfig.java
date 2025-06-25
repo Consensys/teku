@@ -342,7 +342,7 @@ public class ValidatorConfig {
     return executorMaxQueueSize;
   }
 
-  public int getexecutorThreads() {
+  public int getExecutorThreads() {
     return executorThreads;
   }
 
