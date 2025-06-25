@@ -69,21 +69,17 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         peerSubnetSubscriptionsFactory.create(network);
     final int peersRequiredForPeerCount =
         targetPeerCountRange.getPeersToAdd(network.getPeerCount());
-    LOG.debug("peersRequiredForPeerCount from targetPeerCountRange: {}", peersRequiredForPeerCount);
     final int randomlySelectedPeerCount = getCurrentRandomlySelectedPeerCount(network, peerPools);
     final int randomlySelectedPeersToAdd =
         targetPeerCountRange.getRandomlySelectedPeersToAdd(randomlySelectedPeerCount);
 
     final int peersRequiredForSubnets = peerSubnetSubscriptions.getSubscribersRequired();
-    LOG.debug(
-        "randomlySelectedPeersToAdd: {}, peersRequiredForSubnets: {}",
-        randomlySelectedPeerCount,
-        peersRequiredForSubnets);
     final int scoreBasedPeersToAdd =
         Math.max(peersRequiredForPeerCount - randomlySelectedPeerCount, peersRequiredForSubnets);
-    LOG.debug("scoreBasedPeersToAdd: {}", scoreBasedPeersToAdd);
     final int maxPeersToAdd = scoreBasedPeersToAdd + randomlySelectedPeersToAdd;
-    LOG.debug("Connecting to up to {} known peers", maxPeersToAdd);
+    LOG.debug(
+        "Eth2PeerSelectionStrategy - selectPeersToConnect - Connecting to up to {} known peers",
+        maxPeersToAdd);
     if (maxPeersToAdd == 0) {
       return emptyList();
     }
@@ -102,6 +98,9 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
           selectPeersByScore(
               network, peerSubnetSubscriptions, scoreBasedPeersToAdd, allCandidatePeers));
     }
+    LOG.debug(
+        "Eth2PeerSelectionStrategy - selectPeersToConnect - selectedPeers {}",
+        selectedPeers.size());
     return unmodifiableList(selectedPeers); // Unmodifiable to make errorprone happy
   }
 
@@ -167,12 +166,9 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final List<Peer> randomlySelectedPeers =
         peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());
     final int randomlySelectedPeerCount = randomlySelectedPeers.size();
-    LOG.debug("selectPeersToDisconnect, randomlySelectedPeerCount: {}", randomlySelectedPeerCount);
-
     final int currentPeerCount = network.getPeerCount();
-    LOG.debug("selectPeersToDisconnect, currentPeerCount: {}", currentPeerCount);
     final int peersToDrop = targetPeerCountRange.getPeersToDrop(currentPeerCount);
-    LOG.debug("selectPeersToDisconnect, peersToDrop: {}", peersToDrop);
+    LOG.debug("Eth2PeerSelectionStrategy - selectPeersToDisconnect - peersToDrop: {}", peersToDrop);
     if (peersToDrop == 0) {
       return emptyList();
     }
@@ -187,14 +183,22 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     // Peers from the randomly selected pool that have been chosen are moved have their special
     // randomly selected status revoked, leaving them in the default pool where they are considered
     // for disconnection based on their score
+    LOG.debug(
+        "Eth2PeerSelectionStrategy - selectPeersToDisconnect - randomlySelectedPeersBeingDropped: {}",
+        randomlySelectedPeersBeingDropped.size());
     randomlySelectedPeersBeingDropped.forEach(
         peer -> peerPools.addPeerToPool(peer.getId(), SCORE_BASED));
-    return Stream.concat(
-            randomlySelectedPeersBeingDropped.stream(),
-            peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
-        .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
-        .limit(peersToDrop)
-        .toList();
+    final List<Peer> peersToDisconnect =
+        Stream.concat(
+                randomlySelectedPeersBeingDropped.stream(),
+                peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
+            .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
+            .limit(peersToDrop)
+            .toList();
+    LOG.debug(
+        "Eth2PeerSelectionStrategy - selectPeersToDisconnect - peersToDisconnect: {}",
+        peersToDisconnect.size());
+    return peersToDisconnect;
   }
 
   @FunctionalInterface

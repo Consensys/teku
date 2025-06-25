@@ -34,16 +34,10 @@ public class TargetPeerRange {
   }
 
   public int getPeersToAdd(final int currentPeerCount) {
-    LOG.debug(
-        "getPeersToAdd: currentPeerCount: {}, lowerBound: {}, upperBound: {}",
-        currentPeerCount,
-        lowerBound,
-        upperBound);
     return currentPeerCount < lowerBound ? upperBound - currentPeerCount : 0;
   }
 
   public int getPeersToDrop(final int currentPeerCount) {
-    LOG.debug("getPeersToDrop: currentPeerCount: {}, upperBound: {}", currentPeerCount, upperBound);
     return currentPeerCount > upperBound ? currentPeerCount - upperBound : 0;
   }
 
@@ -60,7 +54,8 @@ public class TargetPeerRange {
       return 0;
     }
     LOG.debug(
-        "getRandomlySelectedPeersToDrop, currentRandomlySelectedPeerCount: {}, minimumRandomlySelectedPeerCount: {}, minimumRandomlySelectedPeerCount: {}",
+        "TargetPeerRange - getRandomlySelectedPeersToDrop - totalPeersToDrop: {}, currentRandomlySelectedPeerCount: {}, minimumRandomlySelectedPeerCount: {}, totalPeersToDrop: {}",
+        totalPeersToDrop,
         currentRandomlySelectedPeerCount,
         minimumRandomlySelectedPeerCount,
         totalPeersToDrop);
