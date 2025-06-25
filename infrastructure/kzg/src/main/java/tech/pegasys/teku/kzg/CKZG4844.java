@@ -166,6 +166,7 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     final CellsAndProofs cellsAndProofs =
         CKZG4844JNI.computeCellsAndKzgProofs(blob.toArrayUnsafe());
