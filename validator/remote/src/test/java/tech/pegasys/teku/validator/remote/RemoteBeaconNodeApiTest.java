@@ -30,7 +30,6 @@ class RemoteBeaconNodeApiTest {
 
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final ValidatorConfig validatorConfig = mock(ValidatorConfig.class);
-  private final AsyncRunner asyncRunner = new StubAsyncRunner();
   private final Spec spec = TestSpecFactory.createMinimalAltair();
 
   @Test
@@ -40,7 +39,6 @@ class RemoteBeaconNodeApiTest {
                 RemoteBeaconNodeApi.create(
                     serviceConfig,
                     validatorConfig,
-                    asyncRunner,
                     spec,
                     List.of(new URI("notvalid"))))
         .hasMessageContaining("Failed to convert remote api endpoint");
