@@ -158,10 +158,7 @@ public class LibP2PPeer implements Peer {
                     locallyInitiated ? "locally" : "remotely",
                     reason,
                     connection.remoteAddress()),
-            error -> {
-              connected.set(true);
-              LOG.warn("Failed to disconnect from peer {}", getId(), error);
-            });
+            error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
   }
 
   private SafeFuture<Optional<String>> getAgentVersionFromIdentity() {
