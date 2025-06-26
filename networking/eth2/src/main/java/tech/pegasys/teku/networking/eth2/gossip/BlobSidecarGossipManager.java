@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
@@ -60,6 +61,7 @@ public class BlobSidecarGossipManager implements GossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
+      final Bytes4 forkDigest,
       final OperationProcessor<BlobSidecar> processor,
       final DebugDataDumper debugDataDumper) {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
@@ -84,6 +86,7 @@ public class BlobSidecarGossipManager implements GossipManager {
                       processor,
                       gossipEncoding,
                       forkInfo,
+                      forkDigest,
                       gossipType,
                       debugDataDumper);
               subnetIdToTopicHandler.put(subnetId, topicHandler);
@@ -169,6 +172,7 @@ public class BlobSidecarGossipManager implements GossipManager {
       final OperationProcessor<BlobSidecar> processor,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
+      final Bytes4 forkDigest,
       final BlobSidecarSchema gossipType,
       final DebugDataDumper debugDataDumper) {
     return new Eth2TopicHandler<>(
@@ -176,7 +180,7 @@ public class BlobSidecarGossipManager implements GossipManager {
         asyncRunner,
         new TopicSubnetIdAwareOperationProcessor(spec, subnetId, processor),
         gossipEncoding,
-        forkInfo.getForkDigest(spec),
+        forkDigest,
         getBlobSidecarSubnetTopicName(subnetId),
         new OperationMilestoneValidator<>(
             spec,

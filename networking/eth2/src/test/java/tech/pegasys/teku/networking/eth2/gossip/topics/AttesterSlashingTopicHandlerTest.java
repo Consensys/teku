@@ -40,6 +40,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
             null,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             processor,
             DebugDataDumper.NOOP);
     return gossipManager.getTopicHandler();
