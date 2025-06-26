@@ -261,7 +261,7 @@ public class DasCustodyStand {
       }
 
       @Override
-      public List<UInt64> getCustodyColumnIndicesForSampling() {
+      public List<UInt64> getSamplingColumnIndices() {
         return IntStream.range(0, sampleGroupCount).mapToObj(UInt64::valueOf).toList();
       }
 

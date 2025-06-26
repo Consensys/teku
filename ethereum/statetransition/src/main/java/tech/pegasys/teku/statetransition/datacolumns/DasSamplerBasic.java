@@ -75,7 +75,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
   private List<DataColumnSlotAndIdentifier> calculateSamplingColumnIds(
       final UInt64 slot, final Bytes32 blockRoot) {
-    return custodyGroupCountManager.getCustodyColumnIndicesForSampling().stream()
+    return custodyGroupCountManager.getSamplingColumnIndices().stream()
         .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
         .toList();
   }

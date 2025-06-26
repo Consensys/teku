@@ -132,7 +132,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   }
 
   @Override
-  public List<UInt64> getCustodyColumnIndicesForSampling() {
+  public List<UInt64> getSamplingColumnIndices() {
     final int sampleCount = Math.max(getCustodyGroupCount(), specConfigFulu.getSamplesPerSlot());
     return miscHelpersFulu.computeCustodyColumnIndexes(nodeId, sampleCount);
   }
