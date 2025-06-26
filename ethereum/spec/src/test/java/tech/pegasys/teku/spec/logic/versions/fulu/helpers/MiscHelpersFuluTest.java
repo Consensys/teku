@@ -82,9 +82,8 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
   private final SpecConfigFulu specConfigFulu =
       SpecConfigFulu.required(spec.getGenesisSpecConfig());
-  private final BpoForkSchedule bpoForkSchedule = new BpoForkSchedule(specConfigFulu);
   private final MiscHelpersFulu miscHelpersFulu =
-      new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu, bpoForkSchedule);
+      new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
 
   @ParameterizedTest(name = "{0} allowed failure(s)")
   @MethodSource("getExtendedSampleCountFixtures")
@@ -165,6 +164,44 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         .isEqualTo(Bytes4.fromHexString(expectedValue));
   }
 
+  @Test
+  public void shouldRejectDataColumnSideCarWhenIndexTooBig() {
+    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
+    final DataColumnSidecar invalidIndex =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(),
+            UInt64.valueOf(numberOfColumns).increment());
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidIndex)).isFalse();
+  }
+
+  @Test
+  public void shouldRejectIfDataColumnAndKzgCommitmentsMismatch() {
+    final DataColumnSidecar mismatchingDataColumnKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGCommitments(10),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(mismatchingDataColumnKzgCommitments))
+        .isFalse();
+  }
+
+  @Test
+  void shouldRejectIfDataColumnSidecarHasNoKzgCommitments() {
+    final DataColumnSidecar emptyKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+            dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(emptyKzgCommitments)).isFalse();
+  }
+
+  @Test
+  public void shouldRejectIfDataColumnAndKzgProofsMismatch() {
+    final DataColumnSidecar invalidDataColumnKzgProofs =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGProofs(10),
+            dataStructureUtil.randomKZGCommitments(5),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidDataColumnKzgProofs)).isFalse();
+  }
+
   // Scenarios from
   // https://github.com/ethereum/consensus-specs/blob/dev/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
   public static Stream<Arguments> getComputeForkDigestFuluScenarios() {
@@ -203,9 +240,8 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
         SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
     final SpecConfigFulu specConfigFulu = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
-    final BpoForkSchedule bpoForkSchedule = new BpoForkSchedule(specConfigFulu);
     final MiscHelpersFulu miscHelpersFulu =
-        new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu, bpoForkSchedule);
+        new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
     final List<Blob> blobs =
         IntStream.range(0, 72).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
     final List<List<MatrixEntry>> extendedMatrix =
@@ -247,7 +283,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     when(predicatesMock.isValidMerkleBranch(any(), any(), anyInt(), anyInt(), any()))
         .thenReturn(true);
     final MiscHelpersFulu miscHelpersFuluWithMockPredicates =
-        new MiscHelpersFulu(specConfigFulu, predicatesMock, schemaDefinitionsFulu, bpoForkSchedule);
+        new MiscHelpersFulu(specConfigFulu, predicatesMock, schemaDefinitionsFulu);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final DataColumnSidecar dataColumnSidecar =
         SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
@@ -289,13 +325,8 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         SchemaDefinitionsFulu.required(specMainnet.getGenesisSchemaDefinitions());
     final SpecConfigFulu specConfigFuluMainnet =
         specMainnet.getGenesisSpecConfig().toVersionFulu().orElseThrow();
-    final BpoForkSchedule bpoForkScheduleMainnet = new BpoForkSchedule(specConfigFulu);
     final MiscHelpersFulu miscHelpersFuluMainnet =
-        new MiscHelpersFulu(
-            specConfigFuluMainnet,
-            predicatesMainnet,
-            schemaDefinitionsFuluMainnet,
-            bpoForkScheduleMainnet);
+        new MiscHelpersFulu(specConfigFuluMainnet, predicatesMainnet, schemaDefinitionsFuluMainnet);
     final DataColumnSidecar dataColumnSidecar =
         SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
             .getDataColumnSidecarSchema()

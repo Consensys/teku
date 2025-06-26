@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -63,10 +62,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -103,7 +102,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile Optional<GenesisData> genesisData = Optional.empty();
   private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
   private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
-  private final Map<BlobParameters, Bytes4> blobParametersToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
@@ -125,6 +123,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
+      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
@@ -233,16 +232,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(milestoneToForkDigest.get(milestone));
   }
 
-  public Optional<Bytes4> getForkDigestByBpoFork(final BlobParameters blobParameters) {
-    return Optional.ofNullable(blobParametersToForkDigest.get(blobParameters));
-  }
-
-  // TODO: berlinterop-devnet-2 optimize
-  public Optional<BlobParameters> getBpoForkByForkDigest(final Bytes4 forkDigest) {
-    return blobParametersToForkDigest.entrySet().stream()
-        .filter(entry -> entry.getValue().equals(forkDigest))
-        .findFirst()
-        .map(Map.Entry::getKey);
+  public Bytes4 getForkDigest(final UInt64 epoch) {
+    final SpecMilestone milestone = spec.atEpoch(epoch).getMilestone();
+    return getForkDigestByMilestone(milestone)
+        .orElseThrow(
+            () -> new IllegalStateException("Fork digest hasn't been computed for epoch " + epoch));
   }
 
   public boolean isPreGenesis() {
@@ -273,34 +267,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .getActiveMilestones()
         .forEach(
             forkAndMilestone -> {
-              final Fork fork = forkAndMilestone.getFork();
-              final Bytes4 forkDigest;
-              if (forkAndMilestone.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                forkDigest =
-                    spec.computeForkDigest(
-                        genesisValidatorsRoot, forkAndMilestone.getFork().getEpoch());
-              } else {
-                forkDigest =
-                    spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
-              }
+              final Bytes4 forkDigest =
+                  spec.computeForkDigest(
+                      genesisValidatorsRoot, forkAndMilestone.getFork().getEpoch());
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      // BPO
-      SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-          .getBlobSchedule()
-          .stream()
-          .map(BlobParameters::fromBlobScheduleEntry)
-          .forEach(
-              blobParameters -> {
-                final SpecMilestone milestone = spec.atEpoch(blobParameters.epoch()).getMilestone();
-                final Bytes4 forkDigest =
-                    spec.computeForkDigest(genesisValidatorsRoot, blobParameters.epoch());
-                this.forkDigestToMilestone.put(forkDigest, milestone);
-                this.blobParametersToForkDigest.put(blobParameters, forkDigest);
-              });
-    }
 
     // Update the ValidatorIndexCache latest finalized index to the anchor state
     BeaconStateCache.getTransitionCaches(anchorState)
@@ -503,45 +475,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
 
-  public Bytes4 getForkDigest(final UInt64 epoch) {
-    return spec.getBpoFork(epoch)
-        .flatMap(this::getForkDigestByBpoFork)
-        .orElseGet(
-            () -> {
-              final SpecMilestone milestone = spec.atEpoch(epoch).getMilestone();
-              return getForkDigestByMilestone(milestone)
-                  .orElseThrow(
-                      () -> new IllegalStateException("No fork digest available for " + milestone));
-            });
-  }
-
-  public Optional<Bytes4> getNextForkDigest(final UInt64 epoch) {
-    final Optional<Fork> maybeNextFork = spec.getForkSchedule().getNextFork(epoch);
-    return spec.getNextBpoFork(epoch)
-        .map(
-            nextBpoFork -> {
-              // compare BPO fork and next fork
-              return maybeNextFork
-                  .map(
-                      nextFork -> {
-                        if (nextFork.getEpoch().isLessThan(nextBpoFork.epoch())) {
-                          return getForkDigestByMilestone(
-                              spec.atEpoch(nextFork.getEpoch()).getMilestone());
-                        }
-                        return getForkDigestByBpoFork(nextBpoFork);
-                      })
-                  .orElse(getForkDigestByBpoFork(nextBpoFork));
-            })
-        .orElseGet(
-            () ->
-                maybeNextFork.flatMap(
-                    nextFork ->
-                        getForkDigestByMilestone(
-                            spec.atEpoch(nextFork.getEpoch()).getMilestone())));
-  }
-
   private Optional<Fork> getCurrentFork() {
-    return getCurrentEpoch().map(this::getFork);
+    return getCurrentEpoch().map(spec.getForkSchedule()::getFork);
   }
 
   private Fork getFork(final UInt64 epoch) {
@@ -558,31 +493,20 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return genesisData
         .map(GenesisData::getGenesisValidatorsRoot)
         .flatMap(
-            validatorsRoot ->
-                getCurrentFork()
-                    .map(
-                        fork -> {
-                          final UInt64 currentEpoch = getCurrentEpoch().orElseThrow();
-                          if (spec.atEpoch(currentEpoch)
-                              .getMilestone()
-                              .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                            return new ForkInfo(fork, validatorsRoot, getForkDigest(currentEpoch));
-                          } else {
-                            return new ForkInfo(fork, validatorsRoot);
-                          }
-                        }));
+            validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
+  }
+
+  /**
+   * @return fork digest based on the current time, not head block
+   */
+  public Optional<Bytes4> getCurrentForkDigest() {
+    return getCurrentEpoch().map(this::getForkDigest);
   }
 
   public Optional<ForkInfo> getForkInfo(final UInt64 epoch) {
     return genesisData
         .map(GenesisData::getGenesisValidatorsRoot)
-        .map(
-            validatorsRoot -> {
-              if (spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                return new ForkInfo(getFork(epoch), validatorsRoot, getForkDigest(epoch));
-              }
-              return new ForkInfo(getFork(epoch), validatorsRoot);
-            });
+        .map(validatorsRoot -> new ForkInfo(getFork(epoch), validatorsRoot));
   }
 
   /** Retrieves the block chosen by fork choice to build and attest on */
