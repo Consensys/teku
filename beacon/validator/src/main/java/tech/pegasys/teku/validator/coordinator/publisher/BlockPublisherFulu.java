@@ -58,6 +58,7 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
   void publishDataColumnSidecars(
       final List<DataColumnSidecar> dataColumnSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
+    blockPublishingPerformance.dataColumnSidecarsPublishingInitiated();
     // TODO-fulu blockPublishingPerformance (https://github.com/Consensys/teku/issues/9473)
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(
         dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
