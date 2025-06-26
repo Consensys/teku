@@ -123,7 +123,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         scope = ScopeType.INHERIT)
     File configFile;
 
-    @SuppressWarnings("UnunsedVariable")
+    @SuppressWarnings("UnusedVariable")
     @Unmatched
     List<String> otherOptions;
   }
