@@ -18,13 +18,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipManager;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -41,15 +40,12 @@ import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra {
+public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
-  private final DasGossipLogger dasGossipLogger;
+  private final BlobScheduleEntry bpo;
 
-  private DataColumnSidecarGossipManager dataColumnSidecarGossipManager;
-
-  public GossipForkSubscriptionsFulu(
+  public GossipForkSubscriptionsFuluBpo(
       final Fork fork,
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -72,7 +68,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
       final DebugDataDumper debugDataDumper,
-      final DasGossipLogger dasGossipLogger) {
+      final DasGossipLogger dasGossipLogger,
+      final BlobScheduleEntry bpo) {
     super(
         fork,
         spec,
@@ -91,76 +88,29 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor,
-        debugDataDumper);
-    this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
-    this.dasGossipLogger = dasGossipLogger;
+        dataColumnSidecarOperationProcessor,
+        debugDataDumper,
+        dasGossipLogger);
+    this.bpo = bpo;
   }
 
   @Override
   public void startGossip(final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
-    if (getActivationEpoch().equals(fork.getEpoch())) {
-      LOG.info(
-          "Starting gossip for Fulu fork (fork digest: {}) scheduled at epoch {}",
-          recentChainData.getForkDigest(fork.getEpoch()),
-          fork.getEpoch());
-    }
+    LOG.info(
+        "Starting gossip for BPO fork (fork digest: {}) scheduled at epoch {} with {} max blobs per block",
+        recentChainData.getForkDigest(bpo.epoch()),
+        bpo.epoch(),
+        bpo.maxBlobsPerBlock());
     super.startGossip(genesisValidatorsRoot, isOptimisticHead);
   }
 
-  // TODO: berlinterop-devnet-2 hacky
+  @Override
+  public UInt64 getActivationEpoch() {
+    return bpo.epoch();
+  }
+
   @Override
   protected ForkInfo getForkInfo(final Bytes32 genesisValidatorsRoot) {
-    return new ForkInfo(
-        fork, genesisValidatorsRoot, recentChainData.getForkDigest(fork.getEpoch()));
-  }
-
-  @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
-    addDataColumnSidecarGossipManager(forkInfo);
-  }
-
-  void addDataColumnSidecarGossipManager(final ForkInfo forkInfo) {
-    final DataColumnSidecarSubnetSubscriptions dataColumnSidecarSubnetSubscriptions =
-        new DataColumnSidecarSubnetSubscriptions(
-            spec,
-            asyncRunner,
-            discoveryNetwork,
-            gossipEncoding,
-            recentChainData,
-            dataColumnSidecarOperationProcessor,
-            debugDataDumper,
-            forkInfo);
-
-    this.dataColumnSidecarGossipManager =
-        new DataColumnSidecarGossipManager(dataColumnSidecarSubnetSubscriptions, dasGossipLogger);
-
-    addGossipManager(dataColumnSidecarGossipManager);
-  }
-
-  @Override
-  public void addBlobSidecarGossipManager(final ForkInfo forkInfo) {
-    // Do nothing
-  }
-
-  @Override
-  public SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
-    // Do nothing
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  public void publishDataColumnSidecar(final DataColumnSidecar blobSidecar) {
-    dataColumnSidecarGossipManager.publish(blobSidecar);
-  }
-
-  @Override
-  public void subscribeToDataColumnSidecarSubnet(final int subnetId) {
-    dataColumnSidecarGossipManager.subscribeToSubnetId(subnetId);
-  }
-
-  @Override
-  public void unsubscribeFromDataColumnSidecarSubnet(final int subnetId) {
-    dataColumnSidecarGossipManager.unsubscribeFromSubnetId(subnetId);
+    return new ForkInfo(fork, genesisValidatorsRoot, recentChainData.getForkDigest(bpo.epoch()));
   }
 }

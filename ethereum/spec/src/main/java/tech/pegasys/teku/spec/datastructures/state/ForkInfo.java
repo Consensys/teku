@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -25,10 +26,20 @@ import tech.pegasys.teku.spec.Spec;
 public class ForkInfo {
   private final Fork fork;
   private final Bytes32 genesisValidatorsRoot;
+  private final Optional<Bytes4> precomputedForkDigest;
 
   public ForkInfo(final Fork fork, final Bytes32 genesisValidatorsRoot) {
     this.fork = fork;
     this.genesisValidatorsRoot = genesisValidatorsRoot;
+    this.precomputedForkDigest = Optional.empty();
+  }
+
+  // TODO: berlinterop-devnet-2 The whole idea is very messy and unintuitive, needs refactor!
+  public ForkInfo(
+      final Fork fork, final Bytes32 genesisValidatorsRoot, final Bytes4 precomputedForkDigest) {
+    this.fork = fork;
+    this.genesisValidatorsRoot = genesisValidatorsRoot;
+    this.precomputedForkDigest = Optional.of(precomputedForkDigest);
   }
 
   public Fork getFork() {
@@ -40,7 +51,8 @@ public class ForkInfo {
   }
 
   public Bytes4 getForkDigest(final Spec spec) {
-    return spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
+    return precomputedForkDigest.orElseGet(
+        () -> spec.computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot));
   }
 
   /**
@@ -63,7 +75,8 @@ public class ForkInfo {
     }
     final ForkInfo forkInfo = (ForkInfo) o;
     return Objects.equals(fork, forkInfo.fork)
-        && Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot);
+        && Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot)
+        && Objects.equals(precomputedForkDigest, forkInfo.precomputedForkDigest);
   }
 
   public static SerializableTypeDefinition<ForkInfo> getJsonTypeDefinition() {
@@ -75,7 +88,7 @@ public class ForkInfo {
 
   @Override
   public int hashCode() {
-    return Objects.hash(fork, genesisValidatorsRoot);
+    return Objects.hash(fork, genesisValidatorsRoot, precomputedForkDigest);
   }
 
   @Override
@@ -83,6 +96,7 @@ public class ForkInfo {
     return MoreObjects.toStringHelper(this)
         .add("fork", fork)
         .add("genesisValidatorsRoot", genesisValidatorsRoot)
+        .add("precomputedForkDigest", precomputedForkDigest)
         .toString();
   }
 }

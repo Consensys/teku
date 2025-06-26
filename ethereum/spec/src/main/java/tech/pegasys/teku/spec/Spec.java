@@ -26,6 +26,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +107,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
@@ -250,6 +253,27 @@ public class Spec {
    */
   public List<ForkAndSpecMilestone> getEnabledMilestones() {
     return forkSchedule.getActiveMilestones();
+  }
+
+  public Optional<BlobParameters> getBpoFork(final UInt64 epoch) {
+    if (!isMilestoneSupported(FULU)) {
+      return Optional.empty();
+    }
+    return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getBpoFork(epoch);
+  }
+
+  public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
+    if (!isMilestoneSupported(FULU)) {
+      return Optional.empty();
+    }
+    return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getNextBpoFork(epoch);
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    if (!isMilestoneSupported(FULU)) {
+      return Collections.emptyList();
+    }
+    return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getBpoForks();
   }
 
   /**
@@ -501,6 +525,16 @@ public class Spec {
     return atForkVersion(currentVersion)
         .miscHelpers()
         .computeForkDigest(currentVersion, genesisValidatorsRoot);
+  }
+
+  // compute_fork_digest Fulu
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionFulu()
+        .map(miscHelpersFulu -> miscHelpersFulu.computeForkDigest(genesisValidatorsRoot, epoch))
+        // backwards compatibility (just in case we call this method for an epoch before Fulu)
+        .orElseGet(() -> computeForkDigest(fork(epoch).getCurrentVersion(), genesisValidatorsRoot));
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
@@ -978,14 +1012,14 @@ public class Spec {
 
     // query the blob_schedule after FULU
     if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
-      final Optional<Integer> maybeHighestMaxBlobsPerBlockFromSchedule =
+      final Optional<Integer> maybeHighestMaxBlobsPerBlockFromBpoForkSchedule =
           forMilestone(FULU)
               .miscHelpers()
               .toVersionFulu()
-              .flatMap(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromSchedule);
-      // only use blob_schedule if it is present
-      if (maybeHighestMaxBlobsPerBlockFromSchedule.isPresent()) {
-        return maybeHighestMaxBlobsPerBlockFromSchedule;
+              .flatMap(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromBpoForkSchedule);
+      // only use BPO fork max_blobs_per_block if it is present
+      if (maybeHighestMaxBlobsPerBlockFromBpoForkSchedule.isPresent()) {
+        return maybeHighestMaxBlobsPerBlockFromBpoForkSchedule;
       }
     }
 
@@ -1118,21 +1152,17 @@ public class Spec {
 
   public Optional<Integer> getMaxBlobsPerBlockAtSlot(final UInt64 slot) {
     final SpecVersion specVersion = atSlot(slot);
-    switch (specVersion.getMilestone()) {
-      case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> {
-        return Optional.empty();
-      }
-      case DENEB, ELECTRA -> {
-        return Optional.of(
-            specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
-      }
-      default -> {
-        final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
-        return Optional.of(
+    return switch (specVersion.getMilestone()) {
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> Optional.empty();
+      case DENEB, ELECTRA ->
+          Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
+      case FULU -> {
+        final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
+        yield Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())
                 .getBlobParameters(epoch)
                 .maxBlobsPerBlock());
       }
-    }
+    };
   }
 }

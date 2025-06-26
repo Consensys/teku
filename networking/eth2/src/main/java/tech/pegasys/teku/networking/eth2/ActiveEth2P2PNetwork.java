@@ -169,12 +169,19 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkSyncCommitteeSubnetsSubscription =
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
+      recentChainData
+          .getNextForkDigest(currentEpoch)
+          .ifPresent(
+              nextForkDigest -> {
+                LOG.info("Setting nfd in ENR to: {}", nextForkDigest.toUnprefixedHexString());
+                discoveryNetwork.setNextForkDigest(nextForkDigest);
+              });
     }
-
-    gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
+    gossipForkManager.configureGossipForEpoch(currentEpoch);
     if (allTopicsFilterEnabled) {
       setAllTopicScoring();
     }
@@ -401,7 +408,17 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
     currentForkInfo = forkInfo;
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-    discoveryNetwork.setForkInfo(forkInfo, nextFork);
+    // TODO: berlinterop-devnet-2 very hacky
+    final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
+    final Optional<Bytes4> nextForkDigest =
+        recentChainData
+            .getBpoForkByForkDigest(forkDigest)
+            .flatMap(
+                bpo -> {
+                  return recentChainData.getNextForkDigest(bpo.epoch());
+                })
+            .or(() -> recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch()));
+    discoveryNetwork.setForkInfo(forkInfo, nextFork, nextForkDigest);
   }
 
   @Override
