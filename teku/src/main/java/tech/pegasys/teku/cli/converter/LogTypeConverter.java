@@ -21,24 +21,32 @@ import picocli.CommandLine.ITypeConverter;
 public class LogTypeConverter implements ITypeConverter<Level> {
   @Override
   public Level convert(final String value) {
-    switch (value.toUpperCase(Locale.ROOT)) {
-      case "OFF":
-        return Level.OFF;
-      case "FATAL":
-        return Level.FATAL;
-      case "ERROR":
-        return Level.ERROR;
-      case "WARN":
-        return Level.WARN;
-      case "INFO":
-        return Level.INFO;
-      case "DEBUG":
-        return Level.DEBUG;
-      case "TRACE":
-        return Level.TRACE;
-      case "ALL":
-        return Level.ALL;
-    }
+      switch (value.toUpperCase(Locale.ROOT)) {
+          case "OFF" -> {
+              return Level.OFF;
+          }
+          case "FATAL" -> {
+              return Level.FATAL;
+          }
+          case "ERROR" -> {
+              return Level.ERROR;
+          }
+          case "WARN" -> {
+              return Level.WARN;
+          }
+          case "INFO" -> {
+              return Level.INFO;
+          }
+          case "DEBUG" -> {
+              return Level.DEBUG;
+          }
+          case "TRACE" -> {
+              return Level.TRACE;
+          }
+          case "ALL" -> {
+              return Level.ALL;
+          }
+      }
     throw new CommandLine.TypeConversionException(
         "'"
             + value

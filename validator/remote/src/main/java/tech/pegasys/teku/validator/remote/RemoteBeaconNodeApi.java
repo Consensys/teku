@@ -228,9 +228,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             endpoint ->
                 Preconditions.checkNotNull(
                     HttpUrl.get(endpoint),
-                    String.format(
                         "Failed to convert remote api endpoint (%s) to a valid url",
-                        UrlSanitizer.sanitizePotentialUrl(endpoint.toString()))))
+                        UrlSanitizer.sanitizePotentialUrl(endpoint.toString())))
         .toList();
   }
 

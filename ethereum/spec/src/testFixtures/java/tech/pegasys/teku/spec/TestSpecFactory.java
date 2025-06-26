@@ -65,9 +65,9 @@ public class TestSpecFactory {
       final UInt64 altairEpoch, final UInt64 bellatrixForkEpoch) {
     Preconditions.checkArgument(
         altairEpoch.isLessThan(bellatrixForkEpoch),
-        String.format(
+
             "Altair epoch %s must be less than bellatrix epoch %s",
-            altairEpoch, bellatrixForkEpoch));
+            altairEpoch, bellatrixForkEpoch);
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getBellatrixSpecConfig(Eth2Network.MINIMAL, altairEpoch, bellatrixForkEpoch);
     return create(specConfig, SpecMilestone.BELLATRIX);

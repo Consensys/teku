@@ -140,30 +140,25 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private void processMessage(
       final InternalValidationResult internalValidationResult,
       final PreparedGossipMessage message) {
-    switch (internalValidationResult.code()) {
-      case REJECT:
-        debugDataDumper.saveGossipRejectedMessage(
-            getTopic(),
-            message.getArrivalTimestamp(),
-            () -> message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
-            internalValidationResult.getDescription());
-        P2P_LOG.onGossipRejected(
-            getTopic(),
-            message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
-            internalValidationResult.getDescription());
-        break;
-      case IGNORE:
-        LOG.trace("Ignoring message for topic: {}", this::getTopic);
-        break;
-      case SAVE_FOR_FUTURE:
-        LOG.trace("Deferring message for topic: {}", this::getTopic);
-        break;
-      case ACCEPT:
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "Unexpected validation result: " + internalValidationResult);
-    }
+      switch (internalValidationResult.code()) {
+          case REJECT -> {
+              debugDataDumper.saveGossipRejectedMessage(
+                      getTopic(),
+                      message.getArrivalTimestamp(),
+                      () -> message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
+                      internalValidationResult.getDescription());
+              P2P_LOG.onGossipRejected(
+                      getTopic(),
+                      message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
+                      internalValidationResult.getDescription());
+          }
+          case IGNORE -> LOG.trace("Ignoring message for topic: {}", this::getTopic);
+          case SAVE_FOR_FUTURE -> LOG.trace("Deferring message for topic: {}", this::getTopic);
+          case ACCEPT -> {
+          }
+          default -> throw new UnsupportedOperationException(
+                  "Unexpected validation result: " + internalValidationResult);
+      }
   }
 
   private SszSchema<MessageT> getMessageType() {

@@ -158,7 +158,7 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
     checkNotNull(schema, "Schema must be specified");
     checkArgument(
         expectedSchemaType == schema.getClass(),
-        String.format("Schema should be: %s", expectedSchemaType));
+        "Schema should be: %s", expectedSchemaType);
     return (T) schema;
   }
 

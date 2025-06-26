@@ -107,20 +107,14 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
     validationResult.thenAccept(
         result -> {
-          switch (result.code()) {
-            case IGNORE:
-              // do nothing
-              break;
-            case REJECT:
-              invalidBlobSidecarRoots.put(blobSidecar.hashTreeRoot(), result);
-              break;
-            case SAVE_FOR_FUTURE:
-              futureBlobSidecars.add(blobSidecar);
-              break;
-            case ACCEPT:
-              prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
-              break;
-          }
+            switch (result.code()) {
+                case IGNORE -> {
+                    // do nothing
+                }
+                case REJECT -> invalidBlobSidecarRoots.put(blobSidecar.hashTreeRoot(), result);
+                case SAVE_FOR_FUTURE -> futureBlobSidecars.add(blobSidecar);
+                case ACCEPT -> prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
+            }
         });
 
     return validationResult;

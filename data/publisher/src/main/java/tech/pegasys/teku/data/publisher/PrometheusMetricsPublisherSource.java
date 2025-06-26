@@ -113,20 +113,12 @@ public class PrometheusMetricsPublisherSource implements MetricsPublisherSource 
 
   private void readBeaconCategoryItem(final Observation observation) {
     isBeaconNodePresent = true;
-    switch (observation.metricName()) {
-      case "head_slot":
-        headSlot = getLongValue(observation.value());
-        break;
-      case "eth1_request_queue_size":
-        isEth1Connected = true;
-        break;
-      case "peer_count":
-        peerCount = getIntValue(observation.value());
-        break;
-      case "node_syncing_active":
-        isEth2Synced = getIntValue(observation.value()) == 0;
-        break;
-    }
+      switch (observation.metricName()) {
+          case "head_slot" -> headSlot = getLongValue(observation.value());
+          case "eth1_request_queue_size" -> isEth1Connected = true;
+          case "peer_count" -> peerCount = getIntValue(observation.value());
+          case "node_syncing_active" -> isEth2Synced = getIntValue(observation.value()) == 0;
+      }
   }
 
   private void readProcessCategoryItem(final Observation observation) {

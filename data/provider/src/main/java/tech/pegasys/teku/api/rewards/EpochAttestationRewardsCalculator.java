@@ -123,17 +123,11 @@ public class EpochAttestationRewardsCalculator {
         final IdealAttestationReward idealAttestationReward =
             idealAttestationRewards.get(effectiveBalanceEth);
         if (!isInactivityLeak()) {
-          switch (flagIndex) {
-            case TIMELY_SOURCE_FLAG_INDEX:
-              idealAttestationReward.addSource(idealReward.longValue());
-              break;
-            case TIMELY_TARGET_FLAG_INDEX:
-              idealAttestationReward.addTarget(idealReward.longValue());
-              break;
-            case TIMELY_HEAD_FLAG_INDEX:
-              idealAttestationReward.addHead(idealReward.longValue());
-              break;
-          }
+            switch (flagIndex) {
+                case TIMELY_SOURCE_FLAG_INDEX -> idealAttestationReward.addSource(idealReward.longValue());
+                case TIMELY_TARGET_FLAG_INDEX -> idealAttestationReward.addTarget(idealReward.longValue());
+                case TIMELY_HEAD_FLAG_INDEX -> idealAttestationReward.addHead(idealReward.longValue());
+            }
         }
       }
     }
