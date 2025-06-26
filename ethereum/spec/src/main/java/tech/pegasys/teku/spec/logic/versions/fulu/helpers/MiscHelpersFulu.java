@@ -97,8 +97,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public MiscHelpersFulu(
       final SpecConfigFulu specConfig,
       final PredicatesElectra predicates,
-      final SchemaDefinitionsFulu schemaDefinitions,
-      final BpoForkSchedule bpoForkSchedule) {
+      final SchemaDefinitionsFulu schemaDefinitions) {
     super(
         SpecConfigElectra.required(specConfig),
         predicates,
@@ -106,7 +105,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.predicates = predicates;
     this.specConfigFulu = specConfig;
     this.schemaDefinitionsFulu = schemaDefinitions;
-    this.bpoForkSchedule = bpoForkSchedule;
+    this.bpoForkSchedule = new BpoForkSchedule(specConfig);
   }
 
   @Override
@@ -141,8 +140,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public BpoForkSchedule getBpoForkSchedule() {
-    return bpoForkSchedule;
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
   }
 
   // get_blob_parameters

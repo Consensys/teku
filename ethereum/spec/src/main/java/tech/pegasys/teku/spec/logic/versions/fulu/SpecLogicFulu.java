@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BpoForkSchedule;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch.EpochProcessorFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -102,9 +101,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
       final TimeProvider timeProvider) {
     // Helpers
     final PredicatesElectra predicates = new PredicatesElectra(config);
-    final BpoForkSchedule bpoForkSchedule = new BpoForkSchedule(config);
-    final MiscHelpersFulu miscHelpers =
-        new MiscHelpersFulu(config, predicates, schemaDefinitions, bpoForkSchedule);
+    final MiscHelpersFulu miscHelpers = new MiscHelpersFulu(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsFulu beaconStateAccessors =
         new BeaconStateAccessorsFulu(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =

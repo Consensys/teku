@@ -23,11 +23,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 /** A helper class to navigate the BPO fork schedule in an efficient manner */
-public class BpoForkSchedule {
+class BpoForkSchedule {
 
   private final NavigableMap<UInt64, BlobParameters> epochToBlobParameters = new TreeMap<>();
 
-  public BpoForkSchedule(final SpecConfigFulu specConfig) {
+  BpoForkSchedule(final SpecConfigFulu specConfig) {
     specConfig
         .getBlobSchedule()
         .forEach(
