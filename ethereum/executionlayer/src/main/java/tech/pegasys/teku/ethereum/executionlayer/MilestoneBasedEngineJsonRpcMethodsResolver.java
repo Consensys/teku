@@ -61,15 +61,14 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
         .map(ForkAndSpecMilestone::getSpecMilestone)
         .forEach(
             milestone -> {
-                switch (milestone) {
-                    case PHASE0, ALTAIR -> {
-                    }
-                    case BELLATRIX -> methodsByMilestone.put(milestone, bellatrixSupportedMethods());
-                    case CAPELLA -> methodsByMilestone.put(milestone, capellaSupportedMethods());
-                    case DENEB -> methodsByMilestone.put(milestone, denebSupportedMethods());
-                    case ELECTRA -> methodsByMilestone.put(milestone, electraSupportedMethods());
-                    case FULU -> methodsByMilestone.put(milestone, fuluSupportedMethods());
-                }
+              switch (milestone) {
+                case PHASE0, ALTAIR -> {}
+                case BELLATRIX -> methodsByMilestone.put(milestone, bellatrixSupportedMethods());
+                case CAPELLA -> methodsByMilestone.put(milestone, capellaSupportedMethods());
+                case DENEB -> methodsByMilestone.put(milestone, denebSupportedMethods());
+                case ELECTRA -> methodsByMilestone.put(milestone, electraSupportedMethods());
+                case FULU -> methodsByMilestone.put(milestone, fuluSupportedMethods());
+              }
             });
   }
 

@@ -46,17 +46,19 @@ public class ExternalSignerBlockRequestProvider {
     final Map<String, Object> metadata = new HashMap<>(additionalEntries);
 
     final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
-      switch (milestone) {
-          case PHASE0 -> metadata.put(SignType.BLOCK.getName(), block); // backward compatible with phase0
-          case ALTAIR -> metadata.put(
-                  SignType.BEACON_BLOCK.getName(),
-                  new BlockWrapper(milestone, Optional.of(block), Optional.empty()));
-          default ->
-              // use block header for BELLATRIX and onward milestones
-                  metadata.put(
-                          SignType.BEACON_BLOCK.getName(),
-                          new BlockWrapper(milestone, Optional.empty(), Optional.of(blockHeader)));
-      }
+    switch (milestone) {
+      case PHASE0 ->
+          metadata.put(SignType.BLOCK.getName(), block); // backward compatible with phase0
+      case ALTAIR ->
+          metadata.put(
+              SignType.BEACON_BLOCK.getName(),
+              new BlockWrapper(milestone, Optional.of(block), Optional.empty()));
+      default ->
+          // use block header for BELLATRIX and onward milestones
+          metadata.put(
+              SignType.BEACON_BLOCK.getName(),
+              new BlockWrapper(milestone, Optional.empty(), Optional.of(blockHeader)));
+    }
 
     return metadata;
   }

@@ -100,67 +100,67 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     saveStorageMode(stateStorageMode);
 
     Database database;
-      switch (dbVersion) {
-          case NOOP -> {
-              database = new NoOpDatabase();
-              LOG.info("Created no-op database");
-          }
-          case V4 -> {
-              database = createV4Database();
-              LOG.info(
-                      "Created V4 Hot database ({}) at {}",
-                      dbVersion.getValue(),
-                      dbDirectory.getAbsolutePath());
-              LOG.info(
-                      "Created V4 Finalized database ({}) at {}",
-                      dbVersion.getValue(),
-                      v5ArchiveDirectory.getAbsolutePath());
-          }
-          case V5 -> {
-              database = createV5Database();
-              LOG.info(
-                      "Created V5 Hot database ({}) at {}",
-                      dbVersion.getValue(),
-                      dbDirectory.getAbsolutePath());
-              LOG.info(
-                      "Created V5 Finalized database ({}) at {}",
-                      dbVersion.getValue(),
-                      v5ArchiveDirectory.getAbsolutePath());
-          }
-          case V6 -> {
-              database = createV6Database();
-              LOG.info(
-                      "Created V6 Hot and Finalized database ({}) at {}",
-                      dbVersion.getValue(),
-                      dbDirectory.getAbsolutePath());
-          }
-          case LEVELDB1 -> {
-              database = createLevelDbV1Database();
-              LOG.info(
-                      "Created leveldb1 Hot database ({}) at {}",
-                      dbVersion.getValue(),
-                      dbDirectory.getAbsolutePath());
-              LOG.info(
-                      "Created leveldb1 Finalized database ({}) at {}",
-                      dbVersion.getValue(),
-                      v5ArchiveDirectory.getAbsolutePath());
-          }
-          case LEVELDB2 -> {
-              database = createLevelDbV2Database();
-              LOG.info(
-                      "Created leveldb2 Hot and Finalized database ({}) at {}",
-                      dbVersion.getValue(),
-                      dbDirectory.getAbsolutePath());
-          }
-          case LEVELDB_TREE -> {
-              database = createLevelDbTreeDatabase();
-              LOG.info(
-                      "Created leveldb_tree Hot and Finalized database ({}) at {}",
-                      dbVersion.getValue(),
-                      dbDirectory.getAbsolutePath());
-          }
-          default -> throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
+    switch (dbVersion) {
+      case NOOP -> {
+        database = new NoOpDatabase();
+        LOG.info("Created no-op database");
       }
+      case V4 -> {
+        database = createV4Database();
+        LOG.info(
+            "Created V4 Hot database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        LOG.info(
+            "Created V4 Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            v5ArchiveDirectory.getAbsolutePath());
+      }
+      case V5 -> {
+        database = createV5Database();
+        LOG.info(
+            "Created V5 Hot database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        LOG.info(
+            "Created V5 Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            v5ArchiveDirectory.getAbsolutePath());
+      }
+      case V6 -> {
+        database = createV6Database();
+        LOG.info(
+            "Created V6 Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+      }
+      case LEVELDB1 -> {
+        database = createLevelDbV1Database();
+        LOG.info(
+            "Created leveldb1 Hot database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        LOG.info(
+            "Created leveldb1 Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            v5ArchiveDirectory.getAbsolutePath());
+      }
+      case LEVELDB2 -> {
+        database = createLevelDbV2Database();
+        LOG.info(
+            "Created leveldb2 Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+      }
+      case LEVELDB_TREE -> {
+        database = createLevelDbTreeDatabase();
+        LOG.info(
+            "Created leveldb_tree Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+      }
+      default -> throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
+    }
     return database;
   }
 
@@ -335,19 +335,19 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
               dbDirectory.getAbsolutePath()));
     }
 
-      switch (dbVersion) {
-          case V4, V5, LEVELDB1 -> {
-              if (!v5ArchiveDirectory.mkdirs() && !v5ArchiveDirectory.isDirectory()) {
-                  throw DatabaseStorageException.unrecoverable(
-                          String.format(
-                                  "Unable to create the path to store archive files at %s",
-                                  v5ArchiveDirectory.getAbsolutePath()));
-              }
-          }
-          default -> {
-              // do nothing
-          }
+    switch (dbVersion) {
+      case V4, V5, LEVELDB1 -> {
+        if (!v5ArchiveDirectory.mkdirs() && !v5ArchiveDirectory.isDirectory()) {
+          throw DatabaseStorageException.unrecoverable(
+              String.format(
+                  "Unable to create the path to store archive files at %s",
+                  v5ArchiveDirectory.getAbsolutePath()));
+        }
       }
+      default -> {
+        // do nothing
+      }
+    }
   }
 
   @VisibleForTesting

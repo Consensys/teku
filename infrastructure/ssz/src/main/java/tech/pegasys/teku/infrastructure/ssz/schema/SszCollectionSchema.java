@@ -54,10 +54,10 @@ public interface SszCollectionSchema<
     // could do better if construct the tree directly in List/Vector subclasses
     checkArgument(
         elements.size() <= getMaxLength(),
-            "Too many elements for this collection type (element type: %s, max length %s, size %s)",
-            !elements.isEmpty() ? elements.getFirst().getClass().getName() : "UNKNOWN",
-            getMaxLength(),
-            elements.size());
+        "Too many elements for this collection type (element type: %s, max length %s, size %s)",
+        !elements.isEmpty() ? elements.getFirst().getClass().getName() : "UNKNOWN",
+        getMaxLength(),
+        elements.size());
     SszMutableComposite<SszElementT> writableCopy = getDefault().createWritableCopy();
     int idx = 0;
     for (SszElementT element : elements) {

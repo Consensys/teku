@@ -241,35 +241,35 @@ public class AttestationManager extends Service
             result -> {
               activeValidatorChannel.onAttestation(attestation);
 
-                switch (result.getStatus()) {
-                    case SUCCESSFUL -> {
-                        LOG.trace("Processed attestation {} successfully", attestation::hashTreeRoot);
-                        aggregatingAttestationPool.add(attestation);
-                        sendToSubscribersIfProducedLocally(attestation);
-                    }
-                    case UNKNOWN_BLOCK -> {
-                        LOG.trace(
-                                "Deferring attestation {} as required block is not yet present",
-                                attestation::hashTreeRoot);
-                        pendingAttestations.add(attestation);
-                    }
-                    case DEFER_FORK_CHOICE_PROCESSING -> {
-                        LOG.trace(
-                                "Defer fork choice processing of attestation {}", attestation::hashTreeRoot);
-                        sendToSubscribersIfProducedLocally(attestation);
-                        aggregatingAttestationPool.add(attestation);
-                    }
-                    case SAVED_FOR_FUTURE -> {
-                        LOG.trace(
-                                "Deferring attestation {} until a future slot", attestation::hashTreeRoot);
-                        aggregatingAttestationPool.add(attestation);
-                        futureAttestations.add(attestation);
-                    }
-                    case INVALID -> {
-                    }
-                    default -> throw new UnsupportedOperationException(
-                            "AttestationProcessingResult is unrecognizable");
+              switch (result.getStatus()) {
+                case SUCCESSFUL -> {
+                  LOG.trace("Processed attestation {} successfully", attestation::hashTreeRoot);
+                  aggregatingAttestationPool.add(attestation);
+                  sendToSubscribersIfProducedLocally(attestation);
                 }
+                case UNKNOWN_BLOCK -> {
+                  LOG.trace(
+                      "Deferring attestation {} as required block is not yet present",
+                      attestation::hashTreeRoot);
+                  pendingAttestations.add(attestation);
+                }
+                case DEFER_FORK_CHOICE_PROCESSING -> {
+                  LOG.trace(
+                      "Defer fork choice processing of attestation {}", attestation::hashTreeRoot);
+                  sendToSubscribersIfProducedLocally(attestation);
+                  aggregatingAttestationPool.add(attestation);
+                }
+                case SAVED_FOR_FUTURE -> {
+                  LOG.trace(
+                      "Deferring attestation {} until a future slot", attestation::hashTreeRoot);
+                  aggregatingAttestationPool.add(attestation);
+                  futureAttestations.add(attestation);
+                }
+                case INVALID -> {}
+                default ->
+                    throw new UnsupportedOperationException(
+                        "AttestationProcessingResult is unrecognizable");
+              }
               return result;
             });
   }

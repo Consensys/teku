@@ -62,26 +62,27 @@ public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1
   @Override
   public synchronized boolean needsToBeValidated() {
     UInt64 currentTime = timeProvider.getTimeInSeconds();
-      switch (lastCallResult) {
+    switch (lastCallResult) {
+      case FAILED -> {
+        return currentTime.isGreaterThanOrEqualTo(
+            lastValidationTime.plus(Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.toSeconds()));
+      }
+      case SUCCESS -> {
+        switch (lastValidationResult) {
           case FAILED -> {
-              return currentTime.isGreaterThanOrEqualTo(
-                      lastValidationTime.plus(Constants.ETH1_FAILED_ENDPOINT_CHECK_INTERVAL.toSeconds()));
+            return currentTime.isGreaterThanOrEqualTo(
+                lastValidationTime.plus(
+                    Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.toSeconds()));
           }
           case SUCCESS -> {
-              switch (lastValidationResult) {
-                  case FAILED -> {
-                      return currentTime.isGreaterThanOrEqualTo(
-                              lastValidationTime.plus(
-                                      Constants.ETH1_INVALID_ENDPOINT_CHECK_INTERVAL.toSeconds()));
-                  }
-                  case SUCCESS -> {
-                      return currentTime.isGreaterThanOrEqualTo(
-                              lastValidationTime.plus(Constants.ETH1_VALID_ENDPOINT_CHECK_INTERVAL.toSeconds()));
-                  }
-                  default -> throw new IllegalStateException("Unknown result type: " + lastValidationResult);
-              }
+            return currentTime.isGreaterThanOrEqualTo(
+                lastValidationTime.plus(Constants.ETH1_VALID_ENDPOINT_CHECK_INTERVAL.toSeconds()));
           }
-          default -> throw new IllegalStateException("Unknown result type: " + lastCallResult);
+          default ->
+              throw new IllegalStateException("Unknown result type: " + lastValidationResult);
+        }
       }
+      default -> throw new IllegalStateException("Unknown result type: " + lastCallResult);
+    }
   }
 }

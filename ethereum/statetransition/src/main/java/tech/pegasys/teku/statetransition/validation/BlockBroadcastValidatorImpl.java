@@ -60,23 +60,24 @@ class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
 
   @Override
   public void attachToBlockImport(final SafeFuture<BlockImportResult> blockImportResult) {
-      switch (broadcastValidationLevel) {
-          case NOT_REQUIRED, EQUIVOCATION, GOSSIP -> {
-              // EQUIVOCATION/GOSSIP validation isn't dependent on block import result,
-              // so not propagating exceptions to consensusValidationSuccessResult allow blocks\blobs
-              // to be published even in case block import fails before the validation completes
-              // EQUIVOCATION/GOSSIP validation isn't dependent on block import result,
-              // so not propagating exceptions to consensusValidationSuccessResult allow blocks\blobs
-              // to be published even in case block import fails before the validation completes
-          }
-          case CONSENSUS, CONSENSUS_AND_EQUIVOCATION ->
-              // Any successful block import will be considered as a consensus validation success, but
-              // more importantly we propagate exceptions to the consensus validation, thus we capture any
-              // early block import failures
-                  blockImportResult
-                          .thenApply(BlockImportResult::isSuccessful)
-                          .propagateTo(consensusValidationSuccessResult);
+    switch (broadcastValidationLevel) {
+      case NOT_REQUIRED, EQUIVOCATION, GOSSIP -> {
+        // EQUIVOCATION/GOSSIP validation isn't dependent on block import result,
+        // so not propagating exceptions to consensusValidationSuccessResult allow blocks\blobs
+        // to be published even in case block import fails before the validation completes
+        // EQUIVOCATION/GOSSIP validation isn't dependent on block import result,
+        // so not propagating exceptions to consensusValidationSuccessResult allow blocks\blobs
+        // to be published even in case block import fails before the validation completes
       }
+      case CONSENSUS, CONSENSUS_AND_EQUIVOCATION ->
+          // Any successful block import will be considered as a consensus validation success, but
+          // more importantly we propagate exceptions to the consensus validation, thus we capture
+          // any
+          // early block import failures
+          blockImportResult
+              .thenApply(BlockImportResult::isSuccessful)
+              .propagateTo(consensusValidationSuccessResult);
+    }
   }
 
   @Override
