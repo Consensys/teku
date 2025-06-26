@@ -121,44 +121,44 @@ public class ProposerConfigManagerTest {
   @EnumSource(Properties.class)
   void shouldReturnValidatorSpecific(final Properties property) throws IOException {
 
-      switch (property) {
-          case FEE_RECIPIENT -> {
-              prepareConfigWithValidatorSpecificProperty(property, validatorFeeRecipientConfig);
-              assertThat(proposerConfigManager.getFeeRecipient(validatorInConfig.getPublicKey()))
-                      .contains(validatorFeeRecipientConfig);
-          }
-          case BUILDER_ENABLED -> {
-              prepareConfigWithValidatorSpecificProperty(property, true);
-              assertThat(proposerConfigManager.isBuilderEnabled(validatorInConfig.getPublicKey()))
-                      .isTrue();
-
-              prepareConfigWithValidatorSpecificProperty(property, false);
-              assertThat(proposerConfigManager.isBuilderEnabled(validatorInConfig.getPublicKey()))
-                      .isFalse();
-          }
-          case BUILDER_GAS_LIMIT -> {
-              final UInt64 randomGasLimit = dataStructureUtil.randomUInt64();
-              prepareConfigWithValidatorSpecificProperty(property, randomGasLimit);
-              assertThat(proposerConfigManager.getGasLimit(validatorInConfig.getPublicKey()))
-                      .isEqualTo(randomGasLimit);
-          }
-          case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY -> {
-              final BLSPublicKey randomKey = dataStructureUtil.randomPublicKey();
-              prepareConfigWithValidatorSpecificProperty(property, randomKey);
-              assertThat(
-                      proposerConfigManager.getBuilderRegistrationPublicKeyOverride(
-                              validatorInConfig.getPublicKey()))
-                      .contains(randomKey);
-          }
-          case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP -> {
-              final UInt64 randomTimestamp = dataStructureUtil.randomUInt64();
-              prepareConfigWithValidatorSpecificProperty(property, randomTimestamp);
-              assertThat(
-                      proposerConfigManager.getBuilderRegistrationTimestampOverride(
-                              validatorInConfig.getPublicKey()))
-                      .contains(randomTimestamp);
-          }
+    switch (property) {
+      case FEE_RECIPIENT -> {
+        prepareConfigWithValidatorSpecificProperty(property, validatorFeeRecipientConfig);
+        assertThat(proposerConfigManager.getFeeRecipient(validatorInConfig.getPublicKey()))
+            .contains(validatorFeeRecipientConfig);
       }
+      case BUILDER_ENABLED -> {
+        prepareConfigWithValidatorSpecificProperty(property, true);
+        assertThat(proposerConfigManager.isBuilderEnabled(validatorInConfig.getPublicKey()))
+            .isTrue();
+
+        prepareConfigWithValidatorSpecificProperty(property, false);
+        assertThat(proposerConfigManager.isBuilderEnabled(validatorInConfig.getPublicKey()))
+            .isFalse();
+      }
+      case BUILDER_GAS_LIMIT -> {
+        final UInt64 randomGasLimit = dataStructureUtil.randomUInt64();
+        prepareConfigWithValidatorSpecificProperty(property, randomGasLimit);
+        assertThat(proposerConfigManager.getGasLimit(validatorInConfig.getPublicKey()))
+            .isEqualTo(randomGasLimit);
+      }
+      case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY -> {
+        final BLSPublicKey randomKey = dataStructureUtil.randomPublicKey();
+        prepareConfigWithValidatorSpecificProperty(property, randomKey);
+        assertThat(
+                proposerConfigManager.getBuilderRegistrationPublicKeyOverride(
+                    validatorInConfig.getPublicKey()))
+            .contains(randomKey);
+      }
+      case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP -> {
+        final UInt64 randomTimestamp = dataStructureUtil.randomUInt64();
+        prepareConfigWithValidatorSpecificProperty(property, randomTimestamp);
+        assertThat(
+                proposerConfigManager.getBuilderRegistrationTimestampOverride(
+                    validatorInConfig.getPublicKey()))
+            .contains(randomTimestamp);
+      }
+    }
   }
 
   @Test
