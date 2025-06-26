@@ -86,12 +86,12 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
         services.createAsyncRunner(
             "validatorBeaconAPI", apiMaxThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
 
-    final int apiMaxReadinessThreads =
+    final int apiReadinessMaxThreads =
         calculateReadinessAPIMaxThreads(
             dutiesProviderNodeConfig.getEndpointsAsURIs().size(), validatorConfig);
     final AsyncRunner readinessAsyncRunner =
         services.createAsyncRunner(
-            "validatorBeaconAPIReadiness", apiMaxReadinessThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
+            "validatorBeaconAPIReadiness", apiReadinessMaxThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
 
     final RemoteValidatorApiChannel dutiesProviderPrimaryValidatorApiChannel =
         createPrimaryValidatorApiChannel(
