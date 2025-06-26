@@ -188,14 +188,12 @@ public class LibP2PPeer implements Peer {
   public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     if (connected.getAndSet(false)) {
       LOG.trace("Disconnecting cleanly because {} from {}", reason, connection.remoteAddress());
-      disconnectReason = Optional.of(reason);
-      disconnectLocallyInitiated = true;
       return disconnectRequestHandler
           .requestDisconnect(reason)
           .handle(
               (__, error) -> {
                 if (error != null) {
-                  LOG.debug("Failed to disconnect from " + getId() + " cleanly.", error);
+                  LOG.debug("Failed to disconnect from {} cleanly.", getId(), error);
                 }
                 internalDisconnectImmediately(Optional.of(reason), true);
                 return null;
