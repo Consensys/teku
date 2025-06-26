@@ -15,16 +15,24 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.security.SecureChannel.Session;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+import kotlin.Unit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
@@ -47,12 +55,14 @@ public class LibP2PPeerTest {
 
   private LibP2PPeer libP2PPeer;
 
+  private final SafeFuture<Unit> closeFuture = new SafeFuture<>();
+
   @BeforeEach
   public void init() {
     when(rpcHandler.getRpcMethod()).thenReturn(rpcMethod);
     final Session secureSession = mock(Session.class);
     when(connection.secureSession()).thenReturn(secureSession);
-    when(connection.closeFuture()).thenReturn(new SafeFuture<>());
+    when(connection.closeFuture()).thenReturn(closeFuture);
     libP2PPeer =
         new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, peer -> 0.0);
   }
@@ -88,5 +98,35 @@ public class LibP2PPeerTest {
 
     // throttled request should have completed now
     assertThat(throttledRequest).isDone();
+  }
+
+  @Test
+  public void disconnectCleanly_shouldCloseConnectionOnlyOnce() {
+    final AtomicReference<Optional<DisconnectReason>> disconnectionReason = new AtomicReference<>();
+    final AtomicBoolean disconnectionLocallyInitiated = new AtomicBoolean();
+    final AtomicInteger disconnectionCount = new AtomicInteger(0);
+
+    libP2PPeer.subscribeDisconnect(
+        (reason, locallyInitiated) -> {
+          disconnectionReason.set(reason);
+          disconnectionLocallyInitiated.set(locallyInitiated);
+          disconnectionCount.addAndGet(1);
+        });
+
+    libP2PPeer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
+    verify(connection).close();
+
+    libP2PPeer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
+    libP2PPeer.disconnectImmediately(Optional.of(DisconnectReason.REMOTE_FAULT), false);
+
+    verify(connection, times(1)).close();
+
+    assertThat(disconnectionCount.get()).isEqualTo(0);
+
+    closeFuture.complete(null);
+
+    assertThat(disconnectionReason.get()).contains(DisconnectReason.IRRELEVANT_NETWORK);
+    assertThat(disconnectionLocallyInitiated.get()).isTrue();
+    assertThat(disconnectionCount.get()).isEqualTo(1);
   }
 }
