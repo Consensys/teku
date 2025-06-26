@@ -102,7 +102,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   private Spec spec;
   private final TimeProvider timeProvider = new SystemTimeProvider();
 
-  static final String WITHDRAWALS_PERMANENT_MESASGE =
+  static final String WITHDRAWALS_PERMANENT_MESSAGE =
       "These validators won't be able to be re-activated once this operation is complete.";
   static final String WITHDRAWALS_NOT_ACTIVE =
       "NOTE: Withdrawals will not be possible until the Capella network fork.";
@@ -238,7 +238,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     SUB_COMMAND_LOG.display(getValidatorAbbreviatedKeys());
     SUB_COMMAND_LOG.display("Epoch: " + epoch.toString());
     SUB_COMMAND_LOG.display("");
-    SUB_COMMAND_LOG.display(WITHDRAWALS_PERMANENT_MESASGE);
+    SUB_COMMAND_LOG.display(WITHDRAWALS_PERMANENT_MESSAGE);
     if (!spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
       SUB_COMMAND_LOG.display(WITHDRAWALS_NOT_ACTIVE);
     }
