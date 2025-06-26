@@ -113,7 +113,7 @@ public class LibP2PPeerTest {
           disconnectionCount.addAndGet(1);
         });
 
-    libP2PPeer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
+    libP2PPeer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).finish(__ -> {});
     verify(connection).close();
 
     libP2PPeer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
