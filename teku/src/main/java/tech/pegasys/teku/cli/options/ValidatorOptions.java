@@ -139,6 +139,27 @@ public class ValidatorOptions {
   private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
   @Option(
+      names = {"--Xvalidator-client-beacon-api-executor-threads"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Set the number of threads for the validator beacon node API executor",
+      hidden = true,
+      converter = OptionalIntConverter.class,
+      arity = "1")
+  private OptionalInt beaconApiExecutorThreads = OptionalInt.empty();
+
+  @Option(
+      names = {"--Xvalidator-client-beacon-api-readiness-executor-threads"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Set the number of threads for the validator beacon node API readiness executor",
+      hidden = true,
+      converter = OptionalIntConverter.class,
+      arity = "1")
+  private OptionalInt beaconApiReadinessExecutorThreads = OptionalInt.empty();
+
+  @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable terminating the process if no validator keys are found during startup",
@@ -170,25 +191,26 @@ public class ValidatorOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
-        config -> {
-          config
-              .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-              .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-              .validatorExternalSignerSlashingProtectionEnabled(
-                  validatorExternalSignerSlashingProtectionEnabled)
-              .isLocalSlashingProtectionSynchronizedModeEnabled(
-                  isLocalSlashingProtectionSynchronizedEnabled)
-              .graffitiProvider(
-                  new FileBackedGraffitiProvider(
-                      Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-              .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
-              .generateEarlyAttestations(generateEarlyAttestations)
-              .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
-              .executorThreads(executorThreads)
-              .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
-              .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed);
-          executorMaxQueueSize.ifPresent(config::executorMaxQueueSize);
-        });
+        config ->
+            config
+                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+                .validatorExternalSignerSlashingProtectionEnabled(
+                    validatorExternalSignerSlashingProtectionEnabled)
+                .isLocalSlashingProtectionSynchronizedModeEnabled(
+                    isLocalSlashingProtectionSynchronizedEnabled)
+                .graffitiProvider(
+                    new FileBackedGraffitiProvider(
+                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
+                .generateEarlyAttestations(generateEarlyAttestations)
+                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
+                .executorThreads(executorThreads)
+                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
+                .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed)
+                .executorMaxQueueSize(executorMaxQueueSize)
+                .beaconApiExecutorThreads(beaconApiExecutorThreads)
+                .beaconApiReadinessExecutorThreads(beaconApiReadinessExecutorThreads));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
