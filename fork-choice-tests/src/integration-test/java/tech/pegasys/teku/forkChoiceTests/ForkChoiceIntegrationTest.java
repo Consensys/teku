@@ -214,44 +214,44 @@ public class ForkChoiceIntegrationTest {
         Map<String, Object> checks = (Map<String, Object>) rawChecks;
         for (Map.Entry<String, Object> e : checks.entrySet()) {
           String check = e.getKey();
-            switch (check) {
-                case "block_in_store" -> {
-                    Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                    assertTrue(
-                            storageClient.retrieveBlockByRoot(root).join().isPresent(),
-                            "Block is missing from store :" + root);
-                }
-                case "block_not_in_store" -> {
-                    Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                    assertTrue(
-                            storageClient.retrieveBlockByRoot(root).join().isEmpty(),
-                            "Block should not have been in store :" + root);
-                }
-                case "head" -> {
-                    Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                    forkChoice.processHead().join();
-                    Bytes32 head = storageClient.getBestBlockRoot().orElseThrow();
-                    assertEquals(
-                            root,
-                            head,
-                            "Head does not match expected head: \n head: "
-                                    + head
-                                    + "\n expectedHead: "
-                                    + root);
-                }
-                case "justified_checkpoint_epoch" -> {
-                    UInt64 expected = UInt64.valueOf((Integer) e.getValue());
-                    UInt64 actual = storageClient.getStore().getJustifiedCheckpoint().getEpoch();
-                    assertEquals(
-                            expected,
-                            actual,
-                            "Justified checkpoint epoch does not match expected: \n actual: "
-                                    + actual
-                                    + "\n expected: "
-                                    + expected);
-                }
-                default -> throw new IllegalArgumentException();
+          switch (check) {
+            case "block_in_store" -> {
+              Bytes32 root = Bytes32.fromHexString((String) e.getValue());
+              assertTrue(
+                  storageClient.retrieveBlockByRoot(root).join().isPresent(),
+                  "Block is missing from store :" + root);
             }
+            case "block_not_in_store" -> {
+              Bytes32 root = Bytes32.fromHexString((String) e.getValue());
+              assertTrue(
+                  storageClient.retrieveBlockByRoot(root).join().isEmpty(),
+                  "Block should not have been in store :" + root);
+            }
+            case "head" -> {
+              Bytes32 root = Bytes32.fromHexString((String) e.getValue());
+              forkChoice.processHead().join();
+              Bytes32 head = storageClient.getBestBlockRoot().orElseThrow();
+              assertEquals(
+                  root,
+                  head,
+                  "Head does not match expected head: \n head: "
+                      + head
+                      + "\n expectedHead: "
+                      + root);
+            }
+            case "justified_checkpoint_epoch" -> {
+              UInt64 expected = UInt64.valueOf((Integer) e.getValue());
+              UInt64 actual = storageClient.getStore().getJustifiedCheckpoint().getEpoch();
+              assertEquals(
+                  expected,
+                  actual,
+                  "Justified checkpoint epoch does not match expected: \n actual: "
+                      + actual
+                      + "\n expected: "
+                      + expected);
+            }
+            default -> throw new IllegalArgumentException();
+          }
         }
       } else {
         throw new IllegalArgumentException();

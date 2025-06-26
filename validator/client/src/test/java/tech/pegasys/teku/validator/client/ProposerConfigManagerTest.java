@@ -178,12 +178,12 @@ public class ProposerConfigManagerTest {
   void shouldReturnDefaultConfig(final Properties property) throws IOException {
 
     switch (property) {
-      case FEE_RECIPIENT:
+      case FEE_RECIPIENT -> {
         prepareConfigWithDefaultConfigProperty(property, defaultFeeRecipientConfig);
         assertThat(proposerConfigManager.getFeeRecipient(validatorNotInConfig.getPublicKey()))
             .contains(defaultFeeRecipientConfig);
-        break;
-      case BUILDER_ENABLED:
+      }
+      case BUILDER_ENABLED -> {
         prepareConfigWithDefaultConfigProperty(property, true);
         assertThat(proposerConfigManager.isBuilderEnabled(validatorNotInConfig.getPublicKey()))
             .isTrue();
@@ -191,24 +191,24 @@ public class ProposerConfigManagerTest {
         prepareConfigWithDefaultConfigProperty(property, false);
         assertThat(proposerConfigManager.isBuilderEnabled(validatorNotInConfig.getPublicKey()))
             .isFalse();
-        break;
-      case BUILDER_GAS_LIMIT:
+      }
+      case BUILDER_GAS_LIMIT -> {
         final UInt64 randomGasLimit = dataStructureUtil.randomUInt64();
         prepareConfigWithDefaultConfigProperty(property, randomGasLimit);
         assertThat(proposerConfigManager.getGasLimit(validatorNotInConfig.getPublicKey()))
             .isEqualTo(randomGasLimit);
-        break;
-      case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY:
+      }
+      case BUILDER_REGISTRATION_OVERRIDE_PUB_KEY -> {
         // not allowed
-        break;
-      case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP:
+      }
+      case BUILDER_REGISTRATION_OVERRIDE_TIMESTAMP -> {
         final UInt64 randomTimestamp = dataStructureUtil.randomUInt64();
         prepareConfigWithDefaultConfigProperty(property, randomTimestamp);
         assertThat(
                 proposerConfigManager.getBuilderRegistrationTimestampOverride(
                     validatorNotInConfig.getPublicKey()))
             .contains(randomTimestamp);
-        break;
+      }
     }
   }
 
