@@ -109,7 +109,7 @@ public class DasSamplerBasicTest {
   public void testCheckDataAvailability(
       final int configuredCustodyCount,
       final int validatorCount,
-      final int expectedSampingRequests) {
+      final int expectedSamplingRequests) {
     final CustodyGroupCountManagerImpl custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             SPEC,
@@ -145,17 +145,17 @@ public class DasSamplerBasicTest {
               eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
           .thenReturn(SafeFuture.completedFuture(true));
     }
-    final List<UInt64> nonCustodyColumns = new ArrayList<>();
+    final List<UInt64> samplingNonCustodyColumns = new ArrayList<>();
     for (UInt64 columnIndex : custodyGroupCountManager.getSamplingColumnIndices()) {
       if (!custodyColumnIndices.contains(columnIndex)) {
-        nonCustodyColumns.add(columnIndex);
+        samplingNonCustodyColumns.add(columnIndex);
         when(custody.hasCustodyDataColumnSidecar(
                 eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
             .thenReturn(SafeFuture.completedFuture(false));
       }
     }
 
-    for (UInt64 missingColumn : nonCustodyColumns) {
+    for (UInt64 missingColumn : samplingNonCustodyColumns) {
       when(retriever.retrieve(
               new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, missingColumn)))
           .thenReturn(
@@ -166,12 +166,12 @@ public class DasSamplerBasicTest {
       when(custody.onNewValidatedDataColumnSidecar(any())).thenReturn(SafeFuture.COMPLETE);
     }
 
-    SafeFuture<List<UInt64>> result = sampler.checkDataAvailability(UInt64.ZERO, blockRoot);
-    List<UInt64> availableColumns = result.join();
+    final SafeFuture<List<UInt64>> result = sampler.checkDataAvailability(UInt64.ZERO, blockRoot);
+    final List<UInt64> availableColumns = result.join();
 
     // Add assertions
     assertThat(availableColumns).containsAll(custodyGroupCountManager.getCustodyColumnIndices());
-    assertThat(availableColumns).containsAll(custodyGroupCountManager.getSamplingColumnIndices());
+    assertThat(availableColumns).containsExactlyInAnyOrder(custodyGroupCountManager.getSamplingColumnIndices().toArray(new UInt64[0]));
 
     // Don't retrieve Datacolumn sidecars that were already in custody.
     for (UInt64 custodyColumn : custodyColumnIndices) {
@@ -179,6 +179,6 @@ public class DasSamplerBasicTest {
           .retrieve(eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, custodyColumn)));
     }
 
-    assertEquals(expectedSampingRequests, nonCustodyColumns.size());
+    assertEquals(expectedSamplingRequests, samplingNonCustodyColumns.size());
   }
 }
