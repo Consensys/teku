@@ -39,8 +39,10 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
       // This check would allow a state to have an empty slot, and still be a valid block and state.
       checkArgument(
           latestBlockHeaderBodyRoot.equals(blockSummary.getBodyRoot()),
-          "Latest Block body root %s in state at slot %s must match the block summary root. "
-              + "Block slot %s, block body root %s",
+          """
+          Latest Block body root %s in state at slot %s must match the block summary root. \
+          Block slot %s, block body root %s
+          """,
           latestBlockHeaderBodyRoot,
           state.getSlot(),
           blockSummary.getSlot(),
