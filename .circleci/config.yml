@@ -469,7 +469,7 @@ jobs:
       - run:
           name: Publish to Cloudsmith
           command: |
-            ./gradlew --no-daemon --parallel cloudsmithUpload publish
+            ./gradlew --no-daemon --parallel cloudsmithUpload publish jreleaserRelease
       - notify
 
   publishDockerAmd64:
@@ -660,6 +660,7 @@ workflows:
             - windowsBuild
           context:
             - protocols-cloudsmith
+            - protocols-maven-central
       - publishDockerAmd64:
           filters:
             branches:
