@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -23,7 +20,6 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -35,15 +31,14 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu {
-  private static final Logger LOG = LogManager.getLogger();
 
-  private final BlobScheduleEntry bpo;
+  private final BlobParameters bpo;
 
   public GossipForkSubscriptionsFuluBpo(
       final Fork fork,
@@ -69,7 +64,7 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
-      final BlobScheduleEntry bpo) {
+      final BlobParameters bpo) {
     super(
         fork,
         spec,
@@ -95,22 +90,7 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
   }
 
   @Override
-  public void startGossip(final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
-    LOG.info(
-        "Starting gossip for BPO fork (fork digest: {}) scheduled at epoch {} with {} max blobs per block",
-        recentChainData.getForkDigest(bpo.epoch()),
-        bpo.epoch(),
-        bpo.maxBlobsPerBlock());
-    super.startGossip(genesisValidatorsRoot, isOptimisticHead);
-  }
-
-  @Override
   public UInt64 getActivationEpoch() {
     return bpo.epoch();
-  }
-
-  @Override
-  protected ForkInfo getForkInfo(final Bytes32 genesisValidatorsRoot) {
-    return new ForkInfo(fork, genesisValidatorsRoot, recentChainData.getForkDigest(bpo.epoch()));
   }
 }

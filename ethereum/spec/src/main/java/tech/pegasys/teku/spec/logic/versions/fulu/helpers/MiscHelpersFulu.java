@@ -140,25 +140,29 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
-    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
-  }
-
   // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return bpoForkSchedule
-        .getBpoFork(epoch)
+    return getBpoFork(epoch)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
   }
 
-  private UInt256 incrementByModule(final UInt256 n) {
-    if (n.equals(UInt256.MAX_VALUE)) {
-      return UInt256.ZERO;
-    } else {
-      return n.plus(1);
-    }
+  // BPO
+  public Optional<BlobParameters> getBpoFork(final UInt64 epoch) {
+    return bpoForkSchedule.getBpoFork(epoch);
+  }
+
+  public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
+    return bpoForkSchedule.getNextBpoFork(epoch);
+  }
+
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    return bpoForkSchedule.getBpoForks();
   }
 
   public UInt64 computeSubnetForDataColumnSidecar(final UInt64 columnIndex) {
@@ -216,6 +220,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .limit(custodyGroupCount)
         .sorted()
         .toList();
+  }
+
+  private UInt256 incrementByModule(final UInt256 n) {
+    if (n.equals(UInt256.MAX_VALUE)) {
+      return UInt256.ZERO;
+    } else {
+      return n.plus(1);
+    }
   }
 
   public UInt64 getValidatorsCustodyRequirement(
