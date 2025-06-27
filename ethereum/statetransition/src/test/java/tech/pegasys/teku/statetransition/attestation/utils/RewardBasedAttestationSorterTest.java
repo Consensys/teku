@@ -126,12 +126,12 @@ public class RewardBasedAttestationSorterTest {
   void sort_shouldSkipSortingWhenNotNeeded() {
     // att1: validator 0, timely source (reward: 1000 * 14 = 14000)
     final PooledAttestationWithData att1 =
-            mockPooledAttestationWithData(
-                    STATE_SLOT.minus(1), CURRENT_EPOCH, List.of(0), List.of(TIMELY_SOURCE_FLAG_INDEX));
+        mockPooledAttestationWithData(
+            STATE_SLOT.minus(1), CURRENT_EPOCH, List.of(0), List.of(TIMELY_SOURCE_FLAG_INDEX));
     // att2: validator 1, timely target (reward: 1000 * 26 = 26000)
     final PooledAttestationWithData att2 =
-            mockPooledAttestationWithData(
-                    STATE_SLOT.minus(2), CURRENT_EPOCH, List.of(1), List.of(TIMELY_TARGET_FLAG_INDEX));
+        mockPooledAttestationWithData(
+            STATE_SLOT.minus(2), CURRENT_EPOCH, List.of(1), List.of(TIMELY_TARGET_FLAG_INDEX));
 
     final List<PooledAttestationWithData> attestations = List.of(att1, att2);
     final List<RewardBasedAttestationSorter.PooledAttestationWithRewardInfo> sortedAttestations =
@@ -177,8 +177,11 @@ public class RewardBasedAttestationSorterTest {
             STATE_SLOT.minus(2), CURRENT_EPOCH, List.of(1), List.of(TIMELY_TARGET_FLAG_INDEX));
     // att3: validator 2, timely target and source (reward: 1000 * (14+26) = 40000)
     final PooledAttestationWithData att3 =
-            mockPooledAttestationWithData(
-                    STATE_SLOT.minus(1), CURRENT_EPOCH, List.of(2), List.of(TIMELY_SOURCE_FLAG_INDEX, TIMELY_TARGET_FLAG_INDEX));
+        mockPooledAttestationWithData(
+            STATE_SLOT.minus(1),
+            CURRENT_EPOCH,
+            List.of(2),
+            List.of(TIMELY_SOURCE_FLAG_INDEX, TIMELY_TARGET_FLAG_INDEX));
 
     final List<PooledAttestationWithData> attestations = List.of(att1, att2, att3);
     final List<RewardBasedAttestationSorter.PooledAttestationWithRewardInfo> sortedAttestations =
@@ -232,11 +235,7 @@ public class RewardBasedAttestationSorterTest {
 
     // Att5 (Val 3): no flags, will be valued 0 and left at the end at first sorting iteration.
     final PooledAttestationWithData att5 =
-            mockPooledAttestationWithData(
-                    STATE_SLOT.minus(1),
-                    CURRENT_EPOCH,
-                    List.of(3),
-                    List.of());
+        mockPooledAttestationWithData(STATE_SLOT.minus(1), CURRENT_EPOCH, List.of(3), List.of());
 
     final List<PooledAttestationWithData> attestations = List.of(att1, att2, att3, att4, att5);
 
