@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
@@ -170,20 +171,37 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public void setForkInfo(
       final ForkInfo currentForkInfo,
       final Bytes4 currentForkDigest,
-      final Optional<Fork> nextForkInfo) {
+      final Optional<Fork> nextForkInfo,
+      final Optional<BlobParameters> nextBpoFork,
+      final Optional<Bytes4> nextForkDigest) {
     // If no future fork is planned, set next_fork_version = current_fork_version to signal this
     final Bytes4 nextVersion =
         nextForkInfo
             .map(Fork::getCurrentVersion)
             .orElse(currentForkInfo.getFork().getCurrentVersion());
-    // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
+    // If no future fork is planned (either BPO or a hard fork), set next_fork_epoch =
+    // FAR_FUTURE_EPOCH to signal this
     final UInt64 nextForkEpoch =
-        nextForkInfo.map(Fork::getEpoch).orElse(SpecConfig.FAR_FUTURE_EPOCH);
+        nextBpoFork
+            .map(
+                bpoFork ->
+                    nextForkInfo
+                        .filter(forkInfo -> forkInfo.getEpoch().isLessThan(bpoFork.epoch()))
+                        .map(Fork::getEpoch)
+                        .orElse(bpoFork.epoch()))
+            .or(() -> nextForkInfo.map(Fork::getEpoch))
+            .orElse(SpecConfig.FAR_FUTURE_EPOCH);
 
     final EnrForkId enrForkId = new EnrForkId(currentForkDigest, nextVersion, nextForkEpoch);
     final Bytes encodedEnrForkId = enrForkId.sszSerialize();
 
     discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
+    LOG.info("Setting eth2 in ENR to: {}", enrForkId);
+    final Bytes4 nfdEnrField = nextForkDigest.orElse(Bytes4.ZERO);
+    LOG.info("Setting nfd in ENR to: {}", nfdEnrField.toUnprefixedHexString());
+    discoveryService.updateCustomENRField(
+        NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nfdEnrField).sszSerialize());
+
     this.enrForkId = Optional.of(enrForkId);
   }
 

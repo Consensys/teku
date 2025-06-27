@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -41,7 +43,6 @@ class BpoForkSchedule {
     return Optional.ofNullable(epochToBlobParameters.floorEntry(epoch)).map(Map.Entry::getValue);
   }
 
-  @SuppressWarnings("unused")
   public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
     return Optional.ofNullable(epochToBlobParameters.ceilingEntry(epoch.plus(1)))
         .map(Map.Entry::getValue);
@@ -51,6 +52,10 @@ class BpoForkSchedule {
     return epochToBlobParameters.values().stream()
         .map(BlobParameters::maxBlobsPerBlock)
         .max(Comparator.naturalOrder());
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    return Collections.unmodifiableCollection(epochToBlobParameters.values());
   }
 
   @Override
