@@ -338,7 +338,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
   private static Predicate<PooledAttestationWithRewardInfo> distinctByDataRoot() {
     final Map<Bytes32, Boolean> seen = new ConcurrentHashMap<>();
-    return t -> seen.putIfAbsent(t.getAttestation().data().hashTreeRoot(), Boolean.TRUE) == null;
+    return t -> seen.putIfAbsent(t.getAttestation().data().hashTreeRoot(), true) == null;
   }
 
   private Predicate<PooledAttestationWithData> previousEpochLimitFilter(
