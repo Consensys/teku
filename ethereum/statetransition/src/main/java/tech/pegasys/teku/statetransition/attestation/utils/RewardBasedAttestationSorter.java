@@ -49,7 +49,7 @@ public class RewardBasedAttestationSorter {
 
   // The NOOP sorter just has to apply the limit.
   public static final RewardBasedAttestationSorter NOOP =
-      new RewardBasedAttestationSorter(null, null, null, null) {
+      new RewardBasedAttestationSorter(null, null, null, null, false) {
         @Override
         public List<PooledAttestationWithRewardInfo> sort(
             final List<PooledAttestationWithData> attestations, final int maxAttestations) {
@@ -73,6 +73,8 @@ public class RewardBasedAttestationSorter {
   private List<Byte> currentEpochParticipation;
   private List<Byte> previousEpochParticipation;
 
+  private final boolean forceSorting;
+
   public static RewardBasedAttestationSorter create(final Spec spec, final BeaconState state) {
     final SpecVersion specVersion = spec.atSlot(state.getSlot());
 
@@ -85,18 +87,35 @@ public class RewardBasedAttestationSorter {
         spec,
         BeaconStateAltair.required(state),
         BeaconStateAccessorsAltair.required(specVersion.beaconStateAccessors()),
-        specVersion.miscHelpers().toVersionAltair().orElseThrow());
+        specVersion.miscHelpers().toVersionAltair().orElseThrow(),
+        false);
+  }
+
+  /*
+   * Creates a sorter for testing purposes, which will always sort the attestations (which means it calculates rewards).
+   */
+  public static RewardBasedAttestationSorter createForReferenceTest(
+      final Spec spec, final BeaconState state) {
+    final SpecVersion specVersion = spec.atSlot(state.getSlot());
+    return new RewardBasedAttestationSorter(
+        spec,
+        BeaconStateAltair.required(state),
+        BeaconStateAccessorsAltair.required(specVersion.beaconStateAccessors()),
+        specVersion.miscHelpers().toVersionAltair().orElseThrow(),
+        true);
   }
 
   protected RewardBasedAttestationSorter(
       final Spec spec,
       final BeaconStateAltair state,
       final BeaconStateAccessorsAltair beaconStateAccessors,
-      final MiscHelpersAltair miscHelpers) {
+      final MiscHelpersAltair miscHelpers,
+      final boolean forceSorting) {
     this.spec = spec;
     this.state = state;
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
+    this.forceSorting = forceSorting;
   }
 
   private List<Byte> getCurrentEpochParticipation() {
@@ -124,7 +143,7 @@ public class RewardBasedAttestationSorter {
   public List<PooledAttestationWithRewardInfo> sort(
       final List<PooledAttestationWithData> attestations, final int maxAttestations) {
 
-    if (attestations.size() <= maxAttestations) {
+    if (!forceSorting && attestations.size() <= maxAttestations) {
       LOG.debug(
           "Skipping sorting as the number of attestations is less than or equal to the limit.");
       return attestations.stream()
