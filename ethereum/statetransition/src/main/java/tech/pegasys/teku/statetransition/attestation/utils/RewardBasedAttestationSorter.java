@@ -124,6 +124,13 @@ public class RewardBasedAttestationSorter {
   public List<PooledAttestationWithRewardInfo> sort(
       final List<PooledAttestationWithData> attestations, final int maxAttestations) {
 
+    if(attestations.size()<=maxAttestations) {
+      LOG.debug("Skipping sorting as the number of attestations is less than or equal to the limit.");
+      return attestations.stream()
+          .map(PooledAttestationWithRewardInfo::empty)
+          .collect(Collectors.toList());
+    }
+
     final long start = System.nanoTime();
     final List<PooledAttestationWithRewardInfo> finalSortedAttestations =
         new ArrayList<>(maxAttestations);
