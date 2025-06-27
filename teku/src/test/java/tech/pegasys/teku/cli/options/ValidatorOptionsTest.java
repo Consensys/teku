@@ -251,4 +251,35 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
         .isFalse();
   }
+
+  @Test
+  public void validatorClientBeaconApiExecutorsEmptyByDefault() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(
+            tekuConfiguration.validatorClient().getValidatorConfig().getBeaconApiExecutorThreads())
+        .isEmpty();
+    assertThat(
+            tekuConfiguration
+                .validatorClient()
+                .getValidatorConfig()
+                .getBeaconApiReadinessExecutorThreads())
+        .isEmpty();
+  }
+
+  @Test
+  public void validatorClientBeaconApiExecutorsCanBeSet() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--Xvalidator-client-beacon-api-executor-threads=2",
+            "--Xvalidator-client-beacon-api-readiness-executor-threads=4");
+    assertThat(
+            tekuConfiguration.validatorClient().getValidatorConfig().getBeaconApiExecutorThreads())
+        .hasValue(2);
+    assertThat(
+            tekuConfiguration
+                .validatorClient()
+                .getValidatorConfig()
+                .getBeaconApiReadinessExecutorThreads())
+        .hasValue(4);
+  }
 }

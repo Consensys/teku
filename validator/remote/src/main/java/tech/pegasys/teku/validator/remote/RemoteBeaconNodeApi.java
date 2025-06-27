@@ -84,9 +84,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final int remoteNodeCount = failoverEndpoints.size() + 1;
 
-    final int apiMaxThreads =
-        calculateAPIMaxThreads(
-            remoteNodeCount, validatorConfig.isFailoversPublishSignedDutiesEnabled());
+    final int apiMaxThreads = calculateAPIMaxThreads(remoteNodeCount, validatorConfig);
     final AsyncRunner asyncRunner =
         services.createAsyncRunner(
             "validatorBeaconAPI", apiMaxThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
@@ -97,7 +95,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     } else {
       // Use a separate async runner for the readiness-related api calls, so that they do not
       // interfere with the critical path API calls.
-      final int apiMaxReadinessThreads = calculateReadinessAPIMaxThreads(remoteNodeCount);
+      final int apiMaxReadinessThreads =
+          calculateReadinessAPIMaxThreads(remoteNodeCount, validatorConfig);
       readinessAsyncRunner =
           services.createAsyncRunner(
               "validatorBeaconAPIReadiness", apiMaxReadinessThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
@@ -188,14 +187,23 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   }
 
   public static int calculateAPIMaxThreads(
-      final int remoteNodeCount, final boolean isFailoversPublishSignedDutiesEnabled) {
+      final int remoteNodeCount, final ValidatorConfig validatorConfig) {
+    if (validatorConfig.getBeaconApiExecutorThreads().isPresent()) {
+      return validatorConfig.getBeaconApiExecutorThreads().getAsInt();
+    }
     // Let's allow at least 4 parallel requests per remote node when publishing signed duties to
     // failovers, to reduce the risk of being affected by a slow remote node.
-    final int remoteNodeCountMultiplier = isFailoversPublishSignedDutiesEnabled ? 4 : 2;
+    final int remoteNodeCountMultiplier =
+        validatorConfig.isFailoversPublishSignedDutiesEnabled() ? 4 : 2;
     return Math.max(5, remoteNodeCount * remoteNodeCountMultiplier);
   }
 
-  public static int calculateReadinessAPIMaxThreads(final int remoteNodeCount) {
+  public static int calculateReadinessAPIMaxThreads(
+      final int remoteNodeCount, final ValidatorConfig validatorConfig) {
+    if (validatorConfig.getBeaconApiReadinessExecutorThreads().isPresent()) {
+      return validatorConfig.getBeaconApiReadinessExecutorThreads().getAsInt();
+    }
+
     // we call two methods per remote node to check readiness, so we need at least 2 threads to call
     // them in parallel
     return remoteNodeCount * 2;
