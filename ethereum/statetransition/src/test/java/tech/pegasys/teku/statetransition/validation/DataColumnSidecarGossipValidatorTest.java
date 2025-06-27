@@ -40,9 +40,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -65,7 +63,6 @@ public class DataColumnSidecarGossipValidatorTest {
   private UInt64 slot;
   private UInt64 index;
   private UInt64 proposerIndex;
-  private Bytes32 blockRoot;
   private Bytes32 blockParentRoot;
 
   private DataColumnSidecar dataColumnSidecar;
@@ -93,7 +90,6 @@ public class DataColumnSidecarGossipValidatorTest {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(slot.longValue(), blockParentRoot);
     proposerIndex = signedBeaconBlock.getProposerIndex();
-    blockRoot = signedBeaconBlock.getRoot();
 
     dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(signedBeaconBlock, index);
@@ -118,49 +114,13 @@ public class DataColumnSidecarGossipValidatorTest {
     when(miscHelpersFulu.verifyDataColumnSidecarKzgProof(any(), any(DataColumnSidecar.class)))
         .thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(any())).thenReturn(true);
+    when(miscHelpersFulu.verifyDataColumnSidecar(any())).thenReturn(true);
   }
 
   @TestTemplate
   void shouldAccept() {
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-  }
-
-  @TestTemplate
-  void shouldRejectWhenIndexIsTooBig(final SpecContext specContext) {
-    final DataStructureUtil dataStructureUtil = specContext.getDataStructureUtil();
-    final BeaconBlockHeader blockHeader =
-        new BeaconBlockHeader(
-            slot, proposerIndex, blockParentRoot, dataStructureUtil.randomBytes32(), blockRoot);
-    dataColumnSidecar =
-        dataStructureUtil.randomDataColumnSidecar(
-            new SignedBeaconBlockHeader(blockHeader, dataStructureUtil.randomSignature()),
-            UInt64.valueOf(specContext.getSpec().getNumberOfDataColumns().orElseThrow()));
-
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
-  }
-
-  @TestTemplate
-  void shouldRejectWhenSlotIsNotFulu() {
-    final Spec mockedSpec = mock(Spec.class);
-    when(mockedSpec.getNumberOfDataColumns()).thenReturn(Optional.empty());
-    final SpecVersion mockedSpecVersion = mock(SpecVersion.class);
-    when(mockedSpec.getGenesisSpec()).thenReturn(mockedSpecVersion);
-    when(mockedSpecVersion.getSlotsPerEpoch()).thenReturn(1);
-
-    validator =
-        DataColumnSidecarGossipValidator.create(
-            mockedSpec,
-            invalidBlocks,
-            gossipValidationHelper,
-            miscHelpersFulu,
-            kzg,
-            metricsSystemStub,
-            stubTimeProvider);
-
-    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @TestTemplate
@@ -177,6 +137,16 @@ public class DataColumnSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @TestTemplate
+  void shouldRejectInvalidDataColumnSidecar() {
+    when(miscHelpersFulu.verifyDataColumnSidecar(any())).thenReturn(false);
+    SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
+        .isCompletedWithValueMatching(
+            result ->
+                result.equals(
+                    InternalValidationResult.reject("DataColumnSidecar has invalid structure")));
   }
 
   @TestTemplate

@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
+import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 
 class AttestationBitsPhase0 implements AttestationBits {
   private SszBitlist aggregationBits;
@@ -40,8 +41,8 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public boolean aggregateWith(final AttestationBits other) {
-    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+  public boolean aggregateWith(final PooledAttestation other) {
+    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other.bits());
     if (aggregationBits.intersects(otherPhase0.aggregationBits)) {
       return false;
     }
@@ -60,8 +61,8 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public boolean isSuperSetOf(final AttestationBits other) {
-    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other);
+  public boolean isSuperSetOf(final PooledAttestation other) {
+    final AttestationBitsPhase0 otherPhase0 = requiresPhase0(other.bits());
     return aggregationBits.isSuperSetOf(otherPhase0.aggregationBits);
   }
 
@@ -106,7 +107,7 @@ class AttestationBitsPhase0 implements AttestationBits {
   }
 
   @Override
-  public int getFirstCommitteeIndex() {
+  public int getSingleCommitteeIndex() {
     throw new IllegalStateException("Committee bits not available in phase0");
   }
 

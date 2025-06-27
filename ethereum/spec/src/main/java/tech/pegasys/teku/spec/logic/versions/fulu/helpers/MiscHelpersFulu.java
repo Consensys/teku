@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -74,6 +76,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
+  private static final Logger LOG = LogManager.getLogger();
   private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
@@ -89,13 +92,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   private final Predicates predicates;
   private final SpecConfigFulu specConfigFulu;
   private final SchemaDefinitionsFulu schemaDefinitionsFulu;
-  private final BlobSchedule blobSchedule;
+  private final BpoForkSchedule bpoForkSchedule;
 
   public MiscHelpersFulu(
       final SpecConfigFulu specConfig,
       final PredicatesElectra predicates,
-      final SchemaDefinitionsFulu schemaDefinitions,
-      final BlobSchedule blobSchedule) {
+      final SchemaDefinitionsFulu schemaDefinitions) {
     super(
         SpecConfigElectra.required(specConfig),
         predicates,
@@ -103,7 +105,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.predicates = predicates;
     this.specConfigFulu = specConfig;
     this.schemaDefinitionsFulu = schemaDefinitions;
-    this.blobSchedule = blobSchedule;
+    this.bpoForkSchedule = new BpoForkSchedule(specConfig);
   }
 
   @Override
@@ -138,14 +140,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public Optional<Integer> getHighestMaxBlobsPerBlockFromSchedule() {
-    return blobSchedule.getHighestMaxBlobsPerBlock();
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
   }
 
   // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return blobSchedule
-        .getBlobParameters(epoch)
+    return bpoForkSchedule
+        .getBpoFork(epoch)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
@@ -233,19 +235,40 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .min(specConfigFulu.getNumberOfCustodyGroups());
   }
 
+  public boolean verifyDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+    final int numberOfColumns = specConfigFulu.getNumberOfColumns();
+
+    if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
+      LOG.trace(
+          "DataColumnSidecar has invalid index {}. Should be less than {}",
+          dataColumnSidecar.getIndex(),
+          numberOfColumns);
+      return false;
+    }
+    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
+      LOG.trace("DataColumnSidecar has no kzg commitments");
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size()
+        != dataColumnSidecar.getSszKZGCommitments().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg commitments ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGCommitments().size());
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg proofs ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGProofs().size());
+      return false;
+    }
+    return true;
+  }
+
   public boolean verifyDataColumnSidecarKzgProof(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
-    final int dataColumns = specConfigFulu.getNumberOfColumns();
-    if (dataColumnSidecar.getIndex().isGreaterThanOrEqualTo(dataColumns)) {
-      return false;
-    }
-
-    // Number of rows is the same for cells, commitments, proofs
-    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
-        || dataColumnSidecar.getSszKZGCommitments().size()
-            != dataColumnSidecar.getSszKZGProofs().size()) {
-      return false;
-    }
 
     final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getDataColumn().size())
@@ -327,6 +350,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
+  @SuppressWarnings("deprecation")
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
       final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())

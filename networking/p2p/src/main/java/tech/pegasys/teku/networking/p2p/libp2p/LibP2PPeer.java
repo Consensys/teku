@@ -44,6 +44,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -141,18 +142,23 @@ public class LibP2PPeer implements Peer {
   public void disconnectImmediately(
       final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
     if (connected.getAndSet(false)) {
-      disconnectReason = reason;
-      disconnectLocallyInitiated = locallyInitiated;
-      SafeFuture.of(connection.close())
-          .finish(
-              () ->
-                  LOG.trace(
-                      "Disconnected forcibly {} because {} from {}",
-                      locallyInitiated ? "locally" : "remotely",
-                      reason,
-                      connection.remoteAddress()),
-              error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
+      internalDisconnectImmediately(reason, locallyInitiated);
     }
+  }
+
+  private void internalDisconnectImmediately(
+      final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+    disconnectReason = reason;
+    disconnectLocallyInitiated = locallyInitiated;
+    SafeFuture.of(connection.close())
+        .finish(
+            () ->
+                LOG.trace(
+                    "Disconnected forcibly {} because {} from {}",
+                    locallyInitiated ? "locally" : "remotely",
+                    reason,
+                    connection.remoteAddress()),
+            error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
   }
 
   private SafeFuture<Optional<String>> getAgentVersionFromIdentity() {
@@ -179,17 +185,14 @@ public class LibP2PPeer implements Peer {
   public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     if (connected.getAndSet(false)) {
       LOG.trace("Disconnecting cleanly because {} from {}", reason, connection.remoteAddress());
-      connected.set(false);
-      disconnectReason = Optional.of(reason);
-      disconnectLocallyInitiated = true;
       return disconnectRequestHandler
           .requestDisconnect(reason)
           .handle(
               (__, error) -> {
                 if (error != null) {
-                  LOG.debug("Failed to disconnect from " + getId() + " cleanly.", error);
+                  LOG.debug("Failed to disconnect from {} cleanly.", getId(), error);
                 }
-                disconnectImmediately(Optional.of(reason), true);
+                internalDisconnectImmediately(Optional.of(reason), true);
                 return null;
               });
     } else {
@@ -211,7 +214,7 @@ public class LibP2PPeer implements Peer {
   @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
-          TRequest,
+          TRequest extends RpcRequest,
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
@@ -253,7 +256,7 @@ public class LibP2PPeer implements Peer {
 
   private static class ThrottlingRpcHandler<
       TOutgoingHandler extends RpcRequestHandler,
-      TRequest,
+      TRequest extends RpcRequest,
       TRespHandler extends RpcResponseHandler<?>> {
 
     private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
