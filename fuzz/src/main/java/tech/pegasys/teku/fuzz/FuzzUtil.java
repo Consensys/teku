@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BpoForkSchedule;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
@@ -102,8 +103,9 @@ public class FuzzUtil {
     final SchemaDefinitionsFulu schemaDefinitionsFulu =
         SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
     final SpecConfigFulu specConfig = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
+    final BpoForkSchedule bpoForkSchedule = new BpoForkSchedule(specConfig);
     final MiscHelpersFulu miscHelpersFulu =
-        new MiscHelpersFulu(specConfig, predicates, schemaDefinitionsFulu);
+        new MiscHelpersFulu(specConfig, predicates, schemaDefinitionsFulu, bpoForkSchedule);
     final BeaconStateAccessorsFulu stateAccessorsFulu =
         new BeaconStateAccessorsFulu(specConfig, predicates, miscHelpersFulu);
     this.stateMutatorsElectra =

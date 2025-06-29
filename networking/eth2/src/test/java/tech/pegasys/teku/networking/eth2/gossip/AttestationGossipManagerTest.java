@@ -29,7 +29,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,7 +58,6 @@ public class AttestationGossipManagerTest {
   private DataStructureUtil dataStructureUtil;
   private RecentChainData recentChainData;
   private ForkInfo forkInfo;
-  private Bytes4 forkDigest;
   private AttestationGossipManager attestationGossipManager;
 
   @SuppressWarnings("unchecked")
@@ -81,7 +79,6 @@ public class AttestationGossipManagerTest {
     dataStructureUtil = specContext.getDataStructureUtil();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     forkInfo = new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
-    forkDigest = dataStructureUtil.randomBytes4();
 
     final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
@@ -92,7 +89,6 @@ public class AttestationGossipManagerTest {
             recentChainData,
             gossipedAttestationProcessor,
             forkInfo,
-            forkDigest,
             DebugDataDumper.NOOP);
 
     BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
@@ -251,6 +247,7 @@ public class AttestationGossipManagerTest {
   }
 
   private String getSubnetTopic(final int subnetId) {
-    return GossipTopics.getAttestationSubnetTopic(forkDigest, subnetId, gossipEncoding);
+    return GossipTopics.getAttestationSubnetTopic(
+        forkInfo.getForkDigest(spec), subnetId, gossipEncoding);
   }
 }

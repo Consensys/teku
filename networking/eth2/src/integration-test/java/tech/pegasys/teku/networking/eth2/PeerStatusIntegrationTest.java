@@ -221,7 +221,7 @@ public class PeerStatusIntegrationTest {
     final BeaconState state = safeJoin(storageClient.getBestState().orElseThrow());
     assertStatus(
         status,
-        storageClient.getCurrentForkDigest().orElseThrow(),
+        storageClient.getCurrentForkInfo().orElseThrow().getForkDigest(spec),
         state.getFinalizedCheckpoint().getRoot(),
         state.getFinalizedCheckpoint().getEpoch(),
         storageClient.getBestBlockRoot().orElseThrow(),

@@ -20,7 +20,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
@@ -47,7 +46,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   private final List<GossipManager> gossipManagers = new ArrayList<>();
-  private final Fork fork;
+  protected final Fork fork;
   protected final Spec spec;
   protected final AsyncRunner asyncRunner;
   protected final MetricsSystem metricsSystem;
@@ -108,19 +107,17 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public final void startGossip(
-      final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
+  public void startGossip(final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
     if (gossipManagers.isEmpty()) {
-      final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-      final Bytes4 forkDigest = recentChainData.getForkDigest(getActivationEpoch());
-      addGossipManagers(forkInfo, forkDigest);
+      final ForkInfo forkInfo = getForkInfo(genesisValidatorsRoot);
+      addGossipManagers(forkInfo);
     }
     gossipManagers.stream()
         .filter(manager -> manager.isEnabledDuringOptimisticSync() || !isOptimisticHead)
         .forEach(GossipManager::subscribe);
   }
 
-  void addAttestationGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addAttestationGossipManager(final ForkInfo forkInfo) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             spec,
@@ -130,7 +127,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             recentChainData,
             attestationProcessor,
             forkInfo,
-            forkDigest,
             debugDataDumper);
 
     attestationGossipManager =
@@ -138,7 +134,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
     addGossipManager(attestationGossipManager);
   }
 
-  void addBlockGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addBlockGossipManager(final ForkInfo forkInfo) {
     blockGossipManager =
         new BlockGossipManager(
             recentChainData,
@@ -147,13 +143,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             blockProcessor,
             debugDataDumper);
     addGossipManager(blockGossipManager);
   }
 
-  void addAggregateGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addAggregateGossipManager(final ForkInfo forkInfo) {
     aggregateGossipManager =
         new AggregateGossipManager(
             spec,
@@ -162,13 +157,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             aggregateProcessor,
             debugDataDumper);
     addGossipManager(aggregateGossipManager);
   }
 
-  void addVoluntaryExitGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addVoluntaryExitGossipManager(final ForkInfo forkInfo) {
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
             recentChainData,
@@ -176,14 +170,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             voluntaryExitProcessor,
             spec.getNetworkingConfig(),
             debugDataDumper);
     addGossipManager(voluntaryExitGossipManager);
   }
 
-  void addProposerSlashingGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addProposerSlashingGossipManager(final ForkInfo forkInfo) {
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
             recentChainData,
@@ -191,14 +184,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             proposerSlashingProcessor,
             spec.getNetworkingConfig(),
             debugDataDumper);
     addGossipManager(proposerSlashingGossipManager);
   }
 
-  void addAttesterSlashingGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addAttesterSlashingGossipManager(final ForkInfo forkInfo) {
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
             spec,
@@ -207,19 +199,22 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             attesterSlashingProcessor,
             debugDataDumper);
     addGossipManager(attesterSlashingGossipManager);
   }
 
-  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
-    addAttestationGossipManager(forkInfo, forkDigest);
-    addBlockGossipManager(forkInfo, forkDigest);
-    addAggregateGossipManager(forkInfo, forkDigest);
-    addVoluntaryExitGossipManager(forkInfo, forkDigest);
-    addProposerSlashingGossipManager(forkInfo, forkDigest);
-    addAttesterSlashingGossipManager(forkInfo, forkDigest);
+  protected ForkInfo getForkInfo(final Bytes32 genesisValidatorsRoot) {
+    return new ForkInfo(fork, genesisValidatorsRoot);
+  }
+
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    addAttestationGossipManager(forkInfo);
+    addBlockGossipManager(forkInfo);
+    addAggregateGossipManager(forkInfo);
+    addVoluntaryExitGossipManager(forkInfo);
+    addProposerSlashingGossipManager(forkInfo);
+    addAttesterSlashingGossipManager(forkInfo);
   }
 
   protected void addGossipManager(final GossipManager gossipManager) {

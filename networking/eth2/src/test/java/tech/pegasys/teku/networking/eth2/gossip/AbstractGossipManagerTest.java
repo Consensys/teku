@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
@@ -62,7 +61,6 @@ class AbstractGossipManagerTest {
   private final TopicChannel topicChannel2 = mock(TopicChannel.class);
   private final ForkInfo forkInfo =
       new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
-  private final Bytes4 forkDigest = dataStructureUtil.randomBytes4();
 
   @SuppressWarnings("unchecked")
   private final OperationProcessor<SszUInt64> processor = mock(OperationProcessor.class);
@@ -84,7 +82,6 @@ class AbstractGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             processor,
             SszPrimitiveSchemas.UINT64_SCHEMA,
             spec.getNetworkingConfig());
@@ -172,7 +169,6 @@ class AbstractGossipManagerTest {
         final GossipNetwork gossipNetwork,
         final GossipEncoding gossipEncoding,
         final ForkInfo forkInfo,
-        final Bytes4 forkDigest,
         final OperationProcessor<SszUInt64> processor,
         final SszSchema<SszUInt64> gossipType,
         final NetworkingSpecConfig networkingConfig) {
@@ -183,7 +179,6 @@ class AbstractGossipManagerTest {
           gossipNetwork,
           gossipEncoding,
           forkInfo,
-          forkDigest,
           processor,
           gossipType,
           message -> Optional.of(UInt64.ZERO),

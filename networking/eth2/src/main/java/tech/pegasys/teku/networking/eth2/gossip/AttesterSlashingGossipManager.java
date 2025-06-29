@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -35,7 +34,6 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final Bytes4 forkDigest,
       final OperationProcessor<AttesterSlashing> processor,
       final DebugDataDumper debugDataDumper) {
     super(
@@ -45,7 +43,6 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
         gossipNetwork,
         gossipEncoding,
         forkInfo,
-        forkDigest,
         processor,
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()

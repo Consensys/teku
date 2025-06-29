@@ -83,9 +83,7 @@ public class ActiveEth2P2PNetworkTest {
   private final ActiveEth2P2PNetwork network = createNetwork();
   private SignedBlockAndState genesis;
   private Fork phase0Fork;
-  private Bytes4 phase0ForkDigest;
   private Fork altairFork;
-  private Bytes4 altairForkDigest;
   private Bytes32 genesisValidatorsRoot;
 
   @BeforeEach
@@ -97,7 +95,7 @@ public class ActiveEth2P2PNetworkTest {
   @Test
   public void start_setsGossipFork() {
     setupForkInfo();
-    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any(), any());
+    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any());
     assertThat(network.start()).isCompleted();
 
     final ForkInfo expectedFork =
@@ -105,17 +103,16 @@ public class ActiveEth2P2PNetworkTest {
     verify(discoveryNetwork)
         .setForkInfo(
             expectedFork,
-            phase0ForkDigest,
             Optional.of(altairFork),
             Optional.empty(),
-            Optional.of(altairForkDigest));
+            Optional.of(Bytes4.fromHexString("0x41249021")));
   }
 
   @Test
   public void onEpoch_shouldUpdateDiscoveryNetworkForkInfo() {
     setupForkInfo();
     // Start network
-    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any(), any());
+    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any());
     assertThat(network.start()).isCompleted();
 
     // Verify updates at startup
@@ -124,10 +121,9 @@ public class ActiveEth2P2PNetworkTest {
     verify(discoveryNetwork)
         .setForkInfo(
             expectedFork,
-            phase0ForkDigest,
             Optional.of(altairFork),
             Optional.empty(),
-            Optional.of(altairForkDigest));
+            Optional.of(Bytes4.fromHexString("0x41249021")));
 
     // Process epoch 1 - we shouldn't update fork info here
     network.onEpoch(UInt64.ONE);
@@ -139,8 +135,7 @@ public class ActiveEth2P2PNetworkTest {
     network.onEpoch(altairForkEpoch);
     expectedFork = new ForkInfo(altairFork, genesisValidatorsRoot);
     verify(discoveryNetwork)
-        .setForkInfo(
-            expectedFork, altairForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
+        .setForkInfo(expectedFork, Optional.empty(), Optional.empty(), Optional.empty());
 
     // Processing altair again shouldn't cause any updates
     network.onEpoch(altairForkEpoch);
@@ -308,13 +303,9 @@ public class ActiveEth2P2PNetworkTest {
 
   private void setupForkInfo() {
     // Set fork info
-    genesisValidatorsRoot = genesis.getState().getGenesisValidatorsRoot();
     phase0Fork = spec.getForkSchedule().getFork(UInt64.ZERO);
-    phase0ForkDigest =
-        spec.computeForkDigest(phase0Fork.getCurrentVersion(), genesisValidatorsRoot);
     altairFork = spec.getForkSchedule().getFork(altairForkEpoch);
-    altairForkDigest =
-        spec.computeForkDigest(altairFork.getCurrentVersion(), genesisValidatorsRoot);
+    genesisValidatorsRoot = genesis.getState().getGenesisValidatorsRoot();
 
     // Verify assumptions
     assertThat(phase0Fork.getCurrentVersion()).isNotEqualTo(altairFork.getCurrentVersion());

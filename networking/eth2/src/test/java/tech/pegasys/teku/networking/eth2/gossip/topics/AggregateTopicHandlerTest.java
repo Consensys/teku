@@ -38,7 +38,6 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             processor,
             DebugDataDumper.NOOP)
         .getTopicHandler();

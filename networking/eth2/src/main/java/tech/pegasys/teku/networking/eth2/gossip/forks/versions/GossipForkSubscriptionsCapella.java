@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.SignedBlsToExecutionChangeGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -87,8 +86,7 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
         signedBlsToExecutionChangeOperationProcessor;
   }
 
-  void addSignedBlsToExecutionChangeGossipManager(
-      final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addSignedBlsToExecutionChangeGossipManager(final ForkInfo forkInfo) {
     final SchemaDefinitionsCapella schemaDefinitions =
         SchemaDefinitionsCapella.required(
             spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
@@ -101,7 +99,6 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             signedBlsToExecutionChangeOperationProcessor,
             spec.getNetworkingConfig(),
             debugDataDumper);
@@ -111,9 +108,9 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
   }
 
   @Override
-  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
-    super.addGossipManagers(forkInfo, forkDigest);
-    addSignedBlsToExecutionChangeGossipManager(forkInfo, forkDigest);
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addGossipManagers(forkInfo);
+    addSignedBlsToExecutionChangeGossipManager(forkInfo);
   }
 
   @Override

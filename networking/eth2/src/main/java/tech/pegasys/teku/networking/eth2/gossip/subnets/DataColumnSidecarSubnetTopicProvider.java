@@ -17,20 +17,24 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getDa
 
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarSubnetTopicProvider {
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final GossipEncoding gossipEncoding;
 
   public DataColumnSidecarSubnetTopicProvider(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
+    this.spec = recentChainData.getSpec();
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
   }
 
   public String getTopicForSubnet(final int subnetId) {
-    final Bytes4 forkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
+    final Bytes4 forkDigest =
+        recentChainData.getCurrentForkInfo().orElseThrow().getForkDigest(spec);
     return getDataColumnSidecarSubnetTopic(forkDigest, subnetId, gossipEncoding);
   }
 }
