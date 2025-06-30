@@ -92,13 +92,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   private final Predicates predicates;
   private final SpecConfigFulu specConfigFulu;
   private final SchemaDefinitionsFulu schemaDefinitionsFulu;
-  private final BlobSchedule blobSchedule;
+  private final BpoForkSchedule bpoForkSchedule;
 
   public MiscHelpersFulu(
       final SpecConfigFulu specConfig,
       final PredicatesElectra predicates,
-      final SchemaDefinitionsFulu schemaDefinitions,
-      final BlobSchedule blobSchedule) {
+      final SchemaDefinitionsFulu schemaDefinitions) {
     super(
         SpecConfigElectra.required(specConfig),
         predicates,
@@ -106,7 +105,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     this.predicates = predicates;
     this.specConfigFulu = specConfig;
     this.schemaDefinitionsFulu = schemaDefinitions;
-    this.blobSchedule = blobSchedule;
+    this.bpoForkSchedule = new BpoForkSchedule(specConfig);
   }
 
   @Override
@@ -141,14 +140,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public Optional<Integer> getHighestMaxBlobsPerBlockFromSchedule() {
-    return blobSchedule.getHighestMaxBlobsPerBlock();
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
   }
 
   // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return blobSchedule
-        .getBlobParameters(epoch)
+    return bpoForkSchedule
+        .getBpoFork(epoch)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
@@ -351,6 +350,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
+  @SuppressWarnings("deprecation")
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
       final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())

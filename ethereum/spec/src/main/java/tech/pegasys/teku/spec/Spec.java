@@ -503,6 +503,15 @@ public class Spec {
         .computeForkDigest(currentVersion, genesisValidatorsRoot);
   }
 
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionFulu()
+        .map(miscHelpersFulu -> miscHelpersFulu.computeForkDigest(genesisValidatorsRoot, epoch))
+        // backwards compatibility for milestones before Fulu
+        .orElseGet(() -> computeForkDigest(fork(epoch).getCurrentVersion(), genesisValidatorsRoot));
+  }
+
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
@@ -976,16 +985,14 @@ public class Spec {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
 
-    // query the blob_schedule after FULU
+    // query the blob_schedule after Fulu
     if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
-      final Optional<Integer> maybeHighestMaxBlobsPerBlockFromSchedule =
-          forMilestone(FULU)
-              .miscHelpers()
-              .toVersionFulu()
-              .flatMap(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromSchedule);
+      final Optional<Integer> maybeHighestMaxBlobsPerBlockFromBpoForkSchedule =
+          MiscHelpersFulu.required(forMilestone(FULU).miscHelpers())
+              .getHighestMaxBlobsPerBlockFromBpoForkSchedule();
       // only use blob_schedule if it is present
-      if (maybeHighestMaxBlobsPerBlockFromSchedule.isPresent()) {
-        return maybeHighestMaxBlobsPerBlockFromSchedule;
+      if (maybeHighestMaxBlobsPerBlockFromBpoForkSchedule.isPresent()) {
+        return maybeHighestMaxBlobsPerBlockFromBpoForkSchedule;
       }
     }
 
@@ -1123,11 +1130,10 @@ public class Spec {
         return Optional.empty();
       }
       case DENEB, ELECTRA -> {
-        return Optional.of(
-            specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
+        return Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
       }
       default -> {
-        final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+        final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
         return Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())
                 .getBlobParameters(epoch)

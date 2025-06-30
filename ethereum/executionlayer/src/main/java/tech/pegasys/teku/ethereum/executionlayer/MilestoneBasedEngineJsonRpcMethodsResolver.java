@@ -62,24 +62,12 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
         .forEach(
             milestone -> {
               switch (milestone) {
-                case PHASE0:
-                case ALTAIR:
-                  break;
-                case BELLATRIX:
-                  methodsByMilestone.put(milestone, bellatrixSupportedMethods());
-                  break;
-                case CAPELLA:
-                  methodsByMilestone.put(milestone, capellaSupportedMethods());
-                  break;
-                case DENEB:
-                  methodsByMilestone.put(milestone, denebSupportedMethods());
-                  break;
-                case ELECTRA:
-                  methodsByMilestone.put(milestone, electraSupportedMethods());
-                  break;
-                case FULU:
-                  methodsByMilestone.put(milestone, fuluSupportedMethods());
-                  break;
+                case PHASE0, ALTAIR -> {}
+                case BELLATRIX -> methodsByMilestone.put(milestone, bellatrixSupportedMethods());
+                case CAPELLA -> methodsByMilestone.put(milestone, capellaSupportedMethods());
+                case DENEB -> methodsByMilestone.put(milestone, denebSupportedMethods());
+                case ELECTRA -> methodsByMilestone.put(milestone, electraSupportedMethods());
+                case FULU -> methodsByMilestone.put(milestone, fuluSupportedMethods());
               }
             });
   }

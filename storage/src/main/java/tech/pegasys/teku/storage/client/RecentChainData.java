@@ -232,6 +232,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(milestoneToForkDigest.get(milestone));
   }
 
+  public Bytes4 getForkDigest(final UInt64 epoch) {
+    final SpecMilestone milestone = spec.atEpoch(epoch).getMilestone();
+    return getForkDigestByMilestone(milestone)
+        .orElseThrow(
+            () -> new IllegalStateException("Fork digest hasn't been computed for epoch " + epoch));
+  }
+
   public boolean isPreGenesis() {
     return this.store == null;
   }
@@ -260,9 +267,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .getActiveMilestones()
         .forEach(
             forkAndMilestone -> {
-              final Fork fork = forkAndMilestone.getFork();
-              final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-              final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
+              final Bytes4 forkDigest =
+                  spec.computeForkDigest(
+                      genesisValidatorsRoot, forkAndMilestone.getFork().getEpoch());
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });
@@ -464,15 +471,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec;
   }
 
-  /**
-   * @return The number of slots between our chainhead and the current slot by time
-   */
-  public Optional<UInt64> getChainHeadSlotsBehind() {
-    return chainHead
-        .map(MinimalBeaconBlockSummary::getSlot)
-        .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
-  }
-
   public Optional<Fork> getNextFork(final Fork fork) {
     return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
@@ -496,6 +494,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .map(GenesisData::getGenesisValidatorsRoot)
         .flatMap(
             validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
+  }
+
+  /**
+   * @return fork digest based on the current time, not head block
+   */
+  public Optional<Bytes4> getCurrentForkDigest() {
+    return getCurrentEpoch().map(this::getForkDigest);
   }
 
   public Optional<ForkInfo> getForkInfo(final UInt64 epoch) {
