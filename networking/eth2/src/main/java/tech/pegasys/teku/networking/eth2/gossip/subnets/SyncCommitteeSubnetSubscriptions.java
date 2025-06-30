@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
@@ -38,6 +39,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   private final AsyncRunner asyncRunner;
   private final OperationProcessor<ValidatableSyncCommitteeMessage> processor;
   private final ForkInfo forkInfo;
+  private final Bytes4 forkDigest;
   private final DebugDataDumper debugDataDumper;
 
   public SyncCommitteeSubnetSubscriptions(
@@ -49,6 +51,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidatableSyncCommitteeMessage> processor,
       final ForkInfo forkInfo,
+      final Bytes4 forkDigest,
       final DebugDataDumper debugDataDumper) {
     super(gossipNetwork, gossipEncoding);
     this.spec = spec;
@@ -57,13 +60,13 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.forkInfo = forkInfo;
+    this.forkDigest = forkDigest;
     this.debugDataDumper = debugDataDumper;
   }
 
   public SafeFuture<?> gossip(final SyncCommitteeMessage message, final int subnetId) {
     return gossipNetwork.gossip(
-        GossipTopics.getSyncCommitteeSubnetTopic(
-            forkInfo.getForkDigest(spec), subnetId, gossipEncoding),
+        GossipTopics.getSyncCommitteeSubnetTopic(forkDigest, subnetId, gossipEncoding),
         gossipEncoding.encode(message));
   }
 
@@ -78,7 +81,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         asyncRunner,
         convertingProcessor,
         gossipEncoding,
-        forkInfo.getForkDigest(spec),
+        forkDigest,
         GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId),
         new OperationMilestoneValidator<>(
             recentChainData.getSpec(),
