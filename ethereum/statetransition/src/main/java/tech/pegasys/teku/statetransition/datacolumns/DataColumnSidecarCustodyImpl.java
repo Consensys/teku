@@ -70,7 +70,7 @@ public class DataColumnSidecarCustodyImpl
     }
 
     public AsyncStream<DataColumnSlotAndIdentifier> streamIncompleteColumns() {
-      return AsyncStream.create(getIncompleteColumns().iterator());
+      return AsyncStream.createUnsafe(getIncompleteColumns().iterator());
     }
 
     @SuppressWarnings("UnusedMethod")
@@ -217,7 +217,8 @@ public class DataColumnSidecarCustodyImpl
                       firstIncompleteSlot,
                       slot -> slot.isLessThanOrEqualTo(toSlotIncluded),
                       UInt64::increment);
-              return AsyncStream.create(slotStream).mapAsync(this::retrieveSlotCustody);
+              return AsyncStream.createUnsafe(slotStream.iterator())
+                  .mapAsync(this::retrieveSlotCustody);
             });
   }
 

@@ -46,7 +46,11 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   private static final Logger LOG = LogManager.getLogger();
 
   /** Time until we timeout the event stream if no events are received. */
-  public static final Duration READ_TIMEOUT = Duration.ofSeconds(60);
+  public static final Duration EVENT_STREAM_READ_TIMEOUT = Duration.ofSeconds(60);
+
+  public static final Duration REST_CALL_TIMEOUT = Duration.ofSeconds(10);
+
+  public static final int MAX_API_EXECUTOR_QUEUE_SIZE = 5000;
 
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
@@ -62,9 +66,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   }
 
   public static BeaconNodeApi create(
-      final ServiceConfig serviceConfig,
+      final ServiceConfig services,
       final ValidatorConfig validatorConfig,
-      final AsyncRunner asyncRunner,
       final Spec spec,
       final List<URI> beaconNodeApiEndpoints) {
     Preconditions.checkArgument(
@@ -79,6 +82,26 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final HttpUrl primaryEndpoint = remoteBeaconNodeEndpoints.getPrimaryEndpoint();
     final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
 
+    final int remoteNodeCount = failoverEndpoints.size() + 1;
+
+    final int apiMaxThreads = calculateAPIMaxThreads(remoteNodeCount, validatorConfig);
+    final AsyncRunner asyncRunner =
+        services.createAsyncRunner(
+            "validatorBeaconAPI", apiMaxThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
+
+    final AsyncRunner readinessAsyncRunner;
+    if (failoverEndpoints.isEmpty()) {
+      readinessAsyncRunner = asyncRunner;
+    } else {
+      // Use a separate async runner for the readiness-related api calls, so that they do not
+      // interfere with the critical path API calls.
+      final int apiMaxReadinessThreads =
+          calculateReadinessAPIMaxThreads(remoteNodeCount, validatorConfig);
+      readinessAsyncRunner =
+          services.createAsyncRunner(
+              "validatorBeaconAPIReadiness", apiMaxReadinessThreads, MAX_API_EXECUTOR_QUEUE_SIZE);
+    }
+
     final RemoteValidatorApiChannel primaryValidatorApi =
         RemoteValidatorApiHandler.create(
             primaryEndpoint,
@@ -87,6 +110,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             validatorConfig.isValidatorClientUseSszBlocksEnabled(),
             validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
             asyncRunner,
+            readinessAsyncRunner,
             validatorConfig.isAttestationsV2ApisEnabled());
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
@@ -99,11 +123,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
                         validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
                         asyncRunner,
+                        readinessAsyncRunner,
                         validatorConfig.isAttestationsV2ApisEnabled()))
             .toList();
 
-    final EventChannels eventChannels = serviceConfig.getEventChannels();
-    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+    final EventChannels eventChannels = services.getEventChannels();
+    final MetricsSystem metricsSystem = services.getMetricsSystem();
 
     if (!failoverEndpoints.isEmpty()) {
       LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
@@ -117,6 +142,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
+            services.getTimeProvider(),
             primaryValidatorApi,
             failoverValidatorApis,
             ValidatorLogger.VALIDATOR_LOGGER,
@@ -140,12 +166,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             beaconNodeReadinessManager,
             primaryValidatorApi,
             failoverValidatorApis,
-            okHttpClient,
+            createOkHttpClientForStreamFromClient(okHttpClient),
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, validatorApi),
-                new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
-                serviceConfig.getTimeProvider(),
+                new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
+                services.getTimeProvider(),
                 validatorTimingChannel,
                 spec),
             validatorTimingChannel,
@@ -158,6 +184,29 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     return new RemoteBeaconNodeApi(
         beaconChainEventAdapter, validatorApi, beaconNodeReadinessManager);
+  }
+
+  public static int calculateAPIMaxThreads(
+      final int remoteNodeCount, final ValidatorConfig validatorConfig) {
+    if (validatorConfig.getBeaconApiExecutorThreads().isPresent()) {
+      return validatorConfig.getBeaconApiExecutorThreads().getAsInt();
+    }
+    // Let's allow at least 4 parallel requests per remote node when publishing signed duties to
+    // failovers, to reduce the risk of being affected by a slow remote node.
+    final int remoteNodeCountMultiplier =
+        validatorConfig.isFailoversPublishSignedDutiesEnabled() ? 4 : 2;
+    return Math.max(5, remoteNodeCount * remoteNodeCountMultiplier);
+  }
+
+  public static int calculateReadinessAPIMaxThreads(
+      final int remoteNodeCount, final ValidatorConfig validatorConfig) {
+    if (validatorConfig.getBeaconApiReadinessExecutorThreads().isPresent()) {
+      return validatorConfig.getBeaconApiReadinessExecutorThreads().getAsInt();
+    }
+
+    // we call two methods per remote node to check readiness, so we need at least 2 threads to call
+    // them in parallel
+    return remoteNodeCount * 2;
   }
 
   @Override
@@ -187,15 +236,23 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             endpoint ->
                 Preconditions.checkNotNull(
                     HttpUrl.get(endpoint),
-                    String.format(
-                        "Failed to convert remote api endpoint (%s) to a valid url",
-                        UrlSanitizer.sanitizePotentialUrl(endpoint.toString()))))
+                    "Failed to convert remote api endpoint (%s) to a valid url",
+                    UrlSanitizer.sanitizePotentialUrl(endpoint.toString())))
         .toList();
+  }
+
+  private static OkHttpClient createOkHttpClientForStreamFromClient(final OkHttpClient client) {
+    // call timeout must be disabled for event streams, we use read timeout instead
+    return client
+        .newBuilder()
+        .callTimeout(Duration.ZERO)
+        .readTimeout(EVENT_STREAM_READ_TIMEOUT)
+        .build();
   }
 
   public static OkHttpClient createOkHttpClient(final List<HttpUrl> endpoints) {
     final OkHttpClient.Builder httpClientBuilder =
-        new OkHttpClient.Builder().readTimeout(READ_TIMEOUT);
+        new OkHttpClient.Builder().callTimeout(REST_CALL_TIMEOUT);
     if (endpoints.size() > 1) {
       OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(endpoints, httpClientBuilder);
     } else {

@@ -110,6 +110,9 @@ public class ValidatorConfig {
 
   private final int executorThreads;
 
+  private final OptionalInt beaconApiExecutorThreads;
+  private final OptionalInt beaconApiReadinessExecutorThreads;
+
   private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
   private final boolean dvtSelectionsEndpointEnabled;
   private final boolean attestationsV2ApisEnabled;
@@ -150,6 +153,8 @@ public class ValidatorConfig {
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final int executorThreads,
+      final OptionalInt beaconApiExecutorThreads,
+      final OptionalInt beaconApiReadinessExecutorThreads,
       final Optional<String> sentryNodeConfigurationFile,
       final boolean isLocalSlashingProtectionSynchronizedModeEnabled,
       final boolean dvtSelectionsEndpointEnabled,
@@ -193,6 +198,8 @@ public class ValidatorConfig {
     this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.executorThreads = executorThreads;
+    this.beaconApiExecutorThreads = beaconApiExecutorThreads;
+    this.beaconApiReadinessExecutorThreads = beaconApiReadinessExecutorThreads;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
     this.isLocalSlashingProtectionSynchronizedModeEnabled =
         isLocalSlashingProtectionSynchronizedModeEnabled;
@@ -342,8 +349,16 @@ public class ValidatorConfig {
     return executorMaxQueueSize;
   }
 
-  public int getexecutorThreads() {
+  public int getExecutorThreads() {
     return executorThreads;
+  }
+
+  public OptionalInt getBeaconApiExecutorThreads() {
+    return beaconApiExecutorThreads;
+  }
+
+  public OptionalInt getBeaconApiReadinessExecutorThreads() {
+    return beaconApiReadinessExecutorThreads;
   }
 
   public Optional<String> getSentryNodeConfigurationFile() {
@@ -418,6 +433,8 @@ public class ValidatorConfig {
     private Optional<UInt64> builderRegistrationTimestampOverride = Optional.empty();
     private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
     private OptionalInt executorMaxQueueSize = OptionalInt.empty();
+    private OptionalInt beaconApiExecutorThreads = OptionalInt.empty();
+    private OptionalInt beaconApiReadinessExecutorThreads = OptionalInt.empty();
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
     private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
@@ -648,14 +665,25 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder executorMaxQueueSize(final int executorMaxQueueSize) {
-      this.executorMaxQueueSize = OptionalInt.of(executorMaxQueueSize);
+    public Builder executorMaxQueueSize(final OptionalInt executorMaxQueueSize) {
+      this.executorMaxQueueSize = executorMaxQueueSize;
+      return this;
+    }
+
+    public Builder beaconApiExecutorThreads(final OptionalInt beaconApiExecutorThreads) {
+      this.beaconApiExecutorThreads = beaconApiExecutorThreads;
+      return this;
+    }
+
+    public Builder beaconApiReadinessExecutorThreads(
+        final OptionalInt beaconApiReadinessExecutorThreads) {
+      this.beaconApiReadinessExecutorThreads = beaconApiReadinessExecutorThreads;
       return this;
     }
 
     public Builder executorMaxQueueSizeIfDefault(final int executorMaxQueueSize) {
       if (this.executorMaxQueueSize.isEmpty()) {
-        this.executorMaxQueueSize(executorMaxQueueSize);
+        this.executorMaxQueueSize = OptionalInt.of(executorMaxQueueSize);
       }
       return this;
     }
@@ -723,6 +751,8 @@ public class ValidatorConfig {
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize.orElse(DEFAULT_EXECUTOR_MAX_QUEUE_SIZE),
           executorThreads,
+          beaconApiExecutorThreads,
+          beaconApiReadinessExecutorThreads,
           sentryNodeConfigurationFile,
           isLocalSlashingProtectionSynchronizedModeEnabled,
           dvtSelectionsEndpointEnabled,

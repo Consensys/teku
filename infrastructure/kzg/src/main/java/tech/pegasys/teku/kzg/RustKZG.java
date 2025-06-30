@@ -146,6 +146,7 @@ final class RustKZG implements KZG {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     final CellsAndProofs cellsAndProofs = library.computeCellsAndKZGProofs(blob.toArrayUnsafe());
     final Stream<KZGCell> kzgCellStream =

@@ -345,13 +345,15 @@ class FailoverValidatorApiHandlerTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRelayRequests")
-  <T> void requestIsRelayedToAllNodes(
+  <T> void requestIsRelayedToAllReadyNodes(
       final ValidatorApiChannelRequest<T> request,
       final Consumer<ValidatorApiChannel> verifyCallIsMade,
       final String methodLabel,
       final T response) {
 
-    setupSuccesses(request, response, primaryApiChannel, failoverApiChannel1, failoverApiChannel2);
+    when(beaconNodeReadinessManager.isReady(failoverApiChannel2)).thenReturn(false);
+
+    setupSuccesses(request, response, primaryApiChannel, failoverApiChannel1);
 
     final SafeFuture<T> result = request.run(failoverApiHandler);
 
@@ -359,7 +361,7 @@ class FailoverValidatorApiHandlerTest {
     verifyCallIsMade.accept(primaryApiChannel);
 
     verifyCallIsMade.accept(failoverApiChannel1);
-    verifyCallIsMade.accept(failoverApiChannel2);
+    verifyNoInteractions(failoverApiChannel2);
 
     verifyRequestCounters(
         primaryApiChannel,
@@ -372,7 +374,7 @@ class FailoverValidatorApiHandlerTest {
     verifyRequestCounters(
         failoverApiChannel2,
         methodLabel,
-        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
+        Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 0L));
   }
 
   @ParameterizedTest(name = "{0}")

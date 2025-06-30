@@ -146,13 +146,13 @@ public class BlockImporter {
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {
-                LOG.trace(
+                LOG.debug(
                     "Failed to import block for reason {}: {}",
                     result::getFailureReason,
                     block::toLogString);
                 return result;
               }
-              LOG.trace("Successfully imported block {}", block::toLogString);
+              LOG.debug("Successfully imported block {}", block::toLogString);
 
               receivedBlockEventsChannelPublisher.onBlockImported(
                   block, result.isImportedOptimistically());

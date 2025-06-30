@@ -326,6 +326,7 @@ public class RocksDbHelper {
     printLine(out, "-".repeat(50), "-".repeat(15), "-".repeat(11), "-".repeat(15), "-".repeat(16));
   }
 
+  @SuppressWarnings("InlineFormatString")
   static void printLine(
       final SubCommandLogger out,
       final String cfName,

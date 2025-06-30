@@ -19,6 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.ethereum.json.types.node.PeerCount;
 import tech.pegasys.teku.ethereum.json.types.node.PeerCountBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 
@@ -63,8 +65,11 @@ public class BeaconNodeReadinessManagerTest {
   private final BeaconNodeReadinessChannel beaconNodeReadinessChannel =
       mock(BeaconNodeReadinessChannel.class);
 
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
+
   private final BeaconNodeReadinessManager beaconNodeReadinessManager =
       new BeaconNodeReadinessManager(
+          timeProvider,
           beaconNodeApi,
           List.of(failoverBeaconNodeApi),
           validatorLogger,
@@ -79,10 +84,6 @@ public class BeaconNodeReadinessManagerTest {
 
   @Test
   public void performsReadinessCheckOnStartup() {
-    // default to true if never started
-    assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
-    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
-
     when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
     when(failoverBeaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
@@ -102,13 +103,39 @@ public class BeaconNodeReadinessManagerTest {
   }
 
   @Test
-  public void retrievesReadinessAndPublishesToAChannel() {
-    // default to true if never ran
+  public void performsReadinessOnceWhenOverlaps() {
+    final SafeFuture<SyncingStatus> primarySyncingStatusFuture = new SafeFuture<>();
+    final SafeFuture<SyncingStatus> failoverSyncingStatusFuture = new SafeFuture<>();
+
+    when(beaconNodeApi.getSyncingStatus()).thenReturn(primarySyncingStatusFuture);
+    when(failoverBeaconNodeApi.getSyncingStatus()).thenReturn(failoverSyncingStatusFuture);
+
+    final SafeFuture<?> startFuture = beaconNodeReadinessManager.start();
+
+    assertThatSafeFuture(startFuture).isNotDone();
+
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
-    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
+    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
 
-    verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
+    assertThatSafeFuture(startFuture).isNotDone();
+
+    primarySyncingStatusFuture.complete(SYNCING_STATUS);
+    failoverSyncingStatusFuture.complete(SYNCING_STATUS);
+
+    assertThatSafeFuture(startFuture).isCompleted();
+
+    verify(beaconNodeApi, times(1)).getSyncingStatus();
+    verify(failoverBeaconNodeApi, times(1)).getSyncingStatus();
+
+    verify(validatorLogger, times(1)).primaryBeaconNodeNotReady();
+    verify(beaconNodeReadinessChannel, times(1)).onPrimaryNodeNotReady();
+    verify(beaconNodeReadinessChannel, times(1)).onFailoverNodeNotReady(failoverBeaconNodeApi);
+  }
+
+  @Test
+  public void retrievesReadinessAndPublishesToAChannel() {
     when(beaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(SYNCED_OPTIMISTIC_STATUS));
     when(failoverBeaconNodeApi.getSyncingStatus())
@@ -150,12 +177,6 @@ public class BeaconNodeReadinessManagerTest {
 
   @Test
   public void shouldFallbackToFailoverNodeWhenElGoesOffline() {
-    // default to true if never ran
-    assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
-    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
-
-    verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
-
     when(beaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(EL_OFFLINE_STATUS));
     when(failoverBeaconNodeApi.getSyncingStatus())
@@ -217,6 +238,7 @@ public class BeaconNodeReadinessManagerTest {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
+            timeProvider,
             primaryBeaconNodeApi,
             List.of(
                 syncingFailover,
@@ -238,6 +260,56 @@ public class BeaconNodeReadinessManagerTest {
             syncedNonOptimisticNotEnoughPeersFailover,
             syncedOptimisticFailover,
             syncingFailover);
+  }
+
+  @Test
+  public void shouldReturnNotReadyForPrimaryAndFailoverNodesWhenNoReadinessCheckPerformed() {
+    // default to true if never ran on primary
+    assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
+    // default to false if never ran on failover
+    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
+
+    verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
+  }
+
+  @Test
+  public void shouldDelayReadinessCheckOnErroredFailoverNode() {
+    when(failoverBeaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+    when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
+
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
+
+    verify(failoverBeaconNodeApi, times(1)).getSyncingStatus();
+
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
+
+    // still only one call to failover
+    verify(failoverBeaconNodeApi, times(1)).getSyncingStatus();
+
+    timeProvider.advanceTimeBySeconds(2 * 60); // advance by 2 minutes
+
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
+
+    // enough time has passed, so we should retry
+    verify(failoverBeaconNodeApi, times(2)).getSyncingStatus();
+  }
+
+  @Test
+  public void shouldAlwaysPerformReadinessCheckOnErroredPrimaryNode() {
+    when(beaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+    when(failoverBeaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
+
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
+
+    verify(beaconNodeApi, times(1)).getSyncingStatus();
+
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
+
+    // on errored primary node, we always retry
+    verify(beaconNodeApi, times(2)).getSyncingStatus();
   }
 
   private void advanceToNextQueryPeriod(

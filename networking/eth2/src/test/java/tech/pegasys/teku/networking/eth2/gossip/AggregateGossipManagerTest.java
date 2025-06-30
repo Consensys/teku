@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -52,6 +53,7 @@ public class AggregateGossipManagerTest {
   private final TopicChannel topicChannel = mock(TopicChannel.class);
   private final ForkInfo forkInfo =
       new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
+  private final Bytes4 forkDigest = dataStructureUtil.randomBytes4();
 
   @SuppressWarnings("unchecked")
   private final OperationProcessor<ValidatableAttestation> processor =
@@ -74,6 +76,7 @@ public class AggregateGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             processor,
             DebugDataDumper.NOOP);
     gossipManager.subscribe();

@@ -18,7 +18,7 @@ import java.util.Map;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
+import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp {
   private final DataColumnPeerManagerStub dataColumnPeerManagerStub =
@@ -39,12 +39,12 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
 
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
-      final UInt256 nodeId, final DataColumnIdentifier columnIdentifier) {
+      final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
     TestPeer peer = connectedPeers.get(nodeId);
     if (peer == null) {
       return SafeFuture.failedFuture(new DasPeerDisconnectedException());
     } else {
-      return peer.requestSidecar(columnIdentifier);
+      return peer.requestSidecar(columnIdentifier.toDataColumnIdentifier());
     }
   }
 

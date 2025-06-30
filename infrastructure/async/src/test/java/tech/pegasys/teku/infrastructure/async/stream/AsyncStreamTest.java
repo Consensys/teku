@@ -16,11 +16,19 @@ package tech.pegasys.teku.infrastructure.async.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncStreamTest {
@@ -33,10 +41,12 @@ public class AsyncStreamTest {
     ArrayList<Integer> collector = new ArrayList<>();
 
     SafeFuture<List<Integer>> listPromise =
-        AsyncStream.create(futures.iterator())
+        AsyncStream.createUnsafe(futures.iterator())
             .flatMap(AsyncStream::create)
             .flatMap(
-                i -> AsyncStream.create(IntStream.range(i * 10, i * 10 + 5).boxed().iterator()))
+                i ->
+                    AsyncStream.createUnsafe(
+                        IntStream.range(i * 10, i * 10 + 5).boxed().iterator()))
             .filter(i -> i % 2 == 0)
             .map(i -> i * 10)
             .limit(10)
@@ -84,7 +94,7 @@ public class AsyncStreamTest {
             .flatMap(
                 __ -> {
                   Stream<Integer> idxStream = IntStream.range(0, futures.size()).boxed();
-                  return AsyncStream.create(idxStream).mapAsync(futures::get);
+                  return AsyncStream.createUnsafe(idxStream.iterator()).mapAsync(futures::get);
                 })
             .toList();
 
@@ -100,7 +110,7 @@ public class AsyncStreamTest {
   @Test
   void longStreamOfCompletedFuturesShouldNotCauseStackOverflow() {
     List<Integer> ints =
-        AsyncStream.create(IntStream.range(0, 10000).boxed().iterator())
+        AsyncStream.createUnsafe(IntStream.range(0, 10000).boxed().iterator())
             .mapAsync(SafeFuture::completedFuture)
             .toList()
             .join();
@@ -111,7 +121,7 @@ public class AsyncStreamTest {
   @Test
   void longStreamOfFlatMapShouldNotCauseStackOverflow() {
     List<Integer> ints =
-        AsyncStream.create(IntStream.range(0, 10000).boxed().iterator())
+        AsyncStream.createUnsafe(IntStream.range(0, 10000).boxed().iterator())
             .flatMap(AsyncStream::of)
             .toList()
             .join();
@@ -138,7 +148,7 @@ public class AsyncStreamTest {
         Stream.generate(() -> new SafeFuture<Integer>()).limit(10).toList();
 
     SafeFuture<List<Integer>> resFuture =
-        AsyncStream.create(futures.iterator())
+        AsyncStream.createUnsafe(futures.iterator())
             .mapAsync(fut -> fut)
             .takeUntil(i -> i == 4, true)
             .collectLast(2);
@@ -172,5 +182,76 @@ public class AsyncStreamTest {
   @Test
   void checkCollectLastWithLessElements() {
     assertThat(AsyncStream.of(0, 1).collectLast(3).join()).containsExactly(0, 1);
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS)
+  void testConcurrentExceptionHasUsefulWrap() throws Exception {
+    final int baseNumber = 10000;
+    final int threadCount = 10;
+    final int perThreadIncrement = 1000;
+    final int expectedTotal = baseNumber + threadCount * perThreadIncrement;
+    final Set<Integer> ints =
+        new HashSet<>(IntStream.range(0, baseNumber).boxed().collect(Collectors.toSet()));
+    final Set<Integer> collector = new HashSet<>();
+    final CountDownLatch startLatch = new CountDownLatch(threadCount);
+    final CountDownLatch finishLatch = new CountDownLatch(threadCount);
+    for (int i = 0; i < threadCount; i++) {
+      final int start = baseNumber + i * perThreadIncrement;
+      new Thread(
+              () -> {
+                startLatch.countDown();
+                try {
+                  startLatch.await();
+                } catch (InterruptedException e) {
+                  throw new RuntimeException(e);
+                }
+                for (int j = start; j < start + perThreadIncrement; j++) {
+                  ints.add(j);
+                  try {
+                    Thread.sleep(2);
+                  } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                  }
+                }
+                finishLatch.countDown();
+              })
+          .start();
+    }
+    final LogCaptor logCaptorCopy;
+    try (LogCaptor logCaptor = LogCaptor.forClass(AsyncStreamTest.class)) {
+      logCaptorCopy = logCaptor;
+      AsyncStream.createUnsafe(ints.iterator())
+          .map(i -> i)
+          .forEach(collector::add)
+          .ifExceptionGetsHereRaiseABug();
+    }
+
+    final boolean rc = finishLatch.await(10, TimeUnit.SECONDS);
+    assertThat(rc).isTrue();
+
+    assertThat(collector).hasSizeLessThan(expectedTotal);
+    final Throwable ex = logCaptorCopy.getThrowable(0).get();
+    assertThat(ExceptionUtils.getStackTrace(ex))
+        .contains("SyncToAsyncIteratorImpl stack trace holder", "AsyncStreamTest.java:");
+    final String logString = logCaptorCopy.getErrorLogs().get(0);
+    assertThat(logString).contains("ConcurrentModificationException");
+  }
+
+  @Test
+  void checkMerge() {
+    assertThat(
+            AsyncStream.of(0, 1, 2)
+                .takeUntil(i -> i == 0, false)
+                .merge(AsyncStream.of(3))
+                .toList()
+                .join())
+        .containsExactlyInAnyOrder(3);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of(3)).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2, 3);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of()).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2);
+    assertThat(AsyncStream.of(0, 1, 2).merge(AsyncStream.of(2)).toList().join())
+        .containsExactlyInAnyOrder(0, 1, 2, 2);
   }
 }

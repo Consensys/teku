@@ -17,7 +17,7 @@ import java.util.List;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command()
+@Command
 public interface TestCommand {
   @Option(names = "--count")
   int getCount();
