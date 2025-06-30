@@ -193,8 +193,8 @@ public class AttestationProductionDuty implements Duty {
 
   private AttestationDataProducer selectAttestationDataProducer(final SpecVersion specVersion) {
     if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      // in Electra and later, the committee index is always 0, so we can reuse the same
-      // AttestationData for all committees in the slot
+      // in Electra and later, the committee index in AttestationData is always 0, so we ask for a
+      // single AttestationData which will be good for all committees in the slot
       final Supplier<SafeFuture<Optional<AttestationData>>> cachedCall =
           Suppliers.memoize(() -> createAttestationDataFromValidatorApiChannel(slot, 0));
 
