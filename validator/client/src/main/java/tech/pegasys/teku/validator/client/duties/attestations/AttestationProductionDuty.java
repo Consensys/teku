@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.duties.attestations;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE_TOTAL;
 
+import com.google.common.base.Suppliers;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -120,10 +122,25 @@ public class AttestationProductionDuty implements Duty {
       final UInt64 slot,
       final ForkInfo forkInfo,
       final Int2ObjectMap<ScheduledCommittee> validatorsByCommitteeIndex) {
+
+    final SpecVersion specVersion = spec.atSlot(slot);
+
+    final SignedAttestationProducer signedAttestationProducer =
+        selectSignedAttestationProducer(specVersion);
+
+    final AttestationDataProducer attestationDataProducer =
+        selectAttestationDataProducer(specVersion);
+
     return validatorsByCommitteeIndex.int2ObjectEntrySet().stream()
         .flatMap(
             entry ->
-                produceAttestationsForCommittee(slot, forkInfo, entry.getIntKey(), entry.getValue())
+                produceAttestationsForCommittee(
+                    slot,
+                    forkInfo,
+                    entry.getIntKey(),
+                    entry.getValue(),
+                    attestationDataProducer,
+                    signedAttestationProducer)
                     .stream());
   }
 
@@ -131,16 +148,12 @@ public class AttestationProductionDuty implements Duty {
       final UInt64 slot,
       final ForkInfo forkInfo,
       final int committeeIndex,
-      final ScheduledCommittee committee) {
+      final ScheduledCommittee committee,
+      final AttestationDataProducer attestationDataProducer,
+      final SignedAttestationProducer signedAttestationProducer) {
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
-        validatorDutyMetrics.record(
-            () -> validatorApiChannel.createAttestationData(slot, committeeIndex),
-            this,
-            CREATE_TOTAL);
+        attestationDataProducer.createAttestationData(slot, committeeIndex);
     unsignedAttestationFuture.propagateTo(committee.getAttestationDataFuture());
-
-    final SignedAttestationProducer signedAttestationProducer =
-        selectSignedAttestationProducer(slot);
 
     return committee.getValidators().stream()
         .map(
@@ -155,8 +168,8 @@ public class AttestationProductionDuty implements Duty {
         .toList();
   }
 
-  private SignedAttestationProducer selectSignedAttestationProducer(final UInt64 slot) {
-    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+  private SignedAttestationProducer selectSignedAttestationProducer(final SpecVersion specVersion) {
+    final SchemaDefinitions schemaDefinitions = specVersion.getSchemaDefinitions();
 
     return schemaDefinitions
         .toVersionElectra()
@@ -176,6 +189,25 @@ public class AttestationProductionDuty implements Duty {
                         attestationData,
                         validator,
                         signature));
+  }
+
+  private AttestationDataProducer selectAttestationDataProducer(final SpecVersion specVersion) {
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
+      // in Electra and later, the committee index is always 0, so we can reuse the same
+      // AttestationData for all committees in the slot
+      final Supplier<SafeFuture<Optional<AttestationData>>> cachedCall =
+          Suppliers.memoize(() -> createAttestationDataFromValidatorApiChannel(slot, 0));
+
+      return (slot, committeeIndex) -> cachedCall.get();
+    }
+
+    return this::createAttestationDataFromValidatorApiChannel;
+  }
+
+  private SafeFuture<Optional<AttestationData>> createAttestationDataFromValidatorApiChannel(
+      final UInt64 slot, final int committeeIndex) {
+    return validatorDutyMetrics.record(
+        () -> validatorApiChannel.createAttestationData(slot, committeeIndex), this, CREATE_TOTAL);
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidatorInCommittee(
@@ -287,5 +319,11 @@ public class AttestationProductionDuty implements Duty {
         final AttestationData attestationData,
         final ValidatorWithAttestationDutyInfo validator,
         final BLSSignature signature);
+  }
+
+  @FunctionalInterface
+  private interface AttestationDataProducer {
+    SafeFuture<Optional<AttestationData>> createAttestationData(
+        final UInt64 slot, int committeeIndex);
   }
 }
