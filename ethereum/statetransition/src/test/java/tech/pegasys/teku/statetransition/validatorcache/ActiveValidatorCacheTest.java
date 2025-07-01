@@ -160,11 +160,11 @@ public class ActiveValidatorCacheTest {
     assertThat(result)
         .isEqualTo(
             Map.of(
-                ONE, Boolean.TRUE,
-                TWO, Boolean.FALSE,
-                THREE, Boolean.TRUE,
-                FOUR, Boolean.FALSE,
-                FIVE, Boolean.FALSE,
-                SIX, Boolean.FALSE));
+                ONE, true,
+                TWO, false,
+                THREE, true,
+                FOUR, false,
+                FIVE, false,
+                SIX, false));
   }
 }

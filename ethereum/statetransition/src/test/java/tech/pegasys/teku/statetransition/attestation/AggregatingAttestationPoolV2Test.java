@@ -194,7 +194,7 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         attestations.stream().map(this::convertToPooledAttestationWithRewardInfo).toList();
 
     var localSorter =
-        new RewardBasedAttestationSorter(null, null, null, null) {
+        new RewardBasedAttestationSorter(null, null, null, null, true) {
           @Override
           public List<PooledAttestationWithRewardInfo> sort(
               final List<PooledAttestationWithData> attestations, final int maxAttestations) {

@@ -97,11 +97,8 @@ public class CustomJniDBFactory extends JniDBFactory {
       this.options.paranoidChecks(value.paranoidChecks());
       this.options.writeBufferSize((long) value.writeBufferSize());
       switch (value.compressionType()) {
-        case NONE:
-          this.options.compression(NativeCompressionType.kNoCompression);
-          break;
-        case SNAPPY:
-          this.options.compression(NativeCompressionType.kSnappyCompression);
+        case NONE -> this.options.compression(NativeCompressionType.kNoCompression);
+        case SNAPPY -> this.options.compression(NativeCompressionType.kSnappyCompression);
       }
 
       if (value.cacheSize() > 0L) {

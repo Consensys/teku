@@ -11,27 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns.retriever;
+package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import java.util.Optional;
+import java.util.function.Function;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
-public interface DataColumnPeerSearcher {
+public class SingleRpcRequestBodySelector<R extends RpcRequest>
+    implements RpcRequestBodySelector<R> {
 
-  DataColumnPeerSearcher NOOP =
-      new DataColumnPeerSearcher() {
-        private static final PeerSearchRequest NOOP_REQUEST = () -> {};
+  private final R request;
 
-        @Override
-        public PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex) {
-          return NOOP_REQUEST;
-        }
-      };
+  public SingleRpcRequestBodySelector(final R request) {
+    this.request = request;
+  }
 
-  PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex);
-
-  interface PeerSearchRequest {
-
-    // stop search
-    void dispose();
+  @Override
+  public Function<String, Optional<R>> getBody() {
+    return (__) -> Optional.ofNullable(request);
   }
 }
