@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -65,7 +64,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA, SpecMilestone.FULU})
+@TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RequestApproval ZERO_OBJECTS_REQUEST_APPROVAL =
@@ -240,7 +239,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @TestTemplate
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
-    assumeThat(specMilestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
+
     when(peer.approveBlobSidecarsRequest(listener, count.times(maxBlobsPerBlock).longValue()))
         .thenReturn(Optional.empty());
 
@@ -268,7 +267,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @TestTemplate
   public void shouldSendResourceUnavailableIfBlobSidecarsAreNotAvailable() {
-    assumeThat(specMilestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
+
     // current epoch is 5020
     setCurrentEpoch(UInt64.valueOf(5020));
 
@@ -302,7 +301,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @TestTemplate
   public void shouldCompleteSuccessfullyIfNoBlobSidecarsInRange() {
-    assumeThat(specMilestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
     when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), anyLong()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =
@@ -327,7 +325,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @TestTemplate
   public void shouldSendToPeerRequestedNumberOfFinalizedBlobSidecars() {
-    assumeThat(specMilestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
+
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
@@ -356,7 +354,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @TestTemplate
   public void shouldSendToPeerRequestedNumberOfCanonicalBlobSidecars() {
-    assumeThat(specMilestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
+
     final UInt64 latestFinalizedSlot = startSlot.plus(count).minus(3);
     when(combinedChainDataClient.getFinalizedBlockSlot())
         .thenReturn(Optional.of(latestFinalizedSlot));
@@ -414,7 +412,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @TestTemplate
   public void shouldIgnoreRequestWhenCountIsZero() {
-    assumeThat(specMilestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
+
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
@@ -440,7 +438,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @TestTemplate
   public void shouldIgnoreRequestWhenCountIsZeroAndHotSlotRequested() {
-    assumeThat(specMilestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
     // not finalized
     final UInt64 hotStartSlot = startSlot.plus(7);
 
@@ -465,18 +462,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(listener).completeSuccessfully();
 
     AssertionsForInterfaceTypes.assertThat(actualSent).isEmpty();
-  }
-
-  @TestTemplate
-  public void shouldIgnoreRequestWhenStartSlotIsAfterFulu() {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.FULU);
-    final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
-
-    handler.onIncomingMessage(protocolId, peer, request, listener);
-
-    verifyNoInteractions(combinedChainDataClient);
-    verifyNoInteractions(listener);
   }
 
   private void setCurrentEpoch(final UInt64 currentEpoch) {
