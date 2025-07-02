@@ -412,6 +412,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
 
     verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
+    verify(combinedChainDataClient, never()).getFinalizedBlockSlot();
+    verify(combinedChainDataClient, never()).getFinalizedBlock();
     verify(callback, times(4)).respond(datacolumnSidecarCaptor.capture());
     verify(callback).completeSuccessfully();
 
