@@ -74,7 +74,6 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -177,9 +176,9 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
     final BlobSidecarsByRangeMessageHandler handler =
         new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
-    handler.onIncomingMessage(protocolId, peer, request, listener);
+    handler.onIncomingMessage(protocolId, peer, request, callback);
     verifyNoInteractions(combinedChainDataClient);
-    verifyNoInteractions(listener);
+    verifyNoInteractions(callback);
   }
 
   public void runTestWith(
