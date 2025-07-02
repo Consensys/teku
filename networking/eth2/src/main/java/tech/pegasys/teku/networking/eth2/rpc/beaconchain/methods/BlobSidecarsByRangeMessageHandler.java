@@ -133,6 +133,15 @@ public class BlobSidecarsByRangeMessageHandler
         startSlot);
     final UInt64 endSlotBeforeFulu = getEndSlotBeforeFulu(endSlot);
 
+    if (startSlot.isGreaterThan(endSlotBeforeFulu)) {
+      LOG.trace(
+          "Peer {} requested {} slots of blob sidecars starting at slot {} after FULU. BlobSidecarsByRange v1 is deprecated and the request will be ignored.",
+          peer.getId(),
+          message.getCount(),
+          startSlot);
+      return;
+    }
+
     final SpecConfigDeneb specConfig =
         SpecConfigDeneb.required(spec.atSlot(endSlotBeforeFulu).getConfig());
     final int requestedCount =
