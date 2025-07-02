@@ -13,4 +13,4 @@
 - Increase the default gas limit (`--validators-builder-registration-default-gas-limit`) to 45 million
 
 ### Bug Fixes
-- fix event stream timeout error for when sentry nodes are used
+- fix a regression introduced in the previous release causing a validator client configured with sentry nodes to not work properly
