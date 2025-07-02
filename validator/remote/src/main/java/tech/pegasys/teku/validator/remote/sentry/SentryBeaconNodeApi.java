@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote.sentry;
 import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.MAX_API_EXECUTOR_QUEUE_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.calculateAPIMaxThreads;
 import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.calculateReadinessAPIMaxThreads;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createOkHttpClientForStreamFromClient;
 
 import java.net.URI;
 import java.util.List;
@@ -180,7 +181,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             beaconNodeReadinessManager,
             dutiesProviderPrimaryValidatorApiChannel,
             dutiesProviderFailoverValidatorApiChannel,
-            sentryNodesHttpClient,
+            createOkHttpClientForStreamFromClient(sentryNodesHttpClient),
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
                 new GenesisDataProvider(asyncRunner, dutiesProviderValidatorApi),
