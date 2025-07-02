@@ -170,7 +170,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
   @Test
   public void shouldIgnoreRequestsWhenStartSlotIsAfterFulu() {
     final UInt64 startSlot =
-        spec.computeStartSlotAtEpoch(fuluForkEpoch.plus(7)); // start slot after fulu
+        spec.computeStartSlotAtEpoch(fuluForkEpoch); // start slot after fulu
     final UInt64 count = slotsPerEpoch.times(2); // count = 16
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
