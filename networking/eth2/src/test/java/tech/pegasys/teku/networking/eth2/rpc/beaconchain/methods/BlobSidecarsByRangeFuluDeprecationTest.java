@@ -67,7 +67,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
       RpcEncoding.createSszSnappyEncoding(
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   private final String protocolId =
-      BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, RPC_ENCODING);
+      BeaconChainMethodIds.getBlobSidecarsByRangeMethodId(1, RPC_ENCODING);
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> callback = mock(ResponseCallback.class);
