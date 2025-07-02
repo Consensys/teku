@@ -263,11 +263,15 @@ public class BeaconNodeReadinessManagerTest {
   }
 
   @Test
-  public void shouldReturnNotReadyForPrimaryAndFailoverNodesWhenNoReadinessCheckPerformed() {
+  public void shouldReturnCorrectDefaultReadinessAndFailoverNodesWhenNoReadinessCheckPerformed() {
     // default to true if never ran on primary
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
     // default to false if never ran on failover
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
+    // default to true for unmonitored nodes
+    final RemoteValidatorApiChannel unknownNodeApi =
+            mock(RemoteValidatorApiChannel.class);
+    assertThat(beaconNodeReadinessManager.isReady(unknownNodeApi)).isTrue();
 
     verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
   }
