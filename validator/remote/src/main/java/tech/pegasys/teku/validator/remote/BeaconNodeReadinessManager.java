@@ -255,7 +255,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
             readinessStatus -> {
               readinessStatusCache.put(beaconNodeApi, readinessStatus);
               if (readinessStatus.isReady()) {
-                processReadyResult(beaconNodeApi == primaryBeaconNodeApi);
+                processReadyResult(isPrimary(beaconNodeApi));
               } else {
                 processNotReadyResult(beaconNodeApi);
               }
@@ -281,7 +281,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   private void processNotReadyResult(final RemoteValidatorApiChannel beaconNodeApi) {
-    if (beaconNodeApi == primaryBeaconNodeApi) {
+    if (isPrimary(beaconNodeApi)) {
       if (latestPrimaryNodeReadiness.compareAndSet(true, false)) {
         validatorLogger.primaryBeaconNodeNotReady();
       }
