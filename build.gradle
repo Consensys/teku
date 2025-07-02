@@ -663,14 +663,14 @@ task localDocker {
       from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
       into(dockerBuildDir)
     }
-    exec {
+    providers.exec {
       def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
       workingDir dockerBuildDir
       executable executableAndArg[0]
       args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
+    providers.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
@@ -682,7 +682,7 @@ task localDockerClean {
   def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
   def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
   doLast {
-    exec {
+    providers.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
     }
@@ -702,7 +702,7 @@ task distDocker  {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
-      exec {
+      providers.exec {
         def image = "${dockerImage}:${dockerBuildVersion}-${variant}${commitHashTag}"
         workingDir dockerBuildDir
         executable executableAndArg[0]
@@ -710,7 +710,7 @@ task distDocker  {
       }
     }
     // tag the "default" (which is the variant in the zero position)
-    exec {
+    providers.exec {
       executable executableAndArg[0]
       args executableAndArg[1], "docker tag ${dockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${dockerImage}:${dockerBuildVersion}${commitHashTag}"
     }
@@ -749,7 +749,7 @@ task uploadDocker {
         into(dockerBuildDir)
       }
 
-      exec {
+      providers.exec {
         workingDir dockerBuildDir
         executable executableAndArg[0]
         args executableAndArg[1], "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
@@ -758,7 +758,7 @@ task uploadDocker {
       //docker trust sign runs one image at a time, so we have to remove the '-t' in the string and split into a list we can use
       def trustTags = tags.replaceAll( '-t ', '' ).trim().split(' ')
       for (def t in trustTags) {
-        exec {
+        providers.exec {
           workingDir dockerBuildDir
           executable executableAndArg[0]
           args executableAndArg[1], "docker trust sign ${t} && docker push ${t} "
@@ -796,7 +796,7 @@ task manifestDocker {
 
       for (def tag in tags) {
         platforms.forEach { platform -> cmd += "${tag}-${platform}${commitHashTag} " }
-        exec {
+        providers.exec {
           executable executableAndArg[0]
           args executableAndArg[1], "docker manifest create ${tag}${commitHashTag} ${cmd} && docker manifest push ${tag}${commitHashTag}"
         }
@@ -1186,7 +1186,7 @@ def getCheckedOutGitCommitHash() {
 task cloudsmithUpload {
   dependsOn([distTar, distZip])
   doLast {
-    exec {
+    providers.exec {
       executable project.file("scripts/cloudsmith-upload.sh")
       args rootProject.version, distTar.archiveFile.get(), distZip.archiveFile.get()
     }
