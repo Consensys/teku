@@ -145,12 +145,11 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {}
 
-  @SuppressWarnings("ReferenceComparison")
   private ReadinessWithErrorTimestamp getReadiness(final RemoteValidatorApiChannel beaconNodeApi) {
     return readinessStatusCache.computeIfAbsent(
         beaconNodeApi,
         beacon -> {
-          if (beacon == primaryBeaconNodeApi) {
+          if (isPrimary(beacon)) {
             return ReadinessWithErrorTimestamp.READY;
           }
           if (failoverBeaconNodeApis.contains(beacon)) {
@@ -191,7 +190,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   private boolean isTimeToPerformReadinessCheck(final RemoteValidatorApiChannel beaconNodeApi) {
-    if (beaconNodeApi == primaryBeaconNodeApi) {
+    if (isPrimary(beaconNodeApi)) {
       return true;
     }
 
@@ -205,6 +204,11 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     final UInt64 currentTime = timeProvider.getTimeInMillis();
     return currentTime.isGreaterThanOrEqualTo(
         lastErrorTimestamp.get().plus(ERRORED_SECONDARY_READINESS_CHECK_INTERVAL_DELAY_MS));
+  }
+
+  @SuppressWarnings("ReferenceComparison")
+  private boolean isPrimary(final RemoteValidatorApiChannel beaconNodeApi) {
+    return beaconNodeApi == primaryBeaconNodeApi;
   }
 
   private SafeFuture<Void> performReadinessCheck(final RemoteValidatorApiChannel beaconNodeApi) {

@@ -269,8 +269,7 @@ public class BeaconNodeReadinessManagerTest {
     // default to false if never ran on failover
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
     // default to true for unmonitored nodes
-    final RemoteValidatorApiChannel unknownNodeApi =
-            mock(RemoteValidatorApiChannel.class);
+    final RemoteValidatorApiChannel unknownNodeApi = mock(RemoteValidatorApiChannel.class);
     assertThat(beaconNodeReadinessManager.isReady(unknownNodeApi)).isTrue();
 
     verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
