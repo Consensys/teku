@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static tech.pegasys.teku.infrastructure.time.TimeProvider.MILLIS_PER_SECOND;
-
-import java.time.Instant;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -67,47 +64,11 @@ public class ForkChoiceUtil {
     this.miscHelpers = miscHelpers;
   }
 
-  public UInt64 getSlotsSinceGenesis(final ReadOnlyStore store, final boolean useUnixTime) {
-    final UInt64 time =
-        useUnixTime ? UInt64.valueOf(Instant.now().getEpochSecond()) : store.getTimeSeconds();
-    return getCurrentSlot(time, store.getGenesisTime());
+  private UInt64 getCurrentSlot(final ReadOnlyStore store) {
+    return miscHelpers.computeSlotAtTime(store.getGenesisTime(), store.getTimeSeconds());
   }
 
-  public UInt64 getCurrentSlot(final UInt64 currentTime, final UInt64 genesisTime) {
-    if (currentTime.isLessThan(genesisTime)) {
-      return UInt64.ZERO;
-    }
-    return currentTime.minus(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
-  }
-
-  public UInt64 getCurrentSlotForMillis(
-      final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
-    if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
-      return UInt64.ZERO;
-    }
-    return currentTimeMillis
-        .minus(genesisTimeMillis)
-        .dividedBy(MILLIS_PER_SECOND.times(specConfig.getSecondsPerSlot()));
-  }
-
-  public UInt64 getSlotStartTime(final UInt64 slotNumber, final UInt64 genesisTime) {
-    return genesisTime.plus(slotNumber.times(specConfig.getSecondsPerSlot()));
-  }
-
-  public UInt64 getSlotStartTimeMillis(final UInt64 slotNumber, final UInt64 genesisTimeMillis) {
-    return genesisTimeMillis.plus(
-        slotNumber.times(MILLIS_PER_SECOND.times(specConfig.getSecondsPerSlot())));
-  }
-
-  public UInt64 getCurrentSlot(final ReadOnlyStore store, final boolean useUnixTime) {
-    return SpecConfig.GENESIS_SLOT.plus(getSlotsSinceGenesis(store, useUnixTime));
-  }
-
-  public UInt64 getCurrentSlot(final ReadOnlyStore store) {
-    return getCurrentSlot(store, false);
-  }
-
-  public UInt64 computeSlotsSinceEpochStart(final UInt64 slot) {
+  private UInt64 computeSlotsSinceEpochStart(final UInt64 slot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     final UInt64 epochStartSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     return slot.minus(epochStartSlot);
@@ -226,7 +187,8 @@ public class ForkChoiceUtil {
       return;
     }
     final UInt64 previousSlot = getCurrentSlot(store);
-    final UInt64 newSlot = getCurrentSlotForMillis(timeMillis, store.getGenesisTimeMillis());
+    final UInt64 newSlot =
+        miscHelpers.computeSlotAtTimeMillis(store.getGenesisTimeMillis(), timeMillis);
     final UInt64 previousEpoch = miscHelpers.computeEpochAtSlot(previousSlot);
     final UInt64 newEpoch = miscHelpers.computeEpochAtSlot(newSlot);
 
@@ -236,7 +198,7 @@ public class ForkChoiceUtil {
         currentEpoch = currentEpoch.plus(1)) {
       final UInt64 firstSlotOfEpoch = miscHelpers.computeStartSlotAtEpoch(currentEpoch);
       final UInt64 slotStartTime =
-          getSlotStartTimeMillis(firstSlotOfEpoch, store.getGenesisTimeMillis());
+          miscHelpers.computeTimeMillisAtSlot(store.getGenesisTimeMillis(), firstSlotOfEpoch);
       processOnTick(store, slotStartTime);
     }
     // Catch up final part

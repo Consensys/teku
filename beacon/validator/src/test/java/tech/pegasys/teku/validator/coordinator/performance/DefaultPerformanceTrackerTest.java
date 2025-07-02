@@ -286,6 +286,7 @@ public class DefaultPerformanceTrackerTest {
         chainUpdater.chainBuilder.getBlockAtSlot(1).getSlotAndBlockRoot());
     performanceTracker.saveProducedBlock(
         chainUpdater.chainBuilder.getBlockAtSlot(2).getSlotAndBlockRoot());
+
     performanceTracker.saveProducedAttestation(dataStructureUtil.randomAttestation(UInt64.ONE));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
     assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
@@ -322,6 +323,7 @@ public class DefaultPerformanceTrackerTest {
         chainUpdater.chainBuilder.getBlockAtSlot(1).getSlotAndBlockRoot());
     performanceTracker.saveProducedBlock(
         chainUpdater.chainBuilder.getBlockAtSlot(2).getSlotAndBlockRoot());
+
     performanceTracker.saveProducedAttestation(dataStructureUtil.randomAttestation(UInt64.ZERO));
     performanceTracker.saveProducedAttestation(dataStructureUtil.randomAttestation(UInt64.ONE));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
@@ -442,11 +444,48 @@ public class DefaultPerformanceTrackerTest {
   }
 
   @TestTemplate
-  void shouldIgnoreSingleAttestation() {
+  void shouldAddSingleAttestation() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
-    final SingleAttestation singleAttestation = dataStructureUtil.randomSingleAttestation();
+    final SingleAttestation singleAttestation =
+        dataStructureUtil.randomSingleAttestation(UInt64.valueOf(2), UInt64.ZERO);
     performanceTracker.saveProducedAttestation(singleAttestation);
-    assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
+    assertThat(performanceTracker.producedAttestationsByEpoch).hasSize(1);
+  }
+
+  @TestTemplate
+  void shouldConvertSingleAttestation() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.ELECTRA);
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
+
+    ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
+    Attestation attestation1 = createAttestation(2, 1);
+    block1Options.addAttestation(attestation1);
+    SignedBlockAndState latestBlockAndState = chainBuilder.generateBlockAtSlot(2, block1Options);
+    chainUpdater.saveBlock(latestBlockAndState);
+    chainUpdater.updateBestBlock(latestBlockAndState);
+
+    final SingleAttestation singleAttestation =
+        spec.getGenesisSchemaDefinitions()
+            .toVersionElectra()
+            .orElseThrow()
+            .getSingleAttestationSchema()
+            .create(
+                UInt64.ZERO,
+                UInt64.ZERO,
+                attestation1.getData(),
+                attestation1.getAggregateSignature());
+
+    performanceTracker.saveProducedAttestation(singleAttestation);
+
+    when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(1);
+
+    UInt64 slot = spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE);
+    performanceTracker.onSlot(slot);
+
+    UInt64 attestationEpoch = spec.computeEpochAtSlot(slot).minus(ATTESTATION_INCLUSION_RANGE);
+    AttestationPerformance expectedAttestationPerformance =
+        new AttestationPerformance(attestationEpoch, 1, 1, 1, 1, 1, 1, 1, 1);
+    verify(log).performance(expectedAttestationPerformance.toString());
   }
 
   /**

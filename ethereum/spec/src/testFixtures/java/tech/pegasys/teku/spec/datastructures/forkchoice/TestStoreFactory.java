@@ -109,7 +109,7 @@ public class TestStoreFactory {
 
     return new TestStoreImpl(
         spec,
-        spec.getSlotStartTime(anchorState.getSlot(), anchorState.getGenesisTime()),
+        spec.computeTimeAtSlot(anchorState.getSlot(), anchorState.getGenesisTime()),
         anchorState.getGenesisTime(),
         Optional.of(anchorCheckpoint),
         anchorCheckpoint,

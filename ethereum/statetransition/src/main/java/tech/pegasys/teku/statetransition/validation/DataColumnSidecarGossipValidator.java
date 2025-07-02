@@ -192,23 +192,19 @@ public class DataColumnSidecarGossipValidator {
     totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
     /*
+     * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar).
+     */
+    if (!miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar)) {
+      return completedFuture(reject("DataColumnSidecar has invalid structure"));
+    }
+
+    /*
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
      */
     if (!isFirstValidForSlotProposerIndexAndColumnIndex(dataColumnSidecar, blockHeader)) {
       LOG.trace(
           "DataColumnSidecar is not the first valid for its slot and index. It will be dropped");
       return completedFuture(InternalValidationResult.IGNORE);
-    }
-
-    /*
-     * [REJECT] The sidecar's index is consistent with NUMBER_OF_COLUMNS -- i.e. sidecar.index < NUMBER_OF_COLUMNS.
-     */
-    final Optional<Integer> maybeNumberOfColumns = spec.getNumberOfDataColumns();
-    if (maybeNumberOfColumns.isEmpty()) {
-      return completedFuture(reject("DataColumnSidecar's slot is pre-Fulu"));
-    }
-    if (!dataColumnSidecar.getIndex().isLessThan(maybeNumberOfColumns.get())) {
-      return completedFuture(reject("DataColumnSidecar index not less than number of columns."));
     }
 
     /*
@@ -311,7 +307,7 @@ public class DataColumnSidecarGossipValidator {
         .thenApply(
             maybePostState -> {
               /*
-               * [REJECT] [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
+               * [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
                *
                * If the proposer_index cannot immediately be verified against the expected shuffling, the sidecar MAY be queued for later processing while proposers for the block's branch are calculated -- in such a case do not REJECT, instead IGNORE this message.
                */

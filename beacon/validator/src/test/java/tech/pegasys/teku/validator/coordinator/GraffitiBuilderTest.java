@@ -243,7 +243,7 @@ public class GraffitiBuilderTest {
     assertThat(graffitiBuilder.joinNonEmpty(" ", "", "", "")).isEqualTo(Bytes32.ZERO);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("graffitiWatermarks")
   void graffitiWatermarksRunner(final int watermarkMaxLength, final String expectedWatermark) {
     graffitiBuilder.onExecutionClientVersion(BESU_CLIENT_VERSION);

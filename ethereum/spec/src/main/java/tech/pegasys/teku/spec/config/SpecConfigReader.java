@@ -252,7 +252,7 @@ public class SpecConfigReader {
 
   @SuppressWarnings("unchecked")
   private Object blobScheduleFromList(final Object o) {
-    final List<BlobSchedule> blobSchedule = new ArrayList<>();
+    final List<BlobScheduleEntry> blobSchedule = new ArrayList<>();
     final List<?> schedule = (List<?>) o;
     for (Object entry : schedule) {
       if (entry instanceof Map) {
@@ -263,7 +263,7 @@ public class SpecConfigReader {
           throw new IllegalArgumentException("Map does not look like a blob schedule");
         }
         blobSchedule.add(
-            new BlobSchedule(
+            new BlobScheduleEntry(
                 UInt64.valueOf(data.get("EPOCH")),
                 Integer.parseInt(data.get("MAX_BLOBS_PER_BLOCK"))));
 

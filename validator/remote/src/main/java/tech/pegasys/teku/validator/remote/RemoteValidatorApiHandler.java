@@ -83,15 +83,18 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private final HttpUrl endpoint;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
+  private final AsyncRunner readinessAsyncRunner; // getPeerCount and getSyncingStatus will use this
   private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
       final OkHttpValidatorTypeDefClient typeDefClient,
       final AsyncRunner asyncRunner,
+      final AsyncRunner readinessAsyncRunner,
       final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
     this.asyncRunner = asyncRunner;
+    this.readinessAsyncRunner = readinessAsyncRunner;
     this.typeDefClient = typeDefClient;
     this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
   }
@@ -103,7 +106,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<SyncingStatus> getSyncingStatus() {
-    return sendRequest(typeDefClient::getSyncingStatus);
+    return sendReadinessRequest(typeDefClient::getSyncingStatus);
   }
 
   @Override
@@ -208,7 +211,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<PeerCount>> getPeerCount() {
-    return sendRequest(typeDefClient::getPeerCount);
+    return sendReadinessRequest(typeDefClient::getPeerCount);
   }
 
   @Override
@@ -340,11 +343,19 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   private <T> SafeFuture<T> sendRequest(final ExceptionThrowingSupplier<T> requestExecutor) {
-    return asyncRunner.runAsync(() -> sendRequest(requestExecutor, 0));
+    return asyncRunner.runAsync(() -> sendRequest(asyncRunner, requestExecutor, 0));
+  }
+
+  private <T> SafeFuture<T> sendReadinessRequest(
+      final ExceptionThrowingSupplier<T> requestExecutor) {
+    return readinessAsyncRunner.runAsync(
+        () -> sendRequest(readinessAsyncRunner, requestExecutor, 0));
   }
 
   private <T> SafeFuture<T> sendRequest(
-      final ExceptionThrowingSupplier<T> requestExecutor, final int attempt) {
+      final AsyncRunner asyncRunner,
+      final ExceptionThrowingSupplier<T> requestExecutor,
+      final int attempt) {
     return SafeFuture.of(requestExecutor)
         .exceptionallyCompose(
             error -> {
@@ -352,7 +363,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                   && attempt < MAX_RATE_LIMITING_RETRIES) {
                 LOG.warn("Beacon node request rate limit has been exceeded. Retrying after delay.");
                 return asyncRunner.runAfterDelay(
-                    () -> sendRequest(requestExecutor, attempt + 1), Duration.ofSeconds(2));
+                    () -> sendRequest(asyncRunner, requestExecutor, attempt + 1),
+                    Duration.ofSeconds(2));
               } else {
                 return SafeFuture.failedFuture(error);
               }
@@ -366,11 +378,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final boolean preferSszBlockEncoding,
       final boolean usePostValidatorsEndpoint,
       final AsyncRunner asyncRunner,
+      final AsyncRunner readinessAsyncRunner,
       final boolean attestationsV2ApisEnabled) {
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(
             httpClient, endpoint, spec, preferSszBlockEncoding, attestationsV2ApisEnabled);
     return new RemoteValidatorApiHandler(
-        endpoint, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
+        endpoint, typeDefClient, asyncRunner, readinessAsyncRunner, usePostValidatorsEndpoint);
   }
 }

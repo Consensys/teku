@@ -274,9 +274,9 @@ public class ExecutionLayerConfiguration {
 
     private void validateStubEndpoints() {
       final boolean engineIsStub =
-          engineEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_PREFIX)).orElse(false);
+          engineEndpoint.map(endpoint -> endpoint.startsWith(STUB_ENDPOINT_PREFIX)).orElse(false);
       final boolean builderIsStub =
-          builderEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_PREFIX)).orElse(false);
+          builderEndpoint.map(endpoint -> endpoint.startsWith(STUB_ENDPOINT_PREFIX)).orElse(false);
 
       checkState(
           engineIsStub == builderIsStub || builderEndpoint.isEmpty(),

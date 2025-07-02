@@ -131,8 +131,7 @@ public class PeerChainValidator {
   }
 
   private boolean isForkValid(final Eth2Peer peer, final PeerStatus status) {
-    Bytes4 expectedForkDigest =
-        chainDataClient.getCurrentForkInfo().orElseThrow().getForkDigest(spec);
+    final Bytes4 expectedForkDigest = chainDataClient.getCurrentForkDigest().orElseThrow();
     if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
       LOG.trace(
           "Peer's fork ({}) differs from our fork ({}): {}",

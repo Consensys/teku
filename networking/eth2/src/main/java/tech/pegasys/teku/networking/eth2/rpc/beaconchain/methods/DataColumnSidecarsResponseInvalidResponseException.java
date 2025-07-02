@@ -34,6 +34,7 @@ public class DataColumnSidecarsResponseInvalidResponseException extends InvalidR
   }
 
   public enum InvalidResponseType {
+    DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED("Validation of DataColumnSidecar has failed"),
     DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED(
         "KZG verification for DataColumnSidecar has failed"),
     DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED(

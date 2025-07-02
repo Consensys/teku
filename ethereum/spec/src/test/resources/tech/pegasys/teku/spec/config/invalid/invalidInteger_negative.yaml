@@ -24,12 +24,6 @@ HYSTERESIS_DOWNWARD_MULTIPLIER: 1
 HYSTERESIS_UPWARD_MULTIPLIER: 5
 
 
-# Fork Choice
-# ---------------------------------------------------------------
-# 2**3 (= 8)
-SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 8
-
-
 # Validator
 # ---------------------------------------------------------------
 # 2**11 (= 2,048)

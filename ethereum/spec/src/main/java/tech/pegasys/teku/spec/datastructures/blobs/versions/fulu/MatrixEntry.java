@@ -39,10 +39,10 @@ public class MatrixEntry extends Container4<MatrixEntry, Cell, SszKZGProof, SszU
   public MatrixEntry(
       final MatrixEntrySchema schema,
       final Cell cell,
-      final SszKZGProof sszKZGProof,
+      final SszKZGProof sszKzgProof,
       final SszUInt64 sszColumnIndex,
       final SszUInt64 sszRowIndex) {
-    super(schema, cell, sszKZGProof, sszColumnIndex, sszRowIndex);
+    super(schema, cell, sszKzgProof, sszColumnIndex, sszRowIndex);
   }
 
   public Cell getCell() {

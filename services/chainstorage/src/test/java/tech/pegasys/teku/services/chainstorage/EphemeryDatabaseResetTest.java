@@ -51,7 +51,7 @@ class EphemeryDatabaseResetTest {
   private Path networkFilePath;
   @Mock private Database database;
 
-  @Mock private EphemeryDatabaseReset ephemeryDatabaseReset;
+  private EphemeryDatabaseReset ephemeryDatabaseReset;
 
   @BeforeEach
   void setUp() throws IOException {

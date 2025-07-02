@@ -45,7 +45,7 @@ public class MetadataMessageSchemaAltair
       final Iterable<Integer> syncnets,
       final Optional<UInt64> custodyGroupCount) {
     return new MetadataMessageAltair(
-        this, seqNumber, getAttnestSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
+        this, seqNumber, getAttnetsSchema().ofBits(attnets), getSyncnetsSchema().ofBits(syncnets));
   }
 
   @Override
@@ -58,7 +58,7 @@ public class MetadataMessageSchemaAltair
     return new MetadataMessageAltair(this, node);
   }
 
-  private SszBitvectorSchema<SszBitvector> getAttnestSchema() {
+  private SszBitvectorSchema<SszBitvector> getAttnetsSchema() {
     return (SszBitvectorSchema<SszBitvector>) getFieldSchema1();
   }
 

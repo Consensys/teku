@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
@@ -110,14 +112,15 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
     if (gossipManagers.isEmpty()) {
       final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-      addGossipManagers(forkInfo);
+      final Bytes4 forkDigest = recentChainData.getForkDigest(getActivationEpoch());
+      addGossipManagers(forkInfo, forkDigest);
     }
     gossipManagers.stream()
         .filter(manager -> manager.isEnabledDuringOptimisticSync() || !isOptimisticHead)
         .forEach(GossipManager::subscribe);
   }
 
-  void addAttestationGossipManager(final ForkInfo forkInfo) {
+  void addAttestationGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             spec,
@@ -127,6 +130,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             recentChainData,
             attestationProcessor,
             forkInfo,
+            forkDigest,
             debugDataDumper);
 
     attestationGossipManager =
@@ -134,7 +138,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
     addGossipManager(attestationGossipManager);
   }
 
-  void addBlockGossipManager(final ForkInfo forkInfo) {
+  void addBlockGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     blockGossipManager =
         new BlockGossipManager(
             recentChainData,
@@ -143,12 +147,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             blockProcessor,
             debugDataDumper);
     addGossipManager(blockGossipManager);
   }
 
-  void addAggregateGossipManager(final ForkInfo forkInfo) {
+  void addAggregateGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     aggregateGossipManager =
         new AggregateGossipManager(
             spec,
@@ -157,12 +162,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             aggregateProcessor,
             debugDataDumper);
     addGossipManager(aggregateGossipManager);
   }
 
-  void addVoluntaryExitGossipManager(final ForkInfo forkInfo) {
+  void addVoluntaryExitGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
             recentChainData,
@@ -170,13 +176,14 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             voluntaryExitProcessor,
             spec.getNetworkingConfig(),
             debugDataDumper);
     addGossipManager(voluntaryExitGossipManager);
   }
 
-  void addProposerSlashingGossipManager(final ForkInfo forkInfo) {
+  void addProposerSlashingGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
             recentChainData,
@@ -184,13 +191,14 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             proposerSlashingProcessor,
             spec.getNetworkingConfig(),
             debugDataDumper);
     addGossipManager(proposerSlashingGossipManager);
   }
 
-  void addAttesterSlashingGossipManager(final ForkInfo forkInfo) {
+  void addAttesterSlashingGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
             spec,
@@ -199,18 +207,19 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             attesterSlashingProcessor,
             debugDataDumper);
     addGossipManager(attesterSlashingGossipManager);
   }
 
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    addAttestationGossipManager(forkInfo);
-    addBlockGossipManager(forkInfo);
-    addAggregateGossipManager(forkInfo);
-    addVoluntaryExitGossipManager(forkInfo);
-    addProposerSlashingGossipManager(forkInfo);
-    addAttesterSlashingGossipManager(forkInfo);
+  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    addAttestationGossipManager(forkInfo, forkDigest);
+    addBlockGossipManager(forkInfo, forkDigest);
+    addAggregateGossipManager(forkInfo, forkDigest);
+    addVoluntaryExitGossipManager(forkInfo, forkDigest);
+    addProposerSlashingGossipManager(forkInfo, forkDigest);
+    addAttesterSlashingGossipManager(forkInfo, forkDigest);
   }
 
   protected void addGossipManager(final GossipManager gossipManager) {
@@ -263,5 +272,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
     attestationGossipManager.unsubscribeFromSubnetId(subnetId);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("fork", fork)
+        .add("activationEpoch", getActivationEpoch())
+        .toString();
   }
 }

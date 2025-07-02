@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 
 public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 

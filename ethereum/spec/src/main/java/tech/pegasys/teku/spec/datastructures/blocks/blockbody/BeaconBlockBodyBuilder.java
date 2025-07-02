@@ -80,5 +80,9 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
 
+  default Boolean supportsCellProofs() {
+    return false;
+  }
+
   BeaconBlockBody build();
 }

@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -66,7 +67,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -106,6 +107,7 @@ public class EventSubscriptionManagerTest {
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock = data.randomSignedBeaconBlock(0);
   private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
+  private final DataColumnSidecar sampleDataColumnSidecar = data.randomDataColumnSidecar();
   private final Attestation sampleAttestation = data.randomAttestation(0);
   private final SingleAttestation singleAttestation = data.randomSingleAttestation();
 
@@ -124,7 +126,7 @@ public class EventSubscriptionManagerTest {
       data.randomPayloadBuildingAttributes(true);
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
-          SpecMilestone.ELECTRA,
+          SpecMilestone.FULU,
           new Data(
               samplePayloadAttributes.getProposalSlot(),
               samplePayloadAttributes.getParentBeaconBlockRoot(),
@@ -275,6 +277,16 @@ public class EventSubscriptionManagerTest {
 
     triggerBlobSidecarEvent();
     checkEvent("blob_sidecar", BlobSidecarEvent.create(spec, sampleBlobSidecar));
+  }
+
+  @Test
+  void shouldPropagateDataColumnSidecar() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=data_column_sidecar");
+    manager.registerClient(client1);
+
+    triggerDataColumnSidecarEvent();
+
+    checkEvent("data_column_sidecar", DataColumnSidecarEvent.create(sampleDataColumnSidecar));
   }
 
   @Test
@@ -475,6 +487,11 @@ public class EventSubscriptionManagerTest {
 
   private void triggerBlobSidecarEvent() {
     manager.onNewBlobSidecar(sampleBlobSidecar);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerDataColumnSidecarEvent() {
+    manager.onNewDataColumnSidecar(sampleDataColumnSidecar);
     asyncRunner.executeQueuedActions();
   }
 

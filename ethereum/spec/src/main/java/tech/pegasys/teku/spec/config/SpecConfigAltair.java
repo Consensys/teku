@@ -51,10 +51,6 @@ public interface SpecConfigAltair extends SpecConfig {
 
   int getUpdateTimeout();
 
-  int getSyncCommitteeBranchLength();
-
-  int getFinalityBranchLength();
-
   @Override
   Optional<SpecConfigAltair> toVersionAltair();
 }

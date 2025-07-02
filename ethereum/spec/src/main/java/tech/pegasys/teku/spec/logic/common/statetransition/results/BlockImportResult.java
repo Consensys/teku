@@ -120,6 +120,10 @@ public interface BlockImportResult {
     return false;
   }
 
+  default boolean isDataNotAvailable() {
+    return false;
+  }
+
   default void markAsCanonical() {
     throw new UnsupportedOperationException(
         "Only successful block imports can be marked as canonical");

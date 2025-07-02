@@ -70,9 +70,9 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
     }
     checkArgument(
         expectedSchemaType == resolvedSchema.getClass(),
-        String.format(
-            "Schema should be %s but was %s",
-            expectedSchemaType.getSimpleName(), resolvedSchema.getClass().getSimpleName()));
+        "Schema should be %s but was %s",
+        expectedSchemaType.getSimpleName(),
+        resolvedSchema.getClass().getSimpleName());
     return (T) resolvedSchema;
   }
 

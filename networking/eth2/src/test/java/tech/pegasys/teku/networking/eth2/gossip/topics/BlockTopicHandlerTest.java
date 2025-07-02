@@ -43,6 +43,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
             gossipNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             processor,
             DebugDataDumper.NOOP)
         .getTopicHandler();

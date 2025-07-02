@@ -30,7 +30,7 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
   }
 
   @Test
-  public void shouldRejectAttestationForMultipleCommittees() {
+  public void shouldRejectAggregateForMultipleCommittees() {
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
 
@@ -75,6 +75,37 @@ public class ElectraAttestationValidatorTest extends DenebAttestationValidatorTe
                 nonZeroIndexData,
                 attestation.getAggregateSignature(),
                 attestation::getCommitteeBitsRequired);
+
+    // Sanity check
+    assertThat(wrongAttestation.getData().getIndex()).isNotEqualTo(UInt64.ZERO);
+
+    assertThat(validate(wrongAttestation))
+        .isEqualTo(
+            InternalValidationResult.reject(
+                "Rejecting attestation because attestation data index must be 0"));
+  }
+
+  @Test
+  public void shouldRejectSingleAttestationWithAttestationDataIndexNonZero() {
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
+
+    final AttestationData correctAttestationData = attestation.getData();
+
+    final AttestationData nonZeroIndexData =
+        new AttestationData(
+            correctAttestationData.getSlot(),
+            UInt64.ONE,
+            correctAttestationData.getBeaconBlockRoot(),
+            correctAttestationData.getSource(),
+            correctAttestationData.getTarget());
+
+    final Attestation wrongAttestation =
+        spec.getGenesisSchemaDefinitions()
+            .toVersionElectra()
+            .orElseThrow()
+            .getSingleAttestationSchema()
+            .create(UInt64.ONE, UInt64.ONE, nonZeroIndexData, attestation.getAggregateSignature());
 
     // Sanity check
     assertThat(wrongAttestation.getData().getIndex()).isNotEqualTo(UInt64.ZERO);

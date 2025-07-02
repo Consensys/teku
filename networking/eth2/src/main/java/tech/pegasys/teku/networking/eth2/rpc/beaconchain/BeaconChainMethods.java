@@ -452,7 +452,7 @@ public class BeaconChainMethods {
 
     final DataColumnSidecarsByRangeMessageHandler dataColumnSidecarsByRangeMessageHandler =
         new DataColumnSidecarsByRangeMessageHandler(
-            spec, getSpecConfigFulu(spec), metricsSystem, combinedChainDataClient, dasLogger);
+            getSpecConfigFulu(spec), metricsSystem, combinedChainDataClient, dasLogger);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

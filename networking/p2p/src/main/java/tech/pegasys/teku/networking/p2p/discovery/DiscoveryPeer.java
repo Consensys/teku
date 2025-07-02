@@ -18,6 +18,7 @@ import com.google.common.base.Objects;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 
@@ -29,6 +30,7 @@ public class DiscoveryPeer {
   private final SszBitvector persistentAttestationSubnets;
   private final SszBitvector syncCommitteeSubnets;
   private final Optional<Integer> dasCustodySubnetCount;
+  private final Optional<Bytes4> nextForkDigest;
 
   public DiscoveryPeer(
       final Bytes publicKey,
@@ -37,7 +39,8 @@ public class DiscoveryPeer {
       final Optional<EnrForkId> enrForkId,
       final SszBitvector persistentAttestationSubnets,
       final SszBitvector syncCommitteeSubnets,
-      final Optional<Integer> dasCustodySubnetCount) {
+      final Optional<Integer> dasCustodySubnetCount,
+      final Optional<Bytes4> nextForkDigest) {
     this.publicKey = publicKey;
     this.nodeId = nodeId;
     this.nodeAddress = nodeAddress;
@@ -45,6 +48,7 @@ public class DiscoveryPeer {
     this.persistentAttestationSubnets = persistentAttestationSubnets;
     this.syncCommitteeSubnets = syncCommitteeSubnets;
     this.dasCustodySubnetCount = dasCustodySubnetCount;
+    this.nextForkDigest = nextForkDigest;
   }
 
   public Bytes getPublicKey() {
@@ -75,6 +79,10 @@ public class DiscoveryPeer {
     return dasCustodySubnetCount;
   }
 
+  public Optional<Bytes4> getNextForkDigest() {
+    return nextForkDigest;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -89,7 +97,8 @@ public class DiscoveryPeer {
         && Objects.equal(getEnrForkId(), that.getEnrForkId())
         && Objects.equal(getPersistentAttestationSubnets(), that.getPersistentAttestationSubnets())
         && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets())
-        && Objects.equal(getDasCustodySubnetCount(), that.getDasCustodySubnetCount());
+        && Objects.equal(getDasCustodySubnetCount(), that.getDasCustodySubnetCount())
+        && Objects.equal(getNextForkDigest(), that.getNextForkDigest());
   }
 
   @Override
@@ -100,7 +109,8 @@ public class DiscoveryPeer {
         getEnrForkId(),
         getPersistentAttestationSubnets(),
         getSyncCommitteeSubnets(),
-        getDasCustodySubnetCount());
+        getDasCustodySubnetCount(),
+        getNextForkDigest());
   }
 
   @Override
@@ -112,6 +122,7 @@ public class DiscoveryPeer {
         .add("persistentSubnets", persistentAttestationSubnets)
         .add("syncCommitteeSubnets", syncCommitteeSubnets)
         .add("dasCustodySubnetCount", dasCustodySubnetCount)
+        .add("nextForkDigest", nextForkDigest)
         .toString();
   }
 }

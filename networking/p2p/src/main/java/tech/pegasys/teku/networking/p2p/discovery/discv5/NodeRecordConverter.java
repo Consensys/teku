@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.NEXT_FORK_DIGEST_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
 
 import java.net.InetSocketAddress;
@@ -28,7 +29,10 @@ import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.IdentitySchemaInterpreter;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -80,6 +84,12 @@ public class NodeRecordConverter {
             nodeRecord,
             DAS_CUSTODY_GROUP_COUNT_ENR_FIELD,
             bytes -> UInt64.fromBytes(bytes).intValue());
+    final Optional<Bytes4> nextForkDigest =
+        parseField(
+                nodeRecord,
+                NEXT_FORK_DIGEST_ENR_FIELD,
+                SszPrimitiveSchemas.BYTES4_SCHEMA::sszDeserialize)
+            .map(SszBytes4::get);
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
@@ -88,7 +98,8 @@ public class NodeRecordConverter {
         enrForkId,
         persistentAttestationSubnets,
         syncCommitteeSubnets,
-        dasTotalCustodySubnetCount);
+        dasTotalCustodySubnetCount,
+        nextForkDigest);
   }
 
   private static <T> Optional<T> parseField(

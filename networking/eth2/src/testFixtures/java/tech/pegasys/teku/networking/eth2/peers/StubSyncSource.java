@@ -88,7 +88,7 @@ public class StubSyncSource implements SyncSource {
       final UInt64 count,
       final List<UInt64> columns,
       final RpcResponseListener<DataColumnSidecar> listener) {
-    // TODO
+    // TODO-fulu (https://github.com/Consensys/teku/issues/9462)
     return SafeFuture.COMPLETE;
   }
 

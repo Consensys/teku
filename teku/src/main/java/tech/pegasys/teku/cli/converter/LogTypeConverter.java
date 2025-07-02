@@ -22,22 +22,30 @@ public class LogTypeConverter implements ITypeConverter<Level> {
   @Override
   public Level convert(final String value) {
     switch (value.toUpperCase(Locale.ROOT)) {
-      case "OFF":
+      case "OFF" -> {
         return Level.OFF;
-      case "FATAL":
+      }
+      case "FATAL" -> {
         return Level.FATAL;
-      case "ERROR":
+      }
+      case "ERROR" -> {
         return Level.ERROR;
-      case "WARN":
+      }
+      case "WARN" -> {
         return Level.WARN;
-      case "INFO":
+      }
+      case "INFO" -> {
         return Level.INFO;
-      case "DEBUG":
+      }
+      case "DEBUG" -> {
         return Level.DEBUG;
-      case "TRACE":
+      }
+      case "TRACE" -> {
         return Level.TRACE;
-      case "ALL":
+      }
+      case "ALL" -> {
         return Level.ALL;
+      }
     }
     throw new CommandLine.TypeConversionException(
         "'"

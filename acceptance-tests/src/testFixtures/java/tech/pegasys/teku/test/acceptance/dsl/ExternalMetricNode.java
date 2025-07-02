@@ -77,14 +77,9 @@ public class ExternalMetricNode extends Node {
       final Map<String, Object> elements = new HashMap<>();
       for (String field : ImmutableList.copyOf(child.fieldNames())) {
         switch (child.get(field).getNodeType()) {
-          case BOOLEAN:
-            elements.put(field, child.get(field).asBoolean());
-            break;
-          case NUMBER:
-            elements.put(field, child.get(field).asLong());
-            break;
-          default:
-            elements.put(field, child.get(field).asText());
+          case BOOLEAN -> elements.put(field, child.get(field).asBoolean());
+          case NUMBER -> elements.put(field, child.get(field).asLong());
+          default -> elements.put(field, child.get(field).asText());
         }
       }
       result.add(elements);

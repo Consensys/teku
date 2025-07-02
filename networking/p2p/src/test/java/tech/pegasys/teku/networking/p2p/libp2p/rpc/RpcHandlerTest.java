@@ -28,6 +28,7 @@ import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.mux.StreamMuxer.Session;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Unit;
@@ -46,13 +47,15 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.VersionBasedRpcRequestBodySelector;
 
 @SuppressWarnings("unchecked")
 public class RpcHandlerTest {
 
   StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  RpcMethod<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
-  RpcHandler<RpcRequestHandler, Object, RpcResponseHandler<?>> rpcHandler =
+  RpcMethod<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> rpcMethod = mock(RpcMethod.class);
+  RpcHandler<RpcRequestHandler, RpcRequest, RpcResponseHandler<?>> rpcHandler =
       new RpcHandler<>(asyncRunner, rpcMethod);
 
   Connection connection = mock(Connection.class);
@@ -67,7 +70,7 @@ public class RpcHandlerTest {
   Controller<RpcRequestHandler> controller = mock(Controller.class);
   RpcStream rpcStream = mock(RpcStream.class);
   final RpcResponseHandler<?> responseHandler = mock(RpcResponseHandler.class);
-  final Object request = new Object();
+  final RpcRequest request = mock(RpcRequest.class);
 
   @BeforeEach
   void init() {
@@ -110,6 +113,77 @@ public class RpcHandlerTest {
     verify(controller, never()).closeAbruptly();
     assertThat(future).isCompletedWithValue(controller);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+  }
+
+  @Test
+  void sendRequestMissingRequestBodyMappingShouldFail() {
+    final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequest(connection, null, responseHandler);
+
+    assertThat(future).isNotDone();
+    streamPromise.getStream().complete(stream);
+
+    assertThat(future).isNotDone();
+    streamPromise.getController().complete(controller);
+
+    assertThat(future).isNotDone();
+    stream.getProtocol().complete("test");
+
+    assertThat(future).isCompletedExceptionally();
+  }
+
+  @Test
+  void sendRequestWithBodySelector_positiveCase() {
+    final String protocolId = "test";
+    final VersionBasedRpcRequestBodySelector<RpcRequest> bodySelector =
+        new VersionBasedRpcRequestBodySelector<>(Map.of(protocolId, request));
+
+    final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequestWithBodySelector(connection, bodySelector, responseHandler);
+
+    assertThat(future).isNotDone();
+    streamPromise.getStream().complete(stream);
+
+    assertThat(future).isNotDone();
+    streamPromise.getController().complete(controller);
+
+    assertThat(future).isNotDone();
+    stream.getProtocol().complete(protocolId);
+
+    assertThat(future).isNotDone();
+    writeFuture.complete(null);
+
+    verify(stream, never()).close();
+    verify(controller, never()).closeAbruptly();
+    assertThat(future).isCompletedWithValue(controller);
+    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+
+    // interrupting after completion shouldn't affect anything
+    closeFuture.complete(null);
+
+    verify(stream, never()).close();
+    verify(controller, never()).closeAbruptly();
+    assertThat(future).isCompletedWithValue(controller);
+    assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+  }
+
+  @Test
+  void sendRequestWithBodySelectorMissingRequestBodyMappingShouldFail() {
+    final VersionBasedRpcRequestBodySelector<RpcRequest> emptyBodySelector =
+        new VersionBasedRpcRequestBodySelector<>(Map.of());
+    final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
+        rpcHandler.sendRequestWithBodySelector(connection, emptyBodySelector, responseHandler);
+
+    assertThat(future).isNotDone();
+    streamPromise.getStream().complete(stream);
+
+    assertThat(future).isNotDone();
+    streamPromise.getController().complete(controller);
+
+    assertThat(future).isNotDone();
+    stream.getProtocol().complete("test");
+
+    assertThat(future).isCompletedExceptionally();
   }
 
   @Test

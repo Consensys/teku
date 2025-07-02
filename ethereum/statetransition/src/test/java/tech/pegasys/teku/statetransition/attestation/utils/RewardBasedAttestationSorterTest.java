@@ -123,6 +123,26 @@ public class RewardBasedAttestationSorterTest {
   }
 
   @Test
+  void sort_shouldSkipSortingWhenNotNeeded() {
+    // att1: validator 0, timely source (reward: 1000 * 14 = 14000)
+    final PooledAttestationWithData att1 =
+        mockPooledAttestationWithData(
+            STATE_SLOT.minus(1), CURRENT_EPOCH, List.of(0), List.of(TIMELY_SOURCE_FLAG_INDEX));
+    // att2: validator 1, timely target (reward: 1000 * 26 = 26000)
+    final PooledAttestationWithData att2 =
+        mockPooledAttestationWithData(
+            STATE_SLOT.minus(2), CURRENT_EPOCH, List.of(1), List.of(TIMELY_TARGET_FLAG_INDEX));
+
+    final List<PooledAttestationWithData> attestations = List.of(att1, att2);
+    final List<RewardBasedAttestationSorter.PooledAttestationWithRewardInfo> sortedAttestations =
+        sorter.sort(attestations, 2);
+
+    assertThat(sortedAttestations).hasSize(2);
+    assertThat(sortedAttestations.get(0).getAttestation()).isEqualTo(att1);
+    assertThat(sortedAttestations.get(1).getAttestation()).isEqualTo(att2);
+  }
+
+  @Test
   void sort_shouldReturnEmptyList_whenInputIsEmpty() {
     final List<PooledAttestationWithData> attestations = List.of();
     final List<PooledAttestationWithRewardInfo> sortedAttestations = sorter.sort(attestations, 10);
@@ -155,19 +175,26 @@ public class RewardBasedAttestationSorterTest {
     final PooledAttestationWithData att2 =
         mockPooledAttestationWithData(
             STATE_SLOT.minus(2), CURRENT_EPOCH, List.of(1), List.of(TIMELY_TARGET_FLAG_INDEX));
+    // att3: validator 2, timely target and source (reward: 1000 * (14+26) = 40000)
+    final PooledAttestationWithData att3 =
+        mockPooledAttestationWithData(
+            STATE_SLOT.minus(1),
+            CURRENT_EPOCH,
+            List.of(2),
+            List.of(TIMELY_SOURCE_FLAG_INDEX, TIMELY_TARGET_FLAG_INDEX));
 
-    final List<PooledAttestationWithData> attestations = List.of(att1, att2);
+    final List<PooledAttestationWithData> attestations = List.of(att1, att2, att3);
     final List<RewardBasedAttestationSorter.PooledAttestationWithRewardInfo> sortedAttestations =
         sorter.sort(attestations, 2);
 
     assertThat(sortedAttestations).hasSize(2);
-    // Expect att2 (higher reward) to be first
-    assertThat(sortedAttestations.get(0).getAttestation()).isEqualTo(att2);
-    assertThat(sortedAttestations.get(1).getAttestation()).isEqualTo(att1);
+    // Expect att3 (higher reward) to be first
+    assertThat(sortedAttestations.get(0).getAttestation()).isEqualTo(att3);
+    assertThat(sortedAttestations.get(1).getAttestation()).isEqualTo(att2);
     assertThat(sortedAttestations.get(0).getRewardNumerator())
-        .isEqualTo(BASE_REWARD_VALUE.times(TIMELY_TARGET_WEIGHT));
+        .isEqualTo(BASE_REWARD_VALUE.times(TIMELY_TARGET_WEIGHT.plus(TIMELY_SOURCE_WEIGHT)));
     assertThat(sortedAttestations.get(1).getRewardNumerator())
-        .isEqualTo(BASE_REWARD_VALUE.times(TIMELY_SOURCE_WEIGHT));
+        .isEqualTo(BASE_REWARD_VALUE.times(TIMELY_TARGET_WEIGHT));
   }
 
   @Test
@@ -206,14 +233,19 @@ public class RewardBasedAttestationSorterTest {
             List.of(2),
             List.of(TIMELY_HEAD_FLAG_INDEX));
 
-    final List<PooledAttestationWithData> attestations = List.of(att1, att2, att3, att4);
+    // Att5 (Val 3): no flags, will be valued 0 and left at the end at first sorting iteration.
+    final PooledAttestationWithData att5 =
+        mockPooledAttestationWithData(STATE_SLOT.minus(1), CURRENT_EPOCH, List.of(3), List.of());
+
+    final List<PooledAttestationWithData> attestations = List.of(att1, att2, att3, att4, att5);
 
     /* Initial rewards computed:
     Att1: 40000 (Val 0: TS+TT)
     Att2: 14000 (Val 0: TS)
     Att3: 26000 (Val 1: TT)
     Att4: 14000 (Val 2: TH, Previous Epoch)
-    Initial Queue Order (highest reward first): Att1, Att3, Att2 (or Att4), Att4 (or Att2)
+    Att5: 0 (Val 3: --, Previous Epoch)
+    Initial Queue Order (highest reward first): Att1, Att3, Att2 (or Att4), Att4 (or Att2), Att5
     */
 
     final List<RewardBasedAttestationSorter.PooledAttestationWithRewardInfo> sortedAttestations =

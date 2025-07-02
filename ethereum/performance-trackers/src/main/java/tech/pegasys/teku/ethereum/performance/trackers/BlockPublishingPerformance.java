@@ -32,6 +32,9 @@ public interface BlockPublishingPerformance {
         public void blobSidecarsPublishingInitiated() {}
 
         @Override
+        public void dataColumnSidecarsPublishingInitiated() {}
+
+        @Override
         public void blockPublishingInitiated() {}
 
         @Override
@@ -42,6 +45,8 @@ public interface BlockPublishingPerformance {
       };
 
   void blobSidecarsPublishingInitiated();
+
+  void dataColumnSidecarsPublishingInitiated();
 
   void blockPublishingInitiated();
 

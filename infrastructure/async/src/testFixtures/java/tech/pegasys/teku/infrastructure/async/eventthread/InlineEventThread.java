@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
  */
 public class InlineEventThread implements EventThread {
 
-  private final ThreadLocal<Boolean> isEventThread = ThreadLocal.withInitial(() -> Boolean.FALSE);
+  private final ThreadLocal<Boolean> isEventThread = ThreadLocal.withInitial(() -> false);
   private final Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
 
   @Override
@@ -90,11 +90,11 @@ public class InlineEventThread implements EventThread {
    * event thread, without having to actually pass a lambda to execute.
    */
   public void markAsOnEventThread() {
-    isEventThread.set(Boolean.TRUE);
+    isEventThread.set(true);
   }
 
   public void markAsOffEventThread() {
-    isEventThread.set(Boolean.FALSE);
+    isEventThread.set(false);
   }
 
   /**

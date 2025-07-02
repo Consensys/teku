@@ -84,6 +84,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
           .put(
               "epoch_processing/pending_deposits",
               new EpochProcessingTestExecutor(EpochOperation.PENDING_DEPOSITS))
+          .put(
+              "epoch_processing/proposer_lookahead",
+              new EpochProcessingTestExecutor(EpochOperation.PROPOSER_LOOKAHEAD))
           .build();
 
   private final EpochOperation operation;

@@ -49,12 +49,6 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   private Integer minSyncCommitteeParticipants;
   private Integer updateTimeout;
 
-  // Light client
-  private Integer syncCommitteeBranchLength;
-  private Integer finalityBranchLength;
-  private static final int SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT = 5;
-  private static final int FINALITY_BRANCH_LENGTH_DEFAULT = 6;
-
   AltairBuilder() {}
 
   @Override
@@ -73,9 +67,7 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
             altairForkVersion,
             altairForkEpoch,
             minSyncCommitteeParticipants,
-            updateTimeout,
-            syncCommitteeBranchLength,
-            finalityBranchLength),
+            updateTimeout),
         specConfigAndParent);
   }
 
@@ -88,25 +80,12 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
       inactivityScoreRecoveryRate = UInt64.valueOf(16);
     }
 
-    // Config items were added after launch so provide defaults to preserve compatibility
-    if (syncCommitteeBranchLength == null) {
-      syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
-    }
-    if (finalityBranchLength == null) {
-      finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
-    }
-
     // Fill default zeros if fork is unsupported
     if (altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }
 
     validateConstants();
-
-    // Config items were added after launch so provide defaults to preserve compatibility
-    if (updateTimeout == null) {
-      updateTimeout = epochsPerSyncCommitteePeriod * 32;
-    }
   }
 
   @Override
@@ -122,6 +101,7 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
     constants.put("altairForkVersion", altairForkVersion);
     constants.put("altairForkEpoch", altairForkEpoch);
     constants.put("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+    constants.put("updateTimeout", updateTimeout);
     return constants;
   }
 
@@ -196,18 +176,6 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   public AltairBuilder updateTimeout(final Integer updateTimeout) {
     checkNotNull(updateTimeout);
     this.updateTimeout = updateTimeout;
-    return this;
-  }
-
-  public AltairBuilder syncCommitteeBranchLength(final Integer syncCommitteeBranchLength) {
-    checkNotNull(syncCommitteeBranchLength);
-    this.syncCommitteeBranchLength = syncCommitteeBranchLength;
-    return this;
-  }
-
-  public AltairBuilder finalityBranchLength(final Integer finalityBranchLength) {
-    checkNotNull(finalityBranchLength);
-    this.finalityBranchLength = finalityBranchLength;
     return this;
   }
 }

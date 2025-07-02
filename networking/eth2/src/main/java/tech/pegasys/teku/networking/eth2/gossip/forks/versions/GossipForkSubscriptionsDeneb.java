@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -85,13 +86,12 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
   }
 
   @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
-    addBlobSidecarGossipManager(forkInfo);
+  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    super.addGossipManagers(forkInfo, forkDigest);
+    addBlobSidecarGossipManager(forkInfo, forkDigest);
   }
 
-  @Override
-  public void addBlobSidecarGossipManager(final ForkInfo forkInfo) {
+  protected void addBlobSidecarGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     blobSidecarGossipManager =
         BlobSidecarGossipManager.create(
             recentChainData,
@@ -100,6 +100,7 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             blobSidecarProcessor,
             debugDataDumper);
     addGossipManager(blobSidecarGossipManager);

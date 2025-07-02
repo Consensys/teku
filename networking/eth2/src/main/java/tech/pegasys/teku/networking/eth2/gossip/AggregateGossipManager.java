@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -35,6 +36,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
+      final Bytes4 forkDigest,
       final OperationProcessor<ValidatableAttestation> processor,
       final DebugDataDumper debugDataDumper) {
     super(
@@ -44,6 +46,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         gossipNetwork,
         gossipEncoding,
         forkInfo,
+        forkDigest,
         (proofMessage, arrivalTimestamp) ->
             processor.process(
                 ValidatableAttestation.aggregateFromNetwork(

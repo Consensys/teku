@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
@@ -39,18 +40,17 @@ public class DataColumnSidecarTopicHandler {
       final GossipEncoding gossipEncoding,
       final DebugDataDumper debugDataDumper,
       final ForkInfo forkInfo,
+      final Bytes4 forkDigest,
       final String topicName,
       final DataColumnSidecarSchema dataColumnSidecarSchema,
       final int subnetId) {
-
     final Spec spec = recentChainData.getSpec();
-
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
         new TopicSubnetIdAwareOperationProcessor(spec, subnetId, operationProcessor),
         gossipEncoding,
-        forkInfo.getForkDigest(spec),
+        forkDigest,
         topicName,
         new OperationMilestoneValidator<>(
             recentChainData.getSpec(),

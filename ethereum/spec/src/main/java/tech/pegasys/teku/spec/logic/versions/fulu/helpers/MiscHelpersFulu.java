@@ -13,17 +13,18 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint256ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.Bytes;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +35,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -44,7 +46,6 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.spec.config.BlobSchedule;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -64,18 +65,19 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
-  private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
   private static final Logger LOG = LogManager.getLogger();
+  private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -87,32 +89,23 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
-  @SuppressWarnings("unused")
-  private final SpecConfigFulu specConfigFulu;
-
-  @SuppressWarnings("unused")
   private final Predicates predicates;
-
-  @SuppressWarnings("unused")
-  private final SchemaDefinitionsFulu schemaDefinitions;
-
-  private final List<BlobSchedule> blobSchedule;
+  private final SpecConfigFulu specConfigFulu;
+  private final SchemaDefinitionsFulu schemaDefinitionsFulu;
+  private final BpoForkSchedule bpoForkSchedule;
 
   public MiscHelpersFulu(
-      final SpecConfigFulu specConfigFulu,
-      final Predicates predicates,
-      final SchemaDefinitions schemaDefinitions) {
+      final SpecConfigFulu specConfig,
+      final PredicatesElectra predicates,
+      final SchemaDefinitionsFulu schemaDefinitions) {
     super(
-        SpecConfigElectra.required(specConfigFulu),
+        SpecConfigElectra.required(specConfig),
         predicates,
         SchemaDefinitionsElectra.required(schemaDefinitions));
     this.predicates = predicates;
-    this.specConfigFulu = specConfigFulu;
-    this.schemaDefinitions = SchemaDefinitionsFulu.required(schemaDefinitions);
-    this.blobSchedule =
-        specConfigFulu.getBlobSchedule().stream()
-            .sorted(Comparator.comparing(BlobSchedule::epoch))
-            .toList();
+    this.specConfigFulu = specConfig;
+    this.schemaDefinitionsFulu = schemaDefinitions;
+    this.bpoForkSchedule = new BpoForkSchedule(specConfig);
   }
 
   @Override
@@ -120,29 +113,44 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
-  // get_max_blobs_per_block
-  public int getMaxBlobsPerBlock(final UInt64 epoch) {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
-
-    final Optional<BlobSchedule> maybeSchedule =
-        blobSchedule.stream()
-            .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
-            .max(Comparator.comparing(BlobSchedule::epoch));
-
-    final int maxBlobs =
-        maybeSchedule
-            .map(BlobSchedule::maxBlobsPerBlock)
-            .orElseGet(() -> blobSchedule.getFirst().maxBlobsPerBlock());
-    LOG.debug("Max blobs at epoch {} found to be {}", epoch, maxBlobs);
-    return maxBlobs;
+  // compute_fork_version
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())) {
+      return specConfigFulu.getFuluForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getElectraForkEpoch())) {
+      return specConfigFulu.getElectraForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getDenebForkEpoch())) {
+      return specConfigFulu.getDenebForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getCapellaForkEpoch())) {
+      return specConfigFulu.getCapellaForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getBellatrixForkEpoch())) {
+      return specConfigFulu.getBellatrixForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getAltairForkEpoch())) {
+      return specConfigFulu.getAltairForkVersion();
+    }
+    return specConfigFulu.getGenesisForkVersion();
   }
 
-  public int getHighestMaxBlobsPerBlockFromSchedule() {
-    checkArgument(!blobSchedule.isEmpty(), "Blob schedules not correctly defined.");
-    return blobSchedule.stream()
-        .max(Comparator.comparing(BlobSchedule::maxBlobsPerBlock))
-        .map(BlobSchedule::maxBlobsPerBlock)
-        .orElseGet(() -> blobSchedule.getLast().maxBlobsPerBlock());
+  // compute_fork_digest
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    final Bytes4 forkVersion = computeForkVersion(epoch);
+    final Bytes32 baseDigest = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
+    final BlobParameters blobParameters = getBlobParameters(epoch);
+    // Bitmask digest with hash of blob parameters
+    return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
+  }
+
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
+  }
+
+  // get_blob_parameters
+  public BlobParameters getBlobParameters(final UInt64 epoch) {
+    return bpoForkSchedule
+        .getBpoFork(epoch)
+        .orElse(
+            new BlobParameters(
+                specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
   }
 
   private UInt256 incrementByModule(final UInt256 n) {
@@ -227,19 +235,40 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .min(specConfigFulu.getNumberOfCustodyGroups());
   }
 
+  public boolean verifyDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+    final int numberOfColumns = specConfigFulu.getNumberOfColumns();
+
+    if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
+      LOG.trace(
+          "DataColumnSidecar has invalid index {}. Should be less than {}",
+          dataColumnSidecar.getIndex(),
+          numberOfColumns);
+      return false;
+    }
+    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
+      LOG.trace("DataColumnSidecar has no kzg commitments");
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size()
+        != dataColumnSidecar.getSszKZGCommitments().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg commitments ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGCommitments().size());
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg proofs ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGProofs().size());
+      return false;
+    }
+    return true;
+  }
+
   public boolean verifyDataColumnSidecarKzgProof(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
-    final int dataColumns = specConfigFulu.getNumberOfColumns();
-    if (dataColumnSidecar.getIndex().isGreaterThanOrEqualTo(dataColumns)) {
-      return false;
-    }
-
-    // Number of rows is the same for cells, commitments, proofs
-    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
-        || dataColumnSidecar.getSszKZGCommitments().size()
-            != dataColumnSidecar.getSszKZGProofs().size()) {
-      return false;
-    }
 
     final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getDataColumn().size())
@@ -272,7 +301,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public int getBlockBodyKzgCommitmentsGeneralizedIndex() {
     return (int)
-        BeaconBlockBodySchemaElectra.required(schemaDefinitions.getBeaconBlockBodySchema())
+        BeaconBlockBodySchemaElectra.required(schemaDefinitionsFulu.getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsGeneralizedIndex();
   }
 
@@ -321,6 +350,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
+  @SuppressWarnings("deprecation")
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
       final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())
@@ -332,7 +362,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
                 row.add(
-                    schemaDefinitions
+                    schemaDefinitionsFulu
                         .getMatrixEntrySchema()
                         .create(
                             kzgCellAndProofs.get(cellIndex).cell(),
@@ -356,7 +386,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCells.size(); ++cellIndex) {
                 row.add(
-                    schemaDefinitions
+                    schemaDefinitionsFulu
                         .getMatrixEntrySchema()
                         .create(
                             kzgCells.get(cellIndex),
@@ -405,9 +435,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       return Collections.emptyList();
     }
 
-    final DataColumnSchema dataColumnSchema = schemaDefinitions.getDataColumnSchema();
+    final DataColumnSchema dataColumnSchema = schemaDefinitionsFulu.getDataColumnSchema();
     final DataColumnSidecarSchema dataColumnSidecarSchema =
-        schemaDefinitions.getDataColumnSidecarSchema();
+        schemaDefinitionsFulu.getDataColumnSidecarSchema();
     final SszListSchema<SszKZGProof, ?> kzgProofsSchema =
         dataColumnSidecarSchema.getKzgProofsSchema();
 
@@ -451,7 +481,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                     IntStream.range(0, sideCar.getDataColumn().size())
                         .mapToObj(
                             rowIndex ->
-                                schemaDefinitions
+                                schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
                                         sideCar.getDataColumn().get(rowIndex),
@@ -500,7 +530,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               return IntStream.range(0, kzgCellAndProofs.size())
                   .mapToObj(
                       kzgCellAndProofIndex ->
-                          schemaDefinitions
+                          schemaDefinitionsFulu
                               .getMatrixEntrySchema()
                               .create(
                                   kzgCellAndProofs.get(kzgCellAndProofIndex).cell(),
@@ -513,7 +543,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   /**
-   * Return the sample count if allowing failures.
+   * NOTE: this method was part of the spec for lossy sampling. Not it is only being used on tests
+   * (eventually it will be removed).
+   *
+   * <p>Return the sample count if allowing failures.
    *
    * <p>This helper demonstrates how to calculate the number of columns to query per slot when
    * allowing given number of failures, assuming uniform random selection without replacement.
@@ -610,5 +643,38 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return currentEpoch
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
+  }
+
+  // compute_proposer_indices
+  @Override
+  public List<Integer> computeProposerIndices(
+      final BeaconState state,
+      final UInt64 epoch,
+      final Bytes32 epochSeed,
+      final IntList activeValidatorIndices) {
+    final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
+    return IntStream.range(0, specConfigFulu.getSlotsPerEpoch())
+        .mapToObj(
+            i -> {
+              final Bytes32 seed =
+                  Hash.sha256(
+                      Bytes.concat(
+                          epochSeed.toArray(), uint64ToBytes(startSlot.plus(i)).toArray()));
+              return computeProposerIndex(state, activeValidatorIndices, seed);
+            })
+        .toList();
+  }
+
+  // initialize_proposer_lookahead
+  public List<UInt64> initializeProposerLookahead(
+      final BeaconStateElectra state, final BeaconStateAccessorsFulu beaconAccessors) {
+    final UInt64 currentEpoch = computeEpochAtSlot(state.getSlot());
+    return IntStream.rangeClosed(0, specConfigFulu.getMinSeedLookahead())
+        .flatMap(
+            i ->
+                beaconAccessors.getBeaconProposerIndices(state, currentEpoch.plus(i)).stream()
+                    .mapToInt(Integer::intValue))
+        .mapToObj(UInt64::valueOf)
+        .toList();
   }
 }

@@ -98,7 +98,6 @@ public class SpecConfigBuilder {
   private Integer secondsPerEth1Block;
 
   // Fork Choice
-  private Integer safeSlotsToUpdateJustified;
   // Added after Phase0 was live, so default to 0 which disables proposer score boosting.
   private Integer proposerScoreBoost = 0;
 
@@ -210,7 +209,6 @@ public class SpecConfigBuilder {
                 maxDeposits,
                 maxVoluntaryExits,
                 secondsPerEth1Block,
-                safeSlotsToUpdateJustified,
                 proposerScoreBoost,
                 depositChainId,
                 depositNetworkId,
@@ -283,7 +281,6 @@ public class SpecConfigBuilder {
     constants.put("maxDeposits", maxDeposits);
     constants.put("maxVoluntaryExits", maxVoluntaryExits);
     constants.put("secondsPerEth1Block", secondsPerEth1Block);
-    constants.put("safeSlotsToUpdateJustified", safeSlotsToUpdateJustified);
     constants.put("depositChainId", depositChainId);
     constants.put("depositNetworkId", depositNetworkId);
     constants.put("depositContractAddress", depositContractAddress);
@@ -324,8 +321,6 @@ public class SpecConfigBuilder {
               "The specified network configuration had missing or invalid values for constants %s",
               String.join(", ", fieldsFailingValidation)));
     }
-    fuluBuilder.validateBlobSchedule(
-        denebBuilder.getBlobSchedule(), electraBuilder.getBlobSchedule());
     builderChain.validate();
   }
 
@@ -607,12 +602,6 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder secondsPerEth1Block(final Integer secondsPerEth1Block) {
     checkNotNull(secondsPerEth1Block);
     this.secondsPerEth1Block = secondsPerEth1Block;
-    return this;
-  }
-
-  public SpecConfigBuilder safeSlotsToUpdateJustified(final Integer safeSlotsToUpdateJustified) {
-    checkNotNull(safeSlotsToUpdateJustified);
-    this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     return this;
   }
 

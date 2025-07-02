@@ -401,7 +401,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             method -> {
               final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobSidecarsByRangeRequestMessage request;
-              final int maxBlobsPerBlock = calculateMaxBlobsPerBlock(startSlot.plus(count));
+              final int maxBlobsPerBlock = getMaxBlobsPerBlock(startSlot.plus(count));
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
@@ -434,8 +434,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
   }
 
-  private int calculateMaxBlobsPerBlock(final UInt64 endSlot) {
-    return SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig()).getMaxBlobsPerBlock();
+  private int getMaxBlobsPerBlock(final UInt64 slot) {
+    return spec.getMaxBlobsPerBlockAtSlot(slot).orElseThrow();
   }
 
   @Override
@@ -546,7 +546,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public boolean approveRequest() {
     if (requestTracker.approveObjectsRequest(1L).isEmpty()) {
-      LOG.info("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);
+      LOG.debug("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
       return false;
     }
@@ -591,7 +591,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     final Optional<RequestApproval> requestApproval =
         requestTracker.approveObjectsRequest(objectsCount);
     if (requestApproval.isEmpty()) {
-      LOG.info("Peer {} disconnected due to {} rate limits", getId(), requestType);
+      LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();

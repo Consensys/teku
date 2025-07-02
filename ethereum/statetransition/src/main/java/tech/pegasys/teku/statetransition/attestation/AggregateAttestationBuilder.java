@@ -53,7 +53,7 @@ class AggregateAttestationBuilder {
       }
       return true;
     }
-    if (currentAggregateBits.aggregateWith(attestation.bits())) {
+    if (currentAggregateBits.aggregateWith(attestation)) {
       includedAttestations.add(attestation);
       if (accumulateValidatorIndices) {
         // since we are aggregating only non-intersecting bits,

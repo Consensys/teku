@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -35,6 +36,7 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
+      final Bytes4 forkDigest,
       final OperationProcessor<SignedBeaconBlock> processor,
       final DebugDataDumper debugDataDumper) {
     super(
@@ -44,6 +46,7 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
         gossipNetwork,
         gossipEncoding,
         forkInfo,
+        forkDigest,
         processor,
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()

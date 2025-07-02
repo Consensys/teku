@@ -1238,6 +1238,20 @@ class ValidatorApiHandlerTest {
     assertThat(result).isCompletedWithValue(emptyList());
   }
 
+  @Test
+  public void shouldReportPerformanceWhenAttestationIsSavedForTheFuture() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.addAttestation(any(), any()))
+        .thenReturn(completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    verify(attestationManager)
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty());
+    verify(performanceTracker).saveProducedAttestation(attestation);
+    verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
+    assertThat(result).isCompletedWithValue(emptyList());
+  }
+
   private boolean validatorIsLive(
       final List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs, final UInt64 validatorIndex) {
     return validatorLivenessAtEpochs.stream()

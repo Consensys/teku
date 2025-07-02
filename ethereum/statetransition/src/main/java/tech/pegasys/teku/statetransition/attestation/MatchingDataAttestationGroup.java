@@ -101,7 +101,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
    */
   public boolean add(
       final PooledAttestation attestation, final Optional<Bytes32> committeeShufflingSeed) {
-    if (includedValidators.isSuperSetOf(attestation.bits())) {
+    if (includedValidators.isSuperSetOf(attestation)) {
       // All attestation bits have already been included on chain
       return false;
     }
@@ -212,7 +212,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
       for (final Iterator<PooledAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         final PooledAttestation candidate = iterator.next();
-        if (includedValidators.isSuperSetOf(candidate.bits())) {
+        if (includedValidators.isSuperSetOf(candidate)) {
           iterator.remove();
           numRemoved++;
         }
@@ -290,7 +290,7 @@ public class MatchingDataAttestationGroup implements Iterable<PooledAttestation>
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(this::isAttestationRelevant)
-          .filter(candidate -> !includedValidators.isSuperSetOf(candidate.bits()))
+          .filter(candidate -> !includedValidators.isSuperSetOf(candidate))
           .iterator();
     }
 

@@ -17,8 +17,6 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_W
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -152,22 +150,16 @@ public class BlockRewardCalculatorUtil {
       final BeaconBlock block,
       final BlockProcessorAltair blockProcessor,
       final BeaconState preState) {
-    final List<Optional<UInt64>> rewards = new ArrayList<>();
     final MutableBeaconStateAltair mutableBeaconStateAltair =
         BeaconStateAltair.required(preState).createWritableCopy();
     final AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider =
         blockProcessor.createIndexedAttestationProvider(
             mutableBeaconStateAltair, IndexedAttestationCache.capturing());
-    block
-        .getBody()
-        .getAttestations()
-        .forEach(
+    return block.getBody().getAttestations().stream()
+        .map(
             attestation ->
-                rewards.add(
-                    blockProcessor.processAttestationProposerReward(
-                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)));
-
-    return rewards.stream()
+                blockProcessor.processAttestationProposerReward(
+                    mutableBeaconStateAltair, attestation, indexedAttestationProvider))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(UInt64::longValue)

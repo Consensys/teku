@@ -28,12 +28,6 @@ HYSTERESIS_DOWNWARD_MULTIPLIER: 1
 HYSTERESIS_UPWARD_MULTIPLIER: 5
 
 
-# Fork Choice
-# ---------------------------------------------------------------
-# 2**1 (= 1)
-SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 2
-
-
 # Validator
 # ---------------------------------------------------------------
 # [customized] process deposits more quickly, but insecure

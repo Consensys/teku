@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.lightclient;
 
+import static tech.pegasys.teku.spec.constants.LightClientConstants.FINALIZED_ROOT_GINDEX;
+import static tech.pegasys.teku.spec.constants.LightClientConstants.NEXT_SYNC_COMMITTEE_GINDEX;
+
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema7;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -23,6 +26,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class LightClientUpdateSchema
     extends ContainerSchema7<
@@ -42,11 +46,11 @@ public class LightClientUpdateSchema
         namedSchema("next_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
             "next_sync_committee_branch",
-            SszBytes32VectorSchema.create(specConfigAltair.getSyncCommitteeBranchLength())),
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(NEXT_SYNC_COMMITTEE_GINDEX))),
         namedSchema("finalized_header", new LightClientHeaderSchema()),
         namedSchema(
             "finality_branch",
-            SszBytes32VectorSchema.create(specConfigAltair.getFinalityBranchLength())),
+            SszBytes32VectorSchema.create(MathHelpers.floorLog2(FINALIZED_ROOT_GINDEX))),
         namedSchema(
             "sync_aggregate", SyncAggregateSchema.create(specConfigAltair.getSyncCommitteeSize())),
         namedSchema("signature_slot", SszPrimitiveSchemas.UINT64_SCHEMA));

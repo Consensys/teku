@@ -15,13 +15,20 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class StubPeerScorer implements PeerScorer {
+
+  record SubnetSubscriptionsKey(
+      SszBitvector attestationSubscriptions,
+      SszBitvector syncCommitteeSubnetSubscriptions,
+      SszBitvector dataColumnSidecarSubnetSubscriptions) {}
+
   private final Object2IntMap<NodeId> peerScores = new Object2IntOpenHashMap<>();
-  private final Object2IntMap<Pair<SszBitvector, SszBitvector>> candidateScores =
+  private final Object2IntMap<SubnetSubscriptionsKey> candidateScores =
       new Object2IntOpenHashMap<>();
 
   public void setScore(final NodeId peerId, final int score) {
@@ -32,7 +39,12 @@ public class StubPeerScorer implements PeerScorer {
       final SszBitvector attestationSubscriptions,
       final SszBitvector syncCommitteeSubnetSubscriptions,
       final int score) {
-    candidateScores.put(Pair.of(attestationSubscriptions, syncCommitteeSubnetSubscriptions), score);
+    candidateScores.put(
+        new SubnetSubscriptionsKey(
+            attestationSubscriptions,
+            syncCommitteeSubnetSubscriptions,
+            SszBitvectorSchema.create(128).getDefault()),
+        score);
   }
 
   @Override
@@ -41,10 +53,19 @@ public class StubPeerScorer implements PeerScorer {
   }
 
   @Override
+  public int scoreCandidatePeer(final DiscoveryPeer candidate) {
+    return scoreCandidatePeer(
+        candidate.getPersistentAttestationSubnets(), candidate.getSyncCommitteeSubnets());
+  }
+
   public int scoreCandidatePeer(
       final SszBitvector attestationSubscriptions,
       final SszBitvector syncCommitteeSubnetSubscriptions) {
     return candidateScores.getOrDefault(
-        Pair.of(attestationSubscriptions, syncCommitteeSubnetSubscriptions), 0);
+        new SubnetSubscriptionsKey(
+            attestationSubscriptions,
+            syncCommitteeSubnetSubscriptions,
+            SszBitvectorSchema.create(128).getDefault()),
+        0);
   }
 }

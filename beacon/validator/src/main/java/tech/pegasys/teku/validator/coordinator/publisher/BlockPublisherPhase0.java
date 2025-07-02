@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -69,6 +70,13 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   @Override
   void publishBlobSidecars(
       final List<BlobSidecar> blobSidecars,
+      final BlockPublishingPerformance blockPublishingPerformance) {
+    // No-op for phase 0
+  }
+
+  @Override
+  void publishDataColumnSidecars(
+      final List<DataColumnSidecar> dataColumnSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
     // No-op for phase 0
   }

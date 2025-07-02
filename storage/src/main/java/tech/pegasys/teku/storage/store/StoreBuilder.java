@@ -68,7 +68,7 @@ public class StoreBuilder {
       final Spec spec, final AnchorPoint anchor, final UInt64 currentTime) {
     final UInt64 genesisTime = anchor.getState().getGenesisTime();
     final UInt64 slot = anchor.getState().getSlot();
-    final UInt64 time = genesisTime.plus(slot.times(spec.getSecondsPerSlot(slot))).max(currentTime);
+    final UInt64 time = spec.computeTimeAtSlot(slot, genesisTime).max(currentTime);
 
     Map<Bytes32, StoredBlockMetadata> blockInfo = new HashMap<>();
     blockInfo.put(

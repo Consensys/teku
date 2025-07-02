@@ -198,7 +198,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
 
-    assertThat(tekuConfig.validatorClient().getValidatorConfig().getexecutorThreads())
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getExecutorThreads())
         .isEqualTo(DEFAULT_VALIDATOR_EXECUTOR_THREADS);
     assertThat(DEFAULT_VALIDATOR_EXECUTOR_THREADS).isGreaterThanOrEqualTo(5);
   }
@@ -217,7 +217,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
 
-    assertThat(tekuConfig.validatorClient().getValidatorConfig().getexecutorThreads())
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getExecutorThreads())
         .isEqualTo(1000);
   }
 

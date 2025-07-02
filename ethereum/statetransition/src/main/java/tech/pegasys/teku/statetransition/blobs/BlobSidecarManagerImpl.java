@@ -24,10 +24,11 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
@@ -107,18 +108,12 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case IGNORE:
+            case IGNORE -> {
               // do nothing
-              break;
-            case REJECT:
-              invalidBlobSidecarRoots.put(blobSidecar.hashTreeRoot(), result);
-              break;
-            case SAVE_FOR_FUTURE:
-              futureBlobSidecars.add(blobSidecar);
-              break;
-            case ACCEPT:
-              prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
-              break;
+            }
+            case REJECT -> invalidBlobSidecarRoots.put(blobSidecar.hashTreeRoot(), result);
+            case SAVE_FOR_FUTURE -> futureBlobSidecars.add(blobSidecar);
+            case ACCEPT -> prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
           }
         });
 
@@ -143,10 +138,14 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public BlobSidecarsAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
+  public AvailabilityChecker<BlobSidecar> createAvailabilityChecker(final SignedBeaconBlock block) {
     // Block is pre-Deneb, blobs are not supported yet
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return BlobSidecarsAvailabilityChecker.NOT_REQUIRED;
+      return AvailabilityChecker.NOOP_BLOBSIDECAR;
+    }
+    // Block is post-BlobSidecars
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return AvailabilityChecker.NOOP_BLOBSIDECAR;
     }
 
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
@@ -156,11 +155,16 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+  public DataAndValidationResult<BlobSidecar> createAvailabilityCheckerAndValidateImmediately(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     // Block is pre-Deneb, blobs are not supported yet
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+      return DataAndValidationResult.notRequired();
+    }
+
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      throw new RuntimeException(
+          String.format("PeerDAS block %s shouldn't be verified in BlobSidecarManager", block));
     }
 
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
@@ -169,14 +173,14 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
     boolean allAdded = blobSidecars.stream().allMatch(blockBlobSidecarsTracker::add);
     if (!allAdded) {
-      return BlobSidecarsAndValidationResult.invalidResult(
+      return DataAndValidationResult.invalidResult(
           blobSidecars,
           new IllegalStateException(
               "Failed to add all blobs to tracker, possible blobs with same index or index out of blocks commitment range"));
     }
 
     if (!blockBlobSidecarsTracker.isComplete()) {
-      return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
+      return DataAndValidationResult.notAvailable();
     }
 
     final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
@@ -184,7 +188,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
     forkChoiceBlobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
-    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     if (availabilityCheckResult.isDone()) {

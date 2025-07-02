@@ -50,12 +50,16 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 
 public class RpcHandler<
         TOutgoingHandler extends RpcRequestHandler,
-        TRequest,
+        TRequest extends RpcRequest,
         TRespHandler extends RpcResponseHandler<?>>
     implements ProtocolBinding<Controller<TOutgoingHandler>> {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration STREAM_INITIALIZE_TIMEOUT = Duration.ofSeconds(5);
@@ -76,13 +80,14 @@ public class RpcHandler<
 
   public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
       final Connection connection, final TRequest request, final TRespHandler responseHandler) {
-    final Bytes initialPayload;
-    try {
-      initialPayload = rpcMethod.encodeRequest(request);
-    } catch (Exception e) {
-      return SafeFuture.failedFuture(e);
-    }
+    return sendRequestWithBodySelector(
+        connection, new SingleRpcRequestBodySelector<>(request), responseHandler);
+  }
 
+  public SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequestWithBodySelector(
+      final Connection connection,
+      final RpcRequestBodySelector<TRequest> bodySelector,
+      final TRespHandler responseHandler) {
     final Interruptor closeInterruptor =
         SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
     final Interruptor timeoutInterruptor =
@@ -109,12 +114,28 @@ public class RpcHandler<
                       (controller, protocolId) -> {
                         final TOutgoingHandler handler =
                             rpcMethod.createOutgoingRequestHandler(
-                                protocolId, request, responseHandler);
+                                protocolId,
+                                requiredRequestBodyForProtocolId(bodySelector, protocolId),
+                                responseHandler);
                         controller.setOutgoingRequestHandler(handler);
                         return controller;
                       })
                   .orInterrupt(closeInterruptor, timeoutInterruptor)
-                  .thenWaitFor(controller -> controller.getRpcStream().writeBytes(initialPayload))
+                  .thenWaitFor(
+                      controller -> {
+                        return protocolIdFuture.thenCompose(
+                            protocolId -> {
+                              final Bytes initialPayload;
+                              try {
+                                initialPayload =
+                                    rpcMethod.encodeRequest(
+                                        requiredRequestBodyForProtocolId(bodySelector, protocolId));
+                              } catch (Exception e) {
+                                return SafeFuture.failedFuture(e);
+                              }
+                              return controller.getRpcStream().writeBytes(initialPayload);
+                            });
+                      })
                   .orInterrupt(closeInterruptor, timeoutInterruptor)
                   // closing the stream in case of any errors or interruption
                   .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join()));
@@ -125,6 +146,15 @@ public class RpcHandler<
                 throw new PeerDisconnectedException(err);
               }
             });
+  }
+
+  private TRequest requiredRequestBodyForProtocolId(
+      final RpcRequestBodySelector<TRequest> bodySelector, final String protocolId) {
+    return bodySelector
+        .getBody()
+        .apply(protocolId)
+        .orElseThrow(
+            () -> new IllegalStateException("No request body for protocolId: " + protocolId));
   }
 
   private void closeStreamAbruptly(final Stream stream) {
@@ -156,6 +186,7 @@ public class RpcHandler<
   static class Controller<TOutgoingHandler extends RpcRequestHandler>
       extends SimpleChannelInboundHandler<ByteBuf>
       implements RpcStreamController<TOutgoingHandler> {
+
     private final NodeId nodeId;
     private final P2PChannel p2pChannel;
     private Optional<TOutgoingHandler> outgoingRequestHandler = Optional.empty();

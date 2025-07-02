@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
@@ -59,11 +59,11 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
@@ -81,29 +81,34 @@ public class FuzzUtil {
 
   // NOTE: this uses primitive values as parameters to more easily call via JNI
   public FuzzUtil(final boolean useMainnetConfig, final boolean disableBls) {
-    spec =
+    this(
         useMainnetConfig
-            ? TestSpecFactory.createMainnetElectra()
-            : TestSpecFactory.createMinimalElectra();
-    specVersion = spec.forMilestone(SpecMilestone.ELECTRA);
-    beaconBlockBodySchema =
+            ? TestSpecFactory.createMainnetFulu()
+            : TestSpecFactory.createMinimalFulu(),
+        SpecMilestone.FULU,
+        disableBls);
+  }
+
+  public FuzzUtil(final Spec spec, final SpecMilestone specMilestone, final boolean disableBls) {
+    this.spec = spec;
+    this.specVersion = spec.forMilestone(specMilestone);
+    this.beaconBlockBodySchema =
         (BeaconBlockBodySchemaElectra<?>)
             specVersion.getSchemaDefinitions().getBeaconBlockBodySchema();
     initialize(disableBls);
     this.signatureVerifier = disableBls ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
 
     final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
-    final SchemaDefinitionsElectra schemaDefinitionsElectra =
-        SchemaDefinitionsElectra.required(spec.getGenesisSchemaDefinitions());
-    final SpecConfigElectra specConfig =
-        spec.getGenesisSpecConfig().toVersionElectra().orElseThrow();
-    final MiscHelpersElectra miscHelpersElectra =
-        new MiscHelpersElectra(specConfig, predicates, schemaDefinitionsElectra);
-    final BeaconStateAccessorsElectra stateAccessorsElectra =
-        new BeaconStateAccessorsElectra(specConfig, predicates, miscHelpersElectra);
-    stateMutatorsElectra =
+    final SchemaDefinitionsFulu schemaDefinitionsFulu =
+        SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
+    final SpecConfigFulu specConfig = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
+    final MiscHelpersFulu miscHelpersFulu =
+        new MiscHelpersFulu(specConfig, predicates, schemaDefinitionsFulu);
+    final BeaconStateAccessorsFulu stateAccessorsFulu =
+        new BeaconStateAccessorsFulu(specConfig, predicates, miscHelpersFulu);
+    this.stateMutatorsElectra =
         new BeaconStateMutatorsElectra(
-            specConfig, miscHelpersElectra, stateAccessorsElectra, schemaDefinitionsElectra);
+            specConfig, miscHelpersFulu, stateAccessorsFulu, schemaDefinitionsFulu);
   }
 
   public static void initialize(final boolean disableBls) {

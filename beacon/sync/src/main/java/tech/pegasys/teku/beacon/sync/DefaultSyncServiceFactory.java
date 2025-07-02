@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.beacon.sync.fetch.DefaultFetchTaskFactory;
@@ -64,6 +65,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final RecentChainData recentChainData;
   private final CombinedChainDataClient combinedChainDataClient;
   private final StorageUpdateChannel storageUpdateChannel;
+  private final SyncPreImportBlockChannel syncPreImportBlockChannel;
   private final Eth2P2PNetwork p2pNetwork;
   private final BlockImporter blockImporter;
   private final BlobSidecarManager blobSidecarManager;
@@ -85,6 +87,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final StorageUpdateChannel storageUpdateChannel,
+      final SyncPreImportBlockChannel syncPreImportBlockChannel,
       final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
@@ -104,6 +107,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.recentChainData = recentChainData;
     this.combinedChainDataClient = combinedChainDataClient;
     this.storageUpdateChannel = storageUpdateChannel;
+    this.syncPreImportBlockChannel = syncPreImportBlockChannel;
     this.p2pNetwork = p2pNetwork;
     this.blockImporter = blockImporter;
     this.blobSidecarManager = blobSidecarManager;
@@ -193,6 +197,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blockBlobSidecarsTrackersPool,
+              syncPreImportBlockChannel,
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxPendingBatches(),
               syncConfig.getForwardSyncMaxBlocksPerMinute(),

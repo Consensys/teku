@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -118,7 +119,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     recentChainData.initializeFromAnchorPoint(
         AnchorPoint.fromInitialBlockAndState(
             spec, new SignedBlockAndState(anchorBlock, anchorState)),
-        spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
+        spec.computeTimeAtSlot(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
@@ -133,6 +134,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             eventThread,
             recentChainData,
             blobSidecarManager,
+            DasSamplerManager.NOOP,
             new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

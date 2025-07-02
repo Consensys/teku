@@ -348,6 +348,51 @@ public class BlockGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
+  @TestTemplate
+  void shouldRejectWhenKzgCommitmentsExceedLimit(final SpecContext specContext) {
+    specContext.assumeDenebActive();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(
+            false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
+    recentChainData = storageSystem.recentChainData();
+    blockGossipValidator =
+        new BlockGossipValidator(
+            spec,
+            new GossipValidationHelper(spec, recentChainData),
+            receivedBlockEventsChannelPublisher);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    final Integer maxBlobsPerBlock =
+        specContext.getSpec().getMaxBlobsPerBlockAtSlot(nextSlot).orElseThrow();
+
+    final SignedBlockAndState signedBlockAndState =
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(
+                nextSlot,
+                BlockOptions.create()
+                    .setSkipStateTransition(true)
+                    .setExecutionPayload(
+                        specContext.getDataStructureUtil().randomExecutionPayload())
+                    .setKzgCommitments(
+                        specContext
+                            .getDataStructureUtil()
+                            .randomBlobKzgCommitments(maxBlobsPerBlock + 1)));
+
+    assertThat(blockGossipValidator.validate(signedBlockAndState.getBlock(), true))
+        .isCompletedWithValueMatching(
+            result ->
+                result.equals(
+                    InternalValidationResult.reject(
+                        "Block has %d kzg commitments, max allowed %d",
+                        maxBlobsPerBlock + 1, maxBlobsPerBlock)));
+  }
+
   private void assertResultIsAccept(
       final SignedBeaconBlock block, final SafeFuture<InternalValidationResult> result) {
     assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isAccept);

@@ -161,12 +161,8 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
                 final IndexedAttestation indexedAttestation =
                     getIndexedAttestationFromSingleAttestation(singleAttestation);
 
-                final SszBitlist singleAttestationAggregationBits =
-                    getSingleAttestationAggregationBits(state, singleAttestation);
-
                 final Attestation convertedAttestation =
-                    convertSingleAttestationToAggregated(
-                        singleAttestation, singleAttestationAggregationBits);
+                    convertSingleAttestationToAggregated(state, singleAttestation);
 
                 attestation.convertToAggregatedFormatFromSingleAttestation(convertedAttestation);
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
@@ -187,12 +183,13 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             });
   }
 
+  @Override
   public Attestation convertSingleAttestationToAggregated(
-      final SingleAttestation singleAttestation,
-      final SszBitlist singleAttestationAggregationBits) {
+      final BeaconState state, final SingleAttestation singleAttestation) {
     final AttestationElectraSchema attestationElectraSchema =
         schemaDefinitions.getAttestationSchema().toVersionElectra().orElseThrow();
-
+    final SszBitlist singleAttestationAggregationBits =
+        getSingleAttestationAggregationBits(state, singleAttestation, attestationElectraSchema);
     return attestationElectraSchema.create(
         singleAttestationAggregationBits,
         singleAttestation.getData(),
@@ -201,6 +198,29 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             .getCommitteeBitsSchema()
             .orElseThrow()
             .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
+  }
+
+  private SszBitlist getSingleAttestationAggregationBits(
+      final BeaconState state,
+      final SingleAttestation singleAttestation,
+      final AttestationElectraSchema attestationElectraSchema) {
+    final IntList committee =
+        beaconStateAccessors.getBeaconCommittee(
+            state,
+            singleAttestation.getData().getSlot(),
+            singleAttestation.getFirstCommitteeIndex());
+
+    final int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
+    final int validatorCommitteeBit = committee.indexOf(validatorIndex);
+
+    checkArgument(
+        validatorCommitteeBit >= 0,
+        "Validator index %s is not part of the committee %s",
+        validatorIndex,
+        singleAttestation.getFirstCommitteeIndex());
+
+    return attestationElectraSchema.createAggregationBitsOf(
+        committee.size(), validatorCommitteeBit);
   }
 
   private SafeFuture<AttestationProcessingResult> validateSingleAttestationSignature(
@@ -224,29 +244,5 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         singleAttestation.getSignature(),
         singleAttestation.getData(),
         signatureVerifier);
-  }
-
-  public SszBitlist getSingleAttestationAggregationBits(
-      final BeaconState state, final SingleAttestation singleAttestation) {
-    final IntList committee =
-        beaconStateAccessors.getBeaconCommittee(
-            state,
-            singleAttestation.getData().getSlot(),
-            singleAttestation.getFirstCommitteeIndex());
-
-    final int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
-    final int validatorCommitteeBit = committee.indexOf(validatorIndex);
-
-    checkArgument(
-        validatorCommitteeBit >= 0,
-        "Validator index %s is not part of the committee %s",
-        validatorIndex,
-        singleAttestation.getFirstCommitteeIndex());
-
-    return schemaDefinitions
-        .toVersionElectra()
-        .orElseThrow()
-        .getAttestationSchema()
-        .createAggregationBitsOf(committee.size(), validatorCommitteeBit);
   }
 }

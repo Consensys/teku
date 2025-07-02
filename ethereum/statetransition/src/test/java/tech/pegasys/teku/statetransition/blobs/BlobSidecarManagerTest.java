@@ -37,11 +37,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl.ForkChoiceBlobSidecarsAvailabilityCheckerProvider;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl.UnpooledBlockBlobSidecarsTrackerProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
@@ -200,13 +199,13 @@ public class BlobSidecarManagerTest {
   }
 
   @Test
-  void createAvailabilityChecker_shouldReturnANotRequiredAvailabilityCheckerWhenBlockIsPreDeneb() {
+  void createAvailabilityChecker_shouldReturnANoOpAvailabilityCheckerWhenBlockIsPreDeneb() {
     final Spec spec = TestSpecFactory.createMainnetCapella();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
-        .isEqualTo(BlobSidecarsAvailabilityChecker.NOT_REQUIRED);
+        .isEqualTo(AvailabilityChecker.NOOP_BLOBSIDECAR);
   }
 
   @Test
@@ -217,7 +216,7 @@ public class BlobSidecarManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
-        .isEqualTo(BlobSidecarsAndValidationResult.NOT_REQUIRED);
+        .isEqualTo(DataAndValidationResult.notRequired());
   }
 
   @Test
@@ -248,15 +247,14 @@ public class BlobSidecarManagerTest {
     when(blockBlobSidecarsTracker.add(any())).thenReturn(true);
     when(blockBlobSidecarsTracker.isComplete()).thenReturn(true);
     when(forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(
-            SafeFuture.completedFuture(BlobSidecarsAndValidationResult.validResult(blobSidecars)));
+        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
 
     assertThat(
             blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
-        .matches(BlobSidecarsAndValidationResult::isValid)
+        .matches(DataAndValidationResult::isValid)
         .matches(
             result -> {
-              assertThat(result.getBlobSidecars()).containsExactlyElementsOf(blobSidecars);
+              assertThat(result.data()).containsExactlyElementsOf(blobSidecars);
               return true;
             });
 
@@ -271,7 +269,7 @@ public class BlobSidecarManagerTest {
     assertThat(
             blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(
                 preDenebBlock, blobSidecars))
-        .matches(BlobSidecarsAndValidationResult::isNotRequired);
+        .matches(DataAndValidationResult::isNotRequired);
 
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
   }
@@ -292,11 +290,11 @@ public class BlobSidecarManagerTest {
 
     assertThat(
             blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
-        .matches(BlobSidecarsAndValidationResult::isInvalid)
+        .matches(DataAndValidationResult::isInvalid)
         .matches(
             result -> {
-              assertThat(result.getCause()).isPresent();
-              assertThat(result.getCause().orElseThrow())
+              assertThat(result.cause()).isPresent();
+              assertThat(result.cause().orElseThrow())
                   .matches(cause -> cause instanceof IllegalStateException)
                   .hasMessage(
                       "Failed to add all blobs to tracker, possible blobs with same index or index out of blocks commitment range");
@@ -322,7 +320,7 @@ public class BlobSidecarManagerTest {
 
     assertThat(
             blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))
-        .matches(BlobSidecarsAndValidationResult::isNotAvailable);
+        .matches(DataAndValidationResult::isNotAvailable);
 
     verifyNoInteractions(blockBlobSidecarsTrackersPool);
   }
@@ -341,7 +339,7 @@ public class BlobSidecarManagerTest {
     when(blockBlobSidecarsTracker.add(any())).thenReturn(true);
     when(blockBlobSidecarsTracker.isComplete()).thenReturn(true);
 
-    final SafeFuture<BlobSidecarsAndValidationResult> result = new SafeFuture<>();
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> result = new SafeFuture<>();
 
     when(forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult()).thenReturn(result);
 
@@ -353,7 +351,7 @@ public class BlobSidecarManagerTest {
         .hasMessage(
             "Availability check expected to be done synchronously when providing immediate blobs");
 
-    result.complete(BlobSidecarsAndValidationResult.validResult(blobSidecars));
+    result.complete(DataAndValidationResult.validResult(blobSidecars));
 
     assertThat(
             blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars))

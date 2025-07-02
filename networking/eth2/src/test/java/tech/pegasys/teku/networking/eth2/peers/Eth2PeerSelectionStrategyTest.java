@@ -341,6 +341,7 @@ class Eth2PeerSelectionStrategyTest {
         ENR_FORK_ID,
         SCHEMA_DEFINITIONS.getAttnetsENRFieldSchema().ofBits(attnets),
         SCHEMA_DEFINITIONS.getSyncnetsENRFieldSchema().getDefault(),
+        Optional.empty(),
         Optional.empty());
   }
 }

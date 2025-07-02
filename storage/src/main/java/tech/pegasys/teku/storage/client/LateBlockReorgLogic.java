@@ -81,7 +81,7 @@ public class LateBlockReorgLogic {
         .ifPresent(
             slot -> {
               final UInt64 slotStartTimeMillis =
-                  spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
+                  spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
               final int millisIntoSlot =
                   arrivalTimeMillis.minusMinZero(slotStartTimeMillis).intValue();
 
@@ -113,7 +113,7 @@ public class LateBlockReorgLogic {
   // then splitting into 6 segments is half-way to the attestation time.
   public boolean isProposingOnTime(final UInt64 slot) {
     final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 timelinessLimit = spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT * 2);
     final UInt64 currentTimeMillis = timeProviderSupplier.get().getTimeInMillis();
     final boolean isTimely =

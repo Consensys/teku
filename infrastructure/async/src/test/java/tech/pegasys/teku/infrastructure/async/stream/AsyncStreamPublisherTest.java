@@ -29,7 +29,8 @@ public class AsyncStreamPublisherTest {
   AsyncStreamPublisher<Integer> publisher = AsyncStream.createPublisher(Integer.MAX_VALUE);
   AsyncStream<Integer> stream =
       publisher
-          .flatMap(i -> AsyncStream.create(IntStream.range(i * 10, i * 10 + 5).boxed().iterator()))
+          .flatMap(
+              i -> AsyncStream.createUnsafe(IntStream.range(i * 10, i * 10 + 5).boxed().iterator()))
           .filter(i -> i % 2 == 0)
           .map(i -> i * 10)
           .limit(10);

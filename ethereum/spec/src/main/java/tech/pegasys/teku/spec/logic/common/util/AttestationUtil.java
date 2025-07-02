@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SingleAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -322,6 +323,9 @@ public abstract class AttestationUtil {
   public abstract Optional<SlotInclusionGossipValidationResult>
       performSlotInclusionGossipValidation(
           Attestation attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
+
+  public abstract Attestation convertSingleAttestationToAggregated(
+      final BeaconState state, final SingleAttestation singleAttestation);
 
   public enum SlotInclusionGossipValidationResult {
     IGNORE,

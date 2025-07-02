@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
-
   @Test
   public void shouldCreateBlockAfterNormalSlot() {
     assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false, state -> {}, false);
@@ -200,6 +199,8 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
             eth1DataCache,
             graffitiBuilder,
             forkChoiceNotifier,
-            executionLayer));
+            executionLayer,
+            metricsSystem,
+            timeProvider));
   }
 }

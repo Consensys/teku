@@ -47,6 +47,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             gossipNetwork,
             gossipEncoding,
             forkInfo,
+            forkDigest,
             processor,
             spec.getNetworkingConfig(),
             DebugDataDumper.NOOP)

@@ -7,6 +7,7 @@ dependencies {
   testImplementation testFixtures(project(":infrastructure:metrics"))
   testImplementation testFixtures(project(":infrastructure:time"))
   testImplementation 'org.apache.logging.log4j:log4j-core'
+  testImplementation testFixtures(project(':infrastructure:logging'))
 
   testFixturesApi 'com.google.guava:guava'
   testFixturesImplementation project(":infrastructure:unsigned")

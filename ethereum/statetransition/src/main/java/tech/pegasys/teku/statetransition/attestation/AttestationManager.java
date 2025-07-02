@@ -242,34 +242,33 @@ public class AttestationManager extends Service
               activeValidatorChannel.onAttestation(attestation);
 
               switch (result.getStatus()) {
-                case SUCCESSFUL:
+                case SUCCESSFUL -> {
                   LOG.trace("Processed attestation {} successfully", attestation::hashTreeRoot);
                   aggregatingAttestationPool.add(attestation);
                   sendToSubscribersIfProducedLocally(attestation);
-                  break;
-                case UNKNOWN_BLOCK:
+                }
+                case UNKNOWN_BLOCK -> {
                   LOG.trace(
                       "Deferring attestation {} as required block is not yet present",
                       attestation::hashTreeRoot);
                   pendingAttestations.add(attestation);
-                  break;
-                case DEFER_FORK_CHOICE_PROCESSING:
+                }
+                case DEFER_FORK_CHOICE_PROCESSING -> {
                   LOG.trace(
                       "Defer fork choice processing of attestation {}", attestation::hashTreeRoot);
                   sendToSubscribersIfProducedLocally(attestation);
                   aggregatingAttestationPool.add(attestation);
-                  break;
-                case SAVED_FOR_FUTURE:
+                }
+                case SAVED_FOR_FUTURE -> {
                   LOG.trace(
                       "Deferring attestation {} until a future slot", attestation::hashTreeRoot);
                   aggregatingAttestationPool.add(attestation);
                   futureAttestations.add(attestation);
-                  break;
-                case INVALID:
-                  break;
-                default:
-                  throw new UnsupportedOperationException(
-                      "AttestationProcessingResult is unrecognizable");
+                }
+                case INVALID -> {}
+                default ->
+                    throw new UnsupportedOperationException(
+                        "AttestationProcessingResult is unrecognizable");
               }
               return result;
             });

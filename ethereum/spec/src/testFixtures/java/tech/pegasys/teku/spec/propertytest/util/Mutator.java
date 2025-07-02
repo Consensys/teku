@@ -77,22 +77,21 @@ public class Mutator {
       final Map.Entry<Double, Mutation> entry = PROBABILITY_MAP.ceilingEntry(randomNumber);
       if (entry != null) {
         switch (entry.getValue()) {
-          case ADD_BEFORE:
+          case ADD_BEFORE -> {
             final byte before = (byte) random.nextInt();
             out.write(before);
             out.write(b);
-            break;
-          case ADD_AFTER:
+          }
+          case ADD_AFTER -> {
             final byte after = (byte) random.nextInt();
             out.write(b);
             out.write(after);
-            break;
-          case REPLACE:
+          }
+          case REPLACE -> {
             final byte replace = (byte) random.nextInt();
             out.write(replace);
-            break;
-          case DELETE:
-            break;
+          }
+          case DELETE -> {}
         }
       } else {
         out.write(b);

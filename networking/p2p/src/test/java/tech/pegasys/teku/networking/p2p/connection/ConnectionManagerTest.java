@@ -476,6 +476,7 @@ class ConnectionManagerTest {
         ENR_FORK_ID,
         SCHEMA_DEFINITIONS_SUPPLIER.getAttnetsENRFieldSchema().ofBits(subnetIds),
         SCHEMA_DEFINITIONS_SUPPLIER.getSyncnetsENRFieldSchema().getDefault(),
+        Optional.empty(),
         Optional.empty());
   }
 }

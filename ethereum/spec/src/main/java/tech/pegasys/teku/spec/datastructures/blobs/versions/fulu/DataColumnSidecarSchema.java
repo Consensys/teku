@@ -45,6 +45,7 @@ public class DataColumnSidecarSchema
         SignedBeaconBlockHeader,
         SszBytes32Vector> {
 
+  static final SszFieldName FIELD_INDEX = () -> "index";
   static final SszFieldName FIELD_BLOB = () -> "column";
   static final SszFieldName FIELD_KZG_COMMITMENTS = () -> "kzg_commitments";
   static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
@@ -58,7 +59,7 @@ public class DataColumnSidecarSchema
       final SpecConfigFulu specConfig) {
     super(
         "DataColumnSidecar",
-        namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(FIELD_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(FIELD_BLOB, dataColumnSchema),
         namedSchema(
             FIELD_KZG_COMMITMENTS,
@@ -75,7 +76,6 @@ public class DataColumnSidecarSchema
                 specConfig.getKzgCommitmentsInclusionProofDepth().intValue())));
   }
 
-  @SuppressWarnings("unchecked")
   public DataColumnSchema getDataColumnSszSchema() {
     return (DataColumnSchema) getChildSchema(getFieldIndex(FIELD_BLOB));
   }
@@ -104,7 +104,7 @@ public class DataColumnSidecarSchema
       final UInt64 index,
       final DataColumn dataColumn,
       final SszList<SszKZGCommitment> sszKzgCommitments,
-      final SszList<SszKZGProof> sszKkzgProofs,
+      final SszList<SszKZGProof> sszKzgProofs,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final List<Bytes32> kzgCommitmentsInclusionProof) {
     return new DataColumnSidecar(
@@ -112,26 +112,10 @@ public class DataColumnSidecarSchema
         index,
         dataColumn,
         sszKzgCommitments,
-        sszKkzgProofs,
+        sszKzgProofs,
         signedBeaconBlockHeader,
         kzgCommitmentsInclusionProof);
   }
-
-  //  public DataColumnSidecar create(
-  //      final UInt64 index,
-  //      final Bytes blob,
-  //      final Bytes48 kzgCommitment,
-  //      final Bytes48 kzgProof,
-  //      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-  //      final List<Bytes32> kzgCommitmentsInclusionProof) {
-  //    return create(
-  //        index,
-  //        new Blob(getBlobSchema(), blob),
-  //        KZGCommitment.fromBytesCompressed(kzgCommitment),
-  //        KZGProof.fromBytesCompressed(kzgProof),
-  //        signedBeaconBlockHeader,
-  //        kzgCommitmentsInclusionProof);
-  //  }
 
   public DataColumnSidecar create(
       final UInt64 index,

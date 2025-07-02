@@ -467,7 +467,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private void setCurrentEpoch(final UInt64 currentEpoch) {
     when(store.getTimeSeconds())
         .thenReturn(
-            spec.getSlotStartTime(currentEpoch.times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
+            spec.computeTimeAtSlot(currentEpoch.times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
   }
 
   private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
