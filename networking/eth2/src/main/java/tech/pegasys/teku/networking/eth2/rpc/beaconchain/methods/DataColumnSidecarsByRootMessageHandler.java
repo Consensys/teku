@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
@@ -90,16 +91,15 @@ public class DataColumnSidecarsByRootMessageHandler
     this.totalDataColumnSidecarsRequestedCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.NETWORK,
-            "rpc_data_column_sidecars_by_root_requested_blob_sidecars_total",
+            "rpc_data_column_sidecars_by_root_requested_data_column_sidecars_total",
             "Total number of data column sidecars requested in accepted data column sidecars by root requests from peers");
   }
 
   private SafeFuture<Boolean> validateAndSendMaybeRespond(
       final DataColumnIdentifier identifier,
       final Optional<DataColumnSidecar> maybeSidecar,
-      final UInt64 finalizedEpoch,
       final ResponseCallback<DataColumnSidecar> callback) {
-    return validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
+    return validateMinimumRequestEpoch(identifier, maybeSidecar)
         .thenCompose(
             __ ->
                 maybeSidecar
@@ -108,11 +108,28 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final DataColumnSidecarsByRootRequestMessage request) {
+    final int maxRequestDataColumnSidecars = getMaxRequestDataColumnSidecars();
+    if (calculateRequestDataColumnSidecars(request) > maxRequestDataColumnSidecars) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Only a maximum of %s data column sidecars can be requested per request",
+                  maxRequestDataColumnSidecars)));
+    }
+    return Optional.empty();
+  }
+
+  @Override
   public void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
       final DataColumnSidecarsByRootRequestMessage message,
       final ResponseCallback<DataColumnSidecar> responseCallback) {
+    final int requestDataColumnSidecars = calculateRequestDataColumnSidecars(message);
 
     final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         dasLogger
@@ -126,7 +143,8 @@ public class DataColumnSidecarsByRootMessageHandler
         new LoggingResponseCallback<>(responseCallback, responseLogger);
 
     final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
-        peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, message.size());
+        peer.approveDataColumnSidecarsRequest(
+            responseCallbackWithLogging, requestDataColumnSidecars);
 
     if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -134,9 +152,7 @@ public class DataColumnSidecarsByRootMessageHandler
     }
 
     requestCounter.labels("ok").inc();
-    totalDataColumnSidecarsRequestedCounter.inc(message.size());
-
-    final UInt64 finalizedEpoch = getFinalizedEpoch();
+    totalDataColumnSidecarsRequestedCounter.inc(requestDataColumnSidecars);
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
@@ -157,7 +173,6 @@ public class DataColumnSidecarsByRootMessageHandler
                                 validateAndSendMaybeRespond(
                                     dataColumnIdentifier,
                                     maybeSidecar,
-                                    finalizedEpoch,
                                     responseCallbackWithLogging)));
 
     final SafeFuture<List<Boolean>> listOfResponses = SafeFuture.collectAll(responseStream);
@@ -166,7 +181,7 @@ public class DataColumnSidecarsByRootMessageHandler
         .thenApply(list -> list.stream().filter(isSent -> isSent).count())
         .thenAccept(
             sentDataColumnSidecarsCount -> {
-              if (sentDataColumnSidecarsCount != message.size()) {
+              if (sentDataColumnSidecarsCount != requestDataColumnSidecars) {
                 peer.adjustDataColumnSidecarsRequest(
                     dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecarsCount);
               }
@@ -196,12 +211,11 @@ public class DataColumnSidecarsByRootMessageHandler
             });
   }
 
-  private UInt64 getFinalizedEpoch() {
-    return combinedChainDataClient
-        .getFinalizedBlock()
-        .map(SignedBeaconBlock::getSlot)
-        .map(spec::computeEpochAtSlot)
-        .orElse(UInt64.ZERO);
+  private int getMaxRequestDataColumnSidecars() {
+    final UInt64 epoch =
+        combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(UInt64.ZERO);
+    return SpecConfigFulu.required(spec.atEpoch(epoch).getConfig())
+        .getMaxRequestDataColumnSidecars();
   }
 
   /**
@@ -213,9 +227,7 @@ public class DataColumnSidecarsByRootMessageHandler
    */
   @SuppressWarnings("unused")
   private SafeFuture<Void> validateMinimumRequestEpoch(
-      final DataColumnIdentifier identifier,
-      final Optional<DataColumnSidecar> maybeSidecar,
-      final UInt64 finalizedEpoch) {
+      final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
         .orElse(
@@ -229,10 +241,7 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
               if (!spec.isAvailabilityOfDataColumnSidecarsRequiredAtEpoch(
-                  combinedChainDataClient.getStore(), requestedEpoch)
-              // TODO-fulu uncomment when sync by range is ready
-              // https://github.com/Consensys/teku/issues/9448
-              /* || requestedEpoch.isLessThan(finalizedEpoch)*/ ) {
+                  combinedChainDataClient.getStore(), requestedEpoch)) {
                 throw new RpcException(
                     INVALID_REQUEST_CODE,
                     String.format(
@@ -240,6 +249,16 @@ public class DataColumnSidecarsByRootMessageHandler
                         identifier.blockRoot()));
               }
             });
+  }
+
+  private int calculateRequestDataColumnSidecars(
+      final DataColumnSidecarsByRootRequestMessage message) {
+    return message.stream()
+        .reduce(
+            0,
+            (current, dataColumnsByRootIdentifier) ->
+                current + dataColumnsByRootIdentifier.getColumns().size(),
+            Integer::sum);
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
