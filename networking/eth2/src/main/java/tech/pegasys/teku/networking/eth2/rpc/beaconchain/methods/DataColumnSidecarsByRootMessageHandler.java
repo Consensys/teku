@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -69,6 +70,7 @@ public class DataColumnSidecarsByRootMessageHandler
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
   private final DasReqRespLogger dasLogger;
+  private final SpecConfigFulu specConfigFulu;
 
   public DataColumnSidecarsByRootMessageHandler(
       final Spec spec,
@@ -82,6 +84,8 @@ public class DataColumnSidecarsByRootMessageHandler
     this.custodyGroupCountManager = custodyGroupCountManager;
     this.dataColumnSidecarCustody = dataColumnSidecarCustody;
     this.dasLogger = dasLogger;
+    this.specConfigFulu =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     this.requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -110,8 +114,8 @@ public class DataColumnSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRootRequestMessage request) {
-    final int maxRequestDataColumnSidecars = getMaxRequestDataColumnSidecars();
-    if (calculateRequestDataColumnSidecars(request) > maxRequestDataColumnSidecars) {
+    final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
+    if (request.getMaximumResponseChunks() > maxRequestDataColumnSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
@@ -129,7 +133,7 @@ public class DataColumnSidecarsByRootMessageHandler
       final Eth2Peer peer,
       final DataColumnSidecarsByRootRequestMessage message,
       final ResponseCallback<DataColumnSidecar> responseCallback) {
-    final int requestDataColumnSidecars = calculateRequestDataColumnSidecars(message);
+    final int requestedDataColumnSidecarsCount = message.getMaximumResponseChunks();
 
     final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         dasLogger
@@ -144,7 +148,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
         peer.approveDataColumnSidecarsRequest(
-            responseCallbackWithLogging, requestDataColumnSidecars);
+            responseCallbackWithLogging, requestedDataColumnSidecarsCount);
 
     if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
@@ -152,7 +156,7 @@ public class DataColumnSidecarsByRootMessageHandler
     }
 
     requestCounter.labels("ok").inc();
-    totalDataColumnSidecarsRequestedCounter.inc(requestDataColumnSidecars);
+    totalDataColumnSidecarsRequestedCounter.inc(requestedDataColumnSidecarsCount);
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
@@ -181,7 +185,7 @@ public class DataColumnSidecarsByRootMessageHandler
         .thenApply(list -> list.stream().filter(isSent -> isSent).count())
         .thenAccept(
             sentDataColumnSidecarsCount -> {
-              if (sentDataColumnSidecarsCount != requestDataColumnSidecars) {
+              if (sentDataColumnSidecarsCount != requestedDataColumnSidecarsCount) {
                 peer.adjustDataColumnSidecarsRequest(
                     dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecarsCount);
               }
@@ -209,13 +213,6 @@ public class DataColumnSidecarsByRootMessageHandler
                 return SafeFuture.completedFuture(Optional.empty());
               }
             });
-  }
-
-  private int getMaxRequestDataColumnSidecars() {
-    final UInt64 epoch =
-        combinedChainDataClient.getRecentChainData().getCurrentEpoch().orElse(UInt64.ZERO);
-    return SpecConfigFulu.required(spec.atEpoch(epoch).getConfig())
-        .getMaxRequestDataColumnSidecars();
   }
 
   /**
@@ -249,16 +246,6 @@ public class DataColumnSidecarsByRootMessageHandler
                         identifier.blockRoot()));
               }
             });
-  }
-
-  private int calculateRequestDataColumnSidecars(
-      final DataColumnSidecarsByRootRequestMessage message) {
-    return message.stream()
-        .reduce(
-            0,
-            (current, dataColumnsByRootIdentifier) ->
-                current + dataColumnsByRootIdentifier.getColumns().size(),
-            Integer::sum);
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
