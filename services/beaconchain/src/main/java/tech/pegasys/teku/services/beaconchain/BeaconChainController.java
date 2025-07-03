@@ -874,8 +874,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             operationPoolAsyncRunner,
             Duration.ofMinutes(5),
             specConfigFulu.getNumberOfColumns());
-    dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
-        (sidecar, remoteOrigin) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        (dataColumnSidecar, remoteOrigin) ->
+            recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
     blockManager.subscribePreImportBlocks(
         (block, remoteOrigin) -> dataColumnSidecarCustody.onNewBlock(block, remoteOrigin));
     final DasCustodySync svc = new DasCustodySync(custody, recoveringSidecarRetriever);
@@ -1280,14 +1281,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return;
     }
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
+    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
     DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
             spec,
             p2pNetwork,
             nodeId,
-            beaconConfig
-                .p2pConfig()
-                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
+            Math.max(
+                beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu),
+                SpecConfigFulu.required(specVersionFulu.getConfig()).getSamplesPerSlot()));
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
     eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);
