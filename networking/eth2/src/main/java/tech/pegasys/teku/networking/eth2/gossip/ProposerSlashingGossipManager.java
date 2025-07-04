@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -34,7 +33,6 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final Bytes4 forkDigest,
       final OperationProcessor<ProposerSlashing> processor,
       final NetworkingSpecConfig networkingConfig,
       final DebugDataDumper debugDataDumper) {
@@ -45,7 +43,6 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
         gossipNetwork,
         gossipEncoding,
         forkInfo,
-        forkDigest,
         processor,
         ProposerSlashing.SSZ_SCHEMA,
         message -> Optional.of(message.getHeader1().getMessage().getSlot()),

@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
 public interface GossipForkSubscriptions {
 
@@ -48,6 +49,8 @@ public interface GossipForkSubscriptions {
   void subscribeToAttestationSubnetId(int subnetId);
 
   void unsubscribeFromAttestationSubnetId(int subnetId);
+
+  default void addBlobSidecarGossipManager(final ForkInfo forkInfo) {}
 
   default void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     // since Altair

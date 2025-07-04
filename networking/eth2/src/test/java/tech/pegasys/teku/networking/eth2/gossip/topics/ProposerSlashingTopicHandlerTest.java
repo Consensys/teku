@@ -39,7 +39,6 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             processor,
             spec.getNetworkingConfig(),
             DebugDataDumper.NOOP)

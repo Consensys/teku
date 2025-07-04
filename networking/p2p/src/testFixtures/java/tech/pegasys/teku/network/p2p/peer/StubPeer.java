@@ -28,7 +28,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class StubPeer implements Peer {
 
@@ -99,11 +98,11 @@ public class StubPeer implements Peer {
   @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
-          TRequest extends RpcRequest,
+          TRequest,
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final TRequest request,
+          final TRequest tRequest,
           final RespHandler responseHandler) {
     return null;
   }

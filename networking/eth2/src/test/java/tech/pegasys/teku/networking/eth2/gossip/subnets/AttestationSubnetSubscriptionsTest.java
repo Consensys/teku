@@ -70,7 +70,6 @@ public class AttestationSubnetSubscriptionsTest {
             recentChainData,
             processor,
             recentChainData.getCurrentForkInfo().orElseThrow(),
-            recentChainData.getCurrentForkDigest().orElseThrow(),
             DebugDataDumper.NOOP);
     subnetSubscriptions.subscribe();
 
@@ -155,17 +154,15 @@ public class AttestationSubnetSubscriptionsTest {
     final Spec spec = TestSpecFactory.createMinimalElectra();
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
-    final RecentChainData recentChainData = storageSystem.recentChainData();
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
             spec,
             asyncRunner,
             gossipNetwork,
             gossipEncoding,
-            recentChainData,
+            storageSystem.recentChainData(),
             processor,
-            recentChainData.getCurrentForkInfo().orElseThrow(),
-            recentChainData.getCurrentForkDigest().orElseThrow(),
+            storageSystem.recentChainData().getCurrentForkInfo().orElseThrow(),
             DebugDataDumper.NOOP);
     assertDoesNotThrow(
         () -> subnetSubscriptions.getAttestationSchema().toSingleAttestationSchemaRequired());
