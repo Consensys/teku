@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.versions.bellatrix.helpers;
 
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -22,8 +25,19 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 
 public class MiscHelpersBellatrix extends MiscHelpersAltair {
 
+  private final SpecConfigBellatrix specConfigBellatrix;
+
   public MiscHelpersBellatrix(final SpecConfig specConfig) {
     super(specConfig);
+    this.specConfigBellatrix = SpecConfigBellatrix.required(specConfig);
+  }
+
+  @Override
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfigBellatrix.getBellatrixForkEpoch())) {
+      return specConfigBellatrix.getBellatrixForkVersion();
+    }
+    return super.computeForkVersion(epoch);
   }
 
   @Override
