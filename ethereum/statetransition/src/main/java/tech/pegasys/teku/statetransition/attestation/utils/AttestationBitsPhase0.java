@@ -124,7 +124,7 @@ class AttestationBitsPhase0 implements AttestationBits {
   static AttestationBitsPhase0 requiresPhase0(final AttestationBits aggregator) {
     if (!(aggregator instanceof AttestationBitsPhase0 aggregatorPhase0)) {
       throw new IllegalArgumentException(
-          "AttestationBitsAggregator required to be Phase0 but was: "
+          "AttestationBits required to be Phase0 but was: "
               + aggregator.getClass().getSimpleName());
     }
     return aggregatorPhase0;
