@@ -423,7 +423,7 @@ class AttestationBitsElectra implements AttestationBits {
   static AttestationBitsElectra requiresElectra(final AttestationBits aggregator) {
     if (!(aggregator instanceof AttestationBitsElectra aggregatorElectra)) {
       throw new IllegalArgumentException(
-          "AttestationBitsAggregator required to be Electra but was: "
+          "AttestationBits required to be Electra but was: "
               + aggregator.getClass().getSimpleName());
     }
     return aggregatorElectra;
