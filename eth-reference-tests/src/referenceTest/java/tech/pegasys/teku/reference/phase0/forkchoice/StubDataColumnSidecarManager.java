@@ -55,7 +55,6 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.kzg = kzg;
-
   }
 
   @Override
@@ -64,29 +63,31 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
 
       @Override
       public boolean initiateDataAvailabilityCheck() {
-          final MiscHelpersFulu helpers =
-                  spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
-          validator = DataColumnSidecarGossipValidator.create(
-                  spec,
-                  new ConcurrentHashMap<>(),
-                  new GossipValidationHelper(spec, recentChainData),
-                  helpers,
-                  kzg,
-                  new StubMetricsSystem(),
-                  recentChainData.getStore());
-          return true;
+        final MiscHelpersFulu helpers =
+            spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+        validator =
+            DataColumnSidecarGossipValidator.create(
+                spec,
+                new ConcurrentHashMap<>(),
+                new GossipValidationHelper(spec, recentChainData),
+                helpers,
+                kzg,
+                new StubMetricsSystem(),
+                recentChainData.getStore());
+        return true;
       }
 
       @Override
       public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
         final List<DataColumnSidecar> dataColumnSidecar =
             dataColumnSidecarBySlot.remove(block.getSlot());
-//                        if(dataColumnSidecar == null || dataColumnSidecar.isEmpty()) {
-//                            LOG.warn("No data column sidecars found for block at slot {}",
-//         block.getSlot());
-//                            return
-//         SafeFuture.completedFuture(DataAndValidationResult.invalidResult(Collections.emptyList()));
-//                        }
+        //                        if(dataColumnSidecar == null || dataColumnSidecar.isEmpty()) {
+        //                            LOG.warn("No data column sidecars found for block at slot {}",
+        //         block.getSlot());
+        //                            return
+        //
+        // SafeFuture.completedFuture(DataAndValidationResult.invalidResult(Collections.emptyList()));
+        //                        }
         return SafeFuture.collectAll(dataColumnSidecar.stream().map(validator::validate))
             .thenApply(
                 validationResultList -> {
