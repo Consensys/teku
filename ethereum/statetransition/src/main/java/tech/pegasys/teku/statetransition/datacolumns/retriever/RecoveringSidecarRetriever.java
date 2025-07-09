@@ -124,20 +124,21 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     pendingPromises.removeIf(
         promiseWithTimestamp -> {
           if (promiseWithTimestamp.promise.isDone()) {
-            // If the promise is already done, we can remove it from the queue
+            // If the promise is already done, we can remove it
             return true;
           }
           // If the promise is not done, we check if it has timed out
           // TODO-fulu we probably need a better heuristics to submit requests for recovery
+          // (https://github.com/Consensys/teku/issues/9465)
           if (promiseWithTimestamp
               .timestamp
               .plus(recoverInitiationTimeout.toMillis())
               .isGreaterThan(currentTime)) {
-            // If the promise is not timed out, we keep it in the queue
+            // If the promise is not timed out, we keep it
             return false;
           }
 
-          // If the promise is timed out, we initiate recovery and remove it from the queue
+          // If the promise is timed out, we initiate recovery and remove it
           maybeInitiateRecovery(
               promiseWithTimestamp.dataColumnSlotAndIdentifier, promiseWithTimestamp.promise);
 
