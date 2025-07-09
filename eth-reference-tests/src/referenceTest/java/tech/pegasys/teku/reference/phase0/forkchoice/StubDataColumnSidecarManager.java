@@ -81,12 +81,15 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
       public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
         final List<DataColumnSidecar> dataColumnSidecar =
             dataColumnSidecarBySlot.remove(block.getSlot());
-        if(block.getMessage().getBody().getOptionalBlobKzgCommitments().isPresent() &&
-                !block.getMessage().getBody().getOptionalBlobKzgCommitments().get().isEmpty()
-                && (dataColumnSidecar == null || dataColumnSidecar.isEmpty())) {
-          LOG.warn("Block at slot {} had {} KZG commitments but no sidecar columns were found",
-                  block.getSlot(),block.getMessage().getBody().getOptionalBlobKzgCommitments().get().size());
-          return SafeFuture.completedFuture(DataAndValidationResult.invalidResult(Collections.emptyList()));
+        if (block.getMessage().getBody().getOptionalBlobKzgCommitments().isPresent()
+            && !block.getMessage().getBody().getOptionalBlobKzgCommitments().get().isEmpty()
+            && (dataColumnSidecar == null || dataColumnSidecar.isEmpty())) {
+          LOG.warn(
+              "Block at slot {} had {} KZG commitments but no sidecar columns were found",
+              block.getSlot(),
+              block.getMessage().getBody().getOptionalBlobKzgCommitments().get().size());
+          return SafeFuture.completedFuture(
+              DataAndValidationResult.invalidResult(Collections.emptyList()));
         }
         return SafeFuture.collectAll(dataColumnSidecar.stream().map(validator::validate))
             .thenApply(
