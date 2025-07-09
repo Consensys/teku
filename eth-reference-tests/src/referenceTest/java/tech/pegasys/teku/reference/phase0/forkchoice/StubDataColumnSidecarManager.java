@@ -30,11 +30,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class StubDataColumnSidecarManager implements DataColumnSidecarManager, AvailabilityCheckerFactory<UInt64> {
-//    private final MiscHelpersFulu helpers;
-//    private final Spec spec;
-//    private final RecentChainData recentChainData;
-//    private final KZG kzg;
+public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<UInt64> {
+
     private final DataColumnSidecarGossipValidator  validator;
     private final Map<UInt64, List<DataColumnSidecar>> dataColumnSidecarBySlot = new ConcurrentHashMap<>();
     private static final Logger LOG = LogManager.getLogger();
@@ -46,27 +43,9 @@ public class StubDataColumnSidecarManager implements DataColumnSidecarManager, A
     }
 
     public StubDataColumnSidecarManager(final Spec spec, final RecentChainData recentChainData, final KZG kzg) {
-//        this.spec = spec;
-//        this.recentChainData = recentChainData;
-//        this.kzg = kzg;
         final MiscHelpersFulu helpers = spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
         this.validator = DataColumnSidecarGossipValidator.create(spec, new ConcurrentHashMap<>(),new GossipValidationHelper(spec,recentChainData),
                 helpers , kzg, new StubMetricsSystem(),recentChainData.getStore());
-    }
-
-    @Override
-    public void onDataColumnSidecarPublish(final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {
-
-    }
-
-    @Override
-    public SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(final DataColumnSidecar sidecar, final Optional<UInt64> arrivalTimestamp) {
-        return null;
-    }
-
-    @Override
-    public void subscribeToValidDataColumnSidecars(final ValidDataColumnSidecarsListener sidecarsListener) {
-
     }
 
     @Override
