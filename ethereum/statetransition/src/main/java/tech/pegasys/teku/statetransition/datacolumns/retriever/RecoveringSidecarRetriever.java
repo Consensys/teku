@@ -112,9 +112,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             columnId, promise, timeProvider.getTimeInMillis());
     pendingPromises.add(pendingPromiseWithTimestamp);
 
+    // remove it from pending as soon as the promise is done
     promise.always(() -> pendingPromises.remove(pendingPromiseWithTimestamp));
 
-    // remove it from pending as soon as the promise is done
     return promise;
   }
 
