@@ -127,7 +127,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
-    final StubDataColumnSidecarManager dataColumnSidecarManager = new StubDataColumnSidecarManager(spec,recentChainData, kzg);
+    final StubDataColumnSidecarManager dataColumnSidecarManager =
+        new StubDataColumnSidecarManager(spec, recentChainData, kzg);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
     // executor
     final ForkChoice forkChoice =
@@ -148,7 +149,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     try {
       runSteps(
-          testDefinition, spec, recentChainData, blobSidecarManager, dataColumnSidecarManager, forkChoice, executionLayer);
+          testDefinition,
+          spec,
+          recentChainData,
+          blobSidecarManager,
+          dataColumnSidecarManager,
+          forkChoice,
+          executionLayer);
     } catch (final AssertionError e) {
       final String protoArrayData =
           recentChainData.getForkChoiceStrategy().orElseThrow().getBlockData().stream()
@@ -301,6 +308,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         () ->
             forkChoice.onAttesterSlashing(attesterSlashing, InternalValidationResult.ACCEPT, true));
   }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   private void applyBlock(
       final TestDefinition testDefinition,
@@ -335,21 +343,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             .orElse(Collections.emptyList());
     @SuppressWarnings("unchecked")
     final List<DataColumnSidecar> columns =
-            getOptionally(step, "columns").map(
-    columnsNameArray ->  ((List<String>) columnsNameArray).stream().map(
-                columnsName -> TestDataUtils.loadSsz(
-                            testDefinition,
-                            columnsName + SSZ_SNAPPY_EXTENSION,
-                                sszBytes -> spec.deserializeSidecar(sszBytes, block.getSlot())))
-                        .toList()).orElse(Collections.emptyList());
+        getOptionally(step, "columns")
+            .map(
+                columnsNameArray ->
+                    ((List<String>) columnsNameArray)
+                        .stream()
+                            .map(
+                                columnsName ->
+                                    TestDataUtils.loadSsz(
+                                        testDefinition,
+                                        columnsName + SSZ_SNAPPY_EXTENSION,
+                                        sszBytes ->
+                                            spec.deserializeSidecar(sszBytes, block.getSlot())))
+                            .toList())
+            .orElse(Collections.emptyList());
     if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      LOG.info(
-              "Adding {} columns to custody for block {}", columns.size(), block.getRoot());
+      LOG.info("Adding {} columns to custody for block {}", columns.size(), block.getRoot());
       dataColumnSidecarManagerStub.prepareDataColumnSidecarForBlock(block, columns);
 
-    } else if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+    } else if (spec.atSlot(block.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       LOG.info(
-              "Preparing {} blobs with proofs {} for block {}", blobs.size(), proofs, block.getRoot());
+          "Preparing {} blobs with proofs {} for block {}", blobs.size(), proofs, block.getRoot());
       blobSidecarManager.prepareBlobsAndProofsForBlock(block, blobs, proofs);
     }
     LOG.info(
