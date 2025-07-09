@@ -85,6 +85,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   public synchronized void start() {
+    if (cancellable != null) {
+      return;
+    }
     cancellable =
         asyncRunner.runWithFixedDelay(
             this::checkPendingPromises,
