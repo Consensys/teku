@@ -30,6 +30,7 @@ public class DataColumnSidecarCustodyStub implements DataColumnSidecarCustody {
 
     @Override
     public SafeFuture<Void> onNewValidatedDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+
         return db.addSidecar(dataColumnSidecar);
     }
 

@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager.NOOP;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -46,7 +45,6 @@ import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -65,15 +63,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
-import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarCustodyStub;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -82,8 +71,6 @@ import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
-import tech.pegasys.teku.storage.api.StubSidecarUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -140,31 +127,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
-    final CurrentSlotProvider currentSlotProvider =
-            CurrentSlotProvider.create(spec, recentChainData.getStore());
-    final DataColumnSidecarDB sidecarDB =
-            DataColumnSidecarDB.create(
-                    storageSystem.combinedChainDataClient(),
-                    storageSystem.chainStorage());
-    final DataColumnSidecarDbAccessor dbAccessor =
-            DataColumnSidecarDbAccessor.builder(sidecarDB)
-                    .spec(spec)
-                    .build();
-    final DataColumnSidecarCustodyStub sidecarCustodyStub = new DataColumnSidecarCustodyStub(dbAccessor);
-    final SpecConfigFulu configFulu =
-            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-    final int totalCustodyGroupCount = configFulu.getCustodyRequirement();
-    final DasSamplerBasic dataAvailabilitySampler =
-        new DasSamplerBasic(
-            spec,
-            currentSlotProvider,
-            dbAccessor,
-            sidecarCustodyStub,
-            new DataColumnSidecarRetrieverStub(),
-                DasCustodyStand.createCustodyGroupCountManager(totalCustodyGroupCount));
-    final DasSamplerManager dasSamplerManager =
-        new DasSamplerManager (
-                () -> dataAvailabilitySampler, kzg, spec);
+    final StubDataColumnSidecarManager dataColumnSidecarManager = new StubDataColumnSidecarManager(spec,recentChainData, kzg);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
     // executor
     final ForkChoice forkChoice =
@@ -173,7 +136,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             eventThread,
             recentChainData,
             blobSidecarManager,
-            dasSamplerManager,
+            dataColumnSidecarManager,
             new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -185,7 +148,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     try {
       runSteps(
-          testDefinition, spec, recentChainData, blobSidecarManager, sidecarCustodyStub, forkChoice, executionLayer);
+          testDefinition, spec, recentChainData, blobSidecarManager, dataColumnSidecarManager, forkChoice, executionLayer);
     } catch (final AssertionError e) {
       final String protoArrayData =
           recentChainData.getForkChoiceStrategy().orElseThrow().getBlockData().stream()
@@ -225,7 +188,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final StubBlobSidecarManager blobSidecarManager,
-      final DataColumnSidecarCustodyStub sidecarCustodyStub,
+      final StubDataColumnSidecarManager dataColumnSidecarManagerStub,
       final ForkChoice forkChoice,
       final ExecutionLayerChannelStub executionLayer)
       throws IOException {
@@ -245,7 +208,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             spec,
             recentChainData,
             blobSidecarManager,
-            sidecarCustodyStub,
+            dataColumnSidecarManagerStub,
             forkChoice,
             step,
             executionLayer);
@@ -344,7 +307,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final StubBlobSidecarManager blobSidecarManager,
-      final DataColumnSidecarCustodyStub sidecarCustodyStub,
+      final StubDataColumnSidecarManager dataColumnSidecarManagerStub,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
       final ExecutionLayerChannelStub executionLayer) {
@@ -379,16 +342,15 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                             columnsName + SSZ_SNAPPY_EXTENSION,
                                 sszBytes -> spec.deserializeSidecar(sszBytes, block.getSlot())))
                         .toList()).orElse(Collections.emptyList());
-
-    if (block.getMessage().getBody().toVersionDeneb().isPresent()) {
-      LOG.info(
-          "Preparing {} blobs with proofs {} for block {}", blobs.size(), proofs, block.getRoot());
-      blobSidecarManager.prepareBlobsAndProofsForBlock(block, blobs, proofs);
-    }
-    if (!columns.isEmpty()) {
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       LOG.info(
               "Adding {} columns to custody for block {}", columns.size(), block.getRoot());
-      columns.forEach(sidecarCustodyStub::onNewValidatedDataColumnSidecar);
+      dataColumnSidecarManagerStub.prepareDataColumnSidecarForBlock(block, columns);
+
+    } else if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      LOG.info(
+              "Preparing {} blobs with proofs {} for block {}", blobs.size(), proofs, block.getRoot());
+      blobSidecarManager.prepareBlobsAndProofsForBlock(block, blobs, proofs);
     }
     LOG.info(
         "Importing block {} at slot {} with parent {}",
