@@ -164,7 +164,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             finalizedSlot);
 
     final SafeFuture<RequestState> response;
-    if (initialState.isComplete()) {
+    if (message.getCount().isZero() || initialState.isComplete()) {
       response = SafeFuture.completedFuture(initialState);
     } else {
       response = sendDataColumnSidecars(initialState);
@@ -314,7 +314,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return endSlot.isLessThan(startSlot)
+      return endSlot.isLessThanOrEqualTo(startSlot)
           || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
