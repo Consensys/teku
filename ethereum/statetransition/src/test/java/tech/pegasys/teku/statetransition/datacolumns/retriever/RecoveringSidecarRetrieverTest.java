@@ -14,10 +14,10 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,7 +103,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
-  void sanityTest() throws Exception {
+  void sanityTest() {
     int blobCount = 3;
     int columnsInDbCount = 3;
 
@@ -124,17 +124,20 @@ public class RecoveringSidecarRetrieverTest {
     SafeFuture<DataColumnSidecar> res1 = recoverRetriever.retrieve(id1);
     SafeFuture<DataColumnSidecar> res2 = recoverRetriever.retrieve(id2);
 
-    // completes immediately
-    res2.complete(sidecars.get(2));
-
     assertThat(delegateRetriever.requests).hasSize(3);
+    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(3);
+
+    // id2 promise completes immediately
+    delegateRetriever.requests.get(2).promise().complete(sidecars.get(2));
+    assertThat(res2).isCompletedWithValue(sidecars.get(2));
+    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(2);
 
     stubAsyncRunner.executeDueActions();
     // does nothing
     assertThat(delegateRetriever.requests).hasSize(3);
 
     // 3 pending promises
-    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(3);
+    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(2);
 
     // advance to the first check
     stubTimeProvider.advanceTimeBy(RECOVER_INITIATION_CHECK_INTERVAL);
@@ -162,9 +165,41 @@ public class RecoveringSidecarRetrieverTest {
 
     stubAsyncRunner.executeQueuedActions();
 
-    assertThat(res0.get(1, TimeUnit.SECONDS)).isEqualTo(sidecars.get(0));
-    assertThat(res1.get(1, TimeUnit.SECONDS)).isEqualTo(sidecars.get(1));
+    assertThat(res0).isCompletedWithValue(sidecars.get(0));
+    assertThat(res1).isCompletedWithValue(sidecars.get(1));
     assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
+  }
+
+  @Test
+  void succeededAndFailedRetrievalShouldBeImmediatelyRemovedFromPendingPromises() {
+    int blobCount = 3;
+    int columnsInDbCount = 3;
+
+    List<Blob> blobs =
+        Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
+    BeaconBlock block = blockResolver.addBlock(10, blobCount);
+    List<DataColumnSidecar> sidecars =
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
+
+    List<Integer> dbColumnIndexes =
+        IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
+    dbColumnIndexes.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
+
+    DataColumnSlotAndIdentifier id0 = createId(block, 0);
+    DataColumnSlotAndIdentifier id1 = createId(block, 1);
+    DataColumnSlotAndIdentifier id2 = createId(block, 2);
+    SafeFuture<DataColumnSidecar> res0 = recoverRetriever.retrieve(id0);
+    SafeFuture<DataColumnSidecar> res1 = recoverRetriever.retrieve(id1);
+    SafeFuture<DataColumnSidecar> res2 = recoverRetriever.retrieve(id2);
+
+    assertThat(delegateRetriever.requests).hasSize(3);
+    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(3);
+
+    res0.complete(sidecars.get(0));
+    res1.completeExceptionally(new RuntimeException("error"));
+
+    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(1);
+    assertThatSafeFuture(res2).isNotCompleted();
   }
 
   @Test

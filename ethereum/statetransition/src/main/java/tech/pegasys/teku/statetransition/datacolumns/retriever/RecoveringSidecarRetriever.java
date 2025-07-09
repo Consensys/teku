@@ -20,9 +20,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -55,8 +54,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final int columnCount;
   private final int recoverColumnCount;
 
-  private final Queue<DataColumnSidecarPromiseWithTimestamp> pendingPromises =
-      new ConcurrentLinkedQueue<>();
+  private final Set<DataColumnSidecarPromiseWithTimestamp> pendingPromises =
+      ConcurrentHashMap.newKeySet();
   private final Map<UInt64, RecoveryEntry> recoveryBySlot = new ConcurrentHashMap<>();
 
   private Cancellable cancellable;
@@ -104,9 +103,14 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
-    pendingPromises.add(
+    final DataColumnSidecarPromiseWithTimestamp pendingPromiseWithTimestamp =
         new DataColumnSidecarPromiseWithTimestamp(
-            columnId, promise, timeProvider.getTimeInMillis()));
+            columnId, promise, timeProvider.getTimeInMillis());
+    pendingPromises.add(pendingPromiseWithTimestamp);
+
+    promise.always(() -> pendingPromises.remove(pendingPromiseWithTimestamp));
+
+    // remove it from pending as soon as the promise is done
     return promise;
   }
 
