@@ -352,6 +352,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile LateInitDataColumnSidecarCustody dataColumnSidecarCustody =
       new LateInitDataColumnSidecarCustody();
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
+  protected volatile Optional<RecoveringSidecarRetriever> recoveringSidecarRetriever;
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
@@ -464,6 +465,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
                   dasCustodySync.ifPresent(DasCustodySync::start);
+                  recoveringSidecarRetriever.ifPresent(RecoveringSidecarRetriever::start);
                 }))
         .finish(
             error -> {
@@ -500,6 +502,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
                   dasCustodySync.ifPresent(DasCustodySync::stop);
+                  recoveringSidecarRetriever.ifPresent(RecoveringSidecarRetriever::stop);
                 }))
         .thenRun(forkChoiceExecutor::stop);
   }
@@ -864,6 +867,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasRpc,
             operationPoolAsyncRunner,
             Duration.ofSeconds(1));
+
     final RecoveringSidecarRetriever recoveringSidecarRetriever =
         new RecoveringSidecarRetriever(
             sidecarRetriever,
@@ -873,6 +877,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dbAccessor,
             operationPoolAsyncRunner,
             Duration.ofMinutes(5),
+            Duration.ofSeconds(30),
+            timeProvider,
             specConfigFulu.getNumberOfColumns());
     dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
         (sidecar, remoteOrigin) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
@@ -895,6 +901,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
     this.dataAvailabilitySampler = dasSampler;
+    this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }
 
   protected void initDasSyncPreSampler() {
