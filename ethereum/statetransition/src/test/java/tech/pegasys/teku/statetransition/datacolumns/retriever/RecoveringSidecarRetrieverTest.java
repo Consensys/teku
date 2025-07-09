@@ -228,7 +228,7 @@ public class RecoveringSidecarRetrieverTest {
     dbColumnIndexes.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
 
     DataColumnSlotAndIdentifier id0 = createId(block, 0);
-    SafeFuture<DataColumnSidecar> res0 = delegateRetriever.retrieve(id0);
+    SafeFuture<DataColumnSidecar> res0 = recoverRetriever.retrieve(id0);
 
     assertThat(delegateRetriever.requests).hasSize(1);
 
