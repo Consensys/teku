@@ -47,28 +47,14 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandlerTest {
+  private final Spec specMinimalPhase0 = TestSpecFactory.createMinimalPhase0();
+  private final Spec specMinimalElectra = TestSpecFactory.createMinimalElectra();
 
-  final Spec specMinimalPhase0 = TestSpecFactory.createMinimalPhase0();
-  final DataStructureUtil phase0DataStructureUtil = new DataStructureUtil(specMinimalPhase0);
-  private final Attestation phase0Attestation = phase0DataStructureUtil.randomAttestation();
-  private final ObjectAndMetaData<Attestation> phase0responseData =
-      new ObjectAndMetaData<>(
-          phase0Attestation,
-          specMinimalPhase0.getGenesisSpec().getMilestone(),
-          false,
-          false,
-          false);
+  private final DataStructureUtil phase0DataStructureUtil =
+      new DataStructureUtil(specMinimalPhase0);
+  private final DataStructureUtil electraDataStructureUtil =
+      new DataStructureUtil(specMinimalElectra);
 
-  final Spec specMinimalElectra = TestSpecFactory.createMinimalElectra();
-  final DataStructureUtil electraDataStructureUtil = new DataStructureUtil(specMinimalElectra);
-  final Attestation electraAttestation = electraDataStructureUtil.randomAttestation();
-  private final ObjectAndMetaData<Attestation> electraResponseData =
-      new ObjectAndMetaData<>(
-          electraAttestation,
-          specMinimalElectra.getGenesisSpec().getMilestone(),
-          false,
-          true,
-          false);
   private final Bytes32 blockRoot = phase0DataStructureUtil.randomBytes32();
   private final UInt64 slot = phase0DataStructureUtil.randomSlot();
   private final UInt64 committeeIndex = phase0DataStructureUtil.randomUInt64();
@@ -83,32 +69,55 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
 
   @Test
   public void shouldReturnAggregateAttestationForPhase0() throws JsonProcessingException {
-    final Optional<ObjectAndMetaData<Attestation>> optionalData = Optional.of(phase0responseData);
+    final ObjectAndMetaData<Attestation> phase0ResponseData = getPhase0ResponseData(false);
     when(validatorDataProvider.createAggregateAndMetaData(slot, blockRoot, committeeIndex))
-        .thenReturn(SafeFuture.completedFuture(optionalData));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(phase0ResponseData)));
 
     handler.handleRequest(request);
-
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(phase0responseData.getData().size()).isGreaterThan(0);
-    assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
+    assertThat(phase0ResponseData.getData().size()).isGreaterThan(0);
+    assertThat(request.getResponseBody()).isEqualTo(phase0ResponseData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(phase0responseData.getMilestone().lowerCaseName());
+        .isEqualTo(phase0ResponseData.getMilestone().lowerCaseName());
   }
 
   @Test
   public void shouldReturnAggregateAttestationForElectra() throws JsonProcessingException {
-    final Optional<ObjectAndMetaData<Attestation>> optionalData = Optional.of(electraResponseData);
+    final ObjectAndMetaData<Attestation> electraResponseData = getElectraResponseData(false);
     when(validatorDataProvider.createAggregateAndMetaData(slot, blockRoot, committeeIndex))
-        .thenReturn(SafeFuture.completedFuture(optionalData));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(electraResponseData)));
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(electraResponseData.getData().size()).isGreaterThan(0);
-    assertThat(request.getResponseBody()).isEqualTo(optionalData.get());
+    assertThat(request.getResponseBody()).isEqualTo(electraResponseData);
     assertThat(request.getResponseHeaders(HEADER_CONSENSUS_VERSION))
         .isEqualTo(electraResponseData.getMilestone().lowerCaseName());
+  }
+
+  @Test
+  public void shouldReturnUnavailableIfOptimistic() throws JsonProcessingException {
+    final Optional<ObjectAndMetaData<Attestation>> maybeData =
+        Optional.of(getElectraResponseData(true));
+    when(validatorDataProvider.createAggregateAndMetaData(slot, blockRoot, committeeIndex))
+        .thenReturn(SafeFuture.completedFuture(maybeData));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+  }
+
+  @Test
+  public void shouldReturnUnavailableIfOptimisticPhase0() throws JsonProcessingException {
+    final Optional<ObjectAndMetaData<Attestation>> maybeData =
+        Optional.of(getPhase0ResponseData(true));
+    when(validatorDataProvider.createAggregateAndMetaData(slot, blockRoot, committeeIndex))
+        .thenReturn(SafeFuture.completedFuture(maybeData));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
   }
 
   @Test
@@ -133,10 +142,11 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
 
   @Test
   void metadata_shouldHandle200_phase0Attestation() throws IOException {
+    final ObjectAndMetaData<Attestation> phase0ResponseData = getPhase0ResponseData(false);
     setHandler(
         new GetAggregateAttestationV2(
             validatorDataProvider, new SchemaDefinitionCache(specMinimalPhase0)));
-    final String data = getResponseStringFromMetadata(handler, SC_OK, phase0responseData);
+    final String data = getResponseStringFromMetadata(handler, SC_OK, phase0ResponseData);
 
     final AttestationSchema<Attestation> phase0AttestationSchema =
         schemaDefinitionCache.getSchemaDefinition(SpecMilestone.PHASE0).getAttestationSchema();
@@ -150,7 +160,8 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
     setHandler(
         new GetAggregateAttestationV2(
             validatorDataProvider, new SchemaDefinitionCache(specMinimalElectra)));
-    final String data = getResponseStringFromMetadata(handler, SC_OK, electraResponseData);
+    final String data =
+        getResponseStringFromMetadata(handler, SC_OK, getElectraResponseData(false));
 
     final AttestationSchema<Attestation> electraAttestationSchema =
         schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ELECTRA).getAttestationSchema();
@@ -163,5 +174,27 @@ public class GetAggregateAttestationV2Test extends AbstractMigratedBeaconHandler
       final String data, final AttestationSchema<T> schema) throws JsonProcessingException {
     return JsonUtil.parse(
         data, SharedApiTypes.withDataWrapper("Attestation", schema.getJsonTypeDefinition()));
+  }
+
+  private ObjectAndMetaData<Attestation> getElectraResponseData(final boolean executionOptimistic) {
+
+    final Attestation electraAttestation = electraDataStructureUtil.randomAttestation();
+    return new ObjectAndMetaData<>(
+        electraAttestation,
+        specMinimalElectra.getGenesisSpec().getMilestone(),
+        executionOptimistic,
+        true,
+        false);
+  }
+
+  private ObjectAndMetaData<Attestation> getPhase0ResponseData(final boolean executionOptimistic) {
+
+    final Attestation phase0Attestation = phase0DataStructureUtil.randomAttestation();
+    return new ObjectAndMetaData<>(
+        phase0Attestation,
+        specMinimalPhase0.getGenesisSpec().getMilestone(),
+        executionOptimistic,
+        false,
+        false);
   }
 }

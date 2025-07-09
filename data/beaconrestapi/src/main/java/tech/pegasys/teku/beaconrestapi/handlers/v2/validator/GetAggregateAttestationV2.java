@@ -100,6 +100,11 @@ public class GetAggregateAttestationV2 extends RestApiEndpoint {
                 maybeAttestation
                     .map(
                         attestationAndMetaData -> {
+                          if (attestationAndMetaData.isExecutionOptimistic()) {
+                            return AsyncApiResponse.respondWithError(
+                                HttpStatusCodes.SC_SERVICE_UNAVAILABLE,
+                                "The returned data was optimistic.");
+                          }
                           request.header(
                               HEADER_CONSENSUS_VERSION,
                               attestationAndMetaData.getMilestone().lowerCaseName());
