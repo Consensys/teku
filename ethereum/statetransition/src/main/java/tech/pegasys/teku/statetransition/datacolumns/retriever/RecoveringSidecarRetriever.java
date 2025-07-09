@@ -101,6 +101,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       return;
     }
     cancellable.cancel();
+    cancellable = null;
   }
 
   @Override
