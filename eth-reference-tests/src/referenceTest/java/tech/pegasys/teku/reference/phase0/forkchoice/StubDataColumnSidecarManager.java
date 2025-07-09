@@ -37,8 +37,10 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<UInt64> {
-
-  private final DataColumnSidecarGossipValidator validator;
+  private final Spec spec;
+  private final RecentChainData recentChainData;
+  private final KZG kzg;
+  private DataColumnSidecarGossipValidator validator;
   private final Map<UInt64, List<DataColumnSidecar>> dataColumnSidecarBySlot =
       new ConcurrentHashMap<>();
   private static final Logger LOG = LogManager.getLogger();
@@ -50,17 +52,10 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
 
   public StubDataColumnSidecarManager(
       final Spec spec, final RecentChainData recentChainData, final KZG kzg) {
-    final MiscHelpersFulu helpers =
-        spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
-    this.validator =
-        DataColumnSidecarGossipValidator.create(
-            spec,
-            new ConcurrentHashMap<>(),
-            new GossipValidationHelper(spec, recentChainData),
-            helpers,
-            kzg,
-            new StubMetricsSystem(),
-            recentChainData.getStore());
+    this.spec = spec;
+    this.recentChainData = recentChainData;
+    this.kzg = kzg;
+
   }
 
   @Override
@@ -69,19 +64,29 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
 
       @Override
       public boolean initiateDataAvailabilityCheck() {
-        return true;
+          final MiscHelpersFulu helpers =
+                  spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+          validator = DataColumnSidecarGossipValidator.create(
+                  spec,
+                  new ConcurrentHashMap<>(),
+                  new GossipValidationHelper(spec, recentChainData),
+                  helpers,
+                  kzg,
+                  new StubMetricsSystem(),
+                  recentChainData.getStore());
+          return true;
       }
 
       @Override
       public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
         final List<DataColumnSidecar> dataColumnSidecar =
             dataColumnSidecarBySlot.remove(block.getSlot());
-        //                if(dataColumnSidecar == null || dataColumnSidecar.isEmpty()) {
-        //                    LOG.warn("No data column sidecars found for block at slot {}",
-        // block.getSlot());
-        //                    return
-        // SafeFuture.completedFuture(DataAndValidationResult.invalidResult(Collections.emptyList()));
-        //                }
+//                        if(dataColumnSidecar == null || dataColumnSidecar.isEmpty()) {
+//                            LOG.warn("No data column sidecars found for block at slot {}",
+//         block.getSlot());
+//                            return
+//         SafeFuture.completedFuture(DataAndValidationResult.invalidResult(Collections.emptyList()));
+//                        }
         return SafeFuture.collectAll(dataColumnSidecar.stream().map(validator::validate))
             .thenApply(
                 validationResultList -> {
