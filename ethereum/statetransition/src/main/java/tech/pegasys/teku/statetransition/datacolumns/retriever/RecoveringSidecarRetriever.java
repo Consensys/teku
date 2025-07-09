@@ -85,7 +85,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.recoverColumnCount = columnCount / 2;
   }
 
-  public void start() {
+  public synchronized void start() {
     cancellable =
         asyncRunner.runWithFixedDelay(
             this::checkPendingPromises,
@@ -94,7 +94,10 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             error -> LOG.error("Failed to check pending Sidecar retrievals", error));
   }
 
-  public void stop() {
+  public synchronized void stop() {
+    if (cancellable == null) {
+      return;
+    }
     cancellable.cancel();
   }
 
