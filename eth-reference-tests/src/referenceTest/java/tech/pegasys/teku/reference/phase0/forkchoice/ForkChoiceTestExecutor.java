@@ -195,7 +195,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final StubBlobSidecarManager blobSidecarManager,
-      final StubDataColumnSidecarManager dataColumnSidecarManagerStub,
+      final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
       final ExecutionLayerChannelStub executionLayer)
       throws IOException {
@@ -215,7 +215,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             spec,
             recentChainData,
             blobSidecarManager,
-            dataColumnSidecarManagerStub,
+            dataColumnSidecarManager,
             forkChoice,
             step,
             executionLayer);
@@ -315,7 +315,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final StubBlobSidecarManager blobSidecarManager,
-      final StubDataColumnSidecarManager dataColumnSidecarManagerStub,
+      final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
       final ExecutionLayerChannelStub executionLayer) {
@@ -359,7 +359,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             .orElse(Collections.emptyList());
     if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       LOG.info("Adding {} columns to custody for block {}", columns.size(), block.getRoot());
-      dataColumnSidecarManagerStub.prepareDataColumnSidecarForBlock(block, columns);
+      dataColumnSidecarManager.prepareDataColumnSidecarForBlock(block, columns);
 
     } else if (spec.atSlot(block.getSlot())
         .getMilestone()
