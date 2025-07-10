@@ -17,6 +17,7 @@ import static tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySamp
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -38,7 +39,7 @@ public class DasPreSampler {
 
   public void onNewPreImportBlocks(final Collection<SignedBeaconBlock> blocks) {
     final List<SignedBeaconBlock> blocksToSample =
-        blocks.stream().filter(this::isSamplingRequired).toList();
+        blocks.stream().filter(Objects::nonNull).filter(this::isSamplingRequired).toList();
 
     LOG.debug(
         "DasPreSampler: requesting pre-sample for {} (of {} received) blocks: {}",
