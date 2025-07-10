@@ -28,7 +28,6 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -86,33 +85,43 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
       public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
         final UInt64 blockSlot = block.getSlot();
         final BeaconBlockBody blockBody = block.getMessage().getBody();
-        final List<DataColumnSidecar> dataColumnSidecars = dataColumnSidecarBySlot.remove(blockSlot);
+        final List<DataColumnSidecar> dataColumnSidecars =
+            dataColumnSidecarBySlot.remove(blockSlot);
 
-        final Optional<SszList<SszKZGCommitment>> optionalKzgCommitments = blockBody.getOptionalBlobKzgCommitments();
-        final boolean hasKzgCommitments = optionalKzgCommitments.isPresent() && !optionalKzgCommitments.get().isEmpty();
+        final Optional<SszList<SszKZGCommitment>> optionalKzgCommitments =
+            blockBody.getOptionalBlobKzgCommitments();
+        final boolean hasKzgCommitments =
+            optionalKzgCommitments.isPresent() && !optionalKzgCommitments.get().isEmpty();
         final boolean hasNoSidecars = dataColumnSidecars == null || dataColumnSidecars.isEmpty();
 
         if (hasKzgCommitments && hasNoSidecars) {
           LOG.warn(
-                  "Block at slot {} had {} KZG commitments but no sidecar columns were found",
-                  blockSlot,
-                  optionalKzgCommitments.get().size()
-          );
-          return SafeFuture.completedFuture(DataAndValidationResult.invalidResult(Collections.emptyList()));
+              "Block at slot {} had {} KZG commitments but no sidecar columns were found",
+              blockSlot,
+              optionalKzgCommitments.get().size());
+          return SafeFuture.completedFuture(
+              DataAndValidationResult.invalidResult(Collections.emptyList()));
         }
 
         if (hasNoSidecars) {
           // No sidecars and no KZG commitments, treat as valid
-          return SafeFuture.completedFuture(DataAndValidationResult.validResult(Collections.emptyList()));
+          return SafeFuture.completedFuture(
+              DataAndValidationResult.validResult(Collections.emptyList()));
         }
 
         return SafeFuture.collectAll(dataColumnSidecars.stream().map(validator::validate))
-                .thenApply(validationResults -> {
-                  boolean anyRejected = validationResults.stream().anyMatch(InternalValidationResult::isReject);
+            .thenApply(
+                validationResults -> {
+                  boolean anyRejected =
+                      validationResults.stream().anyMatch(InternalValidationResult::isReject);
                   if (anyRejected) {
                     validationResults.stream()
-                            .filter(InternalValidationResult::isReject)
-                            .forEach(result -> LOG.warn("Data column sidecar validation failed: {}", result.getDescription()));
+                        .filter(InternalValidationResult::isReject)
+                        .forEach(
+                            result ->
+                                LOG.warn(
+                                    "Data column sidecar validation failed: {}",
+                                    result.getDescription()));
                     return DataAndValidationResult.invalidResult(Collections.emptyList());
                   }
                   return DataAndValidationResult.validResult(Collections.emptyList());
