@@ -288,22 +288,25 @@ public class ExternalSigner implements Signer {
       final SignType type,
       final Map<String, Object> metadata,
       final Supplier<String> slashableMessage) {
-    final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
-    final HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(uri)
-            .timeout(timeout)
-            .header("Content-Type", "application/json")
-            .POST(BodyPublishers.ofString(requestBody))
-            .build();
 
     return SafeFuture.of(
-            httpClient
-                .sendAsync(request, BodyHandlers.ofString())
-                .handleAsync(
-                    (response, error) ->
-                        this.getBlsSignatureResponder(
-                            uri, type, response, error, slashableMessage)))
+            () -> {
+              final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
+              final HttpRequest request =
+                  HttpRequest.newBuilder()
+                      .uri(uri)
+                      .timeout(timeout)
+                      .header("Content-Type", "application/json")
+                      .POST(BodyPublishers.ofString(requestBody))
+                      .build();
+
+              return httpClient
+                  .sendAsync(request, BodyHandlers.ofString())
+                  .handleAsync(
+                      (response, error) ->
+                          this.getBlsSignatureResponder(
+                              uri, type, response, error, slashableMessage));
+            })
         .whenComplete(this::recordMetrics);
   }
 
