@@ -309,7 +309,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             forkChoice.onAttesterSlashing(attesterSlashing, InternalValidationResult.ACCEPT, true));
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   private void applyBlock(
       final TestDefinition testDefinition,
       final Spec spec,
