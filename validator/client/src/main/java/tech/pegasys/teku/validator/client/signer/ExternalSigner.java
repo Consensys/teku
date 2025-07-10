@@ -114,7 +114,7 @@ public class ExternalSigner implements Signer {
               .resolve(
                   EXTERNAL_SIGNER_ENDPOINT + "/" + blsPublicKey.toBytesCompressed().toString());
     } catch (final URISyntaxException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Unable to determine signer URI", e);
     }
   }
 
