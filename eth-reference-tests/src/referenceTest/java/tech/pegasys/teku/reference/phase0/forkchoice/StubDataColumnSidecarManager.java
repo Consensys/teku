@@ -16,17 +16,22 @@ package tech.pegasys.teku.reference.phase0.forkchoice;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
@@ -79,33 +84,38 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
 
       @Override
       public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
-        final List<DataColumnSidecar> dataColumnSidecar =
-            dataColumnSidecarBySlot.remove(block.getSlot());
-        if (block.getMessage().getBody().getOptionalBlobKzgCommitments().isPresent()
-            && !block.getMessage().getBody().getOptionalBlobKzgCommitments().get().isEmpty()
-            && (dataColumnSidecar == null || dataColumnSidecar.isEmpty())) {
+        final UInt64 blockSlot = block.getSlot();
+        final BeaconBlockBody blockBody = block.getMessage().getBody();
+        final List<DataColumnSidecar> dataColumnSidecars = dataColumnSidecarBySlot.remove(blockSlot);
+
+        final Optional<SszList<SszKZGCommitment>> optionalKzgCommitments = blockBody.getOptionalBlobKzgCommitments();
+        final boolean hasKzgCommitments = optionalKzgCommitments.isPresent() && !optionalKzgCommitments.get().isEmpty();
+        final boolean hasNoSidecars = dataColumnSidecars == null || dataColumnSidecars.isEmpty();
+
+        if (hasKzgCommitments && hasNoSidecars) {
           LOG.warn(
-              "Block at slot {} had {} KZG commitments but no sidecar columns were found",
-              block.getSlot(),
-              block.getMessage().getBody().getOptionalBlobKzgCommitments().get().size());
-          return SafeFuture.completedFuture(
-              DataAndValidationResult.invalidResult(Collections.emptyList()));
+                  "Block at slot {} had {} KZG commitments but no sidecar columns were found",
+                  blockSlot,
+                  optionalKzgCommitments.get().size()
+          );
+          return SafeFuture.completedFuture(DataAndValidationResult.invalidResult(Collections.emptyList()));
         }
-        return SafeFuture.collectAll(dataColumnSidecar.stream().map(validator::validate))
-            .thenApply(
-                validationResultList -> {
-                  if (validationResultList.stream().anyMatch(InternalValidationResult::isReject)) {
-                    validationResultList.stream()
-                        .filter(InternalValidationResult::isReject)
-                        .forEach(
-                            result ->
-                                LOG.warn(
-                                    "Data column sidecar validation failed: {}",
-                                    result.getDescription()));
+
+        if (hasNoSidecars) {
+          // No sidecars and no KZG commitments, treat as valid
+          return SafeFuture.completedFuture(DataAndValidationResult.validResult(Collections.emptyList()));
+        }
+
+        return SafeFuture.collectAll(dataColumnSidecars.stream().map(validator::validate))
+                .thenApply(validationResults -> {
+                  boolean anyRejected = validationResults.stream().anyMatch(InternalValidationResult::isReject);
+                  if (anyRejected) {
+                    validationResults.stream()
+                            .filter(InternalValidationResult::isReject)
+                            .forEach(result -> LOG.warn("Data column sidecar validation failed: {}", result.getDescription()));
                     return DataAndValidationResult.invalidResult(Collections.emptyList());
-                  } else {
-                    return DataAndValidationResult.validResult(Collections.emptyList());
                   }
+                  return DataAndValidationResult.validResult(Collections.emptyList());
                 });
       }
     };
