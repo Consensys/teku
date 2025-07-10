@@ -314,7 +314,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return endSlot.isLessThanOrEqualTo(startSlot)
+      return endSlot.isLessThan(startSlot)
           || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }

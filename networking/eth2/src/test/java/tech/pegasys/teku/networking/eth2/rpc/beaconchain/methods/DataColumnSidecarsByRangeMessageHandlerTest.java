@@ -258,6 +258,24 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
   }
 
   @TestTemplate
+  public void shouldSendToPeerRequestedSingleDataColumnSidecars() {
+    final DataColumnSidecarsByRangeRequestMessage request =
+        dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, ONE, List.of(ZERO));
+    final List<DataColumnSidecar> expectedSent =
+        setUpDataColumnSidecarsData(startSlot, request.getMaxSlot(), List.of(ZERO));
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 1 data column sidecars
+    final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
+        ArgumentCaptor.forClass(DataColumnSidecar.class);
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
+    final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
+    verify(listener).completeSuccessfully();
+    assertThat(actualSent.size()).isOne();
+    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+  }
+
+  @TestTemplate
   public void shouldSendToPeerRequestedNumberOfFinalizedDataColumnSidecars() {
     final DataColumnSidecarsByRangeRequestMessage request =
         dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, count, columnIndices);
