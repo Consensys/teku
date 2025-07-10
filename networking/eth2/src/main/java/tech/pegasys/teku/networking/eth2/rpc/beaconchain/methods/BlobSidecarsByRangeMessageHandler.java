@@ -348,7 +348,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return endSlot.isLessThanOrEqualTo(startSlot)
+      return endSlot.isLessThan(startSlot)
           || blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }

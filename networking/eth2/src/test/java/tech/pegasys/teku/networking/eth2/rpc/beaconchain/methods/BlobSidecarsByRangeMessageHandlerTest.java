@@ -404,6 +404,34 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @TestTemplate
+  public void shouldSendToPeerRequestedSingleSlotOfBlobSidecars() {
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, ONE, maxBlobsPerBlock);
+
+    final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 1 * maxBlobsPerBlock blob sidecars
+    verify(peer).approveBlobSidecarsRequest(any(), eq(Long.valueOf(maxBlobsPerBlock)));
+    // Sending expectedSent blob sidecars
+    verify(peer)
+        .adjustBlobSidecarsRequest(
+            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
+
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
+
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+
+    verify(listener).completeSuccessfully();
+
+    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+  }
+
+  @TestTemplate
   public void shouldIgnoreRequestWhenCountIsZero() {
 
     final BlobSidecarsByRangeRequestMessage request =
