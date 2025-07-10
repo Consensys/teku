@@ -258,24 +258,6 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
   }
 
   @TestTemplate
-  public void shouldSendToPeerRequestedSingleDataColumnSidecars() {
-    final DataColumnSidecarsByRangeRequestMessage request =
-        dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, ONE, List.of(ZERO));
-    final List<DataColumnSidecar> expectedSent =
-        setUpDataColumnSidecarsData(startSlot, request.getMaxSlot(), List.of(ZERO));
-    handler.onIncomingMessage(protocolId, peer, request, listener);
-
-    // Requesting 1 data column sidecars
-    final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
-        ArgumentCaptor.forClass(DataColumnSidecar.class);
-    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
-    final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
-    verify(listener).completeSuccessfully();
-    assertThat(actualSent.size()).isOne();
-    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
-  }
-
-  @TestTemplate
   public void shouldSendToPeerRequestedNumberOfFinalizedDataColumnSidecars() {
     final DataColumnSidecarsByRangeRequestMessage request =
         dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, count, columnIndices);
@@ -354,6 +336,30 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
 
     verify(listener).completeSuccessfully();
 
+    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+  }
+
+  @TestTemplate
+  public void shouldSendToPeerRequestedSingleSlotDataColumnSidecars() {
+    final DataColumnSidecarsByRangeRequestMessage request =
+        dataColumnSidecarsByRangeRequestMessageSchema.create(startSlot, ONE, columnIndices);
+    final List<DataColumnSidecar> expectedSent =
+        setUpDataColumnSidecarsData(startSlot, request.getMaxSlot(), columnIndices);
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 1 data column sidecars
+    // Requesting 5 * 2 data column sidecars
+    verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(columnIndices.size())));
+    // Sending expectedSent data column sidecars
+    verify(peer)
+        .adjustDataColumnSidecarsRequest(
+            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
+    final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
+        ArgumentCaptor.forClass(DataColumnSidecar.class);
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
+    final List<DataColumnSidecar> actualSent = argumentCaptor.getAllValues();
+    verify(listener).completeSuccessfully();
+    assertThat(actualSent.size()).isOne();
     AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }
 
