@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -69,7 +70,7 @@ public class ExternalSigner implements Signer {
   public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
   public static final String FORK_INFO = "fork_info";
   private final URL signingServiceUrl;
-  private final BLSPublicKey blsPublicKey;
+  private final URI uri;
   private final Duration timeout;
   private final Spec spec;
   private final HttpClient httpClient;
@@ -92,7 +93,6 @@ public class ExternalSigner implements Signer {
     this.spec = spec;
     this.httpClient = httpClient;
     this.signingServiceUrl = signingServiceUrl;
-    this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
     this.taskQueue = taskQueue;
     this.signingRootUtil = new SigningRootUtil(spec);
@@ -107,6 +107,15 @@ public class ExternalSigner implements Signer {
     failedCounter = labelledCounter.labels("failed");
     timeoutCounter = labelledCounter.labels("timeout");
     this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
+    try {
+      uri =
+          signingServiceUrl
+              .toURI()
+              .resolve(
+                  EXTERNAL_SIGNER_ENDPOINT + "/" + blsPublicKey.toBytesCompressed().toString());
+    } catch (final URISyntaxException e) {
+      throw new RuntimeException("Unable to determine signer URI", e);
+    }
   }
 
   @Override
@@ -279,12 +288,10 @@ public class ExternalSigner implements Signer {
       final SignType type,
       final Map<String, Object> metadata,
       final Supplier<String> slashableMessage) {
-    final String publicKey = blsPublicKey.toBytesCompressed().toString();
+
     return SafeFuture.of(
             () -> {
               final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
-              final URI uri =
-                  signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
               final HttpRequest request =
                   HttpRequest.newBuilder()
                       .uri(uri)
@@ -292,6 +299,7 @@ public class ExternalSigner implements Signer {
                       .header("Content-Type", "application/json")
                       .POST(BodyPublishers.ofString(requestBody))
                       .build();
+
               return httpClient
                   .sendAsync(request, BodyHandlers.ofString())
                   .handleAsync(
