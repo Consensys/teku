@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.peer;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.PeerClientType;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -23,7 +24,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public interface Peer {
 
@@ -51,14 +51,22 @@ public interface Peer {
 
   void subscribeDisconnect(PeerDisconnectedSubscriber subscriber);
 
-  <
-          TOutgoingHandler extends RpcRequestHandler,
-          TRequest extends RpcRequest,
-          RespHandler extends RpcResponseHandler<?>>
+  <TOutgoingHandler extends RpcRequestHandler, TRequest, RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-          RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
           final RespHandler responseHandler);
+
+  default <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest,
+          RespHandler extends RpcResponseHandler<?>>
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final Function<String, TRequest> requestFn,
+          final RespHandler responseHandler) {
+    throw new IllegalStateException("Not supported");
+  }
 
   boolean connectionInitiatedLocally();
 

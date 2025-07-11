@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -55,7 +54,6 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final Bytes4 forkDigest,
       final OperationProcessor<T> processor,
       final SszSchema<T> gossipType,
       final Function<T, Optional<UInt64>> getSlotForMessage,
@@ -70,7 +68,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             asyncRunner,
             processor,
             gossipEncoding,
-            forkDigest,
+            forkInfo.getForkDigest(recentChainData.getSpec()),
             topicName,
             new OperationMilestoneValidator<>(
                 recentChainData.getSpec(), forkInfo.getFork(), getEpochForMessage),

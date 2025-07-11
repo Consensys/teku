@@ -66,7 +66,7 @@ public abstract class AbstractTopicHandlerTest<T> {
         .chainUpdater()
         .updateBestBlock(storageSystem.chainUpdater().advanceChainUntil(validSlot));
     this.forkInfo = recentChainData.getForkInfo(BELLATRIX_FORK_EPOCH).orElseThrow();
-    this.forkDigest = recentChainData.getForkDigest(BELLATRIX_FORK_EPOCH);
+    this.forkDigest = forkInfo.getForkDigest(spec);
     this.topicHandler = createHandler();
   }
 

@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.SyncCommitteeMessageGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -86,8 +85,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
     this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
   }
 
-  void addSignedContributionAndProofGossipManager(
-      final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addSignedContributionAndProofGossipManager(final ForkInfo forkInfo) {
     final SchemaDefinitionsAltair schemaDefinitions =
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
@@ -99,14 +97,13 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            forkDigest,
             signedContributionAndProofOperationProcessor,
             specConfig.getNetworkingConfig(),
             debugDataDumper);
     addGossipManager(syncCommitteeContributionGossipManager);
   }
 
-  void addSyncCommitteeMessageGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+  void addSyncCommitteeMessageGossipManager(final ForkInfo forkInfo) {
     final SchemaDefinitionsAltair schemaDefinitions =
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
@@ -119,7 +116,6 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             asyncRunner,
             syncCommitteeMessageOperationProcessor,
             forkInfo,
-            forkDigest,
             debugDataDumper);
     syncCommitteeMessageGossipManager =
         new SyncCommitteeMessageGossipManager(
@@ -131,10 +127,10 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
   }
 
   @Override
-  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
-    super.addGossipManagers(forkInfo, forkDigest);
-    addSignedContributionAndProofGossipManager(forkInfo, forkDigest);
-    addSyncCommitteeMessageGossipManager(forkInfo, forkDigest);
+  protected void addGossipManagers(final ForkInfo forkInfo) {
+    super.addGossipManagers(forkInfo);
+    addSignedContributionAndProofGossipManager(forkInfo);
+    addSyncCommitteeMessageGossipManager(forkInfo);
   }
 
   @Override
