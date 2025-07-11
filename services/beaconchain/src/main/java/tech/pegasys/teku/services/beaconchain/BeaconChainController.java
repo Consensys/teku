@@ -401,7 +401,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // there are several operations that may be performed in the das runner, so it has more threads,
     // larger default size. das runner should be separate to the operation pool runner as it's a
     // bunch of tasks, not just operation pool activities
-    this.dasAsyncRunner = serviceConfig.createAsyncRunner("das", 4, 20_0000);
+    this.dasAsyncRunner = serviceConfig.createAsyncRunner("das", 4, 20_000);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
