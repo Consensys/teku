@@ -20,13 +20,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -45,11 +48,17 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final CanonicalBlockResolver blockResolver;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
+  private final TimeProvider timeProvider;
   private final Duration recoverInitiationTimeout;
+  private final Duration recoverInitiationCheckInterval;
   private final int columnCount;
   private final int recoverColumnCount;
 
+  private final Set<DataColumnSidecarPromiseWithTimestamp> pendingPromises =
+      ConcurrentHashMap.newKeySet();
   private final Map<UInt64, RecoveryEntry> recoveryBySlot = new ConcurrentHashMap<>();
+
+  private Cancellable cancellable;
 
   public RecoveringSidecarRetriever(
       final DataColumnSidecarRetriever delegate,
@@ -59,6 +68,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
       final Duration recoverInitiationTimeout,
+      final Duration recoverInitiationCheckInterval,
+      final TimeProvider timeProvider,
       final int columnCount) {
     this.delegate = delegate;
     this.kzg = kzg;
@@ -67,25 +78,72 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
     this.recoverInitiationTimeout = recoverInitiationTimeout;
+    this.recoverInitiationCheckInterval = recoverInitiationCheckInterval;
+    this.timeProvider = timeProvider;
     this.columnCount = columnCount;
     this.recoverColumnCount = columnCount / 2;
+  }
+
+  public synchronized void start() {
+    if (cancellable != null) {
+      return;
+    }
+    cancellable =
+        asyncRunner.runWithFixedDelay(
+            this::checkPendingPromises,
+            recoverInitiationCheckInterval,
+            recoverInitiationCheckInterval,
+            error -> LOG.error("Failed to check pending Sidecar retrievals", error));
+  }
+
+  public synchronized void stop() {
+    if (cancellable == null) {
+      return;
+    }
+    cancellable.cancel();
+    cancellable = null;
   }
 
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
-    // TODO-fulu we probably need a better heuristics to submit requests for recovery
-    // (https://github.com/Consensys/teku/issues/9465)
-    asyncRunner
-        .runAfterDelay(
-            () -> {
-              if (!promise.isDone()) {
-                maybeInitiateRecovery(columnId, promise);
-              }
-            },
-            recoverInitiationTimeout)
-        .ifExceptionGetsHereRaiseABug();
+    final DataColumnSidecarPromiseWithTimestamp pendingPromiseWithTimestamp =
+        new DataColumnSidecarPromiseWithTimestamp(
+            columnId, promise, timeProvider.getTimeInMillis());
+    pendingPromises.add(pendingPromiseWithTimestamp);
+
+    // remove it from pending as soon as the promise is done
+    promise.always(() -> pendingPromises.remove(pendingPromiseWithTimestamp));
+
     return promise;
+  }
+
+  private void checkPendingPromises() {
+    final UInt64 currentTime = timeProvider.getTimeInMillis();
+
+    pendingPromises.removeIf(
+        promiseWithTimestamp -> {
+          if (promiseWithTimestamp.promise.isDone()) {
+            // If the promise is already done, we can remove it
+            return true;
+          }
+          // If the promise is not done, we check if it has timed out
+          // TODO-fulu we probably need a better heuristics to submit requests for recovery
+          // (https://github.com/Consensys/teku/issues/9465)
+          if (promiseWithTimestamp
+              .timestamp
+              .plus(recoverInitiationTimeout.toMillis())
+              .isGreaterThan(currentTime)) {
+            // If the promise is not timed out, we keep it
+            return false;
+          }
+
+          // If the promise is timed out, we initiate recovery and remove it
+          maybeInitiateRecovery(
+              promiseWithTimestamp.dataColumnSlotAndIdentifier, promiseWithTimestamp.promise);
+
+          return true;
+        });
   }
 
   @Override
@@ -99,7 +157,11 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   @VisibleForTesting
-  void maybeInitiateRecovery(
+  int pendingPromisesCount() {
+    return pendingPromises.size();
+  }
+
+  private void maybeInitiateRecovery(
       final DataColumnSlotAndIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
     blockResolver
         .getBlockAtSlot(columnId.slot())
@@ -166,6 +228,11 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private synchronized void recoveryComplete(final RecoveryEntry entry) {
     LOG.trace("Recovery complete for entry {}", entry);
   }
+
+  private record DataColumnSidecarPromiseWithTimestamp(
+      DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
+      SafeFuture<DataColumnSidecar> promise,
+      UInt64 timestamp) {}
 
   private class RecoveryEntry {
     private final BeaconBlock block;

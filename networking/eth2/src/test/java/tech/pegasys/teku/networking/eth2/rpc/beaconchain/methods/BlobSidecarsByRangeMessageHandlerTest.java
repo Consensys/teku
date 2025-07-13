@@ -249,8 +249,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
-    verify(peer, times(1))
-        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    verify(peer).approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
     // No adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
@@ -285,11 +284,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
-    verify(peer, times(1))
-        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    verify(peer).approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
     // Request cancelled
-    verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+    verify(peer).adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
 
     // blob sidecars should be available from epoch 5000, but they are
     // available from epoch 5010
@@ -310,11 +307,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
-    verify(peer, times(1))
-        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    verify(peer).approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
     // Sending 0 blob sidecars
-    verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+    verify(peer).adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
 
     verify(combinedChainDataClient, never()).getBlobSidecarByKey(any());
 
@@ -334,10 +329,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
-    verify(peer, times(1))
-        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    verify(peer).approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
     // Sending expectedSent blob sidecars
-    verify(peer, times(1))
+    verify(peer)
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
@@ -392,10 +386,37 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
-    verify(peer, times(1))
-        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    verify(peer).approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
     // Sending expectedSent blob sidecars
-    verify(peer, times(1))
+    verify(peer)
+        .adjustBlobSidecarsRequest(
+            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
+
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
+
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+
+    verify(listener).completeSuccessfully();
+
+    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+  }
+
+  @TestTemplate
+  public void shouldSendToPeerRequestedSingleSlotOfBlobSidecars() {
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, ONE, maxBlobsPerBlock);
+
+    final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 1 * maxBlobsPerBlock blob sidecars
+    verify(peer).approveBlobSidecarsRequest(any(), eq(Long.valueOf(maxBlobsPerBlock)));
+    // Sending expectedSent blob sidecars
+    verify(peer)
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
@@ -421,7 +442,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
-    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(0)));
+    verify(peer).approveBlobSidecarsRequest(any(), eq(Long.valueOf(0)));
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
@@ -449,7 +470,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
-    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(0)));
+    verify(peer).approveBlobSidecarsRequest(any(), eq(Long.valueOf(0)));
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
