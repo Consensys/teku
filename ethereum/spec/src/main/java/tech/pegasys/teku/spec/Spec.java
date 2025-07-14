@@ -432,7 +432,7 @@ public class Spec {
         .getSchemaDefinitions()
         .toVersionFulu()
         .orElseThrow(
-            () -> new RuntimeException("FULU milestone is required to deserialize column sidecar"))
+            () -> new RuntimeException("Fulu milestone is required to deserialize column sidecar"))
         .getDataColumnSidecarSchema()
         .sszDeserialize(serializedSidecar);
   }

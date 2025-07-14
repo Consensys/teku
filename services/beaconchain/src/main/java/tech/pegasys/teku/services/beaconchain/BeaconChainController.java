@@ -708,7 +708,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   private void initDasSamplerManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      LOG.info("Activated DAS Sampler Manager for FULU");
+      LOG.info("Activated DAS Sampler Manager for Fulu");
       this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, kzg, spec);
     } else {
       LOG.info("Using NOOP DAS Sampler Manager");
@@ -742,7 +742,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
       return;
     }
-    LOG.info("Activating DAS Custody for FULU");
+    LOG.info("Activating DAS Custody for Fulu");
     final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
     final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specVersionFulu.getConfig());
     final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
