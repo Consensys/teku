@@ -192,7 +192,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return IntStream.range(0, columnsPerGroup)
         .mapToLong(
             i -> (long) specConfigFulu.getNumberOfCustodyGroups() * i + custodyGroup.intValue())
-        .sorted()
         .mapToObj(UInt64::valueOf)
         .toList();
   }
