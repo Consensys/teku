@@ -36,6 +36,12 @@ public class CustodyGroupCountManagerLateInit implements CustodyGroupCountManage
   }
 
   @Override
+  public int getSampleGroupCount() {
+    checkInitialized();
+    return custodyGroupCountManager.getSampleGroupCount();
+  }
+
+  @Override
   public List<UInt64> getSamplingColumnIndices() {
     checkInitialized();
     return custodyGroupCountManager.getSamplingColumnIndices();

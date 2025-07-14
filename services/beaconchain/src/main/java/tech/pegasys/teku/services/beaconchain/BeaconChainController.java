@@ -767,7 +767,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
     eventChannels
         .getPublisher(CustodyGroupCountChannel.class)
-        .onCustodyGroupCountUpdate(totalMyCustodyGroups);
+        .onGroupCountUpdate(
+            totalMyCustodyGroups,
+            Math.max(totalMyCustodyGroups, specConfigFulu.getSamplesPerSlot()));
 
     final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
@@ -1280,14 +1282,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return;
     }
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
-    DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
-        new DataColumnSidecarSubnetBackboneSubscriber(
-            spec,
-            p2pNetwork,
-            nodeId,
+
+    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+    final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(specVersionFulu.getConfig());
+
+    final int initialSubnetCount =
+        Math.max(
             beaconConfig
                 .p2pConfig()
-                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
+                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)),
+            specConfigFulu.getSamplesPerSlot());
+    DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
+        new DataColumnSidecarSubnetBackboneSubscriber(spec, p2pNetwork, nodeId, initialSubnetCount);
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
     eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);

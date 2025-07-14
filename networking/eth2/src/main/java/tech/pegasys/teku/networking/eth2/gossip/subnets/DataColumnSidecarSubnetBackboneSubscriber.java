@@ -47,8 +47,8 @@ public class DataColumnSidecarSubnetBackboneSubscriber
   }
 
   @Override
-  public void onCustodyGroupCountUpdate(final int groupCount) {
-    totalGroupCount.set(groupCount);
+  public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
+    totalGroupCount.set(samplingGroupCount);
   }
 
   @Override
