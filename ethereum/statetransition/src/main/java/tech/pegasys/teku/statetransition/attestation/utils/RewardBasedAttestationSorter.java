@@ -119,8 +119,7 @@ public class RewardBasedAttestationSorter {
   private MutableEpochParticipation getCurrentEpochParticipation() {
     if (currentEpochParticipation == null) {
       currentEpochParticipation =
-          new MutableEpochParticipation(
-              state.getCurrentEpochParticipation(), new Int2ByteOpenHashMap());
+          MutableEpochParticipation.create(state.getCurrentEpochParticipation());
     }
     return currentEpochParticipation;
   }
@@ -128,8 +127,7 @@ public class RewardBasedAttestationSorter {
   private MutableEpochParticipation getPreviousEpochParticipation() {
     if (previousEpochParticipation == null) {
       previousEpochParticipation =
-          new MutableEpochParticipation(
-              state.getPreviousEpochParticipation(), new Int2ByteOpenHashMap());
+          MutableEpochParticipation.create(state.getPreviousEpochParticipation());
     }
     return previousEpochParticipation;
   }
@@ -290,6 +288,10 @@ public class RewardBasedAttestationSorter {
 
   private record MutableEpochParticipation(
       SszList<SszByte> epochParticipation, Int2ByteOpenHashMap epochParticipationChanges) {
+
+    static MutableEpochParticipation create(final SszList<SszByte> epochParticipation) {
+      return new MutableEpochParticipation(epochParticipation, new Int2ByteOpenHashMap());
+    }
 
     byte getParticipation(final int index) {
       return epochParticipationChanges.getOrDefault(
