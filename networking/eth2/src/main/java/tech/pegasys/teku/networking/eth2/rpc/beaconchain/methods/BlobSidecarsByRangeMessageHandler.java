@@ -128,7 +128,7 @@ public class BlobSidecarsByRangeMessageHandler
 
     if (startSlot.isGreaterThan(spec.blobSidecarsAvailabilityDeprecationSlot())) {
       LOG.trace(
-          "Peer {} requested {} slots of blob sidecars starting at slot {} after FULU. BlobSidecarsByRange v1 is deprecated and the request will be ignored.",
+          "Peer {} requested {} slots of blob sidecars starting at slot {} after Fulu. BlobSidecarsByRange v1 is deprecated and the request will be ignored.",
           peer.getId(),
           message.getCount(),
           startSlot);
