@@ -294,8 +294,7 @@ public class RewardBasedAttestationSorter {
     }
 
     byte getParticipation(final int index) {
-      return epochParticipationChanges.getOrDefault(
-          index, epochParticipation.get(index).get().byteValue());
+      return epochParticipationChanges.computeIfAbsent(index, i -> epochParticipation.get(i).get());
     }
 
     void setParticipation(final int index, final byte value) {
