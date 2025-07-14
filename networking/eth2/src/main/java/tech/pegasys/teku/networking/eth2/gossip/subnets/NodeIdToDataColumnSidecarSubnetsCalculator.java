@@ -35,6 +35,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
   NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, subnetCount) -> Optional.empty();
 
   /** Creates a calculator instance for the specific slot */
+  @SuppressWarnings("UnusedVariable")
   private static NodeIdToDataColumnSidecarSubnetsCalculator createAtSlot(
       final SpecConfigFulu config, final MiscHelpers miscHelpers, final UInt64 currentSlot) {
     SszBitvectorSchema<SszBitvector> bitvectorSchema =
