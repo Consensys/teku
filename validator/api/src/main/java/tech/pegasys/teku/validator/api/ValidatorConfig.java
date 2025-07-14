@@ -66,7 +66,6 @@ public class ValidatorConfig {
       ClientGraffitiAppendFormat.AUTO;
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
   public static final boolean DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED = false;
-  public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(45_000_000);
   public static final boolean DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
@@ -92,7 +91,6 @@ public class ValidatorConfig {
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
   private final Optional<String> proposerConfigSource;
   private final boolean refreshProposerConfigFromSource;
-  private final boolean blindedBeaconBlocksEnabled;
   private final boolean builderRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
   private final boolean validatorClientUsePostValidatorsEndpointEnabled;
@@ -139,7 +137,6 @@ public class ValidatorConfig {
       final Optional<String> proposerConfigSource,
       final boolean refreshProposerConfigFromSource,
       final boolean builderRegistrationDefaultEnabled,
-      final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
       final boolean validatorClientUsePostValidatorsEndpointEnabled,
       final boolean doppelgangerDetectionEnabled,
@@ -182,7 +179,6 @@ public class ValidatorConfig {
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
     this.proposerConfigSource = proposerConfigSource;
     this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
-    this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
     this.builderRegistrationDefaultEnabled = builderRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
     this.validatorClientUsePostValidatorsEndpointEnabled =
@@ -309,10 +305,6 @@ public class ValidatorConfig {
     return refreshProposerConfigFromSource;
   }
 
-  public boolean isBlindedBeaconBlocksEnabled() {
-    return blindedBeaconBlocksEnabled;
-  }
-
   public boolean isValidatorClientUseSszBlocksEnabled() {
     return validatorClientUseSszBlocksEnabled;
   }
@@ -415,7 +407,6 @@ public class ValidatorConfig {
         DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
     private boolean validatorsRegistrationDefaultEnabled =
         DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
-    private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
     private boolean validatorClientUsePostValidatorsEndpointEnabled =
         DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED;
@@ -582,11 +573,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder blindedBeaconBlocksEnabled(final boolean blindedBeaconBlockEnabled) {
-      this.blindedBlocksEnabled = blindedBeaconBlockEnabled;
-      return this;
-    }
-
     public Builder validatorClientUseSszBlocksEnabled(
         final boolean validatorClientUseSszBlocksEnabled) {
       this.validatorClientSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
@@ -737,7 +723,6 @@ public class ValidatorConfig {
           proposerConfigSource,
           refreshProposerConfigFromSource,
           validatorsRegistrationDefaultEnabled,
-          blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
           validatorClientUsePostValidatorsEndpointEnabled,
           doppelgangerDetectionEnabled,

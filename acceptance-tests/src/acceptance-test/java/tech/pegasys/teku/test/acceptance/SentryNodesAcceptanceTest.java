@@ -52,6 +52,34 @@ public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
     remoteValidator.waitForBlockPublishedTo(blockHandlerNode);
   }
 
+  @Test
+  void sentryBeaconNodesSetupWithFailover() throws Exception {
+    final TekuBeaconNode dutiesProviderNode = createAndStartBootstrapBeaconNode();
+    final TekuBeaconNode attestationPublisherNode =
+        createAndStartPeerBeaconNode(dutiesProviderNode, dutiesProviderNode.getGenesisTime());
+    final TekuBeaconNode blockHandlerNode =
+        createAndStartPeerBeaconNode(dutiesProviderNode, dutiesProviderNode.getGenesisTime());
+
+    final SentryNodesConfig sentryNodesConfig =
+        new SentryNodesConfig.Builder()
+            .withDutiesProviders(dutiesProviderNode, blockHandlerNode)
+            .withAttestationPublisher(attestationPublisherNode, blockHandlerNode)
+            .withBlockHandlers(blockHandlerNode, attestationPublisherNode)
+            .build();
+
+    final TekuValidatorNode remoteValidator =
+        createValidatorNode(
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withInteropValidators(0, 32)
+                .withSentryNodes(sentryNodesConfig)
+                .build());
+    remoteValidator.start();
+
+    remoteValidator.waitForDutiesRequestedFrom(dutiesProviderNode);
+    remoteValidator.waitForAttestationPublishedTo(attestationPublisherNode);
+    remoteValidator.waitForBlockPublishedTo(blockHandlerNode);
+  }
+
   private TekuBeaconNode createAndStartPeerBeaconNode(
       final TekuBeaconNode dutiesProviderNode, final UInt64 genesisTime) throws Exception {
     final TekuBeaconNode blockHandlerNode =

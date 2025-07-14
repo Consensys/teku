@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
-
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.UInt64Converter;
@@ -101,16 +99,6 @@ public class ValidatorProposerOptions {
       hidden = true)
   private String builderRegistrationPublicKeyOverride = null;
 
-  @Option(
-      names = {"--validators-proposer-blinded-blocks-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "This option is deprecated and will be removed in future versions.",
-      fallbackValue = "true",
-      arity = "0..1")
-  @Deprecated
-  private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
-
   public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -119,7 +107,6 @@ public class ValidatorProposerOptions {
                 .proposerConfigSource(proposerConfig)
                 .refreshProposerConfigFromSource(proposerConfigRefreshEnabled)
                 .builderRegistrationDefaultEnabled(builderRegistrationDefaultEnabled)
-                .blindedBeaconBlocksEnabled(blindedBlocksEnabled)
                 .builderRegistrationDefaultGasLimit(builderRegistrationDefaultGasLimit)
                 .builderRegistrationSendingBatchSize(builderRegistrationSendingBatchSize)
                 .builderRegistrationTimestampOverride(builderRegistrationTimestampOverride)
