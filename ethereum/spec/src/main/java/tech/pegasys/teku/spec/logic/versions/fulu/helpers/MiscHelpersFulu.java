@@ -182,7 +182,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroup.isGreaterThanOrEqualTo(specConfigFulu.getNumberOfCustodyGroups())) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group %s couldn't exceed number of groups %s",
+              "Custody group (%s) cannot exceed number of groups (%s)",
               custodyGroup, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
@@ -206,7 +206,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroupCount > specConfigFulu.getNumberOfCustodyGroups()) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group count %s couldn't exceed number of groups %s",
+              "Custody group count (%s) cannot exceed number of groups (%s)",
               custodyGroupCount, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
