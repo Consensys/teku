@@ -68,8 +68,8 @@ public class RewardBasedAttestationSorter {
   private final BeaconStateAccessorsAltair beaconStateAccessors;
   private final MiscHelpersAltair miscHelpers;
 
-  private MutableParticipation currentEpochParticipation;
-  private MutableParticipation previousEpochParticipation;
+  private MutableEpochParticipation currentEpochParticipation;
+  private MutableEpochParticipation previousEpochParticipation;
 
   private final boolean forceSorting;
 
@@ -116,24 +116,25 @@ public class RewardBasedAttestationSorter {
     this.forceSorting = forceSorting;
   }
 
-  private MutableParticipation getCurrentEpochParticipation() {
+  private MutableEpochParticipation getCurrentEpochParticipation() {
     if (currentEpochParticipation == null) {
       currentEpochParticipation =
-          new MutableParticipation(state.getCurrentEpochParticipation(), new Int2ByteOpenHashMap());
+          new MutableEpochParticipation(
+              state.getCurrentEpochParticipation(), new Int2ByteOpenHashMap());
     }
     return currentEpochParticipation;
   }
 
-  private MutableParticipation getPreviousEpochParticipation() {
+  private MutableEpochParticipation getPreviousEpochParticipation() {
     if (previousEpochParticipation == null) {
       previousEpochParticipation =
-          new MutableParticipation(
+          new MutableEpochParticipation(
               state.getPreviousEpochParticipation(), new Int2ByteOpenHashMap());
     }
     return previousEpochParticipation;
   }
 
-  private MutableParticipation getEpochParticipation(
+  private MutableEpochParticipation getEpochParticipation(
       final PooledAttestationWithRewardInfo attestation) {
     return attestation.isCurrentEpoch
         ? getCurrentEpochParticipation()
@@ -183,7 +184,8 @@ public class RewardBasedAttestationSorter {
       }
 
       // apply participation changes
-      final MutableParticipation affectedParticipation = getEpochParticipation(bestAttestation);
+      final MutableEpochParticipation affectedParticipation =
+          getEpochParticipation(bestAttestation);
       if (bestAttestation.updatesEpochParticipation.isEmpty()) {
         // no changes to participation
         continue;
@@ -238,7 +240,7 @@ public class RewardBasedAttestationSorter {
   }
 
   private void computeRewards(final PooledAttestationWithRewardInfo attestation) {
-    final MutableParticipation epochParticipation = getEpochParticipation(attestation);
+    final MutableEpochParticipation epochParticipation = getEpochParticipation(attestation);
     final Int2ByteOpenHashMap updatesEpochParticipation = new Int2ByteOpenHashMap();
 
     UInt64 proposerRewardNumerator = UInt64.ZERO;
@@ -286,7 +288,7 @@ public class RewardBasedAttestationSorter {
     attestation.updatesEpochParticipation = updatesEpochParticipation;
   }
 
-  private record MutableParticipation(
+  private record MutableEpochParticipation(
       SszList<SszByte> epochParticipation, Int2ByteOpenHashMap epochParticipationChanges) {
 
     byte getParticipation(final int index) {
