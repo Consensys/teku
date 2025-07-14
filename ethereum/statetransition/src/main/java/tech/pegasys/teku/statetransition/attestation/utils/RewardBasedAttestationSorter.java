@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FL
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX;
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_TARGET_FLAG_INDEX;
 
-import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.Int2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -70,8 +68,8 @@ public class RewardBasedAttestationSorter {
   private final BeaconStateAccessorsAltair beaconStateAccessors;
   private final MiscHelpersAltair miscHelpers;
 
-  private List<Byte> currentEpochParticipation;
-  private List<Byte> previousEpochParticipation;
+  private MutableParticipation currentEpochParticipation;
+  private MutableParticipation previousEpochParticipation;
 
   private final boolean forceSorting;
 
@@ -118,23 +116,25 @@ public class RewardBasedAttestationSorter {
     this.forceSorting = forceSorting;
   }
 
-  private List<Byte> getCurrentEpochParticipation() {
+  private MutableParticipation getCurrentEpochParticipation() {
     if (currentEpochParticipation == null) {
       currentEpochParticipation =
-          epochParticipationToMutableList(state.getCurrentEpochParticipation());
+          new MutableParticipation(state.getCurrentEpochParticipation(), new Int2ByteOpenHashMap());
     }
     return currentEpochParticipation;
   }
 
-  private List<Byte> getPreviousEpochParticipation() {
+  private MutableParticipation getPreviousEpochParticipation() {
     if (previousEpochParticipation == null) {
       previousEpochParticipation =
-          epochParticipationToMutableList(state.getPreviousEpochParticipation());
+          new MutableParticipation(
+              state.getPreviousEpochParticipation(), new Int2ByteOpenHashMap());
     }
     return previousEpochParticipation;
   }
 
-  private List<Byte> getEpochParticipation(final PooledAttestationWithRewardInfo attestation) {
+  private MutableParticipation getEpochParticipation(
+      final PooledAttestationWithRewardInfo attestation) {
     return attestation.isCurrentEpoch
         ? getCurrentEpochParticipation()
         : getPreviousEpochParticipation();
@@ -183,13 +183,13 @@ public class RewardBasedAttestationSorter {
       }
 
       // apply participation changes
-      final List<Byte> affectedParticipation = getEpochParticipation(bestAttestation);
+      final MutableParticipation affectedParticipation = getEpochParticipation(bestAttestation);
       if (bestAttestation.updatesEpochParticipation.isEmpty()) {
         // no changes to participation
         continue;
       }
 
-      bestAttestation.updatesEpochParticipation.forEach(affectedParticipation::set);
+      bestAttestation.updatesEpochParticipation.forEach(affectedParticipation::setParticipation);
 
       final List<PooledAttestationWithRewardInfo> toReAdd = new ArrayList<>();
 
@@ -207,13 +207,6 @@ public class RewardBasedAttestationSorter {
         attestationQueue.addAll(toReAdd);
       }
     }
-  }
-
-  private static List<Byte> epochParticipationToMutableList(
-      final SszList<SszByte> epochParticipation) {
-    return epochParticipation.stream()
-        .map(AbstractSszPrimitive::get)
-        .collect(Collectors.toCollection(ByteArrayList::new));
   }
 
   private final Int2ObjectOpenHashMap<UInt64> validatorBaseRewardCache =
@@ -245,7 +238,7 @@ public class RewardBasedAttestationSorter {
   }
 
   private void computeRewards(final PooledAttestationWithRewardInfo attestation) {
-    final List<Byte> epochParticipation = getEpochParticipation(attestation);
+    final MutableParticipation epochParticipation = getEpochParticipation(attestation);
     final Int2ByteOpenHashMap updatesEpochParticipation = new Int2ByteOpenHashMap();
 
     UInt64 proposerRewardNumerator = UInt64.ZERO;
@@ -253,7 +246,8 @@ public class RewardBasedAttestationSorter {
     for (final UInt64 attestingIndex :
         attestation.getAttestation().pooledAttestation().validatorIndices().orElseThrow()) {
       final int attestingIndexInt = attestingIndex.intValue();
-      final byte previousParticipationFlags = epochParticipation.get(attestingIndexInt);
+      final byte previousParticipationFlags =
+          epochParticipation.getParticipation(attestingIndexInt);
       byte newParticipationFlags = 0;
 
       final UInt64 baseReward = getValidatorBaseRewards(attestingIndexInt);
@@ -290,6 +284,19 @@ public class RewardBasedAttestationSorter {
 
     attestation.rewardNumerator = proposerRewardNumerator;
     attestation.updatesEpochParticipation = updatesEpochParticipation;
+  }
+
+  private record MutableParticipation(
+      SszList<SszByte> epochParticipation, Int2ByteOpenHashMap epochParticipationChanges) {
+
+    byte getParticipation(final int index) {
+      return epochParticipationChanges.getOrDefault(
+          index, epochParticipation.get(index).get().byteValue());
+    }
+
+    void setParticipation(final int index, final byte value) {
+      epochParticipationChanges.put(index, value);
+    }
   }
 
   public static class PooledAttestationWithRewardInfo {
