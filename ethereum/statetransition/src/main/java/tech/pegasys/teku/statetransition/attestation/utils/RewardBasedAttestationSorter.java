@@ -287,18 +287,19 @@ public class RewardBasedAttestationSorter {
   }
 
   private record MutableEpochParticipation(
-      SszList<SszByte> epochParticipation, Int2ByteOpenHashMap epochParticipationChanges) {
+      SszList<SszByte> epochParticipation, Int2ByteOpenHashMap epochParticipationCacheWithChanges) {
 
     static MutableEpochParticipation create(final SszList<SszByte> epochParticipation) {
       return new MutableEpochParticipation(epochParticipation, new Int2ByteOpenHashMap());
     }
 
     byte getParticipation(final int index) {
-      return epochParticipationChanges.computeIfAbsent(index, i -> epochParticipation.get(i).get());
+      return epochParticipationCacheWithChanges.computeIfAbsent(
+          index, i -> epochParticipation.get(i).get());
     }
 
     void setParticipation(final int index, final byte value) {
-      epochParticipationChanges.put(index, value);
+      epochParticipationCacheWithChanges.put(index, value);
     }
   }
 
