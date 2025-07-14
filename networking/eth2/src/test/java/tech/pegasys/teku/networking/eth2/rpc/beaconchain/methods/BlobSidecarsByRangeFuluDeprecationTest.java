@@ -257,7 +257,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
                 )
             .toList();
     UInt64 expectedSlots =
-        spec.blobSidecarsAvailabilityDeprecationSlot().min(startSlot.plus(count)).minus(startSlot);
+        spec.blobSidecarsDeprecationSlot().min(startSlot.plus(count)).minus(startSlot);
     when(combinedChainDataClient.getAncestorRoots(eq(startSlot), eq(expectedSlots), any()))
         .thenReturn(
             ImmutableSortedMap.of(

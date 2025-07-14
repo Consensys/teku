@@ -187,9 +187,7 @@ public class BlobSidecarsByRootMessageHandler
         .thenComposeChecked(
             maybeSlot -> {
               if (maybeSlot.isEmpty()
-                  || maybeSlot
-                      .get()
-                      .isGreaterThanOrEqualTo(spec.blobSidecarsAvailabilityDeprecationSlot())) {
+                  || maybeSlot.get().isGreaterThanOrEqualTo(spec.blobSidecarsDeprecationSlot())) {
                 return SafeFuture.completedFuture(Optional.empty());
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());

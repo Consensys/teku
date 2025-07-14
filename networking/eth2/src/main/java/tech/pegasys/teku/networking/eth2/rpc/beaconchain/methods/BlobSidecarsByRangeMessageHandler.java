@@ -108,7 +108,7 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   private UInt64 getEndSlotBeforeFulu(final UInt64 maxSlot) {
-    return spec.blobSidecarsAvailabilityDeprecationSlot().safeDecrement().min(maxSlot);
+    return spec.blobSidecarsDeprecationSlot().safeDecrement().min(maxSlot);
   }
 
   @Override
@@ -126,7 +126,7 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    if (startSlot.isGreaterThan(spec.blobSidecarsAvailabilityDeprecationSlot())) {
+    if (startSlot.isGreaterThan(spec.blobSidecarsDeprecationSlot())) {
       LOG.trace(
           "Peer {} requested {} slots of blob sidecars starting at slot {} after Fulu. BlobSidecarsByRange v1 is deprecated and the request will be ignored.",
           peer.getId(),
