@@ -453,7 +453,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
-                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
+                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning the Electra fork transition",
                     firstSupportedSlot,
                     startSlot);
                 final UInt64 updatedCount =
