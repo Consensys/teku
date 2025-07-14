@@ -19,13 +19,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -45,8 +46,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
-// TODO-fulu improve thread-safety: external calls are better to do outside of the synchronize block
-// to prevent potential dead locks (https://github.com/Consensys/teku/issues/9467)
 public class SimpleSidecarRetriever
     implements DataColumnSidecarRetriever, DataColumnPeerManager.PeerListener {
   private static final Logger LOG = LogManager.getLogger();
@@ -61,9 +60,9 @@ public class SimpleSidecarRetriever
   private final int maxRequestCount;
 
   private final Map<DataColumnSlotAndIdentifier, RetrieveRequest> pendingRequests =
-      new LinkedHashMap<>();
-  private final Map<UInt256, ConnectedPeer> connectedPeers = new HashMap<>();
-  private boolean started = false;
+      new ConcurrentHashMap<>();
+  private final Map<UInt256, ConnectedPeer> connectedPeers = new ConcurrentHashMap<>();
+  private final AtomicBoolean started = new AtomicBoolean(false);
   private final AtomicLong retrieveCounter = new AtomicLong();
   private final AtomicLong errorCounter = new AtomicLong();
 
@@ -90,29 +89,22 @@ public class SimpleSidecarRetriever
   }
 
   private void startIfNecessary() {
-    if (!started) {
-      started = true;
+    if (started.compareAndSet(false, true)) {
       asyncRunner.runWithFixedDelay(
           this::nextRound, roundPeriod, err -> LOG.debug("Unexpected error", err));
     }
   }
 
   @Override
-  public synchronized SafeFuture<DataColumnSidecar> retrieve(
-      final DataColumnSlotAndIdentifier columnId) {
-    final DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest =
-        peerSearcher.requestPeers(columnId.slot(), columnId.columnIndex());
-
-    final RetrieveRequest existingRequest = pendingRequests.get(columnId);
-    if (existingRequest == null) {
-      final RetrieveRequest request = new RetrieveRequest(columnId, peerSearchRequest);
-      pendingRequests.put(columnId, request);
-      startIfNecessary();
-      return request.result;
-    } else {
-      peerSearchRequest.dispose();
-      return existingRequest.result;
-    }
+  public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
+    final RetrieveRequest request =
+        pendingRequests.computeIfAbsent(
+            columnId,
+            __ ->
+                new RetrieveRequest(
+                    columnId, peerSearcher.requestPeers(columnId.slot(), columnId.columnIndex())));
+    startIfNecessary();
+    return request.result;
   }
 
   @Override
@@ -132,7 +124,7 @@ public class SimpleSidecarRetriever
     filteredRequests.forEach(requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar));
   }
 
-  private synchronized List<RequestMatch> matchRequestsAndPeers() {
+  private List<RequestMatch> matchRequestsAndPeers() {
     disposeCompletedRequests();
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()
@@ -188,17 +180,19 @@ public class SimpleSidecarRetriever
     }
   }
 
-  private synchronized void nextRound() {
+  private void nextRound() {
     final List<RequestMatch> matches = matchRequestsAndPeers();
     for (final RequestMatch match : matches) {
-      final SafeFuture<DataColumnSidecar> reqRespPromise =
-          reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
-      match.request().onPeerRequest(match.peer().nodeId);
-      match.request.activeRpcRequest =
-          new ActiveRequest(
-              reqRespPromise.whenComplete(
-                  (sidecar, err) -> reqRespCompleted(match.request, sidecar)),
-              match.peer);
+      if (match.request.activeRpcRequestSet.compareAndSet(false, true)) {
+        final SafeFuture<DataColumnSidecar> reqRespPromise =
+            reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
+        match.request().onPeerRequest(match.peer().nodeId);
+        match.request.activeRpcRequest =
+            new ActiveRequest(
+                reqRespPromise.whenComplete(
+                    (sidecar, err) -> reqRespCompleted(match.request, sidecar)),
+                match.peer);
+      }
     }
 
     final long activeRequestCount =
@@ -216,14 +210,13 @@ public class SimpleSidecarRetriever
   }
 
   @SuppressWarnings("unused")
-  private synchronized void reqRespCompleted(
+  private void reqRespCompleted(
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
-    if (maybeResult != null) {
-      pendingRequests.remove(request.columnId);
+    if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
       request.result.completeAsync(maybeResult, asyncRunner);
       request.peerSearchRequest.dispose();
       retrieveCounter.incrementAndGet();
-    } else {
+    } else if (request.activeRpcRequestSet.compareAndSet(true, false)) {
       request.activeRpcRequest = null;
       errorCounter.incrementAndGet();
     }
@@ -255,14 +248,14 @@ public class SimpleSidecarRetriever
   }
 
   @Override
-  public synchronized void peerConnected(final UInt256 nodeId) {
+  public void peerConnected(final UInt256 nodeId) {
     LOG.trace(
         "SimpleSidecarRetriever.peerConnected: {}", "0x..." + nodeId.toHexString().substring(58));
-    connectedPeers.put(nodeId, new ConnectedPeer(nodeId));
+    connectedPeers.computeIfAbsent(nodeId, __ -> new ConnectedPeer(nodeId));
   }
 
   @Override
-  public synchronized void peerDisconnected(final UInt256 nodeId) {
+  public void peerDisconnected(final UInt256 nodeId) {
     LOG.trace(
         "SimpleSidecarRetriever.peerDisconnected: {}",
         "0x..." + nodeId.toHexString().substring(58));
@@ -276,6 +269,7 @@ public class SimpleSidecarRetriever
     final DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
     final Map<UInt256, Integer> peerRequestCount = new HashMap<>();
+    final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
     volatile ActiveRequest activeRpcRequest = null;
 
     private RetrieveRequest(

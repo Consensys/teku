@@ -529,14 +529,15 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
       final V4MigratableSourceDao dao) {
     switch (key) {
-      case "FINALIZED_STATES_BY_SLOT":
-      case "SLOTS_BY_FINALIZED_STATE_ROOT":
-      case "SLOTS_BY_FINALIZED_ROOT":
+      case "FINALIZED_STATES_BY_SLOT",
+          "SLOTS_BY_FINALIZED_STATE_ROOT",
+          "SLOTS_BY_FINALIZED_ROOT" -> {
         return getEntityCountFromColumn(oldColumns.get(key), dao);
-      case "FINALIZED_BLOCKS_BY_SLOT":
+      }
+      case "FINALIZED_BLOCKS_BY_SLOT" -> {
         return getEntityCountFromColumn(oldColumns.get("SLOTS_BY_FINALIZED_ROOT"), dao);
-      default:
-        break;
+      }
+      default -> {}
     }
     return Optional.empty();
   }

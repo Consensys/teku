@@ -312,7 +312,7 @@ public class BesuNode extends Node {
     }
 
     public BesuNode.Config withJwtTokenAuthorization(final URL jwtFile) {
-      configMap.put("engine-jwt-disabled", Boolean.FALSE);
+      configMap.put("engine-jwt-disabled", false);
       configMap.put("engine-jwt-secret", JWT_SECRET_FILE_PATH);
       this.maybeJwtFile = Optional.of(jwtFile);
       return this;

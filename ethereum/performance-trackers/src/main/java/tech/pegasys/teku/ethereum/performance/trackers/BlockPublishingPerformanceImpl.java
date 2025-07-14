@@ -82,6 +82,11 @@ public class BlockPublishingPerformanceImpl implements BlockPublishingPerformanc
   }
 
   @Override
+  public void dataColumnSidecarsPublishingInitiated() {
+    performanceTracker.addEvent("data_column_sidecars_publishing_initiated");
+  }
+
+  @Override
   public void blockImportCompleted() {
     performanceTracker.addEvent("block_import_completed");
   }
