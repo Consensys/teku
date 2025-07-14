@@ -166,7 +166,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
-      final UInt256 nodeId, final UInt64 epoch, final int groupCount) {
+      final UInt256 nodeId, final int groupCount) {
     final List<UInt64> columns = computeCustodyColumnIndexes(nodeId, groupCount);
     return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
   }

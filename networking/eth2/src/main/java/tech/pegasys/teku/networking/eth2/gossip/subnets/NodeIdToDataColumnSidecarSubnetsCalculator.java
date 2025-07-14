@@ -37,14 +37,13 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
   /** Creates a calculator instance for the specific slot */
   private static NodeIdToDataColumnSidecarSubnetsCalculator createAtSlot(
       final SpecConfigFulu config, final MiscHelpers miscHelpers, final UInt64 currentSlot) {
-    UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
     SszBitvectorSchema<SszBitvector> bitvectorSchema =
         SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount());
     return (nodeId, groupCount) -> {
       List<UInt64> nodeSubnets =
           MiscHelpersFulu.required(miscHelpers)
               .computeDataColumnSidecarBackboneSubnets(
-                  nodeId, currentEpoch, groupCount.orElse(config.getCustodyRequirement()));
+                  nodeId, groupCount.orElse(config.getCustodyRequirement()));
       return Optional.of(
           bitvectorSchema.ofBits(nodeSubnets.stream().map(UInt64::intValue).toList()));
     };
