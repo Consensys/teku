@@ -74,6 +74,8 @@ class DiscoveryNetworkTest {
   private final List<Fork> forks = spec.getForkSchedule().getForks();
   private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   final ForkInfo currentForkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
+  final Bytes4 currentForkDigest =
+      spec.computeForkDigest(currentForkInfo.getFork().getCurrentVersion(), genesisValidatorsRoot);
   final Fork nextFork = forks.get(1);
 
   @SuppressWarnings("unchecked")
@@ -183,11 +185,11 @@ class DiscoveryNetworkTest {
   @Test
   public void setForkInfo_noFutureForkScheduled() {
     discoveryNetwork.setForkInfo(
-        currentForkInfo, Optional.empty(), Optional.empty(), Optional.empty());
+        currentForkInfo, currentForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
@@ -196,11 +198,14 @@ class DiscoveryNetworkTest {
   @Test
   public void setForkInfo_futureForkScheduled() {
     discoveryNetwork.setForkInfo(
-        currentForkInfo, Optional.of(nextFork), Optional.empty(), Optional.empty());
+        currentForkInfo,
+        currentForkDigest,
+        Optional.of(nextFork),
+        Optional.empty(),
+        Optional.empty());
 
     final EnrForkId expectedEnrForkId =
-        new EnrForkId(
-            currentForkInfo.getForkDigest(spec), nextFork.getCurrentVersion(), nextFork.getEpoch());
+        new EnrForkId(currentForkDigest, nextFork.getCurrentVersion(), nextFork.getEpoch());
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
   }
 
@@ -208,11 +213,11 @@ class DiscoveryNetworkTest {
   @SuppressWarnings("unchecked")
   public void setForkInfoShouldAddPredicateToConnectionManager() {
     discoveryNetwork.setForkInfo(
-        currentForkInfo, Optional.empty(), Optional.empty(), Optional.empty());
+        currentForkInfo, currentForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
@@ -225,8 +230,7 @@ class DiscoveryNetworkTest {
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer1)).isTrue();
 
     final EnrForkId newEnrForkId1 =
-        new EnrForkId(
-            currentForkInfo.getForkDigest(spec), Bytes4.fromHexString("0xdeadbeef"), UInt64.ZERO);
+        new EnrForkId(currentForkDigest, Bytes4.fromHexString("0xdeadbeef"), UInt64.ZERO);
     DiscoveryPeer peer2 = createDiscoveryPeer(Optional.of(newEnrForkId1));
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer2)).isTrue();
 
@@ -241,11 +245,11 @@ class DiscoveryNetworkTest {
   @SuppressWarnings("unchecked")
   public void shouldNotConnectToPeerWithNoEnrForkId() {
     discoveryNetwork.setForkInfo(
-        currentForkInfo, Optional.empty(), Optional.empty(), Optional.empty());
+        currentForkInfo, currentForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
@@ -263,7 +267,7 @@ class DiscoveryNetworkTest {
   public void shouldNotConnectToPeersWhenNodeHasNoEnrForkId() {
     final EnrForkId enrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =

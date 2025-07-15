@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
@@ -48,7 +49,7 @@ public class GossipForkSubscriptionsDenebTest {
     final GossipForkSubscriptionsDeneb gossipForkSubscriptions =
         spy(createGossipForkSubscriptionDeneb());
 
-    gossipForkSubscriptions.addGossipManagers(forkInfo());
+    gossipForkSubscriptions.addGossipManagers(forkInfo(), forkDigest());
 
     verify(gossipForkSubscriptions, times(10)).addGossipManager(any());
     verify(gossipForkSubscriptions, times(1)).addGossipManager(any(BlobSidecarGossipManager.class));
@@ -56,6 +57,10 @@ public class GossipForkSubscriptionsDenebTest {
 
   private ForkInfo forkInfo() {
     return new ForkInfo(fork, dataStructureUtil.randomBytes32());
+  }
+
+  private Bytes4 forkDigest() {
+    return dataStructureUtil.randomBytes4();
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

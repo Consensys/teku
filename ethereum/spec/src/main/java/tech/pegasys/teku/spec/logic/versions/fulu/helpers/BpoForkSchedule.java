@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -23,12 +24,12 @@ import java.util.TreeMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
-/** A helper class to navigate the BPO schedule in an efficient manner */
-public class BpoForkSchedule {
+/** A helper class to navigate the BPO fork schedule in an efficient manner */
+class BpoForkSchedule {
 
   private final NavigableMap<UInt64, BlobParameters> epochToBlobParameters = new TreeMap<>();
 
-  public BpoForkSchedule(final SpecConfigFulu specConfig) {
+  BpoForkSchedule(final SpecConfigFulu specConfig) {
     specConfig
         .getBlobSchedule()
         .forEach(
@@ -49,12 +50,12 @@ public class BpoForkSchedule {
 
   public Optional<Integer> getHighestMaxBlobsPerBlock() {
     return epochToBlobParameters.values().stream()
-        .max(Comparator.comparing(BlobParameters::maxBlobsPerBlock))
-        .map(BlobParameters::maxBlobsPerBlock);
+        .map(BlobParameters::maxBlobsPerBlock)
+        .max(Comparator.naturalOrder());
   }
 
   public Collection<BlobParameters> getBpoForks() {
-    return epochToBlobParameters.values();
+    return Collections.unmodifiableCollection(epochToBlobParameters.values());
   }
 
   @Override

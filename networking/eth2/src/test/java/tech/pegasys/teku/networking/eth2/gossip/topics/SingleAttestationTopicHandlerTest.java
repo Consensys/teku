@@ -47,6 +47,7 @@ public class SingleAttestationTopicHandlerTest
         processor,
         gossipEncoding,
         forkInfo,
+        forkDigest,
         GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
         spec.getGenesisSchemaDefinitions().getAttestationSchema(),
         SUBNET_ID,

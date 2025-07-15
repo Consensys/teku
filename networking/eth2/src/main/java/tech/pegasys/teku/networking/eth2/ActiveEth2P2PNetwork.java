@@ -83,6 +83,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private volatile Cancellable gossipUpdateTask;
   private ForkInfo currentForkInfo;
+  private Bytes4 currentForkDigest;
   private final boolean allTopicsFilterEnabled;
 
   public ActiveEth2P2PNetwork(
@@ -130,7 +131,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     }
     // Set the current fork info prior to discovery starting up.
     final ForkInfo currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
-    updateForkInfo(currentForkInfo);
+    final Bytes4 currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
+    updateForkInfo(currentForkInfo, currentForkDigest);
     return super.start().thenAccept(r -> startup());
   }
 
@@ -225,7 +227,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   private void setAllTopicScoring() {
-    LOG.debug("Update all topic scoring on digest {}", currentForkInfo.getForkDigest(spec));
+    LOG.debug("Update all topic scoring on digest {}", currentForkDigest);
     getEth2Context()
         .thenApply(gossipConfigurator::configureAllTopics)
         .thenAccept(discoveryNetwork::updateGossipTopicScoring)
@@ -241,8 +243,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private SafeFuture<Eth2Context> getEth2Context() {
     final ChainHead chainHead = recentChainData.getChainHead().orElseThrow();
-    final Bytes4 forkDigest =
-        recentChainData.getCurrentForkInfo().orElseThrow().getForkDigest(spec);
+    final Bytes4 forkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
@@ -316,8 +317,13 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     if (gossipStarted.get()) {
       gossipForkManager.configureGossipForEpoch(epoch);
     }
-
-    recentChainData.getForkInfo(epoch).ifPresent(this::updateForkInfo);
+    recentChainData
+        .getForkInfo(epoch)
+        .ifPresent(
+            forkInfo -> {
+              final Bytes4 forkDigest = recentChainData.getForkDigest(epoch);
+              updateForkInfo(forkInfo, forkDigest);
+            });
   }
 
   @Override
@@ -401,26 +407,31 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     return peerManager;
   }
 
-  private synchronized void updateForkInfo(final ForkInfo forkInfo) {
+  // TODO: fusaka-devnet-2 this is worth of refactoring
+  private synchronized void updateForkInfo(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     if (currentForkInfo != null
-        && (currentForkInfo.equals(forkInfo) || forkInfo.isPriorTo(currentForkInfo))) {
+        && (currentForkInfo.equals(forkInfo)
+            || forkInfo.isPriorTo(currentForkInfo)
+            || currentForkDigest.equals(forkDigest))) {
       return;
     }
 
     currentForkInfo = forkInfo;
+    currentForkDigest = forkDigest;
+
+    final Optional<BlobParameters> maybeBpoFork =
+        recentChainData.getBpoForkByForkDigest(forkDigest);
+
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-    // TODO: berlinterop-devnet-2 very hacky
-    final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
     final Optional<Bytes4> nextForkDigest =
-        recentChainData
-            .getBpoForkByForkDigest(forkDigest)
+        maybeBpoFork
             .flatMap(bpo -> recentChainData.getNextForkDigest(bpo.epoch()))
             .or(() -> recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch()));
     final Optional<BlobParameters> nextBpoFork =
-        recentChainData
-            .getBpoForkByForkDigest(forkDigest)
-            .flatMap(bpo -> spec.getNextBpoFork(bpo.epoch()));
-    discoveryNetwork.setForkInfo(forkInfo, nextFork, nextBpoFork, nextForkDigest);
+        maybeBpoFork
+            .flatMap(bpo -> spec.getNextBpoFork(bpo.epoch()))
+            .or(() -> spec.getNextBpoFork(forkInfo.getFork().getEpoch()));
+    discoveryNetwork.setForkInfo(forkInfo, forkDigest, nextFork, nextBpoFork, nextForkDigest);
   }
 
   @Override
