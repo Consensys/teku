@@ -381,7 +381,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         .whenComplete((result, error) -> timer.closeUnchecked().run())
         .thenAccept(
             blobAndCellProofsList -> {
-
               if (blobAndCellProofsList.isEmpty()) {
                 LOG.debug(
                     "Blobs for {} are not found on local EL, reconstruction is not possible",
@@ -390,18 +389,15 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
               }
 
               checkArgument(
-                      blobAndCellProofsList.size() == versionedHashes.size(),
-                      "Queried %s versionedHashed but got %s blobAndProofs",
-                      versionedHashes.size(),
-                      blobAndCellProofsList.size());
+                  blobAndCellProofsList.size() == versionedHashes.size(),
+                  "Queried %s versionedHashed but got %s blobAndProofs",
+                  versionedHashes.size(),
+                  blobAndCellProofsList.size());
 
               final List<BlobAndCellProofs> nonNullBlobAndCellProofsList =
-                  blobAndCellProofsList.stream()
-                      .filter(Objects::nonNull)
-                      .toList();
+                  blobAndCellProofsList.stream().filter(Objects::nonNull).toList();
 
               LOG.debug("Found {} blobs", nonNullBlobAndCellProofsList.size());
-
 
               getBlobsV2ResponsesCounter.inc();
               LOG.debug(
