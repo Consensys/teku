@@ -253,7 +253,7 @@ public abstract class KZGAbstractTest {
     final Throwable cause =
         assertThrows(
                 KZGException.class,
-                () -> kzg.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(filename)))
+                () -> kzg.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(filename), 0))
             .getCause();
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
   }
@@ -266,7 +266,7 @@ public abstract class KZGAbstractTest {
             KZGException.class,
             () ->
                 kzg.loadTrustedSetup(
-                    TrustedSetupLoader.getTrustedSetupFile("trusted_setup_monomial.txt")));
+                    TrustedSetupLoader.getTrustedSetupFile("trusted_setup_monomial.txt"), 0));
     assertThat(kzgException.getMessage()).contains("Failed to load trusted setup");
     assertThat(kzgException.getCause().getMessage())
         .contains("There was an error while loading the Trusted Setup. (C_KZG_BADARGS)");

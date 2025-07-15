@@ -80,6 +80,8 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_RUST_KZG_ENABLED = false;
 
+  public static final int DEFAULT_KZG_PRECOMPUTE = 0;
+
   // at least 5, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
       Math.max(5, Math.min(Runtime.getRuntime().availableProcessors(), 12));
@@ -125,6 +127,7 @@ public class Eth2NetworkConfiguration {
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
   private final boolean rustKzgEnabled;
+  private final int kzgPrecompute;
   private final boolean aggregatingAttestationPoolV2Enabled;
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
@@ -159,6 +162,7 @@ public class Eth2NetworkConfiguration {
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
       final boolean rustKzgEnabled,
+      final int kzgPrecompute,
       final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
@@ -195,6 +199,7 @@ public class Eth2NetworkConfiguration {
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
     this.rustKzgEnabled = rustKzgEnabled;
+    this.kzgPrecompute = kzgPrecompute;
     this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
     this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
     this.aggregatingAttestationPoolV2BlockAggregationTimeLimit =
@@ -343,6 +348,10 @@ public class Eth2NetworkConfiguration {
     return rustKzgEnabled;
   }
 
+  public int getKzgPrecompute() {
+    return kzgPrecompute;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -462,6 +471,7 @@ public class Eth2NetworkConfiguration {
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
     private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
+    private int kzgPrecompute = DEFAULT_KZG_PRECOMPUTE;
     private boolean strictConfigLoadingEnabled;
     private boolean aggregatingAttestationPoolV2Enabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
@@ -573,6 +583,7 @@ public class Eth2NetworkConfiguration {
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
+          kzgPrecompute,
           aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
@@ -817,6 +828,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
       this.rustKzgEnabled = rustKzgEnabled;
+      return this;
+    }
+
+    public Builder kzgPrecompute(final int kzgPrecompute) {
+      this.kzgPrecompute = kzgPrecompute;
       return this;
     }
 
