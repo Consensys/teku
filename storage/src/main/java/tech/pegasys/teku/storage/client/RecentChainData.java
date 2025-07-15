@@ -495,7 +495,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(
             bpoFork -> {
               final Fork fork = spec.getForkSchedule().getFork(epoch);
-              if (bpoFork.epoch().isLessThan(fork.getEpoch())) {
+              if (bpoFork.epoch().isGreaterThan(fork.getEpoch())) {
                 return getForkDigestByBpoFork(bpoFork);
               }
               return getForkDigestByMilestone(milestone);
@@ -515,12 +515,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 maybeNextFork
                     .flatMap(
                         nextFork -> {
-                          if (nextFork.getEpoch().isLessThan(nextBpoFork.epoch())) {
-                            final SpecMilestone milestone =
-                                spec.atEpoch(nextFork.getEpoch()).getMilestone();
-                            return getForkDigestByMilestone(milestone);
+                          if (nextBpoFork.epoch().isLessThan(nextFork.getEpoch())) {
+                            return getForkDigestByBpoFork(nextBpoFork);
                           }
-                          return getForkDigestByBpoFork(nextBpoFork);
+                          final SpecMilestone milestone =
+                              spec.atEpoch(nextFork.getEpoch()).getMilestone();
+                          return getForkDigestByMilestone(milestone);
                         })
                     .or(() -> getForkDigestByBpoFork(nextBpoFork)))
         // default to fork digest for the next hard fork
