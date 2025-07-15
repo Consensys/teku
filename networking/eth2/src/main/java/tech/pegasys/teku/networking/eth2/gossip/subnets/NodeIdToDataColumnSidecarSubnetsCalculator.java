@@ -41,10 +41,10 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
             .get()
             .flatMap(
                 slot -> {
-                  SpecVersion version = spec.atSlot(slot);
+                  final SpecVersion version = spec.atSlot(slot);
                   if (version.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                    SpecConfigFulu config = SpecConfigFulu.required(version.getConfig());
-                    List<UInt64> subnets =
+                    final SpecConfigFulu config = SpecConfigFulu.required(version.getConfig());
+                    final List<UInt64> subnets =
                         MiscHelpersFulu.required(version.miscHelpers())
                             .computeDataColumnSidecarBackboneSubnets(
                                 nodeId, groupCount.orElse(config.getCustodyRequirement()));
