@@ -256,6 +256,9 @@ public class AggregatingAttestationPoolV2Test extends AggregatingAttestationPool
         addAttestationFromValidators(attestationData1, 4, 5);
     final Attestation singleAttestation1 = addAttestationFromValidators(attestationData1, 6);
 
+    // the earliest slot we track is supposed to remain 1, so attestationData1 will be included
+    aggregatingPool.onAttestationsIncludedInBlock(UInt64.valueOf(2), List.of());
+
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState();
 
     assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
