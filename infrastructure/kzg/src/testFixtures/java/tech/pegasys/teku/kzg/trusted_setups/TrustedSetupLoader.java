@@ -23,7 +23,7 @@ public class TrustedSetupLoader {
   private static final String TEST_TRUSTED_SETUP = "trusted_setup.txt";
 
   public static void loadTrustedSetupForTests(final KZG kzg) throws KZGException {
-    kzg.loadTrustedSetup(getTrustedSetupFile(TEST_TRUSTED_SETUP));
+    kzg.loadTrustedSetup(getTrustedSetupFile(TEST_TRUSTED_SETUP), 0);
   }
 
   public static String getTrustedSetupFile(final String filename) {
