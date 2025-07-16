@@ -107,6 +107,18 @@ public class Eth2NetworkOptions {
   private boolean rustKzgEnabled = Eth2NetworkConfiguration.DEFAULT_RUST_KZG_ENABLED;
 
   @Option(
+      names = {"--Xkzg-precompute"},
+      paramLabel = "<INT>",
+      description =
+          "Configure KZG precompute value for PeerDAS performance optimization. Valid values range from 0 to 15. "
+              + "Higher values improve performance but use more memory. See the following for more information: "
+              + "https://github.com/ethereum/c-kzg-4844/blob/main/README.md#precompute",
+      arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private int kzgPrecompute = Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE;
+
+  @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allow late blocks to be reorged out if they meet the requirements.",
@@ -452,7 +464,8 @@ public class Eth2NetworkOptions {
             aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
-        .rustKzgEnabled(rustKzgEnabled);
+        .rustKzgEnabled(rustKzgEnabled)
+        .kzgPrecompute(kzgPrecompute);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);

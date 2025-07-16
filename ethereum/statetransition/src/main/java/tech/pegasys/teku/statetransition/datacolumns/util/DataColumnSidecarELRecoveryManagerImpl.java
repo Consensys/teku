@@ -259,7 +259,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     LOG.debug("Received block {} from {}", block.getSlotAndBlockRoot(), remoteOrigin);
     if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
-      LOG.debug("Received block {} before FULU. Ignoring.", block.getSlotAndBlockRoot());
+      LOG.debug("Received block {} before Fulu. Ignoring.", block.getSlotAndBlockRoot());
       return;
     }
     if (recentChainData.containsBlock(block.getRoot())) {

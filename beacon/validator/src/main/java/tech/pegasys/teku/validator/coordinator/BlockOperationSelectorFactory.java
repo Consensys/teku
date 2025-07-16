@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
 
 import java.util.HashSet;
@@ -729,7 +730,10 @@ public class BlockOperationSelectorFactory {
         blobsCellBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
         "Commitments in the builder BlobsCellBundle don't match the commitments in the block");
     checkState(
-        blockCommitments.size() == blobsCellBundle.getBlobs().size(),
+        blobsCellBundle.getProofs().size() == blockCommitments.size() * CELLS_PER_EXT_BLOB,
+        "The number of proofs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
+    checkState(
+        blobsCellBundle.getBlobs().size() == blockCommitments.size(),
         "The number of blobs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
   }
 }

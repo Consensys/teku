@@ -99,7 +99,7 @@ public class DataColumnSidecarsByRootMessageHandler
             "Total number of data column sidecars requested in accepted data column sidecars by root requests from peers");
   }
 
-  private SafeFuture<Boolean> validateAndSendMaybeRespond(
+  private SafeFuture<Boolean> validateAndMaybeRespond(
       final DataColumnIdentifier identifier,
       final Optional<DataColumnSidecar> maybeSidecar,
       final ResponseCallback<DataColumnSidecar> callback) {
@@ -174,7 +174,7 @@ public class DataColumnSidecarsByRootMessageHandler
                     retrieveDataColumnSidecar(dataColumnIdentifier)
                         .thenCompose(
                             maybeSidecar ->
-                                validateAndSendMaybeRespond(
+                                validateAndMaybeRespond(
                                     dataColumnIdentifier,
                                     maybeSidecar,
                                     responseCallbackWithLogging)));

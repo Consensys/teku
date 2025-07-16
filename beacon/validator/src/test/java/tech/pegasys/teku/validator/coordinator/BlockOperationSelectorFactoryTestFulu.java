@@ -398,8 +398,9 @@ class BlockOperationSelectorFactoryTestFulu {
                 factory
                     .createDataColumnSidecarsSelector(NoOpKZG.INSTANCE)
                     .apply(signedBlindedBeaconBlock))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Expected 128 proofs but got 3");
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "The number of proofs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
   }
 
   @ParameterizedTest

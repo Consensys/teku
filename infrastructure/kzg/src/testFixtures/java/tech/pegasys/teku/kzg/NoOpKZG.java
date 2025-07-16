@@ -22,7 +22,8 @@ public class NoOpKZG implements KZG {
   public static final NoOpKZG INSTANCE = new NoOpKZG();
 
   @Override
-  public void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
+  public void loadTrustedSetup(final String trustedSetupFile, final int kzgPrecompute)
+      throws KZGException {
     // DO NOTHING
   }
 
