@@ -77,7 +77,7 @@ public class BlobSidecarReconstructionProvider {
           final List<DataColumnSlotAndIdentifier> requiredIdentifiers =
               Stream.iterate(
                       UInt64.ZERO,
-                      // We need first 50% for reconstruction
+                      // We need the first 50% for reconstruction
                       index -> index.isLessThan(spec.getNumberOfDataColumns().orElseThrow() / 2),
                       UInt64::increment)
                   .map(
@@ -87,6 +87,7 @@ public class BlobSidecarReconstructionProvider {
                   .toList();
           if (requiredIdentifiers.stream()
               .anyMatch(identifier -> !dbIdentifiers.contains(identifier))) {
+              // We do not have the data columns required for reconstruction
             return SafeFuture.completedFuture(emptyList());
           }
           return reconstructBlobSidecarsForIdentifiers(requiredIdentifiers, blobIndices);
@@ -100,7 +101,7 @@ public class BlobSidecarReconstructionProvider {
         .thenCompose(
             sidecarOptionals -> {
               if (sidecarOptionals.stream().anyMatch(Optional::isEmpty)) {
-                // Will not be able to reconstruct if somehow we got a gap
+                // We will not be able to reconstruct if there is a gap
                 return SafeFuture.completedFuture(emptyList());
               }
               final List<DataColumnSidecar> dataColumnSidecars =
@@ -162,6 +163,7 @@ public class BlobSidecarReconstructionProvider {
         signedBeaconBlock,
         UInt64.valueOf(blobIndex),
         schemaDefinitionsDeneb.getBlobSchema().create(blobBytes),
+        // The blob proof is not necessary; only cell proofs matter now
         new SszKZGProof(KZGProof.ZERO));
   }
 }
