@@ -78,7 +78,7 @@ public class BlobSidecarReconstructionProvider {
               Stream.iterate(
                       UInt64.ZERO,
                       // We need first 50% for reconstruction
-                      slot -> slot.isLessThan(spec.getNumberOfDataColumns().orElseThrow() / 2),
+                      index -> index.isLessThan(spec.getNumberOfDataColumns().orElseThrow() / 2),
                       UInt64::increment)
                   .map(
                       index ->
