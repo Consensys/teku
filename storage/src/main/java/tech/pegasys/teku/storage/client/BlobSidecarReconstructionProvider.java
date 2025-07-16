@@ -87,7 +87,7 @@ public class BlobSidecarReconstructionProvider {
                   .toList();
           if (requiredIdentifiers.stream()
               .anyMatch(identifier -> !dbIdentifiers.contains(identifier))) {
-              // We do not have the data columns required for reconstruction
+            // We do not have the data columns required for reconstruction
             return SafeFuture.completedFuture(emptyList());
           }
           return reconstructBlobSidecarsForIdentifiers(requiredIdentifiers, blobIndices);
