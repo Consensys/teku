@@ -114,7 +114,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
           final Set<DataColumnSlotAndIdentifier> columnsInCustody =
               new HashSet<>(columnsInCustodyList);
 
-          final Set<DataColumnSlotAndIdentifier> missingColumn =
+          final Set<DataColumnSlotAndIdentifier> missingColumns =
               Sets.difference(requiredColumnIdentifiers, columnsInCustody);
 
           if (LOG.isDebugEnabled()) {
@@ -134,7 +134,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
           }
 
           final SafeFuture<List<DataColumnSidecar>> columnsRetrievedFuture =
-              SafeFuture.collectAll(missingColumn.stream().map(retriever::retrieve))
+              SafeFuture.collectAll(missingColumns.stream().map(retriever::retrieve))
                   .thenPeek(
                       retrievedColumns -> {
                         if (!retrievedColumns.isEmpty()) {
