@@ -23,6 +23,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class ForkDigestRpcContextCodec<TPayload extends SszData>
@@ -50,7 +51,8 @@ class ForkDigestRpcContextCodec<TPayload extends SszData>
     final UInt64 epoch =
         spec.computeEpochAtSlot(payloadContext.getSlotFromPayload(responsePayload));
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(epoch);
-    return recentChainData.getForkDigest(milestone, epoch).getWrappedBytes();
+    final Optional<BlobParameters> maybeBpoFork = spec.getBpoFork(epoch);
+    return recentChainData.getForkDigest(milestone, maybeBpoFork).getWrappedBytes();
   }
 
   @Override
