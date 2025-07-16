@@ -114,7 +114,7 @@ class SpecConfigBuilderTest {
   }
 
   @Test
-  @Disabled("There is no non-active config at the moment, revisit this when we add FULU")
+  @Disabled("There is no non-active config at the moment, revisit this when we add Fulu")
   public void shouldCreateSpecExposingNonActiveConfig() {
     final Spec spec = getSpec(__ -> {});
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
