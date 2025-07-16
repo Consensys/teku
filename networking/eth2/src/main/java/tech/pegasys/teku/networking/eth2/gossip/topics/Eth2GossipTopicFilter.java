@@ -67,7 +67,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
         .forEach(
             futureFork -> {
               final SpecMilestone futureMilestone =
-                  spec.atEpoch(futureFork.getEpoch()).getMilestone();
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(futureFork.getEpoch());
               final Bytes4 futureForkDigest =
                   recentChainData.getForkDigestByMilestone(futureMilestone).orElseThrow();
               topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));
@@ -78,7 +78,7 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
         .forEach(
             futureBpoFork -> {
               final SpecMilestone futureMilestone =
-                  spec.atEpoch(futureBpoFork.epoch()).getMilestone();
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(futureBpoFork.epoch());
               final Bytes4 futureForkDigest =
                   recentChainData.getForkDigestByBpoFork(futureBpoFork).orElseThrow();
               topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));

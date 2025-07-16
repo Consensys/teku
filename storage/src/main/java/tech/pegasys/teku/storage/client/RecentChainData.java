@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -272,16 +273,18 @@ public abstract class RecentChainData implements StoreUpdateHandler {
               final Bytes4 forkDigest =
                   spec.computeForkDigest(
                       genesisValidatorsRoot, forkAndMilestone.getFork().getEpoch());
-              this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
-              this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
+              final SpecMilestone milestone = forkAndMilestone.getSpecMilestone();
+              this.forkDigestToMilestone.put(forkDigest, milestone);
+              this.milestoneToForkDigest.put(milestone, forkDigest);
             });
     // BPO
     spec.getBpoForks()
         .forEach(
             blobParameters -> {
-              final SpecMilestone milestone = spec.atEpoch(blobParameters.epoch()).getMilestone();
               final Bytes4 forkDigest =
                   spec.computeForkDigest(genesisValidatorsRoot, blobParameters.epoch());
+              final SpecMilestone milestone =
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(blobParameters.epoch());
               this.forkDigestToMilestone.put(forkDigest, milestone);
               this.bpoForkToForkDigest.put(blobParameters, forkDigest);
               this.forkDigestToBpoFork.put(forkDigest, blobParameters);
@@ -488,8 +491,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
 
-  public Bytes4 getForkDigest(final UInt64 epoch) {
-    final SpecMilestone milestone = spec.atEpoch(epoch).getMilestone();
+  public Bytes4 getForkDigest(final SpecMilestone milestone, final UInt64 epoch) {
     return spec.getBpoFork(epoch)
         // either fork digest for the BPO fork or for the hard fork
         .flatMap(
@@ -503,7 +505,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         // default to fork digest for the hard fork
         .or(() -> getForkDigestByMilestone(milestone))
         .orElseThrow(
-            () -> new IllegalStateException("Fork digest hasn't been computed for epoch " + epoch));
+            () ->
+                new NoSuchElementException("Fork digest hasn't been computed for epoch " + epoch));
+  }
+
+  public Bytes4 getForkDigest(final UInt64 epoch) {
+    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(epoch);
+    return getForkDigest(milestone, epoch);
   }
 
   public Optional<Bytes4> getNextForkDigest(final UInt64 epoch) {
@@ -519,7 +527,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                             return getForkDigestByBpoFork(nextBpoFork);
                           }
                           final SpecMilestone milestone =
-                              spec.atEpoch(nextFork.getEpoch()).getMilestone();
+                              spec.getForkSchedule().getSpecMilestoneAtEpoch(nextFork.getEpoch());
                           return getForkDigestByMilestone(milestone);
                         })
                     .or(() -> getForkDigestByBpoFork(nextBpoFork)))
@@ -529,7 +537,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 maybeNextFork.flatMap(
                     nextFork -> {
                       final SpecMilestone milestone =
-                          spec.atEpoch(nextFork.getEpoch()).getMilestone();
+                          spec.getForkSchedule().getSpecMilestoneAtEpoch(nextFork.getEpoch());
                       return getForkDigestByMilestone(milestone);
                     }));
   }
