@@ -51,7 +51,7 @@ public class BlobSidecarReconstructionProvider {
   }
 
   public SafeFuture<List<BlobSidecar>> reconstructBlobSidecars(
-      final UInt64 slot, final List<UInt64> indices) {
+      final UInt64 slot, final List<UInt64> blobIndices) {
     return combinedChainDataClient
         .getBlockAtSlotExact(slot)
         .thenCompose(
@@ -59,12 +59,12 @@ public class BlobSidecarReconstructionProvider {
               if (maybeBlock.isEmpty()) {
                 return SafeFuture.completedFuture(emptyList());
               }
-              return reconstructBlobSidecars(maybeBlock.get().getSlotAndBlockRoot(), indices);
+              return reconstructBlobSidecars(maybeBlock.get().getSlotAndBlockRoot(), blobIndices);
             });
   }
 
   public SafeFuture<List<BlobSidecar>> reconstructBlobSidecars(
-      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> blobIndices) {
     final SafeFuture<List<DataColumnSlotAndIdentifier>> dataColumnIdentifiersFuture =
         combinedChainDataClient.getDataColumnIdentifiers(slotAndBlockRoot.getSlot());
     return dataColumnIdentifiersFuture.thenCompose(
@@ -89,12 +89,12 @@ public class BlobSidecarReconstructionProvider {
               .anyMatch(identifier -> !dbIdentifiers.contains(identifier))) {
             return SafeFuture.completedFuture(emptyList());
           }
-          return reconstructBlobSidecarsForIdentifiers(requiredIdentifiers, indices);
+          return reconstructBlobSidecarsForIdentifiers(requiredIdentifiers, blobIndices);
         });
   }
 
   private SafeFuture<List<BlobSidecar>> reconstructBlobSidecarsForIdentifiers(
-      final List<DataColumnSlotAndIdentifier> slotAndIdentifiers, final List<UInt64> indices) {
+      final List<DataColumnSlotAndIdentifier> slotAndIdentifiers, final List<UInt64> blobIndices) {
     return SafeFuture.collectAll(
             slotAndIdentifiers.stream().map(combinedChainDataClient::getSidecar))
         .thenCompose(
@@ -115,7 +115,7 @@ public class BlobSidecarReconstructionProvider {
                           .map(
                               block ->
                                   reconstructBlobSidecarsFromDataColumns(
-                                      dataColumnSidecars, block, indices))
+                                      dataColumnSidecars, block, blobIndices))
                           .orElse(emptyList()));
             });
   }
@@ -123,7 +123,7 @@ public class BlobSidecarReconstructionProvider {
   private List<BlobSidecar> reconstructBlobSidecarsFromDataColumns(
       final List<DataColumnSidecar> dataColumnSidecars,
       final SignedBeaconBlock signedBeaconBlock,
-      final List<UInt64> indices) {
+      final List<UInt64> blobIndices) {
     if (dataColumnSidecars.isEmpty()) {
       return emptyList();
     }
@@ -135,7 +135,7 @@ public class BlobSidecarReconstructionProvider {
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
 
     return IntStream.range(0, dataColumnSidecars.getFirst().getSszKZGCommitments().size())
-        .filter(index -> indices.isEmpty() || indices.contains(UInt64.valueOf(index)))
+        .filter(index -> blobIndices.isEmpty() || blobIndices.contains(UInt64.valueOf(index)))
         .mapToObj(
             blobIndex ->
                 constructBlobSidecar(
