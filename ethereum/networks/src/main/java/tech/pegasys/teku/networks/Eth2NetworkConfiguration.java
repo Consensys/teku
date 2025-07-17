@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -128,6 +129,7 @@ public class Eth2NetworkConfiguration {
   private final int pendingAttestationsMaxQueue;
   private final boolean rustKzgEnabled;
   private final int kzgPrecompute;
+  private final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis;
   private final boolean aggregatingAttestationPoolV2Enabled;
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
@@ -163,6 +165,7 @@ public class Eth2NetworkConfiguration {
       final int pendingAttestationsMaxQueue,
       final boolean rustKzgEnabled,
       final int kzgPrecompute,
+      final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis,
       final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
@@ -200,6 +203,7 @@ public class Eth2NetworkConfiguration {
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
     this.rustKzgEnabled = rustKzgEnabled;
     this.kzgPrecompute = kzgPrecompute;
+    this.dataColumnSidecarRecoveryMaxDelayMillis = dataColumnSidecarRecoveryMaxDelayMillis;
     this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
     this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
     this.aggregatingAttestationPoolV2BlockAggregationTimeLimit =
@@ -352,6 +356,10 @@ public class Eth2NetworkConfiguration {
     return kzgPrecompute;
   }
 
+  public OptionalLong getDataColumnSidecarRecoveryMaxDelayMillis() {
+    return dataColumnSidecarRecoveryMaxDelayMillis;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -472,6 +480,7 @@ public class Eth2NetworkConfiguration {
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
     private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
     private int kzgPrecompute = DEFAULT_KZG_PRECOMPUTE;
+    private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
     private boolean strictConfigLoadingEnabled;
     private boolean aggregatingAttestationPoolV2Enabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
@@ -584,6 +593,7 @@ public class Eth2NetworkConfiguration {
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
           kzgPrecompute,
+          dataColumnSidecarRecoveryMaxDelayMillis,
           aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
@@ -833,6 +843,13 @@ public class Eth2NetworkConfiguration {
 
     public Builder kzgPrecompute(final int kzgPrecompute) {
       this.kzgPrecompute = kzgPrecompute;
+      return this;
+    }
+
+    public Builder dataColumnSidecarRecoveryMaxDelayMillis(
+        final Long dataColumnSidecarRecoveryMaxDelayMillis) {
+      this.dataColumnSidecarRecoveryMaxDelayMillis =
+          OptionalLong.of(dataColumnSidecarRecoveryMaxDelayMillis);
       return this;
     }
 
