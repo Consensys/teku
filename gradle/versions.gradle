@@ -62,12 +62,12 @@ dependencyManagement {
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.2.2.Final') {
+    dependencySet(group: 'io.netty', version: '4.2.3.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
 
-    dependencySet(group: 'io.vertx', version: '4.5.14') {
+    dependencySet(group: 'io.vertx', version: '4.5.16') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
