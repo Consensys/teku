@@ -775,7 +775,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
     eventChannels
         .getPublisher(CustodyGroupCountChannel.class)
-        .onCustodyGroupCountUpdate(totalMyCustodyGroups);
+        .onGroupCountUpdate(
+            totalMyCustodyGroups,
+            Math.max(totalMyCustodyGroups, specConfigFulu.getSamplesPerSlot()));
 
     final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
@@ -883,8 +885,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             Duration.ofSeconds(30),
             timeProvider,
             specConfigFulu.getNumberOfColumns());
-    dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
-        (sidecar, remoteOrigin) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        (dataColumnSidecar, remoteOrigin) ->
+            recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
     blockManager.subscribePreImportBlocks(
         (block, remoteOrigin) -> dataColumnSidecarCustody.onNewBlock(block, remoteOrigin));
     final DasCustodySync svc =
@@ -1291,14 +1294,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return;
     }
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
+    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
     DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
             spec,
             p2pNetwork,
             nodeId,
-            beaconConfig
-                .p2pConfig()
-                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
+            Math.max(
+                beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu),
+                SpecConfigFulu.required(specVersionFulu.getConfig()).getSamplesPerSlot()));
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
     eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);
