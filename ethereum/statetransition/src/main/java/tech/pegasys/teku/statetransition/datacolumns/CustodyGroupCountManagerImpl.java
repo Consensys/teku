@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -171,14 +172,14 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
                             final int genesisValidatorCount =
                                 maybeGenesisState.get().getValidators().size();
                             if (genesisValidatorCount > 0) {
-                              // Calculate custody group count based on genesis validators
+                              // Calculate custody group count based on total effective balance of all genesis validators
                               final int custodyGroupCountFromGenesis =
-                                  calculateCustodyGroupCountFromValidatorCount(genesisValidatorCount);
+                                  calculateCustodyGroupCountFromGenesisState(maybeGenesisState.get());
                               final int updatedCustodyGroupCount =
                                   Math.max(custodyGroupCountFromGenesis, initCustodyGroupCount);
                               updateCustodyGroupCount(updatedCustodyGroupCount);
                               LOG.info(
-                                  "Updated custody group count to {} based on {} genesis validators",
+                                  "Updated custody group count to {} based on {} genesis validators (total effective balance based)",
                                   updatedCustodyGroupCount,
                                   genesisValidatorCount);
                             }
@@ -190,16 +191,21 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
             });
   }
 
-  private int calculateCustodyGroupCountFromValidatorCount(final int validatorCount) {
-    // This is a simplified calculation - in practice, you might want to use
-    // the actual effective balance and the same logic as getValidatorsCustodyRequirement
-    // but for genesis, we can use the validator count as a proxy
+  private int calculateCustodyGroupCountFromGenesisState(final BeaconState genesisState) {
+    // Calculate total effective balance of all validators in genesis state
+    final UInt64 totalEffectiveBalance =
+        genesisState.getValidators().stream()
+            .map(validator -> validator.getEffectiveBalance())
+            .reduce(UInt64.ZERO, UInt64::plus);
+    
+    // Use the same logic as getValidatorsCustodyRequirement but for total network balance
     final UInt64 custodyRequirement =
-        UInt64.valueOf(validatorCount)
-            .dividedBy(specConfigFulu.getBalancePerAdditionalCustodyGroup().dividedBy(UInt64.valueOf(32)))
-            .max(specConfigFulu.getValidatorCustodyRequirement())
-            .min(specConfigFulu.getNumberOfCustodyGroups());
-    return custodyRequirement.intValue();
+        totalEffectiveBalance.dividedBy(specConfigFulu.getBalancePerAdditionalCustodyGroup());
+    
+    return custodyRequirement
+        .max(specConfigFulu.getValidatorCustodyRequirement())
+        .min(specConfigFulu.getNumberOfCustodyGroups())
+        .intValue();
   }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
