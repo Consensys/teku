@@ -50,6 +50,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final SettableGauge custodyGroupSyncedCountGauge;
 
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
+  private boolean hasProcessedGenesisTransition = false;
 
   public CustodyGroupCountManagerImpl(
       final Spec spec,
@@ -104,6 +105,11 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       return;
     }
 
+    // Check if we need to handle genesis transition
+    if (!hasProcessedGenesisTransition) {
+      checkAndHandleGenesisTransition();
+    }
+
     combinedChainDataClient
         .getBestFinalizedState()
         .thenAccept(
@@ -146,6 +152,54 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     LOG.debug("Synced custody group count updated to {}.", custodyGroupSyncedCount);
     custodyGroupCountChannel.onCustodyGroupCountSynced(custodyGroupSyncedCount);
     custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
+  }
+
+  private void checkAndHandleGenesisTransition() {
+    combinedChainDataClient
+        .getLatestFinalized()
+        .ifPresent(
+            finalizedAnchor -> {
+              // Check if we've moved beyond genesis epoch (epoch 0)
+              if (finalizedAnchor.getEpoch().isGreaterThan(UInt64.ZERO)) {
+                // We've finalized beyond genesis, now get the genesis state to count validators
+                final UInt64 genesisSlot = spec.computeStartSlotAtEpoch(UInt64.ZERO);
+                combinedChainDataClient
+                    .getStateAtSlotExact(genesisSlot)
+                    .thenAccept(
+                        maybeGenesisState -> {
+                          if (maybeGenesisState.isPresent()) {
+                            final int genesisValidatorCount =
+                                maybeGenesisState.get().getValidators().size();
+                            if (genesisValidatorCount > 0) {
+                              // Calculate custody group count based on genesis validators
+                              final int custodyGroupCountFromGenesis =
+                                  calculateCustodyGroupCountFromValidatorCount(genesisValidatorCount);
+                              final int updatedCustodyGroupCount =
+                                  Math.max(custodyGroupCountFromGenesis, initCustodyGroupCount);
+                              updateCustodyGroupCount(updatedCustodyGroupCount);
+                              LOG.info(
+                                  "Updated custody group count to {} based on {} genesis validators",
+                                  updatedCustodyGroupCount,
+                                  genesisValidatorCount);
+                            }
+                          }
+                          hasProcessedGenesisTransition = true;
+                        })
+                    .ifExceptionGetsHereRaiseABug();
+              }
+            });
+  }
+
+  private int calculateCustodyGroupCountFromValidatorCount(final int validatorCount) {
+    // This is a simplified calculation - in practice, you might want to use
+    // the actual effective balance and the same logic as getValidatorsCustodyRequirement
+    // but for genesis, we can use the validator count as a proxy
+    final UInt64 custodyRequirement =
+        UInt64.valueOf(validatorCount)
+            .dividedBy(specConfigFulu.getBalancePerAdditionalCustodyGroup().dividedBy(UInt64.valueOf(32)))
+            .max(specConfigFulu.getValidatorCustodyRequirement())
+            .min(specConfigFulu.getNumberOfCustodyGroups());
+    return custodyRequirement.intValue();
   }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
