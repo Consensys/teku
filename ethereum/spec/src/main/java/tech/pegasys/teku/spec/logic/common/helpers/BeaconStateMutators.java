@@ -225,7 +225,7 @@ public class BeaconStateMutators {
 
   /**
    * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#deposits">add_validator_to_registry</a>
+   * href="https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/beacon-chain.md#deposits">add_validator_to_registry</a>
    */
   public void addValidatorToRegistry(
       final MutableBeaconState state,

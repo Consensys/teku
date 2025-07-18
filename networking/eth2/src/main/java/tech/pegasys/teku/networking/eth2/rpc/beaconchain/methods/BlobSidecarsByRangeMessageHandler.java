@@ -49,7 +49,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#blobsidecarsbyrange-v1">BlobSidecarsByRange
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/p2p-interface.md#blobsidecarsbyrange-v1">BlobSidecarsByRange
  * v1</a>
  */
 public class BlobSidecarsByRangeMessageHandler

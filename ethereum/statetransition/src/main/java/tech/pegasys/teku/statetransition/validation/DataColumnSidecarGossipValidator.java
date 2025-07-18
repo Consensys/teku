@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 /**
  * This class supposed to implement gossip validation rules as per <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id">spec</a>
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id">spec</a>
  */
 public class DataColumnSidecarGossipValidator {
   private static final Logger LOG = LogManager.getLogger();

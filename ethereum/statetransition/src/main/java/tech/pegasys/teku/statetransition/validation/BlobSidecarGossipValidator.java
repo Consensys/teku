@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 /**
  * This class supposed to implement gossip validation rules as per <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#the-gossip-domain-gossipsub">spec</a>
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/p2p-interface.md#the-gossip-domain-gossipsub">spec</a>
  */
 public class BlobSidecarGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
