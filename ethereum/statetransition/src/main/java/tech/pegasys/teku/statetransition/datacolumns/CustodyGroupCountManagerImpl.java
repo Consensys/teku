@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -108,7 +109,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
     // Check if we need to handle genesis transition
     if (!hasProcessedGenesisTransition) {
-      checkAndHandleGenesisTransition();
+      checkAndHandleGenesisTransition(preparedProposerInfo.keySet());
     }
 
     combinedChainDataClient
@@ -155,7 +156,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
   }
 
-  private void checkAndHandleGenesisTransition() {
+  private void checkAndHandleGenesisTransition(final Set<UInt64> nodeValidatorIndices) {
     combinedChainDataClient
         .getLatestFinalized()
         .ifPresent(
@@ -169,19 +170,18 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
                     .thenAccept(
                         maybeGenesisState -> {
                           if (maybeGenesisState.isPresent()) {
-                            final int genesisValidatorCount =
-                                maybeGenesisState.get().getValidators().size();
-                            if (genesisValidatorCount > 0) {
-                              // Calculate custody group count based on total effective balance of all genesis validators
+                            if (!nodeValidatorIndices.isEmpty()) {
+                              // Calculate custody group count based on THIS node's validators effective balance
                               final int custodyGroupCountFromGenesis =
-                                  calculateCustodyGroupCountFromGenesisState(maybeGenesisState.get());
+                                  miscHelpersFulu.getValidatorsCustodyRequirement(
+                                      maybeGenesisState.get(), nodeValidatorIndices).intValue();
                               final int updatedCustodyGroupCount =
                                   Math.max(custodyGroupCountFromGenesis, initCustodyGroupCount);
                               updateCustodyGroupCount(updatedCustodyGroupCount);
                               LOG.info(
-                                  "Updated custody group count to {} based on {} genesis validators (total effective balance based)",
+                                  "Updated custody group count to {} based on {} node validators from genesis state",
                                   updatedCustodyGroupCount,
-                                  genesisValidatorCount);
+                                  nodeValidatorIndices.size());
                             }
                           }
                           hasProcessedGenesisTransition = true;
@@ -191,22 +191,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
             });
   }
 
-  private int calculateCustodyGroupCountFromGenesisState(final BeaconState genesisState) {
-    // Calculate total effective balance of all validators in genesis state
-    final UInt64 totalEffectiveBalance =
-        genesisState.getValidators().stream()
-            .map(validator -> validator.getEffectiveBalance())
-            .reduce(UInt64.ZERO, UInt64::plus);
-    
-    // Use the same logic as getValidatorsCustodyRequirement but for total network balance
-    final UInt64 custodyRequirement =
-        totalEffectiveBalance.dividedBy(specConfigFulu.getBalancePerAdditionalCustodyGroup());
-    
-    return custodyRequirement
-        .max(specConfigFulu.getValidatorCustodyRequirement())
-        .min(specConfigFulu.getNumberOfCustodyGroups())
-        .intValue();
-  }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
     if (!lastEpoch.equals(epoch)) {
@@ -222,6 +206,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       LOG.debug(
           "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
       custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount);
+      custodyGroupCountChannel.onCustodyGroupCountSynced(newCustodyGroupCount);
       custodyGroupCountGauge.set(newCustodyGroupCount);
     }
   }
