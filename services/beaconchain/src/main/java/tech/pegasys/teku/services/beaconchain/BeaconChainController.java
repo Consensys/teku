@@ -820,7 +820,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyGroupCountManagerLateInit,
             specConfigFulu.getNumberOfColumns(),
             specConfigFulu.getNumberOfCustodyGroups(),
-            slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
+            slot -> {
+              final long dataColumnSidecarRecoveryMaxDelayMillis =
+                  beaconConfig
+                      .eth2NetworkConfig()
+                      .getDataColumnSidecarRecoveryMaxDelayMillis()
+                      .orElse(spec.getMillisPerSlot(slot).dividedBy(3).longValue());
+              return Duration.ofMillis(dataColumnSidecarRecoveryMaxDelayMillis);
+            },
             metricsSystem,
             timeProvider);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
