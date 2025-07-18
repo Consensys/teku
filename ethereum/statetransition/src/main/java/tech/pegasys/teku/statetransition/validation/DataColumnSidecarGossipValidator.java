@@ -362,6 +362,16 @@ public class DataColumnSidecarGossipValidator {
   private SafeFuture<InternalValidationResult> validateDataColumnSidecarWithKnownValidHeader(
       final DataColumnSidecar dataColumnSidecar, final BeaconBlockHeader blockHeader) {
 
+    // This can be changed between two received DataColumnSidecars from one block, so checking
+    /*
+     * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
+     */
+    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+            blockHeader.getSlot(), blockHeader.getParentRoot())) {
+      return completedFuture(
+              reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
+    }
+
     /*
      * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
      */
@@ -379,16 +389,6 @@ public class DataColumnSidecarGossipValidator {
       }
     } catch (final Throwable t) {
       return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
-    }
-
-    // This can be changed between two received DataColumnSidecars from one block, so checking
-    /*
-     * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
-     */
-    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
-        blockHeader.getSlot(), blockHeader.getParentRoot())) {
-      return completedFuture(
-          reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
     }
 
     /*
