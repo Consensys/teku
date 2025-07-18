@@ -367,9 +367,9 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
      */
     if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
-            blockHeader.getSlot(), blockHeader.getParentRoot())) {
+        blockHeader.getSlot(), blockHeader.getParentRoot())) {
       return completedFuture(
-              reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
+          reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
     }
 
     /*
