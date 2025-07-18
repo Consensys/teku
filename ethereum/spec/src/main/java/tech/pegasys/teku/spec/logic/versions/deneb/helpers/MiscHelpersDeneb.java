@@ -166,7 +166,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   /**
-   * Verifies that blob sidecars are complete and with expected indexes
+   * Verifies that blob sidecars are complete and with expected indices
    *
    * @param completeVerifiedBlobSidecars blob sidecars to verify, It is assumed that it is an
    *     ordered list based on BlobSidecar index

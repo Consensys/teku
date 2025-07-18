@@ -98,7 +98,7 @@ public class SimpleSidecarRetrieverTest {
   }
 
   List<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
-    return miscHelpers.computeCustodyColumnIndexes(
+    return miscHelpers.computeCustodyColumnIndices(
         nodeId, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId));
   }
 

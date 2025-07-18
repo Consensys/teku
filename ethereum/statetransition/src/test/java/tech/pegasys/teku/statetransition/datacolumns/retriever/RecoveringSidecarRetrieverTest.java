@@ -113,9 +113,9 @@ public class RecoveringSidecarRetrieverTest {
     List<DataColumnSidecar> sidecars =
         miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
 
-    List<Integer> dbColumnIndexes =
+    List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
-    dbColumnIndexes.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
+    dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
 
     DataColumnSlotAndIdentifier id0 = createId(block, 0);
     DataColumnSlotAndIdentifier id1 = createId(block, 1);
@@ -181,9 +181,9 @@ public class RecoveringSidecarRetrieverTest {
     List<DataColumnSidecar> sidecars =
         miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
 
-    List<Integer> dbColumnIndexes =
+    List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
-    dbColumnIndexes.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
+    dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
 
     DataColumnSlotAndIdentifier id0 = createId(block, 0);
     DataColumnSlotAndIdentifier id1 = createId(block, 1);
@@ -258,9 +258,9 @@ public class RecoveringSidecarRetrieverTest {
     List<DataColumnSidecar> sidecars =
         miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
 
-    List<Integer> dbColumnIndexes =
+    List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
-    dbColumnIndexes.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
+    dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
 
     DataColumnSlotAndIdentifier id0 = createId(block, 0);
     SafeFuture<DataColumnSidecar> res0 = recoverRetriever.retrieve(id0);

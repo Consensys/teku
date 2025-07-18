@@ -118,7 +118,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
               Sets.difference(requiredColumnIdentifiers, columnsInCustody);
 
           if (LOG.isDebugEnabled()) {
-            final List<Integer> existingColumnIndexes =
+            final List<Integer> existingColumnIndices =
                 Sets.intersection(requiredColumnIdentifiers, columnsInCustody).stream()
                     .map(it -> it.columnIndex().intValue())
                     .sorted()
@@ -126,11 +126,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
             LOG.debug(
                 "checkDataAvailability(): got {} (of {}) columns from custody (or received by Gossip) for block {} ({}), columns: {}",
-                existingColumnIndexes.size(),
+                existingColumnIndices.size(),
                 requiredColumnIdentifiers.size(),
                 slot,
                 blockRoot,
-                StringifyUtil.columnIndexesToString(existingColumnIndexes, getColumnCount(slot)));
+                StringifyUtil.columnIndicesToString(existingColumnIndices, getColumnCount(slot)));
           }
 
           final SafeFuture<List<DataColumnSidecar>> columnsRetrievedFuture =

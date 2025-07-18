@@ -112,7 +112,7 @@ abstract class AbstractDasResponseLogger<TRequest>
   }
 
   protected String blockResponsesToString(final List<DataColumnSlotAndIdentifier> responses) {
-    return StringifyUtil.columnIndexesToString(
+    return StringifyUtil.columnIndicesToString(
         responses.stream().map(it -> it.columnIndex().intValue()).toList(), columnCount);
   }
 
