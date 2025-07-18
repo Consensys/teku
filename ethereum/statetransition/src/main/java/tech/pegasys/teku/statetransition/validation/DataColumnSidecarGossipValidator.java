@@ -203,7 +203,7 @@ public class DataColumnSidecarGossipValidator {
      */
     if (!isFirstValidForSlotProposerIndexAndColumnIndex(dataColumnSidecar, blockHeader)) {
       LOG.trace(
-          "DataColumnSidecar is not the first valid for its slot and index. It will be dropped");
+          "DataColumnSidecar is not the first valid for its slot and index. It will be dropped.");
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
@@ -217,7 +217,7 @@ public class DataColumnSidecarGossipValidator {
      * [IGNORE] The sidecar is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. validate that block_header.slot <= current_slot (a client MAY queue future sidecars for processing at the appropriate slot).
      */
     if (gossipValidationHelper.isSlotFromFuture(blockHeader.getSlot())) {
-      LOG.trace("DataColumnSidecar is from the future. It will be saved for future processing");
+      LOG.trace("DataColumnSidecar is from the future. It will be saved for future processing.");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
@@ -247,7 +247,7 @@ public class DataColumnSidecarGossipValidator {
      */
     if (!gossipValidationHelper.isBlockAvailable(blockHeader.getParentRoot())) {
       LOG.trace(
-          "DataColumnSidecar block header parent block is not available. It will be saved for future processing");
+          "DataColumnSidecar block header parent block is not available. It will be saved for future processing.");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
     final Optional<UInt64> maybeParentBlockSlot =
@@ -270,7 +270,7 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by block_header.parent_root).
      */
     if (!blockHeader.getSlot().isGreaterThan(parentBlockSlot)) {
-      return completedFuture(reject("Parent block is after DataColumnSidecar slot."));
+      return completedFuture(reject("Parent block slot is after DataColumnSidecar slot"));
     }
 
     /*
@@ -320,7 +320,7 @@ public class DataColumnSidecarGossipValidator {
               if (!gossipValidationHelper.isProposerTheExpectedProposer(
                   blockHeader.getProposerIndex(), blockHeader.getSlot(), postState)) {
                 return reject(
-                    "DataColumnSidecar block header proposed by incorrect proposer (%s).",
+                    "DataColumnSidecar block header proposed by incorrect proposer (%s)",
                     blockHeader.getProposerIndex());
               }
 
@@ -329,7 +329,7 @@ public class DataColumnSidecarGossipValidator {
                */
               if (!verifyBlockHeaderSignature(
                   postState, dataColumnSidecar.getSignedBeaconBlockHeader())) {
-                return reject("DataColumnSidecar block header signature is invalid.");
+                return reject("DataColumnSidecar block header signature is invalid");
               }
 
               /*
