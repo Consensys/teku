@@ -44,7 +44,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -214,11 +213,31 @@ public class LibP2PPeer implements Peer {
   @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
-          TRequest extends RpcRequest,
+          TRequest,
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
+          final RespHandler responseHandler) {
+    @SuppressWarnings("unchecked")
+    final ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
+        (ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler>) rpcHandlers.get(rpcMethod);
+    if (rpcHandler == null) {
+      throw new IllegalArgumentException(
+          "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
+    }
+
+    return rpcHandler.sendRequest(connection, request, responseHandler);
+  }
+
+  @Override
+  public <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest,
+          RespHandler extends RpcResponseHandler<?>>
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final Function<String, TRequest> request,
           final RespHandler responseHandler) {
     @SuppressWarnings("unchecked")
     final ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
@@ -256,7 +275,7 @@ public class LibP2PPeer implements Peer {
 
   private static class ThrottlingRpcHandler<
       TOutgoingHandler extends RpcRequestHandler,
-      TRequest extends RpcRequest,
+      TRequest,
       TRespHandler extends RpcResponseHandler<?>> {
 
     private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
@@ -267,6 +286,15 @@ public class LibP2PPeer implements Peer {
     private ThrottlingRpcHandler(
         final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
       this.delegate = delegate;
+    }
+
+    @SuppressWarnings("unused")
+    private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+        final Connection connection,
+        final Function<String, TRequest> requestFn,
+        final TRespHandler responseHandler) {
+      return requestsQueue.queueTask(
+          () -> delegate.sendRequest(connection, requestFn, responseHandler));
     }
 
     private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(

@@ -28,13 +28,11 @@ import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
-import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -53,13 +51,11 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
-      final TimeProvider timeProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
@@ -75,7 +71,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storageQueryChannel::getEarliestAvailableBlobSidecarSlot,
         storageUpdateChannel,
         voteUpdateChannel,
-        sidecarUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
         validatorIsConnectedProvider,
@@ -90,29 +85,25 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final AsyncRunner asyncRunner,
-      final TimeProvider timeProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
-    StorageBackedRecentChainData client =
+    final StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             asyncRunner,
             metricsSystem,
             storeConfig,
-            timeProvider,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,
@@ -126,29 +117,25 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
-      final TimeProvider timeProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final SidecarUpdateChannel sidecarUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
-    StorageBackedRecentChainData client =
+    final StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             asyncRunner,
             metricsSystem,
             storeConfig,
-            timeProvider,
             validatedBlockProvider,
             validatedBlobSidecarProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            sidecarUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             validatorIsConnectedProvider,

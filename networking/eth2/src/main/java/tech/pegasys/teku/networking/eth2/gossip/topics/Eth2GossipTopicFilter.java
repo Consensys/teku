@@ -26,6 +26,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
@@ -56,15 +57,30 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
     final SpecMilestone milestone =
         recentChainData.getMilestoneByForkDigest(forkDigest).orElseThrow();
     final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, milestone);
-    final UInt64 forkEpoch = spec.getForkSchedule().getFork(milestone).getEpoch();
+    final UInt64 forkEpoch =
+        recentChainData
+            .getBpoForkByForkDigest(forkDigest)
+            .map(BlobParameters::epoch)
+            .orElseGet(() -> spec.getForkSchedule().getFork(milestone).getEpoch());
     spec.getForkSchedule().getForks().stream()
         .filter(fork -> fork.getEpoch().isGreaterThan(forkEpoch))
         .forEach(
             futureFork -> {
               final SpecMilestone futureMilestone =
-                  spec.atEpoch(futureFork.getEpoch()).getMilestone();
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(futureFork.getEpoch());
               final Bytes4 futureForkDigest =
                   recentChainData.getForkDigestByMilestone(futureMilestone).orElseThrow();
+              topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));
+            });
+    // BPO
+    spec.getBpoForks().stream()
+        .filter(bpoFork -> bpoFork.epoch().isGreaterThan(forkEpoch))
+        .forEach(
+            futureBpoFork -> {
+              final SpecMilestone futureMilestone =
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(futureBpoFork.epoch());
+              final Bytes4 futureForkDigest =
+                  recentChainData.getForkDigestByBpoFork(futureBpoFork).orElseThrow();
               topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));
             });
     return topics;
