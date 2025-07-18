@@ -266,7 +266,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return true;
   }
 
-  public boolean verifyDataColumnSidecarKzgProof(
+  public boolean verifyDataColumnSidecarKzgProofs(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
 
     final List<KZGCellWithColumnId> cellWithIds =

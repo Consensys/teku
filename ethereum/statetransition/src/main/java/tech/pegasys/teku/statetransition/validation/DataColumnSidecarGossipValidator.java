@@ -294,7 +294,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -374,7 +374,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
