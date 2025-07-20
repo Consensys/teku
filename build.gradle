@@ -21,13 +21,13 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '7.0.4'
+  id 'com.diffplug.spotless' version '7.1.0'
   id 'com.github.ben-manes.versions' version '0.52.0'
   id 'com.github.jk1.dependency-license-report' version '2.9'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'net.ltgt.errorprone' version '4.2.0' apply false
+  id 'net.ltgt.errorprone' version '4.3.0' apply false
   id 'de.undercouch.download' version '5.6.0'
-  id 'org.ajoberstar.grgit' version '5.3.0'
+  id 'org.ajoberstar.grgit' version '5.3.2'
 }
 
 rootProject.version = calculatePublishVersion()
@@ -173,6 +173,7 @@ allprojects {
   dependencies {
     errorprone("com.google.errorprone:error_prone_core")
     errorprone("tech.pegasys.tools.epchecks:errorprone-checks")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   }
 
   apply plugin: 'com.diffplug.spotless'
@@ -327,7 +328,7 @@ allprojects {
 }
 
 def nightly = System.getenv("NIGHTLY") != null
-def refTestVersion = nightly ? "nightly" : "v1.6.0-alpha.1"
+def refTestVersion = nightly ? "nightly" : "v1.6.0-alpha.3"
 def blsRefTestVersion = 'v0.1.2'
 def slashingProtectionInterchangeRefTestVersion = 'v5.3.0'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-spec-tests/releases/download'
@@ -647,11 +648,49 @@ tasks.register("dockerDistUntar") {
   }
 }
 
-def dockerImage = "consensys/teku"
 def dockerJdkVariants = [ "jdk21", "jdk24" ]
 def dockerBuildDir = "build/docker-teku/"
+def localDockerImage = "local/teku"
 
 def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
+
+task localDocker {
+  dependsOn dockerDistUntar
+  def dockerBuildVersion = 'develop'
+  doLast {
+    def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
+    def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+    copy {
+      from file("${projectDir}/docker/${dockerJdkVariants[0]}/Dockerfile")
+      into(dockerBuildDir)
+    }
+    exec {
+      def image = "${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+      workingDir dockerBuildDir
+      executable executableAndArg[0]
+      args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+    }
+    // tag the "default" (which is the variant in the zero position)
+    exec {
+      executable executableAndArg[0]
+      args executableAndArg[1], "docker tag ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag} ${localDockerImage}:${dockerBuildVersion}${commitHashTag}"
+    }
+  }
+}
+
+task localDockerClean {
+  def dockerBuildVersion = 'develop'
+  def includeCommitHashInDockerTag = project.hasProperty('includeCommitHashInDockerTag') && project.property('includeCommitHashInDockerTag').toBoolean()
+  def commitHashTag = includeCommitHashInDockerTag ? '-' + grgit.head().getAbbreviatedId() : ''
+  doLast {
+    exec {
+      executable executableAndArg[0]
+      args executableAndArg[1], "docker rmi ${localDockerImage}:${dockerBuildVersion} ${localDockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}${commitHashTag}"
+    }
+  }
+}
+
+def dockerImage = "consensys/teku"
 
 task distDocker  {
   dependsOn dockerDistUntar

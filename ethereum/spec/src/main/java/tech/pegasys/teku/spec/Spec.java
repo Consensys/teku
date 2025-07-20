@@ -16,9 +16,7 @@ package tech.pegasys.teku.spec;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -434,7 +432,7 @@ public class Spec {
         .getSchemaDefinitions()
         .toVersionFulu()
         .orElseThrow(
-            () -> new RuntimeException("FULU milestone is required to deserialize column sidecar"))
+            () -> new RuntimeException("Fulu milestone is required to deserialize column sidecar"))
         .getDataColumnSidecarSchema()
         .sszDeserialize(serializedSidecar);
   }
@@ -461,8 +459,17 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
   }
 
+  // equivalent to compute_time_at_slot
   public UInt64 computeTimeAtSlot(final BeaconState state, final UInt64 slot) {
-    return atSlot(slot).miscHelpers().computeTimeAtSlot(state.getGenesisTime(), slot);
+    return computeTimeAtSlot(slot, state.getGenesisTime());
+  }
+
+  public UInt64 computeTimeAtSlot(final UInt64 slot, final UInt64 genesisTime) {
+    return atSlot(slot).miscHelpers().computeTimeAtSlot(genesisTime, slot);
+  }
+
+  public UInt64 computeTimeMillisAtSlot(final UInt64 slot, final UInt64 genesisTimeMillis) {
+    return atSlot(slot).miscHelpers().computeTimeMillisAtSlot(genesisTimeMillis, slot);
   }
 
   public Bytes computeSigningRoot(final BeaconBlock block, final Bytes32 domain) {
@@ -494,6 +501,15 @@ public class Spec {
     return atForkVersion(currentVersion)
         .miscHelpers()
         .computeForkDigest(currentVersion, genesisValidatorsRoot);
+  }
+
+  public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .toVersionFulu()
+        .map(miscHelpersFulu -> miscHelpersFulu.computeForkDigest(genesisValidatorsRoot, epoch))
+        // backwards compatibility for milestones before Fulu
+        .orElseGet(() -> computeForkDigest(fork(epoch).getCurrentVersion(), genesisValidatorsRoot));
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
@@ -586,35 +602,25 @@ public class Spec {
   // ForkChoice utils
   public UInt64 getCurrentSlot(final UInt64 currentTime, final UInt64 genesisTime) {
     return atTime(genesisTime, currentTime)
-        .getForkChoiceUtil()
-        .getCurrentSlot(currentTime, genesisTime);
+        .miscHelpers()
+        .computeSlotAtTime(genesisTime, currentTime);
   }
 
-  public UInt64 getCurrentSlotForMillis(
+  public UInt64 getCurrentSlotFromTimeMillis(
       final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
     return atTimeMillis(genesisTimeMillis, currentTimeMillis)
-        .getForkChoiceUtil()
-        .getCurrentSlotForMillis(currentTimeMillis, genesisTimeMillis);
+        .miscHelpers()
+        .computeSlotAtTimeMillis(genesisTimeMillis, currentTimeMillis);
   }
 
   public UInt64 getCurrentSlot(final ReadOnlyStore store) {
     return atTime(store.getGenesisTime(), store.getTimeSeconds())
-        .getForkChoiceUtil()
-        .getCurrentSlot(store);
+        .miscHelpers()
+        .computeSlotAtTime(store.getGenesisTime(), store.getTimeSeconds());
   }
 
   public UInt64 getCurrentEpoch(final ReadOnlyStore store) {
     return computeEpochAtSlot(getCurrentSlot(store));
-  }
-
-  public UInt64 getSlotStartTime(final UInt64 slotNumber, final UInt64 genesisTime) {
-    return atSlot(slotNumber).getForkChoiceUtil().getSlotStartTime(slotNumber, genesisTime);
-  }
-
-  public UInt64 getSlotStartTimeMillis(final UInt64 slotNumber, final UInt64 genesisTimeMillis) {
-    return atSlot(slotNumber)
-        .getForkChoiceUtil()
-        .getSlotStartTimeMillis(slotNumber, genesisTimeMillis);
   }
 
   public Optional<Bytes32> getAncestor(
@@ -964,7 +970,7 @@ public class Spec {
         .orElse(false);
   }
 
-  public UInt64 blobSidecarsAvailabilityDeprecationSlot() {
+  public UInt64 blobSidecarsDeprecationSlot() {
     return getSpecConfigFulu()
         .map(maybeConfig -> computeStartSlotAtEpoch(maybeConfig.getFuluForkEpoch()))
         .orElse(UInt64.MAX_VALUE);
@@ -979,12 +985,15 @@ public class Spec {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
 
-    // query the blob_schedule after FULU
+    // query the blob_schedule after Fulu
     if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
-      return forMilestone(FULU)
-          .miscHelpers()
-          .toVersionFulu()
-          .map(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromSchedule);
+      final Optional<Integer> maybeHighestMaxBlobsPerBlockFromBpoForkSchedule =
+          MiscHelpersFulu.required(forMilestone(FULU).miscHelpers())
+              .getHighestMaxBlobsPerBlockFromBpoForkSchedule();
+      // only use blob_schedule if it is present
+      if (maybeHighestMaxBlobsPerBlockFromBpoForkSchedule.isPresent()) {
+        return maybeHighestMaxBlobsPerBlockFromBpoForkSchedule;
+      }
     }
 
     final Optional<Integer> maybeHighestMaxBlobsPerBlock =
@@ -1121,13 +1130,14 @@ public class Spec {
         return Optional.empty();
       }
       case DENEB, ELECTRA -> {
-        return Optional.of(
-            specVersion.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock());
+        return Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
       }
       default -> {
-        final UInt64 epoch = atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+        final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
         return Optional.of(
-            specVersion.miscHelpers().toVersionFulu().orElseThrow().getMaxBlobsPerBlock(epoch));
+            MiscHelpersFulu.required(specVersion.miscHelpers())
+                .getBlobParameters(epoch)
+                .maxBlobsPerBlock());
       }
     }
   }

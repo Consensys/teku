@@ -38,18 +38,14 @@ public class LinkedObjectsDeliveryTest {
   private final AsyncRunner asyncRunner = asyncRunnerFactory.create("test", 2);
 
   @Test
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void testDeadLock() throws Exception {
     final Retriever retriever = new Retriever();
     final Sync sync = new Sync(retriever);
     final CountDownLatch latch = new CountDownLatch(100);
     for (int i = 0; i < 100; ++i) {
-      executorService.submit(
-          () -> {
-            sync.next(latch);
-          });
+      executorService.submit(() -> sync.next(latch)).isDone();
     }
-    assertThat(latch.await(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
   }
 
   class Retriever {

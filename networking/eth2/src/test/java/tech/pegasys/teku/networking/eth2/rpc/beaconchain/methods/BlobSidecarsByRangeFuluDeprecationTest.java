@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -62,6 +63,12 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
       Optional.of(
           new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
 
+  private static final RpcEncoding RPC_ENCODING =
+      RpcEncoding.createSszSnappyEncoding(
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
+  private final String protocolId =
+      BeaconChainMethodIds.getBlobSidecarsByRangeMethodId(1, RPC_ENCODING);
+
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> callback = mock(ResponseCallback.class);
 
@@ -74,7 +81,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
   private DataStructureUtil dataStructureUtil;
   private final Eth2Peer peer = mock(Eth2Peer.class);
   // ELECTRA live since epoch 0, FULU forks at epoch 2
-  final UInt64 fuluForkEpoch = UInt64.valueOf(2);
+  private final UInt64 fuluForkEpoch = UInt64.valueOf(2);
   private final Spec spec =
       TestSpecFactory.createMinimalFulu(
           builder ->
@@ -88,7 +95,10 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
                               .fuluForkEpoch(fuluForkEpoch)
                               // save blobs for 8 epochs instead of 4096 (test performance)
                               .minEpochsForDataColumnSidecarsRequests(8)));
-  final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getSlotsPerEpoch(ZERO)); // 8
+  private final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getSlotsPerEpoch(ZERO));
+  private final SpecConfigDeneb specConfigDeneb =
+      SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig());
+  private final int maxBlobsPerBlock = specConfigDeneb.getMaxBlobsPerBlock(); // 8
 
   @Test
   public void byRangeShouldSendToPeerPreFuluBlobSidecarsOnly() {
@@ -157,6 +167,20 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
     runTestWith(startSlot, count, currentSlot, fuluForkEpoch, minSlotExpected, maxSlotExpected);
   }
 
+  @Test
+  public void shouldIgnoreRequestsWhenStartSlotIsAfterFulu() {
+    final UInt64 startSlot =
+        spec.computeStartSlotAtEpoch(fuluForkEpoch); // start slot at fulu boundary
+    final UInt64 count = slotsPerEpoch.times(2); // count = 16
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
+    final BlobSidecarsByRangeMessageHandler handler =
+        new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
+    handler.onIncomingMessage(protocolId, peer, request, callback);
+    verifyNoInteractions(combinedChainDataClient);
+    verifyNoInteractions(callback);
+  }
+
   public void runTestWith(
       final UInt64 startSlot,
       final UInt64 count,
@@ -167,12 +191,6 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
 
     dataStructureUtil = new DataStructureUtil(spec);
     fuluForkFirstSlot = spec.computeStartSlotAtEpoch(fuluForkEpoch);
-    final RpcEncoding rpcEncoding =
-        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
-    String protocolId = BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, rpcEncoding);
-    SpecConfigDeneb specConfigDeneb =
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig());
-    int maxBlobsPerBlock = specConfigDeneb.getMaxBlobsPerBlock();
 
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveBlobSidecarsRequest(eq(callback), anyLong()))
@@ -193,7 +211,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
 
     // mock store
     when(store.getGenesisTime()).thenReturn(genesisTime);
-    when(store.getTimeSeconds()).thenReturn(spec.getSlotStartTime(currentSlot, genesisTime));
+    when(store.getTimeSeconds()).thenReturn(spec.computeTimeAtSlot(currentSlot, genesisTime));
 
     final UInt64 latestFinalizedSlot =
         spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(currentSlot).minus(1));
@@ -202,7 +220,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
 
-    when(store.getTimeSeconds()).thenReturn(spec.getSlotStartTime(currentSlot, genesisTime));
+    when(store.getTimeSeconds()).thenReturn(spec.computeTimeAtSlot(currentSlot, genesisTime));
 
     final BlobSidecarsByRangeMessageHandler handler =
         new BlobSidecarsByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
@@ -239,7 +257,7 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
                 )
             .toList();
     UInt64 expectedSlots =
-        spec.blobSidecarsAvailabilityDeprecationSlot().min(startSlot.plus(count)).minus(startSlot);
+        spec.blobSidecarsDeprecationSlot().min(startSlot.plus(count)).minus(startSlot);
     when(combinedChainDataClient.getAncestorRoots(eq(startSlot), eq(expectedSlots), any()))
         .thenReturn(
             ImmutableSortedMap.of(

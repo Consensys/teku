@@ -85,6 +85,7 @@ class MultiaddrUtilTest {
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,
+            Optional.empty(),
             Optional.empty());
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/p2p/" + PEER_ID));
@@ -105,6 +106,7 @@ class MultiaddrUtilTest {
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,
+            Optional.empty(),
             Optional.empty());
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result)
@@ -125,6 +127,7 @@ class MultiaddrUtilTest {
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,
+            Optional.empty(),
             Optional.empty());
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(
@@ -143,6 +146,7 @@ class MultiaddrUtilTest {
             ENR_FORK_ID,
             PERSISTENT_ATTESTATION_SUBNETS,
             SYNC_COMMITTEE_SUBNETS,
+            Optional.empty(),
             Optional.empty());
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(

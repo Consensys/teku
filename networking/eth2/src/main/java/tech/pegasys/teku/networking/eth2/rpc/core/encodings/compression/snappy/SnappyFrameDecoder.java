@@ -99,7 +99,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
       final int chunkLength = in.getUnsignedMediumLE(idx + 1);
 
       switch (chunkType) {
-        case STREAM_IDENTIFIER:
+        case STREAM_IDENTIFIER -> {
           if (started) {
             throw new CompressionException("Extra Snappy stream identifier");
           }
@@ -124,8 +124,8 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
           checkByte(in.getByte(offset), (byte) 'Y');
 
           started = true;
-          break;
-        case RESERVED_SKIPPABLE:
+        }
+        case RESERVED_SKIPPABLE -> {
           if (!started) {
             throw new CompressionException(
                 "Received RESERVED_SKIPPABLE tag before STREAM_IDENTIFIER");
@@ -136,14 +136,14 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
           }
 
           in.skipBytes(4 + chunkLength);
-          break;
-        case RESERVED_UNSKIPPABLE:
-          // The spec mandates that reserved unskippable chunks must immediately
-          // return an error, as we must assume that we cannot decode the stream
-          // correctly
-          throw new CompressionException(
-              "Found reserved unskippable chunk type: 0x" + Integer.toHexString(chunkTypeVal));
-        case UNCOMPRESSED_DATA:
+        }
+        case RESERVED_UNSKIPPABLE ->
+            // The spec mandates that reserved unskippable chunks must immediately
+            // return an error, as we must assume that we cannot decode the stream
+            // correctly
+            throw new CompressionException(
+                "Found reserved unskippable chunk type: 0x" + Integer.toHexString(chunkTypeVal));
+        case UNCOMPRESSED_DATA -> {
           if (!started) {
             throw new CompressionException(
                 "Received UNCOMPRESSED_DATA tag before STREAM_IDENTIFIER");
@@ -164,8 +164,8 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
             in.skipBytes(4);
           }
           ret = in.readRetainedSlice(chunkLength - 4);
-          break;
-        case COMPRESSED_DATA:
+        }
+        case COMPRESSED_DATA -> {
           if (!started) {
             throw new CompressionException("Received COMPRESSED_DATA tag before STREAM_IDENTIFIER");
           }
@@ -206,7 +206,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
             }
           }
           snappy.reset();
-          break;
+        }
       }
     } catch (CompressionException e) {
       corrupted = true;

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo8Bytes;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,17 +22,13 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 
-record BlobParameters(UInt64 epoch, int maxBlobsPerBlock) {
-  static BlobParameters fromBlobSchedule(final BlobScheduleEntry blobScheduleEntry) {
-    return new BlobParameters(blobScheduleEntry.epoch(), blobScheduleEntry.maxBlobsPerBlock());
+public record BlobParameters(UInt64 epoch, int maxBlobsPerBlock) {
+  /** used in {@link MiscHelpersFulu#computeForkDigest(Bytes32, UInt64)} */
+  public Bytes32 hash() {
+    return Hash.sha256(Bytes.wrap(uint64ToBytes(epoch), uintTo8Bytes(maxBlobsPerBlock)));
   }
 
-  // used in computeForkDigestInternal
-  static Bytes32 hash(final BlobParameters blobParameters) {
-    final Bytes epochBytes = uint64ToBytes(blobParameters.epoch());
-    final Bytes maxBlobsPerBlockBytes =
-        uint64ToBytes(UInt64.valueOf(blobParameters.maxBlobsPerBlock()));
-    final Bytes concat = Bytes.wrap(epochBytes, maxBlobsPerBlockBytes);
-    return Hash.sha256(concat);
+  static BlobParameters fromBlobScheduleEntry(final BlobScheduleEntry blobScheduleEntry) {
+    return new BlobParameters(blobScheduleEntry.epoch(), blobScheduleEntry.maxBlobsPerBlock());
   }
 }

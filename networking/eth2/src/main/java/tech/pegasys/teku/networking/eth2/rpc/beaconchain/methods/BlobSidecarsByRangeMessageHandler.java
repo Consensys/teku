@@ -92,13 +92,7 @@ public class BlobSidecarsByRangeMessageHandler
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(request.getMaxSlot()).orElseThrow();
 
-    int requestedCount;
-    try {
-      requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
-    } catch (final ArithmeticException __) {
-      // handle overflows
-      requestedCount = -1;
-    }
+    final int requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
     if (requestedCount == -1 || requestedCount > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
@@ -114,7 +108,7 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   private UInt64 getEndSlotBeforeFulu(final UInt64 maxSlot) {
-    return spec.blobSidecarsAvailabilityDeprecationSlot().safeDecrement().min(maxSlot);
+    return spec.blobSidecarsDeprecationSlot().safeDecrement().min(maxSlot);
   }
 
   @Override
@@ -131,8 +125,17 @@ public class BlobSidecarsByRangeMessageHandler
         peer.getId(),
         message.getCount(),
         startSlot);
-    final UInt64 endSlotBeforeFulu = getEndSlotBeforeFulu(endSlot);
 
+    if (startSlot.isGreaterThan(spec.blobSidecarsDeprecationSlot())) {
+      LOG.trace(
+          "Peer {} requested {} slots of blob sidecars starting at slot {} after Fulu. BlobSidecarsByRange v1 is deprecated and the request will be ignored.",
+          peer.getId(),
+          message.getCount(),
+          startSlot);
+      return;
+    }
+
+    final UInt64 endSlotBeforeFulu = getEndSlotBeforeFulu(endSlot);
     final SpecConfigDeneb specConfig =
         SpecConfigDeneb.required(spec.atSlot(endSlotBeforeFulu).getConfig());
     final int requestedCount =
@@ -196,7 +199,7 @@ public class BlobSidecarsByRangeMessageHandler
                       canonicalHotRoots,
                       finalizedSlot,
                       specConfig.getMaxRequestBlobSidecars());
-              if (message.getCount().isZero()) {
+              if (message.getCount().isZero() || initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendBlobSidecars(initialState);
@@ -217,9 +220,12 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   private int calculateRequestedCount(
-      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock)
-      throws ArithmeticException {
-    return message.getCount().times(maxBlobsPerBlock).intValue();
+      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock) {
+    try {
+      return message.getCount().times(maxBlobsPerBlock).intValue();
+    } catch (final ArithmeticException e) {
+      return -1;
+    }
   }
 
   private boolean checkBlobSidecarsAreAvailable(
@@ -342,7 +348,8 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
+      return endSlot.isLessThan(startSlot)
+          || blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

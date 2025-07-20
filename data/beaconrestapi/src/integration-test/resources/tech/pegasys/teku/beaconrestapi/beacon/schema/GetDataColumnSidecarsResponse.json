@@ -1,8 +1,18 @@
 {
   "title" : "GetDataColumnSidecarsResponse",
   "type" : "object",
-  "required" : [ "data" ],
+  "required" : [ "version", "execution_optimistic", "finalized", "data" ],
   "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu" ]
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
     "data" : {
       "type" : "array",
       "items" : {

@@ -44,8 +44,10 @@ import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -61,7 +63,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -119,13 +120,15 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     recentChainData.initializeFromAnchorPoint(
         AnchorPoint.fromInitialBlockAndState(
             spec, new SignedBlockAndState(anchorBlock, anchorState)),
-        spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesisTime()));
+        spec.computeTimeAtSlot(anchorBlock.getSlot(), anchorState.getGenesisTime()));
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData);
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
+    final StubDataColumnSidecarManager dataColumnSidecarManager =
+        new StubDataColumnSidecarManager(spec, recentChainData, kzg);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
     // executor
     final ForkChoice forkChoice =
@@ -134,7 +137,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             eventThread,
             recentChainData,
             blobSidecarManager,
-            DasSamplerManager.NOOP,
+            dataColumnSidecarManager,
             new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -146,7 +149,13 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     try {
       runSteps(
-          testDefinition, spec, recentChainData, blobSidecarManager, forkChoice, executionLayer);
+          testDefinition,
+          spec,
+          recentChainData,
+          blobSidecarManager,
+          dataColumnSidecarManager,
+          forkChoice,
+          executionLayer);
     } catch (final AssertionError e) {
       final String protoArrayData =
           recentChainData.getForkChoiceStrategy().orElseThrow().getBlockData().stream()
@@ -186,6 +195,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final StubBlobSidecarManager blobSidecarManager,
+      final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
       final ExecutionLayerChannelStub executionLayer)
       throws IOException {
@@ -205,6 +215,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             spec,
             recentChainData,
             blobSidecarManager,
+            dataColumnSidecarManager,
             forkChoice,
             step,
             executionLayer);
@@ -303,6 +314,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final StubBlobSidecarManager blobSidecarManager,
+      final StubDataColumnSidecarManager dataColumnSidecarManager,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
       final ExecutionLayerChannelStub executionLayer) {
@@ -328,7 +340,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 proofsArray ->
                     ((List<String>) proofsArray).stream().map(KZGProof::fromHexString).toList())
             .orElse(Collections.emptyList());
-    if (block.getMessage().getBody().toVersionDeneb().isPresent()) {
+    @SuppressWarnings("unchecked")
+    final List<DataColumnSidecar> columns =
+        getOptionally(step, "columns")
+            .map(
+                columnsNameArray ->
+                    ((List<String>) columnsNameArray)
+                        .stream()
+                            .map(
+                                columnsName ->
+                                    TestDataUtils.loadSsz(
+                                        testDefinition,
+                                        columnsName + SSZ_SNAPPY_EXTENSION,
+                                        sszBytes ->
+                                            spec.deserializeSidecar(sszBytes, block.getSlot())))
+                            .toList())
+            .orElse(Collections.emptyList());
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      LOG.info("Adding {} columns to custody for block {}", columns.size(), block.getRoot());
+      dataColumnSidecarManager.prepareDataColumnSidecarForBlock(block, columns);
+
+    } else if (spec.atSlot(block.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       LOG.info(
           "Preparing {} blobs with proofs {} for block {}", blobs.size(), proofs, block.getRoot());
       blobSidecarManager.prepareBlobsAndProofsForBlock(block, blobs, proofs);

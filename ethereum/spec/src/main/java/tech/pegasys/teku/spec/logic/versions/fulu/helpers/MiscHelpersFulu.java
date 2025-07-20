@@ -25,13 +25,14 @@ import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -45,7 +46,6 @@ import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
-import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -71,11 +71,12 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
+  private static final Logger LOG = LogManager.getLogger();
   private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
@@ -88,48 +89,28 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
-  @SuppressWarnings("unused")
-  private final SpecConfigFulu specConfigFulu;
-
-  @SuppressWarnings("unused")
   private final Predicates predicates;
-
-  @SuppressWarnings("unused")
-  private final SchemaDefinitionsFulu schemaDefinitions;
-
-  private final List<BlobScheduleEntry> blobSchedule;
+  private final SpecConfigFulu specConfigFulu;
+  private final SchemaDefinitionsFulu schemaDefinitionsFulu;
+  private final BpoForkSchedule bpoForkSchedule;
 
   public MiscHelpersFulu(
-      final SpecConfigFulu specConfigFulu,
-      final Predicates predicates,
-      final SchemaDefinitions schemaDefinitions) {
+      final SpecConfigFulu specConfig,
+      final PredicatesElectra predicates,
+      final SchemaDefinitionsFulu schemaDefinitions) {
     super(
-        SpecConfigElectra.required(specConfigFulu),
+        SpecConfigElectra.required(specConfig),
         predicates,
         SchemaDefinitionsElectra.required(schemaDefinitions));
     this.predicates = predicates;
-    this.specConfigFulu = specConfigFulu;
-    this.schemaDefinitions = SchemaDefinitionsFulu.required(schemaDefinitions);
-    this.blobSchedule =
-        specConfigFulu.getBlobSchedule().stream()
-            .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
-            .toList();
+    this.specConfigFulu = specConfig;
+    this.schemaDefinitionsFulu = schemaDefinitions;
+    this.bpoForkSchedule = new BpoForkSchedule(specConfig);
   }
 
   @Override
   public Optional<MiscHelpersFulu> toVersionFulu() {
     return Optional.of(this);
-  }
-
-  // get_max_blobs_per_block
-  public int getMaxBlobsPerBlock(final UInt64 epoch) {
-    final Optional<BlobScheduleEntry> maybeSchedule =
-        blobSchedule.stream()
-            .filter(blobSchedule -> blobSchedule.epoch().isLessThanOrEqualTo(epoch))
-            .max(Comparator.comparing(BlobScheduleEntry::epoch));
-    return maybeSchedule
-        .map(BlobScheduleEntry::maxBlobsPerBlock)
-        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
   }
 
   // compute_fork_version
@@ -143,37 +124,24 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   // compute_fork_digest
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
-
     final Bytes4 forkVersion = computeForkVersion(epoch);
+    final Bytes32 baseDigest = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
     final BlobParameters blobParameters = getBlobParameters(epoch);
-    final Bytes4 baseDigest = super.computeForkDigest(forkVersion, genesisValidatorsRoot);
-    System.out.println("base digest: " + baseDigest.toHexString());
-    return computeForkDigestInternal(baseDigest, blobParameters);
+    // Bitmask digest with hash of blob parameters
+    return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  Bytes4 computeForkDigestInternal(final Bytes4 baseDigest, final BlobParameters blobParameters) {
-
-    final Bytes32 blobParametersHash = BlobParameters.hash(blobParameters);
-    final Bytes4 hashSnippet = new Bytes4(blobParametersHash.slice(0, 4));
-
-    return new Bytes4(baseDigest.getWrappedBytes().xor(hashSnippet.getWrappedBytes()));
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
   }
 
-  public int getHighestMaxBlobsPerBlockFromSchedule() {
-    return blobSchedule.stream()
-        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
-        .map(BlobScheduleEntry::maxBlobsPerBlock)
-        .orElseGet(specConfigFulu::getMaxBlobsPerBlock);
-  }
-
+  // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return blobSchedule.stream()
-        .max(Comparator.comparing(BlobScheduleEntry::maxBlobsPerBlock))
-        .map(BlobParameters::fromBlobSchedule)
+    return bpoForkSchedule
+        .getBpoFork(epoch)
         .orElse(
             new BlobParameters(
-                specConfigFulu.getElectraForkEpoch(),
-                specConfigFulu.toVersionElectra().orElseThrow().getMaxBlobsPerBlock()));
+                specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
   }
 
   private UInt256 incrementByModule(final UInt256 n) {
@@ -189,7 +157,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
-      final UInt256 nodeId, final UInt64 epoch, final int groupCount) {
+      final UInt256 nodeId, final int groupCount) {
     final List<UInt64> columns = computeCustodyColumnIndexes(nodeId, groupCount);
     return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
   }
@@ -205,7 +173,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroup.isGreaterThanOrEqualTo(specConfigFulu.getNumberOfCustodyGroups())) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group %s couldn't exceed number of groups %s",
+              "Custody group (%s) cannot exceed number of groups (%s)",
               custodyGroup, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
@@ -215,7 +183,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return IntStream.range(0, columnsPerGroup)
         .mapToLong(
             i -> (long) specConfigFulu.getNumberOfCustodyGroups() * i + custodyGroup.intValue())
-        .sorted()
         .mapToObj(UInt64::valueOf)
         .toList();
   }
@@ -229,7 +196,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroupCount > specConfigFulu.getNumberOfCustodyGroups()) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group count %s couldn't exceed number of groups %s",
+              "Custody group count (%s) cannot exceed number of groups (%s)",
               custodyGroupCount, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
@@ -258,19 +225,40 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .min(specConfigFulu.getNumberOfCustodyGroups());
   }
 
+  public boolean verifyDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+    final int numberOfColumns = specConfigFulu.getNumberOfColumns();
+
+    if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
+      LOG.trace(
+          "DataColumnSidecar has invalid index {}. Should be less than {}",
+          dataColumnSidecar.getIndex(),
+          numberOfColumns);
+      return false;
+    }
+    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
+      LOG.trace("DataColumnSidecar has no kzg commitments");
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size()
+        != dataColumnSidecar.getSszKZGCommitments().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg commitments ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGCommitments().size());
+      return false;
+    }
+    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
+      LOG.trace(
+          "DataColumnSidecar has unequal data column ({}) and kzg proofs ({}) sizes",
+          dataColumnSidecar.getDataColumn().size(),
+          dataColumnSidecar.getSszKZGProofs().size());
+      return false;
+    }
+    return true;
+  }
+
   public boolean verifyDataColumnSidecarKzgProof(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
-    final int dataColumns = specConfigFulu.getNumberOfColumns();
-    if (dataColumnSidecar.getIndex().isGreaterThanOrEqualTo(dataColumns)) {
-      return false;
-    }
-
-    // Number of rows is the same for cells, commitments, proofs
-    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGCommitments().size()
-        || dataColumnSidecar.getSszKZGCommitments().size()
-            != dataColumnSidecar.getSszKZGProofs().size()) {
-      return false;
-    }
 
     final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getDataColumn().size())
@@ -303,7 +291,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public int getBlockBodyKzgCommitmentsGeneralizedIndex() {
     return (int)
-        BeaconBlockBodySchemaElectra.required(schemaDefinitions.getBeaconBlockBodySchema())
+        BeaconBlockBodySchemaElectra.required(schemaDefinitionsFulu.getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsGeneralizedIndex();
   }
 
@@ -352,6 +340,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
+  @SuppressWarnings("deprecation")
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
       final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())
@@ -363,7 +352,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
                 row.add(
-                    schemaDefinitions
+                    schemaDefinitionsFulu
                         .getMatrixEntrySchema()
                         .create(
                             kzgCellAndProofs.get(cellIndex).cell(),
@@ -387,7 +376,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCells.size(); ++cellIndex) {
                 row.add(
-                    schemaDefinitions
+                    schemaDefinitionsFulu
                         .getMatrixEntrySchema()
                         .create(
                             kzgCells.get(cellIndex),
@@ -436,9 +425,9 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       return Collections.emptyList();
     }
 
-    final DataColumnSchema dataColumnSchema = schemaDefinitions.getDataColumnSchema();
+    final DataColumnSchema dataColumnSchema = schemaDefinitionsFulu.getDataColumnSchema();
     final DataColumnSidecarSchema dataColumnSidecarSchema =
-        schemaDefinitions.getDataColumnSidecarSchema();
+        schemaDefinitionsFulu.getDataColumnSidecarSchema();
     final SszListSchema<SszKZGProof, ?> kzgProofsSchema =
         dataColumnSidecarSchema.getKzgProofsSchema();
 
@@ -482,7 +471,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                     IntStream.range(0, sideCar.getDataColumn().size())
                         .mapToObj(
                             rowIndex ->
-                                schemaDefinitions
+                                schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
                                         sideCar.getDataColumn().get(rowIndex),
@@ -531,7 +520,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               return IntStream.range(0, kzgCellAndProofs.size())
                   .mapToObj(
                       kzgCellAndProofIndex ->
-                          schemaDefinitions
+                          schemaDefinitionsFulu
                               .getMatrixEntrySchema()
                               .create(
                                   kzgCellAndProofs.get(kzgCellAndProofIndex).cell(),

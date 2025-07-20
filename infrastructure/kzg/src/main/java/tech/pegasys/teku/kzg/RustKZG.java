@@ -50,12 +50,14 @@ final class RustKZG implements KZG {
   private RustKZG() {}
 
   @Override
-  public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
+  public synchronized void loadTrustedSetup(final String trustedSetupFile, final int kzgPrecompute)
+      throws KZGException {
     if (!initialized) {
       try {
-        this.library = new LibEthKZG(true);
+        final boolean usePrecompute = kzgPrecompute != 0;
+        this.library = new LibEthKZG(usePrecompute);
         this.initialized = true;
-        LOG.info("Loaded LibPeerDASKZG library");
+        LOG.info("Loaded LibPeerDASKZG library with precompute={}", usePrecompute);
       } catch (final Exception ex) {
         throw new KZGException("Failed to load LibPeerDASKZG Rust library", ex);
       }
@@ -146,6 +148,7 @@ final class RustKZG implements KZG {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     final CellsAndProofs cellsAndProofs = library.computeCellsAndKZGProofs(blob.toArrayUnsafe());
     final Stream<KZGCell> kzgCellStream =

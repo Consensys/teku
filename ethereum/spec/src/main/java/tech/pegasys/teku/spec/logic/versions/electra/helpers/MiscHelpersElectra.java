@@ -34,10 +34,9 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class MiscHelpersElectra extends MiscHelpersDeneb {
   public static final UInt64 MAX_RANDOM_VALUE = UInt64.valueOf(65535);
@@ -46,14 +45,14 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
 
   public MiscHelpersElectra(
       final SpecConfigElectra specConfig,
-      final Predicates predicates,
-      final SchemaDefinitions schemaDefinitions) {
+      final PredicatesElectra predicates,
+      final SchemaDefinitionsElectra schemaDefinitions) {
     super(
         SpecConfigDeneb.required(specConfig),
         predicates,
         SchemaDefinitionsDeneb.required(schemaDefinitions));
-    this.specConfigElectra = SpecConfigElectra.required(specConfig);
-    this.predicatesElectra = PredicatesElectra.required(predicates);
+    this.specConfigElectra = specConfig;
+    this.predicatesElectra = predicates;
   }
 
   @Override

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
@@ -93,12 +94,12 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   }
 
   @Override
-  protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
-    addDataColumnSidecarGossipManager(forkInfo);
+  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    super.addGossipManagers(forkInfo, forkDigest);
+    addDataColumnSidecarGossipManager(forkInfo, forkDigest);
   }
 
-  void addDataColumnSidecarGossipManager(final ForkInfo forkInfo) {
+  void addDataColumnSidecarGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     final DataColumnSidecarSubnetSubscriptions dataColumnSidecarSubnetSubscriptions =
         new DataColumnSidecarSubnetSubscriptions(
             spec,
@@ -108,7 +109,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
             recentChainData,
             dataColumnSidecarOperationProcessor,
             debugDataDumper,
-            forkInfo);
+            forkInfo,
+            forkDigest);
 
     this.dataColumnSidecarGossipManager =
         new DataColumnSidecarGossipManager(dataColumnSidecarSubnetSubscriptions, dasGossipLogger);
@@ -117,7 +119,7 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
   }
 
   @Override
-  public void addBlobSidecarGossipManager(final ForkInfo forkInfo) {
+  protected void addBlobSidecarGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     // Do nothing
   }
 

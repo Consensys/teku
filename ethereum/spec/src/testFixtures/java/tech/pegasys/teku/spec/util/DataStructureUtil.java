@@ -478,6 +478,10 @@ public final class DataStructureUtil {
     return KZGCommitment.fromBytesCompressed(randomBytes48());
   }
 
+  public List<KZGCommitment> randomKZGCommitments(final int size) {
+    return IntStream.range(0, size).mapToObj(__ -> randomKZGCommitment()).collect(toList());
+  }
+
   public SszKZGCommitment randomSszKZGCommitment() {
     return new SszKZGCommitment(randomKZGCommitment());
   }
@@ -2814,6 +2818,22 @@ public final class DataStructureUtil {
   public DataColumnSidecar randomDataColumnSidecar(
       final SignedBeaconBlockHeader header, final UInt64 index) {
     return new RandomSidecarBuilder().signedBeaconBlockHeader(header).index(index).build();
+  }
+
+  public DataColumnSidecar randomDataColumnSidecar(
+      final List<KZGCommitment> kzgCommitments, final DataColumn dataColumn) {
+    return new RandomSidecarBuilder().kzgCommitments(kzgCommitments).dataColumn(dataColumn).build();
+  }
+
+  public DataColumnSidecar randomDataColumnSidecar(
+      final List<KZGProof> kzgProofs,
+      final List<KZGCommitment> kzgCommitments,
+      final DataColumn dataColumn) {
+    return new RandomSidecarBuilder()
+        .kzgProofs(kzgProofs)
+        .kzgCommitments(kzgCommitments)
+        .dataColumn(dataColumn)
+        .build();
   }
 
   public DataColumnSidecar randomDataColumnSidecarWithInclusionProof(

@@ -216,6 +216,7 @@ class SubnetScorerTest {
           Optional.empty(),
           attSubnets,
           syncSubnets,
+          Optional.empty(),
           Optional.empty());
     } catch (UnknownHostException e) {
       throw new RuntimeException(e);

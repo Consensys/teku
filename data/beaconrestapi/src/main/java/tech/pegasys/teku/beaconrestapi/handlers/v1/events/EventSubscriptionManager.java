@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -99,6 +100,8 @@ public class EventSubscriptionManager
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
     nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
     nodeDataProvider.subscribeToForkChoiceUpdatedResult(this::onForkChoiceUpdatedResult);
+    nodeDataProvider.subscribeToValidDataColumnSidecars(
+        (dataColumnSidecar, remoteOrigin) -> onNewDataColumnSidecar(dataColumnSidecar));
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -236,6 +239,12 @@ public class EventSubscriptionManager
   protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {
     final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecar);
     notifySubscribersOfEvent(EventType.blob_sidecar, blobSidecarEvent);
+  }
+
+  protected void onNewDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
+    final DataColumnSidecarEvent dataColumnSidecarEvent =
+        DataColumnSidecarEvent.create(dataColumnSidecar);
+    notifySubscribersOfEvent(EventType.data_column_sidecar, dataColumnSidecarEvent);
   }
 
   protected void onNewAttesterSlashing(

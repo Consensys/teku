@@ -27,12 +27,13 @@ import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.util.SlashingProtectionCommandUtils;
 import tech.pegasys.teku.data.SlashingProtectionRepairer;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.beaconchain.WeakSubjectivityInitializer;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 @CommandLine.Command(
     name = "repair",
@@ -116,18 +117,20 @@ public class RepairCommand implements Runnable {
   }
 
   private UInt64 getComputedSlot(final Optional<AnchorPoint> initialAnchor, final Spec spec) {
-    final TimeProvider timeProvider = SYSTEM_TIME_PROVIDER;
     if (suppliedSlot != null) {
       displaySlotUpdateMessage(suppliedSlot, spec, "WARNING: using a supplied slot");
 
       return suppliedSlot;
     } else if (initialAnchor.isPresent()) {
       final UInt64 genesisTime = initialAnchor.get().getState().getGenesisTime();
-      final int secondsPerEpoch =
-          spec.getGenesisSpec().getSlotsPerEpoch()
-              * spec.getGenesisSpec().getConfig().getSecondsPerSlot();
-      final UInt64 oneEpochInFuture = timeProvider.getTimeInSeconds().plus(secondsPerEpoch);
-      final UInt64 computedSlot = spec.getCurrentSlot(oneEpochInFuture, genesisTime);
+      final MiscHelpers miscHelpers =
+          spec.atTime(genesisTime, SYSTEM_TIME_PROVIDER.getTimeInSeconds()).miscHelpers();
+      final SpecConfig specConfig =
+          spec.atTime(genesisTime, SYSTEM_TIME_PROVIDER.getTimeInSeconds()).getConfig();
+      final UInt64 currentSlot =
+          miscHelpers.computeSlotAtTime(genesisTime, SYSTEM_TIME_PROVIDER.getTimeInSeconds());
+
+      final UInt64 computedSlot = currentSlot.plus(specConfig.getSlotsPerEpoch());
       final String network =
           eth2NetworkOptions.getNetwork() == null ? "" : eth2NetworkOptions.getNetwork();
       displaySlotUpdateMessage(computedSlot, spec, "Computed " + network + " slot");

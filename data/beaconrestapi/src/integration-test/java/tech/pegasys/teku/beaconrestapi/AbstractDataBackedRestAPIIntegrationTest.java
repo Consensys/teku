@@ -71,6 +71,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -141,7 +142,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
-
+  protected final DataColumnSidecarManager dataColumnSidecarManager =
+      mock(DataColumnSidecarManager.class);
   private StorageSystem storageSystem;
 
   protected RecentChainData recentChainData;
@@ -234,6 +236,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .proposersDataManager(proposersDataManager)
             .forkChoiceNotifier(forkChoiceNotifier)
             .rewardCalculator(rewardCalculator)
+            .dataColumnSidecarManager(dataColumnSidecarManager)
             .build();
 
     beaconRestApi =

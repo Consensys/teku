@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +44,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGAbstractBenchmark;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -79,13 +80,10 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   private final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
+  private final SpecConfigFulu specConfigFulu =
+      SpecConfigFulu.required(spec.getGenesisSpecConfig());
   private final MiscHelpersFulu miscHelpersFulu =
-      new MiscHelpersFulu(
-          spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
-          predicates,
-          schemaDefinitionsFulu);
-  final BeaconStateAccessorsFulu beaconStateAccessors =
-      new BeaconStateAccessorsFulu(spec.getGenesisSpecConfig(), predicates, miscHelpersFulu);
+      new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
 
   @ParameterizedTest(name = "{0} allowed failure(s)")
   @MethodSource("getExtendedSampleCountFixtures")
@@ -157,39 +155,125 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @ParameterizedTest
-  @MethodSource("getFuluDigestScenarios")
+  @MethodSource("getComputeForkDigestFuluScenarios")
   public void computeForkDigestFuluTest(
-      final String baseDigest,
-      final UInt64 epoch,
-      final int blobsPerBlock,
-      final String expectedValue) {
-
-    final Bytes4 digest =
-        miscHelpersFulu.computeForkDigestInternal(
-            Bytes4.fromHexString(baseDigest), new BlobParameters(epoch, blobsPerBlock));
-
-    assertThat(digest).isEqualTo(Bytes4.fromHexString(expectedValue));
+      final Spec spec, final long epoch, final String expectedValue) {
+    assertThat(
+            MiscHelpersFulu.required(spec.atEpoch(UInt64.valueOf(epoch)).miscHelpers())
+                .computeForkDigest(Bytes32.ZERO, UInt64.valueOf(epoch)))
+        .isEqualTo(Bytes4.fromHexString(expectedValue));
   }
 
-  public static Stream<Arguments> getFuluDigestScenarios() {
-    // max would be 4096 - MAX_BLOB_COMMITMENTS_PER_BLOCK
-    // this is little endian currently
+  @Test
+  public void shouldRejectDataColumnSideCarWhenIndexTooBig() {
+    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
+    final DataColumnSidecar invalidIndex =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomSignedBeaconBlockHeader(),
+            UInt64.valueOf(numberOfColumns).increment());
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidIndex)).isFalse();
+  }
+
+  @Test
+  public void shouldRejectIfDataColumnAndKzgCommitmentsMismatch() {
+    final DataColumnSidecar mismatchingDataColumnKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGCommitments(10),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(mismatchingDataColumnKzgCommitments))
+        .isFalse();
+  }
+
+  @Test
+  void shouldRejectIfDataColumnSidecarHasNoKzgCommitments() {
+    final DataColumnSidecar emptyKzgCommitments =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
+            dataStructureUtil.randomSignedBeaconBlockWithCommitments(0), UInt64.ONE);
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(emptyKzgCommitments)).isFalse();
+  }
+
+  @Test
+  public void shouldRejectIfDataColumnAndKzgProofsMismatch() {
+    final DataColumnSidecar invalidDataColumnKzgProofs =
+        dataStructureUtil.randomDataColumnSidecar(
+            dataStructureUtil.randomKZGProofs(10),
+            dataStructureUtil.randomKZGCommitments(5),
+            dataStructureUtil.randomDataColumn(UInt64.ONE, 5));
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidDataColumnKzgProofs)).isFalse();
+  }
+
+  // Scenarios from
+  // https://github.com/ethereum/consensus-specs/blob/dev/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
+  public static Stream<Arguments> getComputeForkDigestFuluScenarios() {
+    final Spec spec =
+        TestSpecFactory.createMinimalFulu(
+            b ->
+                b.electraBuilder(
+                        eb -> eb.electraForkEpoch(UInt64.valueOf(9)).maxBlobsPerBlockElectra(9))
+                    .fuluBuilder(
+                        fb ->
+                            fb.fuluForkEpoch(UInt64.valueOf(100))
+                                .blobSchedule(
+                                    List.of(
+                                        new BlobScheduleEntry(UInt64.valueOf(100), 100),
+                                        new BlobScheduleEntry(UInt64.valueOf(150), 175),
+                                        new BlobScheduleEntry(UInt64.valueOf(200), 200),
+                                        new BlobScheduleEntry(UInt64.valueOf(250), 275),
+                                        new BlobScheduleEntry(UInt64.valueOf(300), 300)))));
+
     return Stream.of(
-        Arguments.of("ffffffff", ZERO, 4096, "5f1958f6"),
-        Arguments.of("00000000", ZERO, 4095, "64d0cb3e"),
-        Arguments.of("00000000", ZERO, 4096, "a0e6a709"),
-        Arguments.of("06000000", ZERO, 4095, "62d0cb3e"),
-        Arguments.of("06000000", ZERO, 255, "3a03a4ed"),
-        Arguments.of("06000000", ZERO, 64, "4e3ce2f0"),
-        Arguments.of("06000000", ZERO, 86, "af4d0222"),
-        // EF unit test values
-        // fork version: 05000001 genesis validators root 00x32 would give base digest of 97b2c268
-        Arguments.of("97b2c268", UInt64.valueOf(9), 9, "39f8e7c3"),
-        // fork version: 05000001, genesis validators root of 03x32 would give base digest of
-        // 0e38e75e
-        Arguments.of("0e38e75e", UInt64.valueOf(9), 9, "a072c2f5"),
-        // fork version: 05000001 genesis validators root 00x32 would give base digest of 9eb2e7f0
-        Arguments.of("9eb2e7f0", UInt64.valueOf(100), 100, "44a571e8"));
+        Arguments.of(spec, 100, "44a571e8"),
+        Arguments.of(spec, 101, "44a571e8"),
+        Arguments.of(spec, 150, "1171afca"),
+        Arguments.of(spec, 200, "427a30ab"),
+        Arguments.of(spec, 250, "d5310ef1"),
+        Arguments.of(spec, 299, "d5310ef1"),
+        Arguments.of(spec, 300, "51d229f7"));
+  }
+
+  @Test
+  @Disabled("Benchmark")
+  public void benchmarkVerifyDataColumnSidecarKzgProof() {
+    final Spec spec = TestSpecFactory.createMainnetFulu();
+    final int numberOfRounds = 25;
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SchemaDefinitionsFulu schemaDefinitionsFulu =
+        SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
+    final SpecConfigFulu specConfigFulu = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
+    final MiscHelpersFulu miscHelpersFulu =
+        new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
+    final List<Blob> blobs =
+        IntStream.range(0, 72).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg());
+    final List<SszKZGCommitment> kzgCommitments =
+        blobs.stream()
+            .map(blob -> getKzg().blobToKzgCommitment(blob.getBytes()))
+            .map(SszKZGCommitment::new)
+            .toList();
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema();
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
+            blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
+    final List<DataColumnSidecar> dataColumnSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
+    final List<Integer> runTimes = new ArrayList<>();
+    System.out.printf("Running verifyDataColumnSidecarKzgProof with %s blobs\n", blobs.size());
+    for (int i = 0; i < numberOfRounds; i++) {
+      final long start = System.currentTimeMillis();
+      dataColumnSidecars.stream()
+          .parallel()
+          .forEach(
+              dataColumnSidecar ->
+                  miscHelpersFulu.verifyDataColumnSidecarKzgProof(getKzg(), dataColumnSidecar));
+      final long end = System.currentTimeMillis();
+      runTimes.add((int) (end - start));
+    }
+    printStats(runTimes);
   }
 
   @Test
@@ -199,10 +283,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     when(predicatesMock.isValidMerkleBranch(any(), any(), anyInt(), anyInt(), any()))
         .thenReturn(true);
     final MiscHelpersFulu miscHelpersFuluWithMockPredicates =
-        new MiscHelpersFulu(
-            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
-            predicatesMock,
-            schemaDefinitionsFulu);
+        new MiscHelpersFulu(specConfigFulu, predicatesMock, schemaDefinitionsFulu);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final DataColumnSidecar dataColumnSidecar =
         SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
@@ -225,11 +306,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
             predicatesMock.isValidMerkleBranch(
                 dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
                 dataColumnSidecar.getKzgCommitmentsInclusionProof(),
-                spec.getGenesisSpecConfig()
-                    .toVersionFulu()
-                    .orElseThrow()
-                    .getKzgCommitmentsInclusionProofDepth()
-                    .intValue(),
+                specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
                 miscHelpersFuluWithMockPredicates.getBlockBodyKzgCommitmentsGeneralizedIndex(),
                 dataColumnSidecar.getBlockBodyRoot()))
         .isTrue();
@@ -246,11 +323,10 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         new PredicatesElectra(specMainnet.getGenesisSpecConfig());
     final SchemaDefinitionsFulu schemaDefinitionsFuluMainnet =
         SchemaDefinitionsFulu.required(specMainnet.getGenesisSchemaDefinitions());
+    final SpecConfigFulu specConfigFuluMainnet =
+        specMainnet.getGenesisSpecConfig().toVersionFulu().orElseThrow();
     final MiscHelpersFulu miscHelpersFuluMainnet =
-        new MiscHelpersFulu(
-            specMainnet.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
-            predicatesMainnet,
-            schemaDefinitionsFuluMainnet);
+        new MiscHelpersFulu(specConfigFuluMainnet, predicatesMainnet, schemaDefinitionsFuluMainnet);
     final DataColumnSidecar dataColumnSidecar =
         SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
             .getDataColumnSidecarSchema()
@@ -330,7 +406,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     assertThat(proposerIndices).hasSize(slotsPerEpoch);
   }
 
-  static Stream<Arguments> getExtendedSampleCountFixtures() throws IOException {
+  static Stream<Arguments> getExtendedSampleCountFixtures() {
     return Stream.of(
         Arguments.of(0, 16),
         Arguments.of(1, 20),
@@ -344,7 +420,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
         Arguments.of(64, 128));
   }
 
-  static Stream<Arguments> getValidatorCustodyRequirementFixtures() throws IOException {
+  static Stream<Arguments> getValidatorCustodyRequirementFixtures() {
     return Stream.of(
         // expectedValidatorCustodyCount, validatorBalancesEth
         Arguments.of(8, new long[] {31}),
