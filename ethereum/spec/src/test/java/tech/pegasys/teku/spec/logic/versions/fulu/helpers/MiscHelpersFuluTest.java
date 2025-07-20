@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGAbstractBenchmark;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -172,6 +174,59 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
             dataStructureUtil.randomSignedBeaconBlockHeader(),
             UInt64.valueOf(numberOfColumns).increment());
     assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidIndex)).isFalse();
+  }
+
+  @Test
+  public void shouldReturnCorrectaForkVersion() {
+    final Bytes4 altairFork = Bytes4.fromHexString("0x00000002");
+    final Bytes4 bellatrixFork = Bytes4.fromHexString("0x00000003");
+    final Bytes4 capellaFork = Bytes4.fromHexString("0x00000004");
+    final Bytes4 denebFork = Bytes4.fromHexString("0x00000005");
+    final Bytes4 electraFork = Bytes4.fromHexString("0x00000006");
+    final Bytes4 fuluFork = Bytes4.fromHexString("0x00000007");
+    final Spec localSpec =
+        TestSpecFactory.createMinimalFulu(
+            specConfigBuilder ->
+                specConfigBuilder
+                    .altairBuilder(
+                        altairBuilder ->
+                            altairBuilder.altairForkEpoch(UInt64.ONE).altairForkVersion(altairFork))
+                    .bellatrixBuilder(
+                        bellatrixBuilder ->
+                            bellatrixBuilder
+                                .bellatrixForkEpoch(UInt64.valueOf(2))
+                                .bellatrixForkVersion(bellatrixFork))
+                    .capellaBuilder(
+                        capellaBuilder ->
+                            capellaBuilder
+                                .capellaForkEpoch(UInt64.valueOf(3))
+                                .capellaForkVersion(capellaFork))
+                    .denebBuilder(
+                        denebBuilder ->
+                            denebBuilder
+                                .denebForkEpoch(UInt64.valueOf(4))
+                                .denebForkVersion(denebFork))
+                    .electraBuilder(
+                        electraBuilder ->
+                            electraBuilder
+                                .electraForkEpoch(UInt64.valueOf(5))
+                                .electraForkVersion(electraFork))
+                    .fuluBuilder(
+                        fuluBuilder ->
+                            fuluBuilder
+                                .fuluForkEpoch(UInt64.valueOf(6))
+                                .fuluForkVersion(fuluFork)));
+
+    final MiscHelpersFulu helpers =
+        localSpec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+    assertThat(helpers.computeForkVersion(ZERO))
+        .isEqualTo(spec.atSlot(ZERO).getConfig().getGenesisForkVersion());
+    assertThat(helpers.computeForkVersion(ONE)).isEqualTo(altairFork);
+    assertThat(helpers.computeForkVersion(UInt64.valueOf(2))).isEqualTo(bellatrixFork);
+    assertThat(helpers.computeForkVersion(UInt64.valueOf(3))).isEqualTo(capellaFork);
+    assertThat(helpers.computeForkVersion(UInt64.valueOf(4))).isEqualTo(denebFork);
+    assertThat(helpers.computeForkVersion(UInt64.valueOf(5))).isEqualTo(electraFork);
+    assertThat(helpers.computeForkVersion(UInt64.valueOf(6))).isEqualTo(fuluFork);
   }
 
   @Test
