@@ -57,6 +57,15 @@ public class MiscHelpersElectra extends MiscHelpersDeneb {
 
   @Override
   public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfigElectra
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-electra, but expected electra at the latest");
+              }
+            });
     if (epoch.isGreaterThanOrEqualTo(specConfigElectra.getElectraForkEpoch())) {
       return specConfigElectra.getElectraForkVersion();
     }

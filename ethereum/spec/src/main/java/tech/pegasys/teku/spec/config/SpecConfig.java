@@ -193,4 +193,6 @@ public interface SpecConfig extends NetworkingSpecConfig {
   }
 
   SpecMilestone getMilestone();
+
+  Optional<UInt64> nextForkEpoch();
 }

@@ -70,6 +70,15 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
 
   @Override
   public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfigDeneb
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-deneb, but expected deneb at the latest");
+              }
+            });
     if (epoch.isGreaterThanOrEqualTo(specConfigDeneb.getDenebForkEpoch())) {
       return specConfigDeneb.getDenebForkVersion();
     }

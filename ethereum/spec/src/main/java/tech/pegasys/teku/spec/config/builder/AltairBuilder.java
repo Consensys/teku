@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,6 +49,7 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   // Sync protocol
   private Integer minSyncCommitteeParticipants;
   private Integer updateTimeout;
+  private Optional<UInt64> nextForkEpoch = Optional.empty();
 
   AltairBuilder() {}
 
@@ -67,7 +69,8 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
             altairForkVersion,
             altairForkEpoch,
             minSyncCommitteeParticipants,
-            updateTimeout),
+            updateTimeout,
+            nextForkEpoch),
         specConfigAndParent);
   }
 
@@ -176,6 +179,11 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   public AltairBuilder updateTimeout(final Integer updateTimeout) {
     checkNotNull(updateTimeout);
     this.updateTimeout = updateTimeout;
+    return this;
+  }
+
+  public AltairBuilder nextForkEpoch(final Optional<UInt64> nextForkEpoch) {
+    this.nextForkEpoch = nextForkEpoch;
     return this;
   }
 }

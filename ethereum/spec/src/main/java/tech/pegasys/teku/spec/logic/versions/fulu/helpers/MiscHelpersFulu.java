@@ -116,6 +116,15 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   // compute_fork_version
   @Override
   public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfigFulu
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-fulu, but expected fulu at the latest");
+              }
+            });
     if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())) {
       return specConfigFulu.getFuluForkVersion();
     }

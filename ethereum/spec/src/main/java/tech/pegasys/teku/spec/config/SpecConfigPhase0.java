@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -121,6 +122,8 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final UInt64 maxPerEpochActivationExitChurnLimit;
 
+  private final Optional<UInt64> nextForkEpoch;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -188,7 +191,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgMaxEpochsSinceFinalization,
       final int reorgHeadWeightThreshold,
       final int reorgParentWeightThreshold,
-      final UInt64 maxPerEpochActivationExitChurnLimit) {
+      final UInt64 maxPerEpochActivationExitChurnLimit,
+      final Optional<UInt64> nextForkEpoch) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -257,6 +261,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
     this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
+    this.nextForkEpoch = nextForkEpoch;
   }
 
   @Override
@@ -625,6 +630,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return nextForkEpoch;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -680,6 +690,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
+        && Objects.equals(nextForkEpoch, that.nextForkEpoch)
         && Objects.equals(hysteresisDownwardMultiplier, that.hysteresisDownwardMultiplier)
         && Objects.equals(hysteresisUpwardMultiplier, that.hysteresisUpwardMultiplier)
         && Objects.equals(minDepositAmount, that.minDepositAmount)
@@ -761,6 +772,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         subnetsPerNode,
         attestationSubnetCount,
         attestationSubnetExtraBits,
-        attestationSubnetPrefixBits);
+        attestationSubnetPrefixBits,
+        nextForkEpoch);
   }
 }

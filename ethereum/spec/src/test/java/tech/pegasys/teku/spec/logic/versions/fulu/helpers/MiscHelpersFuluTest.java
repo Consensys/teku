@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -177,7 +178,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @Test
-  public void shouldReturnCorrectaForkVersion() {
+  public void shouldReturnCorrectForkVersion() {
     final Bytes4 altairFork = Bytes4.fromHexString("0x00000002");
     final Bytes4 bellatrixFork = Bytes4.fromHexString("0x00000003");
     final Bytes4 capellaFork = Bytes4.fromHexString("0x00000004");
@@ -227,6 +228,11 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     assertThat(helpers.computeForkVersion(UInt64.valueOf(4))).isEqualTo(denebFork);
     assertThat(helpers.computeForkVersion(UInt64.valueOf(5))).isEqualTo(electraFork);
     assertThat(helpers.computeForkVersion(UInt64.valueOf(6))).isEqualTo(fuluFork);
+
+    // base class would throw for future fork
+    final MiscHelpers miscHelpersBase = localSpec.getGenesisSpec().miscHelpers();
+    assertThatThrownBy(() -> miscHelpersBase.computeForkVersion(UInt64.valueOf(7)))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

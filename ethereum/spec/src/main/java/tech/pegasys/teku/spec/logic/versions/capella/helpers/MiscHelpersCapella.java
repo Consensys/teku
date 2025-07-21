@@ -30,6 +30,15 @@ public class MiscHelpersCapella extends MiscHelpersBellatrix {
 
   @Override
   public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfigCapella
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-capella, but expected capella at the latest");
+              }
+            });
     if (epoch.isGreaterThanOrEqualTo(specConfigCapella.getCapellaForkEpoch())) {
       return specConfigCapella.getCapellaForkVersion();
     }

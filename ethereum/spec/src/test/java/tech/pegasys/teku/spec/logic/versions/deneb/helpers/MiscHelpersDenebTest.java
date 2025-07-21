@@ -20,11 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -59,6 +62,40 @@ class MiscHelpersDenebTest {
           predicates,
           schemaDefinitionsDeneb);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  private final UInt64 nextForkEpoch = UInt64.valueOf(1024_000);
+  private final Spec nextVersionSpec =
+      TestSpecFactory.createMinimalDeneb(
+          builder ->
+              builder.denebBuilder(
+                  denebBuilder -> denebBuilder.nextForkEpoch(Optional.of(nextForkEpoch))));
+  private final MiscHelpersDeneb nextVersionHelpers =
+      new MiscHelpersDeneb(
+          nextVersionSpec.getGenesisSpecConfig().toVersionDeneb().orElseThrow(),
+          predicates,
+          schemaDefinitionsDeneb);
+  final Bytes4 nextForkVersion =
+      nextVersionSpec
+          .forMilestone(SpecMilestone.DENEB)
+          .getConfig()
+          .toVersionDeneb()
+          .orElseThrow()
+          .getDenebForkVersion();
+
+  @Test
+  void canComputeForkVersion() {
+    assertThat(nextVersionHelpers.computeForkVersion(UInt64.ZERO)).isEqualTo(nextForkVersion);
+    assertThat(nextVersionHelpers.computeForkVersion(nextForkEpoch.decrement()))
+        .isEqualTo(nextForkVersion);
+  }
+
+  @Test
+  void canDetectEpochIsNextFork() {
+    assertThatThrownBy(() -> nextVersionHelpers.computeForkVersion(nextForkEpoch.increment()))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> nextVersionHelpers.computeForkVersion(nextForkEpoch))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 
   @Test
   public void versionedHash() {

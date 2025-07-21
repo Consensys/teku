@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -138,6 +139,7 @@ public class SpecConfigElectraTest {
         dataStructureUtil.randomPositiveInt(16),
         dataStructureUtil.randomPositiveInt(8),
         dataStructureUtil.randomPositiveInt(1024),
-        dataStructureUtil.randomPositiveInt(8)) {};
+        dataStructureUtil.randomPositiveInt(8),
+        Optional.empty()) {};
   }
 }

@@ -34,6 +34,15 @@ public class MiscHelpersBellatrix extends MiscHelpersAltair {
 
   @Override
   public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfigBellatrix
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-bellatrix, but expected bellatrix at the latest");
+              }
+            });
     if (epoch.isGreaterThanOrEqualTo(specConfigBellatrix.getBellatrixForkEpoch())) {
       return specConfigBellatrix.getBellatrixForkVersion();
     }

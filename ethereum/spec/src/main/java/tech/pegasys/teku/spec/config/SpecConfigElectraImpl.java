@@ -43,6 +43,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxBlobsPerBlockElectra;
   private final int maxRequestBlobSidecarsElectra;
   private final int blobSidecarSubnetCountElectra;
+  private Optional<UInt64> nextForkEpoch = Optional.empty();
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
@@ -65,7 +66,8 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int maxPendingDepositsPerEpoch,
       final int maxBlobsPerBlockElectra,
       final int maxRequestBlobSidecarsElectra,
-      final int blobSidecarSubnetCountElectra) {
+      final int blobSidecarSubnetCountElectra,
+      final Optional<UInt64> nextForkEpoch) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
@@ -87,6 +89,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.maxBlobsPerBlockElectra = maxBlobsPerBlockElectra;
     this.maxRequestBlobSidecarsElectra = maxRequestBlobSidecarsElectra;
     this.blobSidecarSubnetCountElectra = blobSidecarSubnetCountElectra;
+    this.nextForkEpoch = nextForkEpoch;
   }
 
   @Override
@@ -200,6 +203,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   }
 
   @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return nextForkEpoch;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -214,6 +222,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         && Objects.equals(minPerEpochChurnLimitElectra, that.minPerEpochChurnLimitElectra)
         && Objects.equals(minActivationBalance, that.minActivationBalance)
         && Objects.equals(maxEffectiveBalanceElectra, that.maxEffectiveBalanceElectra)
+        && Objects.equals(nextForkEpoch, that.nextForkEpoch)
         && minSlashingPenaltyQuotientElectra == that.minSlashingPenaltyQuotientElectra
         && whistleblowerRewardQuotientElectra == that.whistleblowerRewardQuotientElectra
         && pendingDepositsLimit == that.pendingDepositsLimit
@@ -254,6 +263,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
         maxPendingDepositsPerEpoch,
         maxBlobsPerBlockElectra,
         maxRequestBlobSidecarsElectra,
-        blobSidecarSubnetCountElectra);
+        blobSidecarSubnetCountElectra,
+        nextForkEpoch);
   }
 }

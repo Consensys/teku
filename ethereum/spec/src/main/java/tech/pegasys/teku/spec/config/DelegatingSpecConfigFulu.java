@@ -21,11 +21,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
     implements SpecConfigFulu {
-  private final SpecConfigFulu delegate;
+  private final SpecConfigFulu specConfigFulu;
 
   public DelegatingSpecConfigFulu(final SpecConfigFulu specConfig) {
     super(specConfig);
-    this.delegate = SpecConfigFulu.required(specConfig);
+    this.specConfigFulu = SpecConfigFulu.required(specConfig);
   }
 
   @Override
@@ -35,77 +35,82 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
 
   @Override
   public Bytes4 getFuluForkVersion() {
-    return delegate.getFuluForkVersion();
+    return specConfigFulu.getFuluForkVersion();
   }
 
   @Override
   public UInt64 getFuluForkEpoch() {
-    return delegate.getFuluForkEpoch();
+    return specConfigFulu.getFuluForkEpoch();
   }
 
   @Override
   public UInt64 getFieldElementsPerCell() {
-    return delegate.getFieldElementsPerCell();
+    return specConfigFulu.getFieldElementsPerCell();
   }
 
   @Override
   public UInt64 getFieldElementsPerExtBlob() {
-    return delegate.getFieldElementsPerExtBlob();
+    return specConfigFulu.getFieldElementsPerExtBlob();
   }
 
   @Override
   public List<BlobScheduleEntry> getBlobSchedule() {
-    return delegate.getBlobSchedule();
+    return specConfigFulu.getBlobSchedule();
   }
 
   @Override
   public UInt64 getKzgCommitmentsInclusionProofDepth() {
-    return delegate.getKzgCommitmentsInclusionProofDepth();
+    return specConfigFulu.getKzgCommitmentsInclusionProofDepth();
   }
 
   @Override
   public int getNumberOfColumns() {
-    return delegate.getNumberOfColumns();
+    return specConfigFulu.getNumberOfColumns();
   }
 
   @Override
   public int getNumberOfCustodyGroups() {
-    return delegate.getNumberOfCustodyGroups();
+    return specConfigFulu.getNumberOfCustodyGroups();
   }
 
   @Override
   public int getDataColumnSidecarSubnetCount() {
-    return delegate.getDataColumnSidecarSubnetCount();
+    return specConfigFulu.getDataColumnSidecarSubnetCount();
   }
 
   @Override
   public int getCustodyRequirement() {
-    return delegate.getCustodyRequirement();
+    return specConfigFulu.getCustodyRequirement();
   }
 
   @Override
   public int getValidatorCustodyRequirement() {
-    return delegate.getValidatorCustodyRequirement();
+    return specConfigFulu.getValidatorCustodyRequirement();
   }
 
   @Override
   public int getSamplesPerSlot() {
-    return delegate.getSamplesPerSlot();
+    return specConfigFulu.getSamplesPerSlot();
   }
 
   @Override
   public int getMinEpochsForDataColumnSidecarsRequests() {
-    return delegate.getMinEpochsForDataColumnSidecarsRequests();
+    return specConfigFulu.getMinEpochsForDataColumnSidecarsRequests();
   }
 
   @Override
   public int getMaxRequestDataColumnSidecars() {
-    return delegate.getMaxRequestDataColumnSidecars();
+    return specConfigFulu.getMaxRequestDataColumnSidecars();
   }
 
   @Override
   public UInt64 getBalancePerAdditionalCustodyGroup() {
-    return delegate.getBalancePerAdditionalCustodyGroup();
+    return specConfigFulu.getBalancePerAdditionalCustodyGroup();
+  }
+
+  @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return specConfigFulu.nextForkEpoch();
   }
 
   @Override
@@ -117,11 +122,11 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
       return false;
     }
     final DelegatingSpecConfigFulu that = (DelegatingSpecConfigFulu) o;
-    return Objects.equals(delegate, that.delegate);
+    return Objects.equals(specConfigFulu, that.specConfigFulu);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(delegate);
+    return Objects.hash(specConfigFulu);
   }
 }

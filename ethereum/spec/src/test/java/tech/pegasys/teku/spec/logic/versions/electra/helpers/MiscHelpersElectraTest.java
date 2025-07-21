@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.electra.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -21,12 +22,15 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -56,6 +60,39 @@ public class MiscHelpersElectraTest {
           spec.getGenesisSpecConfig(), predicatesElectra, miscHelpersElectra);
 
   private final IntList validatorIndices = IntArrayList.of(1, 2, 3, 4, 5, 6, 7, 0);
+  private final UInt64 nextForkEpoch = UInt64.valueOf(1024_000);
+  private final Spec nextVersionSpec =
+      TestSpecFactory.createMinimalElectra(
+          builder ->
+              builder.electraBuilder(
+                  electraBuilder -> electraBuilder.nextForkEpoch(Optional.of(nextForkEpoch))));
+  private final MiscHelpersElectra nextVersionHelpers =
+      new MiscHelpersElectra(
+          nextVersionSpec.getGenesisSpecConfig().toVersionElectra().orElseThrow(),
+          predicatesElectra,
+          schemaDefinitionsElectra);
+  final Bytes4 nextForkVersion =
+      nextVersionSpec
+          .forMilestone(SpecMilestone.ELECTRA)
+          .getConfig()
+          .toVersionElectra()
+          .orElseThrow()
+          .getElectraForkVersion();
+
+  @Test
+  void canComputeForkVersion() {
+    assertThat(nextVersionHelpers.computeForkVersion(UInt64.ZERO)).isEqualTo(nextForkVersion);
+    assertThat(nextVersionHelpers.computeForkVersion(nextForkEpoch.decrement()))
+        .isEqualTo(nextForkVersion);
+  }
+
+  @Test
+  void canDetectEpochIsNextFork() {
+    assertThatThrownBy(() -> nextVersionHelpers.computeForkVersion(nextForkEpoch.increment()))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> nextVersionHelpers.computeForkVersion(nextForkEpoch))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 
   @Test
   public void isFormerDepositMechanismDisabled_returnsTrueIfDisabled() {

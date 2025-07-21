@@ -55,4 +55,9 @@ public class DelegatingSpecConfigCapella extends DelegatingSpecConfigBellatrix
   public int getMaxBlsToExecutionChanges() {
     return specConfigCapella.getMaxBlsToExecutionChanges();
   }
+
+  @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return specConfigCapella.nextForkEpoch();
+  }
 }

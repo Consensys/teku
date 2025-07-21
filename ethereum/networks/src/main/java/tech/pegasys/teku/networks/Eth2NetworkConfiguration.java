@@ -468,6 +468,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<UInt64> electraForkEpoch = Optional.empty();
     private Optional<UInt64> fuluForkEpoch = Optional.empty();
+    private final Optional<UInt64> gStarEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -525,10 +526,13 @@ public class Eth2NetworkConfiguration {
                         terminalBlockHashEpochOverride.ifPresent(
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
+                        bellatrixBuilder.nextForkEpoch(capellaForkEpoch);
                       });
                   builder.capellaBuilder(
-                      capellaBuilder ->
-                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
+                      capellaBuilder -> {
+                        capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch);
+                        capellaBuilder.nextForkEpoch(denebForkEpoch);
+                      });
                   builder.denebBuilder(
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
@@ -540,12 +544,18 @@ public class Eth2NetworkConfiguration {
                               "Setting a default for trusted setup as nothing was set explicitly");
                           trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME);
                         }
+                        denebBuilder.nextForkEpoch(electraForkEpoch);
                       });
                   builder.electraBuilder(
-                      electraBuilder ->
-                          electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
+                      electraBuilder -> {
+                        electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch);
+                        electraBuilder.nextForkEpoch(fuluForkEpoch);
+                      });
                   builder.fuluBuilder(
-                      fuluBuilder -> fuluForkEpoch.ifPresent(fuluBuilder::fuluForkEpoch));
+                      fuluBuilder -> {
+                        fuluForkEpoch.ifPresent(fuluBuilder::fuluForkEpoch);
+                        fuluBuilder.nextForkEpoch(gStarEpoch);
+                      });
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)

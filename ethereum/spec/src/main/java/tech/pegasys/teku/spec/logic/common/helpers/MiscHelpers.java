@@ -297,6 +297,15 @@ public class MiscHelpers {
   }
 
   public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfig
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-phase0, but expected phase0 at the latest");
+              }
+            });
     return specConfig.getGenesisForkVersion();
   }
 

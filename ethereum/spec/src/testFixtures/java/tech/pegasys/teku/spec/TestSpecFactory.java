@@ -73,6 +73,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
+  public static Spec createMinimalPhase0(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName(), configAdapter);
+    return create(specConfig, SpecMilestone.PHASE0);
+  }
+
   public static Spec createMinimalBellatrix() {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getBellatrixSpecConfig(Eth2Network.MINIMAL);
@@ -91,9 +97,21 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.ALTAIR);
   }
 
+  public static Spec createMinimalAltair(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getAltairSpecConfig(Eth2Network.MINIMAL, configAdapter);
+    return create(specConfig, SpecMilestone.ALTAIR);
+  }
+
   public static Spec createMinimalCapella() {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getCapellaSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.CAPELLA);
+  }
+
+  public static Spec createMinimalCapella(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getCapellaSpecConfig(Eth2Network.MINIMAL, configAdapter);
     return create(specConfig, SpecMilestone.CAPELLA);
   }
 
@@ -356,6 +374,17 @@ public class TestSpecFactory {
               builder
                   .altairBuilder(a -> a.altairForkEpoch(ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO));
+              configAdapter.accept(builder);
+            }));
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getAltairSpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return requireAltair(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder.altairBuilder(a -> a.altairForkEpoch(ZERO));
               configAdapter.accept(builder);
             }));
   }

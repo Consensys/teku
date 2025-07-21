@@ -40,6 +40,15 @@ public class MiscHelpersAltair extends MiscHelpers {
 
   @Override
   public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfigAltair
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-altair, but expected altair at the latest");
+              }
+            });
     if (epoch.isGreaterThanOrEqualTo(specConfigAltair.getAltairForkEpoch())) {
       return specConfigAltair.getAltairForkVersion();
     }
