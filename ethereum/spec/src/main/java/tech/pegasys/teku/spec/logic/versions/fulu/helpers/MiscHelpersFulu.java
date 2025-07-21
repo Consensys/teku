@@ -476,16 +476,16 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
             .map(
-                sideCar ->
-                    IntStream.range(0, sideCar.getDataColumn().size())
+                sidecar ->
+                    IntStream.range(0, sidecar.getDataColumn().size())
                         .mapToObj(
                             rowIndex ->
                                 schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
-                                        sideCar.getDataColumn().get(rowIndex),
-                                        sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
-                                        sideCar.getIndex(),
+                                        sidecar.getDataColumn().get(rowIndex),
+                                        sidecar.getSszKZGProofs().get(rowIndex).getKZGProof(),
+                                        sidecar.getIndex(),
                                         UInt64.valueOf(rowIndex)))
                         .toList())
             .toList();
