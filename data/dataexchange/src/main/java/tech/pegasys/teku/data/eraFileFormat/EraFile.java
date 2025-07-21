@@ -41,6 +41,7 @@ public class EraFile {
   private final RandomAccessFile file;
   private final FileChannel channel;
   private final long fileLength;
+  private static final int HEADER_SIZE = 8;
 
   private ReadSlotIndex stateIndices;
   private ReadSlotIndex blockIndices;
@@ -74,7 +75,7 @@ public class EraFile {
     final Map<Bytes, Integer> entryBytes = new HashMap<>();
     while (offset < fileLength) {
       ReadEntry entry = new ReadEntry(byteBuffer, offset);
-      offset += 8; // header
+      offset += HEADER_SIZE; // header
       offset += (int) entry.getDataSize();
       final Bytes key = Bytes.wrap(entry.getType());
       int i = entries.getOrDefault(key, 0);
