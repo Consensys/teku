@@ -1581,7 +1581,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     // Using a throttled historical query retrieval when handling RPC requests to avoid
     // overwhelming the node in case of various DDOS attacks
-    final CombinedChainDataClient throttlingCombinedChainDataClient;
+    Optional<CombinedChainDataClient> throttlingCombinedChainDataClient = Optional.empty();
     if (beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries() > 0) {
       final ThrottlingStorageQueryChannel throttlingStorageQueryChannel =
           new ThrottlingStorageQueryChannel(
@@ -1589,23 +1589,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
               beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries(),
               metricsSystem);
       throttlingCombinedChainDataClient =
-          new CombinedChainDataClient(
-              recentChainData,
-              throttlingStorageQueryChannel,
-              spec,
-              new EarliestAvailableBlockSlot(
+          Optional.of(
+              new CombinedChainDataClient(
+                  recentChainData,
                   throttlingStorageQueryChannel,
-                  timeProvider,
-                  beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency()));
-    } else {
-      throttlingCombinedChainDataClient = combinedChainDataClient;
+                  spec,
+                  new EarliestAvailableBlockSlot(
+                      throttlingStorageQueryChannel,
+                      timeProvider,
+                      beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())));
     }
 
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
-            .combinedChainDataClient(throttlingCombinedChainDataClient)
+            .combinedChainDataClient(
+                throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
             .dataColumnSidecarCustody(dataColumnSidecarCustody)
             .custodyGroupCountManager(custodyGroupCountManagerLateInit)
             .metadataMessagesFactory(metadataMessagesFactory)
