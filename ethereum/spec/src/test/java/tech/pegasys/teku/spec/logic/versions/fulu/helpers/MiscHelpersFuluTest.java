@@ -165,7 +165,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   // Scenarios from
-  // https://github.com/ethereum/consensus-specs/blob/dev/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
+  // https://github.com/ethereum/consensus-specs/blob/master/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
   public static Stream<Arguments> getComputeForkDigestFuluScenarios() {
     final Spec spec =
         TestSpecFactory.createMinimalFulu(
