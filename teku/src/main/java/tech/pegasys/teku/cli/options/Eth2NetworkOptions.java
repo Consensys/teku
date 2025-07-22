@@ -116,9 +116,10 @@ public class Eth2NetworkOptions {
               + "Higher values improve performance but use more memory. See the following for more information: "
               + "https://github.com/ethereum/c-kzg-4844/blob/main/README.md#precompute",
       arity = "1",
+      converter = OptionalIntConverter.class,
       showDefaultValue = Visibility.ALWAYS,
       hidden = true)
-  private int kzgPrecompute = Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE;
+  private OptionalInt kzgPrecompute = OptionalInt.empty();
 
   @Option(
       names = {"--Xdata-column-sidecar-recovery-max-delay"},
@@ -476,8 +477,8 @@ public class Eth2NetworkOptions {
             aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
-        .rustKzgEnabled(rustKzgEnabled)
-        .kzgPrecompute(kzgPrecompute);
+        .rustKzgEnabled(rustKzgEnabled);
+    kzgPrecompute.ifPresent(builder::kzgPrecompute);
     dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
         builder::dataColumnSidecarRecoveryMaxDelayMillis);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
