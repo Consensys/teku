@@ -17,11 +17,13 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue {
-
+  private static final Logger LOG = LogManager.getLogger();
   protected final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
 
   private final int maximumConcurrentTasks;
@@ -45,6 +47,7 @@ public class ThrottlingTaskQueue {
 
   protected ThrottlingTaskQueue(final int maximumConcurrentTasks) {
     this.maximumConcurrentTasks = maximumConcurrentTasks;
+    LOG.debug("Task queue maximum concurrent tasks {}", maximumConcurrentTasks);
   }
 
   public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
