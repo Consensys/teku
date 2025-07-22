@@ -45,7 +45,6 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout;
 import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
