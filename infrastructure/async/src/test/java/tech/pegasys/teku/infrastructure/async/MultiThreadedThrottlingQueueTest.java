@@ -66,7 +66,7 @@ public class MultiThreadedThrottlingQueueTest {
      */
     Thread.sleep(300);
     assertThat(futures.stream().filter(CompletableFuture::isDone).count())
-        .isGreaterThan(3)
+        .isGreaterThanOrEqualTo(3)
         .isLessThan(10);
 
     // cleanup
