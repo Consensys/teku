@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +28,7 @@ import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
+import tech.pegasys.teku.cli.converter.OptionalLongConverter;
 import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -114,9 +116,20 @@ public class Eth2NetworkOptions {
               + "Higher values improve performance but use more memory. See the following for more information: "
               + "https://github.com/ethereum/c-kzg-4844/blob/main/README.md#precompute",
       arity = "1",
+      converter = OptionalIntConverter.class,
       showDefaultValue = Visibility.ALWAYS,
       hidden = true)
-  private int kzgPrecompute = Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE;
+  private OptionalInt kzgPrecompute = OptionalInt.empty();
+
+  @Option(
+      names = {"--Xdata-column-sidecar-recovery-max-delay"},
+      paramLabel = "<MILLISECONDS>",
+      description =
+          "Maximum delay in milliseconds for a supernode to begin data column sidecar recovery.",
+      arity = "1",
+      converter = OptionalLongConverter.class,
+      hidden = true)
+  private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
 
   @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
@@ -464,8 +477,10 @@ public class Eth2NetworkOptions {
             aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
-        .rustKzgEnabled(rustKzgEnabled)
-        .kzgPrecompute(kzgPrecompute);
+        .rustKzgEnabled(rustKzgEnabled);
+    kzgPrecompute.ifPresent(builder::kzgPrecompute);
+    dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
+        builder::dataColumnSidecarRecoveryMaxDelayMillis);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);

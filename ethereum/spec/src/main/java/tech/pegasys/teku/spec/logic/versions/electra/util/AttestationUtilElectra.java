@@ -64,7 +64,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
    * @return
    * @throws IllegalArgumentException
    * @see
-   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#modified-get_attesting_indices</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#modified-get_attesting_indices</a>
    */
   @Override
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
@@ -94,7 +94,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
    * In electra, attestationData must have committee index set to 0
    *
    * @see
-   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/validator.md#construct-attestation</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/electra/validator.md#construct-attestation</a>
    */
   @Override
   public AttestationData getGenericAttestationData(

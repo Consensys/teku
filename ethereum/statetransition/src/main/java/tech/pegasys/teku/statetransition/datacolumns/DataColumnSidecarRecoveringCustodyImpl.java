@@ -250,7 +250,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     list.thenAccept(
             sidecars -> {
               LOG.debug(
-                  "Recovery for block: {}. DatacolumnSidecars found: {}",
+                  "Recovery for block: {}. DataColumnSidecars found: {}",
                   block.getSlotAndBlockRoot(),
                   sidecars.size());
               final List<DataColumnSidecar> recoveredSidecars =
