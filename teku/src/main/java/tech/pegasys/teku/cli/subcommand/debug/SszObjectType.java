@@ -18,7 +18,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader.BeaconBlockHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data.Eth1DataSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeaderSchema;
@@ -102,7 +101,8 @@ public enum SszObjectType {
       denebSchemas(SchemaDefinitionsDeneb::getExecutionPayloadAndBlobsBundleSchema)),
   DataColumn(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSchema)),
   DataColumnSidecar(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSidecarSchema)),
-  ExecutionPayloadAndBlobsCellBundle(fuluSchemas(SchemaDefinitionsFulu::getExecutionPayloadAndBlobsCellBundleSchema));
+  ExecutionPayloadAndBlobsCellBundle(
+      fuluSchemas(SchemaDefinitionsFulu::getExecutionPayloadAndBlobsCellBundleSchema));
 
   private final Function<SpecVersion, SszSchema<?>> getSchema;
 
