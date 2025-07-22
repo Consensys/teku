@@ -29,20 +29,20 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class StringifyUtil {
 
-  public static String columnIndexesToString(
-      final Collection<Integer> indexes, final int maxColumns) {
-    final String lenStr = "(len: " + indexes.size() + ") ";
-    if (indexes.isEmpty()) {
+  public static String columnIndicesToString(
+      final Collection<Integer> indices, final int maxColumns) {
+    final String lenStr = "(len: " + indices.size() + ") ";
+    if (indices.isEmpty()) {
       return lenStr + "[]";
-    } else if (indexes.size() == maxColumns) {
+    } else if (indices.size() == maxColumns) {
       return lenStr + "[all]";
-    } else if (maxColumns - indexes.size() <= 16) {
-      final Set<Integer> exceptIndexes =
+    } else if (maxColumns - indices.size() <= 16) {
+      final Set<Integer> exceptIndices =
           IntStream.range(0, maxColumns).boxed().collect(Collectors.toSet());
-      exceptIndexes.removeAll(indexes);
-      return lenStr + "[all except " + sortAndJoin(exceptIndexes) + "]";
+      exceptIndices.removeAll(indices);
+      return lenStr + "[all except " + sortAndJoin(exceptIndices) + "]";
     } else {
-      final List<IntRange> ranges = reduceToIntRanges(indexes);
+      final List<IntRange> ranges = reduceToIntRanges(indices);
       if (ranges.size() <= 16) {
         return lenStr
             + "["
@@ -50,7 +50,7 @@ public class StringifyUtil {
             + "]";
       } else {
         final BitSet bitSet = new BitSet(maxColumns);
-        indexes.forEach(bitSet::set);
+        indices.forEach(bitSet::set);
         return lenStr + "[bitmap: " + Bytes.of(bitSet.toByteArray()) + "]";
       }
     }

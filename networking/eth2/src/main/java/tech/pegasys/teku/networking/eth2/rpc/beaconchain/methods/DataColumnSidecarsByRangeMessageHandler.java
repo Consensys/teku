@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/fulu/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
  * v1</a>
  */
 public class DataColumnSidecarsByRangeMessageHandler
