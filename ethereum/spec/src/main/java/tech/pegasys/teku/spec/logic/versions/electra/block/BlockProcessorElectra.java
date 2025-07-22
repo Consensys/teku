@@ -395,7 +395,8 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   /**
    * Implements process_consolidation_request from consensus-spec (EIP-7251)
    *
-   * @see <a href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain
+   * @see <a
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain
    *     .md#new-process_consolidation_request"/>
    */
   @Override
@@ -569,7 +570,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
    * Implements function is_valid_switch_to_compounding_request
    *
    * @see <a
-   *     href="https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
    */
   @Override
   public boolean isValidSwitchToCompoundingRequest(

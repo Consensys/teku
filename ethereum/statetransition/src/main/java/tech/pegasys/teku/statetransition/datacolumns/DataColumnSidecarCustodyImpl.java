@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -83,8 +84,8 @@ public class DataColumnSidecarCustodyImpl
     }
   }
 
-  // for how long the custody will wait for a missing column to be gossiped
-  private final int gossipWaitSlots = 2;
+  // How long the custody will wait for a missing column to be gossiped
+  private static final int GOSSIP_WAIT_SLOTS = 2;
 
   private final Spec spec;
   private final DataColumnSidecarDbAccessor db;
@@ -228,7 +229,7 @@ public class DataColumnSidecarCustodyImpl
           new SlotCustody(
               slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
     }
-    final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootIfHaveBlobs(slot);
+    final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootWithBlobs(slot);
     final List<UInt64> requiredColumns = custodyGroupCountManager.getCustodyColumnIndices();
     final SafeFuture<List<DataColumnSlotAndIdentifier>> existingColumns =
         db.getColumnIdentifiers(slot);
@@ -242,7 +243,13 @@ public class DataColumnSidecarCustodyImpl
                     existingColumns.getImmediately()));
   }
 
-  private SafeFuture<Optional<Bytes32>> getBlockRootIfHaveBlobs(final UInt64 slot) {
+  /**
+   * Get the block root for a slot that has at least one blob.
+   *
+   * @param slot The slot to get the block root for.
+   * @return The block root if it has at least one blob, otherwise nothing.
+   */
+  private SafeFuture<Optional<Bytes32>> getBlockRootWithBlobs(final UInt64 slot) {
     return blockResolver
         .getBlockAtSlot(slot)
         .thenApply(
@@ -251,19 +258,18 @@ public class DataColumnSidecarCustodyImpl
                     .filter(
                         block ->
                             block
-                                    .getBeaconBlock()
-                                    .flatMap(b -> b.getBody().toVersionDeneb())
-                                    .map(b -> b.getBlobKzgCommitments().size())
-                                    .orElse(0)
-                                > 0)
+                                .getBeaconBlock()
+                                .flatMap(b -> b.getBody().toVersionDeneb())
+                                .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+                                .map(commitments -> !commitments.isEmpty())
+                                .orElse(false))
                     .map(BeaconBlock::getRoot));
   }
 
   @Override
   public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
-    // waiting a column for [gossipWaitSlots] to be delivered by gossip
-    // and not considering it missing yet
-    return retrievePotentiallyIncompleteSlotCustodies(currentSlot.minusMinZero(gossipWaitSlots))
+    // Wait GOSSIP_WAIT_SLOTS for the column to be delivered by gossip before considering it missing
+    return retrievePotentiallyIncompleteSlotCustodies(currentSlot.minusMinZero(GOSSIP_WAIT_SLOTS))
         .flatMap(SlotCustody::streamIncompleteColumns);
   }
 }

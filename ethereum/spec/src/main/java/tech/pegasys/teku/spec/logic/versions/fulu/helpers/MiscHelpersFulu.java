@@ -167,11 +167,11 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
       final UInt256 nodeId, final int groupCount) {
-    final List<UInt64> columns = computeCustodyColumnIndexes(nodeId, groupCount);
+    final List<UInt64> columns = computeCustodyColumnIndices(nodeId, groupCount);
     return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
   }
 
-  public List<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int groupCount) {
+  public List<UInt64> computeCustodyColumnIndices(final UInt256 nodeId, final int groupCount) {
     final List<UInt64> custodyGroups = getCustodyGroups(nodeId, groupCount);
     return custodyGroups.stream()
         .flatMap(group -> computeColumnsForCustodyGroup(group).stream())
@@ -476,16 +476,16 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
             .map(
-                sideCar ->
-                    IntStream.range(0, sideCar.getDataColumn().size())
+                sidecar ->
+                    IntStream.range(0, sidecar.getDataColumn().size())
                         .mapToObj(
                             rowIndex ->
                                 schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
-                                        sideCar.getDataColumn().get(rowIndex),
-                                        sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
-                                        sideCar.getIndex(),
+                                        sidecar.getDataColumn().get(rowIndex),
+                                        sidecar.getSszKZGProofs().get(rowIndex).getKZGProof(),
+                                        sidecar.getIndex(),
                                         UInt64.valueOf(rowIndex)))
                         .toList())
             .toList();
