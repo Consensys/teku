@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 public interface BatchDataColumnsByRangeReqResp {
 
   AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRange(
-      UInt256 nodeId, UInt64 startSlot, int slotCount, List<UInt64> columnIndexes);
+      UInt256 nodeId, UInt64 startSlot, int slotCount, List<UInt64> columnIndices);
 
   int getCurrentRequestLimit(UInt256 nodeId);
 }

@@ -226,7 +226,7 @@ public class SimpleSidecarRetriever
     final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
     final Map<UInt64, Long> colIndexToCount =
         connectedPeers.values().stream()
-            .flatMap(p -> p.getNodeCustodyIndexes(specVersion).stream())
+            .flatMap(p -> p.getNodeCustodyIndices(specVersion).stream())
             .collect(Collectors.groupingBy(i -> i, Collectors.counting()));
     final int numberOfColumns =
         SpecConfigFulu.required(specVersion.getConfig()).getNumberOfColumns();
@@ -290,7 +290,7 @@ public class SimpleSidecarRetriever
 
   private class ConnectedPeer {
     final UInt256 nodeId;
-    final Cache<CacheKey, Set<UInt64>> custodyIndexesCache = LRUCache.create(2);
+    final Cache<CacheKey, Set<UInt64>> custodyIndicesCache = LRUCache.create(2);
 
     private record CacheKey(SpecVersion specVersion, int custodyCount) {}
 
@@ -298,19 +298,19 @@ public class SimpleSidecarRetriever
       this.nodeId = nodeId;
     }
 
-    private Set<UInt64> calcNodeCustodyIndexes(final CacheKey cacheKey) {
+    private Set<UInt64> calcNodeCustodyIndices(final CacheKey cacheKey) {
       return new HashSet<>(
-          miscHelpersFulu.computeCustodyColumnIndexes(nodeId, cacheKey.custodyCount()));
+          miscHelpersFulu.computeCustodyColumnIndices(nodeId, cacheKey.custodyCount()));
     }
 
-    private Set<UInt64> getNodeCustodyIndexes(final SpecVersion specVersion) {
-      return custodyIndexesCache.get(
+    private Set<UInt64> getNodeCustodyIndices(final SpecVersion specVersion) {
+      return custodyIndicesCache.get(
           new CacheKey(specVersion, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId)),
-          this::calcNodeCustodyIndexes);
+          this::calcNodeCustodyIndices);
     }
 
     public boolean isCustodyFor(final DataColumnSlotAndIdentifier columnId) {
-      return getNodeCustodyIndexes(spec.atSlot(columnId.slot())).contains(columnId.columnIndex());
+      return getNodeCustodyIndices(spec.atSlot(columnId.slot())).contains(columnId.columnIndex());
     }
   }
 

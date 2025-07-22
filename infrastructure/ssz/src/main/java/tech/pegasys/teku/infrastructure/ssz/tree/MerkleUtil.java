@@ -24,7 +24,7 @@ public class MerkleUtil {
 
   /**
    * Returns the merkle inclusion proof for the field at the given leaf index in the given tree. See
-   * https://github.com/ethereum/consensus-specs/blob/dev/ssz/merkle-proofs.md#merkle-multiproofs
+   * https://github.com/ethereum/consensus-specs/blob/master/ssz/merkle-proofs.md#merkle-multiproofs
    * for more info on merkle proofs.
    */
   public static List<Bytes32> constructMerkleProof(
