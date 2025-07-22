@@ -20,6 +20,8 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE_SUPERNODE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
@@ -671,7 +673,28 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   () ->
                       new InvalidConfigurationException(
                           "Trusted setup should be configured when Deneb is enabled"));
-      kzg.loadTrustedSetup(trustedSetupFile, beaconConfig.eth2NetworkConfig().getKzgPrecompute());
+
+      final int kzgPrecompute =
+          beaconConfig
+              .eth2NetworkConfig()
+              .getKzgPrecompute()
+              .orElseGet(
+                  () -> {
+                    // Default to a different value if this is a supernode
+                    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+                      final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+                      final int totalCustodyGroups =
+                          beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
+                      final int numberOfColumns =
+                          SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfColumns();
+                      if (totalCustodyGroups == numberOfColumns) {
+                        return DEFAULT_KZG_PRECOMPUTE_SUPERNODE;
+                      }
+                    }
+                    return DEFAULT_KZG_PRECOMPUTE;
+                  });
+
+      kzg.loadTrustedSetup(trustedSetupFile, kzgPrecompute);
     } else {
       kzg = KZG.DISABLED;
     }
