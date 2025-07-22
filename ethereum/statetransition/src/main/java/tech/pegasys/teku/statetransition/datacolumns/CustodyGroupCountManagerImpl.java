@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -50,6 +52,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final SettableGauge custodyGroupSyncedCountGauge;
 
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
+  private boolean hasProcessedGenesisTransition = false;
 
   public CustodyGroupCountManagerImpl(
       final Spec spec,
@@ -104,6 +107,11 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       return;
     }
 
+    // Check if we need to handle genesis transition
+    if (!hasProcessedGenesisTransition) {
+      checkAndHandleGenesisTransition(preparedProposerInfo.keySet());
+    }
+
     combinedChainDataClient
         .getBestFinalizedState()
         .thenAccept(
@@ -148,6 +156,42 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
   }
 
+  private void checkAndHandleGenesisTransition(final Set<UInt64> nodeValidatorIndices) {
+    combinedChainDataClient
+        .getLatestFinalized()
+        .ifPresent(
+            finalizedAnchor -> {
+              // Check if we've moved beyond genesis epoch (epoch 0)
+              if (finalizedAnchor.getEpoch().isGreaterThan(UInt64.ZERO)) {
+                // We've finalized beyond genesis, now get the genesis state to count validators
+                final UInt64 genesisSlot = spec.computeStartSlotAtEpoch(UInt64.ZERO);
+                combinedChainDataClient
+                    .getStateAtSlotExact(genesisSlot)
+                    .thenAccept(
+                        maybeGenesisState -> {
+                          if (maybeGenesisState.isPresent()) {
+                            if (!nodeValidatorIndices.isEmpty()) {
+                              // Calculate custody group count based on THIS node's validators effective balance
+                              final int custodyGroupCountFromGenesis =
+                                  miscHelpersFulu.getValidatorsCustodyRequirement(
+                                      maybeGenesisState.get(), nodeValidatorIndices).intValue();
+                              final int updatedCustodyGroupCount =
+                                  Math.max(custodyGroupCountFromGenesis, initCustodyGroupCount);
+                              updateCustodyGroupCount(updatedCustodyGroupCount);
+                              LOG.info(
+                                  "Updated custody group count to {} based on {} node validators from genesis state",
+                                  updatedCustodyGroupCount,
+                                  nodeValidatorIndices.size());
+                            }
+                          }
+                          hasProcessedGenesisTransition = true;
+                        })
+                    .ifExceptionGetsHereRaiseABug();
+              }
+            });
+  }
+
+
   private synchronized boolean updateEpoch(final UInt64 epoch) {
     if (!lastEpoch.equals(epoch)) {
       lastEpoch = epoch;
@@ -162,6 +206,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       LOG.debug(
           "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
       custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount);
+      custodyGroupCountChannel.onCustodyGroupCountSynced(newCustodyGroupCount);
       custodyGroupCountGauge.set(newCustodyGroupCount);
     }
   }
