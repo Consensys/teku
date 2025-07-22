@@ -45,8 +45,11 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.noop.NoOpGraffitiManager;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
@@ -279,4 +282,39 @@ public class DebugToolsCommand implements Runnable {
     }
     return 0;
   }
+
+  @Command(
+          name = "deserialize-data-column-sidecar",
+            description = "Deserialize a DataColumnSidecar from a file.",
+            mixinStandardHelpOptions = true,
+          showDefaultValues = true,
+          abbreviateSynopsis = true,
+          versionProvider = PicoCliVersionProvider.class,
+          synopsisHeading = "%n",
+          descriptionHeading = "%nDescription:%n%n",
+          optionListHeading = "%nOptions:%n",
+          footerHeading = "%n",
+          footer = "Teku is licensed under the Apache License 2.0")
+  public int deserializeDataColumnSidecar(
+          @Option(
+                  names = {"--input", "-i"},
+                  description = "File to read the datacolumn from",
+                  required = true)
+          final Path input
+          ){
+    try {
+        final Bytes dataColumnBytes = Bytes.wrap(Files.readAllBytes(Paths.get(input.toUri())));
+        final tech.pegasys.teku.spec.Spec spec = SpecFactory.create("mainnet");
+
+        final DataColumnSidecar dataColumnSidecar = spec.deserializeSidecar(dataColumnBytes, UInt64.valueOf(33));
+        System.out.println("Deserialized DataColumnSidecar: " + dataColumnSidecar);
+
+
+    } catch (IOException e) {
+      System.err.println("Failed to read datacolumn sidecar file: " + e.getMessage());
+      return 1;
+    }
+      return 0;
+  }
+
 }
