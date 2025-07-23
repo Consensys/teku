@@ -164,7 +164,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             finalizedSlot);
 
     final SafeFuture<RequestState> response;
-    if (message.getCount().isZero() || initialState.isComplete()) {
+    if (requestedCount == 0 || initialState.isComplete()) {
       response = SafeFuture.completedFuture(initialState);
     } else {
       response = sendDataColumnSidecars(initialState);
