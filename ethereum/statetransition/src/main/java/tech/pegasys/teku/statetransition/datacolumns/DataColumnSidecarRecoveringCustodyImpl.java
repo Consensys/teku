@@ -235,6 +235,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     final SafeFuture<List<DataColumnSidecar>> list =
         AsyncStream.createUnsafe(task.existingColumnIds().iterator())
             .mapAsync(delegate::getCustodyDataColumnSidecar)
+            .filter(Optional::isPresent)
             .map(Optional::get)
             .toList();
     initiateRecovery(task.block().get(), list);
@@ -249,7 +250,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     list.thenAccept(
             sidecars -> {
               LOG.debug(
-                  "Recovery for block: {}. DatacolumnSidecars found: {}",
+                  "Recovery for block: {}. DataColumnSidecars found: {}",
                   block.getSlotAndBlockRoot(),
                   sidecars.size());
               final List<DataColumnSidecar> recoveredSidecars =

@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -23,16 +24,27 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
-public class BlobSidecarsByRangeRequestMessageTest {
+public class DataColumnSidecarsByRangeRequestMessageTest {
+
+  final Spec spec = TestSpecFactory.createMinimalFulu();
+  final DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema
+      schema =
+          SchemaDefinitionsFulu.required(
+                  spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
+              .getDataColumnSidecarsByRangeRequestMessageSchema();
+  final List<UInt64> columnIndices = List.of(UInt64.ZERO, UInt64.ONE);
 
   @Test
   public void shouldRoundTripViaSsz() {
-    final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(2), UInt64.valueOf(3), 4);
+    final DataColumnSidecarsByRangeRequestMessage request =
+        schema.create(UInt64.valueOf(2), UInt64.valueOf(3), columnIndices);
     final Bytes data = request.sszSerialize();
-    final BlobSidecarsByRangeRequestMessage result =
-        BlobSidecarsByRangeRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
+    final DataColumnSidecarsByRangeRequestMessage result = schema.sszDeserialize(data);
 
     assertThatSszData(result).isEqualByAllMeansTo(request);
   }
@@ -40,18 +52,18 @@ public class BlobSidecarsByRangeRequestMessageTest {
   @ParameterizedTest(name = "startSlot={0}, count={1}")
   @MethodSource("getMaxSlotParams")
   public void getMaxSlot(final long startSlot, final long count, final long expected) {
-    final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(startSlot), UInt64.valueOf(count), 4);
+    final DataColumnSidecarsByRangeRequestMessage request =
+        schema.create(UInt64.valueOf(startSlot), UInt64.valueOf(count), columnIndices);
 
     assertThat(request.getMaxSlot()).isEqualTo(UInt64.valueOf(expected));
   }
 
   @Test
   public void getMaximumResponseChunks() {
-    final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(19), UInt64.valueOf(23), 4);
+    final DataColumnSidecarsByRangeRequestMessage request =
+        schema.create(UInt64.valueOf(19), UInt64.valueOf(23), columnIndices);
 
-    assertThat(request.getMaximumResponseChunks()).isEqualTo(23 * 4);
+    assertThat(request.getMaximumResponseChunks()).isEqualTo(23 * columnIndices.size());
   }
 
   public static Stream<Arguments> getMaxSlotParams() {

@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#blobsidecarsbyroot-v1">BlobSidecarsByRoot
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/p2p-interface.md#blobsidecarsbyroot-v1">BlobSidecarsByRoot
  * v1</a>
  */
 public class BlobSidecarsByRootMessageHandler
@@ -187,9 +187,7 @@ public class BlobSidecarsByRootMessageHandler
         .thenComposeChecked(
             maybeSlot -> {
               if (maybeSlot.isEmpty()
-                  || maybeSlot
-                      .get()
-                      .isGreaterThanOrEqualTo(spec.blobSidecarsAvailabilityDeprecationSlot())) {
+                  || maybeSlot.get().isGreaterThanOrEqualTo(spec.blobSidecarsDeprecationSlot())) {
                 return SafeFuture.completedFuture(Optional.empty());
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());

@@ -13,7 +13,7 @@ See the [Changelog](https://github.com/Consensys/teku/releases) for details of t
 
 ## Useful links
 
-* [Ethereum Beacon Chain specification](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md)
+* [Ethereum Beacon Chain specification](https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/beacon-chain.md)
 * [Teku user documentation](https://docs.teku.consensys.net/)
 * [Teku REST API reference documentation](https://consensys.github.io/teku/)
 * [Teku issues](https://github.com/Consensys/teku/issues)
@@ -112,7 +112,12 @@ All the unit tests are run as part of the build, but can be explicitly triggered
 ```
 
 ## Special thanks
-YourKit for providing us with a free profiler open source license.
+
+**YourKit**
+
+![YourKit Logo](https://www.yourkit.com/images/yklogo.png)
+
+For providing us free open source licenses for their profiler.
 
 YourKit supports open source projects with innovative and intelligent tools
 for monitoring and profiling Java and .NET applications.
@@ -120,4 +125,10 @@ YourKit is the creator of <a href="https://www.yourkit.com/java/profiler/">YourK
 <a href="https://www.yourkit.com/.net/profiler/">YourKit .NET Profiler</a>,
 and <a href="https://www.yourkit.com/youmonitor/">YourKit YouMonitor</a>.
 
-![YourKit Logo](https://www.yourkit.com/images/yklogo.png)
+**OrbStack**
+
+![OrbStack Logo](https://orbstack.dev/_next/image?url=%2Fimg%2Ficon128.png&w=64&q=75)
+
+For providing us free open source licenses for their application.
+
+OrbStack delivers a fast, light, and easy way to run Docker containers and Linux. Check it out on https://orbstack.dev/.

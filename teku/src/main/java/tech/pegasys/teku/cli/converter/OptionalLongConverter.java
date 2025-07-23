@@ -11,19 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz;
+package tech.pegasys.teku.cli.converter;
 
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.OptionalLong;
+import picocli.CommandLine;
 
-/**
- * Returns `hash_tree_root` conforming to SSZ spec:
- * https://github.com/ethereum/consensus-specs/blob/master/ssz/simple-serialize.md#merkleization
- */
-public interface Merkleizable {
+public class OptionalLongConverter implements CommandLine.ITypeConverter<OptionalLong> {
 
-  /**
-   * Returns `hash_tree_root` conforming to SSZ spec:
-   * https://github.com/ethereum/consensus-specs/blob/master/ssz/simple-serialize.md#merkleization
-   */
-  Bytes32 hashTreeRoot();
+  @Override
+  public OptionalLong convert(final String s) throws Exception {
+    return OptionalLong.of(Long.parseLong(s));
+  }
 }

@@ -241,7 +241,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
         .toList();
   }
 
-  private static OkHttpClient createOkHttpClientForStreamFromClient(final OkHttpClient client) {
+  public static OkHttpClient createOkHttpClientForStreamFromClient(final OkHttpClient client) {
     // call timeout must be disabled for event streams, we use read timeout instead
     return client
         .newBuilder()

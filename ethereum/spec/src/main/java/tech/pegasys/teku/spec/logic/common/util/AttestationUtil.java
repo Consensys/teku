@@ -121,7 +121,7 @@ public abstract class AttestationUtil {
    * @return
    * @throws IllegalArgumentException
    * @see
-   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#get_attesting_indices</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/beacon-chain.md#get_attesting_indices</a>
    */
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
     return IntList.of(

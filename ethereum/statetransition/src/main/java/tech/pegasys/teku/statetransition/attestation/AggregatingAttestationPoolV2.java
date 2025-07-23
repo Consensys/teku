@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -86,6 +87,9 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
   private final AtomicInteger size = new AtomicInteger(0);
 
   private final RewardBasedAttestationSorterFactory rewardBasedAttestationSorterFactory;
+
+  private final AtomicReference<Optional<UInt64>> earliestTrackedOnChainAttestationInclusionSlot =
+      new AtomicReference<>(Optional.empty());
 
   public AggregatingAttestationPoolV2(
       final Spec spec,
@@ -299,6 +303,8 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
   public void onAttestationsIncludedInBlock(
       final UInt64 slot, final Iterable<Attestation> attestations) {
     attestations.forEach(attestation -> onAttestationIncludedInBlock(slot, attestation));
+    earliestTrackedOnChainAttestationInclusionSlot.compareAndExchange(
+        Optional.empty(), Optional.of(slot));
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
@@ -480,8 +486,15 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final long aggregationTimeLimit,
       final boolean singleAttestationsOnlyAggregate,
       final List<PooledAttestationWithData> destinationAggregates) {
+    final Optional<UInt64> earliestSlot = earliestTrackedOnChainAttestationInclusionSlot.get();
+
+    if (earliestSlot.isEmpty()) {
+      // the node just went online, so we can assume the pool is almost empty
+      return;
+    }
+
     dataHashBySlot
-        .headMap(stateAtBlockSlot.getSlot(), false)
+        .subMap(earliestSlot.get(), true, stateAtBlockSlot.getSlot(), false)
         .descendingMap() // Safe view
         .values()
         .stream()

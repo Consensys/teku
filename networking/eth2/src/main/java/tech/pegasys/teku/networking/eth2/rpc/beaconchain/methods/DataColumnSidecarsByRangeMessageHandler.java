@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/fulu/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
  * v1</a>
  */
 public class DataColumnSidecarsByRangeMessageHandler
@@ -88,6 +88,24 @@ public class DataColumnSidecarsByRangeMessageHandler
   }
 
   @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final DataColumnSidecarsByRangeRequestMessage request) {
+    final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
+    final int requestedCount = calculateRequestedCount(request);
+
+    if (requestedCount == -1 || requestedCount > maxRequestDataColumnSidecars) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Only a maximum of %s data column sidecars can be requested per request",
+                  maxRequestDataColumnSidecars)));
+    }
+    return Optional.empty();
+  }
+
+  @Override
   public void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
@@ -108,18 +126,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
         new LoggingResponseCallback<>(responseCallback, responseLogger);
 
-    final int requestedCount = message.getMaximumResponseChunks();
-
-    if (requestedCount > specConfigFulu.getMaxRequestDataColumnSidecars()) {
-      requestCounter.labels("count_too_big").inc();
-      responseCallbackWithLogging.completeWithErrorResponse(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              String.format(
-                  "Only a maximum of %s blob sidecars can be requested per request. Requested: %s",
-                  specConfigFulu.getMaxRequestDataColumnSidecars(), requestedCount)));
-      return;
-    }
+    final int requestedCount = calculateRequestedCount(message);
 
     final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
         peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
@@ -157,7 +164,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             finalizedSlot);
 
     final SafeFuture<RequestState> response;
-    if (initialState.isComplete()) {
+    if (requestedCount == 0 || initialState.isComplete()) {
       response = SafeFuture.completedFuture(initialState);
     } else {
       response = sendDataColumnSidecars(initialState);
@@ -176,7 +183,14 @@ public class DataColumnSidecarsByRangeMessageHandler
           peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
           handleProcessingRequestError(error, responseCallbackWithLogging);
         });
-    ;
+  }
+
+  private int calculateRequestedCount(final DataColumnSidecarsByRangeRequestMessage message) {
+    try {
+      return message.getCount().times(message.getColumns().size()).intValue();
+    } catch (final ArithmeticException e) {
+      return -1;
+    }
   }
 
   private SafeFuture<RequestState> sendDataColumnSidecars(final RequestState requestState) {
@@ -227,8 +241,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     private final Map<UInt64, Bytes32> canonicalHotRoots;
 
     // since our storage stores hot and finalized data columns sidecar on the same "table", this
-    // iterator can span
-    // over hot and finalized data column sidecar
+    // iterator can span over hot and finalized data column sidecar
     private Optional<Iterator<DataColumnSlotAndIdentifier>> dataColumnSidecarKeysIterator =
         Optional.empty();
 

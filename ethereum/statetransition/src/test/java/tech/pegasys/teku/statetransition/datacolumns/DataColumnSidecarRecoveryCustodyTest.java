@@ -75,7 +75,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
   @SuppressWarnings("unchecked")
   private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher = mock(Consumer.class);
 
-  private final Supplier<Stream<UInt64>> columnIndexes =
+  private final Supplier<Stream<UInt64>> columnIndices =
       () ->
           Stream.iterate(
               UInt64.ZERO,
@@ -160,7 +160,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
-        columnIndexes
+        columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
@@ -178,7 +178,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
     stubAsyncRunner.executeQueuedActions();
     stubAsyncRunner.executeQueuedActions();
 
-    columnIndexes
+    columnIndices
         .get()
         .limit(30)
         .forEach(
@@ -187,7 +187,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
               verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
-    columnIndexes
+    columnIndices
         .get()
         .skip(100)
         .forEach(
@@ -205,7 +205,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_PROPOSAL));
     final Map<UInt64, DataColumnSidecar> sidecars =
-        columnIndexes
+        columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
@@ -224,7 +224,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_EL));
     final Map<UInt64, DataColumnSidecar> sidecars =
-        columnIndexes
+        columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
@@ -243,7 +243,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
-        columnIndexes
+        columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
@@ -283,7 +283,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
-        columnIndexes
+        columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));

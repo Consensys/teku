@@ -145,13 +145,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
             return;
           }
           final UInt64 column = nodeRequest.columnIdentifier.columnIndex();
-          if (bySlotMap.containsKey(slot)) {
-            bySlotMap.get(slot).add(column);
-          } else {
-            final Set<UInt64> columns = new HashSet<>();
-            columns.add(column);
-            bySlotMap.put(slot, columns);
-          }
+          bySlotMap.computeIfAbsent(slot, k -> new HashSet<>()).add(column);
         });
 
     if (bySlotMap.isEmpty()) {
@@ -188,15 +182,8 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
             return;
           }
           final UInt64 column = nodeRequest.columnIdentifier.columnIndex();
-          final SlotAndBlockRoot slotAndBlockRoot =
-              nodeRequest.columnIdentifier().getSlotAndBlockRoot();
-          if (bySlotAndBlockRootMap.containsKey(slotAndBlockRoot)) {
-            bySlotAndBlockRootMap.get(slotAndBlockRoot).add(column);
-          } else {
-            final Set<UInt64> columns = new HashSet<>();
-            columns.add(column);
-            bySlotAndBlockRootMap.put(slotAndBlockRoot, columns);
-          }
+          final SlotAndBlockRoot key = nodeRequest.columnIdentifier().getSlotAndBlockRoot();
+          bySlotAndBlockRootMap.computeIfAbsent(key, k -> new HashSet<>()).add(column);
         });
 
     if (bySlotAndBlockRootMap.isEmpty()) {

@@ -32,7 +32,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
  * Performs complete data availability check <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
  */
 public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityChecker<BlobSidecar> {
   private final Spec spec;

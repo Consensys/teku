@@ -166,12 +166,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
-      final UInt256 nodeId, final UInt64 epoch, final int groupCount) {
-    final List<UInt64> columns = computeCustodyColumnIndexes(nodeId, groupCount);
+      final UInt256 nodeId, final int groupCount) {
+    final List<UInt64> columns = computeCustodyColumnIndices(nodeId, groupCount);
     return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
   }
 
-  public List<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int groupCount) {
+  public List<UInt64> computeCustodyColumnIndices(final UInt256 nodeId, final int groupCount) {
     final List<UInt64> custodyGroups = getCustodyGroups(nodeId, groupCount);
     return custodyGroups.stream()
         .flatMap(group -> computeColumnsForCustodyGroup(group).stream())
@@ -182,7 +182,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroup.isGreaterThanOrEqualTo(specConfigFulu.getNumberOfCustodyGroups())) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group %s couldn't exceed number of groups %s",
+              "Custody group (%s) cannot exceed number of groups (%s)",
               custodyGroup, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
@@ -192,7 +192,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return IntStream.range(0, columnsPerGroup)
         .mapToLong(
             i -> (long) specConfigFulu.getNumberOfCustodyGroups() * i + custodyGroup.intValue())
-        .sorted()
         .mapToObj(UInt64::valueOf)
         .toList();
   }
@@ -206,7 +205,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroupCount > specConfigFulu.getNumberOfCustodyGroups()) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group count %s couldn't exceed number of groups %s",
+              "Custody group count (%s) cannot exceed number of groups (%s)",
               custodyGroupCount, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
@@ -267,7 +266,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return true;
   }
 
-  public boolean verifyDataColumnSidecarKzgProof(
+  public boolean verifyDataColumnSidecarKzgProofs(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
 
     final List<KZGCellWithColumnId> cellWithIds =
@@ -477,16 +476,16 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
             .map(
-                sideCar ->
-                    IntStream.range(0, sideCar.getDataColumn().size())
+                sidecar ->
+                    IntStream.range(0, sidecar.getDataColumn().size())
                         .mapToObj(
                             rowIndex ->
                                 schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
-                                        sideCar.getDataColumn().get(rowIndex),
-                                        sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
-                                        sideCar.getIndex(),
+                                        sidecar.getDataColumn().get(rowIndex),
+                                        sidecar.getSszKZGProofs().get(rowIndex).getKZGProof(),
+                                        sidecar.getIndex(),
                                         UInt64.valueOf(rowIndex)))
                         .toList())
             .toList();
