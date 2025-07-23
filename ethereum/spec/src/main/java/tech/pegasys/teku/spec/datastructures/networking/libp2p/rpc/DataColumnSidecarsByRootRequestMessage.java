@@ -37,7 +37,12 @@ public class DataColumnSidecarsByRootRequestMessage extends SszListImpl<DataColu
 
   @Override
   public int getMaximumResponseChunks() {
-    return size() * MAX_BATCH_SIZE;
+    return stream()
+            .reduce(
+                    0,
+                    (current, dataColumnsByRootIdentifier) ->
+                            current + dataColumnsByRootIdentifier.getColumns().size(),
+                    Integer::sum);
   }
 
   @Override
