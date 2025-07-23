@@ -26,14 +26,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class StringifyUtilTest {
 
-  record TestCase(IntStream indexes, String expectedString) {
+  record TestCase(IntStream indices, String expectedString) {
     @Override
     public String toString() {
       return expectedString;
     }
   }
 
-  static final int MAX_INDEXES_LEN = 128;
+  static final int MAX_INDICES_LEN = 128;
 
   static final List<TestCase> TEST_CASES =
       List.of(
@@ -62,9 +62,9 @@ public class StringifyUtilTest {
 
   @ParameterizedTest
   @MethodSource("provideTestCaseParameters")
-  void columnIndexesToString_test(final TestCase testCase) {
-    final List<Integer> idxList = testCase.indexes.boxed().toList();
-    final String s = StringifyUtil.columnIndexesToString(idxList, MAX_INDEXES_LEN);
+  void columnIndicesToString_test(final TestCase testCase) {
+    final List<Integer> idxList = testCase.indices.boxed().toList();
+    final String s = StringifyUtil.columnIndicesToString(idxList, MAX_INDICES_LEN);
 
     assertThat(s).isEqualTo("(len: " + idxList.size() + ") " + testCase.expectedString);
   }

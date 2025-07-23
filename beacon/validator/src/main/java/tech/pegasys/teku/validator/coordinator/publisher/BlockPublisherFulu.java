@@ -51,7 +51,7 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
   void publishBlobSidecars(
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    throw new RuntimeException("Unexpected call to publishBlockSidecars in Fulu");
+    throw new RuntimeException("Unexpected call to publishBlobSidecars in Fulu");
   }
 
   @Override
