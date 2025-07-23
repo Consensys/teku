@@ -35,8 +35,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -60,7 +58,10 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
   }
 
   public StubDataColumnSidecarManager(
-          final Spec spec, final RecentChainData recentChainData, final KZG kzg, final DataAvailabilitySampler dataAvailabilitySampler) {
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final KZG kzg,
+      final DataAvailabilitySampler dataAvailabilitySampler) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.kzg = kzg;
@@ -76,31 +77,33 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
         switch (dataAvailabilitySampler.checkSamplingEligibility(block.getMessage())) {
           case NOT_REQUIRED_BEFORE_FULU -> {
             validationResult.complete(DataAndValidationResult.notRequired());
-            LOG.debug("Availability check for slot {} NOT_REQUIRED, Fulu not started", block.getSlot());
+            LOG.debug(
+                "Availability check for slot {} NOT_REQUIRED, Fulu not started", block.getSlot());
           }
           case NOT_REQUIRED_OLD_EPOCH -> {
             validationResult.complete(DataAndValidationResult.notRequired());
-            LOG.debug("Availability check for slot {} NOT_REQUIRED, epoch too old ", block.getSlot());
+            LOG.debug(
+                "Availability check for slot {} NOT_REQUIRED, epoch too old ", block.getSlot());
           }
           case NOT_REQUIRED_NO_BLOBS -> {
             validationResult.complete(DataAndValidationResult.notRequired());
             LOG.debug(
-                    "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
+                "Availability check for slot {} NOT_REQUIRED, kzg commitments empty",
+                block.getSlot());
           }
           default -> {
             final MiscHelpersFulu helpers =
-                    spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
+                spec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
             validator =
-                    DataColumnSidecarGossipValidator.create(
-                            spec,
-                            new ConcurrentHashMap<>(),
-                            new GossipValidationHelper(spec, recentChainData),
-                            helpers,
-                            kzg,
-                            new StubMetricsSystem(),
-                            recentChainData.getStore());
-            validationResult.complete(
-                    validateDataColumnSidecar());
+                DataColumnSidecarGossipValidator.create(
+                    spec,
+                    new ConcurrentHashMap<>(),
+                    new GossipValidationHelper(spec, recentChainData),
+                    helpers,
+                    kzg,
+                    new StubMetricsSystem(),
+                    recentChainData.getStore());
+            validationResult.complete(validateDataColumnSidecar());
           }
         }
         return true;
@@ -108,50 +111,48 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
 
       @Override
       public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
-          return validationResult;
+        return validationResult;
       }
 
-      private DataAndValidationResult<UInt64> validateDataColumnSidecar(){
+      private DataAndValidationResult<UInt64> validateDataColumnSidecar() {
         final UInt64 blockSlot = block.getSlot();
         final BeaconBlockBody blockBody = block.getMessage().getBody();
         final List<DataColumnSidecar> dataColumnSidecars =
-                dataColumnSidecarBySlot.remove(blockSlot);
+            dataColumnSidecarBySlot.remove(blockSlot);
 
         final Optional<SszList<SszKZGCommitment>> optionalKzgCommitments =
-                blockBody.getOptionalBlobKzgCommitments();
+            blockBody.getOptionalBlobKzgCommitments();
         final boolean hasKzgCommitments =
-                optionalKzgCommitments.isPresent() && !optionalKzgCommitments.get().isEmpty();
+            optionalKzgCommitments.isPresent() && !optionalKzgCommitments.get().isEmpty();
         final boolean hasNoSidecars = dataColumnSidecars == null || dataColumnSidecars.isEmpty();
 
         if (hasKzgCommitments && hasNoSidecars) {
           LOG.warn(
-                  "Block at slot {} had {} KZG commitments but no sidecar columns were found",
-                  blockSlot,
-                  optionalKzgCommitments.get().size());
+              "Block at slot {} had {} KZG commitments but no sidecar columns were found",
+              blockSlot,
+              optionalKzgCommitments.get().size());
           return DataAndValidationResult.invalidResult(Collections.emptyList());
         }
 
-
         return SafeFuture.collectAll(dataColumnSidecars.stream().map(validator::validate))
-                .thenApply(
-                        validationResults -> {
-                          boolean anyRejected =
-                                  validationResults.stream().anyMatch(InternalValidationResult::isReject);
-                          if (anyRejected) {
-                            validationResults.stream()
-                                    .filter(InternalValidationResult::isReject)
-                                    .forEach(
-                                            result ->
-                                                    LOG.warn(
-                                                            "Data column sidecar validation failed: {}",
-                                                            result.getDescription()));
-                            return DataAndValidationResult.invalidResult(List.of(blockSlot));
-                          }
-                          return DataAndValidationResult.validResult(List.of(blockSlot));
-                        }).join();
+            .thenApply(
+                validationResults -> {
+                  boolean anyRejected =
+                      validationResults.stream().anyMatch(InternalValidationResult::isReject);
+                  if (anyRejected) {
+                    validationResults.stream()
+                        .filter(InternalValidationResult::isReject)
+                        .forEach(
+                            result ->
+                                LOG.warn(
+                                    "Data column sidecar validation failed: {}",
+                                    result.getDescription()));
+                    return DataAndValidationResult.invalidResult(List.of(blockSlot));
+                  }
+                  return DataAndValidationResult.validResult(List.of(blockSlot));
+                })
+            .join();
       }
-
     };
   }
-
 }
