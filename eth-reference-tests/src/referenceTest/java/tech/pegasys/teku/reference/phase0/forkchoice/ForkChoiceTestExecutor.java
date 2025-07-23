@@ -45,6 +45,7 @@ import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -63,6 +64,14 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
+import tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
+import tech.pegasys.teku.statetransition.forkchoice.DataColumnSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -127,8 +136,27 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
+    final CurrentSlotProvider currentSlotProvider =
+            CurrentSlotProvider.create(spec, recentChainData.getStore());
+    final DataColumnSidecarDB sidecarDB =
+            DataColumnSidecarDB.create(
+                    storageSystem.combinedChainDataClient(),
+                    storageSystem.chainStorage());
+    final DataColumnSidecarDbAccessor dbAccessor =
+            DataColumnSidecarDbAccessor.builder(sidecarDB)
+                    .spec(spec)
+                    .build();
+    final DasSamplerBasic dasSampler = new DasSamplerBasic(
+            spec,
+            currentSlotProvider,
+            dbAccessor,
+            DataColumnSidecarRecoveringCustody.NOOP,
+            new DataColumnSidecarRetrieverStub(),
+            // using a const for the custody group count here, the test doesn't care
+            //and fetching from the config would break when not in fulu
+            DasCustodyStand.createCustodyGroupCountManager(4));
     final StubDataColumnSidecarManager dataColumnSidecarManager =
-        new StubDataColumnSidecarManager(spec, recentChainData, kzg);
+        new StubDataColumnSidecarManager(spec, recentChainData,kzg, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
     // executor
     final ForkChoice forkChoice =
