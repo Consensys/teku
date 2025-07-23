@@ -138,7 +138,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public List<UInt64> getSamplingColumnIndices() {
-    return miscHelpersFulu.computeCustodyColumnIndexes(nodeId, getSampleGroupCount());
+    return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getSampleGroupCount());
   }
 
   @Override
