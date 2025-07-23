@@ -21,9 +21,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class DataColumnSidecarsByRootRequestMessage extends SszListImpl<DataColumnsByRootIdentifier>
     implements SszList<DataColumnsByRootIdentifier>, RpcRequest {
 
-  // 64 slots * 128 columns at max = 8192, half of MAX_REQUEST_DATA_COLUMN_SIDECARS
-  public static final int MAX_BATCH_SIZE = 64;
-
   public DataColumnSidecarsByRootRequestMessage(
       final DataColumnSidecarsByRootRequestMessageSchema schema,
       final List<DataColumnsByRootIdentifier> dataColumnsByRootIdentifiers) {

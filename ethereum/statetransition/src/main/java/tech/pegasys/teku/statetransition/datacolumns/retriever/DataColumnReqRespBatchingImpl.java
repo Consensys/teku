@@ -36,13 +36,14 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private static final Logger LOG = LogManager.getLogger();
+  // 64 slots * 128 columns at max = 8192, half of MAX_REQUEST_DATA_COLUMN_SIDECARS
+  private static final int MAX_BATCH_SIZE = 64;
 
   private final BatchDataColumnsByRangeReqResp byRangeRpc;
   private final BatchDataColumnsByRootReqResp byRootRpc;
@@ -117,7 +118,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
                         byRootRequest.root(), byRootRequest.columns().stream().toList()))
             .toList();
     final List<List<DataColumnsByRootIdentifier>> byRootBatches =
-        Lists.partition(byRootIdentifiers, DataColumnSidecarsByRootRequestMessage.MAX_BATCH_SIZE);
+        Lists.partition(byRootIdentifiers, MAX_BATCH_SIZE);
 
     final AsyncStream<DataColumnSidecar> byRootStream =
         AsyncStream.createUnsafe(byRootBatches.iterator())
