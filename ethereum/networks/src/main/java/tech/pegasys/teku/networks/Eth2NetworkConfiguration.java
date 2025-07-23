@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -62,7 +63,7 @@ public class Eth2NetworkConfiguration {
   public static final int
       DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 150;
   public static final int
-      DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 500;
+      DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 350;
 
   // should fit attestations for a slot given validator set size
   // so DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS * slots_per_epoch should be >= validator set size
@@ -79,6 +80,17 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
   public static final boolean DEFAULT_RUST_KZG_ENABLED = false;
+
+  // For regular nodes which will not recover data column sidecars, default
+  // to a low value which uses less memory. A higher precompute value only
+  // benefits nodes which compute KZG proofs for cells.
+  public static final int DEFAULT_KZG_PRECOMPUTE = 0;
+
+  // For supernodes which might recover data column sidecars, default to a
+  // higher value which makes recovery faster at the cost of higher memory
+  // usage. A value of 9 will result in approximately 2x performance increase
+  // but use an extra 196 MiB of memory.
+  public static final int DEFAULT_KZG_PRECOMPUTE_SUPERNODE = 9;
 
   // at least 5, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
@@ -125,6 +137,8 @@ public class Eth2NetworkConfiguration {
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
   private final boolean rustKzgEnabled;
+  private final OptionalInt kzgPrecompute;
+  private final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis;
   private final boolean aggregatingAttestationPoolV2Enabled;
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
@@ -159,6 +173,8 @@ public class Eth2NetworkConfiguration {
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
       final boolean rustKzgEnabled,
+      final OptionalInt kzgPrecompute,
+      final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis,
       final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
@@ -195,6 +211,8 @@ public class Eth2NetworkConfiguration {
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
     this.rustKzgEnabled = rustKzgEnabled;
+    this.kzgPrecompute = kzgPrecompute;
+    this.dataColumnSidecarRecoveryMaxDelayMillis = dataColumnSidecarRecoveryMaxDelayMillis;
     this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
     this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
     this.aggregatingAttestationPoolV2BlockAggregationTimeLimit =
@@ -343,6 +361,14 @@ public class Eth2NetworkConfiguration {
     return rustKzgEnabled;
   }
 
+  public OptionalInt getKzgPrecompute() {
+    return kzgPrecompute;
+  }
+
+  public OptionalLong getDataColumnSidecarRecoveryMaxDelayMillis() {
+    return dataColumnSidecarRecoveryMaxDelayMillis;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -462,6 +488,8 @@ public class Eth2NetworkConfiguration {
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
     private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
+    private OptionalInt kzgPrecompute = OptionalInt.empty();
+    private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
     private boolean strictConfigLoadingEnabled;
     private boolean aggregatingAttestationPoolV2Enabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
@@ -573,6 +601,8 @@ public class Eth2NetworkConfiguration {
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
+          kzgPrecompute,
+          dataColumnSidecarRecoveryMaxDelayMillis,
           aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
@@ -817,6 +847,18 @@ public class Eth2NetworkConfiguration {
 
     public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
       this.rustKzgEnabled = rustKzgEnabled;
+      return this;
+    }
+
+    public Builder kzgPrecompute(final int kzgPrecompute) {
+      this.kzgPrecompute = OptionalInt.of(kzgPrecompute);
+      return this;
+    }
+
+    public Builder dataColumnSidecarRecoveryMaxDelayMillis(
+        final Long dataColumnSidecarRecoveryMaxDelayMillis) {
+      this.dataColumnSidecarRecoveryMaxDelayMillis =
+          OptionalLong.of(dataColumnSidecarRecoveryMaxDelayMillis);
       return this;
     }
 

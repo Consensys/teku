@@ -432,7 +432,7 @@ public class Spec {
         .getSchemaDefinitions()
         .toVersionFulu()
         .orElseThrow(
-            () -> new RuntimeException("FULU milestone is required to deserialize column sidecar"))
+            () -> new RuntimeException("Fulu milestone is required to deserialize column sidecar"))
         .getDataColumnSidecarSchema()
         .sszDeserialize(serializedSidecar);
   }
@@ -970,7 +970,7 @@ public class Spec {
         .orElse(false);
   }
 
-  public UInt64 blobSidecarsAvailabilityDeprecationSlot() {
+  public UInt64 blobSidecarsDeprecationSlot() {
     return getSpecConfigFulu()
         .map(maybeConfig -> computeStartSlotAtEpoch(maybeConfig.getFuluForkEpoch()))
         .orElse(UInt64.MAX_VALUE);

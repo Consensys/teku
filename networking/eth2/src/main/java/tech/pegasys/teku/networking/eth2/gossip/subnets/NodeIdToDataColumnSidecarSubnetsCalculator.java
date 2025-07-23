@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 @FunctionalInterface
@@ -34,23 +33,6 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
   NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, subnetCount) -> Optional.empty();
 
-  /** Creates a calculator instance for the specific slot */
-  private static NodeIdToDataColumnSidecarSubnetsCalculator createAtSlot(
-      final SpecConfigFulu config, final MiscHelpers miscHelpers, final UInt64 currentSlot) {
-    UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
-    SszBitvectorSchema<SszBitvector> bitvectorSchema =
-        SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount());
-    return (nodeId, groupCount) -> {
-      List<UInt64> nodeSubnets =
-          MiscHelpersFulu.required(miscHelpers)
-              .computeDataColumnSidecarBackboneSubnets(
-                  nodeId, currentEpoch, groupCount.orElse(config.getCustodyRequirement()));
-      return Optional.of(
-          bitvectorSchema.ofBits(nodeSubnets.stream().map(UInt64::intValue).toList()));
-    };
-  }
-
-  /** Create an instance base on the current slot */
   static NodeIdToDataColumnSidecarSubnetsCalculator create(
       final Spec spec, final Supplier<Optional<UInt64>> currentSlotSupplier) {
 
@@ -59,18 +41,18 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
             .get()
             .flatMap(
                 slot -> {
-                  final SpecVersion specVersion = spec.atSlot(slot);
-                  final NodeIdToDataColumnSidecarSubnetsCalculator calculatorAtSlot;
-                  if (specVersion.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                    calculatorAtSlot =
-                        createAtSlot(
-                            SpecConfigFulu.required(specVersion.getConfig()),
-                            specVersion.miscHelpers(),
-                            slot);
-                  } else {
-                    calculatorAtSlot = NOOP;
+                  final SpecVersion version = spec.atSlot(slot);
+                  if (version.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+                    final SpecConfigFulu config = SpecConfigFulu.required(version.getConfig());
+                    final List<UInt64> subnets =
+                        MiscHelpersFulu.required(version.miscHelpers())
+                            .computeDataColumnSidecarBackboneSubnets(
+                                nodeId, groupCount.orElse(config.getCustodyRequirement()));
+                    return Optional.of(
+                        SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount())
+                            .ofBits(subnets.stream().map(UInt64::intValue).toList()));
                   }
-                  return calculatorAtSlot.calculateSubnets(nodeId, groupCount);
+                  return Optional.empty();
                 });
   }
 }
