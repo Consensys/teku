@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.events;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.joining;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -24,8 +25,11 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -45,6 +49,8 @@ class EventChannel<T> {
     this.invoker = invoker;
     this.allowMultipleSubscribers = allowMultipleSubscribers;
   }
+
+  private static final Logger LOG = LogManager.getLogger();
 
   static <T> EventChannel<T> create(
       final Class<T> channelInterface, final MetricsSystem metricsSystem) {
@@ -68,6 +74,7 @@ class EventChannel<T> {
         Executors.newCachedThreadPool(
             new ThreadFactoryBuilder()
                 .setDaemon(true)
+                .setUncaughtExceptionHandler(EventChannel::uncaughtException)
                 .setNameFormat(channelInterface.getSimpleName() + "-%d")
                 .build()),
         exceptionHandler,
@@ -167,6 +174,17 @@ class EventChannel<T> {
       throw new IllegalStateException("Only one subscriber is supported by this event channel");
     }
     invoker.subscribe(listener, requestedParallelism);
+  }
+
+  private static void uncaughtException(final Thread thread, final Throwable throwable) {
+    final Throwable rootCause = Throwables.getRootCause(throwable);
+
+    if (rootCause instanceof RejectedExecutionException
+        || rootCause instanceof InterruptedException) {
+      LOG.warn("{}; on channel {}", throwable.getMessage(), thread.getName());
+    } else {
+      LOG.error("Unhandled exception: {}; on channel {}", throwable.getMessage(), thread.getName());
+    }
   }
 
   public SafeFuture<Void> stop() {

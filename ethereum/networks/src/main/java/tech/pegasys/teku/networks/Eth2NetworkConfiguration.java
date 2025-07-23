@@ -92,12 +92,12 @@ public class Eth2NetworkConfiguration {
   // but use an extra 196 MiB of memory.
   public static final int DEFAULT_KZG_PRECOMPUTE_SUPERNODE = 9;
 
-  // at least 5, but happily up to 12
+  // at least 6, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
       Math.max(5, Math.min(Runtime.getRuntime().availableProcessors(), 12));
 
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS =
-      Math.max(Runtime.getRuntime().availableProcessors(), DEFAULT_VALIDATOR_EXECUTOR_THREADS);
+      Math.max(Runtime.getRuntime().availableProcessors(), 6);
 
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
@@ -620,20 +620,20 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxThreads < 256,
           "P2P Max threads must be <= 255 (Xnetwork-async-p2p-max-threads - default 10)");
       checkArgument(
-          asyncP2pMaxQueue.orElse(DEFAULT_ASYNC_P2P_MAX_QUEUE) >= 2000,
+          asyncP2pMaxQueue.orElse(DEFAULT_ASYNC_P2P_MAX_QUEUE) >= 2_000,
           "P2P Max Queue size must be at least 2000 (Xnetwork-async-p2p-max-queue - default 10000)");
 
       checkArgument(
           asyncBeaconChainMaxThreads > 1,
-          "BeaconChain Max threads must be >= 2 (Xnetwork-async-beaconchain-max-threads - default 5)");
+          "BeaconChain Max threads must be >= 2 (Xnetwork-async-beaconchain-max-threads - default 6)");
       checkArgument(
           asyncBeaconChainMaxThreads < 256,
-          "BeaconChain Max threads must be <= 255 (Xnetwork-async-beaconchain-max-threads - default 5)");
+          "BeaconChain Max threads must be <= 255 (Xnetwork-async-beaconchain-max-threads - default 6)");
       checkArgument(
-          asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) >= 2000,
+          asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE) >= 2_000,
           "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 10000)");
       checkArgument(
-          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS) >= 10000,
+          pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS) >= 10_000,
           "Pending attestations queue size must be at least 10000 (Xnetwork-pending-attestations-max-queue - default 70000)");
     }
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +47,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
         Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder()
                 .setNameFormat(name + "-async-scheduler-%d")
+                .setUncaughtExceptionHandler(ScheduledExecutorAsyncRunner::uncaughtException)
                 .setDaemon(false)
                 .build());
     final ExecutorService workerPool =
@@ -56,6 +58,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
             new ThreadFactoryBuilder()
                 .setNameFormat(name + "-async-%d")
                 .setDaemon(false)
+                .setUncaughtExceptionHandler(ScheduledExecutorAsyncRunner::uncaughtException)
                 .setPriority(threadPriority)
                 .build());
 
@@ -122,5 +125,16 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private <U> Runnable createRunnableForAction(
       final ExceptionThrowingFutureSupplier<U> action, final SafeFuture<U> result) {
     return () -> SafeFuture.of(action).propagateTo(result);
+  }
+
+  private static void uncaughtException(final Thread thread, final Throwable throwable) {
+    final Throwable rootCause = Throwables.getRootCause(throwable);
+
+    if (rootCause instanceof RejectedExecutionException
+        || rootCause instanceof InterruptedException) {
+      LOG.warn("{}; on channel {}", throwable.getMessage(), thread.getName());
+    } else {
+      LOG.error("Unhandled exception: {}; on channel {}", throwable.getMessage(), thread.getName());
+    }
   }
 }
