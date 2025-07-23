@@ -49,7 +49,7 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
   private final Map<UInt64, List<DataColumnSidecar>> dataColumnSidecarBySlot =
       new ConcurrentHashMap<>();
   private final DataAvailabilitySampler dataAvailabilitySampler;
-  private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
+  ;
   private static final Logger LOG = LogManager.getLogger();
 
   public void prepareDataColumnSidecarForBlock(
@@ -70,6 +70,7 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
 
   @Override
   public AvailabilityChecker<UInt64> createAvailabilityChecker(final SignedBeaconBlock block) {
+    final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
     return new AvailabilityChecker<UInt64>() {
 
       @Override
