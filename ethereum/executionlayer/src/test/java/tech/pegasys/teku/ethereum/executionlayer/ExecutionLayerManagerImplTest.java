@@ -833,6 +833,7 @@ class ExecutionLayerManagerImplTest {
     return ExecutionLayerManagerImpl.create(
         eventLogger,
         executionClientHandler,
+        spec,
         builderEnabled ? Optional.of(builderClient) : Optional.empty(),
         stubMetricsSystem,
         builderValidatorEnabled

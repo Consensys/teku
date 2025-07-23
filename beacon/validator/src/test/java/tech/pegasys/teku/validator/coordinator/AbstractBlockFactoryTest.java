@@ -328,7 +328,8 @@ public abstract class AbstractBlockFactoryTest {
     final SignedBeaconBlock unblindedBlock =
         blockFactory
             .unblindSignedBlockIfBlinded(blindedBlock, BlockPublishingPerformance.NOOP)
-            .join();
+            .join()
+            .orElseThrow();
 
     assertThat(unblindedBlock).isNotNull();
     assertThat(unblindedBlock.hashTreeRoot()).isEqualTo(blindedBlock.hashTreeRoot());

@@ -11,10 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -24,10 +23,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSig
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlockUnblinder {
-  protected SafeFuture<ExecutionPayload> executionPayloadFuture;
+public class SignedBeaconBlockUnblinderFulu extends AbstractSignedBeaconBlockUnblinder {
 
-  public SignedBeaconBlockUnblinderBellatrix(
+  private SafeFuture<Void> completionFuture;
+
+  public SignedBeaconBlockUnblinderFulu(
       final SchemaDefinitionsBellatrix schemaDefinitions,
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     super(schemaDefinitions, signedBlindedBeaconBlock);
@@ -36,7 +36,12 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
   @Override
   public void setExecutionPayloadSupplier(
       final Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
-    this.executionPayloadFuture = executionPayloadSupplier.get();
+    throw new RuntimeException("Should not be called for Fulu block");
+  }
+
+  @Override
+  public void setCompletionSupplier(final Supplier<SafeFuture<Void>> completionFutureSupplier) {
+    this.completionFuture = completionFutureSupplier.get();
   }
 
   @Override
@@ -46,19 +51,8 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
       return SafeFuture.completedFuture(Optional.of(signedBlindedBeaconBlock));
     }
 
-    checkNotNull(executionPayloadFuture, "executionPayload must be set");
+    checkNotNull(completionFuture, "completionFuture must be set");
 
-    return executionPayloadFuture.thenApply(
-        executionPayload -> {
-          final BlindedBeaconBlockBodyBellatrix blindedBody =
-              BlindedBeaconBlockBodyBellatrix.required(
-                  signedBlindedBeaconBlock.getMessage().getBody());
-          checkState(
-              executionPayload
-                  .hashTreeRoot()
-                  .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
-              "executionPayloadHeader root in blinded block do not match provided executionPayload root");
-          return Optional.of(signedBlindedBeaconBlock.unblind(schemaDefinitions, executionPayload));
-        });
+    return completionFuture.thenApply(__ -> Optional.empty());
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -59,7 +60,7 @@ class BlindBlockUtilTest {
     assertThat(signedBlindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isNotEmpty();
 
-    final SafeFuture<SignedBeaconBlock> signedBeaconBlockSafeFuture =
+    final SafeFuture<Optional<SignedBeaconBlock>> maybeSignedBeaconBlockSafeFuture =
         blindBlockUtil.unblindSignedBeaconBlock(
             signedBlindedBeaconBlock,
             unblinder ->
@@ -74,7 +75,7 @@ class BlindBlockUtilTest {
                                 .orElseThrow())));
 
     final SignedBeaconBlock unblindedSignedBeaconBlock =
-        signedBeaconBlockSafeFuture.getImmediately();
+        maybeSignedBeaconBlockSafeFuture.getImmediately().orElseThrow();
     assertThat(unblindedSignedBeaconBlock).isEqualTo(signedBeaconBlock);
     assertThat(
             unblindedSignedBeaconBlock
