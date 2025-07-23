@@ -293,8 +293,8 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     final List<DataColumnSidecar> allAvailableDataColumnSidecars =
         setUpDataColumnSidecarsData(startSlot, request.getMaxSlot(), columnIndices);
 
-    // we simulate that the canonical non-finalized chain only contains blobs from last
-    // slotAndBlockRoot
+    // we simulate that the canonical non-finalized chain only contains data column sidecars from
+    // last slotAndBlockRoot
     final SlotAndBlockRoot canonicalSlotAndBlockRoot =
         allAvailableDataColumnSidecars.getLast().getSlotAndBlockRoot();
 
@@ -307,7 +307,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
                             .isLessThanOrEqualTo(latestFinalizedSlot) // include finalized
                         || dataColumnSidecar
                             .getSlotAndBlockRoot()
-                            .equals(canonicalSlotAndBlockRoot) // include non canonical
+                            .equals(canonicalSlotAndBlockRoot) // include non finalized
                 )
             .toList();
 
@@ -347,8 +347,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
         setUpDataColumnSidecarsData(startSlot, request.getMaxSlot(), columnIndices);
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
-    // Requesting 1 data column sidecars
-    // Requesting 5 * 2 data column sidecars
+    // Requesting 2 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(columnIndices.size())));
     // Sending expectedSent data column sidecars
     verify(peer)
