@@ -111,7 +111,7 @@ public class DataColumnSidecarGossipValidatorTest {
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), eq(proposerIndex), any(), eq(postState)))
         .thenReturn(true);
-    when(miscHelpersFulu.verifyDataColumnSidecarKzgProof(any(), any(DataColumnSidecar.class)))
+    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(), any(DataColumnSidecar.class)))
         .thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(any())).thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecar(any())).thenReturn(true);
@@ -213,7 +213,7 @@ public class DataColumnSidecarGossipValidatorTest {
 
   @TestTemplate
   void shouldRejectIfKzgVerificationFailed() {
-    when(miscHelpersFulu.verifyDataColumnSidecarKzgProof(any(), any(DataColumnSidecar.class)))
+    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(), any(DataColumnSidecar.class)))
         .thenReturn(false);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
@@ -265,7 +265,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper)
@@ -277,7 +277,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     verify(miscHelpersFulu, never()).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu, never()).verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu, never()).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
@@ -290,7 +290,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper)
@@ -306,7 +306,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar0);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar0);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar0);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
@@ -336,7 +336,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecarNew);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecarNew);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecarNew);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
   }
 
