@@ -134,7 +134,11 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
         || rootCause instanceof InterruptedException) {
       LOG.warn("{}; on channel {}", throwable.getMessage(), thread.getName());
     } else {
-      LOG.error("Unhandled exception: {}; on channel {}", throwable.getMessage(), thread.getName());
+      LOG.error(
+          "Unhandled exception: {}; root cause {}; on channel {}",
+          throwable.getClass().getSimpleName(),
+          rootCause.getClass().getSimpleName(),
+          thread.getName());
     }
   }
 }
