@@ -582,6 +582,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return sampleCount;
   }
 
+  public int getSamplingGroupCount(final int custodyRequirement) {
+    return Math.max(custodyRequirement, specConfigFulu.getSamplesPerSlot());
+  }
+
   private static <T> List<List<T>> transpose(final List<List<T>> matrix) {
     final int rowCount = matrix.size();
     final int colCount = matrix.getFirst().size();
