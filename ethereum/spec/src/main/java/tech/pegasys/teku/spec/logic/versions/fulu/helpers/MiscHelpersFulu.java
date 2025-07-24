@@ -272,7 +272,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return true;
   }
 
-  public boolean verifyDataColumnSidecarKzgProof(
+  public boolean verifyDataColumnSidecarKzgProofs(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
 
     final List<KZGCellWithColumnId> cellWithIds =
@@ -586,6 +586,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       }
     }
     return sampleCount;
+  }
+
+  public int getSamplingGroupCount(final int custodyRequirement) {
+    return Math.max(custodyRequirement, specConfigFulu.getSamplesPerSlot());
   }
 
   private static <T> List<List<T>> transpose(final List<List<T>> matrix) {
