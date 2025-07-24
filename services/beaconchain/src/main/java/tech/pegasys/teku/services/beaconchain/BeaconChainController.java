@@ -799,8 +799,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .getPublisher(CustodyGroupCountChannel.class)
         .onGroupCountUpdate(
-            totalMyCustodyGroups,
-            Math.max(totalMyCustodyGroups, specConfigFulu.getSamplesPerSlot()));
+            totalMyCustodyGroups, miscHelpersFulu.getSampleGroupCount(totalMyCustodyGroups));
 
     final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
@@ -1330,9 +1329,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             p2pNetwork,
             nodeId,
-            Math.max(
-                beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu),
-                SpecConfigFulu.required(specVersionFulu.getConfig()).getSamplesPerSlot()));
+            MiscHelpersFulu.required(specVersionFulu.miscHelpers())
+                .getSampleGroupCount(
+                    beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu)));
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
     eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);

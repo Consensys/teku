@@ -133,7 +133,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getSampleGroupCount() {
-    return Math.max(getCustodyGroupCount(), specConfigFulu.getSamplesPerSlot());
+    return miscHelpersFulu.getSampleGroupCount(getCustodyGroupCount());
   }
 
   @Override

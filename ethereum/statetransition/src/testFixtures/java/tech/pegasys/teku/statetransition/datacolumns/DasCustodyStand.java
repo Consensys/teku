@@ -30,12 +30,14 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -75,6 +77,8 @@ public class DasCustodyStand {
       final int totalCustodyGroupCount,
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
+    final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
+    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(specVersion.miscHelpers());
     this.spec = spec;
     this.blockResolver = new CanonicalBlockResolverStub(spec);
     final CanonicalBlockResolver asyncBlockResolver =
@@ -96,9 +100,7 @@ public class DasCustodyStand {
             .orElse(this.db);
 
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
-    final SpecConfigFulu configFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-    final int sampleGroupCount = Math.max(totalCustodyGroupCount, configFulu.getSamplesPerSlot());
+    final int sampleGroupCount = miscHelpersFulu.getSampleGroupCount(totalCustodyGroupCount);
     this.custodyGroupCountManager =
         createCustodyGroupCountManager(totalCustodyGroupCount, sampleGroupCount);
     this.custody =
