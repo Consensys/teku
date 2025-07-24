@@ -92,7 +92,7 @@ public class Eth2NetworkConfiguration {
   // but use an extra 196 MiB of memory.
   public static final int DEFAULT_KZG_PRECOMPUTE_SUPERNODE = 9;
 
-  // at least 6, but happily up to 12
+  // at least 5, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
       Math.max(5, Math.min(Runtime.getRuntime().availableProcessors(), 12));
 
