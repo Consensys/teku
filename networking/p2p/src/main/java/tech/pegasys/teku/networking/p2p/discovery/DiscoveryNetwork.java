@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -199,8 +200,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
     this.enrForkId = Optional.of(enrForkId);
 
-    final Bytes4 nfdEnrField = nextForkDigest.orElse(Bytes4.ZERO);
-    setNextForkDigest(nfdEnrField);
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      final Bytes4 nfdEnrField = nextForkDigest.orElse(Bytes4.ZERO);
+      setNextForkDigest(nfdEnrField);
+    }
   }
 
   private void setEth2(final EnrForkId enrForkId) {
