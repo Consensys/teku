@@ -82,7 +82,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private long discoveryNetworkSyncCommitteeSubnetsSubscription;
 
   private volatile Cancellable gossipUpdateTask;
-  private ForkInfo currentForkInfo;
+  private UInt64 currentForkEpoch;
   private Bytes4 currentForkDigest;
   private final boolean allTopicsFilterEnabled;
 
@@ -132,7 +132,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     // Set the current fork info prior to discovery starting up.
     final ForkInfo currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final Bytes4 currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
-    updateForkInfo(currentForkInfo, currentForkDigest);
+    final Optional<BlobParameters> maybeCurrentBpoFork =
+        recentChainData.getBpoForkByForkDigest(currentForkDigest);
+    updateForkInfo(currentForkInfo, maybeCurrentBpoFork, currentForkDigest);
     return super.start().thenAccept(r -> startup());
   }
 
@@ -318,7 +320,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         .ifPresent(
             forkInfo -> {
               final Bytes4 forkDigest = recentChainData.getForkDigest(epoch);
-              updateForkInfo(forkInfo, forkDigest);
+              final Optional<BlobParameters> maybeBpoFork =
+                  recentChainData.getBpoForkByForkDigest(forkDigest);
+              updateForkInfo(forkInfo, maybeBpoFork, forkDigest);
             });
   }
 
@@ -403,37 +407,37 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     return peerManager;
   }
 
-  private synchronized void updateForkInfo(final ForkInfo forkInfo, final Bytes4 forkDigest) {
-    if (currentForkInfo != null
+  private synchronized void updateForkInfo(
+      final ForkInfo forkInfo,
+      final Optional<BlobParameters> maybeBpoFork,
+      final Bytes4 forkDigest) {
+    final UInt64 forkEpoch =
+        maybeBpoFork.map(BlobParameters::epoch).orElse(forkInfo.getFork().getEpoch());
+    if (currentForkEpoch != null
         && currentForkDigest != null
-        // updating fork info when it's a new hard fork or the same hard fork but a different fork
-        // digest (BPO fork)
-        && ((currentForkInfo.equals(forkInfo) && currentForkDigest.equals(forkDigest))
-            || forkInfo.isPriorTo(currentForkInfo)
-            || currentForkDigest.equals(forkDigest))) {
+        // Will NOT update fork info when it's the same fork digest as the current one or the epoch
+        // of the hard fork (or BPO fork) is prior to the current one
+        && (currentForkDigest.equals(forkDigest) || forkEpoch.isLessThan(currentForkEpoch))) {
       return;
     }
 
-    currentForkInfo = forkInfo;
+    currentForkEpoch = forkEpoch;
     currentForkDigest = forkDigest;
 
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-
-    final Optional<BlobParameters> maybeBpoFork =
-        recentChainData.getBpoForkByForkDigest(forkDigest);
-
-    final Optional<Bytes4> nextForkDigest;
-    if (maybeBpoFork.isPresent()) {
-      nextForkDigest = recentChainData.getNextForkDigest(maybeBpoFork.get().epoch());
-    } else {
-      nextForkDigest = recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
-    }
 
     final Optional<BlobParameters> nextBpoFork;
     if (maybeBpoFork.isPresent()) {
       nextBpoFork = spec.getNextBpoFork(maybeBpoFork.get().epoch());
     } else {
       nextBpoFork = spec.getNextBpoFork(forkInfo.getFork().getEpoch());
+    }
+
+    final Optional<Bytes4> nextForkDigest;
+    if (maybeBpoFork.isPresent()) {
+      nextForkDigest = recentChainData.getNextForkDigest(maybeBpoFork.get().epoch());
+    } else {
+      nextForkDigest = recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
     }
 
     discoveryNetwork.setForkInfo(forkInfo, forkDigest, nextFork, nextBpoFork, nextForkDigest);

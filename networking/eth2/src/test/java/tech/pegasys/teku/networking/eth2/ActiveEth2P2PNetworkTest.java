@@ -199,6 +199,10 @@ public class ActiveEth2P2PNetworkTest {
     // Next epoch should not update fork info
     network.onEpoch(bpoForkEpoch.plus(1));
     verifyNoMoreInteractions(discoveryNetwork);
+
+    // Process fulu upgrade epoch again should not update fork info
+    network.onEpoch(fuluForkEpoch);
+    verifyNoMoreInteractions(discoveryNetwork);
   }
 
   @Test
