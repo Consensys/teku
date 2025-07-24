@@ -132,9 +132,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     // Set the current fork info prior to discovery starting up.
     final ForkInfo currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final Bytes4 currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
-    final Optional<BlobParameters> maybeCurrentBpoFork =
-        recentChainData.getBpoForkByForkDigest(currentForkDigest);
-    updateForkInfo(currentForkInfo, maybeCurrentBpoFork, currentForkDigest);
+    updateForkInfo(currentForkInfo, currentForkDigest);
     return super.start().thenAccept(r -> startup());
   }
 
@@ -320,9 +318,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         .ifPresent(
             forkInfo -> {
               final Bytes4 forkDigest = recentChainData.getForkDigest(epoch);
-              final Optional<BlobParameters> maybeBpoFork =
-                  recentChainData.getBpoForkByForkDigest(forkDigest);
-              updateForkInfo(forkInfo, maybeBpoFork, forkDigest);
+              updateForkInfo(forkInfo, forkDigest);
             });
   }
 
@@ -407,10 +403,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     return peerManager;
   }
 
-  private synchronized void updateForkInfo(
-      final ForkInfo forkInfo,
-      final Optional<BlobParameters> maybeBpoFork,
-      final Bytes4 forkDigest) {
+  private synchronized void updateForkInfo(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    final Optional<BlobParameters> maybeBpoFork =
+        recentChainData.getBpoForkByForkDigest(forkDigest);
     final UInt64 forkEpoch =
         maybeBpoFork.map(BlobParameters::epoch).orElse(forkInfo.getFork().getEpoch());
     if (currentForkEpoch != null
