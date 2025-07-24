@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Bytes;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +75,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
   private static final Logger LOG = LogManager.getLogger();
-  private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
     return miscHelpers
