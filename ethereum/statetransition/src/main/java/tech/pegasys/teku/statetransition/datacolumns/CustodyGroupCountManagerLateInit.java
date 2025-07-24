@@ -36,9 +36,9 @@ public class CustodyGroupCountManagerLateInit implements CustodyGroupCountManage
   }
 
   @Override
-  public int getSampleGroupCount() {
+  public int getSamplingGroupCount() {
     checkInitialized();
-    return custodyGroupCountManager.getSampleGroupCount();
+    return custodyGroupCountManager.getSamplingGroupCount();
   }
 
   @Override

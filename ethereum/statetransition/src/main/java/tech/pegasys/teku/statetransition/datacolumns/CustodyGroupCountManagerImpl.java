@@ -132,13 +132,13 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   }
 
   @Override
-  public int getSampleGroupCount() {
-    return miscHelpersFulu.getSampleGroupCount(getCustodyGroupCount());
+  public int getSamplingGroupCount() {
+    return miscHelpersFulu.getSamplingGroupCount(getCustodyGroupCount());
   }
 
   @Override
   public List<UInt64> getSamplingColumnIndices() {
-    return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getSampleGroupCount());
+    return miscHelpersFulu.computeCustodyColumnIndices(nodeId, getSamplingGroupCount());
   }
 
   @Override
@@ -171,7 +171,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     if (oldCustodyGroupCount != newCustodyGroupCount) {
       LOG.debug(
           "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
-      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSampleGroupCount());
+      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
       custodyGroupCountGauge.set(newCustodyGroupCount);
     }
   }

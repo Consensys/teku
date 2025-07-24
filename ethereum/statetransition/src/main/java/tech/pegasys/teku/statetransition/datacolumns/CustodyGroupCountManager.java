@@ -30,7 +30,7 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
-        public int getSampleGroupCount() {
+        public int getSamplingGroupCount() {
           return 0;
         }
 
@@ -52,7 +52,7 @@ public interface CustodyGroupCountManager {
 
   List<UInt64> getCustodyColumnIndices();
 
-  int getSampleGroupCount();
+  int getSamplingGroupCount();
 
   List<UInt64> getSamplingColumnIndices();
 

@@ -172,8 +172,7 @@ public class DasSamplerBasicTest {
     // Add assertions
     assertThat(availableColumns).containsAll(custodyGroupCountManager.getCustodyColumnIndices());
     assertThat(availableColumns)
-        .containsExactlyInAnyOrder(
-            custodyGroupCountManager.getSamplingColumnIndices().toArray(new UInt64[0]));
+        .containsExactlyInAnyOrderElementsOf(custodyGroupCountManager.getSamplingColumnIndices());
 
     // Don't retrieve Datacolumn sidecars that were already in custody.
     for (UInt64 custodyColumn : custodyColumnIndices) {

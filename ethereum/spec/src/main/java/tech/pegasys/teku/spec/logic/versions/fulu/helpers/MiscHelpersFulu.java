@@ -582,7 +582,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return sampleCount;
   }
 
-  public int getSampleGroupCount(final int custodyRequirement) {
+  public int getSamplingGroupCount(final int custodyRequirement) {
     return Math.max(custodyRequirement, specConfigFulu.getSamplesPerSlot());
   }
 

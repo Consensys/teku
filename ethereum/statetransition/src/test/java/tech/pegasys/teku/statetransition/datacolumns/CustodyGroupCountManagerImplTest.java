@@ -32,6 +32,11 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class CustodyGroupCountManagerImplTest {
+
+  private final int defaultCustodyRequirement = 4;
+  private final int defaultSamplesPerSlot = 8;
+  private final int defaultValidatorCustodyRequirement = 8;
+
   @Test
   public void
       testDefaultFuluConfigWithoutValidatorsSamplingColumnsShouldContainsAllCustodyColumns() {
@@ -41,12 +46,12 @@ public class CustodyGroupCountManagerImplTest {
                 builder.fuluBuilder(
                     fuluBuilder ->
                         fuluBuilder
-                            .dataColumnSidecarSubnetCount(4)
+                            .dataColumnSidecarSubnetCount(128)
                             .numberOfColumns(128)
                             .numberOfCustodyGroups(128)
-                            .custodyRequirement(4)
-                            .samplesPerSlot(8)
-                            .validatorCustodyRequirement(8)
+                            .custodyRequirement(defaultCustodyRequirement)
+                            .samplesPerSlot(defaultSamplesPerSlot)
+                            .validatorCustodyRequirement(defaultValidatorCustodyRequirement)
                             .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                             .minEpochsForDataColumnSidecarsRequests(64)));
 
@@ -64,14 +69,14 @@ public class CustodyGroupCountManagerImplTest {
             proposersDataManager,
             custodyGroupCountChannel,
             combinedChainDataClient,
-            4,
+            defaultCustodyRequirement,
             dataStructureUtil.randomUInt256(),
             metricsSystem);
 
     final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
     // Sampling column groups should always include all custody columns at the minimum.
     assertThat(samplingColumnIndices)
-        .contains(custodyGroupCountManager.getCustodyColumnIndices().toArray(new UInt64[] {}));
-    assertEquals(8, samplingColumnIndices.size());
+        .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
+    assertEquals(defaultSamplesPerSlot, samplingColumnIndices.size());
   }
 }

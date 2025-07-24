@@ -75,6 +75,7 @@ public class DasCustodyStand {
   private DasCustodyStand(
       final Spec spec,
       final int totalCustodyGroupCount,
+      final int samplingGroupCount,
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
     final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
@@ -100,9 +101,8 @@ public class DasCustodyStand {
             .orElse(this.db);
 
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
-    final int sampleGroupCount = miscHelpersFulu.getSampleGroupCount(totalCustodyGroupCount);
     this.custodyGroupCountManager =
-        createCustodyGroupCountManager(totalCustodyGroupCount, sampleGroupCount);
+        createCustodyGroupCountManager(totalCustodyGroupCount, samplingGroupCount);
     this.custody =
         new DataColumnSidecarCustodyImpl(
             spec,
@@ -209,6 +209,7 @@ public class DasCustodyStand {
     private Spec spec;
     private UInt256 myNodeId = UInt256.ONE;
     private Integer totalCustodyGroupCount;
+    private Integer samplingGroupCount;
     private Optional<Duration> asyncDbDelay = Optional.empty();
     private Optional<Duration> asyncBlockResolverDelay = Optional.empty();
 
@@ -227,6 +228,11 @@ public class DasCustodyStand {
       return this;
     }
 
+    public Builder withSamplingGroupCount(final Integer samplingGroupCount) {
+      this.samplingGroupCount = samplingGroupCount;
+      return this;
+    }
+
     public Builder withAsyncDb(final Duration asyncDbDelay) {
       this.asyncDbDelay = Optional.ofNullable(asyncDbDelay);
       return this;
@@ -238,14 +244,20 @@ public class DasCustodyStand {
     }
 
     public DasCustodyStand build() {
+      checkNotNull(spec);
+      final SpecConfigFulu configFulu =
+          SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
       if (totalCustodyGroupCount == null) {
-        checkNotNull(spec);
-        final SpecConfigFulu configFulu =
-            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
         totalCustodyGroupCount = configFulu.getCustodyRequirement();
       }
+      if (samplingGroupCount == null) {
+        final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+        samplingGroupCount =
+            MiscHelpersFulu.required(specVersionFulu.miscHelpers())
+                .getSamplingGroupCount(totalCustodyGroupCount);
+      }
       return new DasCustodyStand(
-          spec, totalCustodyGroupCount, asyncDbDelay, asyncBlockResolverDelay);
+          spec, totalCustodyGroupCount, samplingGroupCount, asyncDbDelay, asyncBlockResolverDelay);
     }
   }
 
@@ -263,7 +275,7 @@ public class DasCustodyStand {
       }
 
       @Override
-      public int getSampleGroupCount() {
+      public int getSamplingGroupCount() {
         return sampleGroupCount;
       }
 
