@@ -78,7 +78,6 @@ public class DasCustodyStand {
       final int samplingGroupCount,
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
-    final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
     this.spec = spec;
     this.blockResolver = new CanonicalBlockResolverStub(spec);
     final CanonicalBlockResolver asyncBlockResolver =
