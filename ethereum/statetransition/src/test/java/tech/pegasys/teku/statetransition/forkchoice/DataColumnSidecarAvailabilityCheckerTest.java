@@ -98,13 +98,13 @@ class DataColumnSidecarAvailabilityCheckerTest {
   @Test
   void shouldReturnInvalidWhenDASSamplerReturnError()
       throws ExecutionException, InterruptedException {
+    final RuntimeException exception = new RuntimeException("Error during DAS check");
     when(das.checkSamplingEligibility(block.getMessage()))
         .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
-    when(das.checkDataAvailability(any(), any()))
-        .thenReturn(SafeFuture.failedFuture(new RuntimeException("Error during DAS check")));
+    when(das.checkDataAvailability(any(), any())).thenReturn(SafeFuture.failedFuture(exception));
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
     assertThat(checker.getAvailabilityCheckResult().get())
-        .isEqualTo(DataAndValidationResult.notAvailable());
+        .isEqualTo(DataAndValidationResult.notAvailable(exception));
   }
 
   @Test
