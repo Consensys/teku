@@ -22,7 +22,7 @@ public class Bytes32Converter implements ITypeConverter<Bytes32> {
   public Bytes32 convert(final String value) {
     try {
       return Bytes32.fromHexStringStrict(value);
-    } catch (final NumberFormatException e) {
+    } catch (final IllegalArgumentException e) {
       throw new TypeConversionException(
           "Invalid format: must be a 32 bytes in hex format but was " + value);
     }
