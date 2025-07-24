@@ -79,7 +79,6 @@ public class DasCustodyStand {
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
     final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
-    final MiscHelpersFulu miscHelpersFulu = MiscHelpersFulu.required(specVersion.miscHelpers());
     this.spec = spec;
     this.blockResolver = new CanonicalBlockResolverStub(spec);
     final CanonicalBlockResolver asyncBlockResolver =
