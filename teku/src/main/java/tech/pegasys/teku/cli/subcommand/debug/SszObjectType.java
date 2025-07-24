@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 @SuppressWarnings("JavaCase")
 public enum SszObjectType {
@@ -97,7 +98,11 @@ public enum SszObjectType {
   BlobSidecar(denebSchemas(SchemaDefinitionsDeneb::getBlobSidecarSchema)),
   BlobsBundle(denebSchemas(SchemaDefinitionsDeneb::getBlobsBundleSchema)),
   ExecutionPayloadAndBlobsBundle(
-      denebSchemas(SchemaDefinitionsDeneb::getExecutionPayloadAndBlobsBundleSchema));
+      denebSchemas(SchemaDefinitionsDeneb::getExecutionPayloadAndBlobsBundleSchema)),
+  DataColumn(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSchema)),
+  DataColumnSidecar(fuluSchemas(SchemaDefinitionsFulu::getDataColumnSidecarSchema)),
+  ExecutionPayloadAndBlobsCellBundle(
+      fuluSchemas(SchemaDefinitionsFulu::getExecutionPayloadAndBlobsCellBundleSchema));
 
   private final Function<SpecVersion, SszSchema<?>> getSchema;
 
@@ -141,6 +146,11 @@ public enum SszObjectType {
   private static Function<SpecVersion, SszSchema<?>> electraSchemas(
       final Function<SchemaDefinitionsElectra, SszSchema<?>> getter) {
     return spec -> getter.apply(SchemaDefinitionsElectra.required(spec.getSchemaDefinitions()));
+  }
+
+  private static Function<SpecVersion, SszSchema<?>> fuluSchemas(
+      final Function<SchemaDefinitionsFulu, SszSchema<?>> getter) {
+    return spec -> getter.apply(SchemaDefinitionsFulu.required(spec.getSchemaDefinitions()));
   }
 
   private static Function<SpecVersion, SszSchema<?>> config(

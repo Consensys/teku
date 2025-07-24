@@ -50,7 +50,7 @@ public class MetadataMessagesFactory implements CustodyGroupCountChannel {
   }
 
   @Override
-  public void onCustodyGroupCountUpdate(final int groupCount) {
+  public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
     // we don't care until it's synced
   }
 
