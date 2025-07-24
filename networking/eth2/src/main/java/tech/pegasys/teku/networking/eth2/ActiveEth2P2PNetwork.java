@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -171,12 +172,15 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkSyncCommitteeSubnetsSubscription =
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
+      recentChainData
+          .getNextForkDigest(currentEpoch)
+          .ifPresent(discoveryNetwork::setNextForkDigest);
     }
-
-    gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
+    gossipForkManager.configureGossipForEpoch(currentEpoch);
     if (allTopicsFilterEnabled) {
       setAllTopicScoring();
     }
@@ -401,7 +405,10 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private synchronized void updateForkInfo(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     if (currentForkInfo != null
-        && (currentForkInfo.equals(forkInfo)
+        && currentForkDigest != null
+        // updating fork info when it's a new hard fork or the same hard fork but a different fork
+        // digest (BPO fork)
+        && ((currentForkInfo.equals(forkInfo) && currentForkDigest.equals(forkDigest))
             || forkInfo.isPriorTo(currentForkInfo)
             || currentForkDigest.equals(forkDigest))) {
       return;
@@ -411,7 +418,25 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     currentForkDigest = forkDigest;
 
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-    discoveryNetwork.setForkInfo(forkInfo, forkDigest, nextFork);
+
+    final Optional<BlobParameters> maybeBpoFork =
+        recentChainData.getBpoForkByForkDigest(forkDigest);
+
+    final Optional<Bytes4> nextForkDigest;
+    if (maybeBpoFork.isPresent()) {
+      nextForkDigest = recentChainData.getNextForkDigest(maybeBpoFork.get().epoch());
+    } else {
+      nextForkDigest = recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
+    }
+
+    final Optional<BlobParameters> nextBpoFork;
+    if (maybeBpoFork.isPresent()) {
+      nextBpoFork = spec.getNextBpoFork(maybeBpoFork.get().epoch());
+    } else {
+      nextBpoFork = spec.getNextBpoFork(forkInfo.getFork().getEpoch());
+    }
+
+    discoveryNetwork.setForkInfo(forkInfo, forkDigest, nextFork, nextBpoFork, nextForkDigest);
   }
 
   @Override
