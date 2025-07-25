@@ -443,6 +443,8 @@ public class ExecutionBuilderModule {
                     signedBlindedBeaconBlock,
                     ex.getMessage());
               } else {
+                executionLayerManager.recordExecutionPayloadFallbackSource(
+                    Source.BUILDER, FallbackReason.NONE);
                 LOG.trace(
                     "builderGetPayloadV2(signedBlindedBeaconBlock={}) -> success",
                     signedBlindedBeaconBlock);
