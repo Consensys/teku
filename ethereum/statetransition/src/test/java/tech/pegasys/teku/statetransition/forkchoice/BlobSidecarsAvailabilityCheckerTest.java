@@ -217,8 +217,6 @@ public class BlobSidecarsAvailabilityCheckerTest {
 
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
 
-    Waiter.waitFor(availabilityCheckResult);
-
     assertNotRequired(availabilityCheckResult);
   }
 
