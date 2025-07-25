@@ -127,7 +127,7 @@ public class ScheduledExecutorAsyncRunner implements AsyncRunner {
     return () -> SafeFuture.of(action).propagateTo(result);
   }
 
-  private static void uncaughtException(final Thread thread, final Throwable throwable) {
+  public static void uncaughtException(final Thread thread, final Throwable throwable) {
     final Throwable rootCause = Throwables.getRootCause(throwable);
 
     if (rootCause instanceof RejectedExecutionException
