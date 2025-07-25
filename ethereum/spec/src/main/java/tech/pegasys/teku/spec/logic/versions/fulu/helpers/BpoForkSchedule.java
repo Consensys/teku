@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -22,12 +23,12 @@ import java.util.TreeMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
-/** A helper class to navigate the BPO fork schedule in an efficient manner */
-class BpoForkSchedule {
+/** A helper class to navigate the BPO schedule in an efficient manner */
+public class BpoForkSchedule {
 
   private final NavigableMap<UInt64, BlobParameters> epochToBlobParameters = new TreeMap<>();
 
-  BpoForkSchedule(final SpecConfigFulu specConfig) {
+  public BpoForkSchedule(final SpecConfigFulu specConfig) {
     specConfig
         .getBlobSchedule()
         .forEach(
@@ -41,7 +42,6 @@ class BpoForkSchedule {
     return Optional.ofNullable(epochToBlobParameters.floorEntry(epoch)).map(Map.Entry::getValue);
   }
 
-  @SuppressWarnings("unused")
   public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
     return Optional.ofNullable(epochToBlobParameters.ceilingEntry(epoch.plus(1)))
         .map(Map.Entry::getValue);
@@ -49,8 +49,12 @@ class BpoForkSchedule {
 
   public Optional<Integer> getHighestMaxBlobsPerBlock() {
     return epochToBlobParameters.values().stream()
-        .map(BlobParameters::maxBlobsPerBlock)
-        .max(Comparator.naturalOrder());
+        .max(Comparator.comparing(BlobParameters::maxBlobsPerBlock))
+        .map(BlobParameters::maxBlobsPerBlock);
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    return epochToBlobParameters.values();
   }
 
   @Override
