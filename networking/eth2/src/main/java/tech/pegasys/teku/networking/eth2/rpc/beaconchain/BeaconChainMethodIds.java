@@ -83,6 +83,10 @@ public class BeaconChainMethodIds {
     return extractVersion(methodId, GET_METADATA);
   }
 
+  public static int extractStatusVersion(final String methodId) {
+    return extractVersion(methodId, STATUS);
+  }
+
   @VisibleForTesting
   static int extractVersion(final String methodId, final String methodPrefix) {
     final String versionAndEncoding = methodId.replace(methodPrefix + "/", "");

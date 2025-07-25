@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -333,7 +334,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
-      final Eth2RpcMethod<I, O> method, final I request) {
+      final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 
@@ -452,7 +453,7 @@ public class RespondingEth2Peer implements Eth2Peer {
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final TRequest request,
+          final RpcRequestBodySelector<TRequest> rpcRequestBodySelector,
           final RespHandler responseHandler) {
     return null;
   }

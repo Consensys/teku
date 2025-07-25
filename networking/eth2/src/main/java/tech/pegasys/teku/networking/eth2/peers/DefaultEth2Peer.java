@@ -74,8 +74,10 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -264,15 +266,17 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<PeerStatus> sendStatus() {
-    final Optional<StatusMessage> statusMessage = statusMessageFactory.createStatusMessage();
-    if (statusMessage.isEmpty()) {
+    final Optional<RpcRequestBodySelector<StatusMessage>> statusMessageBodySelector =
+        statusMessageFactory.createStatusMessage();
+    if (statusMessageBodySelector.isEmpty()) {
       final Exception error =
           new IllegalStateException("Unable to generate local status message. Node is not ready.");
       return SafeFuture.failedFuture(error);
     }
-    LOG.trace("Sending status message {} to {}", statusMessage.get(), getAddress());
 
-    return requestSingleItem(rpcMethods.status(), statusMessage.get())
+    LOG.trace("Sending status message to {}", getAddress());
+
+    return requestSingleItem(rpcMethods.status(), statusMessageBodySelector.get())
         .thenApply(PeerStatus::fromStatusMessage)
         .thenPeek(this::updateStatus);
   }
@@ -569,10 +573,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
-      final Eth2RpcMethod<I, O> method, final I request) {
+      final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector) {
     final Eth2RpcResponseHandler<O, O> responseHandler =
         Eth2RpcResponseHandler.expectSingleResponse();
-    return sendEth2Request(method, request, responseHandler)
+    return sendEth2Request(method, requestBodySelector, responseHandler)
         .thenCompose(__ -> responseHandler.getResult());
   }
 
@@ -619,9 +623,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final Eth2RpcMethod<I, O> method,
       final I request,
       final Eth2RpcResponseHandler<O, ?> responseHandler) {
+    return sendEth2Request(method, new SingleRpcRequestBodySelector<>(request), responseHandler);
+  }
+
+  private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendEth2Request(
+      final Eth2RpcMethod<I, O> method,
+      final RpcRequestBodySelector<I> requestBodySelector,
+      final Eth2RpcResponseHandler<O, ?> responseHandler) {
     outstandingRequests.incrementAndGet();
 
-    return this.sendRequest(method, request, responseHandler)
+    return this.sendRequest(method, requestBodySelector, responseHandler)
         .thenPeek(
             ctrl ->
                 ctrl.getRequiredOutgoingRequestHandler()

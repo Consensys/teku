@@ -39,6 +39,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -120,8 +122,13 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   SafeFuture<MetadataMessage> requestMetadata();
 
+  default <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
+      final Eth2RpcMethod<I, O> method, final I request) {
+    return requestSingleItem(method, new SingleRpcRequestBodySelector<>(request));
+  }
+
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
-      final Eth2RpcMethod<I, O> method, final I request);
+      final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector);
 
   Optional<RequestApproval> approveBlocksRequest(
       ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
