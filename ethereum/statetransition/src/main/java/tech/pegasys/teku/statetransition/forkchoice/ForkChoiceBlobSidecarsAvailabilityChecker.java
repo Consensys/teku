@@ -17,6 +17,8 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -74,25 +76,28 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityCh
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    blockBlobSidecarsTracker
-        .getCompletionFuture()
+    final SafeFuture<Void> blobSidecarCompletion = blockBlobSidecarsTracker.getCompletionFuture();
+
+    if (!blobSidecarCompletion.isDone() && isBlockOutsideDataAvailabilityWindow()) {
+      // avoid waiting for blob sidecars if the block is outside the data availability window
+      validationResult.complete(DataAndValidationResult.notRequired());
+      return true;
+    }
+
+    blobSidecarCompletion
         .orTimeout(waitForTrackerCompletionTimeout)
         .thenApply(__ -> validateCompletedBlobSidecars())
         .exceptionallyCompose(
             error ->
                 ExceptionUtil.getCause(error, TimeoutException.class)
-                    .map(
+                    .<SafeFuture<DataAndValidationResult<BlobSidecar>>>map(
                         timeoutException -> {
-                          final SafeFuture<DataAndValidationResult<BlobSidecar>> result;
                           if (isBlockOutsideDataAvailabilityWindow()) {
-                            result =
-                                SafeFuture.completedFuture(DataAndValidationResult.notRequired());
-                          } else {
-                            result =
-                                SafeFuture.completedFuture(
-                                    DataAndValidationResult.notAvailable(timeoutException));
+                            return SafeFuture.completedFuture(
+                                DataAndValidationResult.notRequired());
                           }
-                          return result;
+                          return SafeFuture.completedFuture(
+                              DataAndValidationResult.notAvailable(timeoutException));
                         })
                     .orElseGet(() -> SafeFuture.failedFuture(error)))
         .propagateTo(validationResult);

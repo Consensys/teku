@@ -192,11 +192,45 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() throws Exception {
+  void shouldReturnInvalidWhenBlockIsOutsideAvailabilityWindowButInvalidBlobsAreProvided() throws Exception {
     prepareForImmediateTimeoutWithBlockAndBlobSidecarsOutsideAvailabilityWindow();
+
+    trackerCompletionFuture.complete(null);
 
     final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    assertInvalid(availabilityCheckResult, List.of(), Optional.empty());
+  }
+
+  @Test
+  void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindowNoWait() throws Exception {
+    prepareForImmediateTimeoutWithBlockAndBlobSidecarsOutsideAvailabilityWindow();
+
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
+            blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    assertNotRequired(availabilityCheckResult);
+  }
+
+  @Test
+  void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWhileWaiting() throws Exception {
+    prepareForImmediateTimeoutWithBlockAndBlobSidecarsOutsideAvailabilityWindow();
+
+    when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot()))
+            .thenReturn(true) // first check, inside DA
+            .thenReturn(false); // after timeout, outside DA
+
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
+            blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
 
