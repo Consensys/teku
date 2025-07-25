@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,23 +34,26 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
       SpecMilestone.BELLATRIX,
       SpecMilestone.CAPELLA,
       SpecMilestone.DENEB,
-      SpecMilestone.ELECTRA
+      SpecMilestone.ELECTRA,
+      SpecMilestone.FULU
     })
 class BlindBlockUtilTest {
 
   private DataStructureUtil dataStructureUtil;
   private BlindBlockUtil blindBlockUtil;
+  private SpecMilestone milestone;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
     final Spec spec = specContext.getSpec();
+    this.milestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
     final SpecVersion specVersion = spec.forMilestone(specContext.getSpecMilestone());
     blindBlockUtil = specVersion.getBlindBlockUtil().orElseThrow();
   }
 
   @TestTemplate
-  void shouldBlindAndUnblindBlock() {
+  void shouldBlindBlock() {
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
     assertThat(signedBeaconBlock.isBlinded()).isFalse();
     final SignedBeaconBlock signedBlindedBeaconBlock =
@@ -59,6 +64,14 @@ class BlindBlockUtilTest {
         .isEmpty();
     assertThat(signedBlindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isNotEmpty();
+  }
+
+  @TestTemplate
+  void shouldUnblindSignedBeaconBlockBeforeFulu() {
+    assumeThat(milestone).isLessThanOrEqualTo(SpecMilestone.ELECTRA);
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        blindBlockUtil.blindSignedBeaconBlock(signedBeaconBlock);
 
     final SafeFuture<Optional<SignedBeaconBlock>> maybeSignedBeaconBlockSafeFuture =
         blindBlockUtil.unblindSignedBeaconBlock(
@@ -91,5 +104,30 @@ class BlindBlockUtilTest {
                 .getBody()
                 .getOptionalExecutionPayloadHeader())
         .isEmpty();
+  }
+
+  @TestTemplate
+  void shouldReturnEmptySignedBeaconBlockAfterFulu() {
+    assumeThat(milestone).isGreaterThanOrEqualTo(SpecMilestone.FULU);
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        blindBlockUtil.blindSignedBeaconBlock(signedBeaconBlock);
+
+    assertThatThrownBy(
+            () ->
+                blindBlockUtil.unblindSignedBeaconBlock(
+                    signedBlindedBeaconBlock,
+                    unblinder -> {
+                      unblinder.setExecutionPayloadSupplier(() -> SafeFuture.completedFuture(null));
+                    }))
+        .hasMessageContaining("Should not be called for Fulu block");
+    final SafeFuture<Optional<SignedBeaconBlock>> maybeSignedBeaconBlockSafeFuture =
+        blindBlockUtil.unblindSignedBeaconBlock(
+            signedBlindedBeaconBlock,
+            unblinder -> unblinder.setCompletionSupplier(() -> SafeFuture.completedFuture(null)));
+
+    final Optional<SignedBeaconBlock> maybeUnblindedSignedBeaconBlock =
+        maybeSignedBeaconBlockSafeFuture.getImmediately();
+    assertThat(maybeUnblindedSignedBeaconBlock).isEmpty();
   }
 }
