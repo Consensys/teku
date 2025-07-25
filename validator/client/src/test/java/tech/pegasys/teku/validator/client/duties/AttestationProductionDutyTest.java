@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -83,11 +84,15 @@ class AttestationProductionDutyTest {
 
   private AttestationProductionDuty duty;
 
+  private boolean isElectra;
+
   @BeforeEach
   public void setUp(final SpecContext specContext) {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     fork = dataStructureUtil.randomForkInfo();
+
+    isElectra = specContext.getSpecMilestone().isGreaterThanOrEqualTo(ELECTRA);
 
     duty =
         new AttestationProductionDuty(
@@ -191,6 +196,10 @@ class AttestationProductionDutyTest {
 
   @TestTemplate
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsCanNotBeCreated() {
+    // in electra we create attestation data once for each committee, so it is not applicable
+    // anymore
+    assumeThat(spec.getGenesisSpec().getMilestone()).isLessThan(ELECTRA);
+
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
     final int validator1Index = 10;
@@ -246,7 +255,83 @@ class AttestationProductionDutyTest {
   }
 
   @TestTemplate
+  public void shouldCallForAttestationDataOncePerSlot() {
+    assumeThat(spec.getGenesisSpec().getMilestone()).isGreaterThanOrEqualTo(ELECTRA);
+
+    final Validator validator1 = createValidator();
+    final Validator validator2 = createValidator();
+    final int validator1Index = 10;
+    final int validator1CommitteeIndex = 0;
+    final int validator1CommitteePosition = 5;
+    final int validator1CommitteeSize = 11;
+    final int validator2Index = 20;
+    final int validator2CommitteeIndex = 1;
+    final int validator2CommitteePosition = 3;
+    final int validator2CommitteeSize = 8;
+
+    final AttestationData attestationData = expectCreateAttestationData(0);
+
+    final Attestation expectedAttestation1 =
+        expectSignAttestation(
+            validator1,
+            validator1Index,
+            validator1CommitteeIndex,
+            validator1CommitteePosition,
+            validator1CommitteeSize,
+            attestationData);
+
+    final Attestation expectedAttestation2 =
+        expectSignAttestation(
+            validator2,
+            validator2Index,
+            validator2CommitteeIndex,
+            validator2CommitteePosition,
+            validator2CommitteeSize,
+            attestationData);
+
+    final SafeFuture<Optional<AttestationData>> attestationResult1 =
+        duty.addValidator(
+            validator1,
+            validator1CommitteeIndex,
+            validator1CommitteePosition,
+            validator1Index,
+            validator1CommitteeSize);
+
+    final SafeFuture<Optional<AttestationData>> attestationResult2 =
+        duty.addValidator(
+            validator2,
+            validator2CommitteeIndex,
+            validator2CommitteePosition,
+            validator2Index,
+            validator2CommitteeSize);
+
+    performAndReportDuty();
+
+    verify(validatorApiChannel).createAttestationData(SLOT, 0);
+
+    assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
+    assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
+
+    verify(validatorApiChannel)
+        .sendSignedAttestations(List.of(expectedAttestation1, expectedAttestation2));
+    verify(validatorLogger)
+        .dutyCompleted(
+            TYPE, SLOT, 2, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
+
+    verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics, times(1))
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AttestationProductionDuty.class), eq(SIGN));
+  }
+
+  @TestTemplate
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsFail() {
+    // in electra we create attestation data once for each committee, so it is not applicable
+    // anymore
+    assumeThat(spec.getGenesisSpec().getMilestone()).isLessThan(ELECTRA);
+
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
     final int validator1Index = 10;
@@ -539,7 +624,9 @@ class AttestationProductionDutyTest {
     final Validator validator3 = createValidator();
 
     final AttestationData unsignedAttestation1 = expectCreateAttestationData(committeeIndex1);
-    final AttestationData unsignedAttestation2 = expectCreateAttestationData(committeeIndex2);
+    // we don't create a second unsigned attestation in electra, we reuse the first one
+    final AttestationData unsignedAttestation2 =
+        isElectra ? null : expectCreateAttestationData(committeeIndex2);
     final Attestation expectedAttestation1 =
         expectSignAttestation(
             validator1,
@@ -555,7 +642,7 @@ class AttestationProductionDutyTest {
             committeeIndex2,
             validator2CommitteePosition,
             committeeSize2,
-            unsignedAttestation2);
+            isElectra ? unsignedAttestation1 : unsignedAttestation2);
     final Attestation expectedAttestation3 =
         expectSignAttestation(
             validator3,
@@ -589,7 +676,8 @@ class AttestationProductionDutyTest {
 
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(unsignedAttestation1));
-    assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation2));
+    assertThat(attestationResult2)
+        .isCompletedWithValue(Optional.of(isElectra ? unsignedAttestation1 : unsignedAttestation2));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(unsignedAttestation1));
 
     ArgumentCaptor<List<Attestation>> argumentCaptor = ArgumentCaptor.forClass(List.class);
@@ -599,19 +687,21 @@ class AttestationProductionDutyTest {
             expectedAttestation1, expectedAttestation2, expectedAttestation3);
 
     // Need to create an unsigned attestation for each committee
-    verify(validatorApiChannel, times(2)).createAttestationData(any(), anyInt());
+    verify(validatorApiChannel, times(isElectra ? 1 : 2)).createAttestationData(any(), anyInt());
     verify(validatorLogger)
         .dutyCompleted(
             TYPE,
             SLOT,
             3,
-            Set.of(
-                unsignedAttestation1.getBeaconBlockRoot(),
-                unsignedAttestation2.getBeaconBlockRoot()),
+            isElectra
+                ? Set.of(unsignedAttestation1.getBeaconBlockRoot())
+                : Set.of(
+                    unsignedAttestation1.getBeaconBlockRoot(),
+                    unsignedAttestation2.getBeaconBlockRoot()),
             Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics, times(2))
+    verify(validatorDutyMetrics, times(isElectra ? 1 : 2))
         .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
     verify(validatorDutyMetrics, times(3))
         .record(any(), any(AttestationProductionDuty.class), eq(SIGN));
@@ -645,7 +735,7 @@ class AttestationProductionDutyTest {
 
   private AttestationData expectCreateAttestationData(final int committeeIndex) {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
-    when(validatorApiChannel.createAttestationData(SLOT, committeeIndex))
+    when(validatorApiChannel.createAttestationData(SLOT, isElectra ? 0 : committeeIndex))
         .thenReturn(completedFuture(Optional.of(attestationData)));
     return attestationData;
   }
