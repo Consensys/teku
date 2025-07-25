@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,6 +37,8 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   private Integer maxWithdrawalsPerPayload;
   private Integer maxValidatorsPerWithdrawalSweep;
 
+  private Optional<UInt64> nextForkEpoch = Optional.empty();
+
   CapellaBuilder() {}
 
   @Override
@@ -48,7 +51,8 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
             capellaForkEpoch,
             maxBlsToExecutionChanges,
             maxWithdrawalsPerPayload,
-            maxValidatorsPerWithdrawalSweep),
+            maxValidatorsPerWithdrawalSweep,
+            nextForkEpoch),
         specConfig);
   }
 
@@ -117,5 +121,10 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   @Override
   public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
     rawConfig.accept("CAPELLA_FORK_EPOCH", capellaForkEpoch);
+  }
+
+  public CapellaBuilder nextForkEpoch(final Optional<UInt64> nextForkEpoch) {
+    this.nextForkEpoch = nextForkEpoch;
+    return this;
   }
 }

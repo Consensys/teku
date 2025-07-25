@@ -41,6 +41,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   // Sync protocol
   private final int minSyncCommitteeParticipants;
   private final int updateTimeout;
+  private final Optional<UInt64> nextForkEpoch;
 
   public SpecConfigAltairImpl(
       final SpecConfig specConfig,
@@ -54,7 +55,8 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
       final int minSyncCommitteeParticipants,
-      final int updateTimeout) {
+      final int updateTimeout,
+      final Optional<UInt64> nextForkEpoch) {
     super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
@@ -67,6 +69,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
     this.altairForkEpoch = altairForkEpoch;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.updateTimeout = updateTimeout;
+    this.nextForkEpoch = nextForkEpoch;
   }
 
   public static SpecConfigAltair required(final SpecConfig specConfig) {
@@ -135,6 +138,11 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   }
 
   @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return nextForkEpoch;
+  }
+
+  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }
@@ -163,6 +171,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
         && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
         && Objects.equals(altairForkVersion, that.altairForkVersion)
+        && Objects.equals(nextForkEpoch, that.nextForkEpoch)
         && Objects.equals(altairForkEpoch, that.altairForkEpoch);
   }
 
@@ -179,6 +188,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         epochsPerSyncCommitteePeriod,
         altairForkVersion,
         altairForkEpoch,
-        minSyncCommitteeParticipants);
+        minSyncCommitteeParticipants,
+        nextForkEpoch);
   }
 }

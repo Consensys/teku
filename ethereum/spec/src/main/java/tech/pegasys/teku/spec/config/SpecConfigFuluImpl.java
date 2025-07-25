@@ -38,6 +38,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   private final int maxRequestDataColumnSidecars;
   private final UInt64 balancePerAdditionalCustodyGroup;
   private final List<BlobScheduleEntry> blobSchedule;
+  final Optional<UInt64> nextForkEpoch;
 
   public SpecConfigFuluImpl(
       final SpecConfigElectra specConfig,
@@ -55,7 +56,8 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final int minEpochsForDataColumnSidecarsRequests,
       final int maxRequestDataColumnSidecars,
       final UInt64 balancePerAdditionalCustodyGroup,
-      final List<BlobScheduleEntry> blobSchedule) {
+      final List<BlobScheduleEntry> blobSchedule,
+      final Optional<UInt64> nextForkEpoch) {
     super(specConfig);
     this.fuluForkVersion = fuluForkVersion;
     this.fuluForkEpoch = fuluForkEpoch;
@@ -72,6 +74,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
     this.balancePerAdditionalCustodyGroup = balancePerAdditionalCustodyGroup;
     this.blobSchedule = blobSchedule;
+    this.nextForkEpoch = nextForkEpoch;
   }
 
   @Override
@@ -176,6 +179,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
         && Objects.equals(balancePerAdditionalCustodyGroup, that.balancePerAdditionalCustodyGroup)
         && Objects.equals(blobSchedule, that.blobSchedule)
+        && Objects.equals(nextForkEpoch, that.nextForkEpoch)
         && numberOfColumns == that.numberOfColumns
         && numberOfCustodyGroups == that.numberOfCustodyGroups
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
@@ -204,6 +208,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         validatorCustodyRequirement,
         samplesPerSlot,
         balancePerAdditionalCustodyGroup,
-        blobSchedule);
+        blobSchedule,
+        nextForkEpoch);
   }
 }

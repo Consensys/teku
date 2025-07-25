@@ -296,6 +296,19 @@ public class MiscHelpers {
     return IntList.of(indices);
   }
 
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    specConfig
+        .nextForkEpoch()
+        .ifPresent(
+            nextForkEpoch -> {
+              if (nextForkEpoch.isLessThanOrEqualTo(epoch)) {
+                throw new IllegalArgumentException(
+                    "Epoch " + epoch + " is post-phase0, but expected phase0 at the latest");
+              }
+            });
+    return specConfig.getGenesisForkVersion();
+  }
+
   public void shuffleList(final int[] input, final Bytes32 seed) {
 
     int listSize = input.length;

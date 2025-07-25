@@ -90,4 +90,9 @@ public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
   public int getBlobSidecarSubnetCount() {
     return specConfigDeneb.getBlobSidecarSubnetCount();
   }
+
+  @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return specConfigDeneb.nextForkEpoch();
+  }
 }

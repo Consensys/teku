@@ -82,6 +82,11 @@ public class DelegatingSpecConfigAltair extends DelegatingSpecConfig implements 
   }
 
   @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return specConfigAltair.nextForkEpoch();
+  }
+
+  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }

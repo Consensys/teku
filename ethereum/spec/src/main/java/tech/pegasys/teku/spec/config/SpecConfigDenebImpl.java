@@ -34,6 +34,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final int minEpochsForBlobSidecarsRequests;
   private final int blobSidecarSubnetCount;
   private final Optional<Integer> maybeEpochsStoreBlobs;
+  private final Optional<UInt64> nextForkEpoch;
 
   public SpecConfigDenebImpl(
       final SpecConfigCapella specConfig,
@@ -48,7 +49,8 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final int maxRequestBlobSidecars,
       final int minEpochsForBlobSidecarsRequests,
       final int blobSidecarSubnetCount,
-      final Optional<Integer> maybeEpochsStoreBlobs) {
+      final Optional<Integer> maybeEpochsStoreBlobs,
+      final Optional<UInt64> nextForkEpoch) {
     super(specConfig);
     this.denebForkVersion = denebForkVersion;
     this.denebForkEpoch = denebForkEpoch;
@@ -62,6 +64,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
     this.blobSidecarSubnetCount = blobSidecarSubnetCount;
     this.maybeEpochsStoreBlobs = maybeEpochsStoreBlobs;
+    this.nextForkEpoch = nextForkEpoch;
   }
 
   @Override
@@ -174,5 +177,10 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         minEpochsForBlobSidecarsRequests,
         blobSidecarSubnetCount,
         maybeEpochsStoreBlobs);
+  }
+
+  @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return nextForkEpoch;
   }
 }

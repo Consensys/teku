@@ -28,6 +28,7 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   private final int maxBlsToExecutionChanges;
   private final int maxWithdrawalsPerPayload;
   private final int maxValidatorsPerWithdrawalSweep;
+  private final Optional<UInt64> nextForkEpoch;
 
   public SpecConfigCapellaImpl(
       final SpecConfigBellatrix specConfig,
@@ -35,13 +36,15 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
       final UInt64 capellaForkEpoch,
       final int maxBlsToExecutionChanges,
       final int maxWithdrawalsPerPayload,
-      final int maxValidatorsPerWithdrawalSweep) {
+      final int maxValidatorsPerWithdrawalSweep,
+      final Optional<UInt64> nextForkEpoch) {
     super(specConfig);
     this.capellaForkVersion = capellaForkVersion;
     this.capellaForkEpoch = capellaForkEpoch;
     this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
     this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
     this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
+    this.nextForkEpoch = nextForkEpoch;
   }
 
   @Override
@@ -105,5 +108,10 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   @Override
   public SpecMilestone getMilestone() {
     return SpecMilestone.CAPELLA;
+  }
+
+  @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return nextForkEpoch;
   }
 }

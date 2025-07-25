@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -50,6 +51,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private Integer maxBlobsPerBlockElectra;
   private Integer maxRequestBlobSidecarsElectra;
   private Integer blobSidecarSubnetCountElectra;
+  private Optional<UInt64> nextForkEpoch = Optional.empty();
 
   ElectraBuilder() {}
 
@@ -78,7 +80,8 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
             maxPendingDepositsPerEpoch,
             maxBlobsPerBlockElectra,
             maxRequestBlobSidecarsElectra,
-            blobSidecarSubnetCountElectra),
+            blobSidecarSubnetCountElectra,
+            nextForkEpoch),
         specConfigAndParent);
   }
 
@@ -205,6 +208,11 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   public ElectraBuilder blobSidecarSubnetCountElectra(final Integer blobSidecarSubnetCountElectra) {
     checkNotNull(blobSidecarSubnetCountElectra);
     this.blobSidecarSubnetCountElectra = blobSidecarSubnetCountElectra;
+    return this;
+  }
+
+  public ElectraBuilder nextForkEpoch(final Optional<UInt64> nextForkEpoch) {
+    this.nextForkEpoch = nextForkEpoch;
     return this;
   }
 

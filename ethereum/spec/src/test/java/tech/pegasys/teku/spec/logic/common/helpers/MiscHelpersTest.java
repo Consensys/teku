@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -52,6 +54,28 @@ class MiscHelpersTest {
   private final UInt64 slot50Time =
       GENESIS_TIME.plus(spec.getGenesisSpecConfig().getSecondsPerSlot() * 50L);
   private final UInt64 slot50TimeMillis = secondsToMillis(slot50Time);
+  private final UInt64 nextForkEpoch = UInt64.valueOf(1024_000);
+  private final Spec specNextForkVersionTests =
+      TestSpecFactory.createMinimalPhase0(
+          builder -> builder.nextForkEpoch(Optional.of(nextForkEpoch)));
+  private final MiscHelpers helpersNextTests =
+      new MiscHelpers(specNextForkVersionTests.getGenesisSpecConfig());
+  final Bytes4 genesisForkVersion = spec.getGenesisSpecConfig().getGenesisForkVersion();
+
+  @Test
+  void canComputeForkVersionBellatrix() {
+    assertThat(helpersNextTests.computeForkVersion(UInt64.ZERO)).isEqualTo(genesisForkVersion);
+    assertThat(helpersNextTests.computeForkVersion(nextForkEpoch.decrement()))
+        .isEqualTo(genesisForkVersion);
+  }
+
+  @Test
+  void canDetectEpochIsNextFork() {
+    assertThatThrownBy(() -> helpersNextTests.computeForkVersion(nextForkEpoch.increment()))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> helpersNextTests.computeForkVersion(nextForkEpoch))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 
   @Test
   void computeShuffledIndex_boundaryTest() {
