@@ -198,7 +198,7 @@ class AttestationProductionDutyTest {
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsCanNotBeCreated() {
     // in electra we create attestation data once for each committee, so it is not applicable
     // anymore
-    assumeThat(spec.getGenesisSpec().getMilestone()).isLessThan(ELECTRA);
+    assumeThat(isElectra).isFalse();
 
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
@@ -256,7 +256,7 @@ class AttestationProductionDutyTest {
 
   @TestTemplate
   public void shouldCallForAttestationDataOncePerSlot() {
-    assumeThat(spec.getGenesisSpec().getMilestone()).isGreaterThanOrEqualTo(ELECTRA);
+    assumeThat(isElectra).isTrue();
 
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
@@ -330,7 +330,7 @@ class AttestationProductionDutyTest {
   public void shouldPublishProducedAttestationsWhenSomeUnsignedAttestationsFail() {
     // in electra we create attestation data once for each committee, so it is not applicable
     // anymore
-    assumeThat(spec.getGenesisSpec().getMilestone()).isLessThan(ELECTRA);
+    assumeThat(isElectra).isFalse();
 
     final Validator validator1 = createValidator();
     final Validator validator2 = createValidator();
