@@ -41,9 +41,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl.ForkChoiceBlobSidecarsAvailabilityCheckerProvider;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl.BlobSidecarsAvailabilityCheckerProvider;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl.UnpooledBlockBlobSidecarsTrackerProvider;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.statetransition.forkchoice.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
@@ -63,9 +63,8 @@ public class BlobSidecarManagerTest {
   @SuppressWarnings("unchecked")
   private final FutureItems<BlobSidecar> futureBlobSidecars = mock(FutureItems.class);
 
-  private final ForkChoiceBlobSidecarsAvailabilityCheckerProvider
-      forkChoiceBlobSidecarsAvailabilityCheckerProvider =
-          mock(ForkChoiceBlobSidecarsAvailabilityCheckerProvider.class);
+  private final BlobSidecarsAvailabilityCheckerProvider blobSidecarsAvailabilityCheckerProvider =
+      mock(BlobSidecarsAvailabilityCheckerProvider.class);
   private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider =
       mock(UnpooledBlockBlobSidecarsTrackerProvider.class);
 
@@ -77,7 +76,7 @@ public class BlobSidecarManagerTest {
           blobSidecarValidator,
           futureBlobSidecars,
           invalidBlobSidecarRoots,
-          forkChoiceBlobSidecarsAvailabilityCheckerProvider,
+          blobSidecarsAvailabilityCheckerProvider,
           unpooledBlockBlobSidecarsTrackerProvider);
 
   private final ReceivedBlobSidecarListener receivedBlobSidecarListener =
@@ -221,11 +220,11 @@ public class BlobSidecarManagerTest {
 
   @Test
   void createAvailabilityChecker_shouldReturnAnAvailabilityChecker() {
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
-        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+    final BlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
 
-    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+    when(blobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
         .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
     when(blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block))
         .thenReturn(blockBlobSidecarsTracker);
@@ -237,10 +236,10 @@ public class BlobSidecarManagerTest {
   @Test
   void createAvailabilityCheckerAndValidateImmediately_shouldReturnValidWhenComplete() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
-        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+    final BlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
 
-    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+    when(blobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
         .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
     when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
         .thenReturn(blockBlobSidecarsTracker);
@@ -278,10 +277,10 @@ public class BlobSidecarManagerTest {
   void
       createAvailabilityCheckerAndValidateImmediately_shouldReturnInvalidWhenBlobsHaveDuplicatedIndices() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
-        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+    final BlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
 
-    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+    when(blobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
         .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
     when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
         .thenReturn(blockBlobSidecarsTracker);
@@ -308,10 +307,10 @@ public class BlobSidecarManagerTest {
   void
       createAvailabilityCheckerAndValidateImmediately_shouldReturnNotAvailableWhenBlobsAreIncomplete() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
-        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+    final BlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
 
-    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+    when(blobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
         .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
     when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
         .thenReturn(blockBlobSidecarsTracker);
@@ -329,10 +328,10 @@ public class BlobSidecarManagerTest {
   void
       createAvailabilityCheckerAndValidateImmediately_shouldReturnTheAvailabilityCheckValidationResult() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
-        mock(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+    final BlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
 
-    when(forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
+    when(blobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker))
         .thenReturn(forkChoiceBlobSidecarsAvailabilityChecker);
     when(unpooledBlockBlobSidecarsTrackerProvider.create(block))
         .thenReturn(blockBlobSidecarsTracker);

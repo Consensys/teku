@@ -17,8 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,7 +34,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * Performs complete data availability check <a
  * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
  */
-public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityChecker<BlobSidecar> {
+public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<BlobSidecar> {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
@@ -47,7 +45,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityCh
 
   private final Duration waitForTrackerCompletionTimeout;
 
-  public ForkChoiceBlobSidecarsAvailabilityChecker(
+  public BlobSidecarsAvailabilityChecker(
       final Spec spec,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
@@ -61,7 +59,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityCh
   }
 
   @VisibleForTesting
-  ForkChoiceBlobSidecarsAvailabilityChecker(
+  BlobSidecarsAvailabilityChecker(
       final Spec spec,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
