@@ -45,7 +45,7 @@ public class LibP2PTopicChannel implements TopicChannel {
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
-      LOG.debug("Unsubscribe from topic: {}", topicHandler.getTopic());
+      LOG.trace("Unsubscribe from topic: {}", topicHandler.getTopic());
       subscription.unsubscribe();
     }
   }
