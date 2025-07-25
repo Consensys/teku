@@ -1057,7 +1057,7 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public SafeFuture<SignedBeaconBlock> unblind() {
+    public SafeFuture<Optional<SignedBeaconBlock>> unblind() {
       return null;
     }
   }

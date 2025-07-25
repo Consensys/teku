@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -75,16 +76,24 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
         .thenCompose(
             // creating blob sidecars after unblinding the block to ensure in the blinded flow we
             // will have the cached builder payload
-            signedBlock -> {
+            maybeSignedBlock -> {
+              // Fulu, Builder didn't reveal full block
+              if (maybeSignedBlock.isEmpty()) {
+                return SafeFuture.completedFuture(
+                    new BlockImportAndBroadcastValidationResults(
+                        SafeFuture.completedFuture(BlockImportResult.BUILDER_WITHHOLD)));
+              }
+
+              final SignedBeaconBlock signedBeaconBlock = maybeSignedBlock.get();
               if (blockContainer.supportsCellProofs()) {
                 return gossipAndImportUnblindedSignedBlockAndDataColumnSidecars(
-                    signedBlock,
+                    signedBeaconBlock,
                     Suppliers.memoize(() -> blockFactory.createDataColumnSidecars(blockContainer)),
                     broadcastValidationLevel,
                     blockPublishingPerformance);
               } else {
                 return gossipAndImportUnblindedSignedBlockAndBlobSidecars(
-                    signedBlock,
+                    signedBeaconBlock,
                     Suppliers.memoize(() -> blockFactory.createBlobSidecars(blockContainer)),
                     broadcastValidationLevel,
                     blockPublishingPerformance);
@@ -283,6 +292,15 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                           return SendSignedBlockResult.notImported(
                               importResult.getFailureReason().name());
                         }
+                        if (importResult.getFailureReason() == FailureReason.BUILDER_WITHHOLD) {
+                          LOG.debug(
+                              "Block was not imported because builder didn't reveal full block {}",
+                              maybeBlindedBlockContainer.getSignedBlock().toLogString());
+                          dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
+                          return SendSignedBlockResult.notImported(
+                              importResult.getFailureReason().name());
+                        }
+
                         VALIDATOR_LOGGER.proposedBlockImportFailed(
                             importResult.getFailureReason().toString(),
                             maybeBlindedBlockContainer.getSlot(),

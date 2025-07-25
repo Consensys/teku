@@ -40,12 +40,20 @@ public class BuilderPayloadOrFallbackData {
     return new BuilderPayloadOrFallbackData(Optional.empty(), Optional.ofNullable(fallbackData));
   }
 
+  public static BuilderPayloadOrFallbackData createSuccessful() {
+    return new BuilderPayloadOrFallbackData(Optional.empty(), Optional.empty());
+  }
+
   public Optional<BuilderPayload> getBuilderPayload() {
     return builderPayload;
   }
 
   public Optional<FallbackData> getFallbackData() {
     return fallbackData;
+  }
+
+  public boolean isEmptySuccessful() {
+    return builderPayload.isEmpty() && fallbackData.isEmpty();
   }
 
   public FallbackData getFallbackDataRequired() {
