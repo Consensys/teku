@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -84,22 +83,6 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
       SpecConfigFulu.required(spec.getGenesisSpecConfig());
   private final MiscHelpersFulu miscHelpersFulu =
       new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
-
-  @ParameterizedTest(name = "{0} allowed failure(s)")
-  @MethodSource("getExtendedSampleCountFixtures")
-  public void getExtendedSampleCountReturnsCorrectValues(
-      final int allowedFailures, final int numberOfSamples) {
-    assertThat(miscHelpersFulu.getExtendedSampleCount(UInt64.valueOf(allowedFailures)))
-        .isEqualTo(UInt64.valueOf(numberOfSamples));
-  }
-
-  @Test
-  public void getExtendedSampleCountShouldThrowWhenAllowedFailuresTooBig() {
-    assertThatThrownBy(() -> miscHelpersFulu.getExtendedSampleCount(UInt64.valueOf(65)))
-        .isOfAnyClassIn(IllegalArgumentException.class)
-        .hasMessageStartingWith(
-            "Allowed failures (65) should be less than half of columns number (128)");
-  }
 
   @Test
   @Disabled("Benchmark")
@@ -404,20 +387,6 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
             state, epoch, epochSeed, activeValidatorIndicesIntList);
 
     assertThat(proposerIndices).hasSize(slotsPerEpoch);
-  }
-
-  static Stream<Arguments> getExtendedSampleCountFixtures() {
-    return Stream.of(
-        Arguments.of(0, 16),
-        Arguments.of(1, 20),
-        Arguments.of(2, 24),
-        Arguments.of(3, 27),
-        Arguments.of(4, 29),
-        Arguments.of(5, 32),
-        Arguments.of(6, 35),
-        Arguments.of(7, 37),
-        Arguments.of(8, 40),
-        Arguments.of(64, 128));
   }
 
   static Stream<Arguments> getValidatorCustodyRequirementFixtures() {
