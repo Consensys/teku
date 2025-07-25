@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 
 class EventChannel<T> {
 
@@ -68,6 +69,7 @@ class EventChannel<T> {
         Executors.newCachedThreadPool(
             new ThreadFactoryBuilder()
                 .setDaemon(true)
+                .setUncaughtExceptionHandler(ScheduledExecutorAsyncRunner::uncaughtException)
                 .setNameFormat(channelInterface.getSimpleName() + "-%d")
                 .build()),
         exceptionHandler,
