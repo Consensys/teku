@@ -21,7 +21,6 @@ import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -90,7 +89,6 @@ public class StorageSystem implements AutoCloseable {
       final RestartedStorageSupplier restartedSupplier,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
-      final TimeProvider timeProvider,
       final Spec spec,
       final ChainBuilder chainBuilder,
       final int stateRebuildTimeoutSeconds) {
@@ -110,10 +108,8 @@ public class StorageSystem implements AutoCloseable {
             SYNC_RUNNER,
             metricsSystem,
             storeConfig,
-            timeProvider,
             SingleBlockProvider.NOOP,
             SingleBlobSidecarProvider.NOOP,
-            chainStorageServer,
             chainStorageServer,
             chainStorageServer,
             chainStorageServer,
