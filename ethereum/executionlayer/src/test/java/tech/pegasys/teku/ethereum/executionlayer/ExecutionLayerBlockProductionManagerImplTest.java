@@ -395,8 +395,69 @@ class ExecutionLayerBlockProductionManagerImplTest {
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
+  @Test
+  public void postFulu_builderOnline() throws Exception {
+    setupFulu();
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    // we expect result from the builder
+    final BuilderBid builderBid = prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+    prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, executionPayloadValue, slot);
+
+    final BuilderBidOrFallbackData expectedResult = BuilderBidOrFallbackData.create(builderBid);
+
+    final ExecutionPayloadResult executionPayloadResult =
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext,
+            state,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
+    assertThat(executionPayloadResult.getExecutionPayloadContext())
+        .isEqualTo(executionPayloadContext);
+    assertThat(executionPayloadResult.getExecutionPayloadFutureFromLocalFlow()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFutureFromLocalFlow()).isEmpty();
+
+    final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
+        executionPayloadResult.getBuilderBidOrFallbackDataFuture().orElseThrow();
+    assertThat(builderBidOrFallbackDataFuture.get()).isEqualTo(expectedResult);
+
+    // we expect both builder and local engine have been called
+    verifyBuilderCalled(slot, executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext, slot);
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    prepareBuilderGetPayloadV2InFulu(signedBlindedBeaconBlock);
+
+    // we expect result from the builder
+    assertThat(
+            blockProductionManager.getUnblindedPayload(
+                signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP))
+        .isCompletedWithValue(BuilderPayloadOrFallbackData.createSuccessful());
+
+    // we expect both builder and local engine have been called
+    verify(builderClient).getPayloadV2(signedBlindedBeaconBlock);
+    verifyNoMoreInteractions(executionClientHandler);
+    verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
+  }
+
   private void setupDeneb() {
     this.spec = TestSpecFactory.createMinimalDeneb();
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.executionLayerManager = createExecutionLayerChannelImpl(true, false);
+    this.blockProductionManager =
+        new ExecutionLayerBlockProductionManagerImpl(executionLayerManager);
+  }
+
+  private void setupFulu() {
+    this.spec = TestSpecFactory.createMinimalFulu();
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.executionLayerManager = createExecutionLayerChannelImpl(true, false);
     this.blockProductionManager =
@@ -486,6 +547,12 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .thenReturn(
             SafeFuture.completedFuture(Response.fromPayloadReceivedAsJson(payloadAndBlobsBundle)));
     return payloadAndBlobsBundle;
+  }
+
+  private void prepareBuilderGetPayloadV2InFulu(
+      final SignedBlockContainer signedBlindedBlockContainer) {
+    when(builderClient.getPayloadV2(signedBlindedBlockContainer.getSignedBlock()))
+        .thenReturn(SafeFuture.completedFuture(null));
   }
 
   private GetPayloadResponse prepareEngineGetPayloadResponse(
