@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -218,7 +219,7 @@ public class LibP2PPeer implements Peer {
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final TRequest request,
+          final RpcRequestBodySelector<TRequest> rpcRequestBodySelector,
           final RespHandler responseHandler) {
     @SuppressWarnings("unchecked")
     final ThrottlingRpcHandler<TOutgoingHandler, TRequest, RespHandler> rpcHandler =
@@ -228,7 +229,8 @@ public class LibP2PPeer implements Peer {
           "Unknown rpc method invoked: " + String.join(",", rpcMethod.getIds()));
     }
 
-    return rpcHandler.sendRequest(connection, request, responseHandler);
+    return rpcHandler.sendRequestWithBodySelector(
+        connection, rpcRequestBodySelector, responseHandler);
   }
 
   @Override
@@ -269,10 +271,14 @@ public class LibP2PPeer implements Peer {
       this.delegate = delegate;
     }
 
-    private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-        final Connection connection, final TRequest request, final TRespHandler responseHandler) {
+    private SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequestWithBodySelector(
+        final Connection connection,
+        final RpcRequestBodySelector<TRequest> rpcRequestBodySelector,
+        final TRespHandler responseHandler) {
       return requestsQueue.queueTask(
-          () -> delegate.sendRequest(connection, request, responseHandler));
+          () ->
+              delegate.sendRequestWithBodySelector(
+                  connection, rpcRequestBodySelector, responseHandler));
     }
   }
 }
