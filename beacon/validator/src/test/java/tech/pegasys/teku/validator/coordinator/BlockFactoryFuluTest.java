@@ -36,9 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsFulu;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -96,17 +94,18 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void unblindSignedBlock_shouldUnblindBeaconBlock() {
+  void unblindSignedBlock_shouldSubmitBlockToBuilder() {
 
     final SignedBeaconBlock expectedUnblindedBlock = dataStructureUtil.randomSignedBeaconBlock();
     final SignedBeaconBlock unblindedBlock = assertBlockUnblinded(expectedUnblindedBlock, spec);
     assertThat(unblindedBlock).isEqualTo(expectedUnblindedBlock);
 
     final SignedBeaconBlock blindedBlock = unblindedBlock.blind(spec.getGenesisSchemaDefinitions());
-    assertBlockUnblindedFulu(blindedBlock, spec);
+    assertBlockSubmittedToBuilder(blindedBlock, spec);
   }
 
-  private void assertBlockUnblindedFulu(final SignedBeaconBlock blindedBlock, final Spec spec) {
+  private void assertBlockSubmittedToBuilder(
+      final SignedBeaconBlock blindedBlock, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
     // no need to prepare blobs bundle when only testing block unblinding
@@ -159,49 +158,6 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
                           .mapToObj(
                               blobIndex ->
                                   blobsCellBundle
-                                      .getProofs()
-                                      .get(blobIndex * CELLS_PER_EXT_BLOB + index))
-                          .toList());
-              assertThat(dataColumnSidecar.getSszKZGCommitments()).isEqualTo(expectedCommitments);
-            });
-  }
-
-  @Test
-  void shouldCreateValidDataColumnSidecarsForBlindedBlock() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    // random payload required to construct a valid BuilderPayload
-    executionPayload = dataStructureUtil.randomExecutionPayload();
-
-    final int blobsCount = 3;
-    final BlobsBundleFulu blobsBundleFulu =
-        prepareBuilderPayload(spec, blobsCount).getOptionalBlobsCellBundle().orElseThrow();
-
-    final BlockAndDataColumnSidecars blockAndDataColumnSidecars =
-        createBlockAndDataColumnSidecars(true, spec);
-
-    final SignedBlockContainer block = blockAndDataColumnSidecars.block();
-    final List<DataColumnSidecar> dataColumnSidecars =
-        blockAndDataColumnSidecars.dataColumnSidecars();
-
-    verify(executionLayer).getCachedUnblindedPayload(block.getSlot());
-
-    final SszList<SszKZGCommitment> expectedCommitments =
-        block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
-
-    assertThat(dataColumnSidecars).hasSize(CELLS_PER_EXT_BLOB);
-
-    IntStream.range(0, dataColumnSidecars.size())
-        .forEach(
-            index -> {
-              final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
-              // check sidecar is created using the prepared BlobsCellBundle
-              assertThat(dataColumnSidecar.getSszKZGProofs().asList())
-                  .isEqualTo(
-                      IntStream.range(0, expectedCommitments.size())
-                          .mapToObj(
-                              blobIndex ->
-                                  blobsBundleFulu
                                       .getProofs()
                                       .get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());
