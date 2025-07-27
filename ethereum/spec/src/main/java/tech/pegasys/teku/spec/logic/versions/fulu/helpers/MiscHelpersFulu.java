@@ -20,8 +20,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Bytes;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,7 +76,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
   private static final Logger LOG = LogManager.getLogger();
-  private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -140,25 +138,29 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
-    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
-  }
-
   // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return bpoForkSchedule
-        .getBpoFork(epoch)
+    return getBpoFork(epoch)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
   }
 
-  private UInt256 incrementByModule(final UInt256 n) {
-    if (n.equals(UInt256.MAX_VALUE)) {
-      return UInt256.ZERO;
-    } else {
-      return n.plus(1);
-    }
+  // BPO
+  public Optional<BlobParameters> getBpoFork(final UInt64 epoch) {
+    return bpoForkSchedule.getBpoFork(epoch);
+  }
+
+  public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
+    return bpoForkSchedule.getNextBpoFork(epoch);
+  }
+
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    return bpoForkSchedule.getBpoForks();
   }
 
   public UInt64 computeSubnetForDataColumnSidecar(final UInt64 columnIndex) {
@@ -209,12 +211,25 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               custodyGroupCount, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
+    // Skip computation if all groups are custodied
+    if (custodyGroupCount == specConfigFulu.getNumberOfCustodyGroups()) {
+      return LongStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
+    }
+
     return Stream.iterate(nodeId, this::incrementByModule)
         .map(this::computeCustodyGroupIndex)
         .distinct()
         .limit(custodyGroupCount)
         .sorted()
         .toList();
+  }
+
+  private UInt256 incrementByModule(final UInt256 n) {
+    if (n.equals(UInt256.MAX_VALUE)) {
+      return UInt256.ZERO;
+    } else {
+      return n.plus(1);
+    }
   }
 
   public UInt64 getValidatorsCustodyRequirement(
@@ -266,7 +281,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return true;
   }
 
-  public boolean verifyDataColumnSidecarKzgProof(
+  public boolean verifyDataColumnSidecarKzgProofs(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
 
     final List<KZGCellWithColumnId> cellWithIds =
@@ -541,45 +556,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
-  /**
-   * NOTE: this method was part of the spec for lossy sampling. Not it is only being used on tests
-   * (eventually it will be removed).
-   *
-   * <p>Return the sample count if allowing failures.
-   *
-   * <p>This helper demonstrates how to calculate the number of columns to query per slot when
-   * allowing given number of failures, assuming uniform random selection without replacement.
-   * Nested functions are direct replacements of Python library functions math.comb and
-   * scipy.stats.hypergeom.cdf, with the same signatures.
-   */
-  public UInt64 getExtendedSampleCount(final UInt64 allowedFailures) {
-    if (allowedFailures.isGreaterThan(specConfigFulu.getNumberOfColumns() / 2)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Allowed failures (%s) should be less than half of columns number (%s)",
-              allowedFailures, specConfigFulu.getNumberOfColumns()));
-    }
-    final UInt64 worstCaseMissing = UInt64.valueOf(specConfigFulu.getNumberOfColumns() / 2 + 1);
-    final double falsePositiveThreshold =
-        hypergeomCdf(
-            UInt64.ZERO,
-            UInt64.valueOf(specConfigFulu.getNumberOfColumns()),
-            worstCaseMissing,
-            UInt64.valueOf(specConfigFulu.getSamplesPerSlot()));
-    UInt64 sampleCount = UInt64.valueOf(specConfigFulu.getSamplesPerSlot());
-    for (;
-        sampleCount.isLessThanOrEqualTo(specConfigFulu.getNumberOfColumns());
-        sampleCount = sampleCount.increment()) {
-      if (hypergeomCdf(
-              allowedFailures,
-              UInt64.valueOf(specConfigFulu.getNumberOfColumns()),
-              worstCaseMissing,
-              sampleCount)
-          <= falsePositiveThreshold) {
-        break;
-      }
-    }
-    return sampleCount;
+  public int getSamplingGroupCount(final int custodyRequirement) {
+    return Math.max(custodyRequirement, specConfigFulu.getSamplesPerSlot());
   }
 
   private static <T> List<List<T>> transpose(final List<List<T>> matrix) {
@@ -598,37 +576,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       }
     }
     return ret;
-  }
-
-  private UInt256 mathComb(final UInt64 n, final UInt64 k) {
-    if (n.isGreaterThanOrEqualTo(k)) {
-      UInt256 r = UInt256.ONE;
-      for (UInt64 i = UInt64.ZERO;
-          i.isLessThan(k.isGreaterThan(n.minus(k)) ? n.minus(k) : k);
-          i = i.plus(1)) {
-        r = r.multiply(n.minus(i).longValue()).divide(i.plus(1).longValue());
-      }
-      return r;
-    } else {
-      return UInt256.ZERO;
-    }
-  }
-
-  @SuppressWarnings("JavaCase")
-  private double hypergeomCdf(final UInt64 k, final UInt64 M, final UInt64 n, final UInt64 N) {
-    return Stream.iterate(UInt64.ZERO, i -> i.isLessThanOrEqualTo(k), UInt64::increment)
-        .mapToDouble(
-            i ->
-                N.isLessThan(i)
-                    ? 0d
-                    : new BigDecimal(
-                            mathComb(n, i)
-                                .multiply(mathComb(M.minus(n), N.minus(i)))
-                                .toBigInteger(),
-                            BIGDECIMAL_PRECISION)
-                        .divide(new BigDecimal(mathComb(M, N).toBigInteger()), BIGDECIMAL_PRECISION)
-                        .doubleValue())
-        .sum();
   }
 
   @Override

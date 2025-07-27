@@ -21,7 +21,7 @@ public interface CustodyGroupCountChannel extends VoidReturningChannelInterface 
   CustodyGroupCountChannel NOOP =
       new CustodyGroupCountChannel() {
         @Override
-        public void onCustodyGroupCountUpdate(final int groupCount) {}
+        public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {}
 
         @Override
         public void onCustodyGroupCountSynced(final int groupCount) {}
@@ -31,7 +31,7 @@ public interface CustodyGroupCountChannel extends VoidReturningChannelInterface 
       final Consumer<Integer> custodyGroupCountSyncedSubscriber) {
     return new CustodyGroupCountChannel() {
       @Override
-      public void onCustodyGroupCountUpdate(final int groupCount) {}
+      public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {}
 
       @Override
       public void onCustodyGroupCountSynced(final int groupCount) {
@@ -40,7 +40,7 @@ public interface CustodyGroupCountChannel extends VoidReturningChannelInterface 
     };
   }
 
-  void onCustodyGroupCountUpdate(int groupCount);
+  void onGroupCountUpdate(int custodyGroupCount, int samplingGroupCount);
 
   void onCustodyGroupCountSynced(int groupCount);
 }
