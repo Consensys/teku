@@ -43,7 +43,7 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final int maxBlobsPerBlockElectra;
   private final int maxRequestBlobSidecarsElectra;
   private final int blobSidecarSubnetCountElectra;
-  private Optional<UInt64> nextForkEpoch = Optional.empty();
+  private final Optional<UInt64> nextForkEpoch;
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
