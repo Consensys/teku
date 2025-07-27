@@ -51,14 +51,14 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
   void publishBlobSidecars(
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    throw new RuntimeException("Unexpected call to publishBlockSidecars in FULU");
+    throw new RuntimeException("Unexpected call to publishBlobSidecars in Fulu");
   }
 
   @Override
   void publishDataColumnSidecars(
       final List<DataColumnSidecar> dataColumnSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
-    // TODO-fulu blockPublishingPerformance (https://github.com/Consensys/teku/issues/9473)
+    blockPublishingPerformance.dataColumnSidecarsPublishingInitiated();
     dataColumnSidecarGossipChannel.publishDataColumnSidecars(
         dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL);
   }

@@ -123,22 +123,6 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldEnableBlindedBeaconBlocks() {
-    final String[] args = {"--validators-proposer-blinded-blocks-enabled", "true"};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksEnabled())
-        .isTrue();
-  }
-
-  @Test
-  public void shouldNotUseBlindedBeaconBlocksByDefault() {
-    final String[] args = {};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.validatorClient().getValidatorConfig().isBlindedBeaconBlocksEnabled())
-        .isFalse();
-  }
-
-  @Test
   public void shouldSetValidatorRegistrationTimestampOverride() {
     final String[] args = {"--Xvalidators-builder-registration-timestamp-override", "120000"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
@@ -250,5 +234,36 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
         .isFalse();
+  }
+
+  @Test
+  public void validatorClientBeaconApiExecutorsEmptyByDefault() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(
+            tekuConfiguration.validatorClient().getValidatorConfig().getBeaconApiExecutorThreads())
+        .isEmpty();
+    assertThat(
+            tekuConfiguration
+                .validatorClient()
+                .getValidatorConfig()
+                .getBeaconApiReadinessExecutorThreads())
+        .isEmpty();
+  }
+
+  @Test
+  public void validatorClientBeaconApiExecutorsCanBeSet() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--Xvalidator-client-beacon-api-executor-threads=2",
+            "--Xvalidator-client-beacon-api-readiness-executor-threads=4");
+    assertThat(
+            tekuConfiguration.validatorClient().getValidatorConfig().getBeaconApiExecutorThreads())
+        .hasValue(2);
+    assertThat(
+            tekuConfiguration
+                .validatorClient()
+                .getValidatorConfig()
+                .getBeaconApiReadinessExecutorThreads())
+        .hasValue(4);
   }
 }

@@ -75,7 +75,7 @@ class MatchingDataAttestationGroupV2Test {
     when(nanoSupplier.getAsLong()).thenReturn(0L);
     group =
         new MatchingDataAttestationGroupV2(
-            spec, nanoSupplier, attestationData, Optional.of(committeeSizes), false);
+            spec, nanoSupplier, attestationData, Optional.of(committeeSizes));
   }
 
   @TestTemplate
@@ -528,43 +528,6 @@ class MatchingDataAttestationGroupV2Test {
     final Attestation expectedInitial = toAttestation(initialAgg);
 
     assertThat(result).isEqualTo(toPooledAttestationWithData(expectedInitial));
-  }
-
-  @TestTemplate
-  void add_earlyDrop_electra_addingAggregateCoversAndRemovesSingles(final SpecContext specContext) {
-    specContext.assumeElectraActive();
-    // Create a new group with earlyDrop=true for this test
-    final MatchingDataAttestationGroupV2 groupEarlyDrop =
-        new MatchingDataAttestationGroupV2(
-            spec, nanoSupplier, attestationData, Optional.of(committeeSizes), true);
-
-    // Add attestations to this specific group
-    final PooledAttestation singleC0V1Early = createPooledAttestation(Optional.of(0), 1);
-    final PooledAttestation singleC0V2Early = createPooledAttestation(Optional.of(0), 2);
-    groupEarlyDrop.add(singleC0V1Early, Optional.empty());
-    groupEarlyDrop.add(singleC0V2Early, Optional.empty());
-    assertThat(groupEarlyDrop.size()).isEqualTo(2);
-
-    final PooledAttestation aggregateC0V12 = createPooledAttestation(Optional.of(0), 1, 2);
-    groupEarlyDrop.add(aggregateC0V12, Optional.empty());
-
-    assertThat(groupEarlyDrop.size()).isEqualTo(1);
-
-    // Verify using the groupEarlyDrop instance
-
-    final List<PooledAttestationWithData> apiResult =
-        groupEarlyDrop
-            .streamForApiRequest(Optional.empty(), true)
-            .map(this::toPooledAttestationWithDataWithSortedValidatorIndices)
-            .toList();
-    assertThat(apiResult).containsExactly(toPooledAttestationWithData(aggregateC0V12));
-
-    final List<PooledAttestationWithData> aggProdResult =
-        groupEarlyDrop
-            .streamForAggregationProduction(Optional.of(UInt64.ZERO), Long.MAX_VALUE)
-            .map(this::toPooledAttestationWithDataWithSortedValidatorIndices)
-            .toList();
-    assertThat(aggProdResult).isEmpty();
   }
 
   @TestTemplate

@@ -41,6 +41,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFuluBpo;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -87,7 +88,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
@@ -240,6 +243,18 @@ public class Eth2P2PNetworkBuilder {
             forkAndSpecMilestone ->
                 createSubscriptions(forkAndSpecMilestone, network, gossipEncoding))
         .forEach(gossipForkManagerBuilder::fork);
+    // BPO
+    spec.getBpoForks().stream()
+        .map(
+            bpo -> {
+              final Fork fork = spec.getForkSchedule().getFork(bpo.epoch());
+              final SpecMilestone milestone =
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(bpo.epoch());
+              final ForkAndSpecMilestone forkAndSpecMilestone =
+                  new ForkAndSpecMilestone(fork, milestone);
+              return createBpoSubscriptions(forkAndSpecMilestone, network, gossipEncoding, bpo);
+            })
+        .forEach(gossipForkManagerBuilder::fork);
 
     return gossipForkManagerBuilder.build();
   }
@@ -383,6 +398,39 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger);
     };
+  }
+
+  private GossipForkSubscriptions createBpoSubscriptions(
+      final ForkAndSpecMilestone forkAndSpecMilestone,
+      final DiscoveryNetwork<?> network,
+      final GossipEncoding gossipEncoding,
+      final BlobParameters bpo) {
+    if (forkAndSpecMilestone.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return new GossipForkSubscriptionsFuluBpo(
+          forkAndSpecMilestone.getFork(),
+          spec,
+          asyncRunner,
+          metricsSystem,
+          network,
+          combinedChainDataClient.getRecentChainData(),
+          gossipEncoding,
+          gossipedBlockProcessor,
+          gossipedBlobSidecarProcessor,
+          gossipedAttestationConsumer,
+          gossipedAggregateProcessor,
+          gossipedAttesterSlashingConsumer,
+          gossipedProposerSlashingConsumer,
+          gossipedVoluntaryExitConsumer,
+          gossipedSignedContributionAndProofProcessor,
+          gossipedSyncCommitteeMessageProcessor,
+          gossipedSignedBlsToExecutionChangeProcessor,
+          dataColumnSidecarOperationProcessor,
+          debugDataDumper,
+          dasGossipLogger,
+          bpo);
+    }
+    throw new IllegalStateException(
+        "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
   }
 
   protected DiscoveryNetwork<?> buildNetwork(

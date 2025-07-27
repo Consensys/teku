@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.math.BigInteger;
@@ -41,11 +42,16 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersTest {
+  private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
+  private static final UInt64 GENESIS_TIME_MILLIS = GENESIS_TIME.times(1000L);
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final MiscHelpers miscHelpers = new MiscHelpers(specConfig);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final UInt64 slot50Time =
+      GENESIS_TIME.plus(spec.getGenesisSpecConfig().getSecondsPerSlot() * 50L);
+  private final UInt64 slot50TimeMillis = secondsToMillis(slot50Time);
 
   @Test
   void computeShuffledIndex_boundaryTest() {
@@ -246,6 +252,66 @@ class MiscHelpersTest {
                           dataStructureUtil.randomBeaconState()))
                   .isFalse();
             });
+  }
+
+  @Test
+  public void getSlotStartTime_shouldGetCorrectTimePastGenesis() {
+    assertThat(miscHelpers.computeTimeAtSlot(GENESIS_TIME, UInt64.valueOf(50L)))
+        .isEqualTo(slot50Time);
+  }
+
+  @Test
+  public void getSlotStartTime_shouldGetGenesisTimeForBlockZero() {
+    assertThat(miscHelpers.computeTimeAtSlot(GENESIS_TIME, UInt64.ZERO)).isEqualTo(GENESIS_TIME);
+  }
+
+  @Test
+  public void getSlotStartTimeMillis_shouldGetGenesisTimeForBlockZeroMillis() {
+    assertThat(miscHelpers.computeTimeMillisAtSlot(GENESIS_TIME_MILLIS, UInt64.ZERO))
+        .isEqualTo(GENESIS_TIME_MILLIS);
+  }
+
+  @Test
+  public void getSlotStartTimeMillis_shouldGetCorrectTimePastGenesisMillis() {
+    assertThat(miscHelpers.computeTimeMillisAtSlot(GENESIS_TIME_MILLIS, UInt64.valueOf(50L)))
+        .isEqualTo(slot50TimeMillis);
+  }
+
+  @Test
+  public void getCurrentSlot_shouldGetZeroAtGenesis() {
+    assertThat(miscHelpers.computeSlotAtTime(GENESIS_TIME, GENESIS_TIME)).isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  public void getCurrentSlot_shouldGetNonZeroPastGenesis() {
+    assertThat(miscHelpers.computeSlotAtTime(GENESIS_TIME, slot50Time))
+        .isEqualTo(UInt64.valueOf(50L));
+  }
+
+  @Test
+  public void getCurrentSlot_shouldGetZeroPriorToGenesis() {
+    assertThat(miscHelpers.computeSlotAtTime(GENESIS_TIME, GENESIS_TIME.minus(1)))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  public void getCurrentSlotForMillis_shouldGetZeroAtGenesisMillis() {
+    assertThat(miscHelpers.computeSlotAtTimeMillis(GENESIS_TIME_MILLIS, GENESIS_TIME_MILLIS))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  public void getCurrentSlotForMillis_shouldGetNonZeroPastGenesisMillis() {
+    assertThat(miscHelpers.computeSlotAtTimeMillis(GENESIS_TIME_MILLIS, slot50TimeMillis))
+        .isEqualTo(UInt64.valueOf(50L));
+  }
+
+  @Test
+  public void getCurrentSlotForMillis_shouldGetZeroPriorToGenesisMillis() {
+    assertThat(
+            miscHelpers.computeSlotAtTimeMillis(
+                GENESIS_TIME_MILLIS.minus(1000), GENESIS_TIME_MILLIS))
+        .isEqualTo(UInt64.ZERO);
   }
 
   public static Stream<Arguments> getComputesSlotAtTimeArguments() {

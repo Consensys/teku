@@ -11,19 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.DATA_COLUMN_INDICES_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,11 +43,12 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContent
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class GetDataColumnSidecars extends RestApiEndpoint {
-  public static final String ROUTE = "/teku/v1/beacon/data_column_sidecars/{block_id}";
+  public static final String ROUTE = "/eth/v1/debug/beacon/data_column_sidecars/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetDataColumnSidecars(
@@ -58,7 +64,7 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
 
   private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
     return EndpointMetadata.get(ROUTE)
-        .operationId("getDataColumnSidecars")
+        .operationId("getDebugDataColumnSidecars")
         .summary("Get data column sidecars")
         .description(
             """
@@ -66,38 +72,57 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
                             Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.
                             If the `indices` parameter is specified, only the data column sidecars with the specified indices will be returned. There are no guarantees
                             for the returned data column sidecars in terms of ordering.""")
-        .tags(TAG_BEACON)
+        .tags(TAG_DEBUG)
         .pathParam(PARAMETER_BLOCK_ID)
         .queryListParam(DATA_COLUMN_INDICES_PARAMETER)
-        .response(SC_OK, "Request successful", getResponseType(schemaCache), getSszResponseType())
+        .response(
+            SC_OK,
+            "Request successful",
+            getResponseType(schemaCache),
+            getSszResponseType(),
+            ETH_CONSENSUS_HEADER_TYPE)
         .withNotFoundResponse()
+        .withInternalErrorResponse()
+        .withNotAcceptedResponse()
         .build();
   }
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final List<UInt64> indices = request.getQueryParameterList(DATA_COLUMN_INDICES_PARAMETER);
-    final SafeFuture<Optional<List<DataColumnSidecar>>> future =
+    final SafeFuture<Optional<DataColumnSidecarsAndMetaData>> future =
         chainDataProvider.getDataColumnSidecars(
             request.getPathParameter(PARAMETER_BLOCK_ID), indices);
 
     request.respondAsync(
         future.thenApply(
-            dataColumnSidecars ->
-                dataColumnSidecars
-                    .map(AsyncApiResponse::respondOk)
+            maybeDataColumnSidecarsAndMetaData ->
+                maybeDataColumnSidecarsAndMetaData
+                    .map(
+                        dataColumnSidecarsAndMetaData -> {
+                          request.header(
+                              HEADER_CONSENSUS_VERSION,
+                              dataColumnSidecarsAndMetaData.getMilestone().lowerCaseName());
+                          return AsyncApiResponse.respondOk(dataColumnSidecarsAndMetaData);
+                        })
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
-  private static SerializableTypeDefinition<List<DataColumnSidecar>> getResponseType(
+  private static SerializableTypeDefinition<DataColumnSidecarsAndMetaData> getResponseType(
       final SchemaDefinitionCache schemaCache) {
     final DeserializableTypeDefinition<DataColumnSidecar> dataColumnSidecarType =
         SchemaDefinitionsFulu.required(schemaCache.getSchemaDefinition(SpecMilestone.FULU))
             .getDataColumnSidecarSchema()
             .getJsonTypeDefinition();
-    return SerializableTypeDefinition.<List<DataColumnSidecar>>object()
+    return SerializableTypeDefinition.<DataColumnSidecarsAndMetaData>object()
         .name("GetDataColumnSidecarsResponse")
-        .withField("data", listOf(dataColumnSidecarType), Function.identity())
+        .withField("version", MILESTONE_TYPE, DataColumnSidecarsAndMetaData::getMilestone)
+        .withField(
+            EXECUTION_OPTIMISTIC,
+            BOOLEAN_TYPE,
+            DataColumnSidecarsAndMetaData::isExecutionOptimistic)
+        .withField(FINALIZED, BOOLEAN_TYPE, DataColumnSidecarsAndMetaData::isFinalized)
+        .withField("data", listOf(dataColumnSidecarType), DataColumnSidecarsAndMetaData::getData)
         .build();
   }
 

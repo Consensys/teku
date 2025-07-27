@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,18 +46,34 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ActiveEth2P2PNetworkTest {
   private final UInt64 altairForkEpoch = UInt64.valueOf(2);
-  private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairForkEpoch);
+  private final UInt64 fuluForkEpoch = UInt64.valueOf(7);
+  private final UInt64 bpoForkEpoch = UInt64.valueOf(8);
+  private final Spec spec =
+      TestSpecFactory.createMinimalFulu(
+          b ->
+              b.altairBuilder(ab -> ab.altairForkEpoch(altairForkEpoch))
+                  .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(3)))
+                  .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
+                  .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
+                  .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
+                  .fuluBuilder(
+                      fb ->
+                          fb.fuluForkEpoch(fuluForkEpoch)
+                              .blobSchedule(List.of(new BlobScheduleEntry(bpoForkEpoch, 64)))));
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
 
   // Stubs and mocks
@@ -82,7 +100,15 @@ public class ActiveEth2P2PNetworkTest {
   private final ActiveEth2P2PNetwork network = createNetwork();
   private SignedBlockAndState genesis;
   private Fork phase0Fork;
+  private Bytes4 phase0ForkDigest;
   private Fork altairFork;
+  private Bytes4 altairForkDigest;
+  private Fork bellatrixFork;
+  private Bytes4 bellatrixForkDigest;
+  private Fork fuluFork;
+  private Bytes4 fuluForkDigest;
+  private BlobParameters bpoFork;
+  private Bytes4 bpoForkDigest;
   private Bytes32 genesisValidatorsRoot;
 
   @BeforeEach
@@ -94,47 +120,88 @@ public class ActiveEth2P2PNetworkTest {
   @Test
   public void start_setsGossipFork() {
     setupForkInfo();
-    verify(discoveryNetwork, never()).setForkInfo(any(), any());
+    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any(), any());
     assertThat(network.start()).isCompleted();
 
     final ForkInfo expectedFork =
         new ForkInfo(phase0Fork, genesis.getState().getGenesisValidatorsRoot());
-    verify(discoveryNetwork).setForkInfo(expectedFork, Optional.of(altairFork));
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork,
+            phase0ForkDigest,
+            Optional.of(altairFork),
+            Optional.of(bpoFork),
+            Optional.of(altairForkDigest));
   }
 
   @Test
   public void onEpoch_shouldUpdateDiscoveryNetworkForkInfo() {
     setupForkInfo();
     // Start network
-    verify(discoveryNetwork, never()).setForkInfo(any(), any());
+    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any(), any());
     assertThat(network.start()).isCompleted();
 
     // Verify updates at startup
     verify(discoveryNetwork).start();
     ForkInfo expectedFork = new ForkInfo(phase0Fork, genesisValidatorsRoot);
-    verify(discoveryNetwork).setForkInfo(expectedFork, Optional.of(altairFork));
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork,
+            phase0ForkDigest,
+            Optional.of(altairFork),
+            Optional.of(bpoFork),
+            Optional.of(altairForkDigest));
 
     // Process epoch 1 - we shouldn't update fork info here
     network.onEpoch(UInt64.ONE);
     asyncRunner.executeDueActions();
     verify(discoveryNetwork).updateGossipTopicScoring(any());
+    verify(discoveryNetwork).setDASTotalCustodySubnetCount(anyInt());
+    verify(discoveryNetwork).setNextForkDigest(altairForkDigest);
     verifyNoMoreInteractions(discoveryNetwork);
 
     // At the altair upgrade epoch, we should update fork info
     network.onEpoch(altairForkEpoch);
     expectedFork = new ForkInfo(altairFork, genesisValidatorsRoot);
-    verify(discoveryNetwork).setForkInfo(expectedFork, Optional.empty());
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork,
+            altairForkDigest,
+            Optional.of(bellatrixFork),
+            Optional.of(bpoFork),
+            Optional.of(bellatrixForkDigest));
 
     // Processing altair again shouldn't cause any updates
     network.onEpoch(altairForkEpoch);
     verifyNoMoreInteractions(discoveryNetwork);
 
-    // Next epoch should not update fork info
-    network.onEpoch(altairForkEpoch.plus(1));
-    verifyNoMoreInteractions(discoveryNetwork);
-
     // Reprocessing prior epoch should not update fork info
     network.onEpoch(UInt64.ONE);
+    verifyNoMoreInteractions(discoveryNetwork);
+
+    // At the fulu upgrade epoch, we should update fork info
+    network.onEpoch(fuluForkEpoch);
+    expectedFork = new ForkInfo(fuluFork, genesisValidatorsRoot);
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork,
+            fuluForkDigest,
+            Optional.empty(),
+            Optional.of(bpoFork),
+            Optional.of(bpoForkDigest));
+
+    // At the BPO fork upgrade epoch, we should update fork info
+    network.onEpoch(bpoForkEpoch);
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork, bpoForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
+
+    // Next epoch should not update fork info
+    network.onEpoch(bpoForkEpoch.plus(1));
+    verifyNoMoreInteractions(discoveryNetwork);
+
+    // Process fulu upgrade epoch again should not update fork info
+    network.onEpoch(fuluForkEpoch);
     verifyNoMoreInteractions(discoveryNetwork);
   }
 
@@ -291,9 +358,20 @@ public class ActiveEth2P2PNetworkTest {
 
   private void setupForkInfo() {
     // Set fork info
-    phase0Fork = spec.getForkSchedule().getFork(UInt64.ZERO);
-    altairFork = spec.getForkSchedule().getFork(altairForkEpoch);
     genesisValidatorsRoot = genesis.getState().getGenesisValidatorsRoot();
+    phase0Fork = spec.getForkSchedule().getFork(UInt64.ZERO);
+    phase0ForkDigest =
+        spec.computeForkDigest(phase0Fork.getCurrentVersion(), genesisValidatorsRoot);
+    altairFork = spec.getForkSchedule().getFork(altairForkEpoch);
+    altairForkDigest =
+        spec.computeForkDigest(altairFork.getCurrentVersion(), genesisValidatorsRoot);
+    bellatrixFork = spec.getForkSchedule().getFork(SpecMilestone.BELLATRIX);
+    bellatrixForkDigest =
+        spec.computeForkDigest(bellatrixFork.getCurrentVersion(), genesisValidatorsRoot);
+    fuluFork = spec.getForkSchedule().getFork(fuluForkEpoch);
+    fuluForkDigest = spec.computeForkDigest(genesisValidatorsRoot, fuluForkEpoch);
+    bpoFork = spec.getBpoFork(bpoForkEpoch).orElseThrow();
+    bpoForkDigest = spec.computeForkDigest(genesisValidatorsRoot, bpoForkEpoch);
 
     // Verify assumptions
     assertThat(phase0Fork.getCurrentVersion()).isNotEqualTo(altairFork.getCurrentVersion());

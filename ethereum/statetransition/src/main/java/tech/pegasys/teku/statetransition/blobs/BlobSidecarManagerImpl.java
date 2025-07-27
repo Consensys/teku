@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.statetransition.forkchoice.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -43,7 +43,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FutureItems<BlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
-  private final ForkChoiceBlobSidecarsAvailabilityCheckerProvider
+  private final BlobSidecarsAvailabilityCheckerProvider
       forkChoiceBlobSidecarsAvailabilityCheckerProvider;
   private final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider;
 
@@ -65,8 +65,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         validator,
         futureBlobSidecars,
         invalidBlobSidecarRoots,
-        (tracker) ->
-            new ForkChoiceBlobSidecarsAvailabilityChecker(spec, recentChainData, tracker, kzg),
+        (tracker) -> new BlobSidecarsAvailabilityChecker(spec, recentChainData, tracker, kzg),
         (block) -> new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot()));
   }
 
@@ -78,7 +77,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final BlobSidecarGossipValidator validator,
       final FutureItems<BlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
-      final ForkChoiceBlobSidecarsAvailabilityCheckerProvider
+      final BlobSidecarsAvailabilityCheckerProvider
           forkChoiceBlobSidecarsAvailabilityCheckerProvider,
       final UnpooledBlockBlobSidecarsTrackerProvider unpooledBlockBlobSidecarsTrackerProvider) {
     this.spec = spec;
@@ -108,18 +107,12 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case IGNORE:
+            case IGNORE -> {
               // do nothing
-              break;
-            case REJECT:
-              invalidBlobSidecarRoots.put(blobSidecar.hashTreeRoot(), result);
-              break;
-            case SAVE_FOR_FUTURE:
-              futureBlobSidecars.add(blobSidecar);
-              break;
-            case ACCEPT:
-              prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
-              break;
+            }
+            case REJECT -> invalidBlobSidecarRoots.put(blobSidecar.hashTreeRoot(), result);
+            case SAVE_FOR_FUTURE -> futureBlobSidecars.add(blobSidecar);
+            case ACCEPT -> prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
           }
         });
 
@@ -189,13 +182,13 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       return DataAndValidationResult.notAvailable();
     }
 
-    final ForkChoiceBlobSidecarsAvailabilityChecker forkChoiceBlobSidecarsAvailabilityChecker =
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         forkChoiceBlobSidecarsAvailabilityCheckerProvider.create(blockBlobSidecarsTracker);
 
-    forkChoiceBlobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
+    blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
     final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
-        forkChoiceBlobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
 
     if (availabilityCheckResult.isDone()) {
       return availabilityCheckResult.join();
@@ -220,9 +213,8 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @VisibleForTesting
   @FunctionalInterface
-  interface ForkChoiceBlobSidecarsAvailabilityCheckerProvider {
-    ForkChoiceBlobSidecarsAvailabilityChecker create(
-        final BlockBlobSidecarsTracker blockBlobSidecarsTracker);
+  interface BlobSidecarsAvailabilityCheckerProvider {
+    BlobSidecarsAvailabilityChecker create(final BlockBlobSidecarsTracker blockBlobSidecarsTracker);
   }
 
   @VisibleForTesting

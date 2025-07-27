@@ -25,6 +25,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
@@ -33,11 +34,13 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
@@ -47,6 +50,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public static final String SYNC_COMMITTEE_SUBNET_ENR_FIELD = "syncnets";
   public static final String DAS_CUSTODY_GROUP_COUNT_ENR_FIELD = "cgc";
   public static final String ETH2_ENR_FIELD = "eth2";
+  public static final String NEXT_FORK_DIGEST_ENR_FIELD = "nfd";
 
   private final Spec spec;
   private final P2PNetwork<P> p2pNetwork;
@@ -144,8 +148,15 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       throw new IllegalArgumentException(
           String.format("Custody subnet count should be a positive number, but was %s", count));
     }
+    LOG.debug("Setting cgc in ENR to: {}", count);
     discoveryService.updateCustomENRField(
         DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.ofUnsignedInt(count).trimLeadingZeros());
+  }
+
+  public void setNextForkDigest(final Bytes4 nextForkDigest) {
+    LOG.debug("Setting nfd in ENR to: {}", nextForkDigest.toUnprefixedHexString());
+    discoveryService.updateCustomENRField(
+        NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nextForkDigest).sszSerialize());
   }
 
   public void setPreGenesisForkInfo() {
@@ -156,26 +167,48 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             genesisSpec.miscHelpers().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
             genesisForkVersion,
             SpecConfig.FAR_FUTURE_EPOCH);
-    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());
+    setEth2(enrForkId);
     this.enrForkId = Optional.of(enrForkId);
   }
 
-  public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
+  public void setForkInfo(
+      final ForkInfo currentForkInfo,
+      final Bytes4 currentForkDigest,
+      final Optional<Fork> nextForkInfo,
+      final Optional<BlobParameters> nextBpoFork,
+      final Optional<Bytes4> nextForkDigest) {
     // If no future fork is planned, set next_fork_version = current_fork_version to signal this
     final Bytes4 nextVersion =
         nextForkInfo
             .map(Fork::getCurrentVersion)
             .orElse(currentForkInfo.getFork().getCurrentVersion());
-    // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
+    // If no future fork is planned (either BPO or a hard fork), set next_fork_epoch =
+    // FAR_FUTURE_EPOCH to signal this
     final UInt64 nextForkEpoch =
-        nextForkInfo.map(Fork::getEpoch).orElse(SpecConfig.FAR_FUTURE_EPOCH);
+        nextBpoFork
+            .map(
+                bpoFork ->
+                    nextForkInfo
+                        .filter(forkInfo -> forkInfo.getEpoch().isLessThan(bpoFork.epoch()))
+                        .map(Fork::getEpoch)
+                        .orElse(bpoFork.epoch()))
+            .or(() -> nextForkInfo.map(Fork::getEpoch))
+            .orElse(SpecConfig.FAR_FUTURE_EPOCH);
 
-    final Bytes4 forkDigest = currentForkInfo.getForkDigest(spec);
-    final EnrForkId enrForkId = new EnrForkId(forkDigest, nextVersion, nextForkEpoch);
-    final Bytes encodedEnrForkId = enrForkId.sszSerialize();
+    final EnrForkId enrForkId = new EnrForkId(currentForkDigest, nextVersion, nextForkEpoch);
+    setEth2(enrForkId);
 
-    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
     this.enrForkId = Optional.of(enrForkId);
+
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      final Bytes4 nfdEnrField = nextForkDigest.orElse(Bytes4.ZERO);
+      setNextForkDigest(nfdEnrField);
+    }
+  }
+
+  private void setEth2(final EnrForkId enrForkId) {
+    LOG.debug("Setting eth2 in ENR to: {}", enrForkId);
+    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());
   }
 
   private boolean dontConnectPeersWithDifferentForkDigests(final DiscoveryPeer peer) {

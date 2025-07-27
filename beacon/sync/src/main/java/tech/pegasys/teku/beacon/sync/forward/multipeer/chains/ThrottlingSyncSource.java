@@ -78,7 +78,7 @@ public class ThrottlingSyncSource implements SyncSource {
                         maxDataColumnSidecarsPerMinute,
                         TIMEOUT_SECONDS,
                         timeProvider,
-                        "throttling-dataColumn"))
+                        "throttling-columns"))
             .orElse(RateTracker.NOOP);
   }
 

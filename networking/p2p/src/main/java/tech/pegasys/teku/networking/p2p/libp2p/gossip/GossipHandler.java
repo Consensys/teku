@@ -86,4 +86,8 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     return SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
         .thenRun(() -> LOG.trace("Successfully gossiped message on {}", topic));
   }
+
+  public String getTopic() {
+    return topic.getTopic();
+  }
 }

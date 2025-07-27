@@ -50,7 +50,7 @@ public class BLSPerformanceRunner {
     return end - start;
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCountOrder4")
   void benchmarkVerifyAggregate128(final Integer i) {
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
@@ -80,14 +80,14 @@ public class BLSPerformanceRunner {
     LOG.info("Time for 128: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCountOrder4")
   void generateRandomSignature(final Integer i) {
     Long time = executeRun(BLSTestUtil::randomSignature, i);
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCount")
   void testAggregateManySignatures(final Integer i) {
     final BLSSignature signature = BLSTestUtil.randomSignature();
@@ -107,7 +107,7 @@ public class BLSPerformanceRunner {
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCountOrder4")
   void testSigning(final Integer i) {
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
@@ -118,7 +118,7 @@ public class BLSPerformanceRunner {
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCount")
   void testAggregationTime(final Integer i) {
     BLSSignature signature = BLSTestUtil.randomSignature();
@@ -136,7 +136,7 @@ public class BLSPerformanceRunner {
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCountOrder4")
   void testBLSPubKeyDeserialize(final Integer i) {
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[48])));
@@ -145,7 +145,7 @@ public class BLSPerformanceRunner {
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCountOrder4")
   void testBLSPubKeySerialize(final Integer i) {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
@@ -154,7 +154,7 @@ public class BLSPerformanceRunner {
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCountOrder4")
   void testSignatureSerialize(final Integer i) {
     BLSSignature signature1 = BLSTestUtil.randomSignature();
@@ -163,7 +163,7 @@ public class BLSPerformanceRunner {
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("singleAggregationCountOrder4")
   void testSignatureDeserialize(final Integer i) {
     BLSSignature signature1 = BLSTestUtil.randomSignature();

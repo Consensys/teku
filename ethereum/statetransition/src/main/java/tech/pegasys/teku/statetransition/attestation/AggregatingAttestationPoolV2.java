@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -80,13 +81,15 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
   private final long maxBlockAggregationTimeNanos;
   private final long maxTotalBlockAggregationTimeMillis;
-  private final boolean earlyDropSingleAttestations;
 
   private final LongSupplier nanosSupplier;
 
   private final AtomicInteger size = new AtomicInteger(0);
 
   private final RewardBasedAttestationSorterFactory rewardBasedAttestationSorterFactory;
+
+  private final AtomicReference<Optional<UInt64>> earliestTrackedOnChainAttestationInclusionSlot =
+      new AtomicReference<>(Optional.empty());
 
   public AggregatingAttestationPoolV2(
       final Spec spec,
@@ -95,8 +98,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final int maximumAttestationCount,
       final AggregatingAttestationPoolProfiler aggregatingAttestationPoolProfiler,
       final int maxBlockAggregationTimeMillis,
-      final int maxTotalBlockAggregationTimeMillis,
-      final boolean earlyDropSingleAttestations) {
+      final int maxTotalBlockAggregationTimeMillis) {
     super(spec, recentChainData);
     this.sizeGauge =
         SettableGauge.create(
@@ -108,7 +110,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
     this.aggregatingAttestationPoolProfiler = aggregatingAttestationPoolProfiler;
     this.maxBlockAggregationTimeNanos = maxBlockAggregationTimeMillis * 1_000_000L;
     this.maxTotalBlockAggregationTimeMillis = maxTotalBlockAggregationTimeMillis * 1_000_000L;
-    this.earlyDropSingleAttestations = earlyDropSingleAttestations;
     this.nanosSupplier = System::nanoTime;
     this.rewardBasedAttestationSorterFactory = RewardBasedAttestationSorterFactory.DEFAULT;
   }
@@ -136,7 +137,6 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
         maxBlockAggregationTimeMillis * 1_000_000L; // Integer.MAX_VALUE * 1_000_000L
     this.maxTotalBlockAggregationTimeMillis =
         maxTotalBlockAggregationTimeMillis * 1_000_000L; // Integer.MAX_VALUE * 1_000_000L
-    this.earlyDropSingleAttestations = false;
     this.nanosSupplier = nanosSupplier;
     this.rewardBasedAttestationSorterFactory = rewardBasedAttestationSorterFactory;
   }
@@ -214,11 +214,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
             dataHash,
             __ ->
                 new MatchingDataAttestationGroupV2(
-                    spec,
-                    nanosSupplier,
-                    attestationData,
-                    committeesSize,
-                    earlyDropSingleAttestations)); // Pass spec, data, committeesSize
+                    spec, nanosSupplier, attestationData, committeesSize));
 
     return Optional.of(attestationGroup);
   }
@@ -307,6 +303,8 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
   public void onAttestationsIncludedInBlock(
       final UInt64 slot, final Iterable<Attestation> attestations) {
     attestations.forEach(attestation -> onAttestationIncludedInBlock(slot, attestation));
+    earliestTrackedOnChainAttestationInclusionSlot.compareAndExchange(
+        Optional.empty(), Optional.of(slot));
   }
 
   private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
@@ -346,7 +344,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
 
   private static Predicate<PooledAttestationWithRewardInfo> distinctByDataRoot() {
     final Map<Bytes32, Boolean> seen = new ConcurrentHashMap<>();
-    return t -> seen.putIfAbsent(t.getAttestation().data().hashTreeRoot(), Boolean.TRUE) == null;
+    return t -> seen.putIfAbsent(t.getAttestation().data().hashTreeRoot(), true) == null;
   }
 
   private Predicate<PooledAttestationWithData> previousEpochLimitFilter(
@@ -488,8 +486,15 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
       final long aggregationTimeLimit,
       final boolean singleAttestationsOnlyAggregate,
       final List<PooledAttestationWithData> destinationAggregates) {
+    final Optional<UInt64> earliestSlot = earliestTrackedOnChainAttestationInclusionSlot.get();
+
+    if (earliestSlot.isEmpty()) {
+      // the node just went online, so we can assume the pool is almost empty
+      return;
+    }
+
     dataHashBySlot
-        .headMap(stateAtBlockSlot.getSlot(), false)
+        .subMap(earliestSlot.get(), true, stateAtBlockSlot.getSlot(), false)
         .descendingMap() // Safe view
         .values()
         .stream()

@@ -65,9 +65,9 @@ public class TestSpecFactory {
       final UInt64 altairEpoch, final UInt64 bellatrixForkEpoch) {
     Preconditions.checkArgument(
         altairEpoch.isLessThan(bellatrixForkEpoch),
-        String.format(
-            "Altair epoch %s must be less than bellatrix epoch %s",
-            altairEpoch, bellatrixForkEpoch));
+        "Altair epoch %s must be less than bellatrix epoch %s",
+        altairEpoch,
+        bellatrixForkEpoch);
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getBellatrixSpecConfig(Eth2Network.MINIMAL, altairEpoch, bellatrixForkEpoch);
     return create(specConfig, SpecMilestone.BELLATRIX);
@@ -510,10 +510,10 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.FULU);
   }
 
-  // Our current config files contain FULU params.
-  // So all specConfigs created from them will be FULU.
+  // Our current config files contain Fulu params.
+  // So all specConfigs created from them will be Fulu.
   // Here we just want to make sure that a given config supports the given milestone
-  // (which useless in theory because they are all FULU)
+  // (which useless in theory because they are all Fulu)
 
   private static SpecConfigAndParent<? extends SpecConfig> requireAltair(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent) {

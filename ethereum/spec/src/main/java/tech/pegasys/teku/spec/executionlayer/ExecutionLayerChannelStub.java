@@ -124,7 +124,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private boolean online = true;
 
   public ExecutionLayerChannelStub(
-      final Spec spec, final TimeProvider timeProvider, final boolean enableTransitionEmulation) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final List<String> additionalConfigs,
+      final boolean enableTransitionEmulation) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
     this.timeProvider = timeProvider;
@@ -137,10 +140,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       kzg = KZG.DISABLED;
     }
     this.blobsUtil = new BlobsUtil(spec, kzg);
+
+    applyAdditionalConfig(additionalConfigs);
   }
 
   public ExecutionLayerChannelStub(final Spec spec, final boolean enableTransitionEmulation) {
-    this(spec, SYSTEM_TIME_PROVIDER, enableTransitionEmulation);
+    this(spec, SYSTEM_TIME_PROVIDER, List.of(), enableTransitionEmulation);
   }
 
   public void addPowBlock(final PowBlock block) {
@@ -149,6 +154,18 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   public void addPosBlock(final Bytes32 blockHash, final PayloadStatus payloadStatus) {
     knownPosBlocks.put(blockHash, payloadStatus);
+  }
+
+  private void applyAdditionalConfig(final List<String> additionalConfigs) {
+    additionalConfigs.forEach(
+        config -> {
+          if (config.startsWith("blobs=")) {
+            final String status = config.substring("blobs=".length());
+            blobsToGenerate = Optional.of(Integer.valueOf(status));
+          } else {
+            LOG.warn("Unknown additional config: {}", config);
+          }
+        });
   }
 
   @Override

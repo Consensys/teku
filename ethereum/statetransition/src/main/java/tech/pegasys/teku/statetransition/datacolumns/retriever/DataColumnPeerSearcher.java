@@ -31,6 +31,7 @@ public interface DataColumnPeerSearcher {
 
   interface PeerSearchRequest {
 
+    // stop search
     void dispose();
   }
 }

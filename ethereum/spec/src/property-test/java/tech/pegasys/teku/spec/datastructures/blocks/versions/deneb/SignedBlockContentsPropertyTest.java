@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.Signe
 
 public class SignedBlockContentsPropertyTest {
 
-  @Property
+  @Property(tries = 100)
   void roundTrip(
       @ForAll(supplier = SignedBlockContentsSupplier.class)
           final SignedBlockContainer signedBlockContents)
@@ -32,7 +32,7 @@ public class SignedBlockContentsPropertyTest {
     assertRoundTrip(signedBlockContents);
   }
 
-  @Property
+  @Property(tries = 100)
   void deserializeMutated(
       @ForAll(supplier = SignedBlockContentsSupplier.class)
           final SignedBlockContainer signedBlockContents,

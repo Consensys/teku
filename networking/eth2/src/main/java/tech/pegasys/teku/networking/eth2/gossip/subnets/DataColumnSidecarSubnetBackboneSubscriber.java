@@ -47,8 +47,8 @@ public class DataColumnSidecarSubnetBackboneSubscriber
   }
 
   @Override
-  public void onCustodyGroupCountUpdate(final int groupCount) {
-    totalGroupCount.set(groupCount);
+  public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
+    totalGroupCount.set(samplingGroupCount);
   }
 
   @Override
@@ -81,7 +81,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber
             miscHelpersFulu -> {
               List<UInt64> subnets =
                   miscHelpersFulu.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, epoch, totalGroupCount.get());
+                      nodeId, totalGroupCount.get());
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }

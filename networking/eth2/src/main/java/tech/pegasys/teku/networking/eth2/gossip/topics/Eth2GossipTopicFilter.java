@@ -21,12 +21,12 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2GossipTopicFilter implements GossipTopicFilter {
@@ -53,24 +53,35 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
 
   private Set<String> computeRelevantTopics(
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
-    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
-    final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
-    final SpecMilestone specMilestone =
+    final Bytes4 forkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
+    final SpecMilestone milestone =
         recentChainData.getMilestoneByForkDigest(forkDigest).orElseThrow();
-    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, specMilestone);
+    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest, spec, milestone);
+    final UInt64 forkEpoch =
+        recentChainData
+            .getBpoForkByForkDigest(forkDigest)
+            .map(BlobParameters::epoch)
+            .orElseGet(() -> spec.getForkSchedule().getFork(milestone).getEpoch());
     spec.getForkSchedule().getForks().stream()
-        .filter(fork -> fork.getEpoch().isGreaterThan(forkInfo.getFork().getEpoch()))
+        .filter(fork -> fork.getEpoch().isGreaterThan(forkEpoch))
         .forEach(
             futureFork -> {
-              final SpecVersion futureSpecVersion = spec.atEpoch(futureFork.getEpoch());
+              final SpecMilestone futureMilestone =
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(futureFork.getEpoch());
               final Bytes4 futureForkDigest =
-                  futureSpecVersion
-                      .miscHelpers()
-                      .computeForkDigest(
-                          futureFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot());
-              topics.addAll(
-                  getAllTopics(
-                      gossipEncoding, futureForkDigest, spec, futureSpecVersion.getMilestone()));
+                  recentChainData.getForkDigestByMilestone(futureMilestone).orElseThrow();
+              topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));
+            });
+    // BPO
+    spec.getBpoForks().stream()
+        .filter(bpoFork -> bpoFork.epoch().isGreaterThan(forkEpoch))
+        .forEach(
+            futureBpoFork -> {
+              final SpecMilestone futureMilestone =
+                  spec.getForkSchedule().getSpecMilestoneAtEpoch(futureBpoFork.epoch());
+              final Bytes4 futureForkDigest =
+                  recentChainData.getForkDigestByBpoFork(futureBpoFork).orElseThrow();
+              topics.addAll(getAllTopics(gossipEncoding, futureForkDigest, spec, futureMilestone));
             });
     return topics;
   }

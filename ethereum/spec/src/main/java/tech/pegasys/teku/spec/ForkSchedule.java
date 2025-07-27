@@ -240,7 +240,7 @@ public class ForkSchedule {
       final UInt64 forkEpoch = maybeForkEpoch.get();
       final Bytes4 forkVersion = maybeForkVersion.get();
       final UInt64 forkSlot = spec.miscHelpers().computeStartSlotAtEpoch(forkEpoch);
-      final UInt64 genesisOffset = spec.getForkChoiceUtil().getSlotStartTime(forkSlot, UInt64.ZERO);
+      final UInt64 genesisOffset = spec.miscHelpers().computeTimeAtSlot(UInt64.ZERO, forkSlot);
       final Fork fork = new Fork(prevForkVersion.orElse(forkVersion), forkVersion, forkEpoch);
 
       // Validate against prev fork

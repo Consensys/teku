@@ -24,6 +24,7 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.ge
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
@@ -37,22 +38,23 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {DENEB, ELECTRA})
+@TestSpecContext(milestone = {DENEB, ELECTRA, FULU})
 class Eth2GossipTopicFilterTest {
   private final UInt64 nextMilestoneForkEpoch = UInt64.valueOf(10);
+  private final BlobParameters bpoFork = new BlobParameters(UInt64.valueOf(11), 64);
   private RecentChainData recentChainData;
   private Spec spec;
   private SpecMilestone currentSpecMilestone;
   private SpecMilestone nextSpecMilestone;
-  private ForkInfo currentForkInfo;
+  private Bytes4 currentForkDigest;
   private Eth2GossipTopicFilter filter;
   private Bytes4 nextForkDigest;
 
@@ -72,7 +74,16 @@ class Eth2GossipTopicFilterTest {
           case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(nextMilestoneForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(nextMilestoneForkEpoch);
-          case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(nextMilestoneForkEpoch);
+          case FULU ->
+              TestSpecFactory.createMinimalFulu(
+                  b ->
+                      b.fuluBuilder(
+                          fb ->
+                              fb.fuluForkEpoch(nextMilestoneForkEpoch)
+                                  .blobSchedule(
+                                      List.of(
+                                          new BlobScheduleEntry(
+                                              bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
         };
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
@@ -81,16 +92,11 @@ class Eth2GossipTopicFilterTest {
     recentChainData = spy(storageSystem.recentChainData());
     filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
 
-    final List<Fork> forks = spec.getForkSchedule().getForks();
-    currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
-
-    final Fork nextFork = forks.get(1);
+    currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     nextForkDigest =
-        spec.atEpoch(nextFork.getEpoch())
-            .miscHelpers()
-            .computeForkDigest(
-                nextFork.getCurrentVersion(),
-                recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
+        recentChainData
+            .getNextForkDigest(recentChainData.getCurrentEpoch().orElseThrow())
+            .orElseThrow();
   }
 
   @TestTemplate
@@ -181,12 +187,21 @@ class Eth2GossipTopicFilterTest {
     assertThat(filter.isRelevantTopic(irrelevantTopic)).isFalse();
   }
 
+  @TestTemplate
+  void shouldAllowTopicsForBpoFork() {
+    assumeThat(nextSpecMilestone).isEqualTo(FULU);
+    final Bytes4 bpoForkDigest = recentChainData.getForkDigestByBpoFork(bpoFork).orElseThrow();
+    final String bpoTopic =
+        GossipTopics.getTopic(bpoForkDigest, GossipTopicName.BEACON_BLOCK, SSZ_SNAPPY);
+    assertThat(filter.isRelevantTopic(bpoTopic)).isTrue();
+  }
+
   private String getTopicName(final GossipTopicName name) {
-    return GossipTopics.getTopic(currentForkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(currentForkDigest, name, SSZ_SNAPPY);
   }
 
   private String getTopicName(final String name) {
-    return GossipTopics.getTopic(currentForkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(currentForkDigest, name, SSZ_SNAPPY);
   }
 
   private String getNextForkTopicName(final GossipTopicName name) {

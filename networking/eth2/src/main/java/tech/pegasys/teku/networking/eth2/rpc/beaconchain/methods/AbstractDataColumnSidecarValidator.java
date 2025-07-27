@@ -37,17 +37,35 @@ public abstract class AbstractDataColumnSidecarValidator {
     this.kzg = kzg;
   }
 
+  void verifyValidity(final DataColumnSidecar dataColumnSidecar) {
+    if (!verifyDataColumnSidecarValidity(dataColumnSidecar)) {
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED);
+    }
+  }
+
+  private boolean verifyDataColumnSidecarValidity(final DataColumnSidecar dataColumnSidecar) {
+    try {
+      return MiscHelpersFulu.required(spec.atSlot(dataColumnSidecar.getSlot()).miscHelpers())
+          .verifyDataColumnSidecar(dataColumnSidecar);
+    } catch (final Exception ex) {
+      LOG.debug("Validity check failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());
+      throw new DataColumnSidecarsResponseInvalidResponseException(
+          peer, InvalidResponseType.DATA_COLUMN_SIDECAR_VALIDITY_CHECK_FAILED, ex);
+    }
+  }
+
   void verifyKzgProof(final DataColumnSidecar dataColumnSidecar) {
-    if (!verifyDataColumnSidecarKzgProof(dataColumnSidecar)) {
+    if (!verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
       throw new DataColumnSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
     }
   }
 
-  private boolean verifyDataColumnSidecarKzgProof(final DataColumnSidecar dataColumnSidecar) {
+  private boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
     try {
       return MiscHelpersFulu.required(spec.atSlot(dataColumnSidecar.getSlot()).miscHelpers())
-          .verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar);
+          .verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
     } catch (final Exception ex) {
       LOG.debug(
           "KZG verification failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());

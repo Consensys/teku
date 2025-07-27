@@ -32,9 +32,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
  * Performs complete data availability check <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
  */
-public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityChecker<BlobSidecar> {
+public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<BlobSidecar> {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
@@ -45,7 +45,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityCh
 
   private final Duration waitForTrackerCompletionTimeout;
 
-  public ForkChoiceBlobSidecarsAvailabilityChecker(
+  public BlobSidecarsAvailabilityChecker(
       final Spec spec,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
@@ -59,7 +59,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityCh
   }
 
   @VisibleForTesting
-  ForkChoiceBlobSidecarsAvailabilityChecker(
+  BlobSidecarsAvailabilityChecker(
       final Spec spec,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
@@ -74,25 +74,28 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements AvailabilityCh
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    blockBlobSidecarsTracker
-        .getCompletionFuture()
+    final SafeFuture<Void> blobSidecarCompletion = blockBlobSidecarsTracker.getCompletionFuture();
+
+    if (!blobSidecarCompletion.isDone() && isBlockOutsideDataAvailabilityWindow()) {
+      // avoid waiting for blob sidecars if the block is outside the data availability window
+      validationResult.complete(DataAndValidationResult.notRequired());
+      return true;
+    }
+
+    blobSidecarCompletion
         .orTimeout(waitForTrackerCompletionTimeout)
         .thenApply(__ -> validateCompletedBlobSidecars())
         .exceptionallyCompose(
             error ->
                 ExceptionUtil.getCause(error, TimeoutException.class)
-                    .map(
+                    .<SafeFuture<DataAndValidationResult<BlobSidecar>>>map(
                         timeoutException -> {
-                          final SafeFuture<DataAndValidationResult<BlobSidecar>> result;
                           if (isBlockOutsideDataAvailabilityWindow()) {
-                            result =
-                                SafeFuture.completedFuture(DataAndValidationResult.notRequired());
-                          } else {
-                            result =
-                                SafeFuture.completedFuture(
-                                    DataAndValidationResult.notAvailable(timeoutException));
+                            return SafeFuture.completedFuture(
+                                DataAndValidationResult.notRequired());
                           }
-                          return result;
+                          return SafeFuture.completedFuture(
+                              DataAndValidationResult.notAvailable(timeoutException));
                         })
                     .orElseGet(() -> SafeFuture.failedFuture(error)))
         .propagateTo(validationResult);

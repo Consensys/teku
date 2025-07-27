@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import com.google.common.base.MoreObjects;
+import io.vertx.core.impl.ConcurrentHashSet;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -178,7 +177,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
           block.getSlotAndBlockRoot(),
           new RecoveryTask(
               new AtomicReference<>(block),
-              new HashSet<>(),
+              new ConcurrentHashSet<>(),
               new AtomicBoolean(false),
               new AtomicBoolean(false)));
     }
@@ -188,12 +187,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (readyToBeRecovered(task)) {
       task.recoveryStarted().set(true);
       if (task.existingColumnIds().size() != columnCount) {
-        asyncRunner
-            .runAsync(() -> prepareAndInitiateRecovery(task))
-            .finish(
-                error -> {
-                  LOG.error("DataColumnSidecars recovery task {} failed", task, error);
-                });
+        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).ifExceptionGetsHereRaiseABug();
       }
     }
   }
@@ -235,30 +229,13 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       AtomicReference<BeaconBlock> block,
       Set<DataColumnSlotAndIdentifier> existingColumnIds,
       AtomicBoolean recoveryStarted,
-      AtomicBoolean timedOut) {
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("block", block.get() == null ? "null" : block.get().toLogString())
-          .add(
-              "existingColumnIds",
-              existingColumnIds.isEmpty()
-                  ? "empty"
-                  : existingColumnIds.stream().findFirst()
-                      + ", "
-                      + existingColumnIds.size()
-                      + " total")
-          .add("recoveryStarted", recoveryStarted)
-          .add("timedOut", timedOut)
-          .toString();
-    }
-  }
+      AtomicBoolean timedOut) {}
 
   private void prepareAndInitiateRecovery(final RecoveryTask task) {
     final SafeFuture<List<DataColumnSidecar>> list =
-        AsyncStream.create(task.existingColumnIds().stream())
+        AsyncStream.createUnsafe(task.existingColumnIds().iterator())
             .mapAsync(delegate::getCustodyDataColumnSidecar)
+            .filter(Optional::isPresent)
             .map(Optional::get)
             .toList();
     initiateRecovery(task.block().get(), list);
@@ -273,7 +250,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     list.thenAccept(
             sidecars -> {
               LOG.debug(
-                  "Recovery for block: {}. DatacolumnSidecars found: {}",
+                  "Recovery for block: {}. DataColumnSidecars found: {}",
                   block.getSlotAndBlockRoot(),
                   sidecars.size());
               final List<DataColumnSidecar> recoveredSidecars =
@@ -326,10 +303,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       existing.existingColumnIds().add(identifier);
       maybeStartRecovery(existing);
     } else {
-      RecoveryTask recoveryTask =
+      final ConcurrentHashSet<DataColumnSlotAndIdentifier> identifiers = new ConcurrentHashSet<>();
+      identifiers.add(identifier);
+      final RecoveryTask recoveryTask =
           new RecoveryTask(
               new AtomicReference<>(null),
-              new HashSet<>(List.of(identifier)),
+              identifiers,
               new AtomicBoolean(false),
               new AtomicBoolean(false));
       recoveryTasks.put(identifier.getSlotAndBlockRoot(), recoveryTask);
