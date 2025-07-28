@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,8 +48,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final UInt256 nodeId;
   private final SettableGauge custodyGroupCountGauge;
   private final SettableGauge custodyGroupSyncedCountGauge;
-  private final AtomicBoolean genesisInitialized = new AtomicBoolean(false);
 
+  private volatile boolean genesisInitialized = false;
   private volatile UInt64 lastEpoch = UInt64.MAX_VALUE;
 
   public CustodyGroupCountManagerImpl(
@@ -90,7 +89,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public void onSlot(final UInt64 slot) {
-    LOG.info("onSlot called for slot {}", slot);
     if (initCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups()) {
       // Supernode, we are already subscribed to all groups
       return;
@@ -102,6 +100,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
         proposersDataManager.getPreparedProposerInfo();
 
     if (detectGenesisInitialization(currentEpoch, preparedValidators)) {
+      updateEpoch(currentEpoch);
       return;
     }
 
@@ -119,15 +118,23 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   private boolean detectGenesisInitialization(
       final UInt64 currentEpoch, final Map<UInt64, PreparedProposerInfo> preparedValidators) {
-    if (currentEpoch.isZero()) {
-      if (genesisInitialized.compareAndSet(false, !preparedValidators.isEmpty())) {
-        LOG.info("Validators at genesis epoch detected, initializing custody group count.");
-        computeAndUpdateCustodyGroupCount(preparedValidators);
-        updateEpoch(currentEpoch);
-        return true;
-      }
+    if (!currentEpoch.isZero()) {
+      return false;
     }
-    return false;
+
+    if (preparedValidators.isEmpty()) {
+      return false;
+    }
+
+    if (genesisInitialized) {
+      return false;
+    }
+
+    genesisInitialized = true;
+
+    LOG.info("Validators at genesis epoch detected, initializing custody group count.");
+    computeAndUpdateCustodyGroupCount(preparedValidators);
+    return true;
   }
 
   private void computeAndUpdateCustodyGroupCount(
