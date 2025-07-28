@@ -279,12 +279,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   block.getSlotAndBlockRoot());
             })
         .alwaysRun(timer.closeUnchecked())
-        .exceptionally(
-            error -> {
-              LOG.error("Failed to recover columns, encountered error: {}", error.getMessage());
-              return null;
-            })
-        .ifExceptionGetsHereRaiseABug();
+        .finish(
+            error ->
+                LOG.error("Failed to recover columns, encountered error: {}", error.getMessage()));
   }
 
   @Override
