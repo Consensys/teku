@@ -49,7 +49,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final SettableGauge custodyGroupCountGauge;
   private final SettableGauge custodyGroupSyncedCountGauge;
 
-  private UInt64 lastEpoch = UInt64.MAX_VALUE;
+  private volatile boolean genesisInitialized = false;
+  private volatile UInt64 lastEpoch = UInt64.MAX_VALUE;
 
   public CustodyGroupCountManagerImpl(
       final Spec spec,
@@ -93,29 +94,69 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       return;
     }
 
-    if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+
+    final Map<UInt64, PreparedProposerInfo> preparedValidators =
+        proposersDataManager.getPreparedProposerInfo();
+
+    if (detectGenesisInitialization(currentEpoch, preparedValidators)) {
+      updateEpoch(currentEpoch);
       return;
     }
 
-    final Map<UInt64, PreparedProposerInfo> preparedProposerInfo =
-        proposersDataManager.getPreparedProposerInfo();
-    if (preparedProposerInfo.isEmpty()) {
+    if (!updateEpoch(currentEpoch)) {
+      return;
+    }
+
+    if (preparedValidators.isEmpty()) {
       updateCustodyGroupCount(initCustodyGroupCount);
       return;
     }
 
+    computeAndUpdateCustodyGroupCount(preparedValidators);
+  }
+
+  private boolean detectGenesisInitialization(
+      final UInt64 currentEpoch, final Map<UInt64, PreparedProposerInfo> preparedValidators) {
+    if (!currentEpoch.isZero()) {
+      return false;
+    }
+
+    if (preparedValidators.isEmpty()) {
+      return false;
+    }
+
+    if (genesisInitialized) {
+      return false;
+    }
+
+    genesisInitialized = true;
+
+    LOG.info("Validators at genesis epoch detected, initializing custody group count.");
+    computeAndUpdateCustodyGroupCount(preparedValidators);
+    return true;
+  }
+
+  private void computeAndUpdateCustodyGroupCount(
+      final Map<UInt64, PreparedProposerInfo> preparedProposerInfo) {
     combinedChainDataClient
         .getBestFinalizedState()
         .thenAccept(
             maybeState -> {
-              if (maybeState.isPresent()) {
-                final int custodyGroupCountUpdated =
-                    miscHelpersFulu
-                        .getValidatorsCustodyRequirement(
-                            maybeState.get(), preparedProposerInfo.keySet())
-                        .max(initCustodyGroupCount)
-                        .intValue();
-                updateCustodyGroupCount(custodyGroupCountUpdated);
+              if (maybeState.isEmpty()) {
+                return;
+              }
+
+              final int custodyGroupCountUpdated =
+                  miscHelpersFulu
+                      .getValidatorsCustodyRequirement(
+                          maybeState.get(), preparedProposerInfo.keySet())
+                      .max(initCustodyGroupCount)
+                      .intValue();
+              updateCustodyGroupCount(custodyGroupCountUpdated);
+              if (maybeState.get().getSlot().isZero()) {
+                // genesis state
+                setCustodyGroupSyncedCount(custodyGroupCountUpdated);
               }
             })
         .ifExceptionGetsHereRaiseABug();
@@ -158,7 +199,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
   }
 
-  private synchronized boolean updateEpoch(final UInt64 epoch) {
+  private boolean updateEpoch(final UInt64 epoch) {
     if (!lastEpoch.equals(epoch)) {
       lastEpoch = epoch;
       return true;
@@ -166,7 +207,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return false;
   }
 
-  private synchronized void updateCustodyGroupCount(final int newCustodyGroupCount) {
+  private void updateCustodyGroupCount(final int newCustodyGroupCount) {
     final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
     if (oldCustodyGroupCount != newCustodyGroupCount) {
       LOG.debug(
