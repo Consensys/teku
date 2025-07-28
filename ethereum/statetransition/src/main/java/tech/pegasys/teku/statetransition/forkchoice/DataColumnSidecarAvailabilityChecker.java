@@ -67,13 +67,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
             .checkDataAvailability(block.getSlot(), block.getRoot())
             .finish(
                 sampleIndices -> {
-                  if (sampleIndices.isEmpty()) {
-                    LOG.debug(
-                        "Data availability check for slot {} returned no indices", block.getSlot());
-                    validationResult.complete(DataAndValidationResult.notAvailable());
-                  } else {
                     validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
-                  }
                 },
                 throwable ->
                     validationResult.complete(DataAndValidationResult.notAvailable(throwable)));

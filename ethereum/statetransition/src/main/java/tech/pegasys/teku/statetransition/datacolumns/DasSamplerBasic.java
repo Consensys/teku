@@ -139,15 +139,22 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                       retrievedColumns -> {
                         if (!retrievedColumns.isEmpty()) {
                           LOG.debug(
-                              "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
-                              retrievedColumns.size(),
-                              requiredColumnIdentifiers.size(),
-                              slot,
-                              blockRoot);
+                                  "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
+                                  retrievedColumns.size(),
+                                  requiredColumnIdentifiers.size(),
+                                  slot,
+                                  blockRoot);
+
+                          retrievedColumns.stream()
+                                  .map(custody::onNewValidatedDataColumnSidecar)
+                                  .forEach(updateFuture -> updateFuture.ifExceptionGetsHereRaiseABug());
                         }
-                        retrievedColumns.stream()
-                            .map(custody::onNewValidatedDataColumnSidecar)
-                            .forEach(updateFuture -> updateFuture.ifExceptionGetsHereRaiseABug());
+                        else{
+                          throw new IllegalStateException(
+                              String.format(
+                                  "No columns retrieved for block %s (%s) with %d required columns",
+                                  slot, blockRoot, requiredColumnIdentifiers.size()));
+                        }
                       });
 
           return columnsRetrievedFuture.thenApply(
