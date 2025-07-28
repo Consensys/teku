@@ -15,7 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -50,9 +49,9 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private final UInt256 nodeId;
   private final SettableGauge custodyGroupCountGauge;
   private final SettableGauge custodyGroupSyncedCountGauge;
+  private final AtomicBoolean genesisInitialized = new AtomicBoolean(false);
 
-  private UInt64 lastEpoch = UInt64.MAX_VALUE;
-  private boolean hasProcessedGenesisTransition = false;
+  private volatile UInt64 lastEpoch = UInt64.MAX_VALUE;
 
   public CustodyGroupCountManagerImpl(
       final Spec spec,
@@ -91,39 +90,66 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public void onSlot(final UInt64 slot) {
+    LOG.info("onSlot called for slot {}", slot);
     if (initCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups()) {
       // Supernode, we are already subscribed to all groups
       return;
     }
 
-    if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+
+    final Map<UInt64, PreparedProposerInfo> preparedValidators =
+        proposersDataManager.getPreparedProposerInfo();
+
+    if (detectGenesisInitialization(currentEpoch, preparedValidators)) {
       return;
     }
 
-    final Map<UInt64, PreparedProposerInfo> preparedProposerInfo =
-        proposersDataManager.getPreparedProposerInfo();
-    if (preparedProposerInfo.isEmpty()) {
+    if (!updateEpoch(currentEpoch)) {
+      return;
+    }
+
+    if (preparedValidators.isEmpty()) {
       updateCustodyGroupCount(initCustodyGroupCount);
       return;
     }
 
-    // Check if we need to handle genesis transition
-    if (!hasProcessedGenesisTransition) {
-      checkAndHandleGenesisTransition(preparedProposerInfo.keySet());
-    }
+    computeAndUpdateCustodyGroupCount(preparedValidators);
+  }
 
+  private boolean detectGenesisInitialization(
+      final UInt64 currentEpoch, final Map<UInt64, PreparedProposerInfo> preparedValidators) {
+    if (currentEpoch.isZero()) {
+      if (genesisInitialized.compareAndSet(false, !preparedValidators.isEmpty())) {
+        LOG.info("Validators at genesis epoch detected, initializing custody group count.");
+        computeAndUpdateCustodyGroupCount(preparedValidators);
+        updateEpoch(currentEpoch);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void computeAndUpdateCustodyGroupCount(
+      final Map<UInt64, PreparedProposerInfo> preparedProposerInfo) {
     combinedChainDataClient
         .getBestFinalizedState()
         .thenAccept(
             maybeState -> {
-              if (maybeState.isPresent()) {
-                final int custodyGroupCountUpdated =
-                    miscHelpersFulu
-                        .getValidatorsCustodyRequirement(
-                            maybeState.get(), preparedProposerInfo.keySet())
-                        .max(initCustodyGroupCount)
-                        .intValue();
-                updateCustodyGroupCount(custodyGroupCountUpdated);
+              if (maybeState.isEmpty()) {
+                return;
+              }
+
+              final int custodyGroupCountUpdated =
+                  miscHelpersFulu
+                      .getValidatorsCustodyRequirement(
+                          maybeState.get(), preparedProposerInfo.keySet())
+                      .max(initCustodyGroupCount)
+                      .intValue();
+              updateCustodyGroupCount(custodyGroupCountUpdated);
+              if (maybeState.get().getSlot().isZero()) {
+                // genesis state
+                setCustodyGroupSyncedCount(custodyGroupCountUpdated);
               }
             })
         .ifExceptionGetsHereRaiseABug();
@@ -156,43 +182,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
   }
 
-  private void checkAndHandleGenesisTransition(final Set<UInt64> nodeValidatorIndices) {
-    combinedChainDataClient
-        .getLatestFinalized()
-        .ifPresent(
-            finalizedAnchor -> {
-              // Check if we've moved beyond genesis epoch (epoch 0)
-              if (finalizedAnchor.getEpoch().isGreaterThan(UInt64.ZERO)) {
-                // We've finalized beyond genesis, now get the genesis state to count validators
-                final UInt64 genesisSlot = spec.computeStartSlotAtEpoch(UInt64.ZERO);
-                combinedChainDataClient
-                    .getStateAtSlotExact(genesisSlot)
-                    .thenAccept(
-                        maybeGenesisState -> {
-                          if (maybeGenesisState.isPresent()) {
-                            if (!nodeValidatorIndices.isEmpty()) {
-                              // Calculate custody group count based on THIS node's validators effective balance
-                              final int custodyGroupCountFromGenesis =
-                                  miscHelpersFulu.getValidatorsCustodyRequirement(
-                                      maybeGenesisState.get(), nodeValidatorIndices).intValue();
-                              final int updatedCustodyGroupCount =
-                                  Math.max(custodyGroupCountFromGenesis, initCustodyGroupCount);
-                              updateCustodyGroupCount(updatedCustodyGroupCount);
-                              LOG.info(
-                                  "Updated custody group count to {} based on {} node validators from genesis state",
-                                  updatedCustodyGroupCount,
-                                  nodeValidatorIndices.size());
-                            }
-                          }
-                          hasProcessedGenesisTransition = true;
-                        })
-                    .ifExceptionGetsHereRaiseABug();
-              }
-            });
-  }
-
-
-  private synchronized boolean updateEpoch(final UInt64 epoch) {
+  private boolean updateEpoch(final UInt64 epoch) {
     if (!lastEpoch.equals(epoch)) {
       lastEpoch = epoch;
       return true;
@@ -200,13 +190,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return false;
   }
 
-  private synchronized void updateCustodyGroupCount(final int newCustodyGroupCount) {
+  private void updateCustodyGroupCount(final int newCustodyGroupCount) {
     final int oldCustodyGroupCount = custodyGroupCount.getAndSet(newCustodyGroupCount);
     if (oldCustodyGroupCount != newCustodyGroupCount) {
       LOG.debug(
           "Custody group count updated from {} to {}.", oldCustodyGroupCount, newCustodyGroupCount);
       custodyGroupCountChannel.onCustodyGroupCountUpdate(newCustodyGroupCount);
-      custodyGroupCountChannel.onCustodyGroupCountSynced(newCustodyGroupCount);
       custodyGroupCountGauge.set(newCustodyGroupCount);
     }
   }
