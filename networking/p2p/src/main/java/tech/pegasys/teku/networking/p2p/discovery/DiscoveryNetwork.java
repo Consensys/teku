@@ -147,11 +147,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       throw new IllegalArgumentException(
           String.format("Custody subnet count should be a positive number, but was %s", count));
     }
+    LOG.debug("Setting cgc in ENR to: {}", count);
     discoveryService.updateCustomENRField(
         DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.ofUnsignedInt(count).trimLeadingZeros());
   }
 
   public void setNextForkDigest(final Bytes4 nextForkDigest) {
+    LOG.debug("Setting nfd in ENR to: {}", nextForkDigest.toUnprefixedHexString());
     discoveryService.updateCustomENRField(
         NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nextForkDigest).sszSerialize());
   }
@@ -164,7 +166,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             genesisSpec.miscHelpers().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
             genesisForkVersion,
             SpecConfig.FAR_FUTURE_EPOCH);
-    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());
+    setEth2(enrForkId);
     this.enrForkId = Optional.of(enrForkId);
   }
 
@@ -193,16 +195,17 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .orElse(SpecConfig.FAR_FUTURE_EPOCH);
 
     final EnrForkId enrForkId = new EnrForkId(currentForkDigest, nextVersion, nextForkEpoch);
-    final Bytes encodedEnrForkId = enrForkId.sszSerialize();
-
-    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
-    LOG.info("Setting eth2 in ENR to: {}", enrForkId);
-    final Bytes4 nfdEnrField = nextForkDigest.orElse(Bytes4.ZERO);
-    LOG.info("Setting nfd in ENR to: {}", nfdEnrField.toUnprefixedHexString());
-    discoveryService.updateCustomENRField(
-        NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nfdEnrField).sszSerialize());
+    setEth2(enrForkId);
 
     this.enrForkId = Optional.of(enrForkId);
+
+    final Bytes4 nfdEnrField = nextForkDigest.orElse(Bytes4.ZERO);
+    setNextForkDigest(nfdEnrField);
+  }
+
+  private void setEth2(final EnrForkId enrForkId) {
+    LOG.debug("Setting eth2 in ENR to: {}", enrForkId);
+    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());
   }
 
   private boolean dontConnectPeersWithDifferentForkDigests(final DiscoveryPeer peer) {

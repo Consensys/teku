@@ -53,10 +53,10 @@ public class ObolDvtSyncAggregatorSelectionProofProvider
 
     assignments.forEach(
         assignment -> {
-          final IntStream syncSubCommitteeIndexes =
+          final IntStream syncSubCommitteeIndices =
               syncCommitteeUtil.getSyncSubcommittees(assignment.getCommitteeIndices()).intStream();
 
-          syncSubCommitteeIndexes.forEach(
+          syncSubCommitteeIndices.forEach(
               subcommitteeIndex -> {
                 selectionProofFutures.put(
                     Pair.of(assignment.getValidatorIndex(), subcommitteeIndex), new SafeFuture<>());

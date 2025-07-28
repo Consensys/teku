@@ -178,11 +178,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
       recentChainData
           .getNextForkDigest(currentEpoch)
-          .ifPresent(
-              nextForkDigest -> {
-                LOG.info("Setting nfd in ENR to: {}", nextForkDigest.toUnprefixedHexString());
-                discoveryNetwork.setNextForkDigest(nextForkDigest);
-              });
+          .ifPresent(discoveryNetwork::setNextForkDigest);
     }
     gossipForkManager.configureGossipForEpoch(currentEpoch);
     if (allTopicsFilterEnabled) {
@@ -407,10 +403,12 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     return peerManager;
   }
 
-  // TODO: fusaka-devnet-2 this is worth of refactoring
   private synchronized void updateForkInfo(final ForkInfo forkInfo, final Bytes4 forkDigest) {
     if (currentForkInfo != null
-        && (currentForkInfo.equals(forkInfo)
+        && currentForkDigest != null
+        // updating fork info when it's a new hard fork or the same hard fork but a different fork
+        // digest (BPO fork)
+        && ((currentForkInfo.equals(forkInfo) && currentForkDigest.equals(forkDigest))
             || forkInfo.isPriorTo(currentForkInfo)
             || currentForkDigest.equals(forkDigest))) {
       return;
@@ -419,18 +417,25 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     currentForkInfo = forkInfo;
     currentForkDigest = forkDigest;
 
+    final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
+
     final Optional<BlobParameters> maybeBpoFork =
         recentChainData.getBpoForkByForkDigest(forkDigest);
 
-    final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-    final Optional<Bytes4> nextForkDigest =
-        maybeBpoFork
-            .flatMap(bpo -> recentChainData.getNextForkDigest(bpo.epoch()))
-            .or(() -> recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch()));
-    final Optional<BlobParameters> nextBpoFork =
-        maybeBpoFork
-            .flatMap(bpo -> spec.getNextBpoFork(bpo.epoch()))
-            .or(() -> spec.getNextBpoFork(forkInfo.getFork().getEpoch()));
+    final Optional<Bytes4> nextForkDigest;
+    if (maybeBpoFork.isPresent()) {
+      nextForkDigest = recentChainData.getNextForkDigest(maybeBpoFork.get().epoch());
+    } else {
+      nextForkDigest = recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
+    }
+
+    final Optional<BlobParameters> nextBpoFork;
+    if (maybeBpoFork.isPresent()) {
+      nextBpoFork = spec.getNextBpoFork(maybeBpoFork.get().epoch());
+    } else {
+      nextBpoFork = spec.getNextBpoFork(forkInfo.getFork().getEpoch());
+    }
+
     discoveryNetwork.setForkInfo(forkInfo, forkDigest, nextFork, nextBpoFork, nextForkDigest);
   }
 

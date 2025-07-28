@@ -165,7 +165,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   // Scenarios from
-  // https://github.com/ethereum/consensus-specs/blob/dev/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
+  // https://github.com/ethereum/consensus-specs/blob/master/tests/core/pyspec/eth2spec/test/fulu/validator/test_compute_fork_digest.py
   public static Stream<Arguments> getComputeForkDigestFuluScenarios() {
     final Spec spec =
         TestSpecFactory.createMinimalFulu(
@@ -195,7 +195,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
 
   @Test
   @Disabled("Benchmark")
-  public void benchmarkVerifyDataColumnSidecarKzgProof() {
+  public void benchmarkVerifyDataColumnSidecarKzgProofs() {
     final Spec spec = TestSpecFactory.createMainnetFulu();
     final int numberOfRounds = 25;
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -224,14 +224,14 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
             signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
 
     final List<Integer> runTimes = new ArrayList<>();
-    System.out.printf("Running verifyDataColumnSidecarKzgProof with %s blobs\n", blobs.size());
+    System.out.printf("Running verifyDataColumnSidecarKzgProofs with %s blobs\n", blobs.size());
     for (int i = 0; i < numberOfRounds; i++) {
       final long start = System.currentTimeMillis();
       dataColumnSidecars.stream()
           .parallel()
           .forEach(
               dataColumnSidecar ->
-                  miscHelpersFulu.verifyDataColumnSidecarKzgProof(getKzg(), dataColumnSidecar));
+                  miscHelpersFulu.verifyDataColumnSidecarKzgProofs(getKzg(), dataColumnSidecar));
       final long end = System.currentTimeMillis();
       runTimes.add((int) (end - start));
     }

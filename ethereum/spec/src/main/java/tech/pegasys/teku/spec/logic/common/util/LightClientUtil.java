@@ -43,7 +43,7 @@ public class LightClientUtil {
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
 
     // Requires rehashing the state. See
-    // https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/full-node.md#create_light_client_bootstrap
+    // https://github.com/ethereum/consensus-specs/blob/master/specs/altair/light-client/full-node.md#create_light_client_bootstrap
     final LightClientHeader lightClientHeader =
         schemaDefinitionsAltair
             .getLightClientHeaderSchema()

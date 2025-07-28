@@ -89,7 +89,7 @@ public class BatchImporter {
                 if (lastBlockImportResult.isSuccessful()) {
                   return BatchImportResult.IMPORTED_ALL_BLOCKS;
                 } else if (lastBlockImportResult.hasFailedExecutingExecutionPayload()) {
-                  return BatchImportResult.SERVICE_OFFLINE;
+                  return BatchImportResult.EXECUTION_CLIENT_OFFLINE;
                 } else if (lastBlockImportResult.isDataNotAvailable()) {
                   return BatchImportResult.DATA_NOT_AVAILABLE;
                 }
@@ -145,7 +145,7 @@ public class BatchImporter {
   public enum BatchImportResult {
     IMPORTED_ALL_BLOCKS,
     IMPORT_FAILED,
-    SERVICE_OFFLINE,
+    EXECUTION_CLIENT_OFFLINE,
     DATA_NOT_AVAILABLE;
 
     public boolean isFailure() {

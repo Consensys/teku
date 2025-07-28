@@ -20,6 +20,8 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_KZG_PRECOMPUTE_SUPERNODE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
@@ -669,7 +671,28 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   () ->
                       new InvalidConfigurationException(
                           "Trusted setup should be configured when Deneb is enabled"));
-      kzg.loadTrustedSetup(trustedSetupFile, beaconConfig.eth2NetworkConfig().getKzgPrecompute());
+
+      final int kzgPrecompute =
+          beaconConfig
+              .eth2NetworkConfig()
+              .getKzgPrecompute()
+              .orElseGet(
+                  () -> {
+                    // Default to a different value if this is a supernode
+                    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+                      final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+                      final int totalCustodyGroups =
+                          beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
+                      final int numberOfColumns =
+                          SpecConfigFulu.required(specVersionFulu.getConfig()).getNumberOfColumns();
+                      if (totalCustodyGroups == numberOfColumns) {
+                        return DEFAULT_KZG_PRECOMPUTE_SUPERNODE;
+                      }
+                    }
+                    return DEFAULT_KZG_PRECOMPUTE;
+                  });
+
+      kzg.loadTrustedSetup(trustedSetupFile, kzgPrecompute);
     } else {
       kzg = KZG.DISABLED;
     }
@@ -773,7 +796,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
     eventChannels
         .getPublisher(CustodyGroupCountChannel.class)
-        .onCustodyGroupCountUpdate(totalMyCustodyGroups);
+        .onGroupCountUpdate(
+            totalMyCustodyGroups, miscHelpersFulu.getSamplingGroupCount(totalMyCustodyGroups));
 
     final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
@@ -818,7 +842,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
             custodyGroupCountManagerLateInit,
             specConfigFulu.getNumberOfColumns(),
             specConfigFulu.getNumberOfCustodyGroups(),
-            slot -> Duration.ofMillis(spec.getMillisPerSlot(slot).dividedBy(3).longValue()),
+            slot -> {
+              final long dataColumnSidecarRecoveryMaxDelayMillis =
+                  beaconConfig
+                      .eth2NetworkConfig()
+                      .getDataColumnSidecarRecoveryMaxDelayMillis()
+                      .orElse(spec.getMillisPerSlot(slot).dividedBy(3).longValue());
+              return Duration.ofMillis(dataColumnSidecarRecoveryMaxDelayMillis);
+            },
             metricsSystem,
             timeProvider);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
@@ -881,8 +912,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             Duration.ofSeconds(30),
             timeProvider,
             specConfigFulu.getNumberOfColumns());
-    dataColumnSidecarCustody.subscribeToValidDataColumnSidecars(
-        (sidecar, remoteOrigin) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        (dataColumnSidecar, remoteOrigin) ->
+            recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
     blockManager.subscribePreImportBlocks(
         (block, remoteOrigin) -> dataColumnSidecarCustody.onNewBlock(block, remoteOrigin));
     final DasCustodySync svc =
@@ -1289,14 +1321,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return;
     }
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
+    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
     DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
             spec,
             p2pNetwork,
             nodeId,
-            beaconConfig
-                .p2pConfig()
-                .getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
+            MiscHelpersFulu.required(specVersionFulu.miscHelpers())
+                .getSamplingGroupCount(
+                    beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu)));
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
     eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);

@@ -30,12 +30,14 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -73,6 +75,7 @@ public class DasCustodyStand {
   private DasCustodyStand(
       final Spec spec,
       final int totalCustodyGroupCount,
+      final int samplingGroupCount,
       final Optional<Duration> asyncDbDelay,
       final Optional<Duration> asyncBlockResolverDelay) {
     this.spec = spec;
@@ -96,8 +99,8 @@ public class DasCustodyStand {
             .orElse(this.db);
 
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
-
-    this.custodyGroupCountManager = createCustodyGroupCountManager(totalCustodyGroupCount);
+    this.custodyGroupCountManager =
+        createCustodyGroupCountManager(totalCustodyGroupCount, samplingGroupCount);
     this.custody =
         new DataColumnSidecarCustodyImpl(
             spec,
@@ -152,7 +155,7 @@ public class DasCustodyStand {
         .orElse(false);
   }
 
-  public Collection<UInt64> getCustodyColumnIndexes() {
+  public Collection<UInt64> getCustodyColumnIndices() {
     return custodyGroupCountManager.getCustodyColumnIndices();
   }
 
@@ -162,8 +165,8 @@ public class DasCustodyStand {
 
   public List<DataColumnSidecar> createCustodyColumnSidecars(final SignedBeaconBlock block) {
     if (hasBlobs(block.getBeaconBlock().orElseThrow())) {
-      final Collection<UInt64> custodyColumnIndexes = getCustodyColumnIndexes();
-      return custodyColumnIndexes.stream()
+      final Collection<UInt64> custodyColumnIndices = getCustodyColumnIndices();
+      return custodyColumnIndices.stream()
           .map(colIndex -> createSidecar(block, colIndex.intValue()))
           .toList();
     } else {
@@ -204,6 +207,7 @@ public class DasCustodyStand {
     private Spec spec;
     private UInt256 myNodeId = UInt256.ONE;
     private Integer totalCustodyGroupCount;
+    private Integer samplingGroupCount;
     private Optional<Duration> asyncDbDelay = Optional.empty();
     private Optional<Duration> asyncBlockResolverDelay = Optional.empty();
 
@@ -222,6 +226,11 @@ public class DasCustodyStand {
       return this;
     }
 
+    public Builder withSamplingGroupCount(final Integer samplingGroupCount) {
+      this.samplingGroupCount = samplingGroupCount;
+      return this;
+    }
+
     public Builder withAsyncDb(final Duration asyncDbDelay) {
       this.asyncDbDelay = Optional.ofNullable(asyncDbDelay);
       return this;
@@ -233,19 +242,25 @@ public class DasCustodyStand {
     }
 
     public DasCustodyStand build() {
+      checkNotNull(spec);
+      final SpecConfigFulu configFulu =
+          SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
       if (totalCustodyGroupCount == null) {
-        checkNotNull(spec);
-        final SpecConfigFulu configFulu =
-            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
         totalCustodyGroupCount = configFulu.getCustodyRequirement();
       }
+      if (samplingGroupCount == null) {
+        final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
+        samplingGroupCount =
+            MiscHelpersFulu.required(specVersionFulu.miscHelpers())
+                .getSamplingGroupCount(totalCustodyGroupCount);
+      }
       return new DasCustodyStand(
-          spec, totalCustodyGroupCount, asyncDbDelay, asyncBlockResolverDelay);
+          spec, totalCustodyGroupCount, samplingGroupCount, asyncDbDelay, asyncBlockResolverDelay);
     }
   }
 
   public static CustodyGroupCountManager createCustodyGroupCountManager(
-      final int custodyGroupCount) {
+      final int custodyGroupCount, final int sampleGroupCount) {
     return new CustodyGroupCountManager() {
       @Override
       public int getCustodyGroupCount() {
@@ -255,6 +270,16 @@ public class DasCustodyStand {
       @Override
       public List<UInt64> getCustodyColumnIndices() {
         return IntStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
+      }
+
+      @Override
+      public int getSamplingGroupCount() {
+        return sampleGroupCount;
+      }
+
+      @Override
+      public List<UInt64> getSamplingColumnIndices() {
+        return IntStream.range(0, sampleGroupCount).mapToObj(UInt64::valueOf).toList();
       }
 
       @Override

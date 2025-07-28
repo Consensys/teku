@@ -240,9 +240,9 @@ class BatchImporterTest {
     ignoreFuture(verify(blockImporter).importBlock(block2));
     verifyNoMoreInteractions(blockImporter);
 
-    // Import failed due to service being offline
+    // Import failed due to execution being offline
     importResult2.complete(BlockImportResult.failedExecutionPayloadExecution(new Error()));
-    assertThat(result).isCompletedWithValue(BatchImportResult.SERVICE_OFFLINE);
+    assertThat(result).isCompletedWithValue(BatchImportResult.EXECUTION_CLIENT_OFFLINE);
     verify(batch).getSource();
     verify(syncSource, never()).disconnectCleanly(any());
 
