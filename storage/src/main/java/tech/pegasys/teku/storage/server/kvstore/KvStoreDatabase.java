@@ -398,6 +398,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public long getSidecarColumnCount() {
+    return dao.getSidecarColumnCount();
+  }
+
+  @Override
   public long getNonCanonicalBlobSidecarColumnCount() {
     return dao.getNonCanonicalBlobSidecarColumnCount();
   }

@@ -480,6 +480,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public long getSidecarColumnCount() {
+    final KvStoreColumn<?, ?> column =
+            schema.getColumnMap().get("SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER");
+    return db.size(column);
+  }
+
+  @Override
   public long getNonCanonicalBlobSidecarColumnCount() {
     final KvStoreColumn<?, ?> column =
         schema

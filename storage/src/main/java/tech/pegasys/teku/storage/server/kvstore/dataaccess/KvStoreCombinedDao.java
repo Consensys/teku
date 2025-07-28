@@ -162,6 +162,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   long getBlobSidecarColumnCount();
 
+  long getSidecarColumnCount();
+
   long getNonCanonicalBlobSidecarColumnCount();
 
   @MustBeClosed

@@ -320,6 +320,12 @@ public class V4FinalizedKvStoreDao {
     return db.size(column);
   }
 
+  public long getSidecarColumnCount() {
+    final KvStoreColumn<?, ?> column =
+            schema.getColumnMap().get("SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER");
+    return db.size(column);
+  }
+
   public long getNonCanonicalBlobSidecarColumnCount() {
     final KvStoreColumn<?, ?> column =
         schema
