@@ -15,12 +15,14 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -113,7 +115,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       return;
     }
 
-    computeAndUpdateCustodyGroupCount(preparedValidators);
+    computeAndUpdateCustodyGroupCount(preparedValidators).ifExceptionGetsHereRaiseABug();
   }
 
   private boolean detectGenesisInitialization(
@@ -133,18 +135,22 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     genesisInitialized = true;
 
     LOG.info("Validators at genesis epoch detected, initializing custody group count.");
-    computeAndUpdateCustodyGroupCount(preparedValidators);
+    computeAndUpdateCustodyGroupCount(preparedValidators)
+        .thenAccept(
+            maybeCustodyGroupCountUpdated ->
+                maybeCustodyGroupCountUpdated.ifPresent(this::setCustodyGroupSyncedCount))
+        .ifExceptionGetsHereRaiseABug();
     return true;
   }
 
-  private void computeAndUpdateCustodyGroupCount(
+  private SafeFuture<Optional<Integer>> computeAndUpdateCustodyGroupCount(
       final Map<UInt64, PreparedProposerInfo> preparedProposerInfo) {
-    combinedChainDataClient
+    return combinedChainDataClient
         .getBestFinalizedState()
-        .thenAccept(
+        .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                return;
+                return Optional.empty();
               }
 
               final int custodyGroupCountUpdated =
@@ -154,12 +160,9 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
                       .max(initCustodyGroupCount)
                       .intValue();
               updateCustodyGroupCount(custodyGroupCountUpdated);
-              if (maybeState.get().getSlot().isZero()) {
-                // genesis state
-                setCustodyGroupSyncedCount(custodyGroupCountUpdated);
-              }
-            })
-        .ifExceptionGetsHereRaiseABug();
+
+              return Optional.of(custodyGroupCountUpdated);
+            });
   }
 
   @Override
