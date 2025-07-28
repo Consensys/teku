@@ -48,7 +48,7 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
+public class BlobSidecarsAvailabilityCheckerTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
@@ -67,7 +67,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
   private final SafeFuture<Void> trackerCompletionFuture = new SafeFuture<>();
 
-  private ForkChoiceBlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker;
+  private BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker;
 
   @BeforeEach
   void setUp() {
@@ -192,8 +192,41 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() throws Exception {
+  void shouldReturnInvalidWhenBlockIsOutsideAvailabilityWindowButInvalidBlobsAreProvided()
+      throws Exception {
     prepareForImmediateTimeoutWithBlockAndBlobSidecarsOutsideAvailabilityWindow();
+
+    trackerCompletionFuture.complete(null);
+
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    Waiter.waitFor(availabilityCheckResult);
+
+    assertInvalid(availabilityCheckResult, List.of(), Optional.empty());
+  }
+
+  @Test
+  void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindowNoWait() throws Exception {
+    prepareForImmediateTimeoutWithBlockAndBlobSidecarsOutsideAvailabilityWindow();
+
+    final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
+
+    assertNotRequired(availabilityCheckResult);
+  }
+
+  @Test
+  void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWhileWaiting() throws Exception {
+    prepareForImmediateTimeoutWithBlockAndBlobSidecarsOutsideAvailabilityWindow();
+
+    when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot()))
+        .thenReturn(true) // first check, inside DA
+        .thenReturn(false); // after timeout, outside DA
 
     final SafeFuture<DataAndValidationResult<BlobSidecar>> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
@@ -311,7 +344,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     blobSidecarsAvailabilityChecker =
-        new ForkChoiceBlobSidecarsAvailabilityChecker(
+        new BlobSidecarsAvailabilityChecker(
             spec, recentChainData, blockBlobSidecarsTracker, kzg, timeout);
   }
 
@@ -339,7 +372,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     blobSidecarsAvailabilityChecker =
-        new ForkChoiceBlobSidecarsAvailabilityChecker(
+        new BlobSidecarsAvailabilityChecker(
             spec, recentChainData, blockBlobSidecarsTracker, kzg, Duration.ZERO);
   }
 }
