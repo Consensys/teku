@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -81,7 +82,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private long discoveryNetworkSyncCommitteeSubnetsSubscription;
 
   private volatile Cancellable gossipUpdateTask;
-  private ForkInfo currentForkInfo;
+  private UInt64 currentForkEpoch;
   private Bytes4 currentForkDigest;
   private final boolean allTopicsFilterEnabled;
 
@@ -171,12 +172,15 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkSyncCommitteeSubnetsSubscription =
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
       discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
+      recentChainData
+          .getNextForkDigest(currentEpoch)
+          .ifPresent(discoveryNetwork::setNextForkDigest);
     }
-
-    gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
+    gossipForkManager.configureGossipForEpoch(currentEpoch);
     if (allTopicsFilterEnabled) {
       setAllTopicScoring();
     }
@@ -400,18 +404,38 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   }
 
   private synchronized void updateForkInfo(final ForkInfo forkInfo, final Bytes4 forkDigest) {
-    if (currentForkInfo != null
-        && (currentForkInfo.equals(forkInfo)
-            || forkInfo.isPriorTo(currentForkInfo)
-            || currentForkDigest.equals(forkDigest))) {
+    final Optional<BlobParameters> maybeBpoFork =
+        recentChainData.getBpoForkByForkDigest(forkDigest);
+    final UInt64 forkEpoch =
+        maybeBpoFork.map(BlobParameters::epoch).orElse(forkInfo.getFork().getEpoch());
+    if (currentForkEpoch != null
+        && currentForkDigest != null
+        // Will NOT update fork info when it's the same fork digest as the current one or the epoch
+        // of the hard fork (or BPO fork) is prior to the current one
+        && (currentForkDigest.equals(forkDigest) || forkEpoch.isLessThan(currentForkEpoch))) {
       return;
     }
 
-    currentForkInfo = forkInfo;
+    currentForkEpoch = forkEpoch;
     currentForkDigest = forkDigest;
 
     final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
-    discoveryNetwork.setForkInfo(forkInfo, forkDigest, nextFork);
+
+    final Optional<BlobParameters> nextBpoFork;
+    if (maybeBpoFork.isPresent()) {
+      nextBpoFork = spec.getNextBpoFork(maybeBpoFork.get().epoch());
+    } else {
+      nextBpoFork = spec.getNextBpoFork(forkInfo.getFork().getEpoch());
+    }
+
+    final Optional<Bytes4> nextForkDigest;
+    if (maybeBpoFork.isPresent()) {
+      nextForkDigest = recentChainData.getNextForkDigest(maybeBpoFork.get().epoch());
+    } else {
+      nextForkDigest = recentChainData.getNextForkDigest(forkInfo.getFork().getEpoch());
+    }
+
+    discoveryNetwork.setForkInfo(forkInfo, forkDigest, nextFork, nextBpoFork, nextForkDigest);
   }
 
   @Override
