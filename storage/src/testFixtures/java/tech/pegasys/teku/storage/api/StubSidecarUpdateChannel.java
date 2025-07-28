@@ -33,8 +33,4 @@ public class StubSidecarUpdateChannel implements SidecarUpdateChannel {
     return SafeFuture.COMPLETE;
   }
 
-  @Override
-  public SafeFuture<Void> onSidecarsAvailabilitySlot(final UInt64 earliestSlotRequired) {
-    return SafeFuture.COMPLETE;
-  }
 }

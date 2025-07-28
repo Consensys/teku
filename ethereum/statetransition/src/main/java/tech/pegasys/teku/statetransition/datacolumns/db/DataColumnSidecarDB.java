@@ -51,5 +51,4 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   @Override
   SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);
 
-  SafeFuture<Void> pruneAllSidecars(UInt64 tillSlot);
 }
