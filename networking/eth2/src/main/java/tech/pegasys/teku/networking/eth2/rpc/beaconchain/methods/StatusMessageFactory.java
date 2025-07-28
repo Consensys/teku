@@ -84,6 +84,6 @@ public class StatusMessageFactory {
             finalizedCheckpoint.getEpoch(),
             chainHead.getRoot(),
             chainHead.getSlot(),
-            Optional.ofNullable(latestFinalizedSlot)));
+            Optional.of(latestFinalizedSlot)));
   }
 }
