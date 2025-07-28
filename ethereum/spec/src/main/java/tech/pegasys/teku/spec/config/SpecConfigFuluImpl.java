@@ -158,6 +158,11 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   }
 
   @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return nextForkEpoch;
+  }
+
+  @Override
   public Optional<SpecConfigFulu> toVersionFulu() {
     return Optional.of(this);
   }

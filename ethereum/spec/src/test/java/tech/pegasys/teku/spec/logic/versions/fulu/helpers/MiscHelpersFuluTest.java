@@ -88,6 +88,25 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   private final MiscHelpersFulu miscHelpersFulu =
       new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
 
+  private final UInt64 nextForkEpoch = UInt64.valueOf(1024_000);
+  private final Spec nextVersionSpec =
+      TestSpecFactory.createMinimalFulu(
+          builder ->
+              builder.fuluBuilder(
+                  fuluBuilder -> fuluBuilder.nextForkEpoch(Optional.of(nextForkEpoch))));
+  private final MiscHelpersFulu nextVersionHelpers =
+      new MiscHelpersFulu(
+          nextVersionSpec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
+          predicates,
+          schemaDefinitionsFulu);
+  final Bytes4 nextForkVersion =
+      nextVersionSpec
+          .forMilestone(SpecMilestone.FULU)
+          .getConfig()
+          .toVersionFulu()
+          .orElseThrow()
+          .getFuluForkVersion();
+
   @Test
   @Disabled("Benchmark")
   public void benchmarkComputeExtendedMatrix() {
@@ -217,6 +236,45 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     final MiscHelpers miscHelpersBase = localSpec.getGenesisSpec().miscHelpers();
     assertThatThrownBy(() -> miscHelpersBase.computeForkVersion(UInt64.valueOf(7)))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void canComputeForkVersion() {
+    assertThat(nextVersionHelpers.computeForkVersion(UInt64.ZERO)).isEqualTo(nextForkVersion);
+    assertThat(nextVersionHelpers.computeForkVersion(nextForkEpoch.decrement()))
+        .isEqualTo(nextForkVersion);
+  }
+
+  @Test
+  void canDetectEpochIsNextFork() {
+    assertThatThrownBy(() -> nextVersionHelpers.computeForkVersion(nextForkEpoch.increment()))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> nextVersionHelpers.computeForkVersion(nextForkEpoch))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void canHandleFuluAsFinalVersion() {
+    final Spec localSpec =
+        TestSpecFactory.createMinimalFulu(
+            builder ->
+                builder.fuluBuilder(fuluBuilder -> fuluBuilder.nextForkEpoch(Optional.empty())));
+    final MiscHelpersFulu helpers =
+        new MiscHelpersFulu(
+            localSpec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
+            predicates,
+            schemaDefinitionsFulu);
+
+    final Bytes4 fuluVersion =
+        localSpec
+            .forMilestone(SpecMilestone.FULU)
+            .getConfig()
+            .toVersionFulu()
+            .orElseThrow()
+            .getFuluForkVersion();
+
+    assertThat(helpers.computeForkVersion(ZERO)).isEqualTo(fuluVersion);
+    assertThat(helpers.computeForkVersion(UInt64.MAX_VALUE.decrement())).isEqualTo(fuluVersion);
   }
 
   @Test
