@@ -300,6 +300,33 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         dataColumnSidecar.getSszKZGProofs().stream().map(SszKZGProof::getKZGProof).toList());
   }
 
+  public boolean verifyDataColumnSidecarKzgProofsBatch(
+      final KZG kzg, final List<DataColumnSidecar> dataColumnSidecars) {
+
+    final List<KZGCellWithColumnId> cellWithIds =
+        dataColumnSidecars.stream()
+            .flatMap(
+                dataColumnSidecar ->
+                    IntStream.range(0, dataColumnSidecar.getDataColumn().size())
+                        .mapToObj(
+                            rowIndex ->
+                                KZGCellWithColumnId.fromCellAndColumn(
+                                    new KZGCell(
+                                        dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
+                                    dataColumnSidecar.getIndex().intValue())))
+            .toList();
+    return kzg.verifyCellProofBatch(
+        dataColumnSidecars.stream()
+            .flatMap(sidecar -> sidecar.getSszKZGCommitments().stream())
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList(),
+        cellWithIds,
+        dataColumnSidecars.stream()
+            .flatMap(sidecar -> sidecar.getSszKZGProofs().stream())
+            .map(SszKZGProof::getKZGProof)
+            .toList());
+  }
+
   public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
     if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
       return false;

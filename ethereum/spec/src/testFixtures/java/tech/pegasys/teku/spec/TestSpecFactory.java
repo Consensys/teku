@@ -255,6 +255,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.FULU);
   }
 
+  public static Spec createMainnetFulu(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getFuluSpecConfig(Eth2Network.MAINNET, configAdapter);
+    return create(specConfig, SpecMilestone.FULU);
+  }
+
   public static Spec createPhase0(final SpecConfigAndParent<? extends SpecConfig> config) {
     return create(config, SpecMilestone.PHASE0);
   }

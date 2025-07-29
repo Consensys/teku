@@ -64,7 +64,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
 
   private final Spec spec =
-      TestSpecFactory.createMinimalFulu(
+      TestSpecFactory.createMainnetFulu(
           builder ->
               builder.fuluBuilder(
                   fuluBuilder ->
@@ -132,6 +132,41 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
               signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
       assertEquals(blobs.size(), dataColumnSidecars.getFirst().getDataColumn().size());
       final long end = System.currentTimeMillis();
+      runTimes.add((int) (end - start));
+    }
+    printStats(runTimes);
+  }
+
+  @Test
+  @Disabled
+  public void benchmarkReconstructHalfOfDataColumnSidecars() {
+    final int numberOfRounds = 10;
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final List<Blob> blobs =
+        IntStream.range(0, 72).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<SszKZGCommitment> kzgCommitments =
+        blobs.stream()
+            .map(blob -> getKzg().blobToKzgCommitment(blob.getBytes()))
+            .map(SszKZGCommitment::new)
+            .toList();
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsFulu.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema();
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
+            blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
+    final List<DataColumnSidecar> dataColumnSidecarsAll =
+        miscHelpersFulu.constructDataColumnSidecarsOld(signedBeaconBlock, blobs, getKzg());
+    final List<DataColumnSidecar> dataColumnSidecarsHalf =
+        dataColumnSidecarsAll.subList(0, dataColumnSidecarsAll.size() / 2);
+
+    final List<Integer> runTimes = new ArrayList<>();
+    for (int i = 0; i < numberOfRounds; i++) {
+      final long start = System.currentTimeMillis();
+      final List<DataColumnSidecar> dataColumnSidecars =
+          miscHelpersFulu.reconstructAllDataColumnSidecars(dataColumnSidecarsHalf, getKzg());
+      final long end = System.currentTimeMillis();
+      assertThat(dataColumnSidecars).containsExactlyInAnyOrderElementsOf(dataColumnSidecarsAll);
       runTimes.add((int) (end - start));
     }
     printStats(runTimes);
@@ -215,7 +250,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @Test
-  @Disabled("Benchmark")
+  @Disabled
   public void benchmarkVerifyDataColumnSidecarKzgProofs() {
     final Spec spec = TestSpecFactory.createMainnetFulu();
     final int numberOfRounds = 25;
@@ -248,11 +283,58 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
     System.out.printf("Running verifyDataColumnSidecarKzgProofs with %s blobs\n", blobs.size());
     for (int i = 0; i < numberOfRounds; i++) {
       final long start = System.currentTimeMillis();
-      dataColumnSidecars.stream()
-          .parallel()
-          .forEach(
-              dataColumnSidecar ->
-                  miscHelpersFulu.verifyDataColumnSidecarKzgProofs(getKzg(), dataColumnSidecar));
+      final Set<Boolean> result =
+          dataColumnSidecars.stream()
+              .parallel()
+              .map(
+                  dataColumnSidecar ->
+                      miscHelpersFulu.verifyDataColumnSidecarKzgProofs(getKzg(), dataColumnSidecar))
+              .collect(Collectors.toSet());
+
+      assertThat(result).containsExactly(true);
+      final long end = System.currentTimeMillis();
+      runTimes.add((int) (end - start));
+    }
+    printStats(runTimes);
+  }
+
+  @Test
+  @Disabled
+  public void benchmarkVerifyDataColumnSidecarKzgProofsBatch() {
+    final Spec spec = TestSpecFactory.createMainnetFulu();
+    final int numberOfRounds = 25;
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SchemaDefinitionsFulu schemaDefinitionsFulu =
+        SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
+    final SpecConfigFulu specConfigFulu = spec.getGenesisSpecConfig().toVersionFulu().orElseThrow();
+    final MiscHelpersFulu miscHelpersFulu =
+        new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
+    final List<Blob> blobs =
+        IntStream.range(0, 72).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg());
+    final List<SszKZGCommitment> kzgCommitments =
+        blobs.stream()
+            .map(blob -> getKzg().blobToKzgCommitment(blob.getBytes()))
+            .map(SszKZGCommitment::new)
+            .toList();
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema();
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
+            blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
+    final List<DataColumnSidecar> dataColumnSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
+    final List<Integer> runTimes = new ArrayList<>();
+    System.out.printf("Running verifyDataColumnSidecarKzgProofs with %s blobs\n", blobs.size());
+    for (int i = 0; i < numberOfRounds; i++) {
+      final long start = System.currentTimeMillis();
+      assertThat(
+              miscHelpersFulu.verifyDataColumnSidecarKzgProofsBatch(getKzg(), dataColumnSidecars))
+          .isTrue();
       final long end = System.currentTimeMillis();
       runTimes.add((int) (end - start));
     }
