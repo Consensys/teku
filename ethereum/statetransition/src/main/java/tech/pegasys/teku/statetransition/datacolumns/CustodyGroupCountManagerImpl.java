@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,7 +57,29 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   public CustodyGroupCountManagerImpl(
       final Spec spec,
+      final ProposersDataManager proposersDataManager,
+      final CustodyGroupCountChannel custodyGroupCountChannel,
+      final CombinedChainDataClient combinedChainDataClient,
+      final int initCustodyGroupCount,
+      final UInt256 nodeId,
+      final MetricsSystem metricsSystem) {
+    this(
+        spec,
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig()),
+        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
+        proposersDataManager,
+        custodyGroupCountChannel,
+        combinedChainDataClient,
+        initCustodyGroupCount,
+        nodeId,
+        metricsSystem);
+  }
+
+  @VisibleForTesting
+  CustodyGroupCountManagerImpl(
+      final Spec spec,
       final SpecConfigFulu specConfigFulu,
+      final MiscHelpersFulu miscHelpersFulu,
       final ProposersDataManager proposersDataManager,
       final CustodyGroupCountChannel custodyGroupCountChannel,
       final CombinedChainDataClient combinedChainDataClient,
@@ -65,8 +88,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.specConfigFulu = specConfigFulu;
-    this.miscHelpersFulu =
-        MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
+    this.miscHelpersFulu = miscHelpersFulu;
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountChannel = custodyGroupCountChannel;
@@ -115,20 +137,25 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       return;
     }
 
-    computeAndUpdateCustodyGroupCount(preparedValidators).ifExceptionGetsHereRaiseABug();
+    computeAndUpdateCustodyGroupCount(preparedValidators)
+        .finish(
+            error ->
+                LOG.error(
+                    "Failed to compute custody group count for epoch {}", currentEpoch, error));
   }
 
   private boolean detectGenesisInitialization(
       final UInt64 currentEpoch, final Map<UInt64, PreparedProposerInfo> preparedValidators) {
+    if (genesisInitialized) {
+      return false;
+    }
+
     if (!currentEpoch.isZero()) {
+      genesisInitialized = true;
       return false;
     }
 
     if (preparedValidators.isEmpty()) {
-      return false;
-    }
-
-    if (genesisInitialized) {
       return false;
     }
 
@@ -139,7 +166,10 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
         .thenAccept(
             maybeCustodyGroupCountUpdated ->
                 maybeCustodyGroupCountUpdated.ifPresent(this::setCustodyGroupSyncedCount))
-        .ifExceptionGetsHereRaiseABug();
+        .finish(
+            error ->
+                LOG.error(
+                    "Failed to compute custody group count for epoch {}", currentEpoch, error));
     return true;
   }
 
