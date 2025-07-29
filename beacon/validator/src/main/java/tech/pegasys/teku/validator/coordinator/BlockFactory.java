@@ -38,7 +38,7 @@ public interface BlockFactory {
       Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 
-  SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
+  SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBlockIfBlinded(
       SignedBeaconBlock maybeBlindedBlock, BlockPublishingPerformance blockPublishingPerformance);
 
   List<BlobSidecar> createBlobSidecars(SignedBlockContainer blockContainer);

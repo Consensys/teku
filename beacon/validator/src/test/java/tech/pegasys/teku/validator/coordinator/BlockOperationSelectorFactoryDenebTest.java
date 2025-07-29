@@ -83,7 +83,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
-class BlockOperationSelectorFactoryTestDeneb {
+class BlockOperationSelectorFactoryDenebTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
