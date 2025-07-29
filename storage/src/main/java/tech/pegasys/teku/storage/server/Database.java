@@ -221,6 +221,8 @@ public interface Database extends AutoCloseable {
 
   long getBlobSidecarColumnCount();
 
+  long getSidecarColumnCount();
+
   long getNonCanonicalBlobSidecarColumnCount();
 
   Optional<Checkpoint> getAnchor();

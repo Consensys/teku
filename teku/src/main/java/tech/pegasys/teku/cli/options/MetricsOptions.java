@@ -194,6 +194,17 @@ public class MetricsOptions {
   private boolean blobSidecarsStorageCountersEnabled =
       MetricsConfig.DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED;
 
+    @Option(
+      names = {"--Xmetrics-data-column-sidecars-storage-enabled"},
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether data column sidecars storage metrics are reported",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean dataColumnSidecarsStorageCountersEnabled =
+      MetricsConfig.DEFAULT_DATA_COLUMN_SIDECARS_STORAGE_COUNTERS_ENABLED;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.metrics(
         b ->
@@ -209,6 +220,7 @@ public class MetricsOptions {
                 .blockProductionPerformanceEnabled(blockProductionPerformanceEnabled)
                 .tickPerformanceEnabled(tickPerformanceEnabled)
                 .blobSidecarsStorageCountersEnabled(blobSidecarsStorageCountersEnabled)
+                .dataColumnSidecarsStorageCountersEnabled(dataColumnSidecarsStorageCountersEnabled)
                 .blockProductionAndPublishingPerformanceEnabled(
                     blockProductionAndPublishingPerformanceEnabled)
                 .blockProductionPerformanceWarningLocalThreshold(
