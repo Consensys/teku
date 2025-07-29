@@ -35,7 +35,7 @@ public class DasDbTest {
   final int prunePeriodSlots = 5;
   final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
       slot -> slot.minusMinZero(custodyPeriodSlots);
-  DasDb autoPruningDb = new DasDb(das.db);
+  DasDb dasDb = new DasDb(das.db);
 
   private DataColumnSidecar createSidecar(final int slot, final int index) {
     SignedBeaconBlock block = das.createBlockWithBlobs(slot);
@@ -50,7 +50,7 @@ public class DasDbTest {
     das.db.addSidecar(s900);
 
     DataColumnSidecar s1000 = createSidecar(1000, 0);
-    autoPruningDb.addSidecar(s1000);
+    dasDb.addSidecar(s1000);
 
     assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(s0)).join()).isEmpty();
     assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(s900)).join())
@@ -61,20 +61,20 @@ public class DasDbTest {
 
   @Test
   void checkPruneIsCalledOncePerPrunePeriod() {
-    autoPruningDb.addSidecar(createSidecar(1010, 0));
+    dasDb.addSidecar(createSidecar(1010, 0));
     long writesCount = das.db.getDbWriteCounter().get();
-    autoPruningDb.addSidecar(createSidecar(1010, 1));
-    autoPruningDb.addSidecar(createSidecar(990, 0));
+    dasDb.addSidecar(createSidecar(1010, 1));
+    dasDb.addSidecar(createSidecar(990, 0));
     DataColumnSidecar sidecar1000 = createSidecar(1000, 0);
-    autoPruningDb.addSidecar(sidecar1000);
-    autoPruningDb.addSidecar(createSidecar(1010, 2));
-    autoPruningDb.addSidecar(createSidecar(1010 + prunePeriodSlots - 1, 0));
+    dasDb.addSidecar(sidecar1000);
+    dasDb.addSidecar(createSidecar(1010, 2));
+    dasDb.addSidecar(createSidecar(1010 + prunePeriodSlots - 1, 0));
     // check that no additional prune was called
     assertThat(das.db.getDbWriteCounter().get()).isEqualTo(writesCount + 5);
     assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1000)).join())
         .isNotEmpty();
 
-    autoPruningDb.addSidecar(createSidecar(1010 + prunePeriodSlots + 1, 0));
+    dasDb.addSidecar(createSidecar(1010 + prunePeriodSlots + 1, 0));
     assertThat(das.db.getSidecar(DataColumnSlotAndIdentifier.fromDataColumn(sidecar1000)).join())
         .isEmpty();
   }
@@ -88,7 +88,7 @@ public class DasDbTest {
         sidecars.stream().map(DataColumnSlotAndIdentifier::fromDataColumn).toList();
     sidecars.forEach(
         sidecar -> {
-          autoPruningDb.addSidecar(sidecar);
+          dasDb.addSidecar(sidecar);
           int noDataTill =
               sidecar.getSlot().minusMinZero(totalPeriod + prunePeriodSlots).intValue();
           for (int slot = 0; slot < noDataTill; slot++) {
