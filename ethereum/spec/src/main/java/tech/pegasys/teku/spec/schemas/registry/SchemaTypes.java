@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -114,6 +115,8 @@ public class SchemaTypes {
       BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
   public static final SchemaId<MetadataMessageSchema<?>> METADATA_MESSAGE_SCHEMA =
       create("METADATA_MESSAGE_SCHEMA");
+  public static final SchemaId<StatusMessageSchema<?>> STATUS_MESSAGE_SCHEMA =
+      create("STATUS_MESSAGE_SCHEMA");
 
   // Altair
 
