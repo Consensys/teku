@@ -513,7 +513,8 @@ public class PeerChainValidatorTest {
             remoteFinalizedCheckpoint.getRoot(),
             remoteFinalizedCheckpoint.getEpoch(),
             headRoot,
-            headSlot);
+            headSlot,
+            Optional.ofNullable(remoteFinalizedCheckpoint.getEpochStartSlot(spec)));
     when(peer.getStatus()).thenReturn(status);
 
     remoteStatus = status;

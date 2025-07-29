@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.server.Database;
@@ -62,25 +61,22 @@ public class FileBackedStorageSystemBuilder {
         createRestartSupplier(),
         storageMode,
         storeConfig,
-        new SystemTimeProvider(),
         spec,
         ChainBuilder.create(spec),
         stateRebuildTimeoutSeconds);
   }
 
   private Database buildDatabase() {
-    final Database database =
-        switch (version) {
-          case LEVELDB_TREE -> createLevelDbTrieDatabase();
-          case LEVELDB2 -> createLevelDb2Database();
-          case LEVELDB1 -> createLevelDb1Database();
-          case V6 -> createV6Database();
-          case V5 -> createV5Database();
-          case V4 -> createV4Database();
-          default ->
-              throw new UnsupportedOperationException("Unsupported database version: " + version);
-        };
-    return database;
+    return switch (version) {
+      case LEVELDB_TREE -> createLevelDbTrieDatabase();
+      case LEVELDB2 -> createLevelDb2Database();
+      case LEVELDB1 -> createLevelDb1Database();
+      case V6 -> createV6Database();
+      case V5 -> createV5Database();
+      case V4 -> createV4Database();
+      default ->
+          throw new UnsupportedOperationException("Unsupported database version: " + version);
+    };
   }
 
   private FileBackedStorageSystemBuilder copy() {
