@@ -65,7 +65,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private volatile Optional<BlobSidecarPruner> blobsPruner = Optional.empty();
   private volatile Optional<StatePruner> statePruner = Optional.empty();
-  private volatile Optional<DataColumnSidecarPruner> dataColumnPruner = Optional.empty();
+  private volatile Optional<DataColumnSidecarPruner> dataColumnSidecarPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
   private final boolean dataColumnSidecarsStorageCountersEnabled;
@@ -199,8 +199,8 @@ public class StorageService extends Service implements StorageServiceFacade {
                                             serviceConfig.getMetricsSystem(),
                                             storagePrunerAsyncRunner,
                                             serviceConfig.getTimeProvider(),
-                                            config.getSidecarPruningInterval(),
-                                            config.getSidecarPruningLimit(),
+                                            config.getDataColumnPruningInterval(),
+                                            config.getDataColumnPruningLimit(),
                                             dataColumnSidecarsStorageCountersEnabled,
                                             "data_column_sidecar",
                                             pruningTimingsLabelledGauge,
