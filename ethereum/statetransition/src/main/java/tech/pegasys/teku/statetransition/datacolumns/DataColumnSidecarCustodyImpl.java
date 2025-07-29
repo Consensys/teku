@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -153,15 +154,12 @@ public class DataColumnSidecarCustodyImpl
     if (updateEpoch(spec.computeEpochAtSlot(slot))) {
       int groupCount = custodyGroupCountManager.getCustodyGroupCount();
       final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
-      // TODO-fulu: ignoring the case when it's less, let's skip pruning in early version, to
-      // implement in future invalidating current custody as number of required groups have
-      // increased (https://github.com/Consensys/teku/issues/9468)
-      if (groupCount > oldGroupCount) {
+      if (groupCount != oldGroupCount) {
         LOG.debug("Custody group count changed from {} to {}", oldGroupCount, groupCount);
-        final UInt64 minCustodyPeriodSlot =
-            minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
-        db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
       }
+      final UInt64 minCustodyPeriodSlot =
+          minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
+      db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
     }
   }
 
@@ -169,6 +167,11 @@ public class DataColumnSidecarCustodyImpl
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
     advanceFirstIncompleteSlot(checkpoint.getEpoch()).ifExceptionGetsHereRaiseABug();
+  }
+
+  @VisibleForTesting
+  public int getTotalCustodyGroupCount() {
+    return totalCustodyGroupCount.get();
   }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
@@ -189,10 +192,6 @@ public class DataColumnSidecarCustodyImpl
                 maybeFirstIncompleteOrLastComplete
                     .map(
                         firstIncompleteOrLastComplete -> {
-                          // TODO-fulu: if we don't have finalization, we will not advance it and
-                          // it's an issue
-                          //  non-finalized epochs could be still not synced with up-to-date custody
-                          // (https://github.com/Consensys/teku/issues/9469)
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.debug(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());

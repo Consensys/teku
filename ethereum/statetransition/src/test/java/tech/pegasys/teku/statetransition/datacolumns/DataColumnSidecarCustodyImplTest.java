@@ -19,7 +19,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -50,29 +52,28 @@ public class DataColumnSidecarCustodyImplTest {
   final int groupCount = config.getNumberOfCustodyGroups();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
+  private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
+      MinCustodyPeriodSlotCalculator.createFromSpec(spec);
 
-  private DataColumnSidecar createSidecar(final BeaconBlock block, final int column) {
-    return dataStructureUtil.randomDataColumnSidecar(createSigned(block), UInt64.valueOf(column));
-  }
+  private DataColumnSidecarCustodyImpl custody;
 
-  private SignedBeaconBlockHeader createSigned(final BeaconBlock block) {
-    return dataStructureUtil.signedBlock(block).asHeader();
-  }
-
-  @Test
-  void sanityTest() throws Throwable {
-    DataColumnSidecarCustodyImpl custody =
+  @BeforeEach
+  public void setup() {
+    custody =
         new DataColumnSidecarCustodyImpl(
             spec,
             blockResolver,
             dbAccessor,
-            MinCustodyPeriodSlotCalculator.createFromSpec(spec),
+            minCustodyPeriodSlotCalculator,
             custodyGroupCountManager,
             groupCount);
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
             List.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+  }
 
+  @Test
+  void sanityTest() throws Throwable {
     BeaconBlock block = blockResolver.addBlock(10, true);
     DataColumnSidecar sidecar0 = createSidecar(block, 0);
     DataColumnSidecar sidecar1 = createSidecar(block, 1);
@@ -93,5 +94,45 @@ public class DataColumnSidecarCustodyImplTest {
 
     assertThat(fRet2_1.get().get()).isEqualTo(sidecar0);
     assertThat(fRet2_2.get().get()).isEqualTo(sidecar0);
+  }
+
+  @Test
+  public void onSlot_shouldUpdateCustodyGroupCountWhenDifferent() {
+    assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount);
+    // Group count decreases
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount - 2);
+    custody.onSlot(UInt64.ZERO);
+    assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount - 2);
+    // Group count increases
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount + 3);
+    custody.onSlot(UInt64.valueOf(config.getSlotsPerEpoch()).increment());
+    assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount + 3);
+  }
+
+  @Test
+  public void onSlot_shouldUpdateFirstCustodyIncompleteSlot()
+      throws ExecutionException, InterruptedException {
+    custody.onSlot(UInt64.ZERO);
+    final UInt64 minCustodyPeriodSlot =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(UInt64.ZERO);
+    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(minCustodyPeriodSlot);
+    final UInt64 firstSlotAfterMinEpochsForDataColumnSidecarsRequests =
+        UInt64.valueOf(config.getMinEpochsForDataColumnSidecarsRequests())
+            .increment()
+            .times(config.getSlotsPerEpoch());
+    custody.onSlot(firstSlotAfterMinEpochsForDataColumnSidecarsRequests);
+    final UInt64 advancedMinCustodyPeriodSlot =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
+            firstSlotAfterMinEpochsForDataColumnSidecarsRequests);
+    assertThat(advancedMinCustodyPeriodSlot).isGreaterThan(minCustodyPeriodSlot);
+    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(advancedMinCustodyPeriodSlot);
+  }
+
+  private DataColumnSidecar createSidecar(final BeaconBlock block, final int column) {
+    return dataStructureUtil.randomDataColumnSidecar(createSigned(block), UInt64.valueOf(column));
+  }
+
+  private SignedBeaconBlockHeader createSigned(final BeaconBlock block) {
+    return dataStructureUtil.signedBlock(block).asHeader();
   }
 }
