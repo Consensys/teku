@@ -121,10 +121,10 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldAggregatingAttestationPoolV2EnabledDisabledByDefault() {
+  void shouldAggregatingAttestationPoolV2EnabledEnabledByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(false);
+        .isEqualTo(true);
   }
 
   @Test
