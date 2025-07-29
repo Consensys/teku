@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -22,10 +23,12 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.Status
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class PeerStatus {
+
   private final Bytes4 forkDigest;
   private final Checkpoint finalizedCheckpoint;
   private final Bytes32 headRoot;
   private final UInt64 headSlot;
+  private final Optional<UInt64> earliestAvailableSlot;
 
   public static PeerStatus fromStatusMessage(final StatusMessage message) {
     return new PeerStatus(
@@ -33,7 +36,8 @@ public class PeerStatus {
         message.getFinalizedRoot().copy(),
         message.getFinalizedEpoch(),
         message.getHeadRoot().copy(),
-        message.getHeadSlot());
+        message.getHeadSlot(),
+        message.getEarliestAvailableSlot());
   }
 
   public PeerStatus(
@@ -41,11 +45,13 @@ public class PeerStatus {
       final Bytes32 finalizedRoot,
       final UInt64 finalizedEpoch,
       final Bytes32 headRoot,
-      final UInt64 headSlot) {
+      final UInt64 headSlot,
+      final Optional<UInt64> earliestAvailableSlot) {
     this.forkDigest = forkDigest;
     this.finalizedCheckpoint = new Checkpoint(finalizedEpoch, finalizedRoot);
     this.headRoot = headRoot;
     this.headSlot = headSlot;
+    this.earliestAvailableSlot = earliestAvailableSlot;
   }
 
   public Bytes4 getForkDigest() {
@@ -72,6 +78,10 @@ public class PeerStatus {
     return headSlot;
   }
 
+  public Optional<UInt64> getEarliestAvailableSlot() {
+    return earliestAvailableSlot;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -80,6 +90,7 @@ public class PeerStatus {
         .add("finalizedEpoch", getFinalizedEpoch())
         .add("headRoot", headRoot)
         .add("headSlot", headSlot)
+        .add("earliestAvailableSlot", earliestAvailableSlot)
         .toString();
   }
 
@@ -95,11 +106,12 @@ public class PeerStatus {
     return Objects.equals(forkDigest, that.forkDigest)
         && Objects.equals(finalizedCheckpoint, that.finalizedCheckpoint)
         && Objects.equals(headRoot, that.headRoot)
-        && Objects.equals(headSlot, that.headSlot);
+        && Objects.equals(headSlot, that.headSlot)
+        && Objects.equals(earliestAvailableSlot, that.earliestAvailableSlot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(forkDigest, finalizedCheckpoint, headRoot, headSlot);
+    return Objects.hash(forkDigest, finalizedCheckpoint, headRoot, headSlot, earliestAvailableSlot);
   }
 }

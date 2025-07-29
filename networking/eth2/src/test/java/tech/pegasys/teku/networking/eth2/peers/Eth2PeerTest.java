@@ -344,6 +344,7 @@ class Eth2PeerTest {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomUInt64());
+        dataStructureUtil.randomUInt64(),
+        Optional.of(dataStructureUtil.randomUInt64()));
   }
 }
