@@ -109,20 +109,23 @@ public class RespondingEth2Peer implements Eth2Peer {
         finalizedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
         head.getRoot(),
-        head.getSlot());
+        head.getSlot(),
+        Optional.empty());
   }
 
-  private PeerStatus createStatus(final Checkpoint head, final Checkpoint finalized) {
+  private PeerStatus createStatus(
+      final Spec spec, final Checkpoint head, final Checkpoint finalized) {
     return new PeerStatus(
         FORK_DIGEST,
         finalized.getRoot(),
         finalized.getEpoch(),
         head.getRoot(),
-        head.getEpochStartSlot(spec));
+        head.getEpochStartSlot(spec),
+        Optional.ofNullable(finalized.getEpochStartSlot(spec)));
   }
 
-  public void updateStatus(final Checkpoint head, final Checkpoint finalized) {
-    updateStatus(createStatus(head, finalized));
+  public void updateStatus(final Spec spec, final Checkpoint head, final Checkpoint finalized) {
+    updateStatus(createStatus(spec, head, finalized));
   }
 
   @Override
