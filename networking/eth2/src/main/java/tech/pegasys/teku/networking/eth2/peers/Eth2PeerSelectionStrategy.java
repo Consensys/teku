@@ -42,6 +42,8 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
+
+  public static final int MIN_PEERS_PER_DATA_COLUMN_SUBNET = 1;
   private static final Logger LOG = LogManager.getLogger();
 
   private final TargetPeerRange targetPeerCountRange;
@@ -132,8 +134,8 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     // to an overall peer score which takes into account the already connected peer count for each
     // subnet
     // and this list is sorted by highest scoring peers.
-    // Then from this list we select the top peers that satisfy the datacolumn subnet needs, up to
-    // minPeersRequired.
+    // Then from this list, we select the top peers that satisfy the datacolumn subnet requirements
+    // to make sure we have at least one peer per subnet.
     // This list is then the list of 'must have' candidates, and the other peers are 'optional extra
     // candidates'. We combine both lists and select the top ones up to scoreBasedPeersToAdd
 
@@ -145,7 +147,12 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
             .collect(
                 Collectors.toMap(
                     subnetId -> subnetId,
-                    peerSubnetSubscriptions::getSubscriberCountForDataColumnSidecarSubnet));
+                    subnetId ->
+                        peerSubnetSubscriptions.getSubscriberCountForDataColumnSidecarSubnet(
+                                    subnetId)
+                                >= MIN_PEERS_PER_DATA_COLUMN_SUBNET
+                            ? 0
+                            : MIN_PEERS_PER_DATA_COLUMN_SUBNET));
 
     // Step 1: Convert candidates to AvailableDiscoveryPeer if they pass filtering
     final List<AvailableDiscoveryPeer> availablePeers =
