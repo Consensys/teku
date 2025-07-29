@@ -118,8 +118,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     return selectedPeers;
   }
 
-  private record AvailableDiscoveryPeer(
-      DiscoveryPeer discoveryPeer, PeerAddress peerAddress) {}
+  private record AvailableDiscoveryPeer(DiscoveryPeer discoveryPeer, PeerAddress peerAddress) {}
 
   private List<PeerAddress> selectPeersByScore(
       final P2PNetwork<?> network,
@@ -128,16 +127,18 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
       final List<DiscoveryPeer> allCandidatePeers) {
 
     // Summary of the peer selection algorithm
-    // First peers are scored like pre-Fusaka: a score is calculated per peer individually depending on the relevant
-    // subnets for attestations, sync committee and data columns needed. This leads to an overall peer score
-    // which takes into account the already connected peer count for each subnet and this list is sorted by highest
-    // scoring peers.
-    // Then from this list we select the top peers that satisfy the datacolumn subnet needs, up to minPeersRequired.
-    // This list is then the list of 'must have' candidates, and the other peers are 'optional extra candidates'
-    // We combine both lists and select the top ones up to scoreBasedPeersToAdd
+    // First peers are scored like pre-Fusaka: a score is calculated per peer individually depending
+    // on the relevant subnets for attestations, sync committee and data columns needed. This leads
+    // to an overall peer score which takes into account the already connected peer count for each
+    // subnet
+    // and this list is sorted by highest scoring peers.
+    // Then from this list we select the top peers that satisfy the datacolumn subnet needs, up to
+    // minPeersRequired.
+    // This list is then the list of 'must have' candidates, and the other peers are 'optional extra
+    // candidates'. We combine both lists and select the top ones up to scoreBasedPeersToAdd
 
     final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
-    final Map<Integer, Integer> neededPeersPerSubnetId =
+    final Map<Integer, Integer> requiredExtraPeerCountPerSubnetId =
         peerSubnetSubscriptions
             .streamRelevantSubnets()
             .boxed()
@@ -146,41 +147,52 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
                     subnetId -> subnetId,
                     peerSubnetSubscriptions::getSubscriberCountForDataColumnSidecarSubnet));
 
-    final List<PeerAddress> sortedMustHaveCandidates = new ArrayList<>();
-    final List<PeerAddress> sortedOptionalExtraCandidates = new ArrayList<>();
+    // Step 1: Convert candidates to AvailableDiscoveryPeer if they pass filtering
+    final List<AvailableDiscoveryPeer> availablePeers =
+        allCandidatePeers.stream()
+            .map(
+                candidate ->
+                    checkCandidate(candidate, network)
+                        .map(addr -> new AvailableDiscoveryPeer(candidate, addr)))
+            .flatMap(Optional::stream)
+            .sorted(
+                Comparator.comparingInt(
+                        (AvailableDiscoveryPeer p) ->
+                            peerScorer.scoreCandidatePeer(p.discoveryPeer()))
+                    .reversed())
+            .toList();
 
-    allCandidatePeers.stream()
-        .map(
-            candidate ->
-                checkCandidate(candidate, network)
-                    .map(addr -> new AvailableDiscoveryPeer(candidate, addr)))
-        .flatMap(Optional::stream)
-        .sorted(
-            Comparator.comparing(
-                    (AvailableDiscoveryPeer p) -> peerScorer.scoreCandidatePeer(p.discoveryPeer()))
-                .reversed())
-        .forEach(
-            availableDiscoveryPeer -> {
-              peerSubnetSubscriptions
-                  .getDataColumnSidecarSubnetSubscriptionsByNodeId(
-                      UInt256.fromBytes(availableDiscoveryPeer.discoveryPeer.getNodeId()),
-                      availableDiscoveryPeer.discoveryPeer.getDasCustodySubnetCount())
-                  .streamAllSetBits()
-                  .forEach(
-                      subnetId -> {
-                        Integer neededPeerCountForSubnetId = neededPeersPerSubnetId.get(subnetId);
-                        if ((neededPeerCountForSubnetId != null)
-                            && (neededPeerCountForSubnetId > 0)) {
-                          sortedMustHaveCandidates.add(availableDiscoveryPeer.peerAddress);
-                          neededPeersPerSubnetId.put(subnetId, neededPeerCountForSubnetId - 1);
-                        } else {
-                          sortedOptionalExtraCandidates.add(availableDiscoveryPeer.peerAddress);
-                        }
-                      });
-            });
+    // Step 2: Partition into must-have and optional
+    List<AvailableDiscoveryPeer> mustHavePeers = new ArrayList<>();
+    List<AvailableDiscoveryPeer> optionalPeers = new ArrayList<>();
 
-    return Stream.concat(sortedMustHaveCandidates.stream(), sortedOptionalExtraCandidates.stream())
+    for (AvailableDiscoveryPeer peer : availablePeers) {
+      boolean isMustHave = false;
+
+      var subnets =
+          peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
+              UInt256.fromBytes(peer.discoveryPeer().getNodeId()),
+              peer.discoveryPeer().getDasCustodySubnetCount());
+
+      for (int subnetId : subnets.streamAllSetBits().toArray()) {
+        Integer remaining = requiredExtraPeerCountPerSubnetId.get(subnetId);
+        if (remaining != null && remaining > 0) {
+          requiredExtraPeerCountPerSubnetId.put(subnetId, remaining - 1);
+          isMustHave = true;
+        }
+      }
+
+      if (isMustHave) {
+        mustHavePeers.add(peer);
+      } else {
+        optionalPeers.add(peer);
+      }
+    }
+
+    // Step 3: Combine and limit the total result
+    return Stream.concat(mustHavePeers.stream(), optionalPeers.stream())
         .limit(scoreBasedPeersToAdd)
+        .map(AvailableDiscoveryPeer::peerAddress)
         .toList();
   }
 
