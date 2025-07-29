@@ -15,32 +15,91 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class CustodyGroupCountManagerImplTest {
 
-  private final int defaultCustodyRequirement = 4;
-  private final int defaultSamplesPerSlot = 8;
-  private final int defaultValidatorCustodyRequirement = 8;
+  private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  private final CustodyGroupCountChannel custodyGroupCountChannel =
+      mock(CustodyGroupCountChannel.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
+  private MiscHelpersFulu miscHelpersFulu;
+  private Spec spec;
+  private SpecConfigFulu specConfigFulu;
+  private CustodyGroupCountManagerImpl custodyGroupCountManager;
 
   @Test
-  public void
-      testDefaultFuluConfigWithoutValidatorsSamplingColumnsShouldContainsAllCustodyColumns() {
-    final Spec spec =
+  public void defaultFuluConfigWithoutValidatorsSamplingColumnsShouldContainsAllCustodyColumns() {
+
+    setUpManager(4, 8, 8);
+
+    final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
+    // Sampling column groups should always include all custody columns at the minimum.
+    assertThat(samplingColumnIndices)
+        .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
+    assertEquals(8, samplingColumnIndices.size());
+  }
+
+  @Test
+  public void onSlot_shouldUpdateCustodyAtGenesis() {
+    setUpManager(4, 8, 8);
+
+    custodyGroupCountManager.onSlot(UInt64.ZERO);
+
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(4);
+    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isZero();
+
+    // prepare a validator
+    when(proposersDataManager.getPreparedProposerInfo())
+        .thenReturn(Map.of(UInt64.ZERO, mock(PreparedProposerInfo.class)));
+
+    // make requirements go up
+    when(miscHelpersFulu.getValidatorsCustodyRequirement(any(), anySet()))
+        .thenReturn(UInt64.valueOf(10));
+
+    custodyGroupCountManager.onSlot(UInt64.ONE);
+
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
+    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(10);
+
+    final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
+
+    assertThat(samplingColumnIndices)
+        .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
+    assertEquals(10, samplingColumnIndices.size());
+  }
+
+  private void setUpManager(
+      final int defaultCustodyRequirement,
+      final int defaultSamplesPerSlot,
+      final int defaultValidatorCustodyRequirement) {
+
+    spec =
         TestSpecFactory.createMinimalFulu(
             builder ->
                 builder.fuluBuilder(
@@ -55,17 +114,17 @@ public class CustodyGroupCountManagerImplTest {
                             .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                             .minEpochsForDataColumnSidecarsRequests(64)));
 
-    final SpecConfigFulu specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-    final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
-    final CustodyGroupCountChannel custodyGroupCountChannel = mock(CustodyGroupCountChannel.class);
-    final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
+    specConfigFulu = SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+    miscHelpersFulu =
+        spy(MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()));
+
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
-    final MetricsSystem metricsSystem = new NoOpMetricsSystem();
-    final CustodyGroupCountManagerImpl custodyGroupCountManager =
+
+    custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
             specConfigFulu,
+            miscHelpersFulu,
             proposersDataManager,
             custodyGroupCountChannel,
             combinedChainDataClient,
@@ -73,10 +132,7 @@ public class CustodyGroupCountManagerImplTest {
             dataStructureUtil.randomUInt256(),
             metricsSystem);
 
-    final List<UInt64> samplingColumnIndices = custodyGroupCountManager.getSamplingColumnIndices();
-    // Sampling column groups should always include all custody columns at the minimum.
-    assertThat(samplingColumnIndices)
-        .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
-    assertEquals(defaultSamplesPerSlot, samplingColumnIndices.size());
+    when(combinedChainDataClient.getBestFinalizedState())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
   }
 }
