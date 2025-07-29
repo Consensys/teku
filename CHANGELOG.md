@@ -9,6 +9,6 @@
 ### Breaking Changes
 
 ### Additions and Improvements
-- New attestation pool improving attestation packing during block production and aggregation. It is possible to revert to previous implementation via `--Xaggregating-attestation-pool-v2-enabled=false` if needed.
+- Enabling, by default, a new attestation pool implementation that improves the attestation packing during block and aggregation production. It can still be disabled by setting `--Xaggregating-attestation-pool-v2-enabled=false` if needed
 
 ### Bug Fixes
