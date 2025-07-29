@@ -777,10 +777,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final DataColumnSidecarDbAccessor dbAccessor =
         DataColumnSidecarDbAccessor.builder(sidecarDB)
             .spec(spec)
-            .minCustodyPeriodSlotCalculator(minCustodyPeriodSlotCalculator)
-            .withAutoPrune(
-                pruneBuilder ->
-                    pruneBuilder.pruneMarginSlots(slotsPerEpoch).prunePeriodSlots(slotsPerEpoch))
             .build();
     final CanonicalBlockResolver canonicalBlockResolver =
         slot ->

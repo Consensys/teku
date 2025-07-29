@@ -20,40 +20,17 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 
-class AutoPruningDasDb extends AbstractDelegatingDasDb implements DataColumnSidecarDbAccessor {
+class DasDb extends AbstractDelegatingDasDb implements DataColumnSidecarDbAccessor {
 
-  private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
   private final DataColumnSidecarDB delegate;
-  private final int marginPruneSlots;
-  private final int prunePeriod;
 
-  private volatile UInt64 nextPruneSlot = UInt64.ZERO;
-
-  public AutoPruningDasDb(
-      final DataColumnSidecarDB delegate,
-      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
-      final int marginPruneSlots,
-      final int prunePeriod) {
+  public DasDb(
+      final DataColumnSidecarDB delegate) {
     super(delegate);
     this.delegate = checkNotNull(delegate);
-    this.minCustodyPeriodSlotCalculator = checkNotNull(minCustodyPeriodSlotCalculator);
-    this.marginPruneSlots = marginPruneSlots;
-    checkArgument(prunePeriod >= 1, "prunePeriod should be >= 1");
-    this.prunePeriod = prunePeriod;
-  }
 
-  private UInt64 calculatePruneSlot(final UInt64 currentSlot) {
-    return minCustodyPeriodSlotCalculator
-        .getMinCustodyPeriodSlot(currentSlot)
-        .minusMinZero(marginPruneSlots);
-  }
-
-  @Override
-  public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
-    return super.addSidecar(sidecar);
-  }
+   }
 
   @Override
   public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {

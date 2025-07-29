@@ -1188,11 +1188,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void pruneAllSidecars(final UInt64 tillSlotInclusive) {
+  public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
-            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
+            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive).limit(pruneLimit);
         final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
-            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
+            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive).limit(pruneLimit);
         final FinalizedUpdater updater = finalizedUpdater()) {
       prunableIdentifiers.forEach(updater::removeSidecar);
       prunableNonCanonicalIdentifiers.forEach(updater::removeNonCanonicalSidecar);

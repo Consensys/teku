@@ -40,7 +40,7 @@ public class DataColumnSidecarPruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
-  private final long pruneLimit;
+  private final int pruneLimit;
   private final TimeProvider timeProvider;
   private final boolean dataColumnSidecarsStorageCountersEnabled;
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
@@ -117,11 +117,11 @@ public class DataColumnSidecarPruner extends Service {
     pruningActiveLabelledGauge.set(1, pruningMetricsType);
     final long start = System.currentTimeMillis();
     final UInt64 minCustodySlot = calculatePruneSlot();
-    database.pruneAllSidecars(minCustodySlot.minusMinZero(1));
+
+    database.pruneAllSidecars(minCustodySlot.minusMinZero(1), pruneLimit);
 
     pruningTimingsLabelledGauge.set(System.currentTimeMillis() - start, pruningMetricsType);
     pruningActiveLabelledGauge.set(0, pruningMetricsType);
-
     if (dataColumnSidecarsStorageCountersEnabled) {
       dataColumnSize.set(database.getSidecarColumnCount());
       earliestDataColumnSidecarSlot.set(
