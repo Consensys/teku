@@ -24,12 +24,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
@@ -118,17 +118,68 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     return selectedPeers;
   }
 
+  private record AvailableDiscoveryPeer(
+      DiscoveryPeer discoveryPeer, PeerAddress peerAddress) {}
+
   private List<PeerAddress> selectPeersByScore(
       final P2PNetwork<?> network,
       final PeerSubnetSubscriptions peerSubnetSubscriptions,
       final int scoreBasedPeersToAdd,
       final List<DiscoveryPeer> allCandidatePeers) {
+
+    // Summary of the peer selection algorithm
+    // First peers are scored like pre-Fusaka: a score is calculated per peer individually depending on the relevant
+    // subnets for attestations, sync committee and data columns needed. This leads to an overall peer score
+    // which takes into account the already connected peer count for each subnet and this list is sorted by highest
+    // scoring peers.
+    // Then from this list we select the top peers that satisfy the datacolumn subnet needs, up to minPeersRequired.
+    // This list is then the list of 'must have' candidates, and the other peers are 'optional extra candidates'
+    // We combine both lists and select the top ones up to scoreBasedPeersToAdd
+
     final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
-    return allCandidatePeers.stream()
+    final Map<Integer, Integer> neededPeersPerSubnetId =
+        peerSubnetSubscriptions
+            .streamRelevantSubnets()
+            .boxed()
+            .collect(
+                Collectors.toMap(
+                    subnetId -> subnetId,
+                    peerSubnetSubscriptions::getSubscriberCountForDataColumnSidecarSubnet));
+
+    final List<PeerAddress> sortedMustHaveCandidates = new ArrayList<>();
+    final List<PeerAddress> sortedOptionalExtraCandidates = new ArrayList<>();
+
+    allCandidatePeers.stream()
+        .map(
+            candidate ->
+                checkCandidate(candidate, network)
+                    .map(addr -> new AvailableDiscoveryPeer(candidate, addr)))
+        .flatMap(Optional::stream)
         .sorted(
-            Comparator.comparing((Function<DiscoveryPeer, Integer>) peerScorer::scoreCandidatePeer)
+            Comparator.comparing(
+                    (AvailableDiscoveryPeer p) -> peerScorer.scoreCandidatePeer(p.discoveryPeer()))
                 .reversed())
-        .flatMap(candidate -> checkCandidate(candidate, network).stream())
+        .forEach(
+            availableDiscoveryPeer -> {
+              peerSubnetSubscriptions
+                  .getDataColumnSidecarSubnetSubscriptionsByNodeId(
+                      UInt256.fromBytes(availableDiscoveryPeer.discoveryPeer.getNodeId()),
+                      availableDiscoveryPeer.discoveryPeer.getDasCustodySubnetCount())
+                  .streamAllSetBits()
+                  .forEach(
+                      subnetId -> {
+                        Integer neededPeerCountForSubnetId = neededPeersPerSubnetId.get(subnetId);
+                        if ((neededPeerCountForSubnetId != null)
+                            && (neededPeerCountForSubnetId > 0)) {
+                          sortedMustHaveCandidates.add(availableDiscoveryPeer.peerAddress);
+                          neededPeersPerSubnetId.put(subnetId, neededPeerCountForSubnetId - 1);
+                        } else {
+                          sortedOptionalExtraCandidates.add(availableDiscoveryPeer.peerAddress);
+                        }
+                      });
+            });
+
+    return Stream.concat(sortedMustHaveCandidates.stream(), sortedOptionalExtraCandidates.stream())
         .limit(scoreBasedPeersToAdd)
         .toList();
   }
