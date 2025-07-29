@@ -32,5 +32,4 @@ public class StubSidecarUpdateChannel implements SidecarUpdateChannel {
   public SafeFuture<Void> onNewSidecar(final DataColumnSidecar sidecar) {
     return SafeFuture.COMPLETE;
   }
-
 }

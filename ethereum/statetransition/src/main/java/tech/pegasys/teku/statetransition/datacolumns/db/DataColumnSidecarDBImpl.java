@@ -86,7 +86,6 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
         .thenRun(() -> detailLogger.logOnNewSidecar(sidecar));
   }
 
-
   private class DetailLogger {
     private final AtomicInteger addCounter = new AtomicInteger();
     private long maxAddedSlot = 0;

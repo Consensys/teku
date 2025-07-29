@@ -190,22 +190,22 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningActiveLabelledGauge,
                             config.isStoreNonCanonicalBlocksEnabled()));
               }
-                if (config.getSpec().isMilestoneSupported(SpecMilestone.FULU)) {
-                    dataColumnSidecarPruner =
-                            Optional.of(
-                                    new DataColumnSidecarPruner(
-                                            config.getSpec(),
-                                            database,
-                                            serviceConfig.getMetricsSystem(),
-                                            storagePrunerAsyncRunner,
-                                            serviceConfig.getTimeProvider(),
-                                            config.getDataColumnPruningInterval(),
-                                            config.getDataColumnPruningLimit(),
-                                            dataColumnSidecarsStorageCountersEnabled,
-                                            "data_column_sidecar",
-                                            pruningTimingsLabelledGauge,
-                                            pruningActiveLabelledGauge));
-                }
+              if (config.getSpec().isMilestoneSupported(SpecMilestone.FULU)) {
+                dataColumnSidecarPruner =
+                    Optional.of(
+                        new DataColumnSidecarPruner(
+                            config.getSpec(),
+                            database,
+                            serviceConfig.getMetricsSystem(),
+                            storagePrunerAsyncRunner,
+                            serviceConfig.getTimeProvider(),
+                            config.getDataColumnPruningInterval(),
+                            config.getDataColumnPruningLimit(),
+                            dataColumnSidecarsStorageCountersEnabled,
+                            "data_column_sidecar",
+                            pruningTimingsLabelledGauge,
+                            pruningActiveLabelledGauge));
+              }
               chainStorage =
                   ChainStorage.create(
                       database,

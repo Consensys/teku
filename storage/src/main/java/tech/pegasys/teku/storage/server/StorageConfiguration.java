@@ -304,7 +304,8 @@ public class StorageConfiguration {
 
     public Builder dataColumnPruningInterval(final Duration dataColumnPruningInterval) {
       if (dataColumnPruningInterval.isNegative() || dataColumnPruningInterval.isZero()) {
-        throw new InvalidConfigurationException("DataColumn sidecar pruning interval must be positive");
+        throw new InvalidConfigurationException(
+            "DataColumn sidecar pruning interval must be positive");
       }
       this.dataColumnPruningInterval = dataColumnPruningInterval;
       return this;

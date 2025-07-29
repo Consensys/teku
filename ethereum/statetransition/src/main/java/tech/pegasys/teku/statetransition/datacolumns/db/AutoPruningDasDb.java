@@ -52,7 +52,7 @@ class AutoPruningDasDb extends AbstractDelegatingDasDb implements DataColumnSide
 
   @Override
   public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
-      return super.addSidecar(sidecar);
+    return super.addSidecar(sidecar);
   }
 
   @Override

@@ -194,7 +194,7 @@ public class MetricsOptions {
   private boolean blobSidecarsStorageCountersEnabled =
       MetricsConfig.DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED;
 
-    @Option(
+  @Option(
       names = {"--Xmetrics-data-column-sidecars-storage-enabled"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
