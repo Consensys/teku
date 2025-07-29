@@ -2433,7 +2433,7 @@ public class DatabaseTest {
     database.addSidecar(dataColumnSidecar1_1);
     database.addSidecar(dataColumnSidecar2_0);
 
-    database.pruneAllSidecars(ZERO,10);
+    database.pruneAllSidecars(ZERO, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
@@ -2441,13 +2441,13 @@ public class DatabaseTest {
               columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1, columnSlotAndIdentifier2_0);
     }
 
-    database.pruneAllSidecars(ONE,10);
+    database.pruneAllSidecars(ONE, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
     }
 
-    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot(),10);
+    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot(), 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();

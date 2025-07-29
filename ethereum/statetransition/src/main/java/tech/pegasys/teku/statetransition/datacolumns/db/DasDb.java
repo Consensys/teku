@@ -13,24 +13,20 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.db;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 
 class DasDb extends AbstractDelegatingDasDb implements DataColumnSidecarDbAccessor {
 
   private final DataColumnSidecarDB delegate;
 
-  public DasDb(
-      final DataColumnSidecarDB delegate) {
+  public DasDb(final DataColumnSidecarDB delegate) {
     super(delegate);
     this.delegate = checkNotNull(delegate);
-
-   }
+  }
 
   @Override
   public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {

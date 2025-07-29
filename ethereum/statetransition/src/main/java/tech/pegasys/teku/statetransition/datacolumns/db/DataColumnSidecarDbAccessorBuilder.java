@@ -13,13 +13,9 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.db;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 
 public class DataColumnSidecarDbAccessorBuilder {
 

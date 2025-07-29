@@ -35,9 +35,7 @@ public class DasDbTest {
   final int prunePeriodSlots = 5;
   final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator =
       slot -> slot.minusMinZero(custodyPeriodSlots);
-  DasDb autoPruningDb =
-      new DasDb(
-          das.db);
+  DasDb autoPruningDb = new DasDb(das.db);
 
   private DataColumnSidecar createSidecar(final int slot, final int index) {
     SignedBeaconBlock block = das.createBlockWithBlobs(slot);
