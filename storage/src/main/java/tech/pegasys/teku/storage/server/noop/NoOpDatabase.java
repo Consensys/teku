@@ -274,6 +274,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public long getSidecarColumnCount() {
+    return 0;
+  }
+
+  @Override
   public long getNonCanonicalBlobSidecarColumnCount() {
     return 0L;
   }
