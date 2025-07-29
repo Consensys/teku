@@ -138,7 +138,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @Test
-  @Disabled
+  @Disabled("Benchmark")
   public void benchmarkReconstructHalfOfDataColumnSidecars() {
     final int numberOfRounds = 10;
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -250,7 +250,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @Test
-  @Disabled
+  @Disabled("Benchmark")
   public void benchmarkVerifyDataColumnSidecarKzgProofs() {
     final Spec spec = TestSpecFactory.createMainnetFulu();
     final int numberOfRounds = 25;
@@ -299,7 +299,7 @@ public class MiscHelpersFuluTest extends KZGAbstractBenchmark {
   }
 
   @Test
-  @Disabled
+  @Disabled("Benchmark")
   public void benchmarkVerifyDataColumnSidecarKzgProofsBatch() {
     final Spec spec = TestSpecFactory.createMainnetFulu();
     final int numberOfRounds = 25;
