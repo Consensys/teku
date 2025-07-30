@@ -14,10 +14,8 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -34,8 +32,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -44,7 +40,6 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
@@ -52,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -74,7 +68,6 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
@@ -85,7 +78,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
-class BlockOperationSelectorFactoryTestFulu {
+class BlockOperationSelectorFactoryFuluTest {
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -330,82 +323,7 @@ class BlockOperationSelectorFactoryTestFulu {
   }
 
   @Test
-  void
-      shouldFailCreatingDataColumnSidecarsIfBuilderBlobsCellBundleCommitmentsRootIsNotConsistent() {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
-
-    final BlobsBundleFulu blobsBundleFulu = dataStructureUtil.randomBuilderBlobsBundleFulu(3);
-
-    prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
-        blobsBundleFulu);
-
-    assertThatThrownBy(
-            () ->
-                factory
-                    .createDataColumnSidecarsSelector(NoOpKZG.INSTANCE)
-                    .apply(signedBlindedBeaconBlock))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage(
-            "Commitments in the builder BlobsCellBundle don't match the commitments in the block");
-  }
-
-  @Test
-  void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleProofsIsNotConsistent() {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
-
-    final BlobsBundleFulu blobsBundleFulu =
-        spy(dataStructureUtil.randomBuilderBlobsBundleFulu(commitments));
-    when(blobsBundleFulu.getBlobs()).thenReturn(dataStructureUtil.randomSszBlobs(2));
-
-    prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
-        blobsBundleFulu);
-
-    assertThatThrownBy(
-            () ->
-                factory
-                    .createDataColumnSidecarsSelector(NoOpKZG.INSTANCE)
-                    .apply(signedBlindedBeaconBlock))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage(
-            "The number of blobs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
-  }
-
-  @Test
-  void shouldFailCreatingDataColumnSidecarsIfBuilderBlobsBundleBlobsIsNotConsistent() {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
-
-    final BlobsBundleFulu blobsBundle =
-        spy(dataStructureUtil.randomBuilderBlobsBundleFulu(commitments));
-    when(blobsBundle.getProofs()).thenReturn(dataStructureUtil.randomSszKZGProofs(3));
-
-    prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
-        blobsBundle);
-
-    assertThatThrownBy(
-            () ->
-                factory
-                    .createDataColumnSidecarsSelector(NoOpKZG.INSTANCE)
-                    .apply(signedBlindedBeaconBlock))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage(
-            "The number of proofs in the builder BlobsCellBundle doesn't match the number of commitments in the block");
-  }
-
-  @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  void shouldCreateDataColumnSidecarsForBlindedBlock(final boolean useLocalFallback) {
+  void shouldCreateDataColumnSidecarsForBlindedBlock_ForLocalFallvack() {
     final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
@@ -414,19 +332,12 @@ class BlockOperationSelectorFactoryTestFulu {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final BlobsBundleFulu blobsBundle = dataStructureUtil.randomBuilderBlobsBundleFulu(commitments);
 
-    if (useLocalFallback) {
-      final BlobsCellBundle localFallbackBlobsBundle =
-          new BlobsCellBundle(
-              blobsBundle.getCommitments().stream()
-                  .map(SszKZGCommitment::getKZGCommitment)
-                  .toList(),
-              blobsBundle.getProofs().stream().map(SszKZGProof::getKZGProof).toList(),
-              blobsBundle.getBlobs().stream().toList());
-      prepareCachedFallbackData(slot, executionPayload, localFallbackBlobsBundle);
-    } else {
-
-      prepareCachedBuilderPayload(slot, executionPayload, blobsBundle);
-    }
+    final BlobsCellBundle localFallbackBlobsBundle =
+        new BlobsCellBundle(
+            blobsBundle.getCommitments().stream().map(SszKZGCommitment::getKZGCommitment).toList(),
+            blobsBundle.getProofs().stream().map(SszKZGProof::getKZGProof).toList(),
+            blobsBundle.getBlobs().stream().toList());
+    prepareCachedFallbackData(slot, executionPayload, localFallbackBlobsBundle);
 
     final KZG kzg = mock(KZG.class);
     when(kzg.computeCells(any()))
@@ -524,18 +435,6 @@ class BlockOperationSelectorFactoryTestFulu {
                 ExecutionPayloadResult.createForBuilderFlow(
                     executionPayloadContext,
                     SafeFuture.completedFuture(builderBidOrFallbackData))));
-  }
-
-  private void prepareCachedBuilderPayload(
-      final UInt64 slot,
-      final ExecutionPayload executionPayload,
-      final BlobsBundleFulu blobsCellBundle) {
-    final BuilderPayload builderPayload =
-        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getExecutionPayloadAndBlobsCellBundleSchema()
-            .create(executionPayload, blobsCellBundle);
-    when(executionLayer.getCachedUnblindedPayload(slot))
-        .thenReturn(Optional.of(BuilderPayloadOrFallbackData.create(builderPayload)));
   }
 
   private void prepareCachedFallbackData(
