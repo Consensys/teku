@@ -13,19 +13,27 @@
 
 package tech.pegasys.teku.kzg;
 
+import static tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader.TEST_TRUSTED_SETUP;
+
 import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 
-public class KZGAbstractBenchmark {
+public class KzgInstances {
   private final KZG kzg = KZG.getInstance(false);
+  private final KZG rustKzg = KZG.getInstance(true);
 
-  public KZGAbstractBenchmark() {
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
+  public KzgInstances(final int precompute) {
+    kzg.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(TEST_TRUSTED_SETUP), precompute);
+    rustKzg.loadTrustedSetup(TEST_TRUSTED_SETUP, precompute);
   }
 
   protected KZG getKzg() {
     return kzg;
+  }
+
+  protected KZG getKzg(final boolean isRustEnabled) {
+    return isRustEnabled ? rustKzg : kzg;
   }
 
   protected void printStats(final List<Integer> validationTimes) {

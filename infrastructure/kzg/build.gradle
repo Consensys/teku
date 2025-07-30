@@ -1,3 +1,9 @@
+idea {
+  module {
+    testSourceDirs += sourceSets.jmh.java.srcDirs
+  }
+}
+
 dependencies {
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:http')
@@ -10,4 +16,9 @@ dependencies {
 
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'io.consensys.tuweni:tuweni-bytes'
+
+  jmhImplementation testFixtures(project(':ethereum:spec'))
+  jmhImplementation 'org.mockito:mockito-core'
+  jmhImplementation testFixtures(project(':eth-benchmark-tests'))
+  jmhImplementation testFixtures(project(':infrastructure:kzg'))
 }
