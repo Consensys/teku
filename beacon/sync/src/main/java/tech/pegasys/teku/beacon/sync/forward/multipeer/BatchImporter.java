@@ -134,9 +134,7 @@ public class BatchImporter {
                     "Disconnecting source ({}) for sending block that failed weak subjectivity checks: {}",
                     source,
                     result);
-                source
-                    .disconnectCleanly(DisconnectReason.REMOTE_FAULT)
-                    .ifExceptionGetsHereRaiseABug();
+                source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishWarn();
               }
               return result;
             });

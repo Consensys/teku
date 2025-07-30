@@ -212,13 +212,13 @@ public class ChainStorageTest {
         final List<SignedBeaconBlock> batch = batches.get(i);
         chainStorage
             .onFinalizedBlocks(batch, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
-            .ifExceptionGetsHereRaiseABug();
+            .finishDebug();
       }
     } else {
       chainStorage
           .onFinalizedBlocks(
               missingHistoricalBlocks, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
-          .ifExceptionGetsHereRaiseABug();
+          .finishDebug();
     }
 
     // Verify blocks and blob sidecars are now available
@@ -322,7 +322,7 @@ public class ChainStorageTest {
       // earliestBlobSidecarSlot: 2, 1, 0. Correct only in the last batch
       chainStorage
           .onFinalizedBlocks(batch, missingHistoricalBlobSidecars, Optional.of(UInt64.valueOf(i)))
-          .ifExceptionGetsHereRaiseABug();
+          .finishDebug();
     }
 
     // The correct earliest BlobSidecar slot, no matter of order saving

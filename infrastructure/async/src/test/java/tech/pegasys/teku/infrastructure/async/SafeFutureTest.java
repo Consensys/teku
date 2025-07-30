@@ -33,12 +33,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 
 public class SafeFutureTest {
+  public static final String COMPUTER_SAYS_NO = "Computer says no";
 
   private static class TestAsyncExec {
     final SafeFuture<Integer> fut = new SafeFuture<>();
@@ -85,6 +88,66 @@ public class SafeFutureTest {
   public void tearDown() {
     // Reset the thread uncaught exception handler
     Thread.currentThread().setUncaughtExceptionHandler(null);
+  }
+
+  @Test
+  public void shouldLogMessageAtErrorLevel() {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      future.finishError();
+
+      future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
+
+      assertThat(logCaptor.getErrorLogs().getFirst()).contains(COMPUTER_SAYS_NO);
+    }
+  }
+
+  @Test
+  public void shouldLogMessageAtWarnLevel() {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      future.finishWarn();
+
+      future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
+
+      assertThat(logCaptor.getWarnLogs().getFirst()).contains(COMPUTER_SAYS_NO);
+    }
+  }
+
+  @Test
+  public void shouldLogMessageAtInfoLevel() {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      future.finishInfo();
+
+      future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
+
+      assertThat(logCaptor.getInfoLogs().getFirst()).contains(COMPUTER_SAYS_NO);
+    }
+  }
+
+  @Test
+  public void shouldLogMessageAtDebugLevel() {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      future.finishDebug();
+
+      future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
+
+      assertThat(logCaptor.getDebugLogs().getFirst()).contains(COMPUTER_SAYS_NO);
+    }
+  }
+
+  @Test
+  public void shouldLogMessageAtTraceLevel() {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class, Level.TRACE)) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      future.finishTrace();
+
+      future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
+
+      assertThat(logCaptor.getTraceLogs().getFirst()).contains(COMPUTER_SAYS_NO);
+    }
   }
 
   @Test

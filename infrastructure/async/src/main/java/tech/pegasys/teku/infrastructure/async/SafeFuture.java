@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import com.google.common.base.Throwables;
+import io.netty.handler.logging.LogLevel;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -30,11 +32,28 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
-
+  private static final Logger LOG = LogManager.getLogger();
   public static final SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
+
+  static void finishUsingExceptionMessage(final CompletionStage<?> future, final LogLevel level) {
+    future.exceptionally(
+        error -> {
+          final String message = Throwables.getRootCause(error).getMessage();
+          switch (level) {
+            case WARN -> LOG.warn(message);
+            case ERROR -> LOG.error(message);
+            case DEBUG -> LOG.debug(message);
+            case INFO -> LOG.info(message);
+            case TRACE -> LOG.trace(message);
+          }
+          return null;
+        });
+  }
 
   public static void ifExceptionGetsHereRaiseABug(final CompletionStage<?> future) {
     future.exceptionally(
@@ -313,6 +332,26 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void ifExceptionGetsHereRaiseABug() {
     ifExceptionGetsHereRaiseABug(this);
+  }
+
+  public void finishError() {
+    finishUsingExceptionMessage(this, LogLevel.ERROR);
+  }
+
+  public void finishWarn() {
+    finishUsingExceptionMessage(this, LogLevel.WARN);
+  }
+
+  public void finishInfo() {
+    finishUsingExceptionMessage(this, LogLevel.INFO);
+  }
+
+  public void finishDebug() {
+    finishUsingExceptionMessage(this, LogLevel.DEBUG);
+  }
+
+  public void finishTrace() {
+    finishUsingExceptionMessage(this, LogLevel.TRACE);
   }
 
   public SafeFuture<Void> ignoreCancelException() {

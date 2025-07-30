@@ -130,6 +130,6 @@ public class NodeManager {
   }
 
   public void gossipBlock(final SignedBeaconBlock block) {
-    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
+    blockGossipChannel.publishBlock(block).finishDebug();
   }
 }
