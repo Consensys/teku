@@ -1,3 +1,12 @@
 {
-   "signedContributors": []
+  "signedContributors": [
+    {
+      "name": "gfukushima",
+      "id": 25556862,
+      "comment_id": 3138099592,
+      "created_at": "2025-07-30T23:27:30Z",
+      "repoId": 147802356,
+      "pullRequestNo": 9702
+    }
+  ]
 }
