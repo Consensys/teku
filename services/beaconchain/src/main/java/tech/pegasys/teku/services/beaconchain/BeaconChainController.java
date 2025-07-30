@@ -1452,6 +1452,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            beaconConfig.eth2NetworkConfig().isLateBlockProductionEnabled(),
             blockProductionPerformanceFactory,
             blockPublisher);
     eventChannels
@@ -1877,6 +1878,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blsToExecutionChangePool,
             recentChainData);
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
+    operationsReOrgManager.subscribeToOperationsReOrg(forkChoice);
   }
 
   protected void initStoredLatestCanonicalBlockUpdater() {

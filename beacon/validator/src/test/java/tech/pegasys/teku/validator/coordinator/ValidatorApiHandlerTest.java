@@ -188,6 +188,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            false,
             blockProductionPerformanceFactory,
             blockPublisher);
 
@@ -440,6 +441,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            false,
             blockProductionPerformanceFactory,
             blockPublisher);
     // Best state is still in Phase0
@@ -875,6 +877,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
+            false,
             blockProductionPerformanceFactory,
             blockPublisher);
 
