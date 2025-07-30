@@ -68,4 +68,9 @@ public class ThrottlingBuilderClient implements BuilderClient {
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     return taskQueue.queueTask(() -> delegate.getPayload(signedBlindedBeaconBlock));
   }
+
+  @Override
+  public SafeFuture<Response<Void>> getPayloadV2(final SignedBeaconBlock signedBlindedBeaconBlock) {
+    return taskQueue.queueTask(() -> delegate.getPayloadV2(signedBlindedBeaconBlock));
+  }
 }

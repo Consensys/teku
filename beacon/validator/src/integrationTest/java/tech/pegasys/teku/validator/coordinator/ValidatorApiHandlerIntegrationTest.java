@@ -138,7 +138,7 @@ public class ValidatorApiHandlerIntegrationTest {
     when(blobSidecarGossipChannel.publishBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
     when(blobSidecarGossipChannel.publishBlobSidecars(any())).thenReturn(SafeFuture.COMPLETE);
 
-    doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
+    doAnswer(invocation -> SafeFuture.completedFuture(Optional.of(invocation.getArgument(0))))
         .when(blockFactory)
         .unblindSignedBlockIfBlinded(any(), any());
 

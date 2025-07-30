@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerService extends Service {
@@ -57,7 +58,9 @@ public class ExecutionLayerService extends Service {
   private final ExecutionLayerManager executionLayerManager;
 
   public static ExecutionLayerService create(
-      final ServiceConfig serviceConfig, final ExecutionLayerConfiguration config) {
+      final ServiceConfig serviceConfig,
+      final ExecutionLayerConfiguration config,
+      final Spec spec) {
 
     final Path beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
@@ -122,6 +125,7 @@ public class ExecutionLayerService extends Service {
           createRealExecutionLayerManager(
               serviceConfig,
               config,
+              spec,
               engineWeb3jClientProvider,
               builderRestClientProvider,
               builderCircuitBreaker);
@@ -153,6 +157,7 @@ public class ExecutionLayerService extends Service {
   private static ExecutionLayerManager createRealExecutionLayerManager(
       final ServiceConfig serviceConfig,
       final ExecutionLayerConfiguration config,
+      final Spec spec,
       final ExecutionWeb3jClientProvider engineWeb3jClientProvider,
       final Optional<RestClientProvider> builderRestClientProvider,
       final BuilderCircuitBreaker builderCircuitBreaker) {
@@ -192,6 +197,7 @@ public class ExecutionLayerService extends Service {
     return ExecutionLayerManagerImpl.create(
         EVENT_LOG,
         executionClientHandler,
+        spec,
         builderClient,
         metricsSystem,
         new BuilderBidValidatorImpl(config.getSpec(), EVENT_LOG),
