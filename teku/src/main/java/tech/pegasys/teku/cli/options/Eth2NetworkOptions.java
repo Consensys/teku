@@ -143,6 +143,16 @@ public class Eth2NetworkOptions {
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 
   @Option(
+      names = {"--Xlate-block-production"},
+      paramLabel = "<BOOLEAN>",
+      description = "late-block-production.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean lateBlockProduction = Eth2NetworkConfiguration.DEFAULT_LATE_BLOCK_PRODUCTION;
+
+  @Option(
       names = {"--Xfork-choice-updated-always-send-payload-attributes"},
       paramLabel = "<BOOLEAN>",
       description =
@@ -475,6 +485,7 @@ public class Eth2NetworkOptions {
             aggregatingAttestationPoolV2BlockAggregationTimeLimit)
         .aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(
             aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
+        .lateBlockProductionEnabled(lateBlockProduction)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
         .rustKzgEnabled(rustKzgEnabled);

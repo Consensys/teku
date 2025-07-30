@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -140,7 +141,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
-
+  private final boolean isLateBlockProductionEnabled;
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
@@ -162,6 +163,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
+      final boolean isLateBlockProductionEnabled,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher) {
@@ -186,6 +188,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.isLateBlockProductionEnabled = isLateBlockProductionEnabled;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
@@ -324,9 +327,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return localBlockProductionBySlotCache
         .computeIfAbsent(
             slot,
-            __ ->
-                createUnsignedBlockInternal(
-                    slot, randaoReveal, graffiti, requestedBuilderBoostFactor))
+            __ -> {
+              final SafeFuture<Void> delay;
+              if (isLateBlockProductionEnabled) {
+                final int delaySeconds =
+                    (spec.atSlot(slot).getConfig().getSecondsPerSlot() / 3) + 1;
+                LOG.info("delaying block production for slot {} by {} seconds", slot, delaySeconds);
+                delay =
+                    new SafeFuture<>()
+                        .orTimeout(delaySeconds, TimeUnit.SECONDS)
+                        .exceptionally(ignore -> null)
+                        .toVoid();
+              } else {
+                delay = SafeFuture.COMPLETE;
+              }
+
+              return delay.thenCompose(
+                  unused ->
+                      createUnsignedBlockInternal(
+                          slot, randaoReveal, graffiti, requestedBuilderBoostFactor));
+            })
         .whenException(
             __ -> {
               // allow further block production attempts for this slot
@@ -348,10 +368,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
-        .thenCompose(
-            __ ->
-                combinedChainDataClient.getStateForBlockProduction(
-                    slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
+        .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
         .thenPeek(__ -> blockProductionPerformance.getStateAtSlot())
         .thenCompose(
             blockSlotState ->

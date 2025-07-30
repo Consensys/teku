@@ -370,6 +370,7 @@ public class AggregatingAttestationPoolV2 extends AggregatingAttestationPool {
   @Override
   public SszList<Attestation> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
+    LOG.info("getAttestationsForBlock: slot {}", stateAtBlockSlot.getSlot());
     final Predicate<PooledAttestationWithData> previousEpochLimitFilter =
         previousEpochLimitFilter(stateAtBlockSlot);
 
