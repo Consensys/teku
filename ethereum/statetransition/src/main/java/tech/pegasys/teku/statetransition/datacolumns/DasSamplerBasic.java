@@ -139,21 +139,24 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                       retrievedColumns -> {
                         if (retrievedColumns.size() == missingColumns.size()) {
                           LOG.debug(
-                                  "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
-                                  retrievedColumns.size(),
-                                  requiredColumnIdentifiers.size(),
-                                  slot,
-                                  blockRoot);
+                              "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
+                              retrievedColumns.size(),
+                              requiredColumnIdentifiers.size(),
+                              slot,
+                              blockRoot);
 
                           retrievedColumns.stream()
-                                  .map(custody::onNewValidatedDataColumnSidecar)
-                                  .forEach(updateFuture -> updateFuture.ifExceptionGetsHereRaiseABug());
-                        }
-                        else{
+                              .map(custody::onNewValidatedDataColumnSidecar)
+                              .forEach(updateFuture -> updateFuture.ifExceptionGetsHereRaiseABug());
+                        } else {
                           throw new IllegalStateException(
                               String.format(
                                   "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
-                                      retrievedColumns.size(), missingColumns.size(), slot, blockRoot, requiredColumnIdentifiers.size()));
+                                  retrievedColumns.size(),
+                                  missingColumns.size(),
+                                  slot,
+                                  blockRoot,
+                                  requiredColumnIdentifiers.size()));
                         }
                       });
 
