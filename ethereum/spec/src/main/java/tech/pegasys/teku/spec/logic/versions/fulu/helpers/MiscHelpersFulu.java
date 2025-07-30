@@ -487,8 +487,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       final Optional<DataColumnSidecar> maybeSidecar = existingSidecars.stream().findAny();
       throw new IllegalArgumentException(
           String.format(
-              "Number of sidecars must be greater than or equal to the half of column count, slot: %s",
-              maybeSidecar.isPresent() ? maybeSidecar.get().getSlot().toString() : "unknown"));
+              "Number of sidecars must be greater than or equal to the half of column count, slot: %s; columns: found %s, needed at least %d",
+              maybeSidecar.isPresent() ? maybeSidecar.get().getSlot().toString() : "unknown",
+              existingSidecars.size(),
+              specConfigFulu.getNumberOfColumns() / 2));
     }
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
