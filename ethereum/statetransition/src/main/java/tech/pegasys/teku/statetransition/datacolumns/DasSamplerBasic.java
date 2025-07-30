@@ -137,7 +137,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
               SafeFuture.collectAll(missingColumns.stream().map(retriever::retrieve))
                   .thenPeek(
                       retrievedColumns -> {
-                        if (!retrievedColumns.isEmpty()) {
+                        if (retrievedColumns.size() == missingColumns.size()) {
                           LOG.debug(
                                   "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                                   retrievedColumns.size(),
@@ -152,8 +152,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                         else{
                           throw new IllegalStateException(
                               String.format(
-                                  "No columns retrieved for block %s (%s) with %d required columns",
-                                  slot, blockRoot, requiredColumnIdentifiers.size()));
+                                  "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
+                                      retrievedColumns.size(), missingColumns.size(), slot, blockRoot, requiredColumnIdentifiers.size()));
                         }
                       });
 
