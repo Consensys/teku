@@ -323,6 +323,9 @@ public class BlockManager extends Service
                     logFailedBlockImport(block, result.getFailureReason());
                     dropInvalidBlock(block, result);
                   }
+                  case BUILDER_WITHHOLD -> {
+                    // normal flow, nothing to do
+                  }
                   case INTERNAL_ERROR -> {
                     logFailedBlockImport(block, result.getFailureReason());
                     if (result
