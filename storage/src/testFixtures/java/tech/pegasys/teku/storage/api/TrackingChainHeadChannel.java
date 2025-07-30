@@ -51,9 +51,9 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
                     bestBlockRoot,
                     slot,
                     stateRoot,
-                    context.getOldBestBlockRoot(),
-                    context.getOldBestStateRoot(),
-                    context.getCommonAncestorSlot())));
+                    context.oldBestBlockRoot(),
+                    context.oldBestStateRoot(),
+                    context.commonAncestorSlot())));
   }
 
   public List<HeadEvent> getHeadEvents() {

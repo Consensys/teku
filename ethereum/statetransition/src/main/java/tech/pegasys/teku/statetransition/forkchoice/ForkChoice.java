@@ -25,7 +25,10 @@ import java.net.ConnectException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -73,6 +76,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.statetransition.OperationsReOrgManager.OperationsReOrgSubscriber;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
@@ -81,6 +85,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
@@ -88,7 +93,7 @@ import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
+public class ForkChoice implements ForkChoiceUpdatedResultSubscriber, OperationsReOrgSubscriber {
 
   public static final int BLOCK_CREATION_TOLERANCE_MS = 500;
   private static final Logger LOG = LogManager.getLogger();
@@ -115,6 +120,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
 
   private final DebugDataDumper debugDataDumper;
+
+  private volatile SafeFuture<Void> reorgCompleteFuture = SafeFuture.COMPLETE;
 
   public ForkChoice(
       final Spec spec,
@@ -207,6 +214,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 LOG.error(errorMessage, error);
               }
             });
+  }
+
+  @Override
+  public void onOperationsReOrgCompleted(final ReorgContext reorgContext) {
+    LOG.info("Fork choice operations reorg completed: {}", reorgContext);
+    reorgCompleteFuture.complete(null);
   }
 
   public SafeFuture<Boolean> processHead() {
@@ -337,7 +350,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .retrieveCheckpointState(retrievedJustifiedCheckpoint)
         .thenCompose(
             maybeJustifiedCheckpointState ->
-                onForkChoiceThread(
+                onForkChoiceThreadFuture(
                     () -> {
                       final Checkpoint finalizedCheckpoint =
                           recentChainData.getStore().getFinalizedCheckpoint();
@@ -350,31 +363,37 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             retrievedJustifiedCheckpoint::getRoot,
                             justifiedCheckpoint::getEpoch,
                             justifiedCheckpoint::getRoot);
-                        return false;
+                        return SafeFuture.completedFuture(false);
                       }
                       if (maybeJustifiedCheckpointState.isEmpty()) {
                         LOG.debug(
                             "Retrieved justified checkpoint state for {} was empty, cannot update head given current information.",
                             justifiedCheckpoint::getRoot);
-                        return false;
+                        return SafeFuture.completedFuture(false);
                       }
-                      updateHeadTransaction(
-                          nodeSlot,
-                          maybeJustifiedCheckpointState.orElseThrow(),
-                          finalizedCheckpoint,
-                          justifiedCheckpoint);
-                      nodeSlot.ifPresent(lastProcessHeadSlot::set);
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-                          isPreProposal ? nodeSlot : Optional.empty());
-                      return true;
+                      return updateHeadTransaction(
+                              nodeSlot,
+                              maybeJustifiedCheckpointState.orElseThrow(),
+                              finalizedCheckpoint,
+                              justifiedCheckpoint,
+                              isPreProposal)
+                          .thenAcceptAsync(
+                              __ -> {
+                                nodeSlot.ifPresent(lastProcessHeadSlot::set);
+                                notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+                                    isPreProposal ? nodeSlot : Optional.empty());
+                              },
+                              forkChoiceExecutor)
+                          .thenApply(__ -> true);
                     }));
   }
 
-  private void updateHeadTransaction(
+  private SafeFuture<Void> updateHeadTransaction(
       final Optional<UInt64> nodeSlot,
       final BeaconState justifiedState,
       final Checkpoint finalizedCheckpoint,
-      final Checkpoint justifiedCheckpoint) {
+      final Checkpoint justifiedCheckpoint,
+      final boolean isPreProposal) {
     if (forkChoiceLateBlockReorgEnabled) {
       recentChainData.getStore().computeBalanceThresholds(justifiedState);
     }
@@ -398,23 +417,73 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             recentChainData.getStore().getProposerBoostRoot(),
             spec.getProposerBoostAmount(justifiedState));
 
+    final LateBlockReorgResult lateBlockReorgResult =
+        evaluateLateBlockReorg(headBlockRoot, nodeSlot, isPreProposal);
+
+    // If we do a late block reorg, we will update the head with current parent head,
+    // causing a reorg which will trigger reorg manager run the reorg against our pools.
+    // The head on the fork choice (protoarray) remains the same, so we have temporary
+    // inconsistency between protoarray and recentChainData, which will be solved at
+    // next head processing (most probably when importing our reorging block).
+    // The forkchoice notifier takes info from protoarray, so it will not be
+    // picking our selected head, but "shouldOverrideForkChoiceUpdate" logic will activate
+
     try {
       recentChainData.updateHead(
-          headBlockRoot,
+          lateBlockReorgResult.headBlockRoot,
           nodeSlot.orElse(
               forkChoiceStrategy
-                  .blockSlot(headBlockRoot)
+                  .blockSlot(lateBlockReorgResult.headBlockRoot)
                   .orElseThrow(
                       () ->
                           new IllegalStateException(
                               "Unable to retrieve the slot of fork choice head: "
-                                  + headBlockRoot))));
+                                  + lateBlockReorgResult.headBlockRoot))),
+          lateBlockReorgResult.isLateBlockReorg);
     } finally {
       // here we just make sure to commit, because protoarray has been updated. We just had an
       // exception while updating recentChainData which will become consistent again on the next
       // successful updateHead call
       transaction.commit();
     }
+
+    return lateBlockReorgResult.updateHeadFuture;
+  }
+
+  private record LateBlockReorgResult(
+      Bytes32 headBlockRoot, boolean isLateBlockReorg, SafeFuture<Void> updateHeadFuture) {}
+
+  private LateBlockReorgResult evaluateLateBlockReorg(
+      final Bytes32 headBlockRoot, final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
+
+    if (!(isPreProposal && forkChoiceLateBlockReorgEnabled)) {
+      return new LateBlockReorgResult(headBlockRoot, false, SafeFuture.COMPLETE);
+    }
+
+    final Bytes32 proposerHeadRoot =
+        recentChainData.getProposerHead(headBlockRoot, nodeSlot.orElseThrow());
+
+    if (proposerHeadRoot.equals(headBlockRoot)) {
+      return new LateBlockReorgResult(headBlockRoot, false, SafeFuture.COMPLETE);
+    }
+
+    // let's wait reorg completion
+    LOG.info("preparing waiting for reorg completion");
+    reorgCompleteFuture = new SafeFuture<>();
+    final SafeFuture<Void> reorgCompleteFutureWithTimeout =
+        reorgCompleteFuture
+            .orTimeout(200, TimeUnit.MILLISECONDS)
+            .exceptionally(
+                error -> {
+                  if (ExceptionUtil.hasCause(error, TimeoutException.class)) {
+                    LOG.warn("Late block reorg completion timed out, continuing block production.");
+                  } else {
+                    LOG.error("Late block reorg failed continuing block production.", error);
+                  }
+                  return null;
+                });
+
+    return new LateBlockReorgResult(proposerHeadRoot, true, reorgCompleteFutureWithTimeout);
   }
 
   /**
@@ -970,6 +1039,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
     return forkChoiceExecutor.execute(task);
+  }
+
+  private <T> SafeFuture<T> onForkChoiceThreadFuture(final Supplier<SafeFuture<T>> callable) {
+    return forkChoiceExecutor.executeFuture(callable);
   }
 
   private Optional<Boolean> getOptimisticSyncing() {

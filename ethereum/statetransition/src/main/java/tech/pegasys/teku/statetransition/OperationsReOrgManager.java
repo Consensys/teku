@@ -16,10 +16,12 @@ package tech.pegasys.teku.statetransition;
 import java.util.Collection;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -46,6 +48,8 @@ public class OperationsReOrgManager implements ChainHeadChannel {
   private final MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool;
   private final RecentChainData recentChainData;
 
+  private final Subscribers<OperationsReOrgSubscriber> subscribers = Subscribers.create(true);
+
   public OperationsReOrgManager(
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<AttesterSlashing> attesterSlashingPool,
@@ -63,6 +67,14 @@ public class OperationsReOrgManager implements ChainHeadChannel {
     this.recentChainData = recentChainData;
   }
 
+  public long subscribeToOperationsReOrg(final OperationsReOrgSubscriber subscriber) {
+    return subscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeFromOperationsReOrg(final long subscriberId) {
+    subscribers.unsubscribe(subscriberId);
+  }
+
   @Override
   public void chainHeadUpdated(
       final UInt64 slot,
@@ -77,109 +89,124 @@ public class OperationsReOrgManager implements ChainHeadChannel {
         reorgContext -> {
           final NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
               recentChainData.getAncestorsOnFork(
-                  reorgContext.getCommonAncestorSlot(), reorgContext.getOldBestBlockRoot());
+                  reorgContext.commonAncestorSlot(), reorgContext.oldBestBlockRoot());
           final NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
-              recentChainData.getAncestorsOnFork(
-                  reorgContext.getCommonAncestorSlot(), bestBlockRoot);
+              recentChainData.getAncestorsOnFork(reorgContext.commonAncestorSlot(), bestBlockRoot);
 
           if (!notCanonicalBlockRoots.isEmpty()) {
-            attestationPool.onReorg(reorgContext.getCommonAncestorSlot());
+            attestationPool.onReorg(reorgContext.commonAncestorSlot());
           }
-          processNonCanonicalBlockOperations(notCanonicalBlockRoots.values());
-          processCanonicalBlockOperations(nowCanonicalBlockRoots.values());
+          SafeFuture.allOf(
+                  processNonCanonicalBlockOperations(notCanonicalBlockRoots.values()),
+                  processCanonicalBlockOperations(nowCanonicalBlockRoots.values()))
+              .always(
+                  () ->
+                      subscribers.deliver(
+                          subscriber -> subscriber.onOperationsReOrgCompleted(reorgContext)));
         });
   }
 
-  private void processNonCanonicalBlockOperations(
+  private SafeFuture<Void> processNonCanonicalBlockOperations(
       final Collection<Bytes32> nonCanonicalBlockRoots) {
-    nonCanonicalBlockRoots.forEach(
-        root -> {
-          final SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
-              recentChainData.retrieveBlockByRoot(root);
-          maybeBlockFuture
-              .thenAccept(
-                  maybeBlock ->
-                      maybeBlock.ifPresentOrElse(
-                          block -> {
-                            final BeaconBlockBody blockBody = block.getBody();
-                            proposerSlashingPool.addAll(blockBody.getProposerSlashings());
-                            attesterSlashingPool.addAll(blockBody.getAttesterSlashings());
-                            exitPool.addAll(blockBody.getVoluntaryExits());
-                            blockBody
-                                .getOptionalBlsToExecutionChanges()
-                                .ifPresent(blsToExecutionOperationPool::addAll);
+    return SafeFuture.allOf(
+        nonCanonicalBlockRoots.stream()
+            .map(
+                root -> {
+                  final SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
+                      recentChainData.retrieveBlockByRoot(root);
+                  return maybeBlockFuture
+                      .thenCompose(
+                          maybeBlock -> {
+                            if (maybeBlock.isPresent()) {
+                              final BeaconBlockBody blockBody = maybeBlock.get().getBody();
+                              proposerSlashingPool.addAll(blockBody.getProposerSlashings());
+                              attesterSlashingPool.addAll(blockBody.getAttesterSlashings());
+                              exitPool.addAll(blockBody.getVoluntaryExits());
+                              blockBody
+                                  .getOptionalBlsToExecutionChanges()
+                                  .ifPresent(blsToExecutionOperationPool::addAll);
 
-                            processNonCanonicalBlockAttestations(blockBody.getAttestations(), root);
-                          },
-                          () ->
-                              LOG.debug(
-                                  "Failed to re-queue operations for now non-canonical block: {}",
-                                  root)))
-              .finish(
-                  err ->
-                      LOG.warn(
-                          "Failed to re-queue operations for now non-canonical block: {}",
-                          root,
-                          err));
-        });
+                              return processNonCanonicalBlockAttestations(
+                                  blockBody.getAttestations().stream(), root);
+                            }
+                            LOG.debug(
+                                "Failed to re-queue operations for now non-canonical block: {}",
+                                root);
+
+                            return SafeFuture.completedFuture(null);
+                          })
+                      .exceptionally(
+                          err -> {
+                            LOG.warn(
+                                "Failed to re-queue operations for now non-canonical block: {}",
+                                root,
+                                err);
+                            return null;
+                          });
+                }));
   }
 
-  private void processNonCanonicalBlockAttestations(
-      final Iterable<Attestation> attestations, final Bytes32 blockRoot) {
+  private SafeFuture<Void> processNonCanonicalBlockAttestations(
+      final Stream<Attestation> attestations, final Bytes32 blockRoot) {
     // Attestations need to get re-processed through AttestationManager
     // because we don't have access to the state with which they were
     // verified anymore and we need to make sure later on
     // that they're being included on the correct fork.
-    attestations.forEach(
-        attestation ->
-            attestationManager
-                .onAttestation(
-                    ValidatableAttestation.fromReorgedBlock(recentChainData.getSpec(), attestation))
-                .finish(
-                    result ->
-                        result.ifInvalid(
-                            reason ->
-                                LOG.debug(
-                                    "Rejected re-queued attestation from block: {} due to: {}",
-                                    blockRoot,
-                                    reason)),
-                    err ->
-                        LOG.error(
-                            "Failed to process re-queued attestation from block: {}",
-                            blockRoot,
-                            err)));
+    return SafeFuture.allOf(
+        attestations.map(
+            attestation ->
+                attestationManager
+                    .onAttestation(
+                        ValidatableAttestation.fromReorgedBlock(
+                            recentChainData.getSpec(), attestation))
+                    .thenAccept(
+                        result ->
+                            result.ifInvalid(
+                                reason ->
+                                    LOG.debug(
+                                        "Rejected re-queued attestation from block: {} due to: {}",
+                                        blockRoot,
+                                        reason)))
+                    .exceptionally(
+                        err -> {
+                          LOG.error(
+                              "Failed to process re-queued attestation from block: {}",
+                              blockRoot,
+                              err);
+                          return null;
+                        })));
   }
 
-  private void processCanonicalBlockOperations(final Collection<Bytes32> canonicalBlockRoots) {
-    canonicalBlockRoots.forEach(
-        root -> {
-          final SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
-              recentChainData.retrieveBlockByRoot(root);
-          maybeBlockFuture
-              .thenAccept(
-                  maybeBlock ->
-                      maybeBlock.ifPresentOrElse(
-                          block -> {
-                            final BeaconBlockBody blockBody = block.getBody();
-                            proposerSlashingPool.removeAll(blockBody.getProposerSlashings());
-                            attesterSlashingPool.removeAll(blockBody.getAttesterSlashings());
-                            exitPool.removeAll(blockBody.getVoluntaryExits());
-                            attestationPool.onAttestationsIncludedInBlock(
-                                block.getSlot(), blockBody.getAttestations());
-                            blockBody
-                                .getOptionalBlsToExecutionChanges()
-                                .ifPresent(blsToExecutionOperationPool::removeAll);
-                          },
-                          () ->
-                              LOG.debug(
-                                  "Failed to remove operations from pools for now canonical block: {}",
-                                  root)))
-              .finish(
-                  err ->
-                      LOG.warn(
-                          "Failed to remove operations from pools for now canonical block: {}",
-                          root,
-                          err));
-        });
+  private SafeFuture<Void> processCanonicalBlockOperations(
+      final Collection<Bytes32> canonicalBlockRoots) {
+    return SafeFuture.allOf(
+        canonicalBlockRoots.stream()
+            .map(
+                root -> {
+                  final SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
+                      recentChainData.retrieveBlockByRoot(root);
+                  return maybeBlockFuture.thenAccept(
+                      maybeBlock ->
+                          maybeBlock.ifPresentOrElse(
+                              block -> {
+                                final BeaconBlockBody blockBody = block.getBody();
+                                proposerSlashingPool.removeAll(blockBody.getProposerSlashings());
+                                attesterSlashingPool.removeAll(blockBody.getAttesterSlashings());
+                                exitPool.removeAll(blockBody.getVoluntaryExits());
+                                attestationPool.onAttestationsIncludedInBlock(
+                                    block.getSlot(), blockBody.getAttestations());
+                                blockBody
+                                    .getOptionalBlsToExecutionChanges()
+                                    .ifPresent(blsToExecutionOperationPool::removeAll);
+                              },
+                              () ->
+                                  LOG.debug(
+                                      "Failed to remove operations from pools for now canonical block: {}",
+                                      root)));
+                }));
+  }
+
+  public interface OperationsReOrgSubscriber {
+    void onOperationsReOrgCompleted(ReorgContext reorgContext);
   }
 }

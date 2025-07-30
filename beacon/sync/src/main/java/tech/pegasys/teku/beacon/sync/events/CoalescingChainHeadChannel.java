@@ -47,14 +47,18 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       final Optional<ReorgContext> optionalReorgContext) {
     if (!syncing) {
       optionalReorgContext.ifPresent(
-          reorg ->
-              eventLogger.reorgEvent(
-                  reorg.getOldBestBlockRoot(),
-                  reorg.getOldBestBlockSlot(),
-                  bestBlockRoot,
-                  slot,
-                  reorg.getCommonAncestorRoot(),
-                  reorg.getCommonAncestorSlot()));
+          reorg -> {
+            if (reorg.isLateBlockReorg()) {
+              return;
+            }
+            eventLogger.reorgEvent(
+                reorg.oldBestBlockRoot(),
+                reorg.oldBestBlockSlot(),
+                bestBlockRoot,
+                slot,
+                reorg.commonAncestorRoot(),
+                reorg.commonAncestorSlot());
+          });
       delegate.chainHeadUpdated(
           slot,
           stateRoot,
@@ -171,8 +175,8 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       return this.reorgContext.isEmpty()
           || reorgContext
               .orElseThrow()
-              .getCommonAncestorSlot()
-              .isLessThan(this.reorgContext.orElseThrow().getCommonAncestorSlot());
+              .commonAncestorSlot()
+              .isLessThan(this.reorgContext.orElseThrow().commonAncestorSlot());
     }
   }
 }

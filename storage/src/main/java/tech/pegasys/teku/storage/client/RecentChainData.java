@@ -342,6 +342,11 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
   public void updateHead(final Bytes32 root, final UInt64 currentSlot) {
+    updateHead(root, currentSlot, false);
+  }
+
+  public void updateHead(
+      final Bytes32 root, final UInt64 currentSlot, final boolean isLateBlockReorg) {
     synchronized (this) {
       if (chainHead.map(head -> head.getRoot().equals(root)).orElse(false)) {
         LOG.trace("Skipping head update because new head is same as previous head");
@@ -359,7 +364,8 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
       final ChainHead newChainHead = createNewChainHead(root, currentSlot, maybeBlockData.get());
       this.chainHead = Optional.of(newChainHead);
       final Optional<ReorgContext> optionalReorgContext =
-          computeReorgContext(forkChoiceStrategy, originalChainHead, newChainHead);
+          computeReorgContext(
+              forkChoiceStrategy, originalChainHead, newChainHead, isLateBlockReorg);
       final boolean epochTransition =
           originalChainHead
               .map(
@@ -398,7 +404,8 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   private Optional<ReorgContext> computeReorgContext(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       final Optional<ChainHead> originalChainHead,
-      final ChainHead newChainHead) {
+      final ChainHead newChainHead,
+      final boolean isLateBlockReorg) {
     final Optional<ReorgContext> optionalReorgContext;
     if (originalChainHead
         .map(head -> hasReorgedFrom(head.getRoot(), head.getSlot()))
@@ -417,7 +424,8 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
               previousChainHead.getSlot(),
               previousChainHead.getStateRoot(),
               commonAncestorSlotAndBlockRoot.getSlot(),
-              commonAncestorSlotAndBlockRoot.getBlockRoot());
+              commonAncestorSlotAndBlockRoot.getBlockRoot(),
+              isLateBlockReorg);
     } else {
       optionalReorgContext = ReorgContext.empty();
     }
