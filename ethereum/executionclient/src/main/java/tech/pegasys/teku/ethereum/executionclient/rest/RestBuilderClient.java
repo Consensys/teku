@@ -228,6 +228,16 @@ public class RestBuilderClient implements BuilderClient {
                     this::extractBuilderPayload, milestone, BuilderApiResponse::version, false));
   }
 
+  @Override
+  public SafeFuture<Response<Void>> getPayloadV2(final SignedBeaconBlock signedBlindedBeaconBlock) {
+    ;
+    return restClient.postAsync(
+        BuilderApiMethod.GET_PAYLOAD_V2.getPath(),
+        signedBlindedBeaconBlock,
+        LAST_RECEIVED_HEADER_WAS_IN_SSZ.get(),
+        options.builderGetPayloadTimeout());
+  }
+
   private <T extends BuilderPayload>
       ResponseSchemaAndDeserializableTypeDefinition<T> payloadTypeDefinition(
           final BuilderPayloadSchema<T> schema) {
