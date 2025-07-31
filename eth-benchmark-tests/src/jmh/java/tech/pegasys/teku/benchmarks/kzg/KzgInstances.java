@@ -11,12 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg;
+package tech.pegasys.teku.benchmarks.kzg;
 
 import static tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader.TEST_TRUSTED_SETUP;
 
-import java.util.Collections;
-import java.util.List;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 
 public class KzgInstances {
@@ -28,39 +27,7 @@ public class KzgInstances {
     rustKzg.loadTrustedSetup(TEST_TRUSTED_SETUP, precompute);
   }
 
-  protected KZG getKzg() {
-    return kzg;
-  }
-
-  protected KZG getKzg(final boolean isRustEnabled) {
+  public KZG getKzg(final boolean isRustEnabled) {
     return isRustEnabled ? rustKzg : kzg;
-  }
-
-  protected void printStats(final List<Integer> validationTimes) {
-    int sum = 0;
-    final int size = validationTimes.size();
-
-    // Sum of elements
-    for (int time : validationTimes) {
-      sum += time;
-    }
-
-    // Mean
-    final double mean = (double) sum / size;
-    System.out.printf("Mean, ms: %.2f%n", mean);
-
-    // Standard Deviation
-    double sumOfSquares = 0.0;
-    for (int time : validationTimes) {
-      sumOfSquares += Math.pow(time - mean, 2);
-    }
-    final double standardDeviation = Math.sqrt(sumOfSquares / size);
-    System.out.printf("Std, ms: %.2f%n", standardDeviation);
-
-    // Min and Max
-    final int min = Collections.min(validationTimes);
-    final int max = Collections.max(validationTimes);
-    System.out.println("Min, ms: " + min);
-    System.out.println("Max, ms: " + max);
   }
 }

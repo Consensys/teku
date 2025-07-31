@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg;
+package tech.pegasys.teku.benchmarks.kzg;
 
 import java.util.List;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -33,30 +34,10 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SidecarBenchmarkConfig {
   final KzgInstances kzgBenchmark;
-  final KZG kzg;
   final List<SszKZGCommitment> kzgCommitments;
   final List<List<MatrixEntry>> extendedMatrix;
   final SignedBeaconBlock signedBeaconBlock;
   final List<DataColumnSidecar> dataColumnSidecars;
-
-  SidecarBenchmarkConfig(final boolean isRustKzgEnabled, final boolean precompute) {
-    kzgBenchmark = new KzgInstances(precompute ? 9 : 0);
-    kzg = kzgBenchmark.getKzg(isRustKzgEnabled);
-    kzgCommitments =
-        blobs.stream()
-            .map(blob -> kzg.blobToKzgCommitment(blob.getBytes()))
-            .map(SszKZGCommitment::new)
-            .toList();
-    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
-            blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
-    dataColumnSidecars =
-        miscHelpersFulu.constructDataColumnSidecars(
-            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-  }
-
-  //    final boolean isRustKzgEnabled = true;
 
   final Spec spec = TestSpecFactory.createMainnetFulu();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -72,4 +53,27 @@ public class SidecarBenchmarkConfig {
   final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
       SchemaDefinitionsDeneb.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
           .getBlobKzgCommitmentsSchema();
+
+  SidecarBenchmarkConfig(final boolean precompute) {
+    kzgBenchmark = new KzgInstances(precompute ? 9 : 0);
+    kzgCommitments =
+        blobs.stream()
+            .map(blob -> getKzg(false).blobToKzgCommitment(blob.getBytes()))
+            .map(SszKZGCommitment::new)
+            .toList();
+    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg(false));
+    signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(
+            blobKzgCommitmentsSchema.createFromElements(kzgCommitments));
+    dataColumnSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+  }
+
+  public KZG getKzg(final boolean useRustLibrary) {
+    return kzgBenchmark.getKzg(useRustLibrary);
+  }
+
+  //    final boolean isRustKzgEnabled = true;
+
 }
