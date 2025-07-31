@@ -529,7 +529,7 @@ public class EventSubscriptionManagerTest {
                 chainReorgEvent.getData().getOldHeadState(),
                 chainReorgEvent.getData().getSlot().minus(depth),
                 Bytes32.ZERO,
-                    false)));
+                false)));
     asyncRunner.executeQueuedActions();
   }
 
