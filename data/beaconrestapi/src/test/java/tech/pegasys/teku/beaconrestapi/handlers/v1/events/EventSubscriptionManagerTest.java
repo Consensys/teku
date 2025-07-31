@@ -528,7 +528,8 @@ public class EventSubscriptionManagerTest {
                 UInt64.ZERO,
                 chainReorgEvent.getData().getOldHeadState(),
                 chainReorgEvent.getData().getSlot().minus(depth),
-                Bytes32.ZERO)));
+                Bytes32.ZERO,
+                    false)));
     asyncRunner.executeQueuedActions();
   }
 
