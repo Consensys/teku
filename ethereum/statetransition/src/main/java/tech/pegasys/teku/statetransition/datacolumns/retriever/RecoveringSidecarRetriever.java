@@ -252,10 +252,10 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         new ConcurrentHashMap<>();
     private final Map<UInt64, List<SafeFuture<DataColumnSidecar>>> promisesByColIdx =
         new ConcurrentHashMap<>();
-    private volatile List<SafeFuture<DataColumnSidecar>> recoveryRequests;
-    private volatile SafeFuture<Void> reconstructionInProgress;
 
-    private boolean cancelled = false;
+    private volatile SafeFuture<Void> reconstructionInProgress;
+    private volatile List<SafeFuture<DataColumnSidecar>> recoveryRequests;
+    private volatile boolean cancelled = false;
 
     public RecoveryEntry(
         final BeaconBlock block, final KZG kzg, final MiscHelpersFulu specHelpers) {
@@ -268,10 +268,22 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
       if (isReconstructionDone()) {
         promise.completeAsync(existingSidecarsByColIdx.get(columnIndex), asyncRunner);
+      } else if (isReconstructionInProgress()) {
+        // wait for the reconstruction to finish before completing the request
+        reconstructionInProgress
+            .handleException(__ -> addToPendingPromises(columnIndex, promise))
+            .thenRun(
+                () ->
+                    promise.completeAsync(existingSidecarsByColIdx.get(columnIndex), asyncRunner));
       } else {
-        promisesByColIdx.computeIfAbsent(columnIndex, __ -> new ArrayList<>()).add(promise);
-        handleRequestCancel(columnIndex, promise);
+        addToPendingPromises(columnIndex, promise);
       }
+    }
+
+    private void addToPendingPromises(
+        final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
+      promisesByColIdx.computeIfAbsent(columnIndex, __ -> new ArrayList<>()).add(promise);
+      handleRequestCancel(columnIndex, promise);
     }
 
     public boolean isReconstructionInProgress() {
@@ -340,7 +352,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             final DataColumnSidecar columnSidecar = existingSidecarsByColIdx.get(key);
             value.forEach(promise -> promise.completeAsync(columnSidecar, asyncRunner));
           });
-      promisesByColIdx.clear();
       // cancel all pending recovery requests
       if (recoveryRequests != null) {
         recoveryRequests.forEach(r -> r.cancel(true));
