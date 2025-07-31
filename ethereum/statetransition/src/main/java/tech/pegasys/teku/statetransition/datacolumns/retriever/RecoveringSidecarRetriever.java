@@ -39,6 +39,12 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
+/**
+ * This class helps to recover sidecars which took a consider amount of time to retrieve by {@link
+ * SimpleSidecarRetriever}. It achieves so by either reconstructing (if we have over 50% of data
+ * columns) or asking peers for sidecars until the 50% threshold is met in which case reconstruction
+ * happens
+ */
 public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -105,6 +111,11 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     cancellable = null;
   }
 
+  private record DataColumnSidecarPromiseWithTimestamp(
+      DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
+      SafeFuture<DataColumnSidecar> promise,
+      UInt64 timestamp) {}
+
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final SafeFuture<DataColumnSidecar> promise = delegate.retrieve(columnId);
@@ -117,6 +128,21 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     promise.always(() -> pendingPromises.remove(pendingPromiseWithTimestamp));
 
     return promise;
+  }
+
+  @Override
+  public void flush() {
+    delegate.flush();
+  }
+
+  @Override
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+    delegate.onNewValidatedSidecar(sidecar);
+  }
+
+  @VisibleForTesting
+  int pendingPromisesCount() {
+    return pendingPromises.size();
   }
 
   private void checkPendingPromises() {
@@ -147,21 +173,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         });
   }
 
-  @Override
-  public void flush() {
-    delegate.flush();
-  }
-
-  @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
-    delegate.onNewValidatedSidecar(sidecar);
-  }
-
-  @VisibleForTesting
-  int pendingPromisesCount() {
-    return pendingPromises.size();
-  }
-
   private void maybeInitiateRecovery(
       final DataColumnSlotAndIdentifier columnId, final SafeFuture<DataColumnSidecar> promise) {
     blockResolver
@@ -182,7 +193,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         .ifExceptionGetsHereRaiseABug();
   }
 
-  private synchronized RecoveryEntry addRecovery(
+  private RecoveryEntry addRecovery(
       final DataColumnSlotAndIdentifier columnId, final BeaconBlock block) {
     return recoveryBySlot.compute(
         columnId.slot(),
@@ -215,24 +226,22 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                         .limit(numberOfColumnsRequiredToReconstruct)
                         .map(sidecarDB::getSidecar)))
         .thenAccept(
-            maybeDataColumnSidecars -> {
-              maybeDataColumnSidecars.forEach(
+            dataColumnSidecars -> {
+              dataColumnSidecars.forEach(
                   maybeDataColumnSidecar ->
                       maybeDataColumnSidecar.ifPresent(recoveryEntry::addSidecar));
-              // don't try to recover if reconstruction is in progress
-              if (!recoveryEntry.isReconstructionInProgress()) {
-                recoveryEntry.initRecoveryRequests();
+              // don't try to recover from peers if reconstruction is in progress or reconstruction
+              // is done
+              if (recoveryEntry.isReconstructionInProgress()
+                  || recoveryEntry.isReconstructionDone()) {
+                return;
               }
+              recoveryEntry.initRecoveryRequests();
             })
         .ifExceptionGetsHereRaiseABug();
 
     return recoveryEntry;
   }
-
-  private record DataColumnSidecarPromiseWithTimestamp(
-      DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
-      SafeFuture<DataColumnSidecar> promise,
-      UInt64 timestamp) {}
 
   private class RecoveryEntry {
     private final BeaconBlock block;
@@ -244,8 +253,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     private final Map<UInt64, List<SafeFuture<DataColumnSidecar>>> promisesByColIdx =
         new ConcurrentHashMap<>();
     private volatile List<SafeFuture<DataColumnSidecar>> recoveryRequests;
+    private volatile SafeFuture<Void> reconstructionInProgress;
 
-    private SafeFuture<Void> reconstructionInProgress;
     private boolean cancelled = false;
 
     public RecoveryEntry(
@@ -255,8 +264,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       this.specHelpers = specHelpers;
     }
 
-    public synchronized void addRequest(
-        final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
+    public void addRequest(final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
       if (isReconstructionDone()) {
         promise.completeAsync(existingSidecarsByColIdx.get(columnIndex), asyncRunner);
       } else {
@@ -303,8 +311,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                         reconstruct();
                         reconstructionComplete();
                       })
-                  // in case of reconstruction failures, attempt recovery
-                  .handleException(__ -> initRecoveryRequests());
+                  // in case of reconstruction failures, attempt recovery as a backup
+                  .whenException(__ -> initRecoveryRequests());
         }
       }
     }
@@ -341,6 +349,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     public synchronized void initRecoveryRequests() {
       if (!cancelled) {
+        LOG.trace("Initialising recovery requests to peers for slot {}", block.getSlot());
         recoveryRequests =
             IntStream.range(0, numberOfColumns)
                 .mapToObj(UInt64::valueOf)
@@ -369,6 +378,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                   asyncRunner.runAsync(() -> promise.cancel(true)).ifExceptionGetsHereRaiseABug());
       if (recoveryRequests != null) {
         recoveryRequests.forEach(rr -> rr.cancel(true));
+      }
+      if (reconstructionInProgress != null) {
+        reconstructionInProgress.cancel(true);
       }
     }
   }
