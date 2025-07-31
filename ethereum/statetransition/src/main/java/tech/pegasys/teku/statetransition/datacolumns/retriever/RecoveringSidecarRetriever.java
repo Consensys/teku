@@ -301,7 +301,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     public synchronized void addSidecar(final DataColumnSidecar sidecar) {
-      if (sidecar.getBlockRoot().equals(block.getRoot()) && !isReconstructionDone()) {
+      if (sidecar.getBlockRoot().equals(block.getRoot()) && !isReconstructionDone() && !cancelled) {
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         if (existingSidecarsByColIdx.size() >= numberOfColumnsRequiredToReconstruct
             && reconstructionInProgress == null) {
