@@ -43,13 +43,16 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   static void finishUsingExceptionMessage(final CompletionStage<?> future, final LogLevel level) {
     future.exceptionally(
         error -> {
-          final String message = Throwables.getRootCause(error).getMessage();
+          final String message =
+              Optional.ofNullable(Throwables.getRootCause(error).getMessage())
+                  .orElse(error.getMessage());
           switch (level) {
             case WARN -> LOG.warn(message);
             case ERROR -> LOG.error(message);
             case DEBUG -> LOG.debug(message);
             case INFO -> LOG.info(message);
             case TRACE -> LOG.trace(message);
+            default -> LOG.error("Unexpected log level {}; {} ", level, message);
           }
           return null;
         });
