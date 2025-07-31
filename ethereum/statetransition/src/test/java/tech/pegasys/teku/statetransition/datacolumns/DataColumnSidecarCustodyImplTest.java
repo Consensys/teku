@@ -97,7 +97,7 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
-  public void onSlot_shouldUpdateCustodyGroupCountWhenDifferent() {
+  public void onSlot_shouldUpdateCustodyGroupCount() {
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount);
     // Group count decreases
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount - 2);
@@ -110,12 +110,21 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
-  public void onSlot_shouldUpdateFirstCustodyIncompleteSlot()
+  public void onSlot_shouldUpdateFirstCustodyIncompleteSlotOnlyWhenCustodyGroupCountIncreases()
       throws ExecutionException, InterruptedException {
+    // initial cgc is 0
+    custody =
+        new DataColumnSidecarCustodyImpl(
+            spec,
+            blockResolver,
+            dbAccessor,
+            minCustodyPeriodSlotCalculator,
+            custodyGroupCountManager,
+            0);
     custody.onSlot(UInt64.ZERO);
-    final UInt64 minCustodyPeriodSlot =
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(UInt64.ZERO);
-    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(minCustodyPeriodSlot);
+    // cgc increases to groupCount
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount);
+    // first slot after which the min epoch for data column sidecars epoch is updated
     final UInt64 firstSlotAfterMinEpochsForDataColumnSidecarsRequests =
         UInt64.valueOf(config.getMinEpochsForDataColumnSidecarsRequests())
             .increment()
@@ -124,7 +133,26 @@ public class DataColumnSidecarCustodyImplTest {
     final UInt64 advancedMinCustodyPeriodSlot =
         minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
             firstSlotAfterMinEpochsForDataColumnSidecarsRequests);
+    final UInt64 minCustodyPeriodSlot =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(UInt64.ZERO);
     assertThat(advancedMinCustodyPeriodSlot).isGreaterThan(minCustodyPeriodSlot);
+    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(advancedMinCustodyPeriodSlot);
+    // cgc stays the same
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount);
+    // next epoch slot
+    final UInt64 firstEpochHopSlot =
+        firstSlotAfterMinEpochsForDataColumnSidecarsRequests
+            .plus(config.getSlotsPerEpoch())
+            .increment();
+    custody.onSlot(firstEpochHopSlot);
+    // min custody slot is not updated when cgc is the same
+    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(advancedMinCustodyPeriodSlot);
+    // cgc decreases
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount - 10);
+    // next epoch slot
+    final UInt64 secondEpochHopSlot = firstEpochHopSlot.plus(config.getSlotsPerEpoch()).increment();
+    custody.onSlot(secondEpochHopSlot);
+    // min custody slot is not updated when cgc decreases
     assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(advancedMinCustodyPeriodSlot);
   }
 

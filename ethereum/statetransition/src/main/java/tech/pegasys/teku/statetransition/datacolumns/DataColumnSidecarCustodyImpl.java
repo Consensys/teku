@@ -151,22 +151,35 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public void onSlot(final UInt64 slot) {
     currentSlot = slot;
-    if (updateEpoch(spec.computeEpochAtSlot(slot))) {
-      int groupCount = custodyGroupCountManager.getCustodyGroupCount();
-      final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
-      if (groupCount != oldGroupCount) {
-        LOG.debug("Custody group count changed from {} to {}", oldGroupCount, groupCount);
-      }
+    if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
+      return;
+    }
+    final int newCustodyGroupCount = custodyGroupCountManager.getCustodyGroupCount();
+    final int oldCustodyGroupCount = totalCustodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (newCustodyGroupCount == oldCustodyGroupCount) {
+      return;
+    }
+    LOG.debug(
+        "Custody group count changed from {} to {}", oldCustodyGroupCount, newCustodyGroupCount);
+    if (newCustodyGroupCount > oldCustodyGroupCount) {
       final UInt64 minCustodyPeriodSlot =
           minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
-      db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
+      db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
+          .finish(
+              error ->
+                  LOG.error(
+                      "Unexpected error while updating first custody incomplete slot.", error));
     }
   }
 
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    advanceFirstIncompleteSlot(checkpoint.getEpoch()).ifExceptionGetsHereRaiseABug();
+    advanceFirstIncompleteSlot(checkpoint.getEpoch())
+        .finish(
+            error ->
+                LOG.error(
+                    "Unexpected error while advancing first custody incomplete slot.", error));
   }
 
   @VisibleForTesting
