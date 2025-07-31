@@ -47,6 +47,10 @@ This includes but is not limited to
 
 Minimal discussion will be given in PR's due to the volume we're needing to deal with currently of this type of PR, which is taking away from actual development time, so please don't be offended if you're genuinely trying to help out; and we say 'see contribution guidelines'.
 
+Please note that in your first contribution, you will be required to sign a Contributor License Agreement (CLA). All you need to do is add a comment to your Pull Request like this:
+
+> I have read the CLA Document and I hereby sign the CLA
+
 ### Local Development
 The codebase is maintained using the "*contributor workflow*" where everyone without exception contributes patch proposals using "*pull-requests*". This facilitates social contribution, easy testing and peer review.
 
