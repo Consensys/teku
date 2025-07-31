@@ -82,7 +82,6 @@ public class DataColumnSidecarPrunerTest {
     verify(database, never()).pruneAllSidecars(any(), anyInt());
   }
 
-
   @Test
   void checkCalculatedMinSlotMatchesDALastSlotOfMinEpoch() {
     final SpecConfig config = spec.forMilestone(SpecMilestone.FULU).getConfig();
