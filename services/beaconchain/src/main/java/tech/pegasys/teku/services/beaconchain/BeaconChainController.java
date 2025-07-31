@@ -947,14 +947,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
       return;
     }
-    final SpecConfigFulu specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     final int totalMyCustodyGroups =
         beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
     final CustodyGroupCountManagerImpl custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
-            specConfigFulu,
             proposersDataManager,
             eventChannels.getPublisher(CustodyGroupCountChannel.class),
             combinedChainDataClient,

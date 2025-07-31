@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.Optional;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -38,10 +39,17 @@ public class PeerStatusFactory {
     final Bytes32 finalizedRoot = randomBytes32();
     final UInt64 finalizedEpoch = randomLong(0, 10);
     final Bytes32 headRoot = randomBytes32();
+    final UInt64 earliestAvailableSlot = randomLong(0, 10);
     final long minHeadSlot =
         (finalizedEpoch.longValue() + 2) * spec.getGenesisSpecConfig().getSlotsPerEpoch();
     final UInt64 headSlot = randomLong(minHeadSlot, minHeadSlot + 5);
-    return new PeerStatus(fork, finalizedRoot, finalizedEpoch, headRoot, headSlot);
+    return new PeerStatus(
+        fork,
+        finalizedRoot,
+        finalizedEpoch,
+        headRoot,
+        headSlot,
+        Optional.ofNullable(earliestAvailableSlot));
   }
 
   private UInt64 randomLong(final long min, final long max) {

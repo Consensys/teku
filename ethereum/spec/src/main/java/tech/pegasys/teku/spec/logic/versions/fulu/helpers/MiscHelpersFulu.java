@@ -292,7 +292,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         new KZGCell(dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
                         dataColumnSidecar.getIndex().intValue()))
             .collect(Collectors.toList());
-
     return kzg.verifyCellProofBatch(
         dataColumnSidecar.getSszKZGCommitments().stream()
             .map(SszKZGCommitment::getKZGCommitment)
@@ -485,8 +484,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
       final Collection<DataColumnSidecar> existingSidecars, final KZG kzg) {
     if (existingSidecars.size() < (specConfigFulu.getNumberOfColumns() / 2)) {
+      final Optional<DataColumnSidecar> maybeSidecar = existingSidecars.stream().findAny();
       throw new IllegalArgumentException(
-          "Number of sidecars must be greater than or equal to the half of column count");
+          String.format(
+              "Number of sidecars must be greater than or equal to the half of column count, slot: %s; columns: found %s, needed at least %d",
+              maybeSidecar.isPresent() ? maybeSidecar.get().getSlot().toString() : "unknown",
+              existingSidecars.size(),
+              specConfigFulu.getNumberOfColumns() / 2));
     }
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
