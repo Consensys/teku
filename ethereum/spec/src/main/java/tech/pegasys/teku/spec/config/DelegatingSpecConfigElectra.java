@@ -118,6 +118,11 @@ public class DelegatingSpecConfigElectra extends DelegatingSpecConfigDeneb
   }
 
   @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return specConfigElectra.nextForkEpoch();
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;

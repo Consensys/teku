@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -390,5 +391,10 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public SpecMilestone getMilestone() {
     return specConfig.getMilestone();
+  }
+
+  @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return specConfig.nextForkEpoch();
   }
 }

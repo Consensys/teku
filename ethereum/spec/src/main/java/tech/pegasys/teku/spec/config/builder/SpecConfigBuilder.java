@@ -128,6 +128,7 @@ public class SpecConfigBuilder {
   private Integer reorgHeadWeightThreshold = 20;
 
   private Integer reorgParentWeightThreshold = 160;
+  private Optional<UInt64> nextForkEpoch = Optional.empty();
   private final DenebBuilder denebBuilder = new DenebBuilder();
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
@@ -158,6 +159,16 @@ public class SpecConfigBuilder {
         maxPayloadSize(Integer.parseInt(gossipMaxSize));
       } catch (NumberFormatException e) {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
+      }
+    }
+    if (nextForkEpoch.isEmpty() && rawConfig.containsKey("ALTAIR_FORK_EPOCH")) {
+      try {
+        final UInt64 altairForkEpoch = (UInt64) rawConfig.get("ALTAIR_FORK_EPOCH");
+        if (altairForkEpoch.isLessThan(UInt64.MAX_VALUE)) {
+          nextForkEpoch(Optional.of(altairForkEpoch));
+        }
+      } catch (Exception e) {
+        LOG.error("Failed to parse ALTAIR_FORK_EPOCH", e);
       }
     }
     validate();
@@ -230,7 +241,8 @@ public class SpecConfigBuilder {
                 reorgMaxEpochsSinceFinalization,
                 reorgHeadWeightThreshold,
                 reorgParentWeightThreshold,
-                maxPerEpochActivationExitChurnLimit));
+                maxPerEpochActivationExitChurnLimit,
+                nextForkEpoch));
 
     return builderChain.build(config);
   }
@@ -713,6 +725,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder reorgParentWeightThreshold(final Integer reorgParentWeightThreshold) {
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
+    return this;
+  }
+
+  public SpecConfigBuilder nextForkEpoch(final Optional<UInt64> nextForkEpoch) {
+    this.nextForkEpoch = nextForkEpoch;
     return this;
   }
 

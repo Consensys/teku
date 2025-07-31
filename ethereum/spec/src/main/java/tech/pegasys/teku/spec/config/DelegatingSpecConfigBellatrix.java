@@ -97,4 +97,9 @@ public class DelegatingSpecConfigBellatrix extends DelegatingSpecConfigAltair
   public int getSafeSlotsToImportOptimistically() {
     return specConfigBellatrix.getSafeSlotsToImportOptimistically();
   }
+
+  @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return specConfigBellatrix.nextForkEpoch();
+  }
 }

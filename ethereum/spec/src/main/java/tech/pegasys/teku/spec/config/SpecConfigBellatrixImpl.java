@@ -34,6 +34,7 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   private final int maxTransactionsPerPayload;
   private final int bytesPerLogsBloom;
   private final int maxExtraDataBytes;
+  private final Optional<UInt64> nextForkEpoch;
 
   // Transition
   private final UInt256 terminalTotalDifficulty;
@@ -57,7 +58,8 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
       final UInt256 terminalTotalDifficulty,
       final Bytes32 terminalBlockHash,
       final UInt64 terminalBlockHashActivationEpoch,
-      final int safeSlotsToImportOptimistically) {
+      final int safeSlotsToImportOptimistically,
+      final Optional<UInt64> nextForkEpoch) {
     super(specConfig);
     this.bellatrixForkVersion = bellatrixForkVersion;
     this.bellatrixForkEpoch = bellatrixForkEpoch;
@@ -72,6 +74,7 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
     this.terminalBlockHash = terminalBlockHash;
     this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
     this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
+    this.nextForkEpoch = nextForkEpoch;
   }
 
   public static SpecConfigBellatrix required(final SpecConfig specConfig) {
@@ -150,6 +153,11 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   }
 
   @Override
+  public Optional<UInt64> nextForkEpoch() {
+    return nextForkEpoch;
+  }
+
+  @Override
   public Optional<SpecConfigBellatrix> toVersionBellatrix() {
     return Optional.of(this);
   }
@@ -181,6 +189,7 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
             inactivityPenaltyQuotientBellatrix, that.inactivityPenaltyQuotientBellatrix)
         && Objects.equals(terminalTotalDifficulty, that.terminalTotalDifficulty)
         && Objects.equals(terminalBlockHash, that.terminalBlockHash)
+        && Objects.equals(nextForkEpoch, that.nextForkEpoch)
         && Objects.equals(terminalBlockHashActivationEpoch, that.terminalBlockHashActivationEpoch);
   }
 
@@ -199,6 +208,7 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
         maxExtraDataBytes,
         terminalTotalDifficulty,
         terminalBlockHash,
-        terminalBlockHashActivationEpoch);
+        terminalBlockHashActivationEpoch,
+        nextForkEpoch);
   }
 }

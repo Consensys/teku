@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,6 +49,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer maxRequestDataColumnSidecars;
   private UInt64 balancePerAdditionalCustodyGroup;
   private final List<BlobScheduleEntry> blobSchedule = new ArrayList<>();
+  private Optional<UInt64> nextForkEpoch = Optional.empty();
 
   FuluBuilder() {}
 
@@ -71,7 +73,8 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             minEpochsForDataColumnSidecarsRequests,
             maxRequestDataColumnSidecars,
             balancePerAdditionalCustodyGroup,
-            blobSchedule),
+            blobSchedule,
+            nextForkEpoch),
         specConfigAndParent);
   }
 
@@ -167,6 +170,11 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
       final UInt64 balancePerAdditionalCustodyGroup) {
     checkNotNull(balancePerAdditionalCustodyGroup);
     this.balancePerAdditionalCustodyGroup = balancePerAdditionalCustodyGroup;
+    return this;
+  }
+
+  public FuluBuilder nextForkEpoch(final Optional<UInt64> nextForkEpoch) {
+    this.nextForkEpoch = nextForkEpoch;
     return this;
   }
 

@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLO
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -48,6 +49,7 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
   private UInt256 terminalTotalDifficulty;
   private Bytes32 terminalBlockHash;
   private UInt64 terminalBlockHashActivationEpoch;
+  private Optional<UInt64> nextForkEpoch = Optional.empty();
 
   // Optimistic Sync
   private Integer safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
@@ -72,7 +74,8 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
             terminalTotalDifficulty,
             terminalBlockHash,
             terminalBlockHashActivationEpoch,
-            safeSlotsToImportOptimistically),
+            safeSlotsToImportOptimistically,
+            nextForkEpoch),
         specConfigAndParent);
   }
 
@@ -198,6 +201,11 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
   public BellatrixBuilder safeSlotsToImportOptimistically(
       final Integer safeSlotsToImportOptimistically) {
     this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
+    return this;
+  }
+
+  public BellatrixBuilder nextForkEpoch(final Optional<UInt64> nextForkEpoch) {
+    this.nextForkEpoch = nextForkEpoch;
     return this;
   }
 }

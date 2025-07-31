@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -177,6 +178,7 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomUInt64(32000000000L),
         List.of(
             new BlobScheduleEntry(
-                dataStructureUtil.randomEpoch(), dataStructureUtil.randomPositiveInt(64)))) {};
+                dataStructureUtil.randomEpoch(), dataStructureUtil.randomPositiveInt(64))),
+        Optional.empty()) {};
   }
 }
