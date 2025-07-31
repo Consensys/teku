@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -21,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 
 public abstract class BlindBlockUtil {
 
-  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
+  public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBeaconBlock(
       final SignedBeaconBlock signedBlindedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
     final SignedBeaconBlockUnblinder beaconBlockUnblinder =

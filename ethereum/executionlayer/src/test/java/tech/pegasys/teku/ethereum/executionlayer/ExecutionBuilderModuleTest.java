@@ -218,6 +218,7 @@ public class ExecutionBuilderModuleTest {
     executionBuilderModule =
         new ExecutionBuilderModule(
             executionLayerManager,
+            spec,
             builderBidValidator,
             builderCircuitBreaker,
             Optional.of(builderClient),
