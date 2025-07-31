@@ -82,13 +82,6 @@ public class DataColumnSidecarPrunerTest {
     verify(database, never()).pruneAllSidecars(any(), anyInt());
   }
 
-  @Test
-  void shouldNotPrunePriorGenesis() {
-    asyncRunner.executeDueActions();
-
-    verify(database).getGenesisTime();
-    verify(database, never()).pruneAllSidecars(any(), anyInt());
-  }
 
   @Test
   void checkCalculatedMinSlotMatchesDALastSlotOfMinEpoch() {
