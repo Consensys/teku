@@ -84,4 +84,9 @@ public class MetricRecordingBuilderClient extends MetricRecordingAbstractClient
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     return countRequest(() -> delegate.getPayload(signedBlindedBeaconBlock), GET_PAYLOAD_METHOD);
   }
+
+  @Override
+  public SafeFuture<Response<Void>> getPayloadV2(final SignedBeaconBlock signedBlindedBeaconBlock) {
+    return countRequest(() -> delegate.getPayloadV2(signedBlindedBeaconBlock), GET_PAYLOAD_METHOD);
+  }
 }

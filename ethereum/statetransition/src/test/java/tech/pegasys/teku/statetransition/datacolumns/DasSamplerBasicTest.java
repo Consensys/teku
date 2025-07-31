@@ -113,7 +113,6 @@ public class DasSamplerBasicTest {
     final CustodyGroupCountManagerImpl custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             SPEC,
-            SPEC_CONFIG_FULU,
             proposersDataManager,
             custodyGroupCountChannel,
             combinedChainDataClient,

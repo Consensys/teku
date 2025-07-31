@@ -59,7 +59,7 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
-  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = false;
+  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = true;
   public static final int
       DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 150;
   public static final int

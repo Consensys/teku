@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -23,15 +24,21 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 public class VersionBasedRpcRequestBodySelector<R extends RpcRequest>
     implements RpcRequestBodySelector<R> {
 
-  private final Map<String, R> requests;
+  private final Function<String, Optional<R>> versionToRequestFunction;
 
+  public VersionBasedRpcRequestBodySelector(
+      final Function<String, Optional<R>> versionToRequestFunction) {
+    this.versionToRequestFunction = versionToRequestFunction;
+  }
+
+  @VisibleForTesting
   public VersionBasedRpcRequestBodySelector(final Map<String, R> requests) {
     checkNotNull(requests);
-    this.requests = requests;
+    this.versionToRequestFunction = (key) -> Optional.ofNullable(requests.getOrDefault(key, null));
   }
 
   @Override
   public Function<String, Optional<R>> getBody() {
-    return (key) -> Optional.ofNullable(requests.getOrDefault(key, null));
+    return versionToRequestFunction;
   }
 }
