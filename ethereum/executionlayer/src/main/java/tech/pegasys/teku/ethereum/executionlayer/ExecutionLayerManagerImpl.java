@@ -77,6 +77,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public static ExecutionLayerManagerImpl create(
       final EventLogger eventLogger,
       final ExecutionClientHandler executionClientHandler,
+      final Spec spec,
       final Optional<BuilderClient> builderClient,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
@@ -104,6 +105,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     return new ExecutionLayerManagerImpl(
         executionClientHandler,
+        spec,
         builderClient,
         eventLogger,
         builderBidValidator,
@@ -142,6 +144,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private ExecutionLayerManagerImpl(
       final ExecutionClientHandler executionClientHandler,
+      final Spec spec,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
@@ -154,6 +157,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     this.executionBuilderModule =
         new ExecutionBuilderModule(
             this,
+            spec,
             builderBidValidator,
             builderCircuitBreaker,
             builderClient,

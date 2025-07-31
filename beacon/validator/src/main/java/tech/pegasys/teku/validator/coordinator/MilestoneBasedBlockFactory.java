@@ -96,7 +96,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   }
 
   @Override
-  public SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
+  public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBlockIfBlinded(
       final SignedBeaconBlock maybeBlindedBlock,
       final BlockPublishingPerformance blockPublishingPerformance) {
     final SpecMilestone milestone = getMilestone(maybeBlindedBlock.getSlot());

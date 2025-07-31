@@ -14,9 +14,11 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -165,7 +167,7 @@ public class BlockOperationSelectorFactory {
                             blockSlotState,
                             blockProductionPerformance));
       } else {
-        setExecutionDataComplete = SafeFuture.COMPLETE;
+        setExecutionDataComplete = COMPLETE;
       }
 
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
@@ -264,7 +266,7 @@ public class BlockOperationSelectorFactory {
     // pre-Merge Execution Payload / Execution Payload Header
     if (executionPayloadContext.isEmpty()) {
       bodyBuilder.executionPayload(schemaDefinitions.getExecutionPayloadSchema().getDefault());
-      return SafeFuture.COMPLETE;
+      return COMPLETE;
     }
 
     // We should run Builder flow (blinded) only if we have a validator registration
@@ -338,7 +340,7 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsKzgCommitments()) {
-      return SafeFuture.COMPLETE;
+      return COMPLETE;
     }
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
@@ -426,7 +428,7 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final ExecutionPayloadResult executionPayloadResult) {
     if (!bodyBuilder.supportsExecutionRequests()) {
-      return SafeFuture.COMPLETE;
+      return COMPLETE;
     }
     final SafeFuture<ExecutionRequests> executionRequests;
     if (executionPayloadResult.isFromLocalFlow()) {
@@ -465,6 +467,18 @@ public class BlockOperationSelectorFactory {
       final SignedBeaconBlock signedBlindedBlock = bodyUnblinder.getSignedBlindedBeaconBlock();
 
       final BeaconBlock block = signedBlindedBlock.getMessage();
+      if (isBlockFromFuluOrLater(signedBlindedBlock)) {
+        bodyUnblinder.setCompletionSupplier(
+            () ->
+                executionLayerBlockProductionManager
+                    .getUnblindedPayload(signedBlindedBlock, blockPublishingPerformance)
+                    .thenApplyChecked(
+                        builderPayloadOrFallbackData -> {
+                          checkState(builderPayloadOrFallbackData.isEmptySuccessful());
+                          return null;
+                        }));
+        return;
+      }
 
       if (block
           .getBody()
@@ -645,6 +659,10 @@ public class BlockOperationSelectorFactory {
                         new IllegalStateException(
                             "BuilderPayloadOrFallbackData hasn't been cached for slot " + slot));
 
+        if (builderPayloadOrFallbackData.isEmptySuccessful() && isBlockFromFuluOrLater(block)) {
+          return Collections.emptyList();
+        }
+
         final Optional<BuilderPayload> maybeBuilderPayload =
             builderPayloadOrFallbackData.getBuilderPayload();
 
@@ -705,6 +723,12 @@ public class BlockOperationSelectorFactory {
         throw new RuntimeException(t);
       }
     };
+  }
+
+  private boolean isBlockFromFuluOrLater(final SignedBlockContainer blockContainer) {
+    return spec.atSlot(blockContainer.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.FULU);
   }
 
   private void verifyBuilderBlobsBundle(

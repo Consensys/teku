@@ -60,7 +60,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
-class BlockOperationSelectorFactoryTestBellatrix {
+class BlockOperationSelectorFactoryBellatrixTest {
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

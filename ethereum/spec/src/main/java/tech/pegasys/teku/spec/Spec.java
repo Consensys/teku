@@ -782,7 +782,7 @@ public class Spec {
 
   // Blind Block Utils
 
-  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
+  public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBeaconBlock(
       final SignedBeaconBlock signedBlindedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
     return atSlot(signedBlindedBeaconBlock.getSlot())
@@ -797,7 +797,7 @@ public class Spec {
               checkState(
                   !signedBlindedBeaconBlock.isBlinded(),
                   "Unblinder not available for the current spec but the given block was blinded");
-              return SafeFuture.completedFuture(signedBlindedBeaconBlock);
+              return SafeFuture.completedFuture(Optional.of(signedBlindedBeaconBlock));
             });
   }
 

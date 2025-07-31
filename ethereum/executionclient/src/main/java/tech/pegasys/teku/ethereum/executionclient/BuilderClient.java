@@ -36,4 +36,6 @@ public interface BuilderClient {
       UInt64 slot, BLSPublicKey pubKey, Bytes32 parentHash);
 
   SafeFuture<Response<BuilderPayload>> getPayload(SignedBeaconBlock signedBlindedBeaconBlock);
+
+  SafeFuture<Response<Void>> getPayloadV2(SignedBeaconBlock signedBlindedBeaconBlock);
 }

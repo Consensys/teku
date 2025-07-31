@@ -22,9 +22,11 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.kzg.KZG.CELLS_PER_EXT_BLOB;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.kzg.KZG;
@@ -34,10 +36,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsFulu;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -93,21 +94,30 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void unblindSignedBlock_shouldUnblindBeaconBlock() {
+  void unblindSignedBlock_shouldSubmitBlockToBuilder() {
 
     final SignedBeaconBlock expectedUnblindedBlock = dataStructureUtil.randomSignedBeaconBlock();
-    final SignedBeaconBlock blindedBlock = assertBlockBlinded(expectedUnblindedBlock, spec);
-
-    // let the unblinder return a consistent execution payload
-    executionPayload =
-        expectedUnblindedBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow();
-
-    final SignedBeaconBlock unblindedBlock = assertBlockUnblinded(blindedBlock, spec);
-
-    verify(executionLayer).getUnblindedPayload(unblindedBlock, BlockPublishingPerformance.NOOP);
-
-    assertThat(unblindedBlock.isBlinded()).isFalse();
+    final SignedBeaconBlock unblindedBlock = assertBlockUnblinded(expectedUnblindedBlock, spec);
     assertThat(unblindedBlock).isEqualTo(expectedUnblindedBlock);
+
+    final SignedBeaconBlock blindedBlock = unblindedBlock.blind(spec.getGenesisSchemaDefinitions());
+    assertBlockSubmittedToBuilder(blindedBlock, spec);
+  }
+
+  private void assertBlockSubmittedToBuilder(
+      final SignedBeaconBlock blindedBlock, final Spec spec) {
+    final BlockFactory blockFactory = createBlockFactory(spec);
+
+    // no need to prepare blobs bundle when only testing block unblinding
+    when(executionLayer.getUnblindedPayload(blindedBlock, BlockPublishingPerformance.NOOP))
+        .thenReturn(SafeFuture.completedFuture(BuilderPayloadOrFallbackData.createSuccessful()));
+
+    final Optional<SignedBeaconBlock> maybeUnblindedBlock =
+        blockFactory
+            .unblindSignedBlockIfBlinded(blindedBlock, BlockPublishingPerformance.NOOP)
+            .join();
+    assertThat(maybeUnblindedBlock).isEmpty();
+    verify(executionLayer).getUnblindedPayload(blindedBlock, BlockPublishingPerformance.NOOP);
   }
 
   @Test
@@ -148,49 +158,6 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
                           .mapToObj(
                               blobIndex ->
                                   blobsCellBundle
-                                      .getProofs()
-                                      .get(blobIndex * CELLS_PER_EXT_BLOB + index))
-                          .toList());
-              assertThat(dataColumnSidecar.getSszKZGCommitments()).isEqualTo(expectedCommitments);
-            });
-  }
-
-  @Test
-  void shouldCreateValidDataColumnSidecarsForBlindedBlock() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    // random payload required to construct a valid BuilderPayload
-    executionPayload = dataStructureUtil.randomExecutionPayload();
-
-    final int blobsCount = 3;
-    final BlobsBundleFulu blobsBundleFulu =
-        prepareBuilderPayload(spec, blobsCount).getOptionalBlobsCellBundle().orElseThrow();
-
-    final BlockAndDataColumnSidecars blockAndDataColumnSidecars =
-        createBlockAndDataColumnSidecars(true, spec);
-
-    final SignedBlockContainer block = blockAndDataColumnSidecars.block();
-    final List<DataColumnSidecar> dataColumnSidecars =
-        blockAndDataColumnSidecars.dataColumnSidecars();
-
-    verify(executionLayer).getCachedUnblindedPayload(block.getSlot());
-
-    final SszList<SszKZGCommitment> expectedCommitments =
-        block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
-
-    assertThat(dataColumnSidecars).hasSize(CELLS_PER_EXT_BLOB);
-
-    IntStream.range(0, dataColumnSidecars.size())
-        .forEach(
-            index -> {
-              final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
-              // check sidecar is created using the prepared BlobsCellBundle
-              assertThat(dataColumnSidecar.getSszKZGProofs().asList())
-                  .isEqualTo(
-                      IntStream.range(0, expectedCommitments.size())
-                          .mapToObj(
-                              blobIndex ->
-                                  blobsBundleFulu
                                       .getProofs()
                                       .get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());

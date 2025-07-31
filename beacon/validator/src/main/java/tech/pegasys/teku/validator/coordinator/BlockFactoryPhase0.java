@@ -93,7 +93,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
   }
 
   @Override
-  public SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
+  public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBlockIfBlinded(
       final SignedBeaconBlock maybeBlindedBlock,
       final BlockPublishingPerformance blockPublishingPerformance) {
     if (maybeBlindedBlock.isBlinded()) {
@@ -101,7 +101,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
           maybeBlindedBlock.getSignedBlock(),
           operationSelector.createBlockUnblinderSelector(blockPublishingPerformance));
     }
-    return SafeFuture.completedFuture(maybeBlindedBlock);
+    return SafeFuture.completedFuture(Optional.of(maybeBlindedBlock));
   }
 
   @Override
