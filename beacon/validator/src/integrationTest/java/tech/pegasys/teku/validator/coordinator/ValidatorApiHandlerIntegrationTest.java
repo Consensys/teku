@@ -191,7 +191,6 @@ public class ValidatorApiHandlerIntegrationTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            false,
             new BlockProductionAndPublishingPerformanceFactory(
                 new SystemTimeProvider(), __ -> UInt64.ZERO, true, 0, 0, 0, 0, Optional.empty()),
             new MilestoneBasedBlockPublisher(

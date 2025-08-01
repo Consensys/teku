@@ -498,7 +498,6 @@ public class Eth2NetworkOptions {
             aggregatingAttestationPoolV2BlockAggregationTimeLimit)
         .aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(
             aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
-        .lateBlockProductionEnabled(lateBlockProduction)
         .epochsStoreBlobs(epochsStoreBlobs)
         .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)

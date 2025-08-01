@@ -1452,7 +1452,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            beaconConfig.eth2NetworkConfig().isLateBlockProductionEnabled(),
             blockProductionPerformanceFactory,
             blockPublisher);
     eventChannels
