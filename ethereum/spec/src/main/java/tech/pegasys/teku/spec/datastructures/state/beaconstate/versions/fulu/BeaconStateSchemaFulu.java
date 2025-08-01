@@ -26,13 +26,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSc
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
@@ -82,16 +79,6 @@ public class BeaconStateSchemaFulu
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
-  }
-
-  public ExecutionPayloadHeaderSchemaDeneb getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaDeneb)
-        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
-  }
-
   @Override
   public MutableBeaconStateFulu createBuilder() {
     return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
@@ -108,12 +95,6 @@ public class BeaconStateSchemaFulu
         "Expected a BeaconStateSchemaFulu but was %s",
         schema.getClass());
     return (BeaconStateSchemaFulu) schema;
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
-    return (SszListSchema<HistoricalSummary, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
   }
 
   @SuppressWarnings("unchecked")
