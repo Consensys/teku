@@ -472,6 +472,17 @@ public class P2POptions {
       hidden = true)
   private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
 
+  @Option(
+      names = {"--Xp2p-historical-data-max-concurrent-queries"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "Limits the number of concurrent queries to historical data when handling RPC requests. Use 0 to allow unlimited concurrent queries.",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "1")
+  private int historicalDataMaxConcurrentQueries =
+      P2PConfig.DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -538,7 +549,8 @@ public class P2POptions {
                   .peerRequestLimit(peerRequestLimit)
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
-                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount);
+                  .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
+                  .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

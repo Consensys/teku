@@ -37,6 +37,13 @@ public interface RestClient {
   <TReq extends SszData> SafeFuture<Response<Void>> postAsync(
       String apiPath, TReq requestBodyObject, boolean postAsSsz, Duration timeout);
 
+  <TReq extends SszData> SafeFuture<Response<Void>> postAsync(
+      String apiPath,
+      Map<String, String> headers,
+      TReq requestBodyObject,
+      boolean postAsSsz,
+      Duration timeout);
+
   <TResp extends SszData, TReq extends SszData>
       SafeFuture<Response<BuilderApiResponse<TResp>>> postAsync(
           String apiPath,
