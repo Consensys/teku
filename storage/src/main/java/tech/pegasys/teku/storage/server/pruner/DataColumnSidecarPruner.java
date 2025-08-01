@@ -129,8 +129,12 @@ public class DataColumnSidecarPruner extends Service {
     }
   }
 
+  /**
+   * This method adds an extra epoch following the rational of the edge case found in the
+   * BlobSidecarPruner. See {@link
+   * tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner#getLatestPrunableSlot(UInt64)}
+   */
   private UInt64 calculatePruneSlot() {
-
     final UInt64 currentSlot =
         spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime.get());
     final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
@@ -142,7 +146,7 @@ public class DataColumnSidecarPruner extends Service {
     if (custodyPeriodEpochs == 0) {
       return currentSlot;
     } else {
-      final UInt64 minCustodyEpoch = currentEpoch.minusMinZero(custodyPeriodEpochs);
+      final UInt64 minCustodyEpoch = currentEpoch.minusMinZero(custodyPeriodEpochs + 1);
       return spec.computeStartSlotAtEpoch(minCustodyEpoch);
     }
   }
