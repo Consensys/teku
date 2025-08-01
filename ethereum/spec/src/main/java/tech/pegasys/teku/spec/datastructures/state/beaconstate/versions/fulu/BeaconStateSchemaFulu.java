@@ -82,16 +82,6 @@ public class BeaconStateSchemaFulu
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
-  }
-
-  public ExecutionPayloadHeaderSchemaDeneb getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaDeneb)
-        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
-  }
-
   @Override
   public MutableBeaconStateFulu createBuilder() {
     return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
@@ -108,12 +98,6 @@ public class BeaconStateSchemaFulu
         "Expected a BeaconStateSchemaFulu but was %s",
         schema.getClass());
     return (BeaconStateSchemaFulu) schema;
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
-    return (SszListSchema<HistoricalSummary, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
   }
 
   @SuppressWarnings("unchecked")

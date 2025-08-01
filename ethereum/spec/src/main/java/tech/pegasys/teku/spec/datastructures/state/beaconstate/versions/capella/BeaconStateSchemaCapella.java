@@ -93,16 +93,6 @@ public class BeaconStateSchemaCapella
         getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
-  }
-
-  public ExecutionPayloadHeaderSchemaCapella getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaCapella)
-        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
-  }
-
   @Override
   public MutableBeaconStateCapella createBuilder() {
     return new MutableBeaconStateCapellaImpl(createEmptyBeaconStateImpl(), true);
