@@ -2295,7 +2295,7 @@
 
 - name: initiate_validator_exit#phase0
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateMutatorsElectra.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
       search: public void initiateValidatorExit(
   spec: |
     <spec fn="initiate_validator_exit" fork="phase0" hash="0483a058">
@@ -2323,7 +2323,7 @@
 - name: initiate_validator_exit#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateMutatorsElectra.java
-      search: public void initiateValidatorExit
+      search: public void initiateValidatorExit(
   spec: |
     <spec fn="initiate_validator_exit" fork="electra" hash="0adfd988">
     def initiate_validator_exit(state: BeaconState, index: ValidatorIndex) -> None:
@@ -2794,7 +2794,7 @@
 - name: is_valid_indexed_attestation
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
-      search: public\s+AttestationProcessingResult\s+isValidIndexedAttestation\s*\(\s*final\s+Fork\s+\w+\s*,\s*final\s+BeaconState\s+\w+\s*,\s*final\s+ValidatableAttestation\s+\w+\s*\)
+      search: public AttestationProcessingResult\s+isValidIndexedAttestation\s*\(\s*final\s+Fork\s+\w+\s*,\s*final\s+BeaconState\s+\w+\s*,\s*final\s+ValidatableAttestation\s+\w+\s*\)
       regex: true
   spec: |
     <spec fn="is_valid_indexed_attestation" fork="phase0" hash="31223a33">
@@ -3484,7 +3484,7 @@
 - name: process_attester_slashing
   sources:
   - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: processAttesterSlashings\s*\([^,]+,[^,]+\)\s*throws
+    search: public void processAttesterSlashings\s*\([^,]+,[^,]+\)\s*throws
     regex: true
   spec: |
     <spec fn="process_attester_slashing" fork="phase0" hash="e47f6e1e">
@@ -3753,7 +3753,7 @@
 - name: process_deposit#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
-      search: processDepositWithoutCheckingMerkleProof
+      search: public void processDepositWithoutCheckingMerkleProof(
   spec: |
     <spec fn="process_deposit" fork="electra" hash="b75831d0">
     def process_deposit(state: BeaconState, deposit: Deposit) -> None:
@@ -3900,7 +3900,7 @@
 - name: process_execution_payload#bellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/block/BlockProcessorBellatrix.java
-      search: public void processExecutionPayload
+      search: public void processExecutionPayload(
   spec: |
     <spec fn="process_execution_payload" fork="bellatrix" hash="d1d1e466">
     def process_execution_payload(
@@ -5079,6 +5079,8 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/StateTransition.java
       search: public BeaconState processSlots(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public BeaconState processBlock(
   spec: |
     <spec fn="state_transition" fork="phase0" hash="0b7e562f">
     def state_transition(
