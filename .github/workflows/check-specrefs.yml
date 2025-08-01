@@ -30,10 +30,10 @@ jobs:
 
     - name: Check for differences
       run: |
-        if ! git diff --exit-code specrefs; then
+        if ! git diff --exit-code specrefs >/dev/null; then
           echo "Spec references are out-of-date!"
           echo ""
-          git diff specrefs
+          git --no-pager diff specrefs
           exit 1
         else
           echo "Spec references are up-to-date!"
