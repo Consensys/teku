@@ -265,8 +265,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     @SuppressWarnings("FutureReturnValueIgnored")
-    public synchronized void addRequest(
-        final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
+    public void addRequest(final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
       if (isReconstructionDone()) {
         promise.completeAsync(existingSidecarsByColIdx.get(columnIndex), asyncRunner);
       } else if (isReconstructionInProgress()) {
