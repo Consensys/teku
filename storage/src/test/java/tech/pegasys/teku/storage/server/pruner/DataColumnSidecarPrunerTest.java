@@ -87,7 +87,7 @@ public class DataColumnSidecarPrunerTest {
     final SpecConfig config = spec.forMilestone(SpecMilestone.FULU).getConfig();
     final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
     final UInt64 minEpochsForDataColumnSidecarsRequests =
-        UInt64.valueOf(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests());
+        UInt64.valueOf(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests()+1);
 
     final UInt64 currentSlot =
         UInt64.valueOf(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests() + 1)
