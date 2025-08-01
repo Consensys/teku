@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -144,7 +143,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
-  private final boolean isLateBlockProductionEnabled;
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
@@ -166,7 +164,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-      final boolean isLateBlockProductionEnabled,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher) {
@@ -191,7 +188,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
-    this.isLateBlockProductionEnabled = isLateBlockProductionEnabled;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
@@ -338,26 +334,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     return blockProductionBySlotCache
         .computeIfAbsent(
             slot,
-            __ -> {
-              final SafeFuture<Void> delay;
-              if (isLateBlockProductionEnabled) {
-                final int delaySeconds =
-                    (spec.atSlot(slot).getConfig().getSecondsPerSlot() / 3) + 1;
-                LOG.info("delaying block production for slot {} by {} seconds", slot, delaySeconds);
-                delay =
-                    new SafeFuture<>()
-                        .orTimeout(delaySeconds, TimeUnit.SECONDS)
-                        .exceptionally(ignore -> null)
-                        .toVoid();
-              } else {
-                delay = SafeFuture.COMPLETE;
-              }
-
-              return delay.thenCompose(
-                  unused ->
-                      createUnsignedBlockInternal(
-                          slot, randaoReveal, graffiti, requestedBuilderBoostFactor));
-            })
+            __ ->
+                createUnsignedBlockInternal(
+                    slot, randaoReveal, graffiti, requestedBuilderBoostFactor))
         .whenException(
             __ -> {
               // allow further block production attempts for this slot

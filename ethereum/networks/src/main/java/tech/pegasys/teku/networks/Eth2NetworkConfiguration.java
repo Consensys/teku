@@ -58,7 +58,6 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
-  public static final boolean DEFAULT_LATE_BLOCK_PRODUCTION = false;
 
   public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = false;
 
@@ -375,10 +374,6 @@ public class Eth2NetworkConfiguration {
 
   public int getPendingAttestationsMaxQueue() {
     return pendingAttestationsMaxQueue;
-  }
-
-  public boolean isLateBlockProductionEnabled() {
-    return lateBlockProductionEnabled;
   }
 
   public boolean isForkChoiceUpdatedAlwaysSendPayloadAttributes() {
@@ -1238,11 +1233,6 @@ public class Eth2NetworkConfiguration {
         final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit) {
       this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
-      return this;
-    }
-
-    public Builder lateBlockProductionEnabled(final boolean lateBlockProductionEnabled) {
-      this.lateBlockProductionEnabled = lateBlockProductionEnabled;
       return this;
     }
 
