@@ -158,7 +158,7 @@ public class RpcHandler<
   }
 
   private void closeStreamAbruptly(final Stream stream) {
-    SafeFuture.of(stream.close()).ifExceptionGetsHereRaiseABug();
+    SafeFuture.of(stream.close()).finishDebug();
   }
 
   @NotNull

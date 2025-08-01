@@ -220,10 +220,7 @@ public class AsyncStreamTest {
     final LogCaptor logCaptorCopy;
     try (LogCaptor logCaptor = LogCaptor.forClass(AsyncStreamTest.class)) {
       logCaptorCopy = logCaptor;
-      AsyncStream.createUnsafe(ints.iterator())
-          .map(i -> i)
-          .forEach(collector::add)
-          .ifExceptionGetsHereRaiseABug();
+      AsyncStream.createUnsafe(ints.iterator()).map(i -> i).forEach(collector::add).finishDebug();
     }
 
     final boolean rc = finishLatch.await(10, TimeUnit.SECONDS);

@@ -79,7 +79,7 @@ public class TestPeer {
               }
             },
             latency)
-        .ifExceptionGetsHereRaiseABug();
+        .finishDebug();
     return promise;
   }
 

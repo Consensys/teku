@@ -51,14 +51,14 @@ public class LinkedObjectsDeliveryTest {
   class Retriever {
     public synchronized SafeFuture<DataColumnSidecar> retrieve() {
       final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
-      asyncRunner.runAsync(() -> reqRespCompleted(result)).ifExceptionGetsHereRaiseABug();
+      asyncRunner.runAsync(() -> reqRespCompleted(result)).finishDebug();
       return result;
     }
 
     private synchronized void reqRespCompleted(final SafeFuture<DataColumnSidecar> result) {
       asyncRunner
           .runAsync(() -> result.complete(dataStructureUtil.randomDataColumnSidecar()))
-          .ifExceptionGetsHereRaiseABug();
+          .finishDebug();
       // Same without asyncrunner will cause deadlock
       // result.complete(dataStructureUtil.randomDataColumnSidecar());
     }

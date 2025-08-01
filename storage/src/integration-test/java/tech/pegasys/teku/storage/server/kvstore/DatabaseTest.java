@@ -1764,7 +1764,7 @@ public class DatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock, spec.calculateBlockCheckpoints(newBlock.getState()));
     transaction.setFinalizedCheckpoint(newCheckpoint, false);
-    transaction.commit().ifExceptionGetsHereRaiseABug();
+    transaction.commit().finishError();
     // Close db
     database.close();
 

@@ -131,7 +131,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
 
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
-    performReadinessCheckAgainstAllNodes().ifExceptionGetsHereRaiseABug();
+    performReadinessCheckAgainstAllNodes().finishError();
   }
 
   @Override
