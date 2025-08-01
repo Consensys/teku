@@ -255,6 +255,11 @@ public class StorageService extends Service implements StorageServiceFacade {
                     .orElseGet(() -> SafeFuture.completedFuture(null)))
         .thenCompose(
             __ ->
+                dataColumnSidecarPruner
+                    .map(DataColumnSidecarPruner::start)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .thenCompose(
+            __ ->
                 statePruner
                     .map(StatePruner::start)
                     .orElseGet(() -> SafeFuture.completedFuture(null)));
@@ -304,7 +309,11 @@ public class StorageService extends Service implements StorageServiceFacade {
                 .map(BlobSidecarPruner::stop)
                 .map(SafeFuture::toVoid)
                 .orElse(SafeFuture.COMPLETE),
-            statePruner.map(StatePruner::stop).map(SafeFuture::toVoid).orElse(SafeFuture.COMPLETE))
+            statePruner.map(StatePruner::stop).map(SafeFuture::toVoid).orElse(SafeFuture.COMPLETE),
+            dataColumnSidecarPruner
+                .map(DataColumnSidecarPruner::stop)
+                .map(SafeFuture::toVoid)
+                .orElse(SafeFuture.COMPLETE))
         .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
   }
 
