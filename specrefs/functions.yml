@@ -378,7 +378,7 @@
 - name: compute_fork_version
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
-      search: public Bytes4 computeForkVersion(final UInt64 epoch)
+      search: public Bytes4 computeForkVersion(
   spec: |
     <spec fn="compute_fork_version" fork="fulu" hash="6d472038">
     def compute_fork_version(epoch: Epoch) -> Version:
@@ -678,7 +678,7 @@
 - name: decrease_balance
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
-      search: public void decreaseBalance(final MutableBeaconState state, final int index, final UInt64 delta)
+      search: public void decreaseBalance(
   spec: |
     <spec fn="decrease_balance" fork="phase0" hash="3dd9c03a">
     def decrease_balance(state: BeaconState, index: ValidatorIndex, delta: Gwei) -> None:
@@ -1113,7 +1113,7 @@
 - name: get_block_signature
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/SigningRootUtil.java
-      search: public Bytes signingRootForSignBlock(final BeaconBlock block, final ForkInfo forkInfo)
+      search: public Bytes signingRootForSignBlock(
   spec: |
     <spec fn="get_block_signature" fork="phase0" hash="1f2edb6b">
     def get_block_signature(state: BeaconState, block: BeaconBlock, privkey: int) -> BLSSignature:
@@ -1203,7 +1203,7 @@
 - name: get_current_epoch
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateAccessors.java
-      search: public UInt64 getCurrentEpoch(final BeaconState state)
+      search: public UInt64 getCurrentEpoch(
   spec: |
     <spec fn="get_current_epoch" fork="phase0" hash="73a94be9">
     def get_current_epoch(state: BeaconState) -> Epoch:
@@ -1322,7 +1322,7 @@
 - name: get_eth1_vote#electra
   sources:
     - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/Eth1DataCache.java
-      search: public Eth1Data getEth1Vote(final BeaconState state)
+      search: public Eth1Data getEth1Vote(
   spec: |
     <spec fn="get_eth1_vote" fork="electra" hash="978c2389">
     def get_eth1_vote(state: BeaconState, eth1_chain: Sequence[Eth1Block]) -> Eth1Data:
@@ -1722,7 +1722,7 @@
 - name: get_next_sync_committee_indices#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public IntList getNextSyncCommitteeIndices(final BeaconState state)
+      search: public IntList getNextSyncCommitteeIndices(
   spec: |
     <spec fn="get_next_sync_committee_indices" fork="altair" hash="29891ee8">
     def get_next_sync_committee_indices(state: BeaconState) -> Sequence[ValidatorIndex]:
@@ -1753,7 +1753,7 @@
 - name: get_next_sync_committee_indices#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateAccessorsElectra.java
-      search: public IntList getNextSyncCommitteeIndices(final BeaconState state)
+      search: public IntList getNextSyncCommitteeIndices(
   spec: |
     <spec fn="get_next_sync_committee_indices" fork="electra" hash="ff7c2d75">
     def get_next_sync_committee_indices(state: BeaconState) -> Sequence[ValidatorIndex]:
@@ -1802,7 +1802,7 @@
 - name: get_previous_epoch
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateAccessors.java
-      search: public UInt64 getPreviousEpoch(final BeaconState state)
+      search: public UInt64 getPreviousEpoch(
   spec: |
     <spec fn="get_previous_epoch" fork="phase0" hash="935f3711">
     def get_previous_epoch(state: BeaconState) -> Epoch:
@@ -2217,7 +2217,7 @@
 - name: increase_balance
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
-      search: public void increaseBalance(final MutableBeaconState state, final int index, final UInt64 delta)
+      search: public void increaseBalance(
   spec: |
     <spec fn="increase_balance" fork="phase0" hash="33ddd025">
     def increase_balance(state: BeaconState, index: ValidatorIndex, delta: Gwei) -> None:
