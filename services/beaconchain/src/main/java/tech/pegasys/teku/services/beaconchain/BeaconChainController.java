@@ -238,6 +238,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -1572,11 +1573,33 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     eventChannels.subscribe(CustodyGroupCountChannel.class, metadataMessagesFactory);
 
+    // Using a throttled historical query retrieval when handling RPC requests to avoid
+    // overwhelming the node in case of various DDOS attacks
+    Optional<CombinedChainDataClient> throttlingCombinedChainDataClient = Optional.empty();
+    if (beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries() > 0) {
+      final ThrottlingStorageQueryChannel throttlingStorageQueryChannel =
+          new ThrottlingStorageQueryChannel(
+              storageQueryChannel,
+              beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries(),
+              metricsSystem);
+      throttlingCombinedChainDataClient =
+          Optional.of(
+              new CombinedChainDataClient(
+                  recentChainData,
+                  throttlingStorageQueryChannel,
+                  spec,
+                  new EarliestAvailableBlockSlot(
+                      throttlingStorageQueryChannel,
+                      timeProvider,
+                      beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())));
+    }
+
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
-            .combinedChainDataClient(combinedChainDataClient)
+            .combinedChainDataClient(
+                throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
             .dataColumnSidecarCustody(dataColumnSidecarCustody)
             .custodyGroupCountManager(custodyGroupCountManagerLateInit)
             .metadataMessagesFactory(metadataMessagesFactory)
