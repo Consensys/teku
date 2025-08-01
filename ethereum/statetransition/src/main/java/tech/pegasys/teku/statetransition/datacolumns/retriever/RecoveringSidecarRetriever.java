@@ -271,7 +271,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       } else if (isReconstructionInProgress()) {
         // wait for the reconstruction to finish before completing the request
         reconstructionInProgress
-            .handleException(__ -> addToPendingPromises(columnIndex, promise))
+            .whenException(__ -> addToPendingPromises(columnIndex, promise))
             .thenRun(
                 () ->
                     promise.completeAsync(existingSidecarsByColIdx.get(columnIndex), asyncRunner));
