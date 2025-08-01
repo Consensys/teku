@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSAL;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
@@ -388,17 +387,16 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
             blobAndCellProofsList -> {
               LOG.debug("Found {} blobs", blobAndCellProofsList.size());
               if (blobAndCellProofsList.isEmpty()) {
-                LOG.debug(
-                    "Blobs for {} are not found on local EL, reconstruction is not possible",
-                    slotAndBlockRoot);
-                return;
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Blobs for %s are not found on local EL, reconstruction is not possible",
+                        slotAndBlockRoot));
+              } else if (blobAndCellProofsList.size() != versionedHashes.size()) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Queried %s versionedHashes but got %s blobAndProofs",
+                        versionedHashes.size(), blobAndCellProofsList.size()));
               }
-
-              checkArgument(
-                  blobAndCellProofsList.size() == versionedHashes.size(),
-                  "Queried %s versionedHashed but got %s blobAndProofs",
-                  versionedHashes.size(),
-                  blobAndCellProofsList.size());
 
               getBlobsV2ResponsesCounter.inc();
               LOG.debug(
