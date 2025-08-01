@@ -19,6 +19,7 @@ import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSA
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -98,6 +99,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final MetricsHistogram getBlobsV2RuntimeSeconds;
 
   private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
+  private final Duration localElBlobsFetchingRetryDelay;
+  private final int localElBlobsFetchingMaxRetries;
 
   @VisibleForTesting
   public DataColumnSidecarELRecoveryManagerImpl(
@@ -112,7 +115,9 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
       final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final Duration localElBlobsFetchingRetryDelay,
+      final int localElBlobsFetchingMaxRetries) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -122,6 +127,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.kzg = kzg;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
+    this.localElBlobsFetchingRetryDelay = localElBlobsFetchingRetryDelay;
+    this.localElBlobsFetchingMaxRetries = localElBlobsFetchingMaxRetries;
     this.dataColumnSidecarComputationTimeSeconds =
         DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
     this.getBlobsV2RequestsCounter =
@@ -332,10 +339,10 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     }
 
     asyncRunner
-        .runAsync(
-            () ->
-                // fetch blobs from EL with no delay
-                fetchMissingBlobsFromLocalEL(slotAndBlockRoot))
+        .runWithRetry(
+            () -> fetchMissingBlobsFromLocalEL(slotAndBlockRoot),
+            localElBlobsFetchingRetryDelay,
+            localElBlobsFetchingMaxRetries)
         .handleException(this::logLocalElBlobsLookupFailure)
         .finishStackTrace();
   }
