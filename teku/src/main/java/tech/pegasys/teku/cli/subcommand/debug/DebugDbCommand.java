@@ -166,20 +166,54 @@ public class DebugDbCommand implements Runnable {
           final boolean verbose)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      final long startTime = System.currentTimeMillis();
+      final Optional<UInt64> earliestAvailableBlockSlot = database.getEarliestAvailableBlockSlot();
+      final long endTime = System.currentTimeMillis();
+      earliestAvailableBlockSlot.ifPresent(System.out::println);
       if (verbose) {
-        final long startTime = System.currentTimeMillis();
-        final Optional<UInt64> earliestAvailableBlockSlot =
-            database.getEarliestAvailableBlockSlot();
-        final long endTime = System.currentTimeMillis();
-        earliestAvailableBlockSlot.ifPresent(System.out::println);
         System.out.println(
             "Time taken to retrieve the earliest available block slot: "
                 + (endTime - startTime)
                 + "ms");
-      } else {
-        final Optional<UInt64> earliestAvailableBlockSlot =
-            database.getEarliestAvailableBlockSlot();
-        earliestAvailableBlockSlot.ifPresent(System.out::println);
+      }
+      return 0;
+    }
+  }
+
+  @Command(
+      name = "get-earliest-available-data-column-slot",
+      description = "Get the earliest available data-column slot in the database",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getEarliestAvailableDataColumnSlot(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              names = {"--timed", "-t"},
+              description = "Prints the time taken to retrieve the earliest available block slot",
+              defaultValue = "true",
+              fallbackValue = "true",
+              showDefaultValue = Visibility.ALWAYS)
+          final boolean verbose)
+      throws Exception {
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+      final long startTime = System.currentTimeMillis();
+      final Optional<UInt64> earliestAvailableDataColumnSlot =
+          database.getEarliestDataColumnSidecarSlot();
+      final long endTime = System.currentTimeMillis();
+      earliestAvailableDataColumnSlot.ifPresent(System.out::println);
+      if (verbose) {
+        System.out.println(
+            "Time taken to retrieve the earliest available data column slot: "
+                + (endTime - startTime)
+                + "ms");
       }
       return 0;
     }
