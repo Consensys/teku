@@ -73,7 +73,4 @@ public class SidecarBenchmarkConfig {
   public KZG getKzg(final boolean useRustLibrary) {
     return kzgBenchmark.getKzg(useRustLibrary);
   }
-
-  //    final boolean isRustKzgEnabled = true;
-
 }
