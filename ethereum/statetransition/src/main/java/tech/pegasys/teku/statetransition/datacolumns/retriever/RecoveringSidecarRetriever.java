@@ -264,6 +264,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       this.specHelpers = specHelpers;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public synchronized void addRequest(
         final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> promise) {
       if (isReconstructionDone()) {
