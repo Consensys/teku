@@ -181,7 +181,7 @@ public class DebugDbCommand implements Runnable {
   }
 
   @Command(
-      name = "get-earliest-available-data-column-slot",
+      name = "get-earliest-data-column-slot",
       description = "Get the earliest available data-column slot in the database",
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
@@ -192,7 +192,7 @@ public class DebugDbCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public int getEarliestAvailableDataColumnSlot(
+  public int getEarliestDataColumnSlot(
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
