@@ -140,7 +140,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
-
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
@@ -348,10 +347,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
-        .thenCompose(
-            __ ->
-                combinedChainDataClient.getStateForBlockProduction(
-                    slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
+        .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
         .thenPeek(__ -> blockProductionPerformance.getStateAtSlot())
         .thenCompose(
             blockSlotState ->
