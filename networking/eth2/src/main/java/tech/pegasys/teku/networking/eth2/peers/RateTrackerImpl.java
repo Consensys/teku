@@ -16,13 +16,14 @@ package tech.pegasys.teku.networking.eth2.peers;
 import com.google.common.base.Preconditions;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RateTrackerImpl implements RateTracker {
 
-  private final NavigableMap<RequestsKey, Long> requests = new TreeMap<>();
+  private final ConcurrentNavigableMap<RequestsKey, Long> requests = new ConcurrentSkipListMap<>();
 
   private final int peerRateLimit;
   private final long timeoutSeconds;
