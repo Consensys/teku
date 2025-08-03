@@ -47,8 +47,8 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 @SuppressWarnings({"JavaCase"})
 public class RecoveringSidecarRetrieverTest {
 
-  static final Duration RECOVER_INITIATION_TIMEOUT = Duration.ofSeconds(10);
-  static final Duration RECOVER_INITIATION_CHECK_INTERVAL = Duration.ofSeconds(1);
+  static final Duration RECOVERY_INITIATION_TIMEOUT = Duration.ofSeconds(10);
+  static final Duration RECOVERY_INITIATION_CHECK_INTERVAL = Duration.ofSeconds(1);
 
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
@@ -94,8 +94,8 @@ public class RecoveringSidecarRetrieverTest {
             blockResolver,
             dbAccessor,
             stubAsyncRunner,
-            RECOVER_INITIATION_TIMEOUT,
-            RECOVER_INITIATION_CHECK_INTERVAL,
+            RECOVERY_INITIATION_TIMEOUT,
+            RECOVERY_INITIATION_CHECK_INTERVAL,
             stubTimeProvider,
             128);
 
@@ -125,29 +125,29 @@ public class RecoveringSidecarRetrieverTest {
     SafeFuture<DataColumnSidecar> res2 = recoverRetriever.retrieve(id2);
 
     assertThat(delegateRetriever.requests).hasSize(3);
-    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(3);
+    assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(3);
 
     // id2 promise completes immediately
     delegateRetriever.requests.get(2).promise().complete(sidecars.get(2));
     assertThat(res2).isCompletedWithValue(sidecars.get(2));
-    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(2);
+    assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(2);
 
     stubAsyncRunner.executeDueActions();
     // does nothing
     assertThat(delegateRetriever.requests).hasSize(3);
 
     // 3 pending promises
-    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(2);
+    assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(2);
 
     // advance to the first check
-    stubTimeProvider.advanceTimeBy(RECOVER_INITIATION_CHECK_INTERVAL);
+    stubTimeProvider.advanceTimeBy(RECOVERY_INITIATION_CHECK_INTERVAL);
     stubAsyncRunner.executeDueActions();
 
     // 2 pending promises, one is already completed
-    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(2);
+    assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(2);
 
     // should initiate recovery
-    stubTimeProvider.advanceTimeBy(RECOVER_INITIATION_TIMEOUT);
+    stubTimeProvider.advanceTimeBy(RECOVERY_INITIATION_TIMEOUT);
     stubAsyncRunner.executeDueActions();
 
     assertThat(delegateRetriever.requests).hasSize(3 + columnCount - columnsInDbCount);
@@ -155,7 +155,7 @@ public class RecoveringSidecarRetrieverTest {
     assertThat(delegateRetriever.requests).hasSize(3 + columnCount - columnsInDbCount);
 
     // no more pending promises
-    assertThat(recoverRetriever.pendingPromisesCount()).isZero();
+    assertThat(recoverRetriever.pendingRequestsCount()).isZero();
 
     delegateRetriever.requests.stream()
         .skip(50)
@@ -193,12 +193,12 @@ public class RecoveringSidecarRetrieverTest {
     SafeFuture<DataColumnSidecar> res2 = recoverRetriever.retrieve(id2);
 
     assertThat(delegateRetriever.requests).hasSize(3);
-    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(3);
+    assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(3);
 
     res0.complete(sidecars.get(0));
     res1.completeExceptionally(new RuntimeException("error"));
 
-    assertThat(recoverRetriever.pendingPromisesCount()).isEqualTo(1);
+    assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(1);
     assertThatSafeFuture(res2).isNotCompleted();
   }
 
@@ -229,7 +229,7 @@ public class RecoveringSidecarRetrieverTest {
     assertThat(delegateRetriever.requests).hasSize(1);
 
     // should initiate recovery
-    stubTimeProvider.advanceTimeBy(RECOVER_INITIATION_TIMEOUT);
+    stubTimeProvider.advanceTimeBy(RECOVERY_INITIATION_TIMEOUT);
     stubAsyncRunner.executeDueActions();
 
     assertThat(delegateRetriever.requests).hasSize(1 + columnCount - columnsInDbCount);
@@ -241,7 +241,7 @@ public class RecoveringSidecarRetrieverTest {
             req ->
                 req.promise().complete(sidecars_10_1.get(req.columnId().columnIndex().intValue())));
 
-    stubAsyncRunner.executeDueActionsRepeatedly();
+    stubAsyncRunner.executeDueActions();
 
     assertThat(res0).isCompletedWithValue(sidecars_10_1.get(100));
     assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
@@ -268,7 +268,7 @@ public class RecoveringSidecarRetrieverTest {
     assertThat(delegateRetriever.requests).hasSize(1);
 
     // should initiate recovery
-    stubTimeProvider.advanceTimeBy(RECOVER_INITIATION_TIMEOUT);
+    stubTimeProvider.advanceTimeBy(RECOVERY_INITIATION_TIMEOUT);
     stubAsyncRunner.executeDueActions();
 
     assertThat(delegateRetriever.requests).hasSize(1 + columnCount - columnsInDbCount);
