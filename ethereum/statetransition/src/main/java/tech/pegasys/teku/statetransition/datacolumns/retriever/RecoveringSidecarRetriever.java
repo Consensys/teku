@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -214,7 +213,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             // we are recovering obsolete column which is no more on our canonical chain
             existingRecovery.cancel();
           }
-          if (existingRecovery == null || existingRecovery.cancelled.get()) {
+          if (existingRecovery == null || existingRecovery.cancelled) {
             return createNewRecovery(block);
           } else {
             return existingRecovery;
@@ -265,15 +264,15 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     private final KZG kzg;
     private final MiscHelpersFulu specHelpers;
 
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
     private final Map<UInt64, DataColumnSidecar> existingSidecarsByColIdx =
         new ConcurrentHashMap<>();
     private final Map<UInt64, List<SafeFuture<DataColumnSidecar>>> responsesByColIdx =
         new ConcurrentHashMap<>();
 
-    private volatile SafeFuture<Void> reconstructionInProgress;
-    private volatile List<SafeFuture<DataColumnSidecar>> recoveryPeerRequests;
+    private SafeFuture<Void> reconstructionInProgress;
+    private List<SafeFuture<DataColumnSidecar>> recoveryPeerRequests;
+
+    private boolean cancelled = false;
 
     RecoveryEntry(final BeaconBlock block, final KZG kzg, final MiscHelpersFulu specHelpers) {
       this.block = block;
@@ -290,19 +289,20 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     void addSidecar(final DataColumnSidecar sidecar) {
-      if (!cancelled.get() && sidecar.getBlockRoot().equals(block.getRoot())) {
+      if (!cancelled && sidecar.getBlockRoot().equals(block.getRoot())) {
         // attempt to complete any pending requests immediately
-        final UInt64 colIdx = sidecar.getIndex();
-        if (responsesByColIdx.containsKey(colIdx)) {
-          responsesByColIdx.remove(colIdx).forEach(response -> response.complete(sidecar));
+        final List<SafeFuture<DataColumnSidecar>> responses =
+            responsesByColIdx.remove(sidecar.getIndex());
+        if (responses != null) {
+          responses.forEach(response -> response.complete(sidecar));
         }
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
       }
     }
 
     /** Start reconstruction if we have enough available columns */
-    boolean maybeStartReconstruction() {
-      if (!cancelled.get()
+    synchronized boolean maybeStartReconstruction() {
+      if (!cancelled
           && existingSidecarsByColIdx.size() >= numberOfColumnsRequiredToReconstruct
           && (reconstructionInProgress == null
               || reconstructionInProgress.isCompletedExceptionally())) {
@@ -322,8 +322,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       }
     }
 
-    void attemptRecoveryViaPeers() {
-      if (!cancelled.get() && recoveryPeerRequests == null) {
+    synchronized void attemptRecoveryViaPeers() {
+      if (!cancelled && recoveryPeerRequests == null) {
         LOG.trace("Initialising peer recovery requests for slot {}", block.getSlot());
         recoveryPeerRequests =
             IntStream.range(0, numberOfColumns)
@@ -350,8 +350,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       }
     }
 
-    void cancel() {
-      cancelled.set(true);
+    synchronized void cancel() {
+      cancelled = true;
       responsesByColIdx.values().stream()
           .flatMap(Collection::stream)
           .forEach(response -> response.cancel(true));
