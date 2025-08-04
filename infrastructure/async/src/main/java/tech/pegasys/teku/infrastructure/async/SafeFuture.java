@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
   public static final SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
+  private static final String UNKNOWN_ERROR = "UNKNOWN ERROR";
 
   public static void ifExceptionGetsHereRaiseABug(final CompletionStage<?> future) {
     future.exceptionally(
@@ -317,8 +318,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   private String getMessageFromException(final Throwable error) {
-    return Optional.ofNullable(Throwables.getRootCause(error).getMessage())
-        .orElse(error.getMessage());
+    // always within an exception context, should always have an error
+    if (error == null) {
+      return UNKNOWN_ERROR;
+    }
+    return Throwables.getRootCause(error).getMessage();
   }
 
   public void finishError(final Logger logger) {
