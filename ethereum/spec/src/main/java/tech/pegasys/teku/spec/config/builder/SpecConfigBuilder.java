@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -132,6 +133,11 @@ public class SpecConfigBuilder {
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
 
+  // forks
+  // altair fork information
+  private Bytes4 altairForkVersion;
+  private UInt64 altairForkEpoch;
+
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -159,6 +165,15 @@ public class SpecConfigBuilder {
       } catch (NumberFormatException e) {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
       }
+    }
+    if (altairForkEpoch == null) {
+      altairForkEpoch = FAR_FUTURE_EPOCH;
+      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    if (altairForkVersion == null) {
+      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
     }
     validate();
     final SpecConfigAndParent<SpecConfig> config =
@@ -230,7 +245,9 @@ public class SpecConfigBuilder {
                 reorgMaxEpochsSinceFinalization,
                 reorgHeadWeightThreshold,
                 reorgParentWeightThreshold,
-                maxPerEpochActivationExitChurnLimit));
+                maxPerEpochActivationExitChurnLimit,
+                altairForkVersion,
+                altairForkEpoch));
 
     return builderChain.build(config);
   }
@@ -302,6 +319,8 @@ public class SpecConfigBuilder {
     constants.put("reorgMaxEpochsSinceFinalization", reorgMaxEpochsSinceFinalization);
     constants.put("reorgHeadWeightThreshold", reorgHeadWeightThreshold);
     constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
+    constants.put("altairForkEpoch", altairForkEpoch);
+    constants.put("altairForkVersion", altairForkVersion);
     return constants;
   }
 
@@ -437,6 +456,18 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
     checkNotNull(genesisForkVersion);
     this.genesisForkVersion = genesisForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder altairForkVersion(final Bytes4 altairForkVersion) {
+    checkNotNull(altairForkVersion);
+    this.altairForkVersion = altairForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
+    checkNotNull(altairForkEpoch);
+    this.altairForkEpoch = altairForkEpoch;
     return this;
   }
 

@@ -121,6 +121,10 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final UInt64 maxPerEpochActivationExitChurnLimit;
 
+  // altair fork information
+  private final Bytes4 altairForkVersion;
+  private final UInt64 altairForkEpoch;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -188,7 +192,9 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgMaxEpochsSinceFinalization,
       final int reorgHeadWeightThreshold,
       final int reorgParentWeightThreshold,
-      final UInt64 maxPerEpochActivationExitChurnLimit) {
+      final UInt64 maxPerEpochActivationExitChurnLimit,
+      final Bytes4 altairForkVersion,
+      final UInt64 altairForkEpoch) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -257,6 +263,8 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
     this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
+    this.altairForkVersion = altairForkVersion;
+    this.altairForkEpoch = altairForkEpoch;
   }
 
   @Override
@@ -382,6 +390,16 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public UInt64 getGenesisDelay() {
     return genesisDelay;
+  }
+
+  @Override
+  public Bytes4 getAltairForkVersion() {
+    return altairForkVersion;
+  }
+
+  @Override
+  public UInt64 getAltairForkEpoch() {
+    return altairForkEpoch;
   }
 
   @Override
@@ -687,6 +705,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(ejectionBalance, that.ejectionBalance)
         && Objects.equals(effectiveBalanceIncrement, that.effectiveBalanceIncrement)
         && Objects.equals(genesisForkVersion, that.genesisForkVersion)
+        && Objects.equals(altairForkVersion, that.altairForkVersion)
+        && Objects.equals(altairForkEpoch, that.altairForkEpoch)
         && Objects.equals(genesisDelay, that.genesisDelay)
         && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
@@ -761,6 +781,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         subnetsPerNode,
         attestationSubnetCount,
         attestationSubnetExtraBits,
+        altairForkVersion,
+        altairForkEpoch,
         attestationSubnetPrefixBits);
   }
 }

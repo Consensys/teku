@@ -52,8 +52,7 @@ public class SpecConfigReaderTest {
                 reader.build(
                     builder ->
                         builder
-                            .altairBuilder(
-                                altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                            .altairForkEpoch(UInt64.ZERO)
                             .bellatrixBuilder(
                                 bellatrixBuilder ->
                                     bellatrixBuilder.bellatrixForkEpoch(UInt64.ZERO))))
