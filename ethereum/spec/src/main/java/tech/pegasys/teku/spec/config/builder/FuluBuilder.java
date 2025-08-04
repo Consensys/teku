@@ -108,10 +108,27 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
 
   public FuluBuilder blobSchedule(final List<BlobScheduleEntry> blobSchedule) {
     checkNotNull(this.blobSchedule);
+    verifyBlobSchedule(blobSchedule);
     this.blobSchedule.clear();
     // copy list rather than use the one passed in case we need to add to the list during validation
     this.blobSchedule.addAll(blobSchedule);
     return this;
+  }
+
+  public void verifyBlobSchedule(final List<BlobScheduleEntry> blobSchedule) {
+    if (blobSchedule.isEmpty()) {
+      return;
+    }
+    BlobScheduleEntry previousEntry = blobSchedule.getFirst();
+    for (final BlobScheduleEntry entry : blobSchedule.subList(1, blobSchedule.size())) {
+      if (!entry.epoch().isGreaterThan(previousEntry.epoch())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Blob schedule must be ordered and doesn't contain duplicates, while %s and %s entries were provided.",
+                previousEntry, entry));
+      }
+      previousEntry = entry;
+    }
   }
 
   public FuluBuilder numberOfColumns(final Integer numberOfColumns) {

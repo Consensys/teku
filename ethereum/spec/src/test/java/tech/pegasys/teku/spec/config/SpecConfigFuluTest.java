@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -111,6 +112,27 @@ public class SpecConfigFuluTest {
                 .orElseThrow()
                 .getBlobParameters(fuluEpoch))
         .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
+  }
+
+  @Test
+  public void blobParametersShouldFollowForkOrderRules() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    assertThatThrownBy(
+            () ->
+                SpecConfigLoader.loadConfig(
+                    "mainnet",
+                    b ->
+                        b.fuluBuilder(
+                            fb ->
+                                fb.fuluForkEpoch(fuluEpoch)
+                                    .blobSchedule(
+                                        List.of(
+                                            new BlobScheduleEntry(fuluEpoch, 6),
+                                            new BlobScheduleEntry(fuluEpoch.increment(), 9),
+                                            new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))))))
+        .hasMessageContaining("Blob schedule must be ordered and doesn't contain duplicates, while")
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
