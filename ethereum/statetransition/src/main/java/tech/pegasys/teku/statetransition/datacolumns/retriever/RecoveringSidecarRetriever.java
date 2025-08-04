@@ -310,9 +310,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                       reconstruct();
                       reconstructionComplete();
                     })
+                .ignoreCancelException()
                 // in case of reconstruction failures, attempt recovery via peers as a backup
-                .whenException(__ -> attemptRecoveryViaPeers())
-                .ignoreCancelException();
+                .whenException(__ -> attemptRecoveryViaPeers());
         return true;
       } else {
         return false;
@@ -331,7 +331,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                       final DataColumnSlotAndIdentifier columnId =
                           new DataColumnSlotAndIdentifier(
                               block.getSlot(), block.getRoot(), columnIdx);
-                      SafeFuture<DataColumnSidecar> sidecarFuture = delegate.retrieve(columnId);
+                      final SafeFuture<DataColumnSidecar> sidecarFuture =
+                          delegate.retrieve(columnId);
                       sidecarFuture
                           .thenPeek(
                               sidecar -> {
