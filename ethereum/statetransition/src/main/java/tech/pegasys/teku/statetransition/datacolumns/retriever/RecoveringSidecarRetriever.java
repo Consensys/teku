@@ -65,12 +65,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final Set<DataColumnSidecarRequestWithTimestamp> pendingRequests =
       new ConcurrentSkipListSet<>(
           // prioritise the earliest requests when checking if recovery needs to be initiated
-          // ConcurrentSkipListSet uses the comparator for equality checks so adding all the fields
           Comparator.comparing(DataColumnSidecarRequestWithTimestamp::timestamp)
-              .thenComparing(DataColumnSidecarRequestWithTimestamp::dataColumnSlotAndIdentifier)
-              .thenComparing(
-                  dataColumnSidecarRequestWithTimestamp ->
-                      dataColumnSidecarRequestWithTimestamp.response.hashCode()));
+              .thenComparing(DataColumnSidecarRequestWithTimestamp::dataColumnSlotAndIdentifier));
   private final Map<UInt64, RecoveryEntry> recoveryBySlot = new ConcurrentHashMap<>();
 
   private Cancellable cancellable;
@@ -116,7 +112,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             recoveryInitiationCheckInterval,
             error ->
                 LOG.error(
-                    "Failed to check pending data column sidecar requests for recovery initiation",
+                    "Failed to check if {} pending data column sidecar require recovery",
+                    pendingRequests.size(),
                     error));
   }
 
@@ -290,13 +287,13 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     void addSidecar(final DataColumnSidecar sidecar) {
       if (!cancelled && sidecar.getBlockRoot().equals(block.getRoot())) {
+        existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         // attempt to complete any pending requests immediately
         final List<SafeFuture<DataColumnSidecar>> responses =
             responsesByColIdx.remove(sidecar.getIndex());
         if (responses != null) {
           responses.forEach(response -> response.complete(sidecar));
         }
-        existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
       }
     }
 
@@ -330,22 +327,27 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                 .mapToObj(UInt64::valueOf)
                 .filter(idx -> !existingSidecarsByColIdx.containsKey(idx))
                 .map(
-                    columnIdx ->
-                        delegate.retrieve(
-                            new DataColumnSlotAndIdentifier(
-                                block.getSlot(), block.getRoot(), columnIdx)))
-                .peek(
-                    sidecarFuture ->
-                        sidecarFuture
-                            .thenPeek(
-                                sidecar -> {
-                                  addSidecar(sidecar);
-                                  // on each recovered sidecar from peers, check if
-                                  // reconstruction can be started
-                                  maybeStartReconstruction();
-                                })
-                            .ignoreCancelException()
-                            .ifExceptionGetsHereRaiseABug())
+                    columnIdx -> {
+                      final DataColumnSlotAndIdentifier columnId =
+                          new DataColumnSlotAndIdentifier(
+                              block.getSlot(), block.getRoot(), columnIdx);
+                      SafeFuture<DataColumnSidecar> sidecarFuture = delegate.retrieve(columnId);
+                      sidecarFuture
+                          .thenPeek(
+                              sidecar -> {
+                                addSidecar(sidecar);
+                                // on each recovered sidecar from peers, check if
+                                // reconstruction can be started
+                                maybeStartReconstruction();
+                              })
+                          .ignoreCancelException()
+                          .finish(
+                              __ ->
+                                  LOG.error(
+                                      "Exception retrieving sidecar with columnId {} from peer",
+                                      columnId));
+                      return sidecarFuture;
+                    })
                 .toList();
       }
     }
