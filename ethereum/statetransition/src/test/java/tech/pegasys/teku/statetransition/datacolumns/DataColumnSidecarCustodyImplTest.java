@@ -14,12 +14,14 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -110,50 +112,45 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
-  public void onSlot_shouldUpdateFirstCustodyIncompleteSlotOnlyWhenCustodyGroupCountIncreases()
-      throws ExecutionException, InterruptedException {
+  public void onSlot_shouldUpdateFirstCustodyIncompleteSlotOnlyWhenCustodyGroupCountIncreases() {
+    final DataColumnSidecarDbAccessor dbAccessorMock = mock(DataColumnSidecarDbAccessor.class);
+    when(dbAccessorMock.setFirstCustodyIncompleteSlot(any())).thenReturn(SafeFuture.COMPLETE);
     // initial cgc is 0
     custody =
         new DataColumnSidecarCustodyImpl(
             spec,
             blockResolver,
-            dbAccessor,
+            dbAccessorMock,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManager,
             0);
     custody.onSlot(UInt64.ZERO);
+    // next epoch
+    final UInt64 firstEpochSlot = UInt64.valueOf(config.getSlotsPerEpoch()).increment();
     // cgc increases to groupCount
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount);
-    // first slot after which the min epoch for data column sidecars epoch is updated
-    final UInt64 firstSlotAfterMinEpochsForDataColumnSidecarsRequests =
-        UInt64.valueOf(config.getMinEpochsForDataColumnSidecarsRequests())
-            .increment()
-            .times(config.getSlotsPerEpoch());
-    custody.onSlot(firstSlotAfterMinEpochsForDataColumnSidecarsRequests);
-    final UInt64 advancedMinCustodyPeriodSlot =
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
-            firstSlotAfterMinEpochsForDataColumnSidecarsRequests);
-    final UInt64 minCustodyPeriodSlot =
-        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(UInt64.ZERO);
-    assertThat(advancedMinCustodyPeriodSlot).isGreaterThan(minCustodyPeriodSlot);
-    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(advancedMinCustodyPeriodSlot);
+    custody.onSlot(firstEpochSlot);
+    final UInt64 minCustodyPeriodSlotForFirstEpoch =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(firstEpochSlot);
+    verify(dbAccessorMock).setFirstCustodyIncompleteSlot(minCustodyPeriodSlotForFirstEpoch);
+
     // cgc stays the same
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount);
     // next epoch slot
-    final UInt64 firstEpochHopSlot =
-        firstSlotAfterMinEpochsForDataColumnSidecarsRequests
-            .plus(config.getSlotsPerEpoch())
-            .increment();
-    custody.onSlot(firstEpochHopSlot);
+    final UInt64 secondEpochSlot = firstEpochSlot.plus(config.getSlotsPerEpoch()).increment();
+    custody.onSlot(secondEpochSlot);
     // min custody slot is not updated when cgc is the same
-    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(advancedMinCustodyPeriodSlot);
+    verifyNoMoreInteractions(dbAccessorMock);
+
     // cgc decreases
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount - 10);
     // next epoch slot
-    final UInt64 secondEpochHopSlot = firstEpochHopSlot.plus(config.getSlotsPerEpoch()).increment();
-    custody.onSlot(secondEpochHopSlot);
+    final UInt64 thirdEpocSlot = secondEpochSlot.plus(config.getSlotsPerEpoch()).increment();
+    custody.onSlot(secondEpochSlot);
     // min custody slot is not updated when cgc decreases
-    assertThat(db.getFirstCustodyIncompleteSlot().get()).hasValue(advancedMinCustodyPeriodSlot);
+    final UInt64 minCustodyPeriodSlotForThirdEpoch =
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(thirdEpocSlot);
+    verify(dbAccessorMock).setFirstCustodyIncompleteSlot(minCustodyPeriodSlotForThirdEpoch);
   }
 
   private DataColumnSidecar createSidecar(final BeaconBlock block, final int column) {

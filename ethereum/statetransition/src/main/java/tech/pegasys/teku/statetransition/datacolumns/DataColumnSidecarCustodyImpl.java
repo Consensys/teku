@@ -168,7 +168,9 @@ public class DataColumnSidecarCustodyImpl
           .finish(
               error ->
                   LOG.error(
-                      "Unexpected error while updating first custody incomplete slot.", error));
+                      "Unexpected error while updating first custody incomplete slot with a new value: {}.",
+                      minCustodyPeriodSlot,
+                      error));
     }
   }
 
@@ -179,7 +181,10 @@ public class DataColumnSidecarCustodyImpl
         .finish(
             error ->
                 LOG.error(
-                    "Unexpected error while advancing first custody incomplete slot.", error));
+                    "Unexpected error while advancing first custody incomplete slot for checkpoint {}{}",
+                    checkpoint,
+                    fromOptimisticBlock ? " (from optimistic block)" : "",
+                    error));
   }
 
   @VisibleForTesting
