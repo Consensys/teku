@@ -146,7 +146,7 @@ public class DataColumnSidecarCustodyImplTest {
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount - 10);
     // next epoch slot
     final UInt64 thirdEpocSlot = secondEpochSlot.plus(config.getSlotsPerEpoch()).increment();
-    custody.onSlot(secondEpochSlot);
+    custody.onSlot(thirdEpocSlot);
     // min custody slot is not updated when cgc decreases
     final UInt64 minCustodyPeriodSlotForThirdEpoch =
         minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(thirdEpocSlot);
