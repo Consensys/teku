@@ -112,7 +112,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             recoveryInitiationCheckInterval,
             error ->
                 LOG.error(
-                    "Failed to check if {} pending data column sidecar require recovery",
+                    "Failed to check if {} pending data column sidecars requests require recovery to be ran",
                     pendingRequests.size(),
                     error));
   }
