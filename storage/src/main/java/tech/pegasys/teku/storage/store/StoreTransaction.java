@@ -212,7 +212,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                       : storageUpdateChannel.onStorageUpdate(storageUpdate);
 
               if (!storageUpdate.isFinalizedOptimisticTransitionBlockRootSet()) {
-                storageResult.finishError();
+                storageResult.finishError(LOG);
                 applyToStore(updates, UpdateResult.EMPTY);
                 return SafeFuture.COMPLETE;
               } else {

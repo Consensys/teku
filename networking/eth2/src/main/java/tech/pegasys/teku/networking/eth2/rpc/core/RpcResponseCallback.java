@@ -70,7 +70,7 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
           error,
           rpcStream);
     }
-    rpcStream.closeWriteStream().finishDebug();
+    rpcStream.closeWriteStream().finishDebug(LOG);
   }
 
   @Override
@@ -78,7 +78,7 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
     if (error instanceof PeerDisconnectedException) {
       LOG.trace("Not sending RPC response as peer has already disconnected");
       // But close the stream just to be completely sure we don't leak any resources.
-      rpcStream.closeAbruptly().finishTrace();
+      rpcStream.closeAbruptly().finishTrace(LOG);
     } else {
       completeWithErrorResponse(new ServerErrorException());
     }

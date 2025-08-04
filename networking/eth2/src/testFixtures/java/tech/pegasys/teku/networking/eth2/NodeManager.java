@@ -15,6 +15,8 @@ package tech.pegasys.teku.networking.eth2;
 
 import java.util.List;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class NodeManager {
+  private static final Logger LOG = LogManager.getLogger();
   private static final Spec DEFAULT_SPEC = TestSpecFactory.createMinimalPhase0();
 
   private final BlockGossipChannel blockGossipChannel;
@@ -130,6 +133,6 @@ public class NodeManager {
   }
 
   public void gossipBlock(final SignedBeaconBlock block) {
-    blockGossipChannel.publishBlock(block).finishDebug();
+    blockGossipChannel.publishBlock(block).finishDebug(LOG);
   }
 }

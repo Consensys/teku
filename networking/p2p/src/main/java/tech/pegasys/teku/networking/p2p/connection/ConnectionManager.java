@@ -184,7 +184,7 @@ public class ConnectionManager extends Service {
         .selectPeersToDisconnect(network, peerPools)
         .forEach(
             peerToDrop ->
-                peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS).finishTrace());
+                peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS).finishTrace(LOG));
   }
 
   @Override
@@ -209,7 +209,7 @@ public class ConnectionManager extends Service {
   }
 
   private void createPersistentConnection(final PeerAddress peerAddress) {
-    maintainPersistentConnection(peerAddress).finishTrace();
+    maintainPersistentConnection(peerAddress).finishTrace(LOG);
   }
 
   private SafeFuture<Peer> maintainPersistentConnection(final PeerAddress peerAddress) {
@@ -235,7 +235,7 @@ public class ConnectionManager extends Service {
                     asyncRunner
                         .runAfterDelay(
                             () -> maintainPersistentConnection(peerAddress), RECONNECT_TIMEOUT)
-                        .finishDebug();
+                        .finishDebug(LOG);
                   });
               return peer;
             })

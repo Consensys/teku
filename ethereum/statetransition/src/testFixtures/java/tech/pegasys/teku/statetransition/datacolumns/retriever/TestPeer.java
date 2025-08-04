@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 
 public class TestPeer {
+  private static final Logger LOG = LogManager.getLogger();
 
   public record Request(
       DataColumnIdentifier dataColumnIdentifier, SafeFuture<DataColumnSidecar> response) {}
@@ -79,7 +82,7 @@ public class TestPeer {
               }
             },
             latency)
-        .finishDebug();
+        .finishDebug(LOG);
     return promise;
   }
 

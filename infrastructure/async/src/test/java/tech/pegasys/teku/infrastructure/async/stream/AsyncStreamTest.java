@@ -25,12 +25,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncStreamTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Test
   void sanityTest() {
@@ -220,7 +223,10 @@ public class AsyncStreamTest {
     final LogCaptor logCaptorCopy;
     try (LogCaptor logCaptor = LogCaptor.forClass(AsyncStreamTest.class)) {
       logCaptorCopy = logCaptor;
-      AsyncStream.createUnsafe(ints.iterator()).map(i -> i).forEach(collector::add).finishDebug();
+      AsyncStream.createUnsafe(ints.iterator())
+          .map(i -> i)
+          .forEach(collector::add)
+          .finishDebug(LOG);
     }
 
     final boolean rc = finishLatch.await(10, TimeUnit.SECONDS);

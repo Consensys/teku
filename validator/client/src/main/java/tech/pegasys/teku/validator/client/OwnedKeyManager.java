@@ -250,7 +250,7 @@ public class OwnedKeyManager implements KeyManager {
                   validatorTimingChannel.onValidatorsAdded();
                   return null;
                 })
-            .finishError();
+            .finishError(LOG);
       }
     } else {
       reloadRequired =

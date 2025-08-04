@@ -147,7 +147,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       });
             },
             slotToRecoveryDelay.apply(slot))
-        .finishWarn();
+        .finishWarn(LOG);
   }
 
   @Override
@@ -187,7 +187,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (readyToBeRecovered(task)) {
       task.recoveryStarted().set(true);
       if (task.existingColumnIds().size() != columnCount) {
-        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).finishError();
+        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).finishError(LOG);
       }
     }
   }
@@ -269,7 +269,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       dataColumnSidecar -> {
                         validDataColumnSidecarsSubscribers.forEach(
                             l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
-                        delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar).finishError();
+                        delegate
+                            .onNewValidatedDataColumnSidecar(dataColumnSidecar)
+                            .finishError(LOG);
                         dataColumnSidecarPublisher.accept(dataColumnSidecar);
                       });
               LOG.debug(
@@ -277,7 +279,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   block.getSlotAndBlockRoot());
             })
         .alwaysRun(timer.closeUnchecked())
-        .finishError();
+        .finishError(LOG);
   }
 
   @Override

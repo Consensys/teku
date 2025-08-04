@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 
 public class SafeFutureTest {
+  private static final Logger LOG = LogManager.getLogger();
   public static final String COMPUTER_SAYS_NO = "Computer says no";
 
   private static class TestAsyncExec {
@@ -94,7 +97,7 @@ public class SafeFutureTest {
   public void shouldLogMessageAtErrorLevel() {
     try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
-      future.finishError();
+      future.finishError(LOG);
 
       future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
 
@@ -106,7 +109,7 @@ public class SafeFutureTest {
   public void shouldLogMessageAtWarnLevel() {
     try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
-      future.finishWarn();
+      future.finishWarn(LOG);
 
       future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
 
@@ -118,7 +121,7 @@ public class SafeFutureTest {
   public void shouldLogMessageAtInfoLevel() {
     try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
-      future.finishInfo();
+      future.finishInfo(LOG);
 
       future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
 
@@ -130,7 +133,7 @@ public class SafeFutureTest {
   public void shouldLogMessageAtDebugLevel() {
     try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
-      future.finishDebug();
+      future.finishDebug(LOG);
 
       future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
 
@@ -140,9 +143,9 @@ public class SafeFutureTest {
 
   @Test
   public void shouldLogMessageAtTraceLevel() {
-    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class, Level.TRACE)) {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFutureTest.class, Level.TRACE)) {
       final SafeFuture<Void> future = new SafeFuture<>();
-      future.finishTrace();
+      future.finishTrace(LOG);
 
       future.completeExceptionally(new IllegalArgumentException(COMPUTER_SAYS_NO));
 

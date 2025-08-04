@@ -79,7 +79,7 @@ public class ValidatorIndexProvider {
         .finish(
             error -> {
               LOG.warn("Failed to load validator indices. Retrying.", error);
-              asyncRunner.runAfterDelay(this::lookupValidators, RETRY_DELAY).finishError();
+              asyncRunner.runAfterDelay(this::lookupValidators, RETRY_DELAY).finishError(LOG);
             });
   }
 

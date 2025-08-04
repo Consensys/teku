@@ -622,7 +622,7 @@ public class ValidatorClientService extends Service {
                     .orElse(SafeFuture.COMPLETE))
         .thenCompose(
             __ -> {
-              maybeValidatorRestApi.ifPresent(restApi -> restApi.start().finishError());
+              maybeValidatorRestApi.ifPresent(restApi -> restApi.start().finishError(LOG));
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
               return maybeDoppelgangerDetector
@@ -654,7 +654,7 @@ public class ValidatorClientService extends Service {
                 validatorStatusProvider.subscribeValidatorStatusesUpdates(
                     validatorTimingActions::onUpdatedValidatorStatuses);
               }
-              validatorStatusProvider.start().finishError();
+              validatorStatusProvider.start().finishError(LOG);
               return beaconNodeApi.subscribeToEvents();
             });
   }
@@ -663,7 +663,7 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(
-            () -> maybeValidatorRestApi.ifPresent(restApi -> restApi.stop().finishError())),
+            () -> maybeValidatorRestApi.ifPresent(restApi -> restApi.stop().finishError(LOG))),
         beaconNodeApi.unsubscribeFromEvents());
   }
 }
