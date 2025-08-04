@@ -107,7 +107,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   }
 
   public FuluBuilder blobSchedule(final List<BlobScheduleEntry> blobSchedule) {
-    checkNotNull(this.blobSchedule);
+    checkNotNull(blobSchedule);
     verifyBlobSchedule(blobSchedule);
     this.blobSchedule.clear();
     // copy list rather than use the one passed in case we need to add to the list during validation
