@@ -43,7 +43,7 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAcces
 
 /**
  * This class helps to recover sidecars which took a consider amount of time to retrieve by {@link
- * SimpleSidecarRetriever}. It achieves so by either reconstructing (if we have over 50% of data
+ * SimpleSidecarRetriever}. It achieves so by either reconstructing (if we have >= 50% of data
  * columns) or asking peers for sidecars until the 50% threshold is met in which case reconstruction
  * happens
  */
@@ -97,7 +97,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.recoveryInitiationCheckInterval = recoveryInitiationCheckInterval;
     this.timeProvider = timeProvider;
     this.numberOfColumns = numberOfColumns;
-    // reconstruction of all columns is possible with more than 50% of the column data
+    // reconstruction of all columns is possible with >= 50% of the column data
     this.numberOfColumnsRequiredToReconstruct = Math.ceilDiv(numberOfColumns, 2);
   }
 
@@ -386,14 +386,15 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     private void onRequestCancel(final UInt64 columnIndex) {
-      responsesByColIdx
-          .remove(columnIndex)
-          .forEach(
-              response -> {
-                if (!response.isDone()) {
-                  response.cancel(true);
-                }
-              });
+      final List<SafeFuture<DataColumnSidecar>> responses = responsesByColIdx.remove(columnIndex);
+      if (responses != null) {
+        responses.forEach(
+            response -> {
+              if (!response.isDone()) {
+                response.cancel(true);
+              }
+            });
+      }
       if (responsesByColIdx.isEmpty()) {
         cancel();
       }
