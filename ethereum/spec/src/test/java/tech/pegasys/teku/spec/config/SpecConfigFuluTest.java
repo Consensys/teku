@@ -115,7 +115,33 @@ public class SpecConfigFuluTest {
   }
 
   @Test
-  public void blobParametersShouldFollowForkOrderRules() {
+  public void blobParameterSinglesEntryFuluEpoch() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    final SpecConfigAndParent<?> specConfigAndParent =
+        SpecConfigLoader.loadConfig(
+            "mainnet",
+            b ->
+                b.fuluBuilder(
+                    fb ->
+                        fb.fuluForkEpoch(fuluEpoch)
+                            .blobSchedule(
+                                List.of(new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock)))));
+    final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
+
+    // max blobs per block in fulu will start out at the same as electra
+    assertThat(
+            fuluSpec
+                .forMilestone(SpecMilestone.FULU)
+                .miscHelpers()
+                .toVersionFulu()
+                .orElseThrow()
+                .getBlobParameters(fuluEpoch))
+        .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
+  }
+
+  @Test
+  public void blobParametersShouldNotContainDuplicates() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
     final int maxBlobsPerBlock = 512;
     assertThatThrownBy(
@@ -129,9 +155,15 @@ public class SpecConfigFuluTest {
                                     .blobSchedule(
                                         List.of(
                                             new BlobScheduleEntry(fuluEpoch, 6),
+                                            new BlobScheduleEntry(
+                                                fuluEpoch.increment().increment(), 12),
+                                            // not ordered but it's ok
                                             new BlobScheduleEntry(fuluEpoch.increment(), 9),
+                                            // duplicate
                                             new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))))))
-        .hasMessageContaining("Blob schedule must be ordered and doesn't contain duplicates, while")
+        .hasMessage(
+            "Blob schedule must not contain duplicate epochs, entries BlobScheduleEntry[epoch=11223344, maxBlobsPerBlock=6] "
+                + "and BlobScheduleEntry[epoch=11223344, maxBlobsPerBlock=512] does not meet this criteria.")
         .isInstanceOf(IllegalArgumentException.class);
   }
 

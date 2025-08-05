@@ -17,7 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -119,15 +121,22 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     if (blobSchedule.isEmpty()) {
       return;
     }
-    BlobScheduleEntry previousEntry = blobSchedule.getFirst();
-    for (final BlobScheduleEntry entry : blobSchedule.subList(1, blobSchedule.size())) {
-      if (!entry.epoch().isGreaterThan(previousEntry.epoch())) {
+    final Iterator<BlobScheduleEntry> sortedBlobSchedule =
+        blobSchedule.stream()
+            .sorted(
+                Comparator.comparing(BlobScheduleEntry::epoch)
+                    .thenComparing(BlobScheduleEntry::maxBlobsPerBlock))
+            .iterator();
+    BlobScheduleEntry previousEntry = sortedBlobSchedule.next();
+    while (sortedBlobSchedule.hasNext()) {
+      final BlobScheduleEntry currentEntry = sortedBlobSchedule.next();
+      if (currentEntry.epoch().equals(previousEntry.epoch())) {
         throw new IllegalArgumentException(
             String.format(
-                "Blob schedule must be ordered and doesn't contain duplicates, while %s and %s entries were provided.",
-                previousEntry, entry));
+                "Blob schedule must not contain duplicate epochs, entries %s and %s does not meet this criteria.",
+                previousEntry, currentEntry));
       }
-      previousEntry = entry;
+      previousEntry = currentEntry;
     }
   }
 
