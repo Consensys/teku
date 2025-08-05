@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigAltair extends SpecConfig {
@@ -28,10 +27,6 @@ public interface SpecConfigAltair extends SpecConfig {
                     "Expected altair spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
-
-  Bytes4 getAltairForkVersion();
-
-  UInt64 getAltairForkEpoch();
 
   UInt64 getInactivityPenaltyQuotientAltair();
 
