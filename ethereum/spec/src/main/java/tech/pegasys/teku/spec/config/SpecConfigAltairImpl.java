@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -34,10 +33,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   // Time
   private final int epochsPerSyncCommitteePeriod;
 
-  // Fork
-  private final Bytes4 altairForkVersion;
-  private final UInt64 altairForkEpoch;
-
   // Sync protocol
   private final int minSyncCommitteeParticipants;
   private final int updateTimeout;
@@ -51,8 +46,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
       final UInt64 inactivityScoreBias,
       final UInt64 inactivityScoreRecoveryRate,
       final int epochsPerSyncCommitteePeriod,
-      final Bytes4 altairForkVersion,
-      final UInt64 altairForkEpoch,
       final int minSyncCommitteeParticipants,
       final int updateTimeout) {
     super(specConfig);
@@ -63,8 +56,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
     this.inactivityScoreBias = inactivityScoreBias;
     this.inactivityScoreRecoveryRate = inactivityScoreRecoveryRate;
     this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
-    this.altairForkVersion = altairForkVersion;
-    this.altairForkEpoch = altairForkEpoch;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.updateTimeout = updateTimeout;
   }
@@ -77,16 +68,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
                 new IllegalArgumentException(
                     "Expected altair spec config but got: "
                         + specConfig.getClass().getSimpleName()));
-  }
-
-  @Override
-  public Bytes4 getAltairForkVersion() {
-    return altairForkVersion;
-  }
-
-  @Override
-  public UInt64 getAltairForkEpoch() {
-    return altairForkEpoch;
   }
 
   @Override
@@ -161,9 +142,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         && Objects.equals(inactivityScoreRecoveryRate, that.inactivityScoreRecoveryRate)
         && epochsPerSyncCommitteePeriod == that.epochsPerSyncCommitteePeriod
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
-        && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
-        && Objects.equals(altairForkVersion, that.altairForkVersion)
-        && Objects.equals(altairForkEpoch, that.altairForkEpoch);
+        && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair);
   }
 
   @Override
@@ -177,8 +156,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         inactivityScoreBias,
         inactivityScoreRecoveryRate,
         epochsPerSyncCommitteePeriod,
-        altairForkVersion,
-        altairForkEpoch,
         minSyncCommitteeParticipants);
   }
 }

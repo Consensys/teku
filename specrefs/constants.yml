@@ -1,0 +1,424 @@
+- name: BASE_REWARDS_PER_EPOCH
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigPhase0.java
+      search: BASE_REWARDS_PER_EPOCH =
+  spec: |
+    <spec constant_var="BASE_REWARDS_PER_EPOCH" fork="phase0" hash="395f7528">
+    BASE_REWARDS_PER_EPOCH: uint64 = 4
+    </spec>
+
+- name: BLS_MODULUS
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigDeneb.java
+      search: BLS_MODULUS =
+  spec: |
+    <spec constant_var="BLS_MODULUS" fork="deneb" hash="dfa6ff32">
+    BLS_MODULUS = 52435875175126190479447740508185965837690552500527637822603658699938581184513
+    </spec>
+
+- name: BLS_WITHDRAWAL_PREFIX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/WithdrawalPrefixes.java
+      search: BLS_WITHDRAWAL_PREFIX =
+  spec: |
+    <spec constant_var="BLS_WITHDRAWAL_PREFIX" fork="phase0" hash="4153ae92">
+    BLS_WITHDRAWAL_PREFIX: Bytes1 = '0x00'
+    </spec>
+
+- name: BYTES_PER_FIELD_ELEMENT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigDeneb.java
+      search: BYTES_PER_FIELD_ELEMENT =
+  spec: |
+    <spec constant_var="BYTES_PER_FIELD_ELEMENT" fork="deneb" hash="4563f0ce">
+    BYTES_PER_FIELD_ELEMENT: uint64 = 32
+    </spec>
+
+- name: COMPOUNDING_WITHDRAWAL_PREFIX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/WithdrawalPrefixes.java
+      search: COMPOUNDING_WITHDRAWAL_PREFIX =
+  spec: |
+    <spec constant_var="COMPOUNDING_WITHDRAWAL_PREFIX" fork="electra" hash="e52fdfea">
+    COMPOUNDING_WITHDRAWAL_PREFIX: Bytes1 = '0x02'
+    </spec>
+
+- name: CONSOLIDATION_REQUEST_TYPE
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ConsolidationRequest.java
+      search: REQUEST_TYPE =
+  spec: |
+    <spec constant_var="CONSOLIDATION_REQUEST_TYPE" fork="electra" hash="4d01eb44">
+    CONSOLIDATION_REQUEST_TYPE: Bytes1 = '0x02'
+    </spec>
+
+- name: DEPOSIT_CONTRACT_TREE_DEPTH
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigPhase0.java
+      search: DEPOSIT_CONTRACT_TREE_DEPTH =
+    - file: ethereum/pow/api/src/main/java/tech/pegasys/teku/ethereum/pow/api/DepositConstants.java
+      search: DEPOSIT_CONTRACT_TREE_DEPTH =
+  spec: |
+    <spec constant_var="DEPOSIT_CONTRACT_TREE_DEPTH" fork="phase0" hash="5763e551">
+    DEPOSIT_CONTRACT_TREE_DEPTH: uint64 = 2**5
+    </spec>
+
+- name: DEPOSIT_REQUEST_TYPE
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/DepositRequest.java
+      search: REQUEST_TYPE =
+  spec: |
+    <spec constant_var="DEPOSIT_REQUEST_TYPE" fork="electra" hash="54ca462e">
+    DEPOSIT_REQUEST_TYPE: Bytes1 = '0x00'
+    </spec>
+
+- name: DOMAIN_AGGREGATE_AND_PROOF
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: AGGREGATE_AND_PROOF =
+  spec: |
+    <spec constant_var="DOMAIN_AGGREGATE_AND_PROOF" fork="phase0" hash="9f7a43fb">
+    DOMAIN_AGGREGATE_AND_PROOF: DomainType = '0x06000000'
+    </spec>
+
+- name: DOMAIN_BEACON_ATTESTER
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: BEACON_ATTESTER =
+  spec: |
+    <spec constant_var="DOMAIN_BEACON_ATTESTER" fork="phase0" hash="511529c3">
+    DOMAIN_BEACON_ATTESTER: DomainType = '0x01000000'
+    </spec>
+
+- name: DOMAIN_BEACON_PROPOSER
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: BEACON_PROPOSER =
+  spec: |
+    <spec constant_var="DOMAIN_BEACON_PROPOSER" fork="phase0" hash="c6ec551e">
+    DOMAIN_BEACON_PROPOSER: DomainType = '0x00000000'
+    </spec>
+
+- name: DOMAIN_BLS_TO_EXECUTION_CHANGE
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: BLS_TO_EXECUTION_CHANGE =
+  spec: |
+    <spec constant_var="DOMAIN_BLS_TO_EXECUTION_CHANGE" fork="capella" hash="08a623ec">
+    DOMAIN_BLS_TO_EXECUTION_CHANGE: DomainType = '0x0A000000'
+    </spec>
+
+- name: DOMAIN_CONTRIBUTION_AND_PROOF
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: CONTRIBUTION_AND_PROOF =
+  spec: |
+    <spec constant_var="DOMAIN_CONTRIBUTION_AND_PROOF" fork="altair" hash="67dcb5cb">
+    DOMAIN_CONTRIBUTION_AND_PROOF: DomainType = '0x09000000'
+    </spec>
+
+- name: DOMAIN_DEPOSIT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: DEPOSIT =
+  spec: |
+    <spec constant_var="DOMAIN_DEPOSIT" fork="phase0" hash="eab99f9f">
+    DOMAIN_DEPOSIT: DomainType = '0x03000000'
+    </spec>
+
+- name: DOMAIN_RANDAO
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: RANDAO =
+  spec: |
+    <spec constant_var="DOMAIN_RANDAO" fork="phase0" hash="1bf33286">
+    DOMAIN_RANDAO: DomainType = '0x02000000'
+    </spec>
+
+- name: DOMAIN_SELECTION_PROOF
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: Bytes4 SELECTION_PROOF =
+  spec: |
+    <spec constant_var="DOMAIN_SELECTION_PROOF" fork="phase0" hash="5443c8b0">
+    DOMAIN_SELECTION_PROOF: DomainType = '0x05000000'
+    </spec>
+
+- name: DOMAIN_SYNC_COMMITTEE
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: SYNC_COMMITTEE =
+  spec: |
+    <spec constant_var="DOMAIN_SYNC_COMMITTEE" fork="altair" hash="26073f5d">
+    DOMAIN_SYNC_COMMITTEE: DomainType = '0x07000000'
+    </spec>
+
+- name: DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: SYNC_COMMITTEE_SELECTION_PROOF =
+  spec: |
+    <spec constant_var="DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF" fork="altair" hash="f7e4d78c">
+    DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF: DomainType = '0x08000000'
+    </spec>
+
+- name: DOMAIN_VOLUNTARY_EXIT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: VOLUNTARY_EXIT =
+  spec: |
+    <spec constant_var="DOMAIN_VOLUNTARY_EXIT" fork="phase0" hash="6abf51b5">
+    DOMAIN_VOLUNTARY_EXIT: DomainType = '0x04000000'
+    </spec>
+
+- name: ETH1_ADDRESS_WITHDRAWAL_PREFIX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/WithdrawalPrefixes.java
+      search: ETH1_ADDRESS_WITHDRAWAL_PREFIX =
+  spec: |
+    <spec constant_var="ETH1_ADDRESS_WITHDRAWAL_PREFIX" fork="phase0" hash="faffaf83">
+    ETH1_ADDRESS_WITHDRAWAL_PREFIX: Bytes1 = '0x01'
+    </spec>
+
+- name: ETH_TO_GWEI
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/EthConstants.java
+      search: ETH_TO_GWEI =
+  spec: |
+    <spec constant_var="ETH_TO_GWEI" fork="phase0" hash="37392e73">
+    ETH_TO_GWEI: uint64 = 10**9
+    </spec>
+
+- name: FAR_FUTURE_EPOCH
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfig.java
+      search: FAR_FUTURE_EPOCH =
+  spec: |
+    <spec constant_var="FAR_FUTURE_EPOCH" fork="phase0" hash="b11f052e">
+    FAR_FUTURE_EPOCH: Epoch = 2**64 - 1
+    </spec>
+
+- name: FULL_EXIT_REQUEST_AMOUNT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigElectra.java
+      search: FULL_EXIT_REQUEST_AMOUNT =
+  spec: |
+    <spec constant_var="FULL_EXIT_REQUEST_AMOUNT" fork="electra" hash="4f49380e">
+    FULL_EXIT_REQUEST_AMOUNT: uint64 = 0
+    </spec>
+
+- name: GENESIS_EPOCH
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfig.java
+      search: GENESIS_EPOCH =
+  spec: |
+    <spec constant_var="GENESIS_EPOCH" fork="phase0" hash="56876077">
+    GENESIS_EPOCH: Epoch = 0
+    </spec>
+
+- name: GENESIS_SLOT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfig.java
+      search: GENESIS_SLOT =
+  spec: |
+    <spec constant_var="GENESIS_SLOT" fork="phase0" hash="2d6f8884">
+    GENESIS_SLOT: Slot = 0
+    </spec>
+
+- name: INTERVALS_PER_SLOT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
+      search: INTERVALS_PER_SLOT =
+  spec: |
+    <spec constant_var="INTERVALS_PER_SLOT" fork="phase0" hash="3352e419">
+    INTERVALS_PER_SLOT: uint64 = 3
+    </spec>
+
+- name: JUSTIFICATION_BITS_LENGTH
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigPhase0.java
+      search: JUSTIFICATION_BITS_LENGTH =
+  spec: |
+    <spec constant_var="JUSTIFICATION_BITS_LENGTH" fork="phase0" hash="e7ec73ea">
+    JUSTIFICATION_BITS_LENGTH: uint64 = 4
+    </spec>
+
+- name: MAX_CONCURRENT_REQUESTS
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
+      search: MAX_CONCURRENT_REQUESTS =
+  spec: |
+    <spec constant_var="MAX_CONCURRENT_REQUESTS" fork="phase0" hash="f5ff241b">
+    MAX_CONCURRENT_REQUESTS = 2
+    </spec>
+
+- name: NODE_ID_BITS
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
+      search: NODE_ID_BITS =
+  spec: |
+    <spec constant_var="NODE_ID_BITS" fork="phase0" hash="57dab5f1">
+    NODE_ID_BITS = 256
+    </spec>
+
+- name: PARTICIPATION_FLAG_WEIGHTS
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/MiscHelpersAltair.java
+      search: PARTICIPATION_FLAG_WEIGHTS =
+  spec: |
+    <spec constant_var="PARTICIPATION_FLAG_WEIGHTS" fork="altair" hash="0068cac2">
+    PARTICIPATION_FLAG_WEIGHTS = [TIMELY_SOURCE_WEIGHT, TIMELY_TARGET_WEIGHT, TIMELY_HEAD_WEIGHT]
+    </spec>
+
+- name: PROPOSER_WEIGHT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/IncentivizationWeights.java
+      search: PROPOSER_WEIGHT =
+  spec: |
+    <spec constant_var="PROPOSER_WEIGHT" fork="altair" hash="4dcb6f6c">
+    PROPOSER_WEIGHT: uint64 = 8
+    </spec>
+
+- name: SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
+      search: SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY =
+  spec: |
+    <spec constant_var="SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY" fork="bellatrix" hash="87b7dd5b">
+    SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128
+    </spec>
+
+- name: SAFETY_DECAY
+  sources:
+    - file: ethereum/weaksubjectivity/src/main/java/tech/pegasys/teku/weaksubjectivity/config/WeakSubjectivityConfig.java
+      search: SAFETY_DECAY =
+  spec: |
+    <spec constant_var="SAFETY_DECAY" fork="phase0" hash="298e03fe">
+    SAFETY_DECAY: uint64 = 10
+    </spec>
+
+- name: SYNC_COMMITTEE_SUBNET_COUNT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
+      search: SYNC_COMMITTEE_SUBNET_COUNT =
+  spec: |
+    <spec constant_var="SYNC_COMMITTEE_SUBNET_COUNT" fork="altair" hash="58794943">
+    SYNC_COMMITTEE_SUBNET_COUNT = 4
+    </spec>
+
+- name: SYNC_REWARD_WEIGHT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/IncentivizationWeights.java
+      search: SYNC_REWARD_WEIGHT =
+  spec: |
+    <spec constant_var="SYNC_REWARD_WEIGHT" fork="altair" hash="ea70c5e0">
+    SYNC_REWARD_WEIGHT: uint64 = 2
+    </spec>
+
+- name: TARGET_AGGREGATORS_PER_COMMITTEE
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/ValidatorConstants.java
+      search: TARGET_AGGREGATORS_PER_COMMITTEE =
+  spec: |
+    <spec constant_var="TARGET_AGGREGATORS_PER_COMMITTEE" fork="phase0" hash="3a65ef1c">
+    TARGET_AGGREGATORS_PER_COMMITTEE = 2**4
+    </spec>
+
+- name: TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/ValidatorConstants.java
+      search: TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE =
+  spec: |
+    <spec constant_var="TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE" fork="altair" hash="af3f6c9e">
+    TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 2**4
+    </spec>
+
+- name: TIMELY_HEAD_FLAG_INDEX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/ParticipationFlags.java
+      search: TIMELY_HEAD_FLAG_INDEX =
+  spec: |
+    <spec constant_var="TIMELY_HEAD_FLAG_INDEX" fork="altair" hash="a01306fb">
+    TIMELY_HEAD_FLAG_INDEX = 2
+    </spec>
+
+- name: TIMELY_HEAD_WEIGHT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/IncentivizationWeights.java
+      search: TIMELY_HEAD_WEIGHT =
+  spec: |
+    <spec constant_var="TIMELY_HEAD_WEIGHT" fork="altair" hash="d6f53c91">
+    TIMELY_HEAD_WEIGHT: uint64 = 14
+    </spec>
+
+- name: TIMELY_SOURCE_FLAG_INDEX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/ParticipationFlags.java
+      search: TIMELY_SOURCE_FLAG_INDEX =
+  spec: |
+    <spec constant_var="TIMELY_SOURCE_FLAG_INDEX" fork="altair" hash="57f25239">
+    TIMELY_SOURCE_FLAG_INDEX = 0
+    </spec>
+
+- name: TIMELY_SOURCE_WEIGHT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/IncentivizationWeights.java
+      search: TIMELY_SOURCE_WEIGHT =
+  spec: |
+    <spec constant_var="TIMELY_SOURCE_WEIGHT" fork="altair" hash="9cf6e565">
+    TIMELY_SOURCE_WEIGHT: uint64 = 14
+    </spec>
+
+- name: TIMELY_TARGET_FLAG_INDEX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/ParticipationFlags.java
+      search: TIMELY_TARGET_FLAG_INDEX =
+  spec: |
+    <spec constant_var="TIMELY_TARGET_FLAG_INDEX" fork="altair" hash="32530e5a">
+    TIMELY_TARGET_FLAG_INDEX = 1
+    </spec>
+
+- name: TIMELY_TARGET_WEIGHT
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/IncentivizationWeights.java
+      search: TIMELY_TARGET_WEIGHT =
+  spec: |
+    <spec constant_var="TIMELY_TARGET_WEIGHT" fork="altair" hash="5413dfe8">
+    TIMELY_TARGET_WEIGHT: uint64 = 26
+    </spec>
+
+- name: UNSET_DEPOSIT_REQUESTS_START_INDEX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigElectra.java
+      search: UNSET_DEPOSIT_REQUESTS_START_INDEX =
+  spec: |
+    <spec constant_var="UNSET_DEPOSIT_REQUESTS_START_INDEX" fork="electra" hash="5eb703dc">
+    UNSET_DEPOSIT_REQUESTS_START_INDEX: uint64 = 2**64 - 1
+    </spec>
+
+- name: VERSIONED_HASH_VERSION_KZG
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigDeneb.java
+      search: VERSIONED_HASH_VERSION_KZG =
+  spec: |
+    <spec constant_var="VERSIONED_HASH_VERSION_KZG" fork="deneb" hash="fc402ca2">
+    VERSIONED_HASH_VERSION_KZG: Bytes1 = '0x01'
+    </spec>
+
+- name: WEIGHT_DENOMINATOR
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/IncentivizationWeights.java
+      search: WEIGHT_DENOMINATOR =
+  spec: |
+    <spec constant_var="WEIGHT_DENOMINATOR" fork="altair" hash="0d498a82">
+    WEIGHT_DENOMINATOR: uint64 = 64
+    </spec>
+
+- name: WITHDRAWAL_REQUEST_TYPE
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/WithdrawalRequest.java
+      search: REQUEST_TYPE =
+  spec: |
+    <spec constant_var="WITHDRAWAL_REQUEST_TYPE" fork="electra" hash="e8e70397">
+    WITHDRAWAL_REQUEST_TYPE: Bytes1 = '0x01'
+    </spec>

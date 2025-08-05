@@ -51,6 +51,12 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
   public static final int DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT = 0;
+  // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
+  // DEFAULT_BACKGROUND_THREAD_COUNT)
+  // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
+  // To avoid resource saturation and ensure capacity for other tasks, we limit historical data
+  // queries to 5
+  public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 5;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -62,6 +68,7 @@ public class P2PConfig {
   private final int targetSubnetSubscriberCount;
   private final boolean subscribeAllSubnetsEnabled;
   private final int dasExtraCustodyGroupCount;
+  private final int historicalDataMaxConcurrentQueries;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
@@ -81,6 +88,7 @@ public class P2PConfig {
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       final int dasExtraCustodyGroupCount,
+      final int historicalDataMaxConcurrentQueries,
       final int peerBlocksRateLimit,
       final int peerBlobSidecarsRateLimit,
       final int peerRequestLimit,
@@ -98,6 +106,7 @@ public class P2PConfig {
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
+    this.historicalDataMaxConcurrentQueries = historicalDataMaxConcurrentQueries;
     this.peerBlocksRateLimit = peerBlocksRateLimit;
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
@@ -151,6 +160,10 @@ public class P2PConfig {
         MathHelpers.intPlusMaxIntCapped(minCustodyGroupRequirement, dasExtraCustodyGroupCount));
   }
 
+  public int getHistoricalDataMaxConcurrentQueries() {
+    return historicalDataMaxConcurrentQueries;
+  }
+
   public int getPeerBlocksRateLimit() {
     return peerBlocksRateLimit;
   }
@@ -202,6 +215,7 @@ public class P2PConfig {
     private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private int dasExtraCustodyGroupCount = DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
+    private int historicalDataMaxConcurrentQueries = DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
     private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
     private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
@@ -259,6 +273,7 @@ public class P2PConfig {
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
           dasExtraCustodyGroupCount,
+          historicalDataMaxConcurrentQueries,
           peerBlocksRateLimit,
           peerBlobSidecarsRateLimit,
           peerRequestLimit,
@@ -314,6 +329,12 @@ public class P2PConfig {
 
     public Builder dasExtraCustodyGroupCount(final int dasExtraCustodyGroupCount) {
       this.dasExtraCustodyGroupCount = dasExtraCustodyGroupCount;
+      return this;
+    }
+
+    public Builder historicalDataMaxConcurrentQueries(
+        final int historicalDataMaxConcurrentQueries) {
+      this.historicalDataMaxConcurrentQueries = historicalDataMaxConcurrentQueries;
       return this;
     }
 

@@ -269,9 +269,9 @@ class SyncCommitteeMessageValidatorTest {
             SpecConfigLoader.loadConfig(
                 "minimal",
                 phase0Builder ->
-                    phase0Builder.altairBuilder(
-                        altairBuilder ->
-                            altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO)))));
+                    phase0Builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .altairBuilder(altairBuilder -> altairBuilder.syncCommitteeSize(16)))));
     final SignedBlockAndState target = chainBuilder.getLatestBlockAndState();
     final BeaconStateAltair state = BeaconStateAltair.required(target.getState());
     final List<SszPublicKey> committeePubkeys =

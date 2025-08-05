@@ -128,7 +128,7 @@ class SpecConfigBuilderTest {
         getSpec(
             phase0Builder ->
                 phase0Builder
-                    .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(randomEpoch))
+                    .altairForkEpoch(randomEpoch)
                     .bellatrixBuilder(
                         bellatrixBuilder ->
                             bellatrixBuilder.bellatrixForkEpoch(randomEpoch.plus(1))));
