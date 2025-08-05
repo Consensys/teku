@@ -79,7 +79,7 @@ public class DataColumnSidecarPruner extends Service {
       LabelledSuppliedMetric labelledGauge =
           metricsSystem.createLabelledSuppliedGauge(
               TekuMetricCategory.STORAGE,
-              "dataColumn_sidecars",
+              "data_column_sidecars",
               "Statistics for Data columns stored",
               "type");
 
@@ -96,7 +96,7 @@ public class DataColumnSidecarPruner extends Service {
                 this::pruneDataColumnSidecars,
                 Duration.ZERO,
                 pruneInterval,
-                error -> LOG.error("Failed to prune old blobs", error)));
+                error -> LOG.error("Failed to prune old data column sidecars", error)));
     return SafeFuture.COMPLETE;
   }
 
