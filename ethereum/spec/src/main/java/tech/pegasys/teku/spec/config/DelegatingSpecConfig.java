@@ -153,6 +153,16 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getAltairForkVersion() {
+    return specConfig.getAltairForkVersion();
+  }
+
+  @Override
+  public UInt64 getAltairForkEpoch() {
+    return specConfig.getAltairForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
   }

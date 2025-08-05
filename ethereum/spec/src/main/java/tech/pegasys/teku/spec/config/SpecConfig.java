@@ -43,6 +43,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getGenesisDelay();
 
+  Bytes4 getAltairForkVersion();
+
+  UInt64 getAltairForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
 
