@@ -119,9 +119,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-altair-fork-epoch", altairForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.altairBuilder(
-                    altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.altairForkEpoch(altairForkEpoch));
     return this;
   }
 

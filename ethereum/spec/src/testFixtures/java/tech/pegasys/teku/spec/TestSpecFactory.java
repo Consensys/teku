@@ -284,9 +284,7 @@ public class TestSpecFactory {
 
     Consumer<SpecConfigBuilder> defaultModifier = __ -> {};
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.altairForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       defaultModifier =
@@ -334,8 +332,7 @@ public class TestSpecFactory {
       final Eth2Network network, final UInt64 altairForkEpoch) {
     return requireAltair(
         SpecConfigLoader.loadConfig(
-            network.configName(),
-            builder -> builder.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))));
+            network.configName(), builder -> builder.altairForkEpoch(altairForkEpoch)));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getBellatrixSpecConfig(
@@ -349,7 +346,7 @@ public class TestSpecFactory {
         network,
         builder ->
             builder
-                .altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
+                .altairForkEpoch(altairForkEpoch)
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch)));
   }
 
@@ -359,9 +356,7 @@ public class TestSpecFactory {
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
-              builder
-                  .altairBuilder(a -> a.altairForkEpoch(ZERO))
-                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO));
+              builder.altairForkEpoch(ZERO).bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO));
               configAdapter.accept(builder);
             }));
   }
@@ -377,7 +372,7 @@ public class TestSpecFactory {
         network,
         builder ->
             builder
-                .altairBuilder(a -> a.altairForkEpoch(ZERO))
+                .altairForkEpoch(ZERO)
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch)));
   }
@@ -389,7 +384,7 @@ public class TestSpecFactory {
             network.configName(),
             builder -> {
               builder
-                  .altairBuilder(a -> a.altairForkEpoch(ZERO))
+                  .altairForkEpoch(ZERO)
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(ZERO));
               configAdapter.accept(builder);
@@ -407,7 +402,7 @@ public class TestSpecFactory {
         network,
         builder ->
             builder
-                .altairBuilder(a -> a.altairForkEpoch(ZERO))
+                .altairForkEpoch(ZERO)
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch)));
@@ -420,7 +415,7 @@ public class TestSpecFactory {
             network.configName(),
             builder -> {
               builder
-                  .altairBuilder(a -> a.altairForkEpoch(ZERO))
+                  .altairForkEpoch(ZERO)
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
                   .denebBuilder(d -> d.denebForkEpoch(ZERO));
@@ -442,7 +437,7 @@ public class TestSpecFactory {
         network,
         builder ->
             builder
-                .altairBuilder(a -> a.altairForkEpoch(ZERO))
+                .altairForkEpoch(ZERO)
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
@@ -456,7 +451,7 @@ public class TestSpecFactory {
             network.configName(),
             builder -> {
               builder
-                  .altairBuilder(a -> a.altairForkEpoch(ZERO))
+                  .altairForkEpoch(ZERO)
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
                   .denebBuilder(d -> d.denebForkEpoch(ZERO))
@@ -480,7 +475,7 @@ public class TestSpecFactory {
         network,
         builder ->
             builder
-                .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                .altairForkEpoch(ZERO)
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
@@ -495,7 +490,7 @@ public class TestSpecFactory {
             network.configName(),
             builder -> {
               builder
-                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .altairForkEpoch(ZERO)
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
                   .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
