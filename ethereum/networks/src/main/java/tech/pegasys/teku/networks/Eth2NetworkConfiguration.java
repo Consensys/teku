@@ -520,10 +520,7 @@ public class Eth2NetworkConfiguration {
                   if (constants.equals(EPHEMERY.configName())) {
                     EphemeryNetwork.updateConfig(builder);
                   }
-                  altairForkEpoch.ifPresent(
-                      forkEpoch ->
-                          builder.altairBuilder(
-                              altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch)));
+                  altairForkEpoch.ifPresent(builder::altairForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
