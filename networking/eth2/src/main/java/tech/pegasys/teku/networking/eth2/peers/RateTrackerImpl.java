@@ -100,16 +100,7 @@ public class RateTrackerImpl implements RateTracker {
         requests.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
     final long prunedCount = headMap.values().stream().mapToLong(Long::longValue).sum();
     headMap.clear();
-    // for sanity, lets floor at 0
-    if (prunedCount > objectsWithinWindow) {
-      LOG.debug(
-          "Pruned more objects ({}) than we thought we had in RateTracker ({})",
-          prunedCount,
-          objectsWithinWindow);
-      objectsWithinWindow = 0L;
-    } else {
-      objectsWithinWindow -= prunedCount;
-    }
+    objectsWithinWindow = Math.max(objectsWithinWindow - prunedCount, 0L);
   }
 
   @Override
