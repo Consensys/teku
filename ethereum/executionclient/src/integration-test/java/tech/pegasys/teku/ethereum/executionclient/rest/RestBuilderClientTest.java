@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -23,6 +24,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -75,7 +77,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 @TestSpecContext(
-    milestone = {BELLATRIX, CAPELLA, DENEB, ELECTRA},
+    milestone = {BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU},
     network = Eth2Network.MAINNET)
 class RestBuilderClientTest {
 
@@ -467,6 +469,7 @@ class RestBuilderClientTest {
 
   @TestTemplate
   void getHeader_json_wrongFork(final SpecContext specContext) {
+    assumeThat(milestone.isLessThan(FULU)).isTrue();
     specContext.assumeCapellaActive();
 
     final String milestoneFolder =
@@ -489,6 +492,7 @@ class RestBuilderClientTest {
 
   @TestTemplate
   void getHeader_ssz_wrongFork(final SpecContext specContext) throws JsonProcessingException {
+    assumeThat(milestone.isLessThan(FULU)).isTrue();
     specContext.assumeCapellaActive();
 
     final String milestoneFolder =
@@ -670,24 +674,41 @@ class RestBuilderClientTest {
 
     final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
-        .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
-        .satisfies(
-            response -> {
-              assertThat(response.isSuccess()).isTrue();
-              final BuilderPayload builderPayload = response.payload();
-              verifyBuilderPayloadResponse(builderPayload);
-            });
+    if (milestone.isLessThan(FULU)) {
+      assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+          .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+          .satisfies(
+              response -> {
+                assertThat(response.isSuccess()).isTrue();
+                final BuilderPayload builderPayload = response.payload();
+                verifyBuilderPayloadResponse(builderPayload);
+              });
+    } else {
+      assertThat(restBuilderClient.getPayloadV2(signedBlindedBeaconBlock))
+          .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+          .satisfies(
+              response -> {
+                assertThat(response.isSuccess()).isTrue();
+              });
+    }
+
     final Consumer<RecordedRequest> containsConsensusVersionHeader =
         req -> {
           assertThat(req.getHeader("Eth-Consensus-Version"))
               .isEqualTo(milestone.name().toLowerCase(Locale.ROOT));
-          assertThat(req.getHeader("Accept"))
-              .isEqualTo("application/octet-stream;q=1.0,application/json;q=0.9");
+          if (milestone.isLessThan(FULU)) {
+            assertThat(req.getHeader("Accept"))
+                .isEqualTo("application/octet-stream;q=1.0,application/json;q=0.9");
+          }
+          ;
         };
+    final String apiUrl =
+        milestone.isLessThan(FULU)
+            ? "/eth/v1/builder/blinded_blocks"
+            : "/eth/v2/builder/blinded_blocks";
     verifyRequest(
         "POST",
-        "/eth/v1/builder/blinded_blocks",
+        apiUrl,
         Optional.of(signedBlindedBeaconBlockRequestJson),
         Optional.empty(),
         Optional.of(containsConsensusVersionHeader));
@@ -705,22 +726,35 @@ class RestBuilderClientTest {
 
     final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
-        .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
-        .satisfies(
-            response -> {
-              assertThat(response.isSuccess()).isTrue();
-              final BuilderPayload builderPayload = response.payload();
-              verifyBuilderPayloadResponse(builderPayload);
-              assertThat(response.receivedAsSsz()).isTrue();
-            });
+    if (milestone.isLessThan(FULU)) {
+      assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+          .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+          .satisfies(
+              response -> {
+                assertThat(response.isSuccess()).isTrue();
+                final BuilderPayload builderPayload = response.payload();
+                verifyBuilderPayloadResponse(builderPayload);
+                assertThat(response.receivedAsSsz()).isTrue();
+              });
+    } else {
+      assertThat(restBuilderClient.getPayloadV2(signedBlindedBeaconBlock))
+          .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+          .satisfies(
+              response -> {
+                assertThat(response.isSuccess()).isTrue();
+              });
+    }
     final Consumer<RecordedRequest> containsConsensusVersionHeader =
         req ->
             assertThat(req.getHeader("Eth-Consensus-Version"))
                 .isEqualTo(milestone.name().toLowerCase(Locale.ROOT));
+    final String apiUrl =
+        milestone.isLessThan(FULU)
+            ? "/eth/v1/builder/blinded_blocks"
+            : "/eth/v2/builder/blinded_blocks";
     verifyRequest(
         "POST",
-        "/eth/v1/builder/blinded_blocks",
+        apiUrl,
         Optional.empty(),
         Optional.of(signedBlindedBeaconBlockRequestSsz),
         Optional.of(containsConsensusVersionHeader));
