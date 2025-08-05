@@ -38,16 +38,14 @@ public class ForkScheduleTest {
   private static final SpecConfigAltair TRANSITION_CONFIG =
       SpecConfigAltair.required(
           SpecConfigLoader.loadConfig(
-                  Eth2Network.MINIMAL.configName(),
-                  c -> c.altairBuilder(a -> a.altairForkEpoch(FORK_EPOCH_ALTAIR)))
+                  Eth2Network.MINIMAL.configName(), c -> c.altairForkEpoch(FORK_EPOCH_ALTAIR))
               .specConfig());
 
   // Set config starting altair at genesis
   private static final SpecConfigAltair ALTAIR_CONFIG =
       SpecConfigAltair.required(
           SpecConfigLoader.loadConfig(
-                  Eth2Network.MINIMAL.configName(),
-                  c -> c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO)))
+                  Eth2Network.MINIMAL.configName(), c -> c.altairForkEpoch(UInt64.ZERO))
               .specConfig());
 
   // Set up default config

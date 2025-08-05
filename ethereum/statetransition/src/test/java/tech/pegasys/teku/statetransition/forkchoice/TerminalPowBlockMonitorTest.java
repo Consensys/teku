@@ -103,9 +103,7 @@ public class TerminalPowBlockMonitorTest {
             SpecConfigLoader.loadConfig(
                 "minimal",
                 phase0Builder ->
-                    phase0Builder
-                        .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(bellatrixBuilder)));
+                    phase0Builder.altairForkEpoch(UInt64.ZERO).bellatrixBuilder(bellatrixBuilder)));
     dataStructureUtil = new DataStructureUtil(spec);
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
