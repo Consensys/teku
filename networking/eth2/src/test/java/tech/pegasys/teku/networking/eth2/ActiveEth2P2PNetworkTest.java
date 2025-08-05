@@ -360,14 +360,11 @@ public class ActiveEth2P2PNetworkTest {
     // Set fork info
     genesisValidatorsRoot = genesis.getState().getGenesisValidatorsRoot();
     phase0Fork = spec.getForkSchedule().getFork(UInt64.ZERO);
-    phase0ForkDigest =
-        spec.computeForkDigest(phase0Fork.getCurrentVersion(), genesisValidatorsRoot);
+    phase0ForkDigest = spec.computeForkDigest(genesisValidatorsRoot, phase0Fork.getEpoch());
     altairFork = spec.getForkSchedule().getFork(altairForkEpoch);
-    altairForkDigest =
-        spec.computeForkDigest(altairFork.getCurrentVersion(), genesisValidatorsRoot);
+    altairForkDigest = spec.computeForkDigest(genesisValidatorsRoot, altairFork.getEpoch());
     bellatrixFork = spec.getForkSchedule().getFork(SpecMilestone.BELLATRIX);
-    bellatrixForkDigest =
-        spec.computeForkDigest(bellatrixFork.getCurrentVersion(), genesisValidatorsRoot);
+    bellatrixForkDigest = spec.computeForkDigest(genesisValidatorsRoot, bellatrixFork.getEpoch());
     fuluFork = spec.getForkSchedule().getFork(fuluForkEpoch);
     fuluForkDigest = spec.computeForkDigest(genesisValidatorsRoot, fuluForkEpoch);
     bpoFork = spec.getBpoFork(bpoForkEpoch).orElseThrow();
