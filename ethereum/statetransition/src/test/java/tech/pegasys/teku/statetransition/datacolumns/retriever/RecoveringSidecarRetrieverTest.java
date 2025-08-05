@@ -241,7 +241,7 @@ public class RecoveringSidecarRetrieverTest {
             req ->
                 req.promise().complete(sidecars_10_1.get(req.columnId().columnIndex().intValue())));
 
-    stubAsyncRunner.executeDueActions();
+    stubAsyncRunner.executeDueActionsRepeatedly();
 
     assertThat(res0).isCompletedWithValue(sidecars_10_1.get(100));
     assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
