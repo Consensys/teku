@@ -229,7 +229,13 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         .getColumnIdentifiers(block.getSlotAndBlockRoot())
         .thenAccept(
             dataColumnIdentifiers -> processSidecarsFromDb(dataColumnIdentifiers, recoveryEntry))
-        .ifExceptionGetsHereRaiseABug();
+        .finish(
+            error ->
+                LOG.error(
+                    "Exception occurred while retrieving existing data column sidecars from database for slot {} and block {}",
+                    block.getSlot(),
+                    block.getRoot(),
+                    error));
 
     return recoveryEntry;
   }
@@ -345,7 +351,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                           .finish(
                               __ ->
                                   LOG.error(
-                                      "Exception retrieving sidecar with columnId {} from peer",
+                                      "Exception occurred while retrieving data column sidecar with columnId {} from peer",
                                       columnId));
                       return sidecarFuture;
                     })
