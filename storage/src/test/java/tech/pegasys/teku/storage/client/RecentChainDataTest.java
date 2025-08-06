@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.ArrayList;
@@ -35,10 +36,12 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -1066,6 +1069,125 @@ class RecentChainDataTest {
       assertThat(recentChainData.retrieveBlockState(prunedBlock))
           .isCompletedWithValue(Optional.empty());
     }
+  }
+
+  @Test
+  public void getForkAndForkDigestIsCorrectInFulu() {
+    final Spec fuluSpec = TestSpecFactory.createMinimalWithFuluForkEpoch(ONE);
+
+    storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(fuluSpec)
+            .storageMode(StateStorageMode.PRUNE)
+            .storeConfig(StoreConfig.builder().build())
+            .build();
+    chainBuilder = storageSystem.chainBuilder();
+    recentChainData = storageSystem.recentChainData();
+    genesis = chainBuilder.generateGenesis();
+    final Bytes4 electraForkDigest =
+        fuluSpec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), ZERO);
+
+    final Bytes4 fuluForkDigest =
+        fuluSpec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), ONE);
+
+    genesisState = genesis.getState();
+    genesisBlock = genesis.getBlock().getMessage();
+    recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
+
+    assertThat(recentChainData.getForkDigest(ZERO)).isEqualTo(electraForkDigest);
+    assertThat(recentChainData.getForkDigest(ONE)).isEqualTo(fuluForkDigest);
+    assertThat(recentChainData.getNextForkDigest(ZERO)).contains(fuluForkDigest);
+    assertThat(recentChainData.getNextForkDigest(ONE)).isEmpty();
+  }
+
+  @Test
+  public void getForkAndForkDigestIsCorrectInFuluWithBpo() {
+    final Spec spec =
+        TestSpecFactory.createMinimalFulu(
+            b ->
+                b.electraBuilder(
+                        eb -> eb.electraForkEpoch(UInt64.valueOf(9)).maxBlobsPerBlockElectra(9))
+                    .fuluBuilder(
+                        fb ->
+                            fb.fuluForkEpoch(UInt64.valueOf(100))
+                                .blobSchedule(
+                                    List.of(
+                                        new BlobScheduleEntry(UInt64.valueOf(120), 100),
+                                        new BlobScheduleEntry(UInt64.valueOf(150), 175),
+                                        new BlobScheduleEntry(UInt64.valueOf(200), 200)))));
+
+    storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(spec)
+            .storageMode(StateStorageMode.PRUNE)
+            .storeConfig(StoreConfig.builder().build())
+            .build();
+    chainBuilder = storageSystem.chainBuilder();
+    recentChainData = storageSystem.recentChainData();
+    genesis = chainBuilder.generateGenesis();
+    final Bytes4 electraForkDigest =
+        spec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), UInt64.valueOf(9));
+
+    final Bytes4 fuluForkDigest =
+        spec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), UInt64.valueOf(100));
+    final Bytes4 fuluBpo1ForkDigest =
+        spec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), UInt64.valueOf(120));
+    assertThat(fuluBpo1ForkDigest).isNotEqualTo(fuluForkDigest);
+    final Bytes4 fuluBpo2ForkDigest =
+        spec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), UInt64.valueOf(150));
+    final Bytes4 fuluBpo3ForkDigest =
+        spec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), UInt64.valueOf(200));
+
+    genesisState = genesis.getState();
+    genesisBlock = genesis.getBlock().getMessage();
+    recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
+
+    assertThat(recentChainData.getForkDigest(UInt64.valueOf(9))).isEqualTo(electraForkDigest);
+    assertThat(recentChainData.getNextForkDigest(UInt64.valueOf(9))).contains(fuluForkDigest);
+
+    assertThat(recentChainData.getForkDigest(UInt64.valueOf(100))).isEqualTo(fuluForkDigest);
+    assertThat(recentChainData.getNextForkDigest(UInt64.valueOf(100))).contains(fuluBpo1ForkDigest);
+
+    assertThat(recentChainData.getForkDigest(UInt64.valueOf(120))).isEqualTo(fuluBpo1ForkDigest);
+    assertThat(recentChainData.getNextForkDigest(UInt64.valueOf(120))).contains(fuluBpo2ForkDigest);
+
+    assertThat(recentChainData.getForkDigest(UInt64.valueOf(150))).isEqualTo(fuluBpo2ForkDigest);
+    assertThat(recentChainData.getNextForkDigest(UInt64.valueOf(150))).contains(fuluBpo3ForkDigest);
+
+    assertThat(recentChainData.getForkDigest(UInt64.valueOf(200))).isEqualTo(fuluBpo3ForkDigest);
+    assertThat(recentChainData.getNextForkDigest(UInt64.valueOf(200))).isEmpty();
+  }
+
+  @Test
+  public void getForkAndForkDigestIsCorrectInFuluWithBpoSameEpoch() {
+    final Spec spec =
+        TestSpecFactory.createMinimalFulu(
+            b ->
+                b.fuluBuilder(
+                    fb ->
+                        fb.fuluForkEpoch(UInt64.valueOf(100))
+                            .blobSchedule(
+                                List.of(new BlobScheduleEntry(UInt64.valueOf(100), 100)))));
+
+    storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(spec)
+            .storageMode(StateStorageMode.PRUNE)
+            .storeConfig(StoreConfig.builder().build())
+            .build();
+    chainBuilder = storageSystem.chainBuilder();
+    recentChainData = storageSystem.recentChainData();
+    genesis = chainBuilder.generateGenesis();
+
+    final Bytes4 fuluBpo1ForkDigest =
+        spec.computeForkDigest(genesis.getState().getGenesisValidatorsRoot(), UInt64.valueOf(100));
+
+    genesisState = genesis.getState();
+    genesisBlock = genesis.getBlock().getMessage();
+    recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
+
+    assertThat(recentChainData.getForkDigest(UInt64.valueOf(100))).isEqualTo(fuluBpo1ForkDigest);
+    assertThat(recentChainData.getNextForkDigest(UInt64.valueOf(100))).isEmpty();
   }
 
   private void importBlocksAndStates(

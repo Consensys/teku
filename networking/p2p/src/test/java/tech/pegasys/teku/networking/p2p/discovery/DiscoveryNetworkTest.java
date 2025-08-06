@@ -88,7 +88,7 @@ class DiscoveryNetworkTest {
   private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   final ForkInfo currentForkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
   final Bytes4 currentForkDigest =
-      spec.computeForkDigest(currentForkInfo.getFork().getCurrentVersion(), genesisValidatorsRoot);
+      spec.computeForkDigest(genesisValidatorsRoot, currentForkInfo.getFork().getEpoch());
   final Fork nextFork = forks.get(1);
 
   @SuppressWarnings("unchecked")
