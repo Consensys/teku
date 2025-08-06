@@ -22,6 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.Connection;
+import io.libp2p.core.PeerId;
+import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.security.SecureChannel.Session;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 
 public class LibP2PPeerTest {
-
+  public static final String PEER_ID = "16Uiu2HAmFxCpRh2nZevFR3KGXJ3jhpixMYFSuawqKZyZYHrYoiK5";
   private final Connection connection = mock(Connection.class);
 
   @SuppressWarnings("unchecked")
@@ -66,6 +68,9 @@ public class LibP2PPeerTest {
     final Session secureSession = mock(Session.class);
     when(connection.secureSession()).thenReturn(secureSession);
     when(connection.closeFuture()).thenReturn(closeFuture);
+    when(connection.remoteAddress())
+        .thenReturn(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/"));
+    when(secureSession.getRemoteId()).thenReturn(PeerId.fromBase58(PEER_ID));
     libP2PPeer =
         new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, peer -> 0.0);
   }
