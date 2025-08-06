@@ -144,7 +144,7 @@ public class StubSyncSource implements SyncSource {
       columns = Optional.empty();
     }
 
-    private Request(final UInt64 start, final UInt64 count, List<UInt64> columns) {
+    private Request(final UInt64 start, final UInt64 count, final List<UInt64> columns) {
       this.start = start;
       this.count = count;
       this.columns = Optional.of(columns);
