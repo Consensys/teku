@@ -1190,10 +1190,9 @@ public class KvStoreDatabase implements Database {
   @Override
   public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
-            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive).limit(pruneLimit);
+            streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
         final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
-            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)
-                .limit(pruneLimit)) {
+            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
 
       if (pruneDataColumnSidecars(pruneLimit, prunableIdentifiers, false)) {
         LOG.debug("Pruned reached the limit of {} data column sidecars", pruneLimit);
