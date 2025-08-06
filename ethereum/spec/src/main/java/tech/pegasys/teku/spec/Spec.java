@@ -520,7 +520,11 @@ public class Spec {
         object, miscHelpers.computeDomain(Domain.APPLICATION_BUILDER));
   }
 
-  public Bytes4 computeForkDigest(
+  /**
+   * This method should NOT be used for milestones >= Fulu. Use {@link #computeForkDigest(Bytes32,
+   * UInt64)} instead.
+   */
+  private Bytes4 computeForkDigest(
       final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return atForkVersion(currentVersion)
         .miscHelpers()

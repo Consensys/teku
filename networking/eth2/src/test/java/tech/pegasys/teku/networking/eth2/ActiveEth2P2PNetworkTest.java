@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -66,7 +67,7 @@ public class ActiveEth2P2PNetworkTest {
       TestSpecFactory.createMinimalFulu(
           b ->
               b.altairForkEpoch(altairForkEpoch)
-                  .bellatrixForkEpoch(UInt64.valueOf(3))
+                  .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(3)))
                   .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
                   .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
                   .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
@@ -90,14 +91,14 @@ public class ActiveEth2P2PNetworkTest {
       new SubnetSubscriptionService();
   private final SubnetSubscriptionService dataColumnSidecarCommitteeSubnetService =
       new SubnetSubscriptionService();
-  private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private RecentChainData recentChainData;
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final GossipConfigurator gossipConfigurator = GossipConfigurator.NOOP;
   private final Subscribers<ProcessedAttestationListener> subscribers = Subscribers.create(false);
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider =
       subscribers::subscribe;
 
-  private final ActiveEth2P2PNetwork network = createNetwork();
+  private ActiveEth2P2PNetwork network;
   private SignedBlockAndState genesis;
   private Fork phase0Fork;
   private Bytes4 phase0ForkDigest;
@@ -113,8 +114,23 @@ public class ActiveEth2P2PNetworkTest {
 
   @BeforeEach
   public void setup() {
+    spec =
+        TestSpecFactory.createMinimalFulu(
+            b ->
+                b.altairForkEpoch(altairForkEpoch)
+                    .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(3)))
+                    .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
+                    .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
+                    .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
+                    .fuluBuilder(
+                        fb ->
+                            fb.fuluForkEpoch(fuluForkEpoch)
+                                .blobSchedule(List.of(new BlobScheduleEntry(bpoForkEpoch, 64)))));
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    recentChainData = storageSystem.recentChainData();
     when(discoveryNetwork.start()).thenReturn(SafeFuture.completedFuture(null));
     genesis = storageSystem.chainUpdater().initializeGenesis();
+    network = createNetwork();
   }
 
   @Test
@@ -202,6 +218,66 @@ public class ActiveEth2P2PNetworkTest {
 
     // Process fulu upgrade epoch again should not update fork info
     network.onEpoch(fuluForkEpoch);
+    verifyNoMoreInteractions(discoveryNetwork);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void onEpoch_shouldUpdateDiscoveryNetworkForkInfoForSameEpochBpo() {
+    spec =
+        TestSpecFactory.createMinimalFulu(
+            b ->
+                b.altairForkEpoch(altairForkEpoch)
+                    .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(3)))
+                    .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
+                    .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
+                    .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
+                    .fuluBuilder(
+                        fb ->
+                            fb.fuluForkEpoch(fuluForkEpoch)
+                                .blobSchedule(List.of(new BlobScheduleEntry(fuluForkEpoch, 64)))));
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    recentChainData = storageSystem.recentChainData();
+    when(discoveryNetwork.start()).thenReturn(SafeFuture.completedFuture(null));
+    genesis = storageSystem.chainUpdater().initializeGenesis();
+    network = createNetwork();
+    setupForkInfo();
+    assertThat(bpoForkDigest).isEqualTo(fuluForkDigest);
+    // Start network
+    verify(discoveryNetwork, never()).setForkInfo(any(), any(), any(), any(), any());
+    assertThat(network.start()).isCompleted();
+
+    // Verify updates at startup
+    verify(discoveryNetwork).start();
+    ForkInfo expectedFork = new ForkInfo(phase0Fork, genesisValidatorsRoot);
+    final BlobParameters fuluBpo1BlobParameters = new BlobParameters(fuluForkEpoch, 64);
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork,
+            phase0ForkDigest,
+            Optional.of(altairFork),
+            Optional.of(fuluBpo1BlobParameters),
+            Optional.of(altairForkDigest));
+
+    // Process epoch 1 - we shouldn't update fork info here
+    network.onEpoch(UInt64.ONE);
+    asyncRunner.executeDueActions();
+    // At the altair upgrade epoch, we should update fork info
+    network.onEpoch(altairForkEpoch);
+    // Processing altair again shouldn't cause any updates
+    network.onEpoch(altairForkEpoch);
+    // Reprocessing prior epoch should not update fork info
+    network.onEpoch(UInt64.ONE);
+    reset(discoveryNetwork);
+    // At the fulu upgrade epoch, we should update fork info
+    network.onEpoch(fuluForkEpoch);
+    expectedFork = new ForkInfo(fuluFork, genesisValidatorsRoot);
+    verify(discoveryNetwork)
+        .setForkInfo(
+            expectedFork, fuluForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
+
+    // Processing BPO fork shouldn't cause any updates since it's the same epoch as fulu fork
+    network.onEpoch(bpoForkEpoch);
     verifyNoMoreInteractions(discoveryNetwork);
   }
 
@@ -360,14 +436,11 @@ public class ActiveEth2P2PNetworkTest {
     // Set fork info
     genesisValidatorsRoot = genesis.getState().getGenesisValidatorsRoot();
     phase0Fork = spec.getForkSchedule().getFork(UInt64.ZERO);
-    phase0ForkDigest =
-        spec.computeForkDigest(phase0Fork.getCurrentVersion(), genesisValidatorsRoot);
+    phase0ForkDigest = spec.computeForkDigest(genesisValidatorsRoot, phase0Fork.getEpoch());
     altairFork = spec.getForkSchedule().getFork(altairForkEpoch);
-    altairForkDigest =
-        spec.computeForkDigest(altairFork.getCurrentVersion(), genesisValidatorsRoot);
+    altairForkDigest = spec.computeForkDigest(genesisValidatorsRoot, altairFork.getEpoch());
     bellatrixFork = spec.getForkSchedule().getFork(SpecMilestone.BELLATRIX);
-    bellatrixForkDigest =
-        spec.computeForkDigest(bellatrixFork.getCurrentVersion(), genesisValidatorsRoot);
+    bellatrixForkDigest = spec.computeForkDigest(genesisValidatorsRoot, bellatrixFork.getEpoch());
     fuluFork = spec.getForkSchedule().getFork(fuluForkEpoch);
     fuluForkDigest = spec.computeForkDigest(genesisValidatorsRoot, fuluForkEpoch);
     bpoFork = spec.getBpoFork(bpoForkEpoch).orElseThrow();

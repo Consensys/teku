@@ -32,9 +32,6 @@ public interface RateTracker {
         public long getAvailableObjectCount() {
           return 0;
         }
-
-        @Override
-        public void pruneRequests() {}
       };
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
@@ -44,8 +41,6 @@ public interface RateTracker {
   long getAvailableObjectCount();
 
   void adjustObjectsRequest(RequestApproval requestApproval, long returnedObjectsCount);
-
-  void pruneRequests();
 
   static RateTracker create(
       final int peerRateLimit,
