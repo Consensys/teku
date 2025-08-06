@@ -863,7 +863,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         (dataColumnSidecar, remoteOrigin) ->
             dataColumnSidecarRecoveringCustody
                 .onNewValidatedDataColumnSidecar(dataColumnSidecar)
-                .ifExceptionGetsHereRaiseABug());
+                .finishError(LOG));
 
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);

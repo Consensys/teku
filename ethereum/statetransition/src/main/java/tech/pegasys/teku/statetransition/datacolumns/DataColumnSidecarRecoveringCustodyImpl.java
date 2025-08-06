@@ -147,7 +147,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       });
             },
             slotToRecoveryDelay.apply(slot))
-        .ifExceptionGetsHereRaiseABug();
+        .finishWarn(LOG);
   }
 
   @Override
@@ -187,7 +187,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (readyToBeRecovered(task)) {
       task.recoveryStarted().set(true);
       if (task.existingColumnIds().size() != columnCount) {
-        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).ifExceptionGetsHereRaiseABug();
+        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).finishError(LOG);
       }
     }
   }
@@ -271,7 +271,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                             l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
                         delegate
                             .onNewValidatedDataColumnSidecar(dataColumnSidecar)
-                            .ifExceptionGetsHereRaiseABug();
+                            .finishError(LOG);
                         dataColumnSidecarPublisher.accept(dataColumnSidecar);
                       });
               LOG.debug(
@@ -279,9 +279,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   block.getSlotAndBlockRoot());
             })
         .alwaysRun(timer.closeUnchecked())
-        .finish(
-            error ->
-                LOG.error("Failed to recover columns, encountered error: {}", error.getMessage()));
+        .finishError(LOG);
   }
 
   @Override
