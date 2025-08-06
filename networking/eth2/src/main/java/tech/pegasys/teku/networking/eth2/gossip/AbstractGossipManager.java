@@ -88,7 +88,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   }
 
   protected void publishMessage(final T message) {
-    publishMessageWithFeedback(message).ifExceptionGetsHereRaiseABug();
+    publishMessageWithFeedback(message).finishStackTrace();
   }
 
   /**

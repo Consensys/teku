@@ -103,7 +103,7 @@ public class FailedExecutionPool {
         block ->
             asyncRunner
                 .runAfterDelay(() -> retryExecution(block), currentDelay)
-                .ifExceptionGetsHereRaiseABug());
+                .finishStackTrace());
   }
 
   private synchronized void retryExecution(final SignedBeaconBlock block) {

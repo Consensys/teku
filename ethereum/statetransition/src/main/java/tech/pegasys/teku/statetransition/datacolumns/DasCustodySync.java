@@ -80,7 +80,7 @@ public class DasCustodySync implements SlotEventsChannel {
                 fillUpIfNeeded();
               }
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private boolean wasCancelledImplicitly(final Throwable exception) {
@@ -148,7 +148,7 @@ public class DasCustodySync implements SlotEventsChannel {
               }
             })
         .whenComplete((__, ___) -> fillingUp = false)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private synchronized void addPendingRequest(final DataColumnSlotAndIdentifier missingColumn) {

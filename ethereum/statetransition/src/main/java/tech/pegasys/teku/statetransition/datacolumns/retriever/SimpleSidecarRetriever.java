@@ -109,7 +109,7 @@ public class SimpleSidecarRetriever
 
   @Override
   public void flush() {
-    asyncRunner.runAsync(this::nextRound).ifExceptionGetsHereRaiseABug();
+    asyncRunner.runAsync(this::nextRound).finishStackTrace();
   }
 
   @Override

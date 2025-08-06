@@ -113,7 +113,7 @@ public class Eth1DepositManager {
             (err) -> {
               throw new FatalServiceFailureException(getClass(), err);
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private SafeFuture<LoadDepositSnapshotResult> loadDepositSnapshot() {

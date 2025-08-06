@@ -153,7 +153,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
         () -> {
           eventThread.start();
           peerChainTracker.start();
-          syncStallDetector.start().ifExceptionGetsHereRaiseABug();
+          syncStallDetector.start().finishStackTrace();
         });
     return SafeFuture.COMPLETE;
   }
