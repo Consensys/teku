@@ -95,7 +95,7 @@ public class SafeFutureTest {
 
   @Test
   public void shouldLogMessageAtErrorLevel() {
-    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFutureTest.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
       future.finishError(LOG);
 
@@ -107,7 +107,7 @@ public class SafeFutureTest {
 
   @Test
   public void shouldLogMessageAtWarnLevel() {
-    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFutureTest.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
       future.finishWarn(LOG);
 
@@ -119,7 +119,7 @@ public class SafeFutureTest {
 
   @Test
   public void shouldLogMessageAtInfoLevel() {
-    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFutureTest.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
       future.finishInfo(LOG);
 
@@ -131,7 +131,7 @@ public class SafeFutureTest {
 
   @Test
   public void shouldLogMessageAtDebugLevel() {
-    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFuture.class)) {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFutureTest.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();
       future.finishDebug(LOG);
 
