@@ -25,7 +25,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RateTrackerImpl implements RateTracker {
 
-  private final ConcurrentNavigableMap<RequestsKey, Long> requests = new ConcurrentSkipListMap<>();
+  private final ConcurrentNavigableMap<RequestKey, Long> requests = new ConcurrentSkipListMap<>();
+
   private static final Logger LOG = LogManager.getLogger();
   private final int peerRateLimit;
   private final long timeoutSeconds;
@@ -53,18 +54,18 @@ public class RateTrackerImpl implements RateTracker {
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
   @Override
-  public synchronized Optional<RequestApproval> approveObjectsRequest(final long objectsCount) {
+  public synchronized Optional<ApprovedRequest> approveObjectsRequest(final long objectsCount) {
     pruneRequests();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     if (peerRateLimit - objectsWithinWindow <= 0) {
       return Optional.empty();
     }
     objectsWithinWindow += objectsCount;
-    final RequestApproval requestApproval =
-        new RequestApproval.RequestApprovalBuilder()
+    final ApprovedRequest requestApproval =
+        new ApprovedRequest.RequestApprovalBuilder()
             .requestId(newRequestId++)
             .timeSeconds(currentTime)
-            .objectsCount(objectsCount)
+            .requestSize(objectsCount)
             .build();
     requests.put(requestApproval.getRequestKey(), objectsCount);
     return Optional.of(requestApproval);
@@ -78,7 +79,7 @@ public class RateTrackerImpl implements RateTracker {
 
   @Override
   public synchronized void adjustObjectsRequest(
-      final RequestApproval requestApproval, final long returnedObjectsCount) {
+      final ApprovedRequest requestApproval, final long returnedObjectsCount) {
     pruneRequests();
     final Long initialObjectsCount = requests.get(requestApproval.getRequestKey());
     if (initialObjectsCount != null) {
@@ -96,8 +97,10 @@ public class RateTrackerImpl implements RateTracker {
           currentTime);
       return;
     }
-    final NavigableMap<RequestsKey, Long> headMap =
-        requests.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
+
+    final NavigableMap<RequestKey, Long> headMap =
+        requests.headMap(new RequestKey(currentTime.minus(timeoutSeconds), 0), false);
+
     final long prunedCount = headMap.values().stream().mapToLong(Long::longValue).sum();
     headMap.clear();
     objectsWithinWindow = Math.max(objectsWithinWindow - prunedCount, 0L);

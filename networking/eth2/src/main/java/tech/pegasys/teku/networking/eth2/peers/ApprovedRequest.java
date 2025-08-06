@@ -16,22 +16,26 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class RequestApproval {
+public class ApprovedRequest {
 
-  private final RequestsKey requestKey;
-  private final long objectsCount;
+  private final RequestKey requestKey;
+  private long requestSize;
 
-  private RequestApproval(final RequestsKey requestKey, final long objectsCount) {
+  private ApprovedRequest(final RequestKey requestKey, final long requestSize) {
     this.requestKey = requestKey;
-    this.objectsCount = objectsCount;
+    this.requestSize = requestSize;
   }
 
-  public RequestsKey getRequestKey() {
+  public RequestKey getRequestKey() {
     return requestKey;
   }
 
-  public long getObjectsCount() {
-    return objectsCount;
+  void setRequestSize(final long requestSize) {
+    this.requestSize = requestSize;
+  }
+
+  public long getRequestSize() {
+    return requestSize;
   }
 
   @Override
@@ -42,19 +46,19 @@ public class RequestApproval {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final RequestApproval that = (RequestApproval) o;
-    return objectsCount == that.objectsCount && Objects.equals(requestKey, that.requestKey);
+    final ApprovedRequest that = (ApprovedRequest) o;
+    return requestSize == that.requestSize && Objects.equals(requestKey, that.requestKey);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(requestKey, objectsCount);
+    return Objects.hash(requestKey, requestSize);
   }
 
   public static final class RequestApprovalBuilder {
     private int requestId;
     private UInt64 timeSeconds;
-    private long objectsCount;
+    private long requestSize;
 
     public RequestApprovalBuilder requestId(final int requestId) {
       this.requestId = requestId;
@@ -66,14 +70,14 @@ public class RequestApproval {
       return this;
     }
 
-    public RequestApprovalBuilder objectsCount(final long objectsCount) {
-      this.objectsCount = objectsCount;
+    public RequestApprovalBuilder requestSize(final long requestSize) {
+      this.requestSize = requestSize;
       return this;
     }
 
-    public RequestApproval build() {
-      return new RequestApproval(
-          new RequestsKey(this.timeSeconds, this.requestId), this.objectsCount);
+    public ApprovedRequest build() {
+      return new ApprovedRequest(
+          new RequestKey(this.timeSeconds, this.requestId), this.requestSize);
     }
   }
 }
