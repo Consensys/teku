@@ -34,8 +34,8 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -128,7 +128,7 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     final int requestedCount = calculateRequestedCount(message);
 
-    final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
+    final Optional<ApprovedRequest> dataColumnSidecarsRequestApproval =
         peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
 
     if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
