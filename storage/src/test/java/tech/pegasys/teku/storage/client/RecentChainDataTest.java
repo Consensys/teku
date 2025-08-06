@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,6 +67,7 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class RecentChainDataTest {
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConfig genesisSpecConfig = spec.getGenesisSpecConfig();
@@ -347,7 +350,7 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(newCheckpoint, false);
 
-    tx.commit().ifExceptionGetsHereRaiseABug();
+    tx.commit().finishDebug(LOG);
 
     // Check that store was updated
     final Checkpoint currentCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
@@ -361,7 +364,7 @@ class RecentChainDataTest {
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setTimeMillis(UInt64.valueOf(11000L));
-    tx.commit().ifExceptionGetsHereRaiseABug();
+    tx.commit().finishDebug(LOG);
 
     final Checkpoint currentCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
@@ -613,7 +616,7 @@ class RecentChainDataTest {
     assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot())
         .isEqualTo(genesis.getSlot());
     // Commit tx
-    tx.commit().ifExceptionGetsHereRaiseABug();
+    tx.commit().finishDebug(LOG);
 
     assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot())
         .isEqualTo(finalizedBlockSlot);
@@ -1036,7 +1039,7 @@ class RecentChainDataTest {
         blockAndState ->
             tx.putBlockAndState(
                 blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
-    tx.commit().ifExceptionGetsHereRaiseABug();
+    tx.commit().finishDebug(LOG);
 
     // Check that only recent, canonical blocks at or after the latest finalized block are left in
     // the store
@@ -1239,7 +1242,7 @@ class RecentChainDataTest {
   private void saveBlock(final RecentChainData recentChainData, final SignedBlockAndState block) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block, spec.calculateBlockCheckpoints(block.getState()));
-    tx.commit().ifExceptionGetsHereRaiseABug();
+    tx.commit().finishDebug(LOG);
   }
 
   private void disableForkChoicePruneThreshold() {

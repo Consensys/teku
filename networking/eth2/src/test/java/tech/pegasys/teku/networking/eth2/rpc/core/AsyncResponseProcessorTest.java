@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -28,7 +30,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.AdditionalDataRec
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 
 public class AsyncResponseProcessorTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final List<String> responses = new ArrayList<>();
   private final List<Throwable> errors = new ArrayList<>();
   private final Consumer<String> defaultProcessor = responses::add;
@@ -139,7 +141,7 @@ public class AsyncResponseProcessorTest {
 
   @Test
   public void shouldThrowIfResponsesSubmittedAfterFinishedProcessing() {
-    asyncResponseProcessor.finishProcessing().ifExceptionGetsHereRaiseABug();
+    asyncResponseProcessor.finishProcessing().finishDebug(LOG);
     assertThatThrownBy(() -> asyncResponseProcessor.processResponse("a"))
         .isInstanceOf(AdditionalDataReceivedException.class);
   }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -30,11 +31,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
-
   public static final SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
+  private static final String UNKNOWN_ERROR = "UNKNOWN ERROR";
 
   public static void ifExceptionGetsHereRaiseABug(final CompletionStage<?> future) {
     future.exceptionally(
@@ -313,6 +315,59 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void ifExceptionGetsHereRaiseABug() {
     ifExceptionGetsHereRaiseABug(this);
+  }
+
+  private String getMessageFromException(final Throwable error) {
+    // always within an exception context, should always have an error
+    if (error == null) {
+      return UNKNOWN_ERROR;
+    }
+    return Throwables.getRootCause(error).getMessage();
+  }
+
+  public void finishError(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.error(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  public void finishWarn(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.warn(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  public void finishInfo(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.info(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  public void finishDebug(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.debug(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  public void finishTrace(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.trace(getMessageFromException(error));
+          return null;
+        });
   }
 
   public SafeFuture<Void> ignoreCancelException() {
