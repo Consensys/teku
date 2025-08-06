@@ -19,7 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class DasDb extends AbstractDelegatingDasDb implements DataColumnSidecarDbAccessor {
+class DasDb extends AbstractDelegatingDasDb  {
 
   private final DataColumnSidecarDB delegate;
 
