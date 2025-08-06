@@ -17,16 +17,12 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
     implements SpecConfigBellatrix {
 
-  // Fork
-  private final Bytes4 bellatrixForkVersion;
-  private final UInt64 bellatrixForkEpoch;
   private final UInt64 inactivityPenaltyQuotientBellatrix;
   private final int minSlashingPenaltyQuotientBellatrix;
   private final int proportionalSlashingMultiplierBellatrix;
@@ -45,8 +41,6 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
 
   public SpecConfigBellatrixImpl(
       final SpecConfigAltair specConfig,
-      final Bytes4 bellatrixForkVersion,
-      final UInt64 bellatrixForkEpoch,
       final UInt64 inactivityPenaltyQuotientBellatrix,
       final int minSlashingPenaltyQuotientBellatrix,
       final int proportionalSlashingMultiplierBellatrix,
@@ -59,8 +53,6 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
       final UInt64 terminalBlockHashActivationEpoch,
       final int safeSlotsToImportOptimistically) {
     super(specConfig);
-    this.bellatrixForkVersion = bellatrixForkVersion;
-    this.bellatrixForkEpoch = bellatrixForkEpoch;
     this.inactivityPenaltyQuotientBellatrix = inactivityPenaltyQuotientBellatrix;
     this.minSlashingPenaltyQuotientBellatrix = minSlashingPenaltyQuotientBellatrix;
     this.proportionalSlashingMultiplierBellatrix = proportionalSlashingMultiplierBellatrix;
@@ -82,16 +74,6 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
                 new IllegalArgumentException(
                     "Expected bellatrix spec config but got: "
                         + specConfig.getClass().getSimpleName()));
-  }
-
-  @Override
-  public Bytes4 getBellatrixForkVersion() {
-    return bellatrixForkVersion;
-  }
-
-  @Override
-  public UInt64 getBellatrixForkEpoch() {
-    return bellatrixForkEpoch;
   }
 
   @Override
@@ -175,8 +157,8 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
         && maxTransactionsPerPayload == that.maxTransactionsPerPayload
         && bytesPerLogsBloom == that.bytesPerLogsBloom
         && maxExtraDataBytes == that.maxExtraDataBytes
-        && Objects.equals(bellatrixForkVersion, that.bellatrixForkVersion)
-        && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
+        //        && Objects.equals(getBellatrixForkVersion(), that.getBellatrixForkVersion())
+        //        && Objects.equals(getBellatrixForkEpoch(), that.getBellatrixForkEpoch())
         && Objects.equals(
             inactivityPenaltyQuotientBellatrix, that.inactivityPenaltyQuotientBellatrix)
         && Objects.equals(terminalTotalDifficulty, that.terminalTotalDifficulty)
@@ -188,8 +170,8 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        bellatrixForkVersion,
-        bellatrixForkEpoch,
+        //            getBellatrixForkVersion(),
+        //            getBellatrixForkEpoch(),
         inactivityPenaltyQuotientBellatrix,
         minSlashingPenaltyQuotientBellatrix,
         proportionalSlashingMultiplierBellatrix,

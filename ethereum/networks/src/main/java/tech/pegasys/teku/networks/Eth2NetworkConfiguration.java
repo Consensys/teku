@@ -521,11 +521,11 @@ public class Eth2NetworkConfiguration {
                     EphemeryNetwork.updateConfig(builder);
                   }
                   altairForkEpoch.ifPresent(builder::altairForkEpoch);
+                  bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
                             safeSlotsToImportOptimistically);
-                        bellatrixForkEpoch.ifPresent(bellatrixBuilder::bellatrixForkEpoch);
                         totalTerminalDifficultyOverride.ifPresent(
                             bellatrixBuilder::terminalTotalDifficulty);
                         terminalBlockHashEpochOverride.ifPresent(
