@@ -19,6 +19,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -30,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class LinkedObjectsDeliveryTest {
+  private static final Logger LOG = LogManager.getLogger();
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalFulu());
   private final ExecutorService executorService = Executors.newFixedThreadPool(4);
@@ -51,14 +54,14 @@ public class LinkedObjectsDeliveryTest {
   class Retriever {
     public synchronized SafeFuture<DataColumnSidecar> retrieve() {
       final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
-      asyncRunner.runAsync(() -> reqRespCompleted(result)).ifExceptionGetsHereRaiseABug();
+      asyncRunner.runAsync(() -> reqRespCompleted(result)).finishDebug(LOG);
       return result;
     }
 
     private synchronized void reqRespCompleted(final SafeFuture<DataColumnSidecar> result) {
       asyncRunner
           .runAsync(() -> result.complete(dataStructureUtil.randomDataColumnSidecar()))
-          .ifExceptionGetsHereRaiseABug();
+          .finishDebug(LOG);
       // Same without asyncrunner will cause deadlock
       // result.complete(dataStructureUtil.randomDataColumnSidecar());
     }

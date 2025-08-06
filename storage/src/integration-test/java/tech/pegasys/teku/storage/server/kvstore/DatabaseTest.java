@@ -46,6 +46,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
@@ -104,7 +106,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 @TestDatabaseContext
 @Execution(ExecutionMode.CONCURRENT)
 public class DatabaseTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
   protected Spec spec;
@@ -1764,7 +1766,7 @@ public class DatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock, spec.calculateBlockCheckpoints(newBlock.getState()));
     transaction.setFinalizedCheckpoint(newCheckpoint, false);
-    transaction.commit().ifExceptionGetsHereRaiseABug();
+    transaction.commit().finishError(LOG);
     // Close db
     database.close();
 
