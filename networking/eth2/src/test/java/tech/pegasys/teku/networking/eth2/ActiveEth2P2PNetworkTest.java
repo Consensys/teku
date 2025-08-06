@@ -265,7 +265,7 @@ public class ActiveEth2P2PNetworkTest {
         .setForkInfo(
             expectedFork, fuluForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
 
-    // At the BPO fork upgrade epoch, we should update fork info
+    // Processing BPO fork shouldn't cause any updates since it's the same epoch as fulu fork
     network.onEpoch(bpoForkEpoch);
     verifyNoMoreInteractions(discoveryNetwork);
   }

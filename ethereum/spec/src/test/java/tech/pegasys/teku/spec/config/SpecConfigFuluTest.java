@@ -115,7 +115,7 @@ public class SpecConfigFuluTest {
   }
 
   @Test
-  public void blobParameterSinglesEntryFuluEpoch() {
+  public void blobParameterSameEpochAsFuluForkEpoch() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
     final int maxBlobsPerBlock = 512;
     final SpecConfigAndParent<?> specConfigAndParent =
