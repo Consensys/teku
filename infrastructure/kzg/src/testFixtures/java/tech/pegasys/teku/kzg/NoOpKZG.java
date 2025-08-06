@@ -14,6 +14,7 @@
 package tech.pegasys.teku.kzg;
 
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 
@@ -42,18 +43,20 @@ public class NoOpKZG implements KZG {
 
   @Override
   public List<KZGCellAndProof> recoverCellsAndProofs(final List<KZGCellWithColumnId> cells) {
-    return List.of();
+    return cells.stream().map(cell -> new KZGCellAndProof(cell.cell(), KZGProof.ZERO)).toList();
   }
 
   @Override
   @Deprecated(since = "Use computeCells instead, computeCellsAndProof is not for production")
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
-    return List.of();
+    return IntStream.range(0, KZG.CELLS_PER_EXT_BLOB)
+        .mapToObj(__ -> new KZGCellAndProof(KZGCell.ZERO, KZGProof.ZERO))
+        .toList();
   }
 
   @Override
   public List<KZGCell> computeCells(final Bytes blob) {
-    return List.of();
+    return IntStream.range(0, KZG.CELLS_PER_EXT_BLOB).mapToObj(__ -> KZGCell.ZERO).toList();
   }
 
   @Override
