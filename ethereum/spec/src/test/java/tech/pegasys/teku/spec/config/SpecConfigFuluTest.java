@@ -161,9 +161,7 @@ public class SpecConfigFuluTest {
                                             new BlobScheduleEntry(fuluEpoch.increment(), 9),
                                             // duplicate
                                             new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))))))
-        .hasMessage(
-            "Blob schedule must not contain duplicate epochs, entries BlobScheduleEntry[epoch=11223344, maxBlobsPerBlock=6] "
-                + "and BlobScheduleEntry[epoch=11223344, maxBlobsPerBlock=512] does not meet this criteria.")
+        .hasMessage("There are duplicate entries for epoch 11223344 in blob schedule.")
         .isInstanceOf(IllegalArgumentException.class);
   }
 

@@ -19,9 +19,10 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -112,31 +113,20 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     checkNotNull(blobSchedule);
     verifyBlobSchedule(blobSchedule);
     this.blobSchedule.clear();
-    // copy list rather than use the one passed in case we need to add to the list during validation
-    this.blobSchedule.addAll(blobSchedule);
+    blobSchedule.stream()
+        .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
+        .forEach(this.blobSchedule::add);
     return this;
   }
 
-  public void verifyBlobSchedule(final List<BlobScheduleEntry> blobSchedule) {
-    if (blobSchedule.isEmpty()) {
-      return;
-    }
-    final Iterator<BlobScheduleEntry> sortedBlobSchedule =
-        blobSchedule.stream()
-            .sorted(
-                Comparator.comparing(BlobScheduleEntry::epoch)
-                    .thenComparing(BlobScheduleEntry::maxBlobsPerBlock))
-            .iterator();
-    BlobScheduleEntry previousEntry = sortedBlobSchedule.next();
-    while (sortedBlobSchedule.hasNext()) {
-      final BlobScheduleEntry currentEntry = sortedBlobSchedule.next();
-      if (currentEntry.epoch().equals(previousEntry.epoch())) {
+  private void verifyBlobSchedule(final List<BlobScheduleEntry> blobSchedule) {
+    final Set<UInt64> seenEpochs = new HashSet<>();
+    for (final BlobScheduleEntry entry : blobSchedule) {
+      if (!seenEpochs.add(entry.epoch())) {
         throw new IllegalArgumentException(
             String.format(
-                "Blob schedule must not contain duplicate epochs, entries %s and %s does not meet this criteria.",
-                previousEntry, currentEntry));
+                "There are duplicate entries for epoch %s in blob schedule.", entry.epoch()));
       }
-      previousEntry = currentEntry;
     }
   }
 
