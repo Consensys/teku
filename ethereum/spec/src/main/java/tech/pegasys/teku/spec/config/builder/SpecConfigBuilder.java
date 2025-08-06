@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -168,24 +167,7 @@ public class SpecConfigBuilder {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
       }
     }
-    if (altairForkEpoch == null) {
-      altairForkEpoch = FAR_FUTURE_EPOCH;
-      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-    rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
-    if (altairForkVersion == null) {
-      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
-    }
-    if (bellatrixForkEpoch == null) {
-      bellatrixForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
-      bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-    rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
-    if (bellatrixForkVersion == null) {
-      bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-      rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
-    }
+    applyForkVersions();
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
@@ -337,6 +319,23 @@ public class SpecConfigBuilder {
     constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
     constants.put("bellatrixForkVersion", bellatrixForkVersion);
     return constants;
+  }
+
+  private void applyForkVersions() {
+    // update raw config if epochs and fork versions are known
+    // if they're not known, they'll result in a validation error (expected)
+    if (altairForkEpoch != null) {
+      rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    }
+    if (altairForkVersion != null) {
+      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
+    }
+    if (bellatrixForkEpoch != null) {
+      rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
+    }
+    if (bellatrixForkVersion != null) {
+      rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    }
   }
 
   private void validate() {

@@ -157,8 +157,6 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
         && maxTransactionsPerPayload == that.maxTransactionsPerPayload
         && bytesPerLogsBloom == that.bytesPerLogsBloom
         && maxExtraDataBytes == that.maxExtraDataBytes
-        //        && Objects.equals(getBellatrixForkVersion(), that.getBellatrixForkVersion())
-        //        && Objects.equals(getBellatrixForkEpoch(), that.getBellatrixForkEpoch())
         && Objects.equals(
             inactivityPenaltyQuotientBellatrix, that.inactivityPenaltyQuotientBellatrix)
         && Objects.equals(terminalTotalDifficulty, that.terminalTotalDifficulty)
@@ -170,8 +168,6 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        //            getBellatrixForkVersion(),
-        //            getBellatrixForkEpoch(),
         inactivityPenaltyQuotientBellatrix,
         minSlashingPenaltyQuotientBellatrix,
         proportionalSlashingMultiplierBellatrix,
