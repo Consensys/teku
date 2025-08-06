@@ -32,7 +32,6 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
-import tech.pegasys.teku.networking.eth2.peers.NewRateTrackerImpl;
 import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.peers.RateTrackerImpl;
 
@@ -48,18 +47,11 @@ public class RateTrackerBenchmark {
     public final Random random = new Random();
 
     @Param({"true", "false"})
-    public boolean useNewRateTracker;
-
-    @Param({"true", "false"})
     public boolean isEmpty;
 
     @Setup(Level.Invocation)
     public void setup() {
-      config =
-          useNewRateTracker
-              ? new NewRateTrackerImpl(
-                  DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT, 60, timeProvider, "new")
-              : new RateTrackerImpl(DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT, 60, timeProvider, "org");
+      config = new RateTrackerImpl(DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT, 60, timeProvider, "org");
 
       if (!isEmpty) {
         Optional<ApprovedRequest> request = config.approveObjectsRequest(random.nextLong(30));
