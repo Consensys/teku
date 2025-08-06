@@ -56,9 +56,7 @@ public class GenesisGenerator {
   public GenesisGenerator withAltairEpoch(final UInt64 altairForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.altairBuilder(
-                    altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.altairForkEpoch(altairForkEpoch));
     return this;
   }
 

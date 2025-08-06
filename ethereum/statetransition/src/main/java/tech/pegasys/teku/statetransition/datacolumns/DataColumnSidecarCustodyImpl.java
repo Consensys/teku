@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -150,25 +151,45 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public void onSlot(final UInt64 slot) {
     currentSlot = slot;
-    if (updateEpoch(spec.computeEpochAtSlot(slot))) {
-      int groupCount = custodyGroupCountManager.getCustodyGroupCount();
-      final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
-      // TODO-fulu: ignoring the case when it's less, let's skip pruning in early version, to
-      // implement in future invalidating current custody as number of required groups have
-      // increased (https://github.com/Consensys/teku/issues/9468)
-      if (groupCount > oldGroupCount) {
-        LOG.debug("Custody group count changed from {} to {}", oldGroupCount, groupCount);
-        final UInt64 minCustodyPeriodSlot =
-            minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
-        db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
-      }
+    if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
+      return;
+    }
+    final int newCustodyGroupCount = custodyGroupCountManager.getCustodyGroupCount();
+    final int oldCustodyGroupCount = totalCustodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (newCustodyGroupCount == oldCustodyGroupCount) {
+      return;
+    }
+    LOG.debug(
+        "Custody group count changed from {} to {}", oldCustodyGroupCount, newCustodyGroupCount);
+    if (newCustodyGroupCount > oldCustodyGroupCount) {
+      final UInt64 minCustodyPeriodSlot =
+          minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
+      db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
+          .finish(
+              error ->
+                  LOG.error(
+                      "Unexpected error while updating first custody incomplete slot with a new value: {}.",
+                      minCustodyPeriodSlot,
+                      error));
     }
   }
 
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    advanceFirstIncompleteSlot(checkpoint.getEpoch()).ifExceptionGetsHereRaiseABug();
+    advanceFirstIncompleteSlot(checkpoint.getEpoch())
+        .finish(
+            error ->
+                LOG.error(
+                    "Unexpected error while advancing first custody incomplete slot for checkpoint {}{}",
+                    checkpoint,
+                    fromOptimisticBlock ? " (from optimistic block)" : "",
+                    error));
+  }
+
+  @VisibleForTesting
+  public int getTotalCustodyGroupCount() {
+    return totalCustodyGroupCount.get();
   }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
@@ -189,10 +210,6 @@ public class DataColumnSidecarCustodyImpl
                 maybeFirstIncompleteOrLastComplete
                     .map(
                         firstIncompleteOrLastComplete -> {
-                          // TODO-fulu: if we don't have finalization, we will not advance it and
-                          // it's an issue
-                          //  non-finalized epochs could be still not synced with up-to-date custody
-                          // (https://github.com/Consensys/teku/issues/9469)
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.debug(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());

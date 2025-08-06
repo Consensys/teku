@@ -109,9 +109,9 @@ class SyncCommitteeAggregationDutyTest {
     return SpecConfigLoader.loadConfig(
         "minimal",
         modifier ->
-            modifier.altairBuilder(
-                altairModifier ->
-                    altairModifier.altairForkEpoch(UInt64.ZERO).syncCommitteeSize(512)));
+            modifier
+                .altairForkEpoch(UInt64.ZERO)
+                .altairBuilder(altairModifier -> altairModifier.syncCommitteeSize(512)));
   }
 
   @Test
