@@ -601,18 +601,6 @@ public class ChainBuilder {
     checkState(!blocks.isEmpty(), "Genesis block must be created before blocks can be added.");
   }
 
-  private boolean denebMilestoneReached(final UInt64 slot) {
-    return spec.getForkSchedule()
-        .getSpecMilestoneAtSlot(slot)
-        .isGreaterThanOrEqualTo(SpecMilestone.DENEB);
-  }
-
-  private boolean fuluMilestoneReached(final UInt64 slot) {
-    return spec.getForkSchedule()
-        .getSpecMilestoneAtSlot(slot)
-        .isGreaterThanOrEqualTo(SpecMilestone.FULU);
-  }
-
   private void trackBlock(final SignedBlockAndState block) {
     blocks.put(block.getSlot(), block);
     blocksByHash.put(block.getRoot(), block);
@@ -649,18 +637,20 @@ public class ChainBuilder {
     final SignedBlockAndState nextBlockAndState;
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, slot);
     try {
-      SszList<Attestation> attestations =
+      final SszList<Attestation> attestations =
           blockBodyLists.createAttestations(options.getAttestations().toArray(new Attestation[0]));
-      SszList<AttesterSlashing> attesterSlashings =
+      final SszList<AttesterSlashing> attesterSlashings =
           blockBodyLists.createAttesterSlashings(
               options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
-      SszList<ProposerSlashing> proposerSlashings =
+      final SszList<ProposerSlashing> proposerSlashings =
           blockBodyLists.createProposerSlashings(
               options.getProposerSlashings().toArray(new ProposerSlashing[0]));
 
-      if (denebMilestoneReached(slot)) {
+      final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
+
+      if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
         nextBlockAndState =
-            generateBlockWithBlobSidecars(
+            generateBlockWithDataColumnSidecars(
                 slot,
                 options,
                 preState,
@@ -669,9 +659,9 @@ public class ChainBuilder {
                 attestations,
                 attesterSlashings,
                 proposerSlashings);
-      } else if (fuluMilestoneReached(slot)) {
+      } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
         nextBlockAndState =
-            generateBlockWithDataColumnSidecars(
+            generateBlockWithBlobSidecars(
                 slot,
                 options,
                 preState,
