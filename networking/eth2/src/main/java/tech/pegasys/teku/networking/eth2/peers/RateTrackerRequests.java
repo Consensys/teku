@@ -15,19 +15,13 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class RateTrackerRequests {
   private final List<ApprovedRequest> requests = Collections.synchronizedList(new ArrayList<>());
-//  private final Queue<ApprovedRequest> requests = new ConcurrentLinkedQueue<>();
   private final TimeProvider timeProvider;
   private final long timeoutSeconds;
   private final AtomicReference<UInt64> lastPrune = new AtomicReference<>(UInt64.ZERO);
@@ -43,7 +37,8 @@ class RateTrackerRequests {
     if (force || lastPrune.get().isLessThan(oldestTime)) {
       lastPrune.set(oldestTime);
       requests.removeIf(r -> r.getRequestKey().timeSeconds().isLessThan(oldestTime));
-      requestCounter = requests.stream().map(ApprovedRequest::getRequestSize).reduce(Long::sum).orElse(0L);
+      requestCounter =
+          requests.stream().map(ApprovedRequest::getRequestSize).reduce(Long::sum).orElse(0L);
     }
   }
 
@@ -65,13 +60,15 @@ class RateTrackerRequests {
     return requestCounter;
   }
 
-  synchronized void adjustRequestRemainingObjects(final RequestKey requestKey, final long updatedRequestSize) {
+  synchronized void adjustRequestRemainingObjects(
+      final RequestKey requestKey, final long updatedRequestSize) {
     requests.stream()
         .filter(r -> r.getRequestKey().equals(requestKey))
-        .forEach(r -> {
-          final long delta = r.getRequestSize() - updatedRequestSize;
-          r.setRequestSize(updatedRequestSize);
-          requestCounter -= delta;
-        });
+        .forEach(
+            r -> {
+              final long delta = r.getRequestSize() - updatedRequestSize;
+              r.setRequestSize(updatedRequestSize);
+              requestCounter -= delta;
+            });
   }
 }

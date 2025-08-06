@@ -92,6 +92,5 @@ public class RateTrackerTest {
 
   private RateTracker createTracker(final int peerRateLimit, final int timeoutSeconds) {
     return RateTracker.create(peerRateLimit, timeoutSeconds, timeProvider, "");
-//    return new NewRateTrackerImpl(peerRateLimit, timeoutSeconds, timeProvider, "");
   }
 }
