@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -111,6 +112,57 @@ public class SpecConfigFuluTest {
                 .orElseThrow()
                 .getBlobParameters(fuluEpoch))
         .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
+  }
+
+  @Test
+  public void blobParameterSameEpochAsFuluForkEpoch() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    final SpecConfigAndParent<?> specConfigAndParent =
+        SpecConfigLoader.loadConfig(
+            "mainnet",
+            b ->
+                b.fuluBuilder(
+                    fb ->
+                        fb.fuluForkEpoch(fuluEpoch)
+                            .blobSchedule(
+                                List.of(new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock)))));
+    final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
+
+    // max blobs per block in fulu will start out at the same as electra
+    assertThat(
+            fuluSpec
+                .forMilestone(SpecMilestone.FULU)
+                .miscHelpers()
+                .toVersionFulu()
+                .orElseThrow()
+                .getBlobParameters(fuluEpoch))
+        .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
+  }
+
+  @Test
+  public void blobParametersShouldNotContainDuplicates() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    assertThatThrownBy(
+            () ->
+                SpecConfigLoader.loadConfig(
+                    "mainnet",
+                    b ->
+                        b.fuluBuilder(
+                            fb ->
+                                fb.fuluForkEpoch(fuluEpoch)
+                                    .blobSchedule(
+                                        List.of(
+                                            new BlobScheduleEntry(fuluEpoch, 6),
+                                            new BlobScheduleEntry(
+                                                fuluEpoch.increment().increment(), 12),
+                                            // not ordered but it's ok
+                                            new BlobScheduleEntry(fuluEpoch.increment(), 9),
+                                            // duplicate
+                                            new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))))))
+        .hasMessage("There are duplicate entries for epoch 11223344 in blob schedule.")
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

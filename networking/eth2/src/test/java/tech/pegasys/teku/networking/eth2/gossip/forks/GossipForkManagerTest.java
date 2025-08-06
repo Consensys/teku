@@ -583,6 +583,26 @@ class GossipForkManagerTest {
     verify(subscriptions).startGossip(GENESIS_VALIDATORS_ROOT, false);
   }
 
+  @Test
+  void shouldOverrideForkWithBpo() {
+    final Spec spec = TestSpecFactory.createMinimalWithFuluForkEpoch(UInt64.valueOf(1));
+    final GossipForkSubscriptions electraFork = forkAtEpoch(0);
+    final GossipForkSubscriptions fuluFork = forkAtEpoch(1);
+    final GossipForkManager.Builder builder =
+        GossipForkManager.builder().recentChainData(recentChainData).spec(spec);
+    Stream.of(electraFork, fuluFork).forEach(builder::fork);
+    assertThatThrownBy(() -> builder.fork(fuluFork))
+        .hasMessageContaining("Can not schedule two forks to activate at the same epoch")
+        .isInstanceOf(IllegalStateException.class);
+    final GossipForkSubscriptions fuluBpo1Fork = forkAtEpoch(1);
+    final GossipForkSubscriptions fuluBpo2Fork = forkAtEpoch(2);
+    Stream.of(fuluBpo1Fork, fuluBpo2Fork).forEach(builder::bpoFork);
+
+    final GossipForkManager manager = builder.build();
+    manager.configureGossipForEpoch(UInt64.valueOf(1));
+    manager.configureGossipForEpoch(UInt64.valueOf(2));
+  }
+
   private GossipForkSubscriptions forkAtEpoch(final long epoch) {
     final GossipForkSubscriptions subscriptions =
         mock(GossipForkSubscriptions.class, "subscriptionsForEpoch" + epoch);

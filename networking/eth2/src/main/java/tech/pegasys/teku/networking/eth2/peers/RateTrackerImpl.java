@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class RateTrackerImpl implements RateTracker {
 
   private final ConcurrentNavigableMap<RequestKey, Long> requests = new ConcurrentSkipListMap<>();
+
   private static final Logger LOG = LogManager.getLogger();
   private final int peerRateLimit;
   private final long timeoutSeconds;
@@ -96,8 +97,10 @@ public class RateTrackerImpl implements RateTracker {
           currentTime);
       return;
     }
+
     final NavigableMap<RequestKey, Long> headMap =
         requests.headMap(new RequestKey(currentTime.minus(timeoutSeconds), 0), false);
+
     final long prunedCount = headMap.values().stream().mapToLong(Long::longValue).sum();
     headMap.clear();
     objectsWithinWindow = Math.max(objectsWithinWindow - prunedCount, 0L);
