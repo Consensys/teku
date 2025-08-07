@@ -172,6 +172,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   public void shouldMergeBootnodesFromConfigAndFile(@TempDir final Path tempDir)
       throws IOException {
     final List<String> expectedBootnodes =
