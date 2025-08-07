@@ -201,7 +201,7 @@ public class EventSubscriber {
   */
   public void sendReadyComment() {
     if (!stopped.get()) {
-      asyncRunner.runAsync(() -> sseClient.sendComment("ready")).ifExceptionGetsHereRaiseABug();
+      asyncRunner.runAsync(() -> sseClient.sendComment("ready")).finishStackTrace();
     }
   }
 }

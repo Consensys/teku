@@ -257,6 +257,6 @@ public class SyncingNodeManager {
   }
 
   public void gossipBlock(final SignedBeaconBlock block) {
-    blockGossipChannel.publishBlock(block).ifExceptionGetsHereRaiseABug();
+    blockGossipChannel.publishBlock(block).finishStackTrace();
   }
 }

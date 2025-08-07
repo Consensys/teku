@@ -54,16 +54,14 @@ class RpcResponseCallback<TResponse extends SszData> implements ResponseCallback
 
   @Override
   public void completeSuccessfully() {
-    rpcStream.closeWriteStream().ifExceptionGetsHereRaiseABug();
+    rpcStream.closeWriteStream().finishStackTrace();
   }
 
   @Override
   public void completeWithErrorResponse(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessageString());
     try {
-      rpcStream
-          .writeBytes(responseEncoder.encodeErrorResponse(error))
-          .ifExceptionGetsHereRaiseABug();
+      rpcStream.writeBytes(responseEncoder.encodeErrorResponse(error)).finishStackTrace();
     } catch (StreamClosedException e) {
       LOG.debug(
           "Unable to send error message ({}) to peer, rpc stream already closed: {}",

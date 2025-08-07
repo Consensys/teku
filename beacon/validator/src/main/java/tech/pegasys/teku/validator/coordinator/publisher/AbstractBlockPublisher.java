@@ -211,7 +211,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       publishBlock(block, blockPublishingPerformance)
           .always(() -> publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance));
     } else {
-      publishBlock(block, blockPublishingPerformance).ifExceptionGetsHereRaiseABug();
+      publishBlock(block, blockPublishingPerformance).finishStackTrace();
       publishBlobSidecars(blobSidecars.get(), blockPublishingPerformance);
     }
   }
@@ -227,7 +227,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
               () ->
                   publishDataColumnSidecars(dataColumnSidecars.get(), blockPublishingPerformance));
     } else {
-      publishBlock(block, blockPublishingPerformance).ifExceptionGetsHereRaiseABug();
+      publishBlock(block, blockPublishingPerformance).finishStackTrace();
       publishDataColumnSidecars(dataColumnSidecars.get(), blockPublishingPerformance);
     }
   }
