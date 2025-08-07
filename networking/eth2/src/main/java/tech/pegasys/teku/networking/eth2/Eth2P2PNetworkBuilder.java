@@ -255,7 +255,7 @@ public class Eth2P2PNetworkBuilder {
                   new ForkAndSpecMilestone(fork, milestone);
               return createBpoSubscriptions(forkAndSpecMilestone, network, gossipEncoding, bpo);
             })
-        .forEach(gossipForkManagerBuilder::fork);
+        .forEach(gossipForkManagerBuilder::bpoFork);
 
     return gossipForkManagerBuilder.build();
   }

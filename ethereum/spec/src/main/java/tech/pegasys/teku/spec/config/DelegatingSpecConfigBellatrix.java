@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigBellatrix extends DelegatingSpecConfigAltair
@@ -31,16 +30,6 @@ public class DelegatingSpecConfigBellatrix extends DelegatingSpecConfigAltair
   @Override
   public Optional<SpecConfigBellatrix> toVersionBellatrix() {
     return Optional.of(this);
-  }
-
-  @Override
-  public Bytes4 getBellatrixForkVersion() {
-    return specConfigBellatrix.getBellatrixForkVersion();
-  }
-
-  @Override
-  public UInt64 getBellatrixForkEpoch() {
-    return specConfigBellatrix.getBellatrixForkEpoch();
   }
 
   @Override

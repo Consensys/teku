@@ -10,5 +10,6 @@
 
 ### Additions and Improvements
 - Enabling, by default, a new attestation pool implementation that improves the attestation packing during block and aggregation production. It can still be disabled by setting `--Xaggregating-attestation-pool-v2-enabled=false` if needed
+- Added `--p2p-discovery-bootnodes-url` CLI option.
 
 ### Bug Fixes

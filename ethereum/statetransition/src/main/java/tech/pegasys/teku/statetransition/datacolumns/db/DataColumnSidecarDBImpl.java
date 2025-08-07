@@ -121,7 +121,7 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
                       currentAddCounter,
                       prevSlotCountFinalizedSlot.get(1));
                 })
-            .ifExceptionGetsHereRaiseABug();
+            .finishStackTrace();
       }
     }
 

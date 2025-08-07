@@ -125,6 +125,14 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Bytes4 altairForkVersion;
   private final UInt64 altairForkEpoch;
 
+  // bellatrix fork
+  private final Bytes4 bellatrixForkVersion;
+  private final UInt64 bellatrixForkEpoch;
+
+  // capella fork
+  private final Bytes4 capellaForkVersion;
+  private final UInt64 capellaForkEpoch;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -194,7 +202,11 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgParentWeightThreshold,
       final UInt64 maxPerEpochActivationExitChurnLimit,
       final Bytes4 altairForkVersion,
-      final UInt64 altairForkEpoch) {
+      final UInt64 altairForkEpoch,
+      final Bytes4 bellatrixForkVersion,
+      final UInt64 bellatrixForkEpoch,
+      final Bytes4 capellaForkVersion,
+      final UInt64 capellaForkEpoch) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -265,6 +277,10 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
     this.altairForkVersion = altairForkVersion;
     this.altairForkEpoch = altairForkEpoch;
+    this.bellatrixForkVersion = bellatrixForkVersion;
+    this.bellatrixForkEpoch = bellatrixForkEpoch;
+    this.capellaForkVersion = capellaForkVersion;
+    this.capellaForkEpoch = capellaForkEpoch;
   }
 
   @Override
@@ -400,6 +416,26 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public UInt64 getAltairForkEpoch() {
     return altairForkEpoch;
+  }
+
+  @Override
+  public Bytes4 getBellatrixForkVersion() {
+    return bellatrixForkVersion;
+  }
+
+  @Override
+  public UInt64 getBellatrixForkEpoch() {
+    return bellatrixForkEpoch;
+  }
+
+  @Override
+  public Bytes4 getCapellaForkVersion() {
+    return capellaForkVersion;
+  }
+
+  @Override
+  public UInt64 getCapellaForkEpoch() {
+    return capellaForkEpoch;
   }
 
   @Override
@@ -707,6 +743,10 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(genesisForkVersion, that.genesisForkVersion)
         && Objects.equals(altairForkVersion, that.altairForkVersion)
         && Objects.equals(altairForkEpoch, that.altairForkEpoch)
+        && Objects.equals(bellatrixForkVersion, that.bellatrixForkVersion)
+        && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
+        && Objects.equals(capellaForkVersion, that.capellaForkVersion)
+        && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(genesisDelay, that.genesisDelay)
         && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
@@ -783,6 +823,10 @@ public class SpecConfigPhase0 implements SpecConfig {
         attestationSubnetExtraBits,
         altairForkVersion,
         altairForkEpoch,
+        bellatrixForkVersion,
+        bellatrixForkEpoch,
+        capellaForkVersion,
+        capellaForkEpoch,
         attestationSubnetPrefixBits);
   }
 }

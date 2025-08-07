@@ -129,9 +129,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.bellatrixBuilder(
-                    bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.bellatrixForkEpoch(bellatrixForkEpoch));
     return this;
   }
 
@@ -141,9 +139,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-capella-fork-epoch", capellaForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.capellaBuilder(
-                    capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.capellaForkEpoch(capellaForkEpoch));
     return this;
   }
 

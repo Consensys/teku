@@ -73,8 +73,8 @@ class DiscoveryNetworkTest {
       TestSpecFactory.createMinimalFulu(
           b ->
               b.altairForkEpoch(UInt64.valueOf(10_000))
-                  .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(20_000)))
-                  .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(30_000)))
+                  .bellatrixForkEpoch(UInt64.valueOf(20_000))
+                  .capellaForkEpoch(UInt64.valueOf(30_000))
                   .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(40_000)))
                   .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(50_000)))
                   .fuluBuilder(
@@ -88,7 +88,7 @@ class DiscoveryNetworkTest {
   private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   final ForkInfo currentForkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
   final Bytes4 currentForkDigest =
-      spec.computeForkDigest(currentForkInfo.getFork().getCurrentVersion(), genesisValidatorsRoot);
+      spec.computeForkDigest(genesisValidatorsRoot, currentForkInfo.getFork().getEpoch());
   final Fork nextFork = forks.get(1);
 
   @SuppressWarnings("unchecked")

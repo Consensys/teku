@@ -47,6 +47,14 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getAltairForkEpoch();
 
+  Bytes4 getBellatrixForkVersion();
+
+  UInt64 getBellatrixForkEpoch();
+
+  Bytes4 getCapellaForkVersion();
+
+  UInt64 getCapellaForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
 
