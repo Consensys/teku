@@ -73,7 +73,7 @@ class DiscoveryNetworkTest {
       TestSpecFactory.createMinimalFulu(
           b ->
               b.altairForkEpoch(UInt64.valueOf(10_000))
-                  .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(20_000)))
+                  .bellatrixForkEpoch(UInt64.valueOf(20_000))
                   .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(30_000)))
                   .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(40_000)))
                   .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(50_000)))

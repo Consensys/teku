@@ -86,15 +86,12 @@ public class TerminalPowBlockMonitorTest {
     setUpCommon(
         bellatrixBuilder ->
             bellatrixBuilder
-                .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
   }
 
   private void setUpTTDConfig() {
-    setUpCommon(
-        bellatrixBuilder ->
-            bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
+    setUpCommon(bellatrixBuilder -> bellatrixBuilder.terminalTotalDifficulty(TTD));
   }
 
   private void setUpCommon(final Consumer<BellatrixBuilder> bellatrixBuilder) {
@@ -103,7 +100,10 @@ public class TerminalPowBlockMonitorTest {
             SpecConfigLoader.loadConfig(
                 "minimal",
                 phase0Builder ->
-                    phase0Builder.altairForkEpoch(UInt64.ZERO).bellatrixBuilder(bellatrixBuilder)));
+                    phase0Builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
+                        .bellatrixBuilder(bellatrixBuilder)));
     dataStructureUtil = new DataStructureUtil(spec);
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);

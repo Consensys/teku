@@ -63,9 +63,7 @@ public class GenesisGenerator {
   public GenesisGenerator withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.bellatrixBuilder(
-                    bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.bellatrixForkEpoch(bellatrixForkEpoch));
     return this;
   }
 

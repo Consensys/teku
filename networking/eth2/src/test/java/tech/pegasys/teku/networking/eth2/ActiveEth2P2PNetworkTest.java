@@ -107,7 +107,7 @@ public class ActiveEth2P2PNetworkTest {
         TestSpecFactory.createMinimalFulu(
             b ->
                 b.altairForkEpoch(altairForkEpoch)
-                    .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(3)))
+                    .bellatrixForkEpoch(UInt64.valueOf(3))
                     .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
                     .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
                     .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
@@ -217,7 +217,7 @@ public class ActiveEth2P2PNetworkTest {
         TestSpecFactory.createMinimalFulu(
             b ->
                 b.altairForkEpoch(altairForkEpoch)
-                    .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(3)))
+                    .bellatrixForkEpoch(UInt64.valueOf(3))
                     .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
                     .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
                     .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
