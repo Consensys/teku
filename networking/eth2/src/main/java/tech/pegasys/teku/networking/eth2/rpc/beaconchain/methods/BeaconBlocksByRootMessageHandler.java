@@ -30,8 +30,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -95,7 +95,7 @@ public class BeaconBlocksByRootMessageHandler
     LOG.trace(
         "Peer {} requested {} BeaconBlocks with roots: {}", peer.getId(), message.size(), message);
 
-    final Optional<RequestApproval> blocksRequestApproval =
+    final Optional<ApprovedRequest> blocksRequestApproval =
         peer.approveBlocksRequest(callback, message.size());
 
     if (!peer.approveRequest() || blocksRequestApproval.isEmpty()) {

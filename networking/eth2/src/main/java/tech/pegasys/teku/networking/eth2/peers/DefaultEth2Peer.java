@@ -498,19 +498,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> approveBlocksRequest(
+  public Optional<ApprovedRequest> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return approveObjectsRequest("blocks", blockRequestTracker, blocksCount, callback);
   }
 
   @Override
   public void adjustBlocksRequest(
-      final RequestApproval blocksRequest, final long returnedBlocksCount) {
+      final ApprovedRequest blocksRequest, final long returnedBlocksCount) {
     adjustObjectsRequest(blockRequestTracker, blocksRequest, returnedBlocksCount);
   }
 
   @Override
-  public Optional<RequestApproval> approveBlobSidecarsRequest(
+  public Optional<ApprovedRequest> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return approveObjectsRequest(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
@@ -518,7 +518,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public void adjustBlobSidecarsRequest(
-      final RequestApproval blobSidecarsRequest, final long returnedBlobSidecarsCount) {
+      final ApprovedRequest blobSidecarsRequest, final long returnedBlobSidecarsCount) {
     adjustObjectsRequest(
         blobSidecarsRequestTracker, blobSidecarsRequest, returnedBlobSidecarsCount);
   }
@@ -529,7 +529,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> approveDataColumnSidecarsRequest(
+  public Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
       final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
     return approveObjectsRequest(
         "data column sidecars",
@@ -540,7 +540,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public void adjustDataColumnSidecarsRequest(
-      final RequestApproval dataColumnSidecarsRequest, final long returnedDataColumnSidecarsCount) {
+      final ApprovedRequest dataColumnSidecarsRequest, final long returnedDataColumnSidecarsCount) {
     adjustObjectsRequest(
         dataColumnSidecarsRequestTracker,
         dataColumnSidecarsRequest,
@@ -582,17 +582,17 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   private void adjustObjectsRequest(
       final RateTracker requestTracker,
-      final RequestApproval requestApproval,
+      final ApprovedRequest approvedRequest,
       final long returnedObjectsCount) {
-    requestTracker.adjustObjectsRequest(requestApproval, returnedObjectsCount);
+    requestTracker.adjustObjectsRequest(approvedRequest, returnedObjectsCount);
   }
 
-  private <T> Optional<RequestApproval> approveObjectsRequest(
+  private <T> Optional<ApprovedRequest> approveObjectsRequest(
       final String requestType,
       final RateTracker requestTracker,
       final long objectsCount,
       final ResponseCallback<T> callback) {
-    final Optional<RequestApproval> requestApproval =
+    final Optional<ApprovedRequest> requestApproval =
         requestTracker.approveObjectsRequest(objectsCount);
     if (requestApproval.isEmpty()) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
