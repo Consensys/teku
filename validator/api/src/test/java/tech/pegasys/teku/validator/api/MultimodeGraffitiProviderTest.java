@@ -237,4 +237,94 @@ class MultimodeGraffitiProviderTest {
             Bytes32Parser.toBytes32("random3"));
     assertThat(possibleRandomValues).contains(randomValue);
   }
+
+  @Test
+  void shouldReturnEmptyWhenGraffitiValueTooLarge() throws IOException {
+    // Setup config with default graffiti larger than 32 bytes
+    final MultimodeGraffitiProvider.GraffitiConfiguration config =
+        new MultimodeGraffitiProvider.GraffitiConfiguration();
+    config.defaultGraffiti =
+        "This graffiti message is definitely longer than thirty-two bytes and should cause an error";
+
+    // Write config to file
+    yamlMapper.writeValue(graffitiFile.toFile(), config);
+
+    // Create provider
+    final MultimodeGraffitiProvider provider =
+        new MultimodeGraffitiProvider(
+            Optional.of(defaultGraffiti), Optional.empty(), Optional.of(graffitiFile));
+
+    // Should return empty instead of throwing an exception
+    assertThat(provider.get()).isEmpty();
+  }
+
+  @Test
+  void shouldReturnEmptyWhenSpecificGraffitiValueTooLarge() throws IOException {
+    // Setup config with specific validator graffiti larger than 32 bytes
+    final MultimodeGraffitiProvider.GraffitiConfiguration config =
+        new MultimodeGraffitiProvider.GraffitiConfiguration();
+    final Map<String, String> specific = new HashMap<>();
+    specific.put(
+        pubKeyHex,
+        "This specific graffiti message is definitely longer than thirty-two bytes and should cause an error");
+    config.specific = specific;
+
+    // Write config to file
+    yamlMapper.writeValue(graffitiFile.toFile(), config);
+
+    // Create provider with the validator public key
+    final MultimodeGraffitiProvider provider =
+        new MultimodeGraffitiProvider(
+            Optional.of(defaultGraffiti), Optional.of(publicKey), Optional.of(graffitiFile));
+
+    // Should return empty instead of throwing an exception
+    assertThat(provider.get()).isEmpty();
+  }
+
+  @Test
+  void shouldReturnEmptyWhenOrderedGraffitiValueTooLarge() throws IOException {
+    // Setup config with ordered graffiti containing a value larger than 32 bytes
+    final MultimodeGraffitiProvider.GraffitiConfiguration config =
+        new MultimodeGraffitiProvider.GraffitiConfiguration();
+    config.ordered =
+        List.of(
+            "short",
+            "This ordered graffiti message is definitely longer than thirty-two bytes and should cause an error");
+
+    // Write config to file
+    yamlMapper.writeValue(graffitiFile.toFile(), config);
+
+    // Create provider
+    final MultimodeGraffitiProvider provider =
+        new MultimodeGraffitiProvider(
+            Optional.of(defaultGraffiti), Optional.empty(), Optional.of(graffitiFile));
+
+    // First call should work (short message)
+    assertThat(provider.get()).isEqualTo(Optional.of(Bytes32Parser.toBytes32("short")));
+
+    // Second call should return empty instead of throwing an exception
+    assertThat(provider.get()).isEmpty();
+  }
+
+  @Test
+  void shouldReturnEmptyWhenRandomGraffitiValueTooLarge() throws IOException {
+    // Setup config with random graffiti containing only values larger than 32 bytes
+    final MultimodeGraffitiProvider.GraffitiConfiguration config =
+        new MultimodeGraffitiProvider.GraffitiConfiguration();
+    config.random =
+        List.of(
+            "This first random graffiti message is definitely longer than thirty-two bytes and should cause an error",
+            "This second random graffiti message is definitely longer than thirty-two bytes and should cause an error");
+
+    // Write config to file
+    yamlMapper.writeValue(graffitiFile.toFile(), config);
+
+    // Create provider
+    final MultimodeGraffitiProvider provider =
+        new MultimodeGraffitiProvider(
+            Optional.of(defaultGraffiti), Optional.empty(), Optional.of(graffitiFile));
+
+    // Should return empty instead of throwing an exception
+    assertThat(provider.get()).isEmpty();
+  }
 }
