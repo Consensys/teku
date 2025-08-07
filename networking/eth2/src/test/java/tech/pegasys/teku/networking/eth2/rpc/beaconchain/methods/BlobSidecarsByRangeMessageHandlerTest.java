@@ -42,8 +42,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -67,8 +67,8 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 @TestSpecContext(milestone = {SpecMilestone.DENEB, SpecMilestone.ELECTRA})
 public class BlobSidecarsByRangeMessageHandlerTest {
 
-  private static final RequestApproval ZERO_OBJECTS_REQUEST_APPROVAL =
-      new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build();
+  private static final ApprovedRequest ZERO_OBJECTS_REQUEST_APPROVAL =
+      new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build();
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
@@ -86,9 +86,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final String protocolId =
       BeaconChainMethodIds.getBlobSidecarsByRangeMethodId(1, RPC_ENCODING);
-  private final Optional<RequestApproval> allowedObjectsRequest =
+  private final Optional<ApprovedRequest> allowedObjectsRequest =
       Optional.of(
-          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
+          new ApprovedRequest.RequestApprovalBuilder().requestSize(100).timeSeconds(ZERO).build());
 
   private SpecMilestone specMilestone;
   private Spec spec;

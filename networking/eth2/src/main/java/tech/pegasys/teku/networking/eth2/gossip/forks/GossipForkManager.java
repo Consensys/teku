@@ -365,10 +365,21 @@ public class GossipForkManager {
     }
 
     public Builder fork(final GossipForkSubscriptions forkSubscriptions) {
+      return fork(forkSubscriptions, false);
+    }
+
+    public Builder bpoFork(final GossipForkSubscriptions forkSubscriptions) {
+      return fork(forkSubscriptions, true);
+    }
+
+    private Builder fork(
+        final GossipForkSubscriptions forkSubscriptions, final boolean skipReplaceCheck) {
       final UInt64 activationEpoch = forkSubscriptions.getActivationEpoch();
-      checkState(
-          !forksByActivationEpoch.containsKey(activationEpoch),
-          "Can not schedule two forks to activate at the same epoch");
+      if (!skipReplaceCheck) {
+        checkState(
+            !forksByActivationEpoch.containsKey(activationEpoch),
+            "Can not schedule two forks to activate at the same epoch");
+      }
       forksByActivationEpoch.put(activationEpoch, forkSubscriptions);
       return this;
     }
