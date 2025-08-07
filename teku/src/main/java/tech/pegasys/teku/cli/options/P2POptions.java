@@ -103,7 +103,7 @@ public class P2POptions {
 
   @Option(
       names = {"--p2p-discovery-bootnodes"},
-      paramLabel = "<STRING>",
+      paramLabel = "<enr:-...>",
       description = "List of ENRs of the bootnodes",
       split = ",",
       arity = "0..*")
