@@ -130,24 +130,24 @@ public interface Eth2Peer extends Peer, SyncSource {
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector);
 
-  Optional<RequestApproval> approveBlocksRequest(
+  Optional<ApprovedRequest> approveBlocksRequest(
       ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
 
-  void adjustBlocksRequest(RequestApproval blocksRequest, long returnedBlocksCount);
+  void adjustBlocksRequest(ApprovedRequest blocksRequest, long returnedBlocksCount);
 
-  Optional<RequestApproval> approveBlobSidecarsRequest(
+  Optional<ApprovedRequest> approveBlobSidecarsRequest(
       ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
 
   void adjustBlobSidecarsRequest(
-      RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
+      ApprovedRequest blobSidecarsRequest, long returnedBlobSidecarsCount);
 
   long getAvailableDataColumnSidecarsRequestCount();
 
-  Optional<RequestApproval> approveDataColumnSidecarsRequest(
+  Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
       ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount);
 
   void adjustDataColumnSidecarsRequest(
-      RequestApproval dataColumnSidecarsRequest, long returnedDataColumnSidecarsCount);
+      ApprovedRequest dataColumnSidecarsRequest, long returnedDataColumnSidecarsCount);
 
   boolean approveRequest();
 

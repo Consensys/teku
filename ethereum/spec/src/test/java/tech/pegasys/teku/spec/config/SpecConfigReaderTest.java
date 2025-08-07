@@ -51,11 +51,7 @@ public class SpecConfigReaderTest {
             () ->
                 reader.build(
                     builder ->
-                        builder
-                            .altairForkEpoch(UInt64.ZERO)
-                            .bellatrixBuilder(
-                                bellatrixBuilder ->
-                                    bellatrixBuilder.bellatrixForkEpoch(UInt64.ZERO))))
+                        builder.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(UInt64.ZERO)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("EPOCHS_PER_SYNC_COMMITTEE_PERIOD");
   }

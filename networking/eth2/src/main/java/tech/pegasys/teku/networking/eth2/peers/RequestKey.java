@@ -17,12 +17,12 @@ import java.util.Comparator;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record RequestsKey(UInt64 timeSeconds, int requestId) implements Comparable<RequestsKey> {
+public record RequestKey(UInt64 timeSeconds, int requestId) implements Comparable<RequestKey> {
 
   @Override
-  public int compareTo(final @NotNull RequestsKey other) {
-    return Comparator.comparing(RequestsKey::timeSeconds)
-        .thenComparingInt(RequestsKey::requestId)
+  public int compareTo(final @NotNull RequestKey other) {
+    return Comparator.comparing(RequestKey::timeSeconds)
+        .thenComparingInt(RequestKey::requestId)
         .compare(this, other);
   }
 }

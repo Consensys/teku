@@ -342,30 +342,30 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> approveBlocksRequest(
+  public Optional<ApprovedRequest> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return Optional.of(
-        new RequestApproval.RequestApprovalBuilder()
+        new ApprovedRequest.RequestApprovalBuilder()
             .requestId(0)
             .timeSeconds(ZERO)
-            .objectsCount(0)
+            .requestSize(0)
             .build());
   }
 
   @Override
   public void adjustBlocksRequest(
-      final RequestApproval blockRequests, final long returnedBlocksCount) {}
+      final ApprovedRequest blockRequests, final long returnedBlocksCount) {}
 
   @Override
-  public Optional<RequestApproval> approveBlobSidecarsRequest(
+  public Optional<ApprovedRequest> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return Optional.of(
-        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+        new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build());
   }
 
   @Override
   public void adjustBlobSidecarsRequest(
-      final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
+      final ApprovedRequest blobSidecarRequests, final long returnedBlobSidecarsCount) {}
 
   @Override
   public long getAvailableDataColumnSidecarsRequestCount() {
@@ -373,15 +373,15 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> approveDataColumnSidecarsRequest(
+  public Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
       final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
     return Optional.of(
-        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+        new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build());
   }
 
   @Override
   public void adjustDataColumnSidecarsRequest(
-      final RequestApproval dataColumnSidecarRequests,
+      final ApprovedRequest dataColumnSidecarRequests,
       final long returnedDataColumnSidecarsCount) {}
 
   @Override
