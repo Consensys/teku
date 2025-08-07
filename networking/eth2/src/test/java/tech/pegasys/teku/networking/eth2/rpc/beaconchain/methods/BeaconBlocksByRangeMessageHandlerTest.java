@@ -43,8 +43,8 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -93,14 +93,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private final String protocolId = BeaconChainMethodIds.getBlocksByRangeMethodId(2, RPC_ENCODING);
   private final BeaconBlocksByRangeMessageHandler handler =
       new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
-  private final Optional<ApprovedRequest> allowedObjectsRequest =
-      Optional.of(
-          new ApprovedRequest.RequestApprovalBuilder().requestSize(100).timeSeconds(ZERO).build());
+  private final Optional<RequestKey> maybeRequestKey = Optional.of(new RequestKey(ZERO, 0));
 
   @BeforeEach
   public void setup() {
     when(peer.approveRequest()).thenReturn(true);
-    when(peer.approveBlocksRequest(any(), anyLong())).thenReturn(allowedObjectsRequest);
+    when(peer.approveBlocksRequest(any(), anyLong())).thenReturn(maybeRequestKey);
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.of(ZERO)));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
@@ -287,7 +285,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
     // Sending 0 blocks (First block is missing, return error)
     verify(peer, times(1))
-        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
 
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(
@@ -313,7 +311,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
     // Sending 0 blocks (First block is missing, return error)
     verify(peer, times(1))
-        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
 
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(
@@ -374,7 +372,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
     // Sending 1 block
     verify(peer, times(1))
-        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(1)));
+        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(1)));
 
     verifyBlocksReturned(2);
   }
@@ -394,7 +392,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
     // Sending 4 blocks only
     verify(peer, times(1))
-        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(4)));
+        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(4)));
     // Slot 4 is empty so we only return 4 blocks
     verifyBlocksReturned(2, 3, 5, 6);
   }
@@ -414,7 +412,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
     // Sending 1 block
     verify(peer, times(1))
-        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(1)));
+        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(1)));
 
     verifyBlocksReturned(4);
   }
@@ -439,7 +437,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(count)));
     // Sending 0 blocks
     verify(peer, times(1))
-        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
 
     verifyNoBlocksReturned();
     // The first block is after the best block available, so we shouldn't request anything

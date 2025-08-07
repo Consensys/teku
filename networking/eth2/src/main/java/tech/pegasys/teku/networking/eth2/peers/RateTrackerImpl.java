@@ -54,21 +54,16 @@ public class RateTrackerImpl implements RateTracker {
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
   @Override
-  public synchronized Optional<ApprovedRequest> approveObjectsRequest(final long objectsCount) {
+  public synchronized Optional<RequestKey> generateRequestKey(final long objectCount) {
     pruneRequests();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     if (peerRateLimit - objectsWithinWindow <= 0) {
       return Optional.empty();
     }
-    objectsWithinWindow += objectsCount;
-    final ApprovedRequest requestApproval =
-        new ApprovedRequest.RequestApprovalBuilder()
-            .requestId(newRequestId++)
-            .timeSeconds(currentTime)
-            .requestSize(objectsCount)
-            .build();
-    requests.put(requestApproval.getRequestKey(), objectsCount);
-    return Optional.of(requestApproval);
+    objectsWithinWindow += objectCount;
+    final RequestKey requestKey = new RequestKey(currentTime, newRequestId++);
+    requests.put(requestKey, objectCount);
+    return Optional.of(requestKey);
   }
 
   @Override
@@ -78,12 +73,12 @@ public class RateTrackerImpl implements RateTracker {
   }
 
   @Override
-  public synchronized void adjustObjectsRequest(
-      final ApprovedRequest requestApproval, final long returnedObjectsCount) {
+  public synchronized void adjustRequestObjectCount(
+      final RequestKey requestKey, final long returnedObjectsCount) {
     pruneRequests();
-    final Long initialObjectsCount = requests.get(requestApproval.getRequestKey());
+    final Long initialObjectsCount = requests.get(requestKey);
     if (initialObjectsCount != null) {
-      requests.put(requestApproval.getRequestKey(), returnedObjectsCount);
+      requests.put(requestKey, returnedObjectsCount);
       objectsWithinWindow = objectsWithinWindow - initialObjectsCount + returnedObjectsCount;
     }
   }

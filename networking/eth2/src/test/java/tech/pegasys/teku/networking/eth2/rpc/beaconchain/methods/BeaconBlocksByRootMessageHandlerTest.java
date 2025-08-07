@@ -34,8 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -77,15 +77,13 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @SuppressWarnings("unchecked")
   final ResponseCallback<SignedBeaconBlock> callback = mock(ResponseCallback.class);
 
-  private final Optional<ApprovedRequest> allowedObjectsRequest =
-      Optional.of(
-          new ApprovedRequest.RequestApprovalBuilder().requestSize(100).timeSeconds(ZERO).build());
+  private final Optional<RequestKey> maybeRequestKey = Optional.of(new RequestKey(ZERO, 100));
 
   @BeforeEach
   public void setup() {
     chainUpdater.initializeGenesis();
     when(peer.approveRequest()).thenReturn(true);
-    when(peer.approveBlocksRequest(any(), anyLong())).thenReturn(allowedObjectsRequest);
+    when(peer.approveBlocksRequest(any(), anyLong())).thenReturn(maybeRequestKey);
     when(recentChainData.getRecentlyValidatedSignedBlockByRoot(any())).thenReturn(Optional.empty());
     // Forward block requests from the mock to the actual store
     when(recentChainData.retrieveSignedBlockByRoot(any()))
@@ -160,7 +158,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
     // Request cancelled
     verify(peer, times(1))
-        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
 
     // Check that we only asked for the first block
     verify(recentChainData, times(1)).retrieveSignedBlockByRoot(any());

@@ -342,30 +342,23 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<ApprovedRequest> approveBlocksRequest(
+  public Optional<RequestKey> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return Optional.of(
-        new ApprovedRequest.RequestApprovalBuilder()
-            .requestId(0)
-            .timeSeconds(ZERO)
-            .requestSize(0)
-            .build());
+    return Optional.of(new RequestKey(ZERO, 0));
   }
 
   @Override
-  public void adjustBlocksRequest(
-      final ApprovedRequest blockRequests, final long returnedBlocksCount) {}
+  public void adjustBlocksRequest(final RequestKey blockRequests, final long objectCount) {}
 
   @Override
-  public Optional<ApprovedRequest> approveBlobSidecarsRequest(
+  public Optional<RequestKey> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return Optional.of(
-        new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build());
+    return Optional.of(new RequestKey(ZERO, 0));
   }
 
   @Override
   public void adjustBlobSidecarsRequest(
-      final ApprovedRequest blobSidecarRequests, final long returnedBlobSidecarsCount) {}
+      final RequestKey blobSidecarRequests, final long returnedBlobSidecarsCount) {}
 
   @Override
   public long getAvailableDataColumnSidecarsRequestCount() {
@@ -373,16 +366,14 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
+  public Optional<RequestKey> approveDataColumnSidecarsRequest(
       final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
-    return Optional.of(
-        new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build());
+    return Optional.of(new RequestKey(ZERO, 0));
   }
 
   @Override
   public void adjustDataColumnSidecarsRequest(
-      final ApprovedRequest dataColumnSidecarRequests,
-      final long returnedDataColumnSidecarsCount) {}
+      final RequestKey dataColumnSidecarRequests, final long objectCount) {}
 
   @Override
   public boolean approveRequest() {

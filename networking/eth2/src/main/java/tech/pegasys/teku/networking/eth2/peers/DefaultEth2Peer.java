@@ -498,27 +498,26 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<ApprovedRequest> approveBlocksRequest(
+  public Optional<RequestKey> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return approveObjectsRequest("blocks", blockRequestTracker, blocksCount, callback);
+    return getRequestKeyIfAvailable("blocks", blockRequestTracker, blocksCount, callback);
   }
 
   @Override
-  public void adjustBlocksRequest(
-      final ApprovedRequest blocksRequest, final long returnedBlocksCount) {
-    adjustObjectsRequest(blockRequestTracker, blocksRequest, returnedBlocksCount);
+  public void adjustBlocksRequest(final RequestKey requestKey, final long objectCount) {
+    adjustObjectsRequest(blockRequestTracker, requestKey, objectCount);
   }
 
   @Override
-  public Optional<ApprovedRequest> approveBlobSidecarsRequest(
+  public Optional<RequestKey> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return approveObjectsRequest(
+    return getRequestKeyIfAvailable(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
   }
 
   @Override
   public void adjustBlobSidecarsRequest(
-      final ApprovedRequest blobSidecarsRequest, final long returnedBlobSidecarsCount) {
+      final RequestKey blobSidecarsRequest, final long returnedBlobSidecarsCount) {
     adjustObjectsRequest(
         blobSidecarsRequestTracker, blobSidecarsRequest, returnedBlobSidecarsCount);
   }
@@ -529,9 +528,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
+  public Optional<RequestKey> approveDataColumnSidecarsRequest(
       final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
-    return approveObjectsRequest(
+    return getRequestKeyIfAvailable(
         "data column sidecars",
         dataColumnSidecarsRequestTracker,
         dataColumnSidecarsCount,
@@ -539,17 +538,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public void adjustDataColumnSidecarsRequest(
-      final ApprovedRequest dataColumnSidecarsRequest, final long returnedDataColumnSidecarsCount) {
-    adjustObjectsRequest(
-        dataColumnSidecarsRequestTracker,
-        dataColumnSidecarsRequest,
-        returnedDataColumnSidecarsCount);
+  public void adjustDataColumnSidecarsRequest(final RequestKey requestKey, final long objectCount) {
+    adjustObjectsRequest(dataColumnSidecarsRequestTracker, requestKey, objectCount);
   }
 
   @Override
   public boolean approveRequest() {
-    if (requestTracker.approveObjectsRequest(1L).isEmpty()) {
+    if (requestTracker.generateRequestKey(1L).isEmpty()) {
       LOG.debug("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
       return false;
@@ -582,25 +577,24 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   private void adjustObjectsRequest(
       final RateTracker requestTracker,
-      final ApprovedRequest approvedRequest,
+      final RequestKey requestKey,
       final long returnedObjectsCount) {
-    requestTracker.adjustObjectsRequest(approvedRequest, returnedObjectsCount);
+    requestTracker.adjustRequestObjectCount(requestKey, returnedObjectsCount);
   }
 
-  private <T> Optional<ApprovedRequest> approveObjectsRequest(
+  private <T> Optional<RequestKey> getRequestKeyIfAvailable(
       final String requestType,
       final RateTracker requestTracker,
       final long objectsCount,
       final ResponseCallback<T> callback) {
-    final Optional<ApprovedRequest> requestApproval =
-        requestTracker.approveObjectsRequest(objectsCount);
-    if (requestApproval.isEmpty()) {
+    final Optional<RequestKey> maybeRequestKey = requestTracker.generateRequestKey(objectsCount);
+    if (maybeRequestKey.isEmpty()) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
     }
-    return requestApproval;
+    return maybeRequestKey;
   }
 
   private <I extends RpcRequest, O extends SszData> SafeFuture<Optional<O>> requestOptionalItem(
