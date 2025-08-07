@@ -24,9 +24,12 @@ import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
+@DisabledOnOs(OS.WINDOWS)
 class MultilineEntriesReaderTest {
 
   @Test
@@ -50,6 +53,15 @@ class MultilineEntriesReaderTest {
   }
 
   @Test
+  public void shouldIgnoreEmptyLines(@TempDir final Path tempDir) throws IOException {
+    final String filepath = writeLinesToFile(tempDir, List.of("foo", "", "ziz"));
+
+    final List<String> entries = MultilineEntriesReader.readEntries(filepath);
+
+    assertThat(entries).isEqualTo(List.of("foo", "ziz"));
+  }
+
+  @Test
   public void shouldReadNoEntriesFromEmptyFile(@TempDir final Path tempDir) throws IOException {
     final Path entriesFile = Files.createFile(tempDir.resolve("entries.txt"));
 
@@ -60,8 +72,7 @@ class MultilineEntriesReaderTest {
   }
 
   @Test
-  public void shouldThrowInvalidConfigurationWhenFileDoesNotExist(@TempDir final Path tempDir)
-      throws IOException {
+  public void shouldThrowInvalidConfigurationWhenFileDoesNotExist() {
     assertThatThrownBy(() -> MultilineEntriesReader.readEntries("/foo/bar/no_file.txt"))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Failed reading entries from resource /foo/bar/no_file.txt");

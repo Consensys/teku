@@ -37,9 +37,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -95,6 +98,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadUrlFromConfigurationFile(@TempDir final Path tempDir) throws Exception {
     final List<String> expectedPeers = List.of("127.0.1.1", "127.1.1.1");
     final Path peersFile = Files.createFile(tempDir.resolve("peers.txt"));
@@ -114,6 +118,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS)
   public void shouldReadBootnodesFromConfigurationFile(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
@@ -131,6 +136,70 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         configPath,
         String.format("p2p-discovery-bootnodes-url: \"%s\"", bootnodesFile.toAbsolutePath()),
         StandardCharsets.UTF_8);
+
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());
+
+    final DiscoveryConfig discoConfig = tekuConfig.discovery();
+    assertThat(discoConfig.getBootnodes()).isEqualTo(expectedBootnodes);
+  }
+
+  @Test
+  public void shouldUseBootnodesFromList(@TempDir final Path tempDir) throws IOException {
+    final List<String> expectedBootnodes =
+        List.of(
+            "enr:-Iq4QPOida1SQLknUHJqlGuDadJO_jtQ7FnxbVGjC9WTvAaSZEMTaQcetA"
+                + "-wdOBAg8wcw3yyl0hacrZHUBzo4OO07liGAZg3XXaFgmlkgnY0gmlwhLI-72SJc2VjcDI1NmsxoQJJ3h8aUO3GJHv"
+                + "-bdvHtsQZ2OEisutelYfGjXO4lSg8BYN1ZHCCIzI",
+            "enr:-Iq4QCxbKw-XHdkvUcbd5"
+                + "-bJ8vEtyJr5jD3sg3XCwnkWXWwOEcuWWTrev8TnIcSsatTVd2LseQy1wH8u97vPGlxismiGAZerck1AgmlkgnY0gmlwhKdHDm2Jc2VjcDI1NmsxoQJJ3h8aUO3GJHv-bdvHtsQZ2OEisutelYfGjXO4lSg8BYN1ZHCCIzI");
+
+    final Path configPath = tempDir.resolve("config.yaml");
+
+    Files.writeString(
+        configPath,
+        String.format(
+            "p2p-discovery-bootnodes: [%s]",
+            expectedBootnodes.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(","))),
+        StandardCharsets.UTF_8);
+
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());
+
+    final DiscoveryConfig discoConfig = tekuConfig.discovery();
+    // Check that the final list has both bootnodes, from config and from file
+    assertThat(discoConfig.getBootnodes()).isEqualTo(expectedBootnodes);
+  }
+
+  @Test
+  public void shouldMergeBootnodesFromConfigAndFile(@TempDir final Path tempDir)
+      throws IOException {
+    final List<String> expectedBootnodes =
+        List.of(
+            "enr:-Iq4QPOida1SQLknUHJqlGuDadJO_jtQ7FnxbVGjC9WTvAaSZEMTaQcetA"
+                + "-wdOBAg8wcw3yyl0hacrZHUBzo4OO07liGAZg3XXaFgmlkgnY0gmlwhLI-72SJc2VjcDI1NmsxoQJJ3h8aUO3GJHv"
+                + "-bdvHtsQZ2OEisutelYfGjXO4lSg8BYN1ZHCCIzI",
+            "enr:-Iq4QCxbKw-XHdkvUcbd5"
+                + "-bJ8vEtyJr5jD3sg3XCwnkWXWwOEcuWWTrev8TnIcSsatTVd2LseQy1wH8u97vPGlxismiGAZerck1AgmlkgnY0gmlwhKdHDm2Jc2VjcDI1NmsxoQJJ3h8aUO3GJHv-bdvHtsQZ2OEisutelYfGjXO4lSg8BYN1ZHCCIzI");
+
+    final Path configPath = tempDir.resolve("config.yaml");
+
+    // Add first bootnode directly on config file
+    Files.writeString(
+        configPath,
+        String.format("p2p-discovery-bootnodes: [\"%s\"]", expectedBootnodes.get(0)),
+        StandardCharsets.UTF_8);
+
+    Files.writeString(configPath, System.lineSeparator(), StandardOpenOption.APPEND);
+
+    // Add second bootnode in a file
+    final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
+    writeLinesToFile(bootnodesFile, expectedBootnodes.subList(1, expectedBootnodes.size()));
+    Files.writeString(
+        configPath,
+        String.format("p2p-discovery-bootnodes-url: \"%s\"", bootnodesFile.toAbsolutePath()),
+        StandardCharsets.UTF_8,
+        StandardOpenOption.APPEND);
 
     final TekuConfiguration tekuConfig =
         getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());

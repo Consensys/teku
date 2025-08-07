@@ -113,7 +113,7 @@ public class P2POptions {
       names = {"--p2p-discovery-bootnodes-url"},
       paramLabel = "<STRING>",
       description =
-          "ENRs of bootnodes. This value should be a file or URL pointing to an txt file with one ENR per line.",
+          "ENRs of bootnodes. This should be a file or URL pointing to a txt file with one ENR per line.",
       arity = "1")
   private String p2pDiscoveryBootnodesUrl;
 
@@ -569,9 +569,7 @@ public class P2POptions {
             })
         .discovery(
             d -> {
-              if (p2pDiscoveryBootnodes != null) {
-                d.bootnodes(getBootnodes());
-              }
+              d.bootnodes(getBootnodes());
               if (minimumRandomlySelectedPeerCount != null) {
                 d.minRandomlySelectedPeers(minimumRandomlySelectedPeerCount);
               }
