@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.util;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.BLS_MODULUS;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Streams;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
@@ -85,7 +84,6 @@ public class BlobsUtil {
     return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
   }
 
-  @VisibleForTesting
   public List<KZGProof> computeKzgCellProofs(final Blob blob) {
     return kzg.computeCellsAndProofs(blob.getBytes()).stream().map(KZGCellAndProof::proof).toList();
   }
