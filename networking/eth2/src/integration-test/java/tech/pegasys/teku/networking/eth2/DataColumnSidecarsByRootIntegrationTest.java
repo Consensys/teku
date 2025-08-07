@@ -101,7 +101,7 @@ public class DataColumnSidecarsByRootIntegrationTest extends AbstractRpcMethodIn
             Stream.of(UInt64.ONE, UInt64.valueOf(3)), columns);
 
     // request all expected plus a non existing
-    List<DataColumnsByRootIdentifier> requestedDataColumnIds =
+    final List<DataColumnsByRootIdentifier> requestedDataColumnIds =
         Stream.concat(
                 Stream.of(
                     dataColumnsIdentifierSchema.orElseThrow().create(Bytes32.ZERO, UInt64.ZERO)),
