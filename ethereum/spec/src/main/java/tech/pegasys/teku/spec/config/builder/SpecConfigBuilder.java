@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -137,6 +136,8 @@ public class SpecConfigBuilder {
   // altair fork information
   private Bytes4 altairForkVersion;
   private UInt64 altairForkEpoch;
+  private Bytes4 bellatrixForkVersion;
+  private UInt64 bellatrixForkEpoch;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
@@ -166,15 +167,7 @@ public class SpecConfigBuilder {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
       }
     }
-    if (altairForkEpoch == null) {
-      altairForkEpoch = FAR_FUTURE_EPOCH;
-      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-    rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
-    if (altairForkVersion == null) {
-      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
-    }
+    applyForkVersions();
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
@@ -247,7 +240,9 @@ public class SpecConfigBuilder {
                 reorgParentWeightThreshold,
                 maxPerEpochActivationExitChurnLimit,
                 altairForkVersion,
-                altairForkEpoch));
+                altairForkEpoch,
+                bellatrixForkVersion,
+                bellatrixForkEpoch));
 
     return builderChain.build(config);
   }
@@ -321,7 +316,26 @@ public class SpecConfigBuilder {
     constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
     constants.put("altairForkEpoch", altairForkEpoch);
     constants.put("altairForkVersion", altairForkVersion);
+    constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
+    constants.put("bellatrixForkVersion", bellatrixForkVersion);
     return constants;
+  }
+
+  private void applyForkVersions() {
+    // update raw config if epochs and fork versions are known
+    // if they're not known, they'll result in a validation error (expected)
+    if (altairForkEpoch != null) {
+      rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    }
+    if (altairForkVersion != null) {
+      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
+    }
+    if (bellatrixForkEpoch != null) {
+      rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
+    }
+    if (bellatrixForkVersion != null) {
+      rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    }
   }
 
   private void validate() {
@@ -468,6 +482,18 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
     checkNotNull(altairForkEpoch);
     this.altairForkEpoch = altairForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkVersion(final Bytes4 bellatrixForkVersion) {
+    checkNotNull(bellatrixForkVersion);
+    this.bellatrixForkVersion = bellatrixForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+    checkNotNull(bellatrixForkEpoch);
+    this.bellatrixForkEpoch = bellatrixForkEpoch;
     return this;
   }
 

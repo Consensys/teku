@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.math.BigInteger;
@@ -23,9 +21,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -33,9 +29,6 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrixImpl;
 
 public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, SpecConfigBellatrix> {
 
-  // Fork
-  private Bytes4 bellatrixForkVersion;
-  private UInt64 bellatrixForkEpoch;
   private UInt64 inactivityPenaltyQuotientBellatrix;
   private Integer minSlashingPenaltyQuotientBellatrix;
   private Integer proportionalSlashingMultiplierBellatrix;
@@ -60,8 +53,6 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     return SpecConfigAndParent.of(
         new SpecConfigBellatrixImpl(
             specConfigAndParent.specConfig(),
-            bellatrixForkVersion,
-            bellatrixForkEpoch,
             inactivityPenaltyQuotientBellatrix,
             minSlashingPenaltyQuotientBellatrix,
             proportionalSlashingMultiplierBellatrix,
@@ -78,11 +69,6 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
 
   @Override
   public void validate() {
-    if (bellatrixForkEpoch == null) {
-      bellatrixForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
-      bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-
     // temporary, provide default values for backward compatibility
     if (terminalTotalDifficulty == null) {
       terminalTotalDifficulty =
@@ -97,19 +83,12 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
       terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
     }
 
-    // Fill default zeros if fork is unsupported
-    if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      SpecBuilderUtil.fillMissingValuesWithZeros(this);
-    }
-
     validateConstants();
   }
 
   @Override
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
-    constants.put("bellatrixForkVersion", bellatrixForkVersion);
-    constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
     constants.put("inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
     constants.put("minSlashingPenaltyQuotientBellatrix", minSlashingPenaltyQuotientBellatrix);
     constants.put(
@@ -123,22 +102,9 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
 
   @Override
   public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
-    rawConfig.accept("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
     rawConfig.accept("TERMINAL_TOTAL_DIFFICULTY", terminalTotalDifficulty);
     rawConfig.accept("TERMINAL_BLOCK_HASH", terminalBlockHash);
     rawConfig.accept("TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", terminalBlockHashActivationEpoch);
-  }
-
-  public BellatrixBuilder bellatrixForkVersion(final Bytes4 bellatrixForkVersion) {
-    checkNotNull(bellatrixForkVersion);
-    this.bellatrixForkVersion = bellatrixForkVersion;
-    return this;
-  }
-
-  public BellatrixBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
-    checkNotNull(bellatrixForkEpoch);
-    this.bellatrixForkEpoch = bellatrixForkEpoch;
-    return this;
   }
 
   public BellatrixBuilder inactivityPenaltyQuotientBellatrix(
