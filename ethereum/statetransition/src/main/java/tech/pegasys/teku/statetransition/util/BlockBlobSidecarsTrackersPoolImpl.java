@@ -261,7 +261,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private void publishRecoveredBlobSidecar(final BlobSidecar blobSidecar) {
     LOG.debug("Publishing recovered blob sidecar {}", blobSidecar::toLogString);
     gossipValidatorSupplier.get().markForEquivocation(blobSidecar);
-    blobSidecarGossipPublisher.apply(blobSidecar).ifExceptionGetsHereRaiseABug();
+    blobSidecarGossipPublisher.apply(blobSidecar).finishStackTrace();
   }
 
   private void countBlobSidecar(final RemoteOrigin origin) {
@@ -530,7 +530,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                                       }
                                     })
                                 .handleException(this::logBlockOrBlobsRPCFailure))
-                    .ifExceptionGetsHereRaiseABug();
+                    .finishStackTrace();
               }
             });
 
@@ -627,7 +627,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                     .thenCompose(__ -> rpcFetchDelay)
                     .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
                     .handleException(this::logBlockOrBlobsRPCFailure))
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   @VisibleForTesting

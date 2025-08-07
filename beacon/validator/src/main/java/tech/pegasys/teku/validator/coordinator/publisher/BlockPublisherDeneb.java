@@ -66,6 +66,6 @@ public class BlockPublisherDeneb extends BlockPublisherPhase0 {
       final List<BlobSidecar> blobSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
     blockPublishingPerformance.blobSidecarsPublishingInitiated();
-    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars).ifExceptionGetsHereRaiseABug();
+    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars).finishStackTrace();
   }
 }

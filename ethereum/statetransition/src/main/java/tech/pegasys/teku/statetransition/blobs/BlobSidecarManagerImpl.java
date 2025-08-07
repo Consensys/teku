@@ -207,8 +207,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         .prune(slot)
         .forEach(
             blobSidecar ->
-                validateAndPrepareForBlockImport(blobSidecar, Optional.empty())
-                    .ifExceptionGetsHereRaiseABug());
+                validateAndPrepareForBlockImport(blobSidecar, Optional.empty()).finishStackTrace());
   }
 
   @VisibleForTesting

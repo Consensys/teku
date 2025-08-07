@@ -73,6 +73,6 @@ public class AsyncRunLoop {
     } else {
       logic.onError(error);
     }
-    asyncRunner.runAfterDelay(retryAction, retryDelay).ifExceptionGetsHereRaiseABug();
+    asyncRunner.runAfterDelay(retryAction, retryDelay).finishStackTrace();
   }
 }
