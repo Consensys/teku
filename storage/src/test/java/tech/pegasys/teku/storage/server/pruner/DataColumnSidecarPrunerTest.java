@@ -90,9 +90,9 @@ public class DataColumnSidecarPrunerTest {
         UInt64.valueOf(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests() + 1);
 
     final UInt64 currentSlot =
-        UInt64.valueOf(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests() + 1)
+        UInt64.valueOf(specConfigFulu.getMinEpochsForDataColumnSidecarsRequests())
             .times(slotsPerEpoch)
-            .plus(slotsPerEpoch / 2);
+            .plus(slotsPerEpoch * 10L);
     final UInt64 currentTime = currentSlot.times(secondsPerSlot);
 
     final UInt64 currentEpoch = currentSlot.dividedBy(UInt64.valueOf(slotsPerEpoch));
