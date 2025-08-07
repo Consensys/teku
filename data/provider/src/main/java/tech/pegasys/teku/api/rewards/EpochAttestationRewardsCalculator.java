@@ -49,7 +49,7 @@ public class EpochAttestationRewardsCalculator {
   private final BeaconState state;
   private final EpochProcessor epochProcessor;
   private final ValidatorStatuses validatorStatuses;
-  private final List<Integer> validatorIndexes;
+  private final List<Integer> validatorIndices;
 
   public EpochAttestationRewardsCalculator(
       final SpecVersion specVersion, final BeaconState state, final List<String> validatorIds) {
@@ -57,10 +57,10 @@ public class EpochAttestationRewardsCalculator {
     this.state = state;
     this.epochProcessor = specVersion.getEpochProcessor();
     this.validatorStatuses = specVersion.getValidatorStatusFactory().createValidatorStatuses(state);
-    this.validatorIndexes = mapValidatorIndexes(state, validatorIds);
+    this.validatorIndices = mapValidatorIndices(state, validatorIds);
   }
 
-  private List<Integer> mapValidatorIndexes(
+  private List<Integer> mapValidatorIndices(
       final BeaconState state, final List<String> validatorIds) {
     final SszList<Validator> allValidators = state.getValidators();
     return IntStream.range(0, allValidators.size())
@@ -76,8 +76,8 @@ public class EpochAttestationRewardsCalculator {
   }
 
   @VisibleForTesting
-  List<Integer> getValidatorIndexes() {
-    return validatorIndexes;
+  List<Integer> getValidatorIndices() {
+    return validatorIndices;
   }
 
   public AttestationRewardsData calculate() {
@@ -124,15 +124,11 @@ public class EpochAttestationRewardsCalculator {
             idealAttestationRewards.get(effectiveBalanceEth);
         if (!isInactivityLeak()) {
           switch (flagIndex) {
-            case TIMELY_SOURCE_FLAG_INDEX:
-              idealAttestationReward.addSource(idealReward.longValue());
-              break;
-            case TIMELY_TARGET_FLAG_INDEX:
-              idealAttestationReward.addTarget(idealReward.longValue());
-              break;
-            case TIMELY_HEAD_FLAG_INDEX:
-              idealAttestationReward.addHead(idealReward.longValue());
-              break;
+            case TIMELY_SOURCE_FLAG_INDEX ->
+                idealAttestationReward.addSource(idealReward.longValue());
+            case TIMELY_TARGET_FLAG_INDEX ->
+                idealAttestationReward.addTarget(idealReward.longValue());
+            case TIMELY_HEAD_FLAG_INDEX -> idealAttestationReward.addHead(idealReward.longValue());
           }
         }
       }
@@ -162,7 +158,7 @@ public class EpochAttestationRewardsCalculator {
         epochProcessor.getRewardAndPenaltyDeltas(
             state, validatorStatuses, RewardsAndPenaltiesCalculator::getDetailedDeltas);
 
-    return validatorIndexes.stream()
+    return validatorIndices.stream()
         .map(i -> new ImmutablePair<>(i, totalRewardAndPenaltyDeltas.getDelta(i)))
         .map(p -> new TotalAttestationReward(p.left, p.right))
         .toList();

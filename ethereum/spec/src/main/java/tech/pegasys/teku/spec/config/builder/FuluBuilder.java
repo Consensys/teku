@@ -17,14 +17,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.BlobSchedule;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
@@ -48,7 +50,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private Integer minEpochsForDataColumnSidecarsRequests;
   private Integer maxRequestDataColumnSidecars;
   private UInt64 balancePerAdditionalCustodyGroup;
-  private final List<BlobSchedule> blobSchedule = new ArrayList<>();
+  private final List<BlobScheduleEntry> blobSchedule = new ArrayList<>();
 
   FuluBuilder() {}
 
@@ -107,12 +109,25 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
-  public FuluBuilder blobSchedule(final List<BlobSchedule> blobSchedule) {
-    checkNotNull(this.blobSchedule);
+  public FuluBuilder blobSchedule(final List<BlobScheduleEntry> blobSchedule) {
+    checkNotNull(blobSchedule);
+    verifyBlobSchedule(blobSchedule);
     this.blobSchedule.clear();
-    // copy list rather than use the one passed in case we need to add to the list during validation
-    this.blobSchedule.addAll(blobSchedule);
+    blobSchedule.stream()
+        .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
+        .forEach(this.blobSchedule::add);
     return this;
+  }
+
+  private void verifyBlobSchedule(final List<BlobScheduleEntry> blobSchedule) {
+    final Set<UInt64> seenEpochs = new HashSet<>();
+    for (final BlobScheduleEntry entry : blobSchedule) {
+      if (!seenEpochs.add(entry.epoch())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "There are duplicate entries for epoch %s in blob schedule.", entry.epoch()));
+      }
+    }
   }
 
   public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
@@ -184,22 +199,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     }
 
     validateConstants();
-  }
-
-  public void validateBlobSchedule(
-      final Optional<BlobSchedule> denebSchedule, final Optional<BlobSchedule> electraSchedule) {
-    denebSchedule.ifPresent(
-        schedule -> {
-          if (!blobSchedule.contains(schedule)) {
-            blobSchedule.add(schedule);
-          }
-        });
-    electraSchedule.ifPresent(
-        schedule -> {
-          if (!blobSchedule.contains(schedule)) {
-            blobSchedule.add(schedule);
-          }
-        });
   }
 
   @Override

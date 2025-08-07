@@ -21,6 +21,7 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.GENESIS_STATE_
 
 import java.math.BigInteger;
 import java.util.Optional;
+import java.util.OptionalLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
@@ -120,10 +121,10 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldAggregatingAttestationPoolV2EnabledDisabledByDefault() {
+  void shouldAggregatingAttestationPoolV2EnabledEnabledByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.eth2NetworkConfiguration().isAggregatingAttestationPoolV2Enabled())
-        .isEqualTo(false);
+        .isEqualTo(true);
   }
 
   @Test
@@ -271,5 +272,33 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void rustKzgFlagCanBeUsedToToggleRustKzgOn() {
     final TekuConfiguration config = getTekuConfigurationFromArguments("--Xrust-kzg-enabled");
     assertThat(config.eth2NetworkConfiguration().isRustKzgEnabled()).isTrue();
+  }
+
+  @Test
+  void shouldUseSetDataColumnSidecarRecoveryDelay() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xdata-column-sidecar-recovery-max-delay", "2300");
+    final OptionalLong maxDelayMillis =
+        config.eth2NetworkConfiguration().getDataColumnSidecarRecoveryMaxDelayMillis();
+    assertThat(maxDelayMillis).hasValue(2300L);
+  }
+
+  @Test
+  void dataColumnSidecarRecoveryDelayEmptyByDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    final OptionalLong maxDelayMillis =
+        config.eth2NetworkConfiguration().getDataColumnSidecarRecoveryMaxDelayMillis();
+    assertThat(maxDelayMillis).isEmpty();
+  }
+
+  @Test
+  void invalidDataColumnSidecarRecoveryDelayShouldThrow() {
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--Xdata-column-sidecar-recovery-max-delay", "invalid"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining(
+            "Invalid value for option '--Xdata-column-sidecar-recovery-max-delay'");
   }
 }

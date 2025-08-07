@@ -98,7 +98,6 @@ public class SpecConfigBuilder {
   private Integer secondsPerEth1Block;
 
   // Fork Choice
-  private Integer safeSlotsToUpdateJustified;
   // Added after Phase0 was live, so default to 0 which disables proposer score boosting.
   private Integer proposerScoreBoost = 0;
 
@@ -133,6 +132,15 @@ public class SpecConfigBuilder {
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
 
+  // forks
+  // altair fork information
+  private Bytes4 altairForkVersion;
+  private UInt64 altairForkEpoch;
+  private Bytes4 bellatrixForkVersion;
+  private UInt64 bellatrixForkEpoch;
+  private Bytes4 capellaForkVersion;
+  private UInt64 capellaForkEpoch;
+
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -161,6 +169,7 @@ public class SpecConfigBuilder {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
       }
     }
+    applyForkVersions();
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
@@ -210,7 +219,6 @@ public class SpecConfigBuilder {
                 maxDeposits,
                 maxVoluntaryExits,
                 secondsPerEth1Block,
-                safeSlotsToUpdateJustified,
                 proposerScoreBoost,
                 depositChainId,
                 depositNetworkId,
@@ -232,7 +240,13 @@ public class SpecConfigBuilder {
                 reorgMaxEpochsSinceFinalization,
                 reorgHeadWeightThreshold,
                 reorgParentWeightThreshold,
-                maxPerEpochActivationExitChurnLimit));
+                maxPerEpochActivationExitChurnLimit,
+                altairForkVersion,
+                altairForkEpoch,
+                bellatrixForkVersion,
+                bellatrixForkEpoch,
+                capellaForkVersion,
+                capellaForkEpoch));
 
     return builderChain.build(config);
   }
@@ -283,7 +297,6 @@ public class SpecConfigBuilder {
     constants.put("maxDeposits", maxDeposits);
     constants.put("maxVoluntaryExits", maxVoluntaryExits);
     constants.put("secondsPerEth1Block", secondsPerEth1Block);
-    constants.put("safeSlotsToUpdateJustified", safeSlotsToUpdateJustified);
     constants.put("depositChainId", depositChainId);
     constants.put("depositNetworkId", depositNetworkId);
     constants.put("depositContractAddress", depositContractAddress);
@@ -305,7 +318,36 @@ public class SpecConfigBuilder {
     constants.put("reorgMaxEpochsSinceFinalization", reorgMaxEpochsSinceFinalization);
     constants.put("reorgHeadWeightThreshold", reorgHeadWeightThreshold);
     constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
+    constants.put("altairForkEpoch", altairForkEpoch);
+    constants.put("altairForkVersion", altairForkVersion);
+    constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
+    constants.put("bellatrixForkVersion", bellatrixForkVersion);
+    constants.put("capellaForkVersion", capellaForkVersion);
+    constants.put("capellaForkEpoch", capellaForkEpoch);
     return constants;
+  }
+
+  private void applyForkVersions() {
+    // update raw config if epochs and fork versions are known
+    // if they're not known, they'll result in a validation error (expected)
+    if (altairForkEpoch != null) {
+      rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    }
+    if (altairForkVersion != null) {
+      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
+    }
+    if (bellatrixForkEpoch != null) {
+      rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
+    }
+    if (bellatrixForkVersion != null) {
+      rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    }
+    if (capellaForkEpoch != null) {
+      rawConfig.put("CAPELLA_FORK_EPOCH", capellaForkEpoch);
+    }
+    if (capellaForkVersion != null) {
+      rawConfig.put("CAPELLA_FORK_VERSION", capellaForkVersion);
+    }
   }
 
   private void validate() {
@@ -324,8 +366,6 @@ public class SpecConfigBuilder {
               "The specified network configuration had missing or invalid values for constants %s",
               String.join(", ", fieldsFailingValidation)));
     }
-    fuluBuilder.validateBlobSchedule(
-        denebBuilder.getBlobSchedule(), electraBuilder.getBlobSchedule());
     builderChain.validate();
   }
 
@@ -442,6 +482,42 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
     checkNotNull(genesisForkVersion);
     this.genesisForkVersion = genesisForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder altairForkVersion(final Bytes4 altairForkVersion) {
+    checkNotNull(altairForkVersion);
+    this.altairForkVersion = altairForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
+    checkNotNull(altairForkEpoch);
+    this.altairForkEpoch = altairForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkVersion(final Bytes4 bellatrixForkVersion) {
+    checkNotNull(bellatrixForkVersion);
+    this.bellatrixForkVersion = bellatrixForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+    checkNotNull(bellatrixForkEpoch);
+    this.bellatrixForkEpoch = bellatrixForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkVersion(final Bytes4 capellaForkVersion) {
+    checkNotNull(capellaForkVersion);
+    this.capellaForkVersion = capellaForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+    checkNotNull(capellaForkEpoch);
+    this.capellaForkEpoch = capellaForkEpoch;
     return this;
   }
 
@@ -607,12 +683,6 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder secondsPerEth1Block(final Integer secondsPerEth1Block) {
     checkNotNull(secondsPerEth1Block);
     this.secondsPerEth1Block = secondsPerEth1Block;
-    return this;
-  }
-
-  public SpecConfigBuilder safeSlotsToUpdateJustified(final Integer safeSlotsToUpdateJustified) {
-    checkNotNull(safeSlotsToUpdateJustified);
-    this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     return this;
   }
 

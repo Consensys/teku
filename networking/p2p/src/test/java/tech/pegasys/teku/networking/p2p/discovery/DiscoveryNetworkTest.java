@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.DAS_CUSTODY_GROUP_COUNT_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.NEXT_FORK_DIGEST_ENR_FIELD;
 
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
@@ -56,22 +58,37 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 class DiscoveryNetworkTest {
   private final Spec spec =
-      TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(10_000));
+      TestSpecFactory.createMinimalFulu(
+          b ->
+              b.altairForkEpoch(UInt64.valueOf(10_000))
+                  .bellatrixForkEpoch(UInt64.valueOf(20_000))
+                  .capellaForkEpoch(UInt64.valueOf(30_000))
+                  .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(40_000)))
+                  .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(50_000)))
+                  .fuluBuilder(
+                      fb ->
+                          fb.fuluForkEpoch(UInt64.valueOf(60_000))
+                              .blobSchedule(
+                                  List.of(new BlobScheduleEntry(UInt64.valueOf(65_000), 64)))));
   private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final List<Fork> forks = spec.getForkSchedule().getForks();
   private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   final ForkInfo currentForkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
+  final Bytes4 currentForkDigest =
+      spec.computeForkDigest(genesisValidatorsRoot, currentForkInfo.getFork().getEpoch());
   final Fork nextFork = forks.get(1);
 
   @SuppressWarnings("unchecked")
@@ -180,11 +197,12 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfo_noFutureForkScheduled() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+    discoveryNetwork.setForkInfo(
+        currentForkInfo, currentForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
@@ -192,22 +210,51 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfo_futureForkScheduled() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.of(nextFork));
+    discoveryNetwork.setForkInfo(
+        currentForkInfo,
+        currentForkDigest,
+        Optional.of(nextFork),
+        Optional.empty(),
+        Optional.empty());
+
+    final EnrForkId expectedEnrForkId =
+        new EnrForkId(currentForkDigest, nextFork.getCurrentVersion(), nextFork.getEpoch());
+    verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
+  }
+
+  @Test
+  public void setForkInfo_futureBpoForkScheduled() {
+    final ForkInfo fuluForkInfo = new ForkInfo(forks.get(6), genesisValidatorsRoot);
+    final Bytes4 fuluForkDigest =
+        spec.computeForkDigest(genesisValidatorsRoot, fuluForkInfo.getFork().getEpoch());
+    final BlobParameters nextBpoFork = new BlobParameters(UInt64.valueOf(65_000), 64);
+    final Bytes4 nextForkDigest =
+        spec.computeForkDigest(genesisValidatorsRoot, nextBpoFork.epoch());
+
+    discoveryNetwork.setForkInfo(
+        fuluForkInfo,
+        fuluForkDigest,
+        Optional.empty(),
+        Optional.of(new BlobParameters(UInt64.valueOf(65_000), 64)),
+        Optional.of(nextForkDigest));
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec), nextFork.getCurrentVersion(), nextFork.getEpoch());
+            fuluForkDigest, fuluForkInfo.getFork().getCurrentVersion(), nextBpoFork.epoch());
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
+    verify(discoveryService)
+        .updateCustomENRField("nfd", SszBytes4.of(nextForkDigest).sszSerialize());
   }
 
   @Test
   @SuppressWarnings("unchecked")
   public void setForkInfoShouldAddPredicateToConnectionManager() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+    discoveryNetwork.setForkInfo(
+        currentForkInfo, currentForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
@@ -220,8 +267,7 @@ class DiscoveryNetworkTest {
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer1)).isTrue();
 
     final EnrForkId newEnrForkId1 =
-        new EnrForkId(
-            currentForkInfo.getForkDigest(spec), Bytes4.fromHexString("0xdeadbeef"), UInt64.ZERO);
+        new EnrForkId(currentForkDigest, Bytes4.fromHexString("0xdeadbeef"), UInt64.ZERO);
     DiscoveryPeer peer2 = createDiscoveryPeer(Optional.of(newEnrForkId1));
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer2)).isTrue();
 
@@ -235,11 +281,12 @@ class DiscoveryNetworkTest {
   @Test
   @SuppressWarnings("unchecked")
   public void shouldNotConnectToPeerWithNoEnrForkId() {
-    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+    discoveryNetwork.setForkInfo(
+        currentForkInfo, currentForkDigest, Optional.empty(), Optional.empty(), Optional.empty());
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
@@ -257,7 +304,7 @@ class DiscoveryNetworkTest {
   public void shouldNotConnectToPeersWhenNodeHasNoEnrForkId() {
     final EnrForkId enrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(spec),
+            currentForkDigest,
             currentForkInfo.getFork().getCurrentVersion(),
             SpecConfig.FAR_FUTURE_EPOCH);
     ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =
@@ -292,11 +339,19 @@ class DiscoveryNetworkTest {
   }
 
   @ParameterizedTest
-  @MethodSource("getCscFixtures")
-  public void cscIsCorrectlyEncoded(final String hexString, final Integer csc) {
-    discoveryNetwork.setDASTotalCustodySubnetCount(csc);
+  @MethodSource("getCgcFixtures")
+  public void cgcIsCorrectlyEncoded(final String hexString, final Integer cgc) {
+    discoveryNetwork.setDASTotalCustodySubnetCount(cgc);
     verify(discoveryService)
         .updateCustomENRField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
+  }
+
+  @Test
+  public void nfdIsCorrectlyEncoded() {
+    final Bytes4 nfd = Bytes4.fromHexString("abcdef12");
+    discoveryNetwork.setNextForkDigest(nfd);
+    verify(discoveryService)
+        .updateCustomENRField(NEXT_FORK_DIGEST_ENR_FIELD, SszBytes4.of(nfd).sszSerialize());
   }
 
   public DiscoveryPeer createDiscoveryPeer(final Optional<EnrForkId> maybeForkId) {
@@ -310,6 +365,7 @@ class DiscoveryNetworkTest {
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
             .getDefault(),
         syncCommitteeSubnets,
+        Optional.empty(),
         Optional.empty());
   }
 
@@ -322,7 +378,7 @@ class DiscoveryNetworkTest {
             "57467522110468688239177851250859789869070302005900722885377252304169193209346"));
   }
 
-  private static Stream<Arguments> getCscFixtures() {
+  private static Stream<Arguments> getCgcFixtures() {
     return Stream.of(
         Arguments.of("0x", 0),
         Arguments.of("0x80", 128),

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -34,7 +34,12 @@ public class DataColumnSidecarsByRootRequestMessage extends SszListImpl<DataColu
 
   @Override
   public int getMaximumResponseChunks() {
-    return size();
+    return stream()
+        .reduce(
+            0,
+            (current, dataColumnsByRootIdentifier) ->
+                current + dataColumnsByRootIdentifier.getColumns().size(),
+            Integer::sum);
   }
 
   @Override

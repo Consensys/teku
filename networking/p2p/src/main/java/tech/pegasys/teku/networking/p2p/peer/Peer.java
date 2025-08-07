@@ -23,6 +23,9 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 
 public interface Peer {
 
@@ -50,10 +53,24 @@ public interface Peer {
 
   void subscribeDisconnect(PeerDisconnectedSubscriber subscriber);
 
-  <TOutgoingHandler extends RpcRequestHandler, TRequest, RespHandler extends RpcResponseHandler<?>>
+  default <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest extends RpcRequest,
+          RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
-          RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
           final TRequest request,
+          final RespHandler responseHandler) {
+    return sendRequest(rpcMethod, new SingleRpcRequestBodySelector<>(request), responseHandler);
+  }
+
+  <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest extends RpcRequest,
+          RespHandler extends RpcResponseHandler<?>>
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final RpcRequestBodySelector<TRequest> rpcRequestBodySelector,
           final RespHandler responseHandler);
 
   boolean connectionInitiatedLocally();

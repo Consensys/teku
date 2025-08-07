@@ -45,8 +45,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -395,8 +395,69 @@ class ExecutionLayerBlockProductionManagerImplTest {
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
+  @Test
+  public void postFulu_builderOnline() throws Exception {
+    setupFulu();
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    // we expect result from the builder
+    final BuilderBid builderBid = prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+    prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, executionPayloadValue, slot);
+
+    final BuilderBidOrFallbackData expectedResult = BuilderBidOrFallbackData.create(builderBid);
+
+    final ExecutionPayloadResult executionPayloadResult =
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext,
+            state,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
+    assertThat(executionPayloadResult.getExecutionPayloadContext())
+        .isEqualTo(executionPayloadContext);
+    assertThat(executionPayloadResult.getExecutionPayloadFutureFromLocalFlow()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFutureFromLocalFlow()).isEmpty();
+
+    final SafeFuture<BuilderBidOrFallbackData> builderBidOrFallbackDataFuture =
+        executionPayloadResult.getBuilderBidOrFallbackDataFuture().orElseThrow();
+    assertThat(builderBidOrFallbackDataFuture.get()).isEqualTo(expectedResult);
+
+    // we expect both builder and local engine have been called
+    verifyBuilderCalled(slot, executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext, slot);
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    prepareBuilderGetPayloadV2InFulu(signedBlindedBeaconBlock);
+
+    // we expect result from the builder
+    assertThat(
+            blockProductionManager.getUnblindedPayload(
+                signedBlindedBeaconBlock, BlockPublishingPerformance.NOOP))
+        .isCompletedWithValue(BuilderPayloadOrFallbackData.createSuccessful());
+
+    // we expect both builder and local engine have been called
+    verify(builderClient).getPayloadV2(signedBlindedBeaconBlock);
+    verifyNoMoreInteractions(executionClientHandler);
+    verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
+  }
+
   private void setupDeneb() {
     this.spec = TestSpecFactory.createMinimalDeneb();
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.executionLayerManager = createExecutionLayerChannelImpl(true, false);
+    this.blockProductionManager =
+        new ExecutionLayerBlockProductionManagerImpl(executionLayerManager);
+  }
+
+  private void setupFulu() {
+    this.spec = TestSpecFactory.createMinimalFulu();
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.executionLayerManager = createExecutionLayerChannelImpl(true, false);
     this.blockProductionManager =
@@ -488,6 +549,12 @@ class ExecutionLayerBlockProductionManagerImplTest {
     return payloadAndBlobsBundle;
   }
 
+  private void prepareBuilderGetPayloadV2InFulu(
+      final SignedBlockContainer signedBlindedBlockContainer) {
+    when(builderClient.getPayloadV2(signedBlindedBlockContainer.getSignedBlock()))
+        .thenReturn(SafeFuture.completedFuture(null));
+  }
+
   private GetPayloadResponse prepareEngineGetPayloadResponse(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt256 executionPayloadValue,
@@ -518,6 +585,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     return ExecutionLayerManagerImpl.create(
         eventLogger,
         executionClientHandler,
+        spec,
         builderEnabled ? Optional.of(builderClient) : Optional.empty(),
         stubMetricsSystem,
         builderValidatorEnabled

@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
+import tech.pegasys.teku.api.datacolumnselector.DataColumnSidecarSelectorFactory;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -57,6 +59,7 @@ public abstract class AbstractChainDataProviderTest {
   protected CombinedChainDataClient combinedChainDataClient;
   protected BlockSelectorFactory blockSelectorFactory;
   protected BlobSidecarSelectorFactory blobSidecarSelectorFactory;
+  protected DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory;
   protected StateSelectorFactory stateSelectorFactory;
   protected BeaconState beaconStateInternal;
   protected SignedBlockAndState bestBlock;
@@ -64,6 +67,8 @@ public abstract class AbstractChainDataProviderTest {
   protected RewardCalculator rewardCalculatorMock = mock(RewardCalculator.class);
   protected final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  protected final BlobSidecarReconstructionProvider mockBlobSidecarReconstructionProvider =
+      mock(BlobSidecarReconstructionProvider.class);
 
   protected abstract Spec getSpec();
 
@@ -104,7 +109,11 @@ public abstract class AbstractChainDataProviderTest {
     this.blockSelectorFactory = spy(new BlockSelectorFactory(spec, mockCombinedChainDataClient));
     this.stateSelectorFactory = spy(new StateSelectorFactory(spec, mockCombinedChainDataClient));
     this.blobSidecarSelectorFactory =
-        spy(new BlobSidecarSelectorFactory(spec, mockCombinedChainDataClient));
+        spy(
+            new BlobSidecarSelectorFactory(
+                spec, mockCombinedChainDataClient, mockBlobSidecarReconstructionProvider));
+    this.dataColumnSidecarSelectorFactory =
+        spy(new DataColumnSidecarSelectorFactory(spec, mockCombinedChainDataClient));
     final ChainDataProvider provider =
         new ChainDataProvider(
             spec,
@@ -113,6 +122,7 @@ public abstract class AbstractChainDataProviderTest {
             blockSelectorFactory,
             stateSelectorFactory,
             blobSidecarSelectorFactory,
+            dataColumnSidecarSelectorFactory,
             rewardCalculatorMock);
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {

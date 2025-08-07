@@ -43,6 +43,18 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getGenesisDelay();
 
+  Bytes4 getAltairForkVersion();
+
+  UInt64 getAltairForkEpoch();
+
+  Bytes4 getBellatrixForkVersion();
+
+  UInt64 getBellatrixForkEpoch();
+
+  Bytes4 getCapellaForkVersion();
+
+  UInt64 getCapellaForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
 
@@ -161,8 +173,6 @@ public interface SpecConfig extends NetworkingSpecConfig {
   int getMaxVoluntaryExits();
 
   // Misc
-  int getSafeSlotsToUpdateJustified();
-
   int getReorgMaxEpochsSinceFinalization();
 
   int getReorgHeadWeightThreshold();

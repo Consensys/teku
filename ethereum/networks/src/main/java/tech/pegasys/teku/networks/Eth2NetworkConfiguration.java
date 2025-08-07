@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,14 +59,11 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
-  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = false;
+  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = true;
   public static final int
       DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 150;
   public static final int
-      DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 500;
-  public static final boolean
-      DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_EARLY_DROP_SINGLE_ATTESTATIONS_ENABLED = true;
-  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_PARALLEL_ENABLED = true;
+      DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 350;
 
   // should fit attestations for a slot given validator set size
   // so DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS * slots_per_epoch should be >= validator set size
@@ -82,6 +80,17 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
   public static final boolean DEFAULT_RUST_KZG_ENABLED = false;
+
+  // For regular nodes which will not recover data column sidecars, default
+  // to a low value which uses less memory. A higher precompute value only
+  // benefits nodes which compute KZG proofs for cells.
+  public static final int DEFAULT_KZG_PRECOMPUTE = 0;
+
+  // For supernodes which might recover data column sidecars, default to a
+  // higher value which makes recovery faster at the cost of higher memory
+  // usage. A value of 9 will result in approximately 2x performance increase
+  // but use an extra 196 MiB of memory.
+  public static final int DEFAULT_KZG_PRECOMPUTE_SUPERNODE = 9;
 
   // at least 5, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
@@ -111,6 +120,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> capellaForkEpoch;
   private final Optional<UInt64> denebForkEpoch;
   private final Optional<UInt64> electraForkEpoch;
+  private final Optional<UInt64> fuluForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -127,12 +137,12 @@ public class Eth2NetworkConfiguration {
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
   private final boolean rustKzgEnabled;
+  private final OptionalInt kzgPrecompute;
+  private final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis;
   private final boolean aggregatingAttestationPoolV2Enabled;
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
-  private final boolean aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled;
-  private final boolean aggregatingAttestationPoolV2ParallelEnabled;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -149,6 +159,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> capellaForkEpoch,
       final Optional<UInt64> denebForkEpoch,
       final Optional<UInt64> electraForkEpoch,
+      final Optional<UInt64> fuluForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -162,12 +173,12 @@ public class Eth2NetworkConfiguration {
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
       final boolean rustKzgEnabled,
+      final OptionalInt kzgPrecompute,
+      final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis,
       final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
-      final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
-      final boolean aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled,
-      final boolean aggregatingAttestationPoolV2ParallelEnabled) {
+      final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -179,6 +190,7 @@ public class Eth2NetworkConfiguration {
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
     this.electraForkEpoch = electraForkEpoch;
+    this.fuluForkEpoch = fuluForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -199,15 +211,14 @@ public class Eth2NetworkConfiguration {
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
     this.rustKzgEnabled = rustKzgEnabled;
+    this.kzgPrecompute = kzgPrecompute;
+    this.dataColumnSidecarRecoveryMaxDelayMillis = dataColumnSidecarRecoveryMaxDelayMillis;
     this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
     this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
     this.aggregatingAttestationPoolV2BlockAggregationTimeLimit =
         aggregatingAttestationPoolV2BlockAggregationTimeLimit;
     this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
-    this.aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled =
-        aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled;
-    this.aggregatingAttestationPoolV2ParallelEnabled = aggregatingAttestationPoolV2ParallelEnabled;
 
     LOG.debug(
         "P2P async queue - {} threads, max queue size {} ", asyncP2pMaxThreads, asyncP2pMaxQueue);
@@ -277,6 +288,7 @@ public class Eth2NetworkConfiguration {
       case CAPELLA -> capellaForkEpoch;
       case DENEB -> denebForkEpoch;
       case ELECTRA -> electraForkEpoch;
+      case FULU -> fuluForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -337,14 +349,6 @@ public class Eth2NetworkConfiguration {
     return aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
   }
 
-  public boolean isAggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled() {
-    return aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled;
-  }
-
-  public boolean isAggregatingAttestationPoolV2ParallelEnabled() {
-    return aggregatingAttestationPoolV2ParallelEnabled;
-  }
-
   public int getPendingAttestationsMaxQueue() {
     return pendingAttestationsMaxQueue;
   }
@@ -355,6 +359,14 @@ public class Eth2NetworkConfiguration {
 
   public boolean isRustKzgEnabled() {
     return rustKzgEnabled;
+  }
+
+  public OptionalInt getKzgPrecompute() {
+    return kzgPrecompute;
+  }
+
+  public OptionalLong getDataColumnSidecarRecoveryMaxDelayMillis() {
+    return dataColumnSidecarRecoveryMaxDelayMillis;
   }
 
   @Override
@@ -385,10 +397,6 @@ public class Eth2NetworkConfiguration {
             == that.aggregatingAttestationPoolV2BlockAggregationTimeLimit
         && aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit
             == that.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit
-        && aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled
-            == that.aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled
-        && aggregatingAttestationPoolV2ParallelEnabled
-            == that.aggregatingAttestationPoolV2ParallelEnabled
         && forkChoiceUpdatedAlwaysSendPayloadAttributes
             == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
         && rustKzgEnabled == that.rustKzgEnabled
@@ -401,6 +409,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
+        && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
         && Objects.equals(trustedSetup, that.trustedSetup)
@@ -425,6 +434,7 @@ public class Eth2NetworkConfiguration {
         capellaForkEpoch,
         denebForkEpoch,
         electraForkEpoch,
+        fuluForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
         trustedSetup,
@@ -478,6 +488,8 @@ public class Eth2NetworkConfiguration {
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
     private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
+    private OptionalInt kzgPrecompute = OptionalInt.empty();
+    private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
     private boolean strictConfigLoadingEnabled;
     private boolean aggregatingAttestationPoolV2Enabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
@@ -487,11 +499,6 @@ public class Eth2NetworkConfiguration {
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
-
-    private boolean aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled =
-        DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_EARLY_DROP_SINGLE_ATTESTATIONS_ENABLED;
-    private boolean aggregatingAttestationPoolV2ParallelEnabled =
-        DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_PARALLEL_ENABLED;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -513,24 +520,19 @@ public class Eth2NetworkConfiguration {
                   if (constants.equals(EPHEMERY.configName())) {
                     EphemeryNetwork.updateConfig(builder);
                   }
-                  altairForkEpoch.ifPresent(
-                      forkEpoch ->
-                          builder.altairBuilder(
-                              altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch)));
+                  altairForkEpoch.ifPresent(builder::altairForkEpoch);
+                  bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
+                  capellaForkEpoch.ifPresent(builder::capellaForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
                             safeSlotsToImportOptimistically);
-                        bellatrixForkEpoch.ifPresent(bellatrixBuilder::bellatrixForkEpoch);
                         totalTerminalDifficultyOverride.ifPresent(
                             bellatrixBuilder::terminalTotalDifficulty);
                         terminalBlockHashEpochOverride.ifPresent(
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
-                  builder.capellaBuilder(
-                      capellaBuilder ->
-                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
                   builder.denebBuilder(
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
@@ -580,6 +582,7 @@ public class Eth2NetworkConfiguration {
           capellaForkEpoch,
           denebForkEpoch,
           electraForkEpoch,
+          fuluForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -593,12 +596,12 @@ public class Eth2NetworkConfiguration {
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
+          kzgPrecompute,
+          dataColumnSidecarRecoveryMaxDelayMillis,
           aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
-          aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
-          aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled,
-          aggregatingAttestationPoolV2ParallelEnabled);
+          aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit);
     }
 
     private void validateCommandLineParameters() {
@@ -839,6 +842,18 @@ public class Eth2NetworkConfiguration {
 
     public Builder rustKzgEnabled(final boolean rustKzgEnabled) {
       this.rustKzgEnabled = rustKzgEnabled;
+      return this;
+    }
+
+    public Builder kzgPrecompute(final int kzgPrecompute) {
+      this.kzgPrecompute = OptionalInt.of(kzgPrecompute);
+      return this;
+    }
+
+    public Builder dataColumnSidecarRecoveryMaxDelayMillis(
+        final Long dataColumnSidecarRecoveryMaxDelayMillis) {
+      this.dataColumnSidecarRecoveryMaxDelayMillis =
+          OptionalLong.of(dataColumnSidecarRecoveryMaxDelayMillis);
       return this;
     }
 
@@ -1157,20 +1172,6 @@ public class Eth2NetworkConfiguration {
         final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit) {
       this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
           aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
-      return this;
-    }
-
-    public Builder aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled(
-        final boolean aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled) {
-      this.aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled =
-          aggregatingAttestationPoolV2EarlyDropSingleAttestationsEnabled;
-      return this;
-    }
-
-    public Builder aggregatingAttestationPoolV2ParallelEnabled(
-        final boolean aggregatingAttestationPoolV2ParallelEnabled) {
-      this.aggregatingAttestationPoolV2ParallelEnabled =
-          aggregatingAttestationPoolV2ParallelEnabled;
       return this;
     }
 

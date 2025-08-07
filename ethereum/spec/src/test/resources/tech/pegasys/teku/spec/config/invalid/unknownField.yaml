@@ -40,7 +40,12 @@ DOMAIN_CONTRIBUTION_AND_PROOF: 0x09000000
 # ---------------------------------------------------------------
 ALTAIR_FORK_VERSION: 0x01000000
 ALTAIR_FORK_EPOCH: 18446744073709551615
-
+# Bellatrix
+BELLATRIX_FORK_VERSION: 0x02000001
+BELLATRIX_FORK_EPOCH: 18446744073709551615
+# Capella
+CAPELLA_FORK_VERSION: 0x03000001
+CAPELLA_FORK_EPOCH: 18446744073709551615
 
 # Sync protocol
 # ---------------------------------------------------------------
@@ -81,12 +86,6 @@ HYSTERESIS_QUOTIENT: 4
 HYSTERESIS_DOWNWARD_MULTIPLIER: 1
 # 5 (plus 1.25)
 HYSTERESIS_UPWARD_MULTIPLIER: 5
-
-
-# Fork Choice
-# ---------------------------------------------------------------
-# 2**1 (= 1)
-SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 2
 
 
 # Validator
@@ -208,11 +207,6 @@ DOMAIN_SELECTION_PROOF: 0x05000000
 DOMAIN_AGGREGATE_AND_PROOF: 0x06000000
 
 
-# Light client
-# ---------------------------------------------------------------
-SYNC_COMMITTEE_BRANCH_LENGTH: 5
-
-
 # Mainnet preset - Bellatrix
 
 # Updated penalty values
@@ -281,3 +275,5 @@ ATTESTATION_SUBNET_COUNT: 64
 ATTESTATION_SUBNET_EXTRA_BITS: 0
 # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
 ATTESTATION_SUBNET_PREFIX_BITS: 6
+
+UPDATE_TIMEOUT: 64

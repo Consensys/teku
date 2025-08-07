@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BEACON_STATE_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -71,6 +73,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final ContributionAndProofSchema contributionAndProofSchema;
   private final SignedContributionAndProofSchema signedContributionAndProofSchema;
   private final MetadataMessageSchema<?> metadataMessageSchema;
+  private final StatusMessageSchema<?> statusMessageSchema;
   private final LightClientHeaderSchema lightClientHeaderSchema;
   private final LightClientBootstrapSchema lightClientBootstrapSchema;
   private final LightClientUpdateSchema lightClientUpdateSchema;
@@ -94,6 +97,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.signedContributionAndProofSchema =
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
     this.metadataMessageSchema = schemaRegistry.get(METADATA_MESSAGE_SCHEMA);
+    this.statusMessageSchema = schemaRegistry.get(STATUS_MESSAGE_SCHEMA);
     this.lightClientHeaderSchema = new LightClientHeaderSchema();
     this.lightClientBootstrapSchema = new LightClientBootstrapSchema(specConfig);
     this.lightClientUpdateSchema = new LightClientUpdateSchema(specConfig);
@@ -198,6 +202,11 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   @Override
   public MetadataMessageSchema<?> getMetadataMessageSchema() {
     return metadataMessageSchema;
+  }
+
+  @Override
+  public StatusMessageSchema<?> getStatusMessageSchema() {
+    return statusMessageSchema;
   }
 
   @Override

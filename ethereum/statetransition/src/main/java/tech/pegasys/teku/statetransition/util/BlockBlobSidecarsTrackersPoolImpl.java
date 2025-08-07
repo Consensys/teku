@@ -16,8 +16,8 @@ package tech.pegasys.teku.statetransition.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_EL;
-import static tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin.LOCAL_PROPOSAL;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_EL;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSAL;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -59,10 +60,10 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -78,10 +79,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String COUNTER_LOCAL_EL_SUBTYPE = "local_el";
   static final String COUNTER_LOCAL_PROPOSAL_SUBTYPE = "local_proposal";
   static final String COUNTER_RPC_SUBTYPE = "rpc";
+  static final String COUNTER_RECOVERED_SUBTYPE = "recovered";
   static final String COUNTER_GOSSIP_DUPLICATE_SUBTYPE = "gossip_duplicate";
   static final String COUNTER_RPC_DUPLICATE_SUBTYPE = "rpc_duplicate";
   static final String COUNTER_LOCAL_EL_DUPLICATE_SUBTYPE = "local_el_duplicate";
   static final String COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE = "local_proposal_duplicate";
+  static final String COUNTER_RECOVERED_DUPLICATE_SUBTYPE = "recovered_duplicate";
 
   static final String COUNTER_RPC_FETCH_SUBTYPE = "rpc_fetch";
   static final String COUNTER_LOCAL_EL_FETCH_SUBTYPE = "local_el_fetch";
@@ -210,6 +213,11 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   @Override
   public synchronized void onNewBlobSidecar(
       final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {
+    if (spec.atSlot(blobSidecar.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return;
+    }
     if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
       return;
     }
@@ -253,7 +261,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private void publishRecoveredBlobSidecar(final BlobSidecar blobSidecar) {
     LOG.debug("Publishing recovered blob sidecar {}", blobSidecar::toLogString);
     gossipValidatorSupplier.get().markForEquivocation(blobSidecar);
-    blobSidecarGossipPublisher.apply(blobSidecar).ifExceptionGetsHereRaiseABug();
+    blobSidecarGossipPublisher.apply(blobSidecar).finishStackTrace();
   }
 
   private void countBlobSidecar(final RemoteOrigin origin) {
@@ -264,6 +272,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_EL_SUBTYPE).inc();
       case LOCAL_PROPOSAL ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
+      case RECOVERED ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
     }
   }
 
@@ -279,6 +289,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           poolStatsCounters
               .labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
               .inc();
+      case RECOVERED ->
+          poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE).inc();
     }
   }
 
@@ -286,6 +298,9 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   public synchronized void onNewBlock(
       final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
+      return;
+    }
+    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return;
     }
     if (recentChainData.containsBlock(block.getRoot())) {
@@ -384,7 +399,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   @VisibleForTesting
   @Override
-  synchronized void prune(final UInt64 slotLimit) {
+  protected synchronized void prune(final UInt64 slotLimit) {
     final List<SlotAndBlockRoot> toRemove = new ArrayList<>();
     for (SlotAndBlockRoot slotAndBlockRoot : orderedBlobSidecarsTrackers) {
       if (slotAndBlockRoot.getSlot().isGreaterThan(slotLimit)) {
@@ -515,7 +530,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                                       }
                                     })
                                 .handleException(this::logBlockOrBlobsRPCFailure))
-                    .ifExceptionGetsHereRaiseABug();
+                    .finishStackTrace();
               }
             });
 
@@ -536,6 +551,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case LOCAL_EL -> {} // only possible for blobs
             case LOCAL_PROPOSAL ->
                 poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
+            case RECOVERED ->
+                poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
           }
         });
   }
@@ -553,6 +570,10 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
             case LOCAL_PROPOSAL ->
                 poolStatsCounters
                     .labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_DUPLICATE_SUBTYPE)
+                    .inc();
+            case RECOVERED ->
+                poolStatsCounters
+                    .labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE)
                     .inc();
             case LOCAL_EL -> {} // only possible for blobs
           }
@@ -606,7 +627,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                     .thenCompose(__ -> rpcFetchDelay)
                     .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
                     .handleException(this::logBlockOrBlobsRPCFailure))
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   @VisibleForTesting
@@ -620,7 +641,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     final UInt64 nowMillis = timeProvider.getTimeInMillis();
     final UInt64 slotStartTimeMillis = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
-    final UInt64 millisPerSlot = secondsToMillis(spec.getSecondsPerSlot(slot));
+    final UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
     final UInt64 attestationDueMillis = slotStartTimeMillis.plus(millisPerSlot.dividedBy(3));
 
     if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
@@ -688,7 +709,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         .inc(versionedHashes.size());
 
     return executionLayer
-        .engineGetBlobs(versionedHashes, slotAndBlockRoot.getSlot())
+        .engineGetBlobAndProofs(versionedHashes, slotAndBlockRoot.getSlot())
         .thenAccept(
             blobAndProofs -> {
               checkArgument(
@@ -726,6 +747,11 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
         blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
 
     if (blockBlobSidecarsTracker == null || blockBlobSidecarsTracker.isComplete()) {
+      return;
+    }
+    if (spec.atSlot(slotAndBlockRoot.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       return;
     }
 

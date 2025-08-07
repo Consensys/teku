@@ -33,8 +33,6 @@ import org.apache.tuweni.bytes.Bytes;
 final class CKZG4844 implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
-  // used for FK20 proof computations (PeerDAS) so can default to 0 for now
-  private static final int PRECOMPUTE_DEFAULT = 0;
 
   @SuppressWarnings("NonFinalStaticField")
   private static CKZG4844 instance;
@@ -59,7 +57,8 @@ final class CKZG4844 implements KZG {
 
   /** Only one trusted setup at a time can be loaded. */
   @Override
-  public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
+  public synchronized void loadTrustedSetup(final String trustedSetupFile, final int kzgPrecompute)
+      throws KZGException {
     if (loadedTrustedSetupFile.isPresent()
         && loadedTrustedSetupFile.get().equals(trustedSetupFile)) {
       LOG.trace("Trusted setup from {} is already loaded", trustedSetupFile);
@@ -82,7 +81,7 @@ final class CKZG4844 implements KZG {
           CKZG4844Utils.flattenG1Points(g1PointsMonomial),
           CKZG4844Utils.flattenG1Points(g1PointsLagrange),
           CKZG4844Utils.flattenG2Points(g2PointsMonomial),
-          PRECOMPUTE_DEFAULT);
+          kzgPrecompute);
       LOG.debug("Loaded trusted setup from {}", trustedSetupFile);
       loadedTrustedSetupFile = Optional.of(trustedSetupFile);
     } catch (final Exception ex) {
@@ -166,6 +165,7 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     final CellsAndProofs cellsAndProofs =
         CKZG4844JNI.computeCellsAndKzgProofs(blob.toArrayUnsafe());

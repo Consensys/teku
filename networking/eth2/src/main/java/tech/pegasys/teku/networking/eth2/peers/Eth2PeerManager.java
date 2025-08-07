@@ -136,7 +136,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Optional<UInt64> custodyGroupCount,
       final DasReqRespLogger dasLogger) {
 
-    // FIXME: we have no guarantee here that it's synced already
+    // TODO-fulu: we have no guarantee here that it's synced already
+    // (https://github.com/Consensys/teku/issues/9461)
     custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
@@ -253,8 +254,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.NO_STATUS_RECEIVED)
-                    .ifExceptionGetsHereRaiseABug();
+                peer.disconnectCleanly(DisconnectReason.NO_STATUS_RECEIVED).finishStackTrace();
               }
             },
             STATUS_RECEIVED_TIMEOUT)
@@ -272,7 +272,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   void sendPeriodicPing(final Eth2Peer peer) {
     if (peer.getUnansweredPingCount() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).ifExceptionGetsHereRaiseABug();
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).finishStackTrace();
     } else {
       peer.sendPing()
           .finish(

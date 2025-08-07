@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -84,22 +86,21 @@ public class SpecConfigFuluTest {
   }
 
   @Test
-  public void maxBlobsFuluEpoch() {
+  public void blobParametersFuluEpoch() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
     final int maxBlobsPerBlock = 512;
     final SpecConfigAndParent<?> specConfigAndParent =
         SpecConfigLoader.loadConfig(
             "mainnet",
-            b -> {
-              b.fuluBuilder(
-                  fb ->
-                      fb.fuluForkEpoch(fuluEpoch)
-                          .blobSchedule(
-                              List.of(
-                                  new BlobSchedule(UInt64.valueOf(269568), 6),
-                                  new BlobSchedule(UInt64.valueOf(364032), 9),
-                                  new BlobSchedule(fuluEpoch, maxBlobsPerBlock))));
-            });
+            b ->
+                b.fuluBuilder(
+                    fb ->
+                        fb.fuluForkEpoch(fuluEpoch)
+                            .blobSchedule(
+                                List.of(
+                                    new BlobScheduleEntry(UInt64.valueOf(269568), 6),
+                                    new BlobScheduleEntry(UInt64.valueOf(364032), 9),
+                                    new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock)))));
     final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
 
     // max blobs per block in fulu will start out at the same as electra
@@ -109,8 +110,80 @@ public class SpecConfigFuluTest {
                 .miscHelpers()
                 .toVersionFulu()
                 .orElseThrow()
-                .getMaxBlobsPerBlock(fuluEpoch))
-        .isEqualTo(maxBlobsPerBlock);
+                .getBlobParameters(fuluEpoch))
+        .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
+  }
+
+  @Test
+  public void blobParameterSameEpochAsFuluForkEpoch() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    final SpecConfigAndParent<?> specConfigAndParent =
+        SpecConfigLoader.loadConfig(
+            "mainnet",
+            b ->
+                b.fuluBuilder(
+                    fb ->
+                        fb.fuluForkEpoch(fuluEpoch)
+                            .blobSchedule(
+                                List.of(new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock)))));
+    final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
+
+    // max blobs per block in fulu will start out at the same as electra
+    assertThat(
+            fuluSpec
+                .forMilestone(SpecMilestone.FULU)
+                .miscHelpers()
+                .toVersionFulu()
+                .orElseThrow()
+                .getBlobParameters(fuluEpoch))
+        .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
+  }
+
+  @Test
+  public void blobParametersShouldNotContainDuplicates() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    assertThatThrownBy(
+            () ->
+                SpecConfigLoader.loadConfig(
+                    "mainnet",
+                    b ->
+                        b.fuluBuilder(
+                            fb ->
+                                fb.fuluForkEpoch(fuluEpoch)
+                                    .blobSchedule(
+                                        List.of(
+                                            new BlobScheduleEntry(fuluEpoch, 6),
+                                            new BlobScheduleEntry(
+                                                fuluEpoch.increment().increment(), 12),
+                                            // not ordered but it's ok
+                                            new BlobScheduleEntry(fuluEpoch.increment(), 9),
+                                            // duplicate
+                                            new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))))))
+        .hasMessage("There are duplicate entries for epoch 11223344 in blob schedule.")
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void
+      blobParametersFuluEpochDefaultsToElectraBlobParametersWhenBlobScheduleIsNotConfigured() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final UInt64 electraEpoch = UInt64.valueOf(364032);
+
+    final SpecConfigAndParent<?> specConfigAndParent =
+        SpecConfigLoader.loadConfig(
+            "mainnet",
+            b -> b.fuluBuilder(fb -> fb.fuluForkEpoch(fuluEpoch).blobSchedule(List.of())));
+    final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
+    // max blobs per block will default to MAX_BLOBS_PER_BLOCK_ELECTRA if blob schedule is empty
+    assertThat(
+            MiscHelpersFulu.required(fuluSpec.forMilestone(SpecMilestone.FULU).miscHelpers())
+                .getBlobParameters(fuluEpoch))
+        .isEqualTo(
+            new BlobParameters(
+                electraEpoch,
+                SpecConfigFulu.required(fuluSpec.getSpecConfig(fuluEpoch)).getMaxBlobsPerBlock()));
   }
 
   @Test
@@ -134,24 +207,6 @@ public class SpecConfigFuluTest {
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
-  @Test
-  public void mainnetBlobSchedule() {
-    final Spec mainnetSpec = TestSpecFactory.createMainnetFulu();
-    final MiscHelpersFulu miscHelpersFulu =
-        mainnetSpec.forMilestone(SpecMilestone.FULU).miscHelpers().toVersionFulu().orElseThrow();
-    // test defaulting to minimum
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(0))).isEqualTo(6);
-    // test deneb max blobs boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269568))).isEqualTo(6);
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(269569))).isEqualTo(6);
-    // last epoch of deneb
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364031))).isEqualTo(6);
-    // electra boundary
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364032))).isEqualTo(9);
-    // inside electra
-    assertThat(miscHelpersFulu.getMaxBlobsPerBlock(UInt64.valueOf(364033))).isEqualTo(9);
-  }
-
   private SpecConfigFulu createRandomFuluConfig(
       final SpecConfigElectra electraConfig, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
@@ -173,7 +228,7 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomPositiveInt(8192),
         dataStructureUtil.randomUInt64(32000000000L),
         List.of(
-            new BlobSchedule(
+            new BlobScheduleEntry(
                 dataStructureUtil.randomEpoch(), dataStructureUtil.randomPositiveInt(64)))) {};
   }
 }

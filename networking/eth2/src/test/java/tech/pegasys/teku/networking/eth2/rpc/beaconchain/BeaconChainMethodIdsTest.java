@@ -15,7 +15,13 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
+import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -53,5 +59,57 @@ public class BeaconChainMethodIdsTest {
     protocolId = BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 11, rpcEncoding);
     assertThat(BeaconChainMethodIds.extractVersion(protocolId, BeaconChainMethodIds.STATUS))
         .isEqualTo(11);
+  }
+
+  @ParameterizedTest
+  @MethodSource("rpcMethods")
+  public void testExtractVersionsFromMethodId(final String method) {
+    IntStream.range(1, 10)
+        .forEach(
+            expectedVersion -> {
+              final String methodId =
+                  BeaconChainMethodIds.getMethodId(method, expectedVersion, rpcEncoding);
+              assertThat(BeaconChainMethodIds.extractVersion(methodId, method))
+                  .isEqualTo(expectedVersion);
+            });
+  }
+
+  private static Stream<Arguments> rpcMethods() {
+    return Stream.of(
+        Arguments.of(BeaconChainMethodIds.STATUS),
+        Arguments.of(BeaconChainMethodIds.GOODBYE),
+        Arguments.of(BeaconChainMethodIds.BEACON_BLOCKS_BY_ROOT),
+        Arguments.of(BeaconChainMethodIds.BEACON_BLOCKS_BY_RANGE),
+        Arguments.of(BeaconChainMethodIds.BLOB_SIDECARS_BY_ROOT),
+        Arguments.of(BeaconChainMethodIds.BLOB_SIDECARS_BY_RANGE),
+        Arguments.of(BeaconChainMethodIds.DATA_COLUMN_SIDECARS_BY_ROOT),
+        Arguments.of(BeaconChainMethodIds.DATA_COLUMN_SIDECARS_BY_RANGE),
+        Arguments.of(BeaconChainMethodIds.GET_METADATA),
+        Arguments.of(BeaconChainMethodIds.PING));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("rpcMethodsWithExtractVersionFunction")
+  public void testSpecificExtractVersionMethods(
+      final String method, final Function<String, Integer> versionExtractor) {
+    final int expectedVersion = 99;
+    final String methodId = BeaconChainMethodIds.getMethodId(method, expectedVersion, rpcEncoding);
+    assertThat(versionExtractor.apply(methodId)).isEqualTo(expectedVersion);
+  }
+
+  private static Stream<Arguments> rpcMethodsWithExtractVersionFunction() {
+    return Stream.of(
+        Arguments.of(
+            BeaconChainMethodIds.STATUS,
+            (Function<String, Integer>) BeaconChainMethodIds::extractStatusVersion),
+        Arguments.of(
+            BeaconChainMethodIds.BEACON_BLOCKS_BY_ROOT,
+            (Function<String, Integer>) BeaconChainMethodIds::extractBeaconBlocksByRootVersion),
+        Arguments.of(
+            BeaconChainMethodIds.BEACON_BLOCKS_BY_RANGE,
+            (Function<String, Integer>) BeaconChainMethodIds::extractBeaconBlocksByRangeVersion),
+        Arguments.of(
+            BeaconChainMethodIds.GET_METADATA,
+            (Function<String, Integer>) BeaconChainMethodIds::extractGetMetadataVersion));
   }
 }

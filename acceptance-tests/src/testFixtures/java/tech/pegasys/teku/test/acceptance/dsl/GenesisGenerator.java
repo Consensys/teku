@@ -56,27 +56,21 @@ public class GenesisGenerator {
   public GenesisGenerator withAltairEpoch(final UInt64 altairForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.altairBuilder(
-                    altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.altairForkEpoch(altairForkEpoch));
     return this;
   }
 
   public GenesisGenerator withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.bellatrixBuilder(
-                    bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.bellatrixForkEpoch(bellatrixForkEpoch));
     return this;
   }
 
   public GenesisGenerator withCapellaEpoch(final UInt64 capellaForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.capellaBuilder(
-                    capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.capellaForkEpoch(capellaForkEpoch));
     return this;
   }
 

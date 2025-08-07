@@ -57,11 +57,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
 public class RespondingEth2Peer implements Eth2Peer {
+
   private static final MockNodeIdGenerator ID_GENERATOR = new MockNodeIdGenerator();
   private static final Bytes4 FORK_DIGEST = Bytes4.fromHexString("0x11223344");
 
@@ -107,20 +109,23 @@ public class RespondingEth2Peer implements Eth2Peer {
         finalizedCheckpoint.getRoot(),
         finalizedCheckpoint.getEpoch(),
         head.getRoot(),
-        head.getSlot());
+        head.getSlot(),
+        Optional.empty());
   }
 
-  private PeerStatus createStatus(final Checkpoint head, final Checkpoint finalized) {
+  private PeerStatus createStatus(
+      final Spec spec, final Checkpoint head, final Checkpoint finalized) {
     return new PeerStatus(
         FORK_DIGEST,
         finalized.getRoot(),
         finalized.getEpoch(),
         head.getRoot(),
-        head.getEpochStartSlot(spec));
+        head.getEpochStartSlot(spec),
+        Optional.ofNullable(finalized.getEpochStartSlot(spec)));
   }
 
-  public void updateStatus(final Checkpoint head, final Checkpoint finalized) {
-    updateStatus(createStatus(head, finalized));
+  public void updateStatus(final Spec spec, final Checkpoint head, final Checkpoint finalized) {
+    updateStatus(createStatus(spec, head, finalized));
   }
 
   @Override
@@ -267,7 +272,6 @@ public class RespondingEth2Peer implements Eth2Peer {
   public SafeFuture<Void> requestDataColumnSidecarsByRoot(
       final List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
       final RpcResponseListener<DataColumnSidecar> listener) {
-    // TODO-fulu
     return SafeFuture.COMPLETE;
   }
 
@@ -277,7 +281,6 @@ public class RespondingEth2Peer implements Eth2Peer {
       final UInt64 count,
       final List<UInt64> columns,
       final RpcResponseListener<DataColumnSidecar> listener) {
-    // TODO-fulu
     return SafeFuture.COMPLETE;
   }
 
@@ -334,35 +337,35 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
-      final Eth2RpcMethod<I, O> method, final I request) {
+      final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 
   @Override
-  public Optional<RequestApproval> approveBlocksRequest(
+  public Optional<ApprovedRequest> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return Optional.of(
-        new RequestApproval.RequestApprovalBuilder()
+        new ApprovedRequest.RequestApprovalBuilder()
             .requestId(0)
             .timeSeconds(ZERO)
-            .objectsCount(0)
+            .requestSize(0)
             .build());
   }
 
   @Override
   public void adjustBlocksRequest(
-      final RequestApproval blockRequests, final long returnedBlocksCount) {}
+      final ApprovedRequest blockRequests, final long returnedBlocksCount) {}
 
   @Override
-  public Optional<RequestApproval> approveBlobSidecarsRequest(
+  public Optional<ApprovedRequest> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return Optional.of(
-        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+        new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build());
   }
 
   @Override
   public void adjustBlobSidecarsRequest(
-      final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
+      final ApprovedRequest blobSidecarRequests, final long returnedBlobSidecarsCount) {}
 
   @Override
   public long getAvailableDataColumnSidecarsRequestCount() {
@@ -370,15 +373,15 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> approveDataColumnSidecarsRequest(
+  public Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
       final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
     return Optional.of(
-        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+        new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build());
   }
 
   @Override
   public void adjustDataColumnSidecarsRequest(
-      final RequestApproval dataColumnSidecarRequests,
+      final ApprovedRequest dataColumnSidecarRequests,
       final long returnedDataColumnSidecarsCount) {}
 
   @Override
@@ -449,11 +452,11 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
-          TRequest,
+          TRequest extends RpcRequest,
           RespHandler extends RpcResponseHandler<?>>
       SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
           final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
-          final TRequest tRequest,
+          final RpcRequestBodySelector<TRequest> rpcRequestBodySelector,
           final RespHandler responseHandler) {
     return null;
   }
@@ -498,6 +501,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   public static class PendingRequest<ResponseT, HandlerT> {
+
     private final SafeFuture<ResponseT> future = new SafeFuture<>();
     private final PendingRequestHandler<ResponseT, HandlerT> requestHandler;
 

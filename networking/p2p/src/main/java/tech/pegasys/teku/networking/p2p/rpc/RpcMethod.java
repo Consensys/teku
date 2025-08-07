@@ -15,10 +15,11 @@ package tech.pegasys.teku.networking.p2p.rpc;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public interface RpcMethod<
     TOutgoingHandler extends RpcRequestHandler,
-    TRequest,
+    TRequest extends RpcRequest,
     RespHandler extends RpcResponseHandler<?>> {
 
   /**

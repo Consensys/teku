@@ -39,6 +39,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -120,27 +122,32 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   SafeFuture<MetadataMessage> requestMetadata();
 
-  <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
-      final Eth2RpcMethod<I, O> method, final I request);
+  default <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
+      final Eth2RpcMethod<I, O> method, final I request) {
+    return requestSingleItem(method, new SingleRpcRequestBodySelector<>(request));
+  }
 
-  Optional<RequestApproval> approveBlocksRequest(
+  <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
+      final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector);
+
+  Optional<ApprovedRequest> approveBlocksRequest(
       ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
 
-  void adjustBlocksRequest(RequestApproval blocksRequest, long returnedBlocksCount);
+  void adjustBlocksRequest(ApprovedRequest blocksRequest, long returnedBlocksCount);
 
-  Optional<RequestApproval> approveBlobSidecarsRequest(
+  Optional<ApprovedRequest> approveBlobSidecarsRequest(
       ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
 
   void adjustBlobSidecarsRequest(
-      RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
+      ApprovedRequest blobSidecarsRequest, long returnedBlobSidecarsCount);
 
   long getAvailableDataColumnSidecarsRequestCount();
 
-  Optional<RequestApproval> approveDataColumnSidecarsRequest(
+  Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
       ResponseCallback<DataColumnSidecar> callback, long dataColumnSidecarsCount);
 
   void adjustDataColumnSidecarsRequest(
-      RequestApproval dataColumnSidecarsRequest, long returnedDataColumnSidecarsCount);
+      ApprovedRequest dataColumnSidecarsRequest, long returnedDataColumnSidecarsCount);
 
   boolean approveRequest();
 

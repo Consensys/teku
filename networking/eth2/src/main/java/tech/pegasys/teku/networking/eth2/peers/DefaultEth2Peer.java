@@ -74,8 +74,10 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -195,8 +197,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             },
             error -> {
               LOG.error("Failed to validate updated peer status", error);
-              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK)
-                  .ifExceptionGetsHereRaiseABug();
+              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK).finishStackTrace();
             });
   }
 
@@ -264,15 +265,17 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<PeerStatus> sendStatus() {
-    final Optional<StatusMessage> statusMessage = statusMessageFactory.createStatusMessage();
-    if (statusMessage.isEmpty()) {
+    final Optional<RpcRequestBodySelector<StatusMessage>> statusMessageBodySelector =
+        statusMessageFactory.createStatusMessage();
+    if (statusMessageBodySelector.isEmpty()) {
       final Exception error =
           new IllegalStateException("Unable to generate local status message. Node is not ready.");
       return SafeFuture.failedFuture(error);
     }
-    LOG.trace("Sending status message {} to {}", statusMessage.get(), getAddress());
 
-    return requestSingleItem(rpcMethods.status(), statusMessage.get())
+    LOG.trace("Sending status message to {}", getAddress());
+
+    return requestSingleItem(rpcMethods.status(), statusMessageBodySelector.get())
         .thenApply(PeerStatus::fromStatusMessage)
         .thenPeek(this::updateStatus);
   }
@@ -401,7 +404,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             method -> {
               final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobSidecarsByRangeRequestMessage request;
-              final int maxBlobsPerBlock = calculateMaxBlobsPerBlock(startSlot.plus(count));
+              final int maxBlobsPerBlock = getMaxBlobsPerBlock(startSlot.plus(count));
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
@@ -434,8 +437,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
   }
 
-  private int calculateMaxBlobsPerBlock(final UInt64 endSlot) {
-    return SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig()).getMaxBlobsPerBlock();
+  private int getMaxBlobsPerBlock(final UInt64 slot) {
+    return spec.getMaxBlobsPerBlockAtSlot(slot).orElseThrow();
   }
 
   @Override
@@ -453,7 +456,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
-                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
+                    "Requesting data column sidecars from slot {} instead of slot {} because the request is spanning the Fulu fork transition",
                     firstSupportedSlot,
                     startSlot);
                 final UInt64 updatedCount =
@@ -494,19 +497,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> approveBlocksRequest(
+  public Optional<ApprovedRequest> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return approveObjectsRequest("blocks", blockRequestTracker, blocksCount, callback);
   }
 
   @Override
   public void adjustBlocksRequest(
-      final RequestApproval blocksRequest, final long returnedBlocksCount) {
+      final ApprovedRequest blocksRequest, final long returnedBlocksCount) {
     adjustObjectsRequest(blockRequestTracker, blocksRequest, returnedBlocksCount);
   }
 
   @Override
-  public Optional<RequestApproval> approveBlobSidecarsRequest(
+  public Optional<ApprovedRequest> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return approveObjectsRequest(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
@@ -514,7 +517,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public void adjustBlobSidecarsRequest(
-      final RequestApproval blobSidecarsRequest, final long returnedBlobSidecarsCount) {
+      final ApprovedRequest blobSidecarsRequest, final long returnedBlobSidecarsCount) {
     adjustObjectsRequest(
         blobSidecarsRequestTracker, blobSidecarsRequest, returnedBlobSidecarsCount);
   }
@@ -525,7 +528,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> approveDataColumnSidecarsRequest(
+  public Optional<ApprovedRequest> approveDataColumnSidecarsRequest(
       final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
     return approveObjectsRequest(
         "data column sidecars",
@@ -536,7 +539,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public void adjustDataColumnSidecarsRequest(
-      final RequestApproval dataColumnSidecarsRequest, final long returnedDataColumnSidecarsCount) {
+      final ApprovedRequest dataColumnSidecarsRequest, final long returnedDataColumnSidecarsCount) {
     adjustObjectsRequest(
         dataColumnSidecarsRequestTracker,
         dataColumnSidecarsRequest,
@@ -546,8 +549,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public boolean approveRequest() {
     if (requestTracker.approveObjectsRequest(1L).isEmpty()) {
-      LOG.info("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);
-      disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
+      LOG.debug("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).finishStackTrace();
       return false;
     }
     return true;
@@ -569,32 +572,32 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
-      final Eth2RpcMethod<I, O> method, final I request) {
+      final Eth2RpcMethod<I, O> method, final RpcRequestBodySelector<I> requestBodySelector) {
     final Eth2RpcResponseHandler<O, O> responseHandler =
         Eth2RpcResponseHandler.expectSingleResponse();
-    return sendEth2Request(method, request, responseHandler)
+    return sendEth2Request(method, requestBodySelector, responseHandler)
         .thenCompose(__ -> responseHandler.getResult());
   }
 
   private void adjustObjectsRequest(
       final RateTracker requestTracker,
-      final RequestApproval requestApproval,
+      final ApprovedRequest approvedRequest,
       final long returnedObjectsCount) {
-    requestTracker.adjustObjectsRequest(requestApproval, returnedObjectsCount);
+    requestTracker.adjustObjectsRequest(approvedRequest, returnedObjectsCount);
   }
 
-  private <T> Optional<RequestApproval> approveObjectsRequest(
+  private <T> Optional<ApprovedRequest> approveObjectsRequest(
       final String requestType,
       final RateTracker requestTracker,
       final long objectsCount,
       final ResponseCallback<T> callback) {
-    final Optional<RequestApproval> requestApproval =
+    final Optional<ApprovedRequest> requestApproval =
         requestTracker.approveObjectsRequest(objectsCount);
     if (requestApproval.isEmpty()) {
-      LOG.info("Peer {} disconnected due to {} rate limits", getId(), requestType);
+      LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
-      disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).finishStackTrace();
     }
     return requestApproval;
   }
@@ -619,9 +622,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final Eth2RpcMethod<I, O> method,
       final I request,
       final Eth2RpcResponseHandler<O, ?> responseHandler) {
+    return sendEth2Request(method, new SingleRpcRequestBodySelector<>(request), responseHandler);
+  }
+
+  private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendEth2Request(
+      final Eth2RpcMethod<I, O> method,
+      final RpcRequestBodySelector<I> requestBodySelector,
+      final Eth2RpcResponseHandler<O, ?> responseHandler) {
     outstandingRequests.incrementAndGet();
 
-    return this.sendRequest(method, request, responseHandler)
+    return this.sendRequest(method, requestBodySelector, responseHandler)
         .thenPeek(
             ctrl ->
                 ctrl.getRequiredOutgoingRequestHandler()

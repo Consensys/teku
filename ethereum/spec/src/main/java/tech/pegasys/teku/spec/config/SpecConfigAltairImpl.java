@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -34,17 +33,9 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   // Time
   private final int epochsPerSyncCommitteePeriod;
 
-  // Fork
-  private final Bytes4 altairForkVersion;
-  private final UInt64 altairForkEpoch;
-
   // Sync protocol
   private final int minSyncCommitteeParticipants;
   private final int updateTimeout;
-
-  // Light client
-  private final int syncCommitteeBranchLength;
-  private final int finalityBranchLength;
 
   public SpecConfigAltairImpl(
       final SpecConfig specConfig,
@@ -55,12 +46,8 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
       final UInt64 inactivityScoreBias,
       final UInt64 inactivityScoreRecoveryRate,
       final int epochsPerSyncCommitteePeriod,
-      final Bytes4 altairForkVersion,
-      final UInt64 altairForkEpoch,
       final int minSyncCommitteeParticipants,
-      final int updateTimeout,
-      final int syncCommitteeBranchLength,
-      final int finalityBranchLength) {
+      final int updateTimeout) {
     super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
@@ -69,12 +56,8 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
     this.inactivityScoreBias = inactivityScoreBias;
     this.inactivityScoreRecoveryRate = inactivityScoreRecoveryRate;
     this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
-    this.altairForkVersion = altairForkVersion;
-    this.altairForkEpoch = altairForkEpoch;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.updateTimeout = updateTimeout;
-    this.syncCommitteeBranchLength = syncCommitteeBranchLength;
-    this.finalityBranchLength = finalityBranchLength;
   }
 
   public static SpecConfigAltair required(final SpecConfig specConfig) {
@@ -85,16 +68,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
                 new IllegalArgumentException(
                     "Expected altair spec config but got: "
                         + specConfig.getClass().getSimpleName()));
-  }
-
-  @Override
-  public Bytes4 getAltairForkVersion() {
-    return altairForkVersion;
-  }
-
-  @Override
-  public UInt64 getAltairForkEpoch() {
-    return altairForkEpoch;
   }
 
   @Override
@@ -143,16 +116,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   }
 
   @Override
-  public int getSyncCommitteeBranchLength() {
-    return syncCommitteeBranchLength;
-  }
-
-  @Override
-  public int getFinalityBranchLength() {
-    return finalityBranchLength;
-  }
-
-  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }
@@ -179,11 +142,7 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         && Objects.equals(inactivityScoreRecoveryRate, that.inactivityScoreRecoveryRate)
         && epochsPerSyncCommitteePeriod == that.epochsPerSyncCommitteePeriod
         && minSyncCommitteeParticipants == that.minSyncCommitteeParticipants
-        && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair)
-        && Objects.equals(altairForkVersion, that.altairForkVersion)
-        && Objects.equals(altairForkEpoch, that.altairForkEpoch)
-        && syncCommitteeBranchLength == that.syncCommitteeBranchLength
-        && finalityBranchLength == that.finalityBranchLength;
+        && Objects.equals(inactivityPenaltyQuotientAltair, that.inactivityPenaltyQuotientAltair);
   }
 
   @Override
@@ -197,10 +156,6 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
         inactivityScoreBias,
         inactivityScoreRecoveryRate,
         epochsPerSyncCommitteePeriod,
-        altairForkVersion,
-        altairForkEpoch,
-        minSyncCommitteeParticipants,
-        syncCommitteeBranchLength,
-        finalityBranchLength);
+        minSyncCommitteeParticipants);
   }
 }

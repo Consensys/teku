@@ -25,6 +25,7 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchChain;
@@ -42,7 +43,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 /** Manages the sync process to reach a finalized chain. */
 public class BatchSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration PAUSE_ON_SERVICE_OFFLINE = Duration.ofSeconds(5);
+  private static final Duration PAUSE_ON_SERVICE_OFFLINE_OR_DAS_CHECK = Duration.ofSeconds(5);
 
   private final EventThread eventThread;
   private final AsyncRunner asyncRunner;
@@ -51,6 +52,7 @@ public class BatchSync implements Sync {
   private final BatchDataRequester batchDataRequester;
   private final MultipeerCommonAncestorFinder commonAncestorFinder;
   private final TimeProvider timeProvider;
+  private final SyncPreImportBlockChannel syncPreImportBlockChannel;
 
   private final BatchChain activeBatches;
 
@@ -79,7 +81,8 @@ public class BatchSync implements Sync {
       final BatchImporter batchImporter,
       final BatchDataRequester batchDataRequester,
       final MultipeerCommonAncestorFinder commonAncestorFinder,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final SyncPreImportBlockChannel syncPreImportBlockChannel) {
     this.eventThread = eventThread;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
@@ -89,6 +92,7 @@ public class BatchSync implements Sync {
     this.commonAncestorFinder = commonAncestorFinder;
     this.timeProvider = timeProvider;
     this.lastImportTimerStartPointSeconds = timeProvider.getTimeInSeconds();
+    this.syncPreImportBlockChannel = syncPreImportBlockChannel;
   }
 
   public static BatchSync create(
@@ -100,7 +104,8 @@ public class BatchSync implements Sync {
       final int batchSize,
       final int maxPendingBatches,
       final MultipeerCommonAncestorFinder commonAncestorFinder,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final SyncPreImportBlockChannel syncPreImportBlockChannel) {
     final BatchChain activeBatches = new BatchChain();
     final BatchDataRequester batchDataRequester =
         new BatchDataRequester(
@@ -113,7 +118,8 @@ public class BatchSync implements Sync {
         batchImporter,
         batchDataRequester,
         commonAncestorFinder,
-        timeProvider);
+        timeProvider,
+        syncPreImportBlockChannel);
   }
 
   /**
@@ -201,6 +207,8 @@ public class BatchSync implements Sync {
       progressSync();
       return;
     }
+
+    syncPreImportBlockChannel.onNewPreImportBlocks(batch.getBlocks());
 
     activeBatches
         .previousNonEmptyBatch(batch)
@@ -425,9 +433,10 @@ public class BatchSync implements Sync {
         LOG.debug("Marking batch {} as invalid because it extends from an invalid block", batch);
         batch.markAsInvalid();
       }
-    } else if (result == BatchImportResult.SERVICE_OFFLINE) {
+    } else if (result == BatchImportResult.EXECUTION_CLIENT_OFFLINE
+        || result == BatchImportResult.DATA_NOT_AVAILABLE) {
       if (!scheduledProgressSync) {
-        LOG.warn("Unable to import blocks because execution client is offline.");
+        LOG.warn("Unable to import blocks: {}", result);
         asyncRunner
             .runAfterDelay(
                 () ->
@@ -436,8 +445,8 @@ public class BatchSync implements Sync {
                           scheduledProgressSync = false;
                           progressSync();
                         }),
-                PAUSE_ON_SERVICE_OFFLINE)
-            .ifExceptionGetsHereRaiseABug();
+                PAUSE_ON_SERVICE_OFFLINE_OR_DAS_CHECK)
+            .finishStackTrace();
         scheduledProgressSync = true;
       }
       return;

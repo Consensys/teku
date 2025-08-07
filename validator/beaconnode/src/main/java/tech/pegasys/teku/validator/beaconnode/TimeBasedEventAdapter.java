@@ -53,7 +53,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     this.genesisTime = genesisTime;
     final UInt64 currentSlot = getCurrentSlot();
 
-    final UInt64 nextSlotStartTime = spec.getSlotStartTime(currentSlot.plus(1), genesisTime);
+    final UInt64 nextSlotStartTime = spec.computeTimeAtSlot(currentSlot.plus(1), genesisTime);
     final UInt64 secondsPerSlot = getSecondsPerSlot(currentSlot);
 
     // NOTE: seconds_per_slot currently based on genesis slot, and timings set up based on this
@@ -138,7 +138,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   public SafeFuture<Void> start() {
     // Don't wait for the genesis time to be available before considering startup complete
     // The beacon node may not be available or genesis may not yet be known.
-    genesisDataProvider.getGenesisTime().thenAccept(this::start).ifExceptionGetsHereRaiseABug();
+    genesisDataProvider.getGenesisTime().thenAccept(this::start).finishError(LOG);
     return SafeFuture.COMPLETE;
   }
 

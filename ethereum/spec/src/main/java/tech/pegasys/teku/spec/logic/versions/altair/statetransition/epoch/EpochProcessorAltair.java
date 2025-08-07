@@ -148,6 +148,11 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     // Nothing to do
   }
 
+  @Override
+  public void processProposerLookahead(final MutableBeaconState state) {
+    // Nothing to do
+  }
+
   /**
    * Replaces the progressive total balances in the state transition caches with an altair one if
    * not already in use. This handles both upgrading on milestone transition and switching from the

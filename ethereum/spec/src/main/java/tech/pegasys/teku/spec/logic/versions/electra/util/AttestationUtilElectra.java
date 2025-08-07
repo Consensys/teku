@@ -64,7 +64,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
    * @return
    * @throws IllegalArgumentException
    * @see
-   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/beacon-chain.md#modified-get_attesting_indices</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#modified-get_attesting_indices</a>
    */
   @Override
   public IntList getAttestingIndices(final BeaconState state, final Attestation attestation) {
@@ -94,7 +94,7 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
    * In electra, attestationData must have committee index set to 0
    *
    * @see
-   *     <a>https://github.com/ethereum/consensus-specs/blob/dev/specs/electra/validator.md#construct-attestation</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/master/specs/electra/validator.md#construct-attestation</a>
    */
   @Override
   public AttestationData getGenericAttestationData(
@@ -161,12 +161,8 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
                 final IndexedAttestation indexedAttestation =
                     getIndexedAttestationFromSingleAttestation(singleAttestation);
 
-                final SszBitlist singleAttestationAggregationBits =
-                    getSingleAttestationAggregationBits(state, singleAttestation);
-
                 final Attestation convertedAttestation =
-                    convertSingleAttestationToAggregated(
-                        singleAttestation, singleAttestationAggregationBits);
+                    convertSingleAttestationToAggregated(state, singleAttestation);
 
                 attestation.convertToAggregatedFormatFromSingleAttestation(convertedAttestation);
                 attestation.saveCommitteeShufflingSeedAndCommitteesSize(state);
@@ -187,12 +183,13 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             });
   }
 
+  @Override
   public Attestation convertSingleAttestationToAggregated(
-      final SingleAttestation singleAttestation,
-      final SszBitlist singleAttestationAggregationBits) {
+      final BeaconState state, final SingleAttestation singleAttestation) {
     final AttestationElectraSchema attestationElectraSchema =
         schemaDefinitions.getAttestationSchema().toVersionElectra().orElseThrow();
-
+    final SszBitlist singleAttestationAggregationBits =
+        getSingleAttestationAggregationBits(state, singleAttestation, attestationElectraSchema);
     return attestationElectraSchema.create(
         singleAttestationAggregationBits,
         singleAttestation.getData(),
@@ -201,6 +198,29 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
             .getCommitteeBitsSchema()
             .orElseThrow()
             .ofBits(singleAttestation.getFirstCommitteeIndex().intValue()));
+  }
+
+  private SszBitlist getSingleAttestationAggregationBits(
+      final BeaconState state,
+      final SingleAttestation singleAttestation,
+      final AttestationElectraSchema attestationElectraSchema) {
+    final IntList committee =
+        beaconStateAccessors.getBeaconCommittee(
+            state,
+            singleAttestation.getData().getSlot(),
+            singleAttestation.getFirstCommitteeIndex());
+
+    final int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
+    final int validatorCommitteeBit = committee.indexOf(validatorIndex);
+
+    checkArgument(
+        validatorCommitteeBit >= 0,
+        "Validator index %s is not part of the committee %s",
+        validatorIndex,
+        singleAttestation.getFirstCommitteeIndex());
+
+    return attestationElectraSchema.createAggregationBitsOf(
+        committee.size(), validatorCommitteeBit);
   }
 
   private SafeFuture<AttestationProcessingResult> validateSingleAttestationSignature(
@@ -224,29 +244,5 @@ public class AttestationUtilElectra extends AttestationUtilDeneb {
         singleAttestation.getSignature(),
         singleAttestation.getData(),
         signatureVerifier);
-  }
-
-  public SszBitlist getSingleAttestationAggregationBits(
-      final BeaconState state, final SingleAttestation singleAttestation) {
-    final IntList committee =
-        beaconStateAccessors.getBeaconCommittee(
-            state,
-            singleAttestation.getData().getSlot(),
-            singleAttestation.getFirstCommitteeIndex());
-
-    final int validatorIndex = singleAttestation.getValidatorIndexRequired().intValue();
-    final int validatorCommitteeBit = committee.indexOf(validatorIndex);
-
-    checkArgument(
-        validatorCommitteeBit >= 0,
-        "Validator index %s is not part of the committee %s",
-        validatorIndex,
-        singleAttestation.getFirstCommitteeIndex());
-
-    return schemaDefinitions
-        .toVersionElectra()
-        .orElseThrow()
-        .getAttestationSchema()
-        .createAggregationBitsOf(committee.size(), validatorCommitteeBit);
   }
 }

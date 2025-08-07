@@ -47,7 +47,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
     asyncRunner.runWithFixedDelay(
         this::logBatchedEvents,
         Duration.ofSeconds(1),
-        err -> LOG.info("DasGossipBatchLogger error: {}", err.toString()));
+        err -> LOG.debug("DasGossipBatchLogger error: {}", err.toString()));
   }
 
   interface Event {
@@ -98,7 +98,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
               validationCode,
               msAgoString(codeEvents),
               blockIdString(blockId),
-              columnIndexesString(codeEvents));
+              columnIndicesString(codeEvents));
         });
   }
 
@@ -119,7 +119,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
                     errEvents.size(),
                     msAgoString(errEvents),
                     blockIdString(blockId),
-                    columnIndexesString(errEvents));
+                    columnIndicesString(errEvents));
               });
         });
   }
@@ -132,14 +132,14 @@ public class DasGossipBatchLogger implements DasGossipLogger {
           LOG.debug(
               "Error publishing {} data columns ({}) by gossip {} for block {}: has already been seen",
               errEvents.size(),
-              columnIndexesString(errEvents),
+              columnIndicesString(errEvents),
               msAgoString(errEvents),
               blockIdString(blockId));
       default ->
-          LOG.info(
+          LOG.debug(
               "Error publishing {} data columns ({}) by gossip {} for block {}: {}",
               errEvents.size(),
-              columnIndexesString(errEvents),
+              columnIndicesString(errEvents),
               msAgoString(errEvents),
               blockIdString(blockId),
               error);
@@ -168,7 +168,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
               ? ""
               : "unsubscribed: " + StringifyUtil.toIntRangeStringWithSize(unsubscribedSubnets);
       String maybeDelim = subscribedSubnets.isEmpty() || unsubscribedSubnets.isEmpty() ? "" : ", ";
-      LOG.info(
+      LOG.debug(
           "Data column gossip subnets subscriptions changed: "
               + subscribeString
               + maybeDelim
@@ -176,10 +176,10 @@ public class DasGossipBatchLogger implements DasGossipLogger {
     }
   }
 
-  private String columnIndexesString(final List<? extends ColumnEvent> events) {
-    final List<Integer> columnIndexes =
+  private String columnIndicesString(final List<? extends ColumnEvent> events) {
+    final List<Integer> columnIndices =
         events.stream().map(e -> e.sidecar().getIndex().intValue()).toList();
-    return StringifyUtil.toIntRangeString(columnIndexes);
+    return StringifyUtil.toIntRangeString(columnIndices);
   }
 
   private static String blockIdString(final SlotAndBlockRoot blockId) {

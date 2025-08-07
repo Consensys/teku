@@ -34,11 +34,13 @@ import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -67,9 +69,11 @@ public class ExecutionBuilderModule {
   private final EventLogger eventLogger;
   private final UInt64 builderBidCompareFactor;
   private final boolean useShouldOverrideBuilderFlag;
+  private final Spec spec;
 
   public ExecutionBuilderModule(
       final ExecutionLayerManagerImpl executionLayerManager,
+      final Spec spec,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
@@ -77,6 +81,7 @@ public class ExecutionBuilderModule {
       final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
+    this.spec = spec;
     this.executionLayerManager = executionLayerManager;
     this.builderBidValidator = builderBidValidator;
     this.builderCircuitBreaker = builderCircuitBreaker;
@@ -383,6 +388,17 @@ public class ExecutionBuilderModule {
 
   private SafeFuture<BuilderPayloadOrFallbackData> getPayloadFromBuilder(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
+    if (spec.atSlot(signedBlindedBeaconBlock.getSlot())
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return getPayloadFromBuilderFulu(signedBlindedBeaconBlock);
+    } else {
+      return getPayloadFromBuilderPreFulu(signedBlindedBeaconBlock);
+    }
+  }
+
+  private SafeFuture<BuilderPayloadOrFallbackData> getPayloadFromBuilderPreFulu(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
     LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     return builderClient
@@ -407,6 +423,34 @@ public class ExecutionBuilderModule {
                   builderPayload);
             })
         .thenApply(BuilderPayloadOrFallbackData::create);
+  }
+
+  private SafeFuture<BuilderPayloadOrFallbackData> getPayloadFromBuilderFulu(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    LOG.trace("calling builderGetPayloadV2(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
+
+    return builderClient
+        .orElseThrow(
+            () ->
+                new RuntimeException(
+                    "Unable to get payload from builder: builder endpoint not available"))
+        .getPayloadV2(signedBlindedBeaconBlock)
+        .whenComplete(
+            (__, ex) -> {
+              if (ex != null) {
+                LOG.trace(
+                    "builderGetPayloadV2(signedBlindedBeaconBlock={}) -> failed ({})",
+                    signedBlindedBeaconBlock,
+                    ex.getMessage());
+              } else {
+                executionLayerManager.recordExecutionPayloadFallbackSource(
+                    Source.BUILDER, FallbackReason.NONE);
+                LOG.trace(
+                    "builderGetPayloadV2(signedBlindedBeaconBlock={}) -> success",
+                    signedBlindedBeaconBlock);
+              }
+            })
+        .thenApply(__ -> BuilderPayloadOrFallbackData.createSuccessful());
   }
 
   private SafeFuture<BuilderPayloadOrFallbackData> getPayloadFromBuilderOrFallbackData(
@@ -492,7 +536,7 @@ public class ExecutionBuilderModule {
         executionPayload.getBlockHash());
   }
 
-  private void logReceivedBuilderBlobsBundle(final BlobsBundle blobsBundle) {
+  private void logReceivedBuilderBlobsBundle(final BlobsBundleDeneb blobsBundle) {
     LOG.info(
         "Received blobs bundle from Builder (Blobs count = {})", blobsBundle.getNumberOfBlobs());
   }

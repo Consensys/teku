@@ -20,32 +20,27 @@ public interface RateTracker {
   RateTracker NOOP =
       new RateTracker() {
         @Override
-        public Optional<RequestApproval> approveObjectsRequest(long objectsCount) {
+        public Optional<ApprovedRequest> approveObjectsRequest(long objectsCount) {
           return Optional.empty();
         }
 
         @Override
         public void adjustObjectsRequest(
-            RequestApproval requestApproval, long returnedObjectsCount) {}
+            ApprovedRequest approvedRequest, long updatedRequestSize) {}
 
         @Override
         public long getAvailableObjectCount() {
           return 0;
         }
-
-        @Override
-        public void pruneRequests() {}
       };
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
-  Optional<RequestApproval> approveObjectsRequest(long objectsCount);
+  Optional<ApprovedRequest> approveObjectsRequest(long objectsCount);
 
   long getAvailableObjectCount();
 
-  void adjustObjectsRequest(RequestApproval requestApproval, long returnedObjectsCount);
-
-  void pruneRequests();
+  void adjustObjectsRequest(ApprovedRequest approvedRequest, long updatedRequestSize);
 
   static RateTracker create(
       final int peerRateLimit,

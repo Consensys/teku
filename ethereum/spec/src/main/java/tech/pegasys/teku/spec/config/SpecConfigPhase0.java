@@ -93,7 +93,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int secondsPerEth1Block;
 
   // Fork Choice
-  private final int safeSlotsToUpdateJustified;
   private final int proposerScoreBoost;
 
   // Deposit Contract
@@ -121,6 +120,18 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int reorgParentWeightThreshold;
 
   private final UInt64 maxPerEpochActivationExitChurnLimit;
+
+  // altair fork information
+  private final Bytes4 altairForkVersion;
+  private final UInt64 altairForkEpoch;
+
+  // bellatrix fork
+  private final Bytes4 bellatrixForkVersion;
+  private final UInt64 bellatrixForkEpoch;
+
+  // capella fork
+  private final Bytes4 capellaForkVersion;
+  private final UInt64 capellaForkEpoch;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -168,7 +179,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxDeposits,
       final int maxVoluntaryExits,
       final int secondsPerEth1Block,
-      final int safeSlotsToUpdateJustified,
       final int proposerScoreBoost,
       final long depositChainId,
       final long depositNetworkId,
@@ -190,7 +200,13 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgMaxEpochsSinceFinalization,
       final int reorgHeadWeightThreshold,
       final int reorgParentWeightThreshold,
-      final UInt64 maxPerEpochActivationExitChurnLimit) {
+      final UInt64 maxPerEpochActivationExitChurnLimit,
+      final Bytes4 altairForkVersion,
+      final UInt64 altairForkEpoch,
+      final Bytes4 bellatrixForkVersion,
+      final UInt64 bellatrixForkEpoch,
+      final Bytes4 capellaForkVersion,
+      final UInt64 capellaForkEpoch) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -236,7 +252,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxDeposits = maxDeposits;
     this.maxVoluntaryExits = maxVoluntaryExits;
     this.secondsPerEth1Block = secondsPerEth1Block;
-    this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     this.proposerScoreBoost = proposerScoreBoost;
     this.depositChainId = depositChainId;
     this.depositNetworkId = depositNetworkId;
@@ -260,6 +275,12 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
     this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
+    this.altairForkVersion = altairForkVersion;
+    this.altairForkEpoch = altairForkEpoch;
+    this.bellatrixForkVersion = bellatrixForkVersion;
+    this.bellatrixForkEpoch = bellatrixForkEpoch;
+    this.capellaForkVersion = capellaForkVersion;
+    this.capellaForkEpoch = capellaForkEpoch;
   }
 
   @Override
@@ -385,6 +406,36 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public UInt64 getGenesisDelay() {
     return genesisDelay;
+  }
+
+  @Override
+  public Bytes4 getAltairForkVersion() {
+    return altairForkVersion;
+  }
+
+  @Override
+  public UInt64 getAltairForkEpoch() {
+    return altairForkEpoch;
+  }
+
+  @Override
+  public Bytes4 getBellatrixForkVersion() {
+    return bellatrixForkVersion;
+  }
+
+  @Override
+  public UInt64 getBellatrixForkEpoch() {
+    return bellatrixForkEpoch;
+  }
+
+  @Override
+  public Bytes4 getCapellaForkVersion() {
+    return capellaForkVersion;
+  }
+
+  @Override
+  public UInt64 getCapellaForkEpoch() {
+    return capellaForkEpoch;
   }
 
   @Override
@@ -515,11 +566,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getSecondsPerEth1Block() {
     return secondsPerEth1Block;
-  }
-
-  @Override
-  public int getSafeSlotsToUpdateJustified() {
-    return safeSlotsToUpdateJustified;
   }
 
   @Override
@@ -671,7 +717,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
         && secondsPerEth1Block == that.secondsPerEth1Block
-        && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
@@ -696,6 +741,12 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(ejectionBalance, that.ejectionBalance)
         && Objects.equals(effectiveBalanceIncrement, that.effectiveBalanceIncrement)
         && Objects.equals(genesisForkVersion, that.genesisForkVersion)
+        && Objects.equals(altairForkVersion, that.altairForkVersion)
+        && Objects.equals(altairForkEpoch, that.altairForkEpoch)
+        && Objects.equals(bellatrixForkVersion, that.bellatrixForkVersion)
+        && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
+        && Objects.equals(capellaForkVersion, that.capellaForkVersion)
+        && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && Objects.equals(genesisDelay, that.genesisDelay)
         && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
@@ -754,7 +805,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxDeposits,
         maxVoluntaryExits,
         secondsPerEth1Block,
-        safeSlotsToUpdateJustified,
         proposerScoreBoost,
         depositChainId,
         depositNetworkId,
@@ -771,6 +821,12 @@ public class SpecConfigPhase0 implements SpecConfig {
         subnetsPerNode,
         attestationSubnetCount,
         attestationSubnetExtraBits,
+        altairForkVersion,
+        altairForkEpoch,
+        bellatrixForkVersion,
+        bellatrixForkEpoch,
+        capellaForkVersion,
+        capellaForkEpoch,
         attestationSubnetPrefixBits);
   }
 }

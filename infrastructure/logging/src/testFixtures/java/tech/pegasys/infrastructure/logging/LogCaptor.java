@@ -27,6 +27,7 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.ErrorHandler;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -68,7 +69,11 @@ public class LogCaptor implements AutoCloseable {
   }
 
   public void assertLogged(final Level level, final String message) {
-    assertThat(getMessages(level)).contains(message);
+    assertThat(getMessages(level))
+        .anySatisfy(
+            logString -> {
+              assertThat(logString.contains(message)).isTrue();
+            });
   }
 
   public List<String> getInfoLogs() {
@@ -81,6 +86,14 @@ public class LogCaptor implements AutoCloseable {
 
   public List<String> getErrorLogs() {
     return getMessages(Level.ERROR).collect(Collectors.toList());
+  }
+
+  public List<String> getDebugLogs() {
+    return getMessages(Level.DEBUG).collect(Collectors.toList());
+  }
+
+  public List<String> getTraceLogs() {
+    return getMessages(Level.TRACE).collect(Collectors.toList());
   }
 
   private Stream<String> getMessages(final Level level) {
@@ -99,6 +112,18 @@ public class LogCaptor implements AutoCloseable {
     final CapturingAppender appender =
         new CapturingAppender("LogCaptorAppender" + UNIQUEIFIER.incrementAndGet());
     final LoggerConfig loggerConfig = context.getConfiguration().getLoggerConfig(logger.getName());
+    loggerConfig.addAppender(appender, null, null);
+    return new LogCaptor(loggerConfig, appender);
+  }
+
+  public static LogCaptor forClass(final Class<?> clazz, final Level level) {
+    final LoggerContext context = LoggerContext.getContext(false);
+    final ExtendedLogger logger = context.getLogger(clazz);
+
+    final CapturingAppender appender =
+        new CapturingAppender("LogCaptorAppender" + UNIQUEIFIER.incrementAndGet());
+    final LoggerConfig loggerConfig = context.getConfiguration().getLoggerConfig(logger.getName());
+    ((Logger) logger).setLevel(level);
     loggerConfig.addAppender(appender, null, null);
     return new LogCaptor(loggerConfig, appender);
   }

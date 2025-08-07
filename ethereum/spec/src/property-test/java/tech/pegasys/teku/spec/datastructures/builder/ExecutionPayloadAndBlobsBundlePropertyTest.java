@@ -19,10 +19,11 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.propertytest.suppliers.builder.ExecutionPayloadAndBlobsBundleSupplier;
 
 public class ExecutionPayloadAndBlobsBundlePropertyTest {
-  @Property
+  @Property(tries = 100)
   void roundTrip(
       @ForAll(supplier = ExecutionPayloadAndBlobsBundleSupplier.class)
           final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle)
@@ -30,7 +31,7 @@ public class ExecutionPayloadAndBlobsBundlePropertyTest {
     assertRoundTrip(executionPayloadAndBlobsBundle);
   }
 
-  @Property
+  @Property(tries = 100)
   void deserializeMutated(
       @ForAll(supplier = ExecutionPayloadAndBlobsBundleSupplier.class)
           final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle,

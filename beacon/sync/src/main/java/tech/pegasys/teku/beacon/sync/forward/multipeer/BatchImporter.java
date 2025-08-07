@@ -89,7 +89,9 @@ public class BatchImporter {
                 if (lastBlockImportResult.isSuccessful()) {
                   return BatchImportResult.IMPORTED_ALL_BLOCKS;
                 } else if (lastBlockImportResult.hasFailedExecutingExecutionPayload()) {
-                  return BatchImportResult.SERVICE_OFFLINE;
+                  return BatchImportResult.EXECUTION_CLIENT_OFFLINE;
+                } else if (lastBlockImportResult.isDataNotAvailable()) {
+                  return BatchImportResult.DATA_NOT_AVAILABLE;
                 }
                 LOG.debug(
                     "Failed to import batch {}: {}",
@@ -132,9 +134,7 @@ public class BatchImporter {
                     "Disconnecting source ({}) for sending block that failed weak subjectivity checks: {}",
                     source,
                     result);
-                source
-                    .disconnectCleanly(DisconnectReason.REMOTE_FAULT)
-                    .ifExceptionGetsHereRaiseABug();
+                source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishWarn(LOG);
               }
               return result;
             });
@@ -143,7 +143,8 @@ public class BatchImporter {
   public enum BatchImportResult {
     IMPORTED_ALL_BLOCKS,
     IMPORT_FAILED,
-    SERVICE_OFFLINE;
+    EXECUTION_CLIENT_OFFLINE,
+    DATA_NOT_AVAILABLE;
 
     public boolean isFailure() {
       return this == IMPORT_FAILED;

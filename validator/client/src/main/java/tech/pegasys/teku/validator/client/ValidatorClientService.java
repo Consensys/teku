@@ -395,7 +395,6 @@ public class ValidatorClientService extends Service {
                       RemoteBeaconNodeApi.create(
                           services,
                           validatorConfig,
-                          asyncRunner,
                           validatorClientConfiguration.getSpec(),
                           beaconNodeApiEndpoints))
               .orElseGet(
@@ -411,11 +410,7 @@ public class ValidatorClientService extends Service {
               .load(validatorConfig.getSentryNodeConfigurationFile().get());
       beaconNodeApi =
           SentryBeaconNodeApi.create(
-              services,
-              validatorConfig,
-              asyncRunner,
-              validatorClientConfiguration.getSpec(),
-              sentryNodesConfig);
+              services, validatorConfig, validatorClientConfiguration.getSpec(), sentryNodesConfig);
     }
 
     return beaconNodeApi;
@@ -627,8 +622,7 @@ public class ValidatorClientService extends Service {
                     .orElse(SafeFuture.COMPLETE))
         .thenCompose(
             __ -> {
-              maybeValidatorRestApi.ifPresent(
-                  restApi -> restApi.start().ifExceptionGetsHereRaiseABug());
+              maybeValidatorRestApi.ifPresent(restApi -> restApi.start().finishError(LOG));
               SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
               validatorIndexProvider.lookupValidators();
               return maybeDoppelgangerDetector
@@ -660,7 +654,7 @@ public class ValidatorClientService extends Service {
                 validatorStatusProvider.subscribeValidatorStatusesUpdates(
                     validatorTimingActions::onUpdatedValidatorStatuses);
               }
-              validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
+              validatorStatusProvider.start().finishError(LOG);
               return beaconNodeApi.subscribeToEvents();
             });
   }
@@ -669,9 +663,7 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(
-            () ->
-                maybeValidatorRestApi.ifPresent(
-                    restApi -> restApi.stop().ifExceptionGetsHereRaiseABug())),
+            () -> maybeValidatorRestApi.ifPresent(restApi -> restApi.stop().finishError(LOG))),
         beaconNodeApi.unsubscribeFromEvents());
   }
 }

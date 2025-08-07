@@ -176,7 +176,8 @@ public class PeerSync {
               final PeerSyncBlobSidecarListener blobSidecarListener =
                   new PeerSyncBlobSidecarListener(requestContext.startSlot, requestContext.endSlot);
 
-              if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
+              if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.startSlot)
+                  || blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
                     "Request {} blob sidecars starting at {} from peer {}",
                     requestContext.count,
@@ -365,7 +366,7 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(final Eth2Peer peer) {
-    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).ifExceptionGetsHereRaiseABug();
+    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishStackTrace();
   }
 
   public UInt64 getStartingSlot() {

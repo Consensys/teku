@@ -36,8 +36,8 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
@@ -54,7 +54,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final Bytes4 forkDigest;
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
-  private final OperationMilestoneValidator<MessageT> forkValidator;
+  private final OperationValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
   private final DebugDataDumper debugDataDumper;
   private final String topic;
@@ -70,7 +70,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final String topicName,
-      final OperationMilestoneValidator<MessageT> forkValidator,
+      final OperationValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
       final NetworkingSpecConfig networkingConfig,
       final DebugDataDumper debugDataDumper) {
@@ -96,7 +96,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final GossipTopicName topicName,
-      final OperationMilestoneValidator<MessageT> forkValidator,
+      final OperationValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
       final NetworkingSpecConfig networkingConfig,
       final DebugDataDumper debugDataDumper) {
@@ -141,7 +141,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final InternalValidationResult internalValidationResult,
       final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {
-      case REJECT:
+      case REJECT -> {
         debugDataDumper.saveGossipRejectedMessage(
             getTopic(),
             message.getArrivalTimestamp(),
@@ -151,18 +151,13 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
             getTopic(),
             message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
             internalValidationResult.getDescription());
-        break;
-      case IGNORE:
-        LOG.trace("Ignoring message for topic: {}", this::getTopic);
-        break;
-      case SAVE_FOR_FUTURE:
-        LOG.trace("Deferring message for topic: {}", this::getTopic);
-        break;
-      case ACCEPT:
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "Unexpected validation result: " + internalValidationResult);
+      }
+      case IGNORE -> LOG.trace("Ignoring message for topic: {}", this::getTopic);
+      case SAVE_FOR_FUTURE -> LOG.trace("Deferring message for topic: {}", this::getTopic);
+      case ACCEPT -> {}
+      default ->
+          throw new UnsupportedOperationException(
+              "Unexpected validation result: " + internalValidationResult);
     }
   }
 

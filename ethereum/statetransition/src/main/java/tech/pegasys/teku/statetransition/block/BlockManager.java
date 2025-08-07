@@ -33,8 +33,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -60,6 +60,8 @@ public class BlockManager extends Service
   // as well.
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
+      Subscribers.create(true);
+  private final Subscribers<PreImportBlockListener> preImportBlockSubscribers =
       Subscribers.create(true);
 
   private final Optional<BlockImportMetrics> blockImportMetrics;
@@ -177,6 +179,10 @@ public class BlockManager extends Service
     failedPayloadExecutionSubscribers.subscribe(subscriber);
   }
 
+  public void subscribePreImportBlocks(final PreImportBlockListener subscriber) {
+    preImportBlockSubscribers.subscribe(subscriber);
+  }
+
   @Override
   public void onBlockValidated(final SignedBeaconBlock block) {
     // No-op
@@ -196,7 +202,7 @@ public class BlockManager extends Service
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
     // we don't care about origin here because flow calls this function for retries only
     doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.empty())
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
@@ -252,6 +258,7 @@ public class BlockManager extends Service
       final BlockBroadcastValidator blockBroadcastValidator,
       final Optional<RemoteOrigin> origin) {
     blockBlobSidecarsTrackersPool.onNewBlock(block, origin);
+    preImportBlockSubscribers.deliver(l -> l.onNewBlock(block, origin));
 
     return blockImporter
         .importBlock(block, blockImportPerformance, blockBroadcastValidator)
@@ -261,7 +268,7 @@ public class BlockManager extends Service
                 LOG.trace("Imported block: {}", block);
               } else {
                 switch (result.getFailureReason()) {
-                  case UNKNOWN_PARENT:
+                  case UNKNOWN_PARENT -> {
                     // Add to the pending pool so it is triggered once the parent is imported
                     pendingBlocks.add(block);
                     // Check if the parent was imported while we were trying to import
@@ -273,30 +280,28 @@ public class BlockManager extends Service
                       pendingBlocks.remove(block);
                       importBlockIgnoringResult(block);
                     }
-                    break;
-                  case BLOCK_IS_FROM_FUTURE:
-                    futureBlocks.add(block);
-                    break;
-                  case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
+                  }
+                  case BLOCK_IS_FROM_FUTURE -> futureBlocks.add(block);
+                  case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING -> {
                     LOG.warn(
                         "Unable to import block {} with execution payload {}: Execution Client is still syncing",
                         block.toLogString(),
                         getExecutionPayloadInfoForLog(block));
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
-                    break;
-                  case FAILED_EXECUTION_PAYLOAD_EXECUTION:
+                  }
+                  case FAILED_EXECUTION_PAYLOAD_EXECUTION -> {
                     LOG.error(
                         "Unable to import block: Execution Client returned an error: {}",
                         result.getFailureCause().map(Throwable::getMessage).orElse(""));
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
-                    break;
-                  case FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE:
+                  }
+                  case FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE -> {
                     logFailedBlockImport(block, result.getFailureReason());
                     blockBlobSidecarsTrackersPool.enableBlockImportOnCompletion(block);
-                    break;
-                  case FAILED_DATA_AVAILABILITY_CHECK_INVALID:
+                  }
+                  case FAILED_DATA_AVAILABILITY_CHECK_INVALID -> {
                     // Block's commitments and known blobSidecars are not matching.
                     // To be able to recover from this situation we remove all blobSidecars from the
                     // pool and discard.
@@ -304,21 +309,24 @@ public class BlockManager extends Service
                     // and block again via RPC by root.
                     logFailedBlockImport(block, result.getFailureReason());
                     blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
-                    break;
-                  case FAILED_BROADCAST_VALIDATION:
-                    LOG.warn(
-                        "Unable to import block {} due to failed broadcast validation",
-                        block.toLogString());
-                    break;
+                  }
+                  case FAILED_BROADCAST_VALIDATION ->
+                      LOG.warn(
+                          "Unable to import block {} due to failed broadcast validation",
+                          block.toLogString());
+
                   // let's avoid default: so we don't forget to explicitly handle new cases
                   case DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
                       FAILED_STATE_TRANSITION,
                       FAILED_WEAK_SUBJECTIVITY_CHECKS,
-                      DESCENDANT_OF_INVALID_BLOCK:
+                      DESCENDANT_OF_INVALID_BLOCK -> {
                     logFailedBlockImport(block, result.getFailureReason());
                     dropInvalidBlock(block, result);
-                    break;
-                  case INTERNAL_ERROR:
+                  }
+                  case BUILDER_WITHHOLD -> {
+                    // normal flow, nothing to do
+                  }
+                  case INTERNAL_ERROR -> {
                     logFailedBlockImport(block, result.getFailureReason());
                     if (result
                         .getFailureCause()
@@ -326,6 +334,7 @@ public class BlockManager extends Service
                         .orElse(false)) {
                       dropInvalidBlock(block, result);
                     }
+                  }
                 }
               }
             });
@@ -384,5 +393,9 @@ public class BlockManager extends Service
 
   public interface FailedPayloadExecutionSubscriber {
     void onPayloadExecutionFailed(SignedBeaconBlock block);
+  }
+
+  public interface PreImportBlockListener {
+    void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
   }
 }

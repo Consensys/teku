@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
 /**
  * This class supposed to implement gossip validation rules as per <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id">spec</a>
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#data_column_sidecar_subnet_id">spec</a>
  */
 public class DataColumnSidecarGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -192,23 +192,19 @@ public class DataColumnSidecarGossipValidator {
     totalDataColumnSidecarsProcessingRequestsCounter.inc();
 
     /*
+     * [REJECT] The sidecar is valid as verified by verify_data_column_sidecar(sidecar).
+     */
+    if (!miscHelpersFulu.verifyDataColumnSidecar(dataColumnSidecar)) {
+      return completedFuture(reject("DataColumnSidecar has invalid structure"));
+    }
+
+    /*
      * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, sidecar.index) with valid header signature, sidecar inclusion proof, and kzg proof.
      */
     if (!isFirstValidForSlotProposerIndexAndColumnIndex(dataColumnSidecar, blockHeader)) {
       LOG.trace(
-          "DataColumnSidecar is not the first valid for its slot and index. It will be dropped");
+          "DataColumnSidecar is not the first valid for its slot and index. It will be dropped.");
       return completedFuture(InternalValidationResult.IGNORE);
-    }
-
-    /*
-     * [REJECT] The sidecar's index is consistent with NUMBER_OF_COLUMNS -- i.e. sidecar.index < NUMBER_OF_COLUMNS.
-     */
-    final Optional<Integer> maybeNumberOfColumns = spec.getNumberOfDataColumns();
-    if (maybeNumberOfColumns.isEmpty()) {
-      return completedFuture(reject("DataColumnSidecar's slot is pre-Fulu"));
-    }
-    if (!dataColumnSidecar.getIndex().isLessThan(maybeNumberOfColumns.get())) {
-      return completedFuture(reject("DataColumnSidecar index not less than number of columns."));
     }
 
     /*
@@ -221,7 +217,7 @@ public class DataColumnSidecarGossipValidator {
      * [IGNORE] The sidecar is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. validate that block_header.slot <= current_slot (a client MAY queue future sidecars for processing at the appropriate slot).
      */
     if (gossipValidationHelper.isSlotFromFuture(blockHeader.getSlot())) {
-      LOG.trace("DataColumnSidecar is from the future. It will be saved for future processing");
+      LOG.trace("DataColumnSidecar is from the future. It will be saved for future processing.");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
@@ -251,7 +247,7 @@ public class DataColumnSidecarGossipValidator {
      */
     if (!gossipValidationHelper.isBlockAvailable(blockHeader.getParentRoot())) {
       LOG.trace(
-          "DataColumnSidecar block header parent block is not available. It will be saved for future processing");
+          "DataColumnSidecar block header parent block is not available. It will be saved for future processing.");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
     final Optional<UInt64> maybeParentBlockSlot =
@@ -274,7 +270,7 @@ public class DataColumnSidecarGossipValidator {
      * [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by block_header.parent_root).
      */
     if (!blockHeader.getSlot().isGreaterThan(parentBlockSlot)) {
-      return completedFuture(reject("Parent block is after DataColumnSidecar slot."));
+      return completedFuture(reject("Parent block slot is after DataColumnSidecar slot"));
     }
 
     /*
@@ -298,7 +294,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -311,7 +307,7 @@ public class DataColumnSidecarGossipValidator {
         .thenApply(
             maybePostState -> {
               /*
-               * [REJECT] [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
+               * [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot in the context of the current shuffling (defined by block_header.parent_root/block_header.slot).
                *
                * If the proposer_index cannot immediately be verified against the expected shuffling, the sidecar MAY be queued for later processing while proposers for the block's branch are calculated -- in such a case do not REJECT, instead IGNORE this message.
                */
@@ -324,7 +320,7 @@ public class DataColumnSidecarGossipValidator {
               if (!gossipValidationHelper.isProposerTheExpectedProposer(
                   blockHeader.getProposerIndex(), blockHeader.getSlot(), postState)) {
                 return reject(
-                    "DataColumnSidecar block header proposed by incorrect proposer (%s).",
+                    "DataColumnSidecar block header proposed by incorrect proposer (%s)",
                     blockHeader.getProposerIndex());
               }
 
@@ -333,7 +329,7 @@ public class DataColumnSidecarGossipValidator {
                */
               if (!verifyBlockHeaderSignature(
                   postState, dataColumnSidecar.getSignedBeaconBlockHeader())) {
-                return reject("DataColumnSidecar block header signature is invalid.");
+                return reject("DataColumnSidecar block header signature is invalid");
               }
 
               /*
@@ -366,6 +362,16 @@ public class DataColumnSidecarGossipValidator {
   private SafeFuture<InternalValidationResult> validateDataColumnSidecarWithKnownValidHeader(
       final DataColumnSidecar dataColumnSidecar, final BeaconBlockHeader blockHeader) {
 
+    // This can be changed between two received DataColumnSidecars from one block, so checking
+    /*
+     * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
+     */
+    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+        blockHeader.getSlot(), blockHeader.getParentRoot())) {
+      return completedFuture(
+          reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
+    }
+
     /*
      * [REJECT] The sidecar's kzg_commitments field inclusion proof is valid as verified by verify_data_column_sidecar_inclusion_proof(sidecar).
      */
@@ -378,21 +384,11 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProof(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
       return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
-    }
-
-    // This can be changed between two received DataColumnSidecars from one block, so checking
-    /*
-     * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e. get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root.
-     */
-    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
-        blockHeader.getSlot(), blockHeader.getParentRoot())) {
-      return completedFuture(
-          reject("DataColumnSidecar block header does not descend from finalized checkpoint"));
     }
 
     /*

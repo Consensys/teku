@@ -21,9 +21,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.EXECUTION_CLIENT_OFFLINE;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
-import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.SERVICE_OFFLINE;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchAssert.assertThatBatch;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.StubBatchFactory;
@@ -73,6 +74,8 @@ class BatchSyncTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
 
   private final SyncSource syncSource = mock(SyncSource.class);
+  private final SyncPreImportBlockChannel syncPreImportBlockChannel =
+      mock(SyncPreImportBlockChannel.class);
   private final BatchImporter batchImporter = mock(BatchImporter.class);
   private final StubBatchFactory batches = new StubBatchFactory(eventThread, true);
 
@@ -93,7 +96,8 @@ class BatchSyncTest {
           BATCH_SIZE.intValue(),
           5,
           commonAncestor,
-          timeProvider);
+          timeProvider,
+          syncPreImportBlockChannel);
 
   @BeforeEach
   void setUp() {
@@ -935,7 +939,7 @@ class BatchSyncTest {
         batch2, chainBuilder.generateBlockAtSlot(batch2.getFirstSlot()).getBlock());
 
     // But then it turns out that a batch0 is not processed because importing is offline
-    batches.getImportResult(batch0).complete(SERVICE_OFFLINE);
+    batches.getImportResult(batch0).complete(EXECUTION_CLIENT_OFFLINE);
 
     // This shouldn't make batches invalid
     batches.assertNotMarkedInvalid(batch0);

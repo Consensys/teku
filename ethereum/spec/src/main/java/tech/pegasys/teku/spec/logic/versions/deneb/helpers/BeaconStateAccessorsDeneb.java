@@ -53,7 +53,7 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
 
   /**
    * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#modified-get_attestation_participation_flag_indices">Modified
+   * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/beacon-chain.md#modified-get_attestation_participation_flag_indices">Modified
    * get_attestation_participation_flag_indices</a>
    */
   @Override

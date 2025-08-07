@@ -68,21 +68,17 @@ public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>,
 
   protected void processFetchResult(final T task, final FetchResult<R> result) {
     switch (result.getStatus()) {
-      case SUCCESSFUL:
-        processFetchedResult(task, result.getResult().orElseThrow());
-        break;
-      case NO_AVAILABLE_PEERS:
-        // Wait a bit and then requeue
-        queueTaskWithDelay(task, WAIT_FOR_PEERS_DURATION);
-        break;
-      case FETCH_FAILED:
-        // Push task back onto queue to retry
-        queueTaskWithRetryDelay(task);
-        break;
-      case CANCELLED:
+      case SUCCESSFUL -> processFetchedResult(task, result.getResult().orElseThrow());
+      case NO_AVAILABLE_PEERS ->
+          // Wait a bit and then requeue
+          queueTaskWithDelay(task, WAIT_FOR_PEERS_DURATION);
+      case FETCH_FAILED ->
+          // Push task back onto queue to retry
+          queueTaskWithRetryDelay(task);
+      case CANCELLED -> {
         LOG.trace("Request for {} cancelled: {}.", getTaskName(task), task.getKey());
         removeTask(task);
-        break;
+      }
     }
   }
 

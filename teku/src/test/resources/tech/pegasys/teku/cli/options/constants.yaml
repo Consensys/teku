@@ -1,6 +1,19 @@
 # Minimal preset
 PRESET_BASE: "minimal"
+# Forking
+# ---------------------------------------------------------------
+# Values provided for illustrative purposes.
+# Individual tests/testnets may set different values.
 
+# Altair
+ALTAIR_FORK_VERSION: 0x01000001
+ALTAIR_FORK_EPOCH: 18446744073709551615
+# Bellatrix
+BELLATRIX_FORK_VERSION: 0x02000001
+BELLATRIX_FORK_EPOCH: 18446744073709551615
+# Capella
+CAPELLA_FORK_VERSION: 0x03000001
+CAPELLA_FORK_EPOCH: 18446744073709551615
 # Misc
 # ---------------------------------------------------------------
 
@@ -26,12 +39,6 @@ HYSTERESIS_QUOTIENT: 4
 HYSTERESIS_DOWNWARD_MULTIPLIER: 1
 # 5 (plus 1.25)
 HYSTERESIS_UPWARD_MULTIPLIER: 5
-
-
-# Fork Choice
-# ---------------------------------------------------------------
-# 2**1 (= 1)
-SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 2
 
 
 # Validator
@@ -181,3 +188,7 @@ ATTESTATION_SUBNET_COUNT: 64
 ATTESTATION_SUBNET_EXTRA_BITS: 0
 # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
 ATTESTATION_SUBNET_PREFIX_BITS: 6
+
+INACTIVITY_SCORE_BIAS: 4
+# 2**4 (= 16)
+INACTIVITY_SCORE_RECOVERY_RATE: 16

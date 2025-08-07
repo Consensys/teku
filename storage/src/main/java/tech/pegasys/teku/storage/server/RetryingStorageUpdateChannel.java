@@ -122,7 +122,7 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
               delegate.onChainInitialized(initialAnchor);
               return SafeFuture.COMPLETE;
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private <O> SafeFuture<O> retry(final Supplier<SafeFuture<O>> method) {

@@ -20,6 +20,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlobSupplier extends DataStructureUtilSupplier<Blob> {
   public BlobSupplier() {
-    super(DataStructureUtil::randomBlob, SpecMilestone.DENEB);
+    super(DataStructureUtil::randomValidBlob, SpecMilestone.DENEB);
   }
 }

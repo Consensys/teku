@@ -65,6 +65,8 @@ public class BlockProcessorFulu extends BlockProcessorElectra {
 
   @Override
   public int getMaxBlobsPerBlock(final BeaconState state) {
-    return miscHelpersFulu.getMaxBlobsPerBlock(miscHelpers.computeEpochAtSlot(state.getSlot()));
+    return miscHelpersFulu
+        .getBlobParameters(miscHelpers.computeEpochAtSlot(state.getSlot()))
+        .maxBlobsPerBlock();
   }
 }

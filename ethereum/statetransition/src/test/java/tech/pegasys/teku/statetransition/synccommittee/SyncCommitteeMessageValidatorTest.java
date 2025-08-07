@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 
@@ -131,8 +132,8 @@ class SyncCommitteeMessageValidatorTest {
     final ValidatableSyncCommitteeMessage validatableMessage =
         ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
     timeProvider.advanceTimeByMillis(
-        spec.getSlotStartTime(lastSlotOfPeriod, recentChainData.getGenesisTime())
-            .times(1000)
+        spec.computeTimeMillisAtSlot(
+                lastSlotOfPeriod, secondsToMillis(recentChainData.getGenesisTime()))
             .longValue());
 
     assertThat(validator.validate(validatableMessage)).isCompletedWithValue(ACCEPT);
@@ -268,9 +269,9 @@ class SyncCommitteeMessageValidatorTest {
             SpecConfigLoader.loadConfig(
                 "minimal",
                 phase0Builder ->
-                    phase0Builder.altairBuilder(
-                        altairBuilder ->
-                            altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO)))));
+                    phase0Builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .altairBuilder(altairBuilder -> altairBuilder.syncCommitteeSize(16)))));
     final SignedBlockAndState target = chainBuilder.getLatestBlockAndState();
     final BeaconStateAltair state = BeaconStateAltair.required(target.getState());
     final List<SszPublicKey> committeePubkeys =

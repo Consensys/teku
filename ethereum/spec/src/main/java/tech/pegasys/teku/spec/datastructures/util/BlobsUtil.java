@@ -16,17 +16,20 @@ package tech.pegasys.teku.spec.datastructures.util;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.BLS_MODULUS;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Streams;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
@@ -75,16 +78,27 @@ public class BlobsUtil {
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final List<Blob> blobs) {
-    return blobs.stream().map(Blob::getBytes).map(kzg::blobToKzgCommitment).toList();
+    return blobs.stream().parallel().map(Blob::getBytes).map(kzg::blobToKzgCommitment).toList();
   }
 
   public KZGProof computeKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
     return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
   }
 
+  @VisibleForTesting
+  @SuppressWarnings("deprecation")
+  public List<KZGProof> computeKzgCellProofs(final Blob blob) {
+    return kzg.computeCellsAndProofs(blob.getBytes()).stream().map(KZGCellAndProof::proof).toList();
+  }
+
   public List<KZGProof> computeKzgProofs(
       final List<Blob> blobs, final List<KZGCommitment> kzgCommitments) {
-    return Streams.zip(blobs.stream(), kzgCommitments.stream(), this::computeKzgProof).toList();
+    return Streams.zip(blobs.stream(), kzgCommitments.stream(), Pair::of)
+        .parallel()
+        .map(
+            blobAndCommitment ->
+                computeKzgProof(blobAndCommitment.getLeft(), blobAndCommitment.getRight()))
+        .toList();
   }
 
   public List<Blob> generateBlobs(final UInt64 slot, final int count) {

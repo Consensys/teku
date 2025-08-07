@@ -27,8 +27,8 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#blobsidecarsbyroot-v1">BlobSidecarsByRoot
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/p2p-interface.md#blobsidecarsbyroot-v1">BlobSidecarsByRoot
  * v1</a>
  */
 public class BlobSidecarsByRootMessageHandler
@@ -105,7 +105,7 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    final Optional<RequestApproval> blobSidecarsRequestApproval =
+    final Optional<ApprovedRequest> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, message.size());
 
     if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
@@ -124,10 +124,9 @@ public class BlobSidecarsByRootMessageHandler
       future =
           future
               .thenCompose(__ -> retrieveBlobSidecar(identifier))
-              .thenCompose(
+              .thenComposeChecked(
                   maybeSidecar ->
-                      validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
-                          .thenApply(__ -> maybeSidecar))
+                      validateMinAndMaxRequestEpoch(identifier, maybeSidecar, finalizedEpoch))
               .thenComposeChecked(
                   maybeSidecar ->
                       maybeSidecar
@@ -172,9 +171,10 @@ public class BlobSidecarsByRootMessageHandler
    *
    * <ul>
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
+   *   <li>The block root references a block before fulu fork epoch
    * </ul>
    */
-  private SafeFuture<Void> validateMinimumRequestEpoch(
+  private SafeFuture<Optional<BlobSidecar>> validateMinAndMaxRequestEpoch(
       final BlobIdentifier identifier,
       final Optional<BlobSidecar> maybeSidecar,
       final UInt64 finalizedEpoch) {
@@ -184,10 +184,11 @@ public class BlobSidecarsByRootMessageHandler
             combinedChainDataClient
                 .getBlockByBlockRoot(identifier.getBlockRoot())
                 .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
-        .thenAcceptChecked(
+        .thenComposeChecked(
             maybeSlot -> {
-              if (maybeSlot.isEmpty()) {
-                return;
+              if (maybeSlot.isEmpty()
+                  || maybeSlot.get().isGreaterThanOrEqualTo(spec.blobSidecarsDeprecationSlot())) {
+                return SafeFuture.completedFuture(Optional.empty());
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
               if (!spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
@@ -196,9 +197,10 @@ public class BlobSidecarsByRootMessageHandler
                 throw new RpcException(
                     INVALID_REQUEST_CODE,
                     String.format(
-                        "Block root (%s) references a block earlier than the minimum_request_epoch",
-                        identifier.getBlockRoot()));
+                        "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: %s",
+                        identifier.getBlockRoot(), maybeSlot.get()));
               }
+              return SafeFuture.completedFuture(maybeSidecar);
             });
   }
 

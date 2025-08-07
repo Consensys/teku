@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltairImpl;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 
 public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAltair> {
-
+  private static final Logger LOG = LogManager.getLogger();
   // Updated penalties
   private UInt64 inactivityPenaltyQuotientAltair;
   private Integer minSlashingPenaltyQuotientAltair;
@@ -41,19 +41,9 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   // Time
   private Integer epochsPerSyncCommitteePeriod;
 
-  // Fork
-  private Bytes4 altairForkVersion;
-  private UInt64 altairForkEpoch;
-
   // Sync protocol
   private Integer minSyncCommitteeParticipants;
   private Integer updateTimeout;
-
-  // Light client
-  private Integer syncCommitteeBranchLength;
-  private Integer finalityBranchLength;
-  private static final int SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT = 5;
-  private static final int FINALITY_BRANCH_LENGTH_DEFAULT = 6;
 
   AltairBuilder() {}
 
@@ -70,43 +60,24 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
             inactivityScoreBias,
             inactivityScoreRecoveryRate,
             epochsPerSyncCommitteePeriod,
-            altairForkVersion,
-            altairForkEpoch,
             minSyncCommitteeParticipants,
-            updateTimeout,
-            syncCommitteeBranchLength,
-            finalityBranchLength),
+            updateTimeout),
         specConfigAndParent);
   }
 
   @Override
   public void validate() {
-    if (altairForkEpoch == null) {
-      altairForkEpoch = FAR_FUTURE_EPOCH;
-      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-      inactivityScoreBias = UInt64.valueOf(4);
-      inactivityScoreRecoveryRate = UInt64.valueOf(16);
+    if (inactivityScoreBias == null) {
+      LOG.warn("INACTIVITY_SCORE_BIAS was empty");
     }
-
-    // Config items were added after launch so provide defaults to preserve compatibility
-    if (syncCommitteeBranchLength == null) {
-      syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
+    if (inactivityScoreRecoveryRate == null) {
+      LOG.warn("INACTIVITY_SCORE_RECOVERY_RATE was empty");
     }
-    if (finalityBranchLength == null) {
-      finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
-    }
-
-    // Fill default zeros if fork is unsupported
-    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      SpecBuilderUtil.fillMissingValuesWithZeros(this);
+    if (updateTimeout == null) {
+      LOG.warn("UPDATE_TIMEOUT was empty");
     }
 
     validateConstants();
-
-    // Config items were added after launch so provide defaults to preserve compatibility
-    if (updateTimeout == null) {
-      updateTimeout = epochsPerSyncCommitteePeriod * 32;
-    }
   }
 
   @Override
@@ -119,16 +90,13 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
     constants.put("inactivityScoreBias", inactivityScoreBias);
     constants.put("inactivityScoreRecoveryRate", inactivityScoreRecoveryRate);
     constants.put("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
-    constants.put("altairForkVersion", altairForkVersion);
-    constants.put("altairForkEpoch", altairForkEpoch);
     constants.put("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+    constants.put("updateTimeout", updateTimeout);
     return constants;
   }
 
   @Override
-  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
-    rawConfig.accept("ALTAIR_FORK_EPOCH", altairForkEpoch);
-  }
+  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
 
   public AltairBuilder inactivityPenaltyQuotientAltair(
       final UInt64 inactivityPenaltyQuotientAltair) {
@@ -175,18 +143,6 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
     return this;
   }
 
-  public AltairBuilder altairForkVersion(final Bytes4 altairForkVersion) {
-    checkNotNull(altairForkVersion);
-    this.altairForkVersion = altairForkVersion;
-    return this;
-  }
-
-  public AltairBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
-    checkNotNull(altairForkEpoch);
-    this.altairForkEpoch = altairForkEpoch;
-    return this;
-  }
-
   public AltairBuilder minSyncCommitteeParticipants(final Integer minSyncCommitteeParticipants) {
     checkNotNull(minSyncCommitteeParticipants);
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
@@ -196,18 +152,6 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   public AltairBuilder updateTimeout(final Integer updateTimeout) {
     checkNotNull(updateTimeout);
     this.updateTimeout = updateTimeout;
-    return this;
-  }
-
-  public AltairBuilder syncCommitteeBranchLength(final Integer syncCommitteeBranchLength) {
-    checkNotNull(syncCommitteeBranchLength);
-    this.syncCommitteeBranchLength = syncCommitteeBranchLength;
-    return this;
-  }
-
-  public AltairBuilder finalityBranchLength(final Integer finalityBranchLength) {
-    checkNotNull(finalityBranchLength);
-    this.finalityBranchLength = finalityBranchLength;
     return this;
   }
 }

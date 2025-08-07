@@ -86,8 +86,7 @@ public class PeerChainValidator {
                 // We are not on the same chain
                 LOG.trace("Disconnecting peer on different chain: {}", peer.getId());
                 chainInvalidCounter.inc();
-                peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK)
-                    .ifExceptionGetsHereRaiseABug();
+                peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).finishStackTrace();
               } else {
                 LOG.trace("Validated peer's chain: {}", peer.getId());
                 chainValidCounter.inc();
@@ -98,8 +97,7 @@ public class PeerChainValidator {
             err -> {
               LOG.debug("Unable to validate peer's chain, disconnecting {}", peer.getId(), err);
               validationErrorCounter.inc();
-              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK)
-                  .ifExceptionGetsHereRaiseABug();
+              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK).finishStackTrace();
               return false;
             });
   }
@@ -131,8 +129,7 @@ public class PeerChainValidator {
   }
 
   private boolean isForkValid(final Eth2Peer peer, final PeerStatus status) {
-    Bytes4 expectedForkDigest =
-        chainDataClient.getCurrentForkInfo().orElseThrow().getForkDigest(spec);
+    final Bytes4 expectedForkDigest = chainDataClient.getCurrentForkDigest().orElseThrow();
     if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
       LOG.trace(
           "Peer's fork ({}) differs from our fork ({}): {}",

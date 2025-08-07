@@ -153,6 +153,36 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getAltairForkVersion() {
+    return specConfig.getAltairForkVersion();
+  }
+
+  @Override
+  public UInt64 getAltairForkEpoch() {
+    return specConfig.getAltairForkEpoch();
+  }
+
+  @Override
+  public Bytes4 getBellatrixForkVersion() {
+    return specConfig.getBellatrixForkVersion();
+  }
+
+  @Override
+  public UInt64 getBellatrixForkEpoch() {
+    return specConfig.getBellatrixForkEpoch();
+  }
+
+  @Override
+  public Bytes4 getCapellaForkVersion() {
+    return specConfig.getCapellaForkVersion();
+  }
+
+  @Override
+  public UInt64 getCapellaForkEpoch() {
+    return specConfig.getCapellaForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
   }
@@ -280,11 +310,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public int getSecondsPerEth1Block() {
     return specConfig.getSecondsPerEth1Block();
-  }
-
-  @Override
-  public int getSafeSlotsToUpdateJustified() {
-    return specConfig.getSafeSlotsToUpdateJustified();
   }
 
   @Override

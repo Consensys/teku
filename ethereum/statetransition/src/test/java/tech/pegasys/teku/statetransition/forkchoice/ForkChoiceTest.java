@@ -85,13 +85,14 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -112,8 +113,11 @@ class ForkChoiceTest {
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
-  private final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
-      mock(BlobSidecarsAvailabilityChecker.class);
+
+  @SuppressWarnings("unchecked")
+  private final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker =
+      mock(AvailabilityChecker.class);
+
   private AttestationSchema<?> attestationSchema;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
@@ -160,6 +164,7 @@ class ForkChoiceTest {
             eventThread,
             recentChainData,
             blobSidecarManager,
+            DasSamplerManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -193,11 +198,10 @@ class ForkChoiceTest {
       final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
       when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
           .thenReturn(
-              SafeFuture.completedFuture(
-                  BlobSidecarsAndValidationResult.validResult(blobSidecars)));
+              SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
     } else {
       when(blobSidecarManager.createAvailabilityChecker(any()))
-          .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
+          .thenReturn(AvailabilityChecker.NOOP_BLOBSIDECAR);
     }
   }
 
@@ -236,7 +240,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
+        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notAvailable()));
 
     importBlockAndAssertFailure(
         blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
@@ -253,7 +257,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
+        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notAvailable()));
 
     importBlockAndAssertFailure(
         blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
@@ -357,7 +361,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED));
+        .thenReturn(SafeFuture.completedFuture(DataAndValidationResult.notRequired()));
 
     importBlock(blockAndState);
 
@@ -422,6 +426,7 @@ class ForkChoiceTest {
             eventThread,
             recentChainData,
             BlobSidecarManager.NOOP,
+            DasSamplerManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -1064,7 +1069,7 @@ class ForkChoiceTest {
   @Test
   void prepareForBlockProduction_NotYetInProposalSlotShouldRunOnTickWhenWithinTolerance() {
     final UInt64 newTime =
-        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+        spec.computeTimeMillisAtSlot(ONE, recentChainData.getGenesisTimeMillis())
             .minusMinZero(BLOCK_CREATION_TOLERANCE_MS - 100);
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
@@ -1079,7 +1084,7 @@ class ForkChoiceTest {
   @Test
   void prepareForBlockProduction_NotYetInProposalSlotShouldNotRunOnTickWhenOutOfTolerance() {
     final UInt64 newTime =
-        spec.getSlotStartTimeMillis(ONE, recentChainData.getGenesisTimeMillis())
+        spec.computeTimeMillisAtSlot(ONE, recentChainData.getGenesisTimeMillis())
             .minusMinZero(BLOCK_CREATION_TOLERANCE_MS + 100);
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
@@ -1279,7 +1284,7 @@ class ForkChoiceTest {
 
     // Should apply at start of next slot.
     forkChoice.onTick(
-        spec.getSlotStartTimeMillis(currentSlot.plus(1), recentChainData.getGenesisTimeMillis()),
+        spec.computeTimeMillisAtSlot(currentSlot.plus(1), recentChainData.getGenesisTimeMillis()),
         Optional.empty());
     processHead(currentSlot.plus(1));
 

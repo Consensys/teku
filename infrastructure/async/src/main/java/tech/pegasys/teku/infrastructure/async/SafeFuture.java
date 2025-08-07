@@ -13,37 +13,38 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
-
   public static final SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
+  private static final String UNKNOWN_ERROR = "UNKNOWN ERROR";
 
-  public static void ifExceptionGetsHereRaiseABug(final CompletionStage<?> future) {
+  private static void finishStackTrace(final CompletionStage<?> future) {
     future.exceptionally(
         error -> {
           final Thread currentThread = Thread.currentThread();
           currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, error);
           return null;
         });
-  }
-
-  public static <T, X extends CompletionStage<?>> Consumer<T> ifExceptionGetsHereRaiseABug(
-      final Function<T, X> action) {
-    return value -> ifExceptionGetsHereRaiseABug(action.apply(value));
   }
 
   public static <U> SafeFuture<U> completedFuture(final U value) {
@@ -138,7 +139,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
+  protected static <U> void propagateResult(
+      final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
         (result, error) -> {
           if (error != null) {
@@ -306,8 +308,118 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return new SafeFuture<>();
   }
 
-  public void ifExceptionGetsHereRaiseABug() {
-    ifExceptionGetsHereRaiseABug(this);
+  /**
+   * Raise an error with full stack trace and 'PLEASE FIX OR REPORT'<br>
+   * <B>NOTE:</B> This should only be used if getting to that part of the future indicates a BUG.
+   */
+  public void finishStackTrace() {
+    finishStackTrace(this);
+  }
+
+  private String getMessageFromException(final Throwable error) {
+    // always within an exception context, should always have an error
+    if (error == null) {
+      return UNKNOWN_ERROR;
+    }
+    return Throwables.getRootCause(error).getMessage();
+  }
+
+  /**
+   * Raise an ERROR to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for error
+   */
+  public void finishError(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.error(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  /**
+   * Raise an WARN to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for warning
+   */
+  public void finishWarn(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.warn(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  /**
+   * Raise an INFO to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for info
+   */
+  public void finishInfo(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.info(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  /**
+   * Raise a DEBUG to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for debug
+   */
+  public void finishDebug(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.debug(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  /**
+   * Raise a TRACE to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for trace
+   */
+  public void finishTrace(final Logger logger) {
+    final CompletionStage<?> completionStage = this;
+    completionStage.exceptionally(
+        error -> {
+          logger.trace(getMessageFromException(error));
+          return null;
+        });
+  }
+
+  public SafeFuture<Void> ignoreCancelException() {
+    return ignoreExceptions(CancellationException.class);
+  }
+
+  @SafeVarargs
+  public final SafeFuture<Void> ignoreExceptions(final Class<? extends Throwable>... errors) {
+    return this.exceptionally(
+            err -> {
+              if (ExceptionUtil.hasCause(err, errors)) {
+                return null;
+              } else {
+                switch (err) {
+                  case RuntimeException exception -> throw exception;
+                  default -> throw new CompletionException(err);
+                }
+              }
+            })
+        .thenApply(__ -> null);
+  }
+
+  public void completeAsync(final T value, final AsyncRunner asyncRunner) {
+    asyncRunner.runAsync(() -> complete(value)).finishStackTrace();
+  }
+
+  public void completeExceptionallyAsync(final Throwable exception, final AsyncRunner asyncRunner) {
+    asyncRunner.runAsync(() -> completeExceptionally(exception)).finishStackTrace();
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {
@@ -320,12 +432,9 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void propagateToAsync(final SafeFuture<T> target, final AsyncRunner asyncRunner) {
     finish(
-        result ->
-            asyncRunner.runAsync(() -> target.complete(result)).ifExceptionGetsHereRaiseABug(),
+        result -> asyncRunner.runAsync(() -> target.complete(result)).finishStackTrace(),
         error ->
-            asyncRunner
-                .runAsync(() -> target.completeExceptionally(error))
-                .ifExceptionGetsHereRaiseABug());
+            asyncRunner.runAsync(() -> target.completeExceptionally(error)).finishStackTrace());
   }
 
   /**
@@ -364,7 +473,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               }
               return null;
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   public void finish(final Consumer<Throwable> onError) {
@@ -375,7 +484,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               }
               return null;
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   public void finishAsync(final Consumer<Throwable> onError, final Executor executor) {
@@ -399,7 +508,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               return null;
             },
             executor)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   /**
@@ -627,6 +736,34 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public SafeFuture<T> orTimeout(final long timeout, final TimeUnit unit) {
     return (SafeFuture<T>) super.orTimeout(timeout, unit);
+  }
+
+  /** Schedules future timeout on the specified {@link AsyncRunner} */
+  public SafeFuture<T> orTimeout(final AsyncRunner async, final long timeout, final TimeUnit unit) {
+    return orTimeout(async, Duration.of(timeout, unit.toChronoUnit()));
+  }
+
+  /** Schedules future timeout on the specified {@link AsyncRunner} */
+  public SafeFuture<T> orTimeout(final AsyncRunner async, final Duration timeout) {
+    if (!isDone()) {
+      SafeFuture<Void> timeoutInterruptor =
+          async.runAfterDelay(
+              () -> {
+                if (!SafeFuture.this.isDone()) {
+                  SafeFuture.this.completeExceptionally(new TimeoutException());
+                }
+              },
+              timeout);
+
+      return this.whenComplete(
+          (__, ex) -> {
+            if (ex == null && !timeoutInterruptor.isDone()) {
+              timeoutInterruptor.cancel(false);
+            }
+          });
+    } else {
+      return this;
+    }
   }
 
   /**

@@ -107,7 +107,7 @@ public class DutyMetrics {
 
   private UInt64 calculateSlotStartTimeMillis(final UInt64 slot) {
     final UInt64 genesisTime = recentChainData.getGenesisTimeMillis();
-    return spec.getSlotStartTimeMillis(slot, genesisTime);
+    return spec.computeTimeMillisAtSlot(slot, genesisTime);
   }
 
   public LabelledMetric<OperationTimer> getValidatorDutyMetric() {

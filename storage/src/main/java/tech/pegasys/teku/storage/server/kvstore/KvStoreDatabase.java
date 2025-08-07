@@ -791,7 +791,7 @@ public class KvStoreDatabase implements Database {
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
     final long clockTime = timeSupplier.get();
-    final UInt64 slotTime = spec.getSlotStartTime(finalizedState.getSlot(), genesisTime);
+    final UInt64 slotTime = spec.computeTimeAtSlot(finalizedState.getSlot(), genesisTime);
     final UInt64 time = slotTime.max(clockTime);
 
     return Optional.of(

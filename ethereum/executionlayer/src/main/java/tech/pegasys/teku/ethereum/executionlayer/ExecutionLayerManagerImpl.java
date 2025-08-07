@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -76,6 +77,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public static ExecutionLayerManagerImpl create(
       final EventLogger eventLogger,
       final ExecutionClientHandler executionClientHandler,
+      final Spec spec,
       final Optional<BuilderClient> builderClient,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
@@ -103,6 +105,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     return new ExecutionLayerManagerImpl(
         executionClientHandler,
+        spec,
         builderClient,
         eventLogger,
         builderBidValidator,
@@ -141,6 +144,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private ExecutionLayerManagerImpl(
       final ExecutionClientHandler executionClientHandler,
+      final Spec spec,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
@@ -153,6 +157,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     this.executionBuilderModule =
         new ExecutionBuilderModule(
             this,
+            spec,
             builderBidValidator,
             builderCircuitBreaker,
             builderClient,
@@ -224,12 +229,25 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobs(
+  public SafeFuture<List<Optional<BlobAndProof>>> engineGetBlobAndProofs(
       final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
-    LOG.trace("calling engineGetBlobs(blobVersionedHashes={}, slot={})", blobVersionedHashes, slot);
+    LOG.trace(
+        "calling engineGetBlobAndProofs(blobVersionedHashes={}, slot={})",
+        blobVersionedHashes,
+        slot);
     return executionClientHandler
-        .engineGetBlobs(blobVersionedHashes, slot)
-        .thenApply(blobsAndProofs -> blobsAndProofs.stream().map(Optional::ofNullable).toList());
+        .engineGetBlobsV1(blobVersionedHashes, slot)
+        .thenApply(blobAndProofs -> blobAndProofs.stream().map(Optional::ofNullable).toList());
+  }
+
+  @Override
+  public SafeFuture<List<BlobAndCellProofs>> engineGetBlobAndCellProofsList(
+      final List<VersionedHash> blobVersionedHashes, final UInt64 slot) {
+    LOG.trace(
+        "calling engineGetBlobAndCellProofsList(blobVersionedHashes={}, slot={})",
+        blobVersionedHashes,
+        slot);
+    return executionClientHandler.engineGetBlobsV2(blobVersionedHashes, slot);
   }
 
   @Override

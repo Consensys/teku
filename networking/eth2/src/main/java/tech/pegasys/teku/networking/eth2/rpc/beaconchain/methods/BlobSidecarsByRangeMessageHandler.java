@@ -33,8 +33,8 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -49,7 +49,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#blobsidecarsbyrange-v1">BlobSidecarsByRange
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/p2p-interface.md#blobsidecarsbyrange-v1">BlobSidecarsByRange
  * v1</a>
  */
 public class BlobSidecarsByRangeMessageHandler
@@ -86,18 +86,13 @@ public class BlobSidecarsByRangeMessageHandler
       final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
 
     final SpecConfigDeneb specConfig =
-        SpecConfigDeneb.required(spec.atSlot(request.getMaxSlot()).getConfig());
+        SpecConfigDeneb.required(
+            spec.atSlot(getEndSlotBeforeFulu(request.getMaxSlot())).getConfig());
 
     final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final int maxBlobsPerBlock = spec.getMaxBlobsPerBlockAtSlot(request.getMaxSlot()).orElseThrow();
 
-    int requestedCount;
-    try {
-      requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
-    } catch (final ArithmeticException __) {
-      // handle overflows
-      requestedCount = -1;
-    }
+    final int requestedCount = calculateRequestedCount(request, maxBlobsPerBlock);
 
     if (requestedCount == -1 || requestedCount > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
@@ -110,6 +105,10 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     return Optional.empty();
+  }
+
+  private UInt64 getEndSlotBeforeFulu(final UInt64 maxSlot) {
+    return spec.blobSidecarsDeprecationSlot().safeDecrement().min(maxSlot);
   }
 
   @Override
@@ -127,11 +126,22 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
-    final int requestedCount =
-        calculateRequestedCount(message, spec.getMaxBlobsPerBlockAtSlot(endSlot).orElseThrow());
+    if (startSlot.isGreaterThan(spec.blobSidecarsDeprecationSlot())) {
+      LOG.trace(
+          "Peer {} requested {} slots of blob sidecars starting at slot {} after Fulu. BlobSidecarsByRange v1 is deprecated and the request will be ignored.",
+          peer.getId(),
+          message.getCount(),
+          startSlot);
+      return;
+    }
 
-    final Optional<RequestApproval> blobSidecarsRequestApproval =
+    final UInt64 endSlotBeforeFulu = getEndSlotBeforeFulu(endSlot);
+    final SpecConfigDeneb specConfig =
+        SpecConfigDeneb.required(spec.atSlot(endSlotBeforeFulu).getConfig());
+    final int requestedCount =
+        calculateRequestedCount(
+            message, spec.getMaxBlobsPerBlockAtSlot(endSlotBeforeFulu).orElseThrow());
+    final Optional<ApprovedRequest> blobSidecarsRequestApproval =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
 
     if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
@@ -149,7 +159,7 @@ public class BlobSidecarsByRangeMessageHandler
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
               if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
                       combinedChainDataClient.getStore(), requestEpoch)
-                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlot)) {
+                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlotBeforeFulu)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
               }
@@ -157,12 +167,22 @@ public class BlobSidecarsByRangeMessageHandler
               UInt64 finalizedSlot =
                   combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
 
+              final UInt64 currentEpoch = spec.getCurrentEpoch(combinedChainDataClient.getStore());
+              final UInt64 lowestAllowedBlobSidecarEpoch =
+                  currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests());
+              final UInt64 adjustedStartsSlot =
+                  lowestAllowedBlobSidecarEpoch.isGreaterThan(requestEpoch)
+                      ? spec.computeStartSlotAtEpoch(lowestAllowedBlobSidecarEpoch)
+                      : startSlot;
+
               final SortedMap<UInt64, Bytes32> canonicalHotRoots;
-              if (endSlot.isGreaterThan(finalizedSlot)) {
-                final UInt64 hotSlotsCount = endSlot.increment().minusMinZero(startSlot);
+              if (endSlotBeforeFulu.isGreaterThan(finalizedSlot)) {
+                final UInt64 hotSlotsCount =
+                    endSlotBeforeFulu.increment().minusMinZero(adjustedStartsSlot);
 
                 canonicalHotRoots =
-                    combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
+                    combinedChainDataClient.getAncestorRoots(
+                        adjustedStartsSlot, UInt64.ONE, hotSlotsCount);
 
                 // refresh finalized slot to avoid race condition that can occur if we finalize just
                 // before getting hot canonical roots
@@ -174,12 +194,12 @@ public class BlobSidecarsByRangeMessageHandler
               final RequestState initialState =
                   new RequestState(
                       callback,
-                      startSlot,
-                      endSlot,
+                      adjustedStartsSlot,
+                      endSlotBeforeFulu,
                       canonicalHotRoots,
                       finalizedSlot,
                       specConfig.getMaxRequestBlobSidecars());
-              if (message.getCount().isZero()) {
+              if (message.getCount().isZero() || initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }
               return sendBlobSidecars(initialState);
@@ -200,9 +220,12 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   private int calculateRequestedCount(
-      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock)
-      throws ArithmeticException {
-    return message.getCount().times(maxBlobsPerBlock).intValue();
+      final BlobSidecarsByRangeRequestMessage message, final int maxBlobsPerBlock) {
+    try {
+      return message.getCount().times(maxBlobsPerBlock).intValue();
+    } catch (final ArithmeticException e) {
+      return -1;
+    }
   }
 
   private boolean checkBlobSidecarsAreAvailable(
@@ -325,7 +348,8 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
+      return endSlot.isLessThan(startSlot)
+          || blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

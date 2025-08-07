@@ -29,16 +29,18 @@ public interface KZG {
   int BYTES_PER_G2 = 96;
   int CELLS_PER_EXT_BLOB = 128;
   int FIELD_ELEMENTS_PER_BLOB = 4096;
+  int FIELD_ELEMENTS_PER_EXT_BLOB = 8192;
 
   static KZG getInstance(final boolean rustKzgEnabled) {
-    return rustKzgEnabled ? RustWithCKZG.getInstance() : CKZG4844.getInstance();
+    return rustKzgEnabled ? RustKZG.getInstance() : CKZG4844.getInstance();
   }
 
   KZG DISABLED =
       new KZG() {
 
         @Override
-        public void loadTrustedSetup(final String trustedSetupFile) throws KZGException {}
+        public void loadTrustedSetup(final String trustedSetupFile, final int kzgPrecompute)
+            throws KZGException {}
 
         @Override
         public void freeTrustedSetup() throws KZGException {}
@@ -94,7 +96,7 @@ public interface KZG {
         }
       };
 
-  void loadTrustedSetup(String trustedSetupFile) throws KZGException;
+  void loadTrustedSetup(String trustedSetupFile, int kzgPrecompute) throws KZGException;
 
   void freeTrustedSetup() throws KZGException;
 

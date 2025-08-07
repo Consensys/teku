@@ -33,7 +33,7 @@ public class AttestationDataValidatorDeneb extends AttestationDataValidatorPhase
 
   /**
    * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#modified-process_attestation">Modified
+   * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/beacon-chain.md#modified-process_attestation">Modified
    * process_attestation</a>
    */
   @Override

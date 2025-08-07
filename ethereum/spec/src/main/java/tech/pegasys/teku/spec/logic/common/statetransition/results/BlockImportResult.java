@@ -20,6 +20,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 public interface BlockImportResult {
   BlockImportResult FAILED_BLOCK_IS_FROM_FUTURE =
       new FailedBlockImportResult(FailureReason.BLOCK_IS_FROM_FUTURE, Optional.empty());
+  BlockImportResult BUILDER_WITHHOLD =
+      new FailedBlockImportResult(FailureReason.BUILDER_WITHHOLD, Optional.empty());
   BlockImportResult FAILED_UNKNOWN_PARENT =
       new FailedBlockImportResult(FailureReason.UNKNOWN_PARENT, Optional.empty());
   BlockImportResult FAILED_INVALID_ANCESTRY =
@@ -78,6 +80,7 @@ public interface BlockImportResult {
   enum FailureReason {
     UNKNOWN_PARENT,
     BLOCK_IS_FROM_FUTURE,
+    BUILDER_WITHHOLD,
     DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
     FAILED_STATE_TRANSITION,
     FAILED_WEAK_SUBJECTIVITY_CHECKS,
@@ -117,6 +120,10 @@ public interface BlockImportResult {
   }
 
   default boolean hasFailedExecutingExecutionPayload() {
+    return false;
+  }
+
+  default boolean isDataNotAvailable() {
     return false;
   }
 

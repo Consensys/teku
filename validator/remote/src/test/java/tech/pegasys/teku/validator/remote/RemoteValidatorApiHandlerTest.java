@@ -92,6 +92,7 @@ class RemoteValidatorApiHandlerTest {
   private final HttpUrl endpoint = HttpUrl.get("http://localhost:5051");
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubAsyncRunner readinessAsyncRunner = new StubAsyncRunner();
 
   private final OkHttpValidatorTypeDefClient typeDefClient =
       mock(OkHttpValidatorTypeDefClient.class);
@@ -100,7 +101,9 @@ class RemoteValidatorApiHandlerTest {
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler = new RemoteValidatorApiHandler(endpoint, typeDefClient, asyncRunner, true);
+    apiHandler =
+        new RemoteValidatorApiHandler(
+            endpoint, typeDefClient, asyncRunner, readinessAsyncRunner, true);
   }
 
   @Test
@@ -168,7 +171,7 @@ class RemoteValidatorApiHandlerTest {
 
     final SafeFuture<SyncingStatus> future = apiHandler.getSyncingStatus();
 
-    asyncRunner.executeQueuedActions();
+    readinessAsyncRunner.executeQueuedActions();
 
     assertThat(future).isCompletedWithValue(syncingStatus);
   }
@@ -440,7 +443,7 @@ class RemoteValidatorApiHandlerTest {
             .build();
     when(typeDefClient.getPeerCount()).thenReturn(Optional.of(response));
     final SafeFuture<Optional<PeerCount>> peerCountFuture = apiHandler.getPeerCount();
-    PeerCount peerCount = unwrapToValue(peerCountFuture);
+    PeerCount peerCount = unwrapToValue(readinessAsyncRunner, peerCountFuture);
     assertThat(peerCount).isEqualTo(response);
   }
 
@@ -747,6 +750,11 @@ class RemoteValidatorApiHandlerTest {
   }
 
   private <T> T unwrapToValue(final SafeFuture<Optional<T>> future) {
+    return unwrapToValue(asyncRunner, future);
+  }
+
+  private <T> T unwrapToValue(
+      final StubAsyncRunner asyncRunner, final SafeFuture<Optional<T>> future) {
     try {
       asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future).orElseThrow();
