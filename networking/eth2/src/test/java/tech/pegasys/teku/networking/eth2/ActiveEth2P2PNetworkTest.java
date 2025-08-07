@@ -108,7 +108,7 @@ public class ActiveEth2P2PNetworkTest {
             b ->
                 b.altairForkEpoch(altairForkEpoch)
                     .bellatrixForkEpoch(UInt64.valueOf(3))
-                    .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
+                    .capellaForkEpoch(UInt64.valueOf(4))
                     .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
                     .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
                     .fuluBuilder(
@@ -218,7 +218,7 @@ public class ActiveEth2P2PNetworkTest {
             b ->
                 b.altairForkEpoch(altairForkEpoch)
                     .bellatrixForkEpoch(UInt64.valueOf(3))
-                    .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(4)))
+                    .capellaForkEpoch(UInt64.valueOf(4))
                     .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
                     .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
                     .fuluBuilder(

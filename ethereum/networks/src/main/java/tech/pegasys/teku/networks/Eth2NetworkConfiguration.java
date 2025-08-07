@@ -522,6 +522,7 @@ public class Eth2NetworkConfiguration {
                   }
                   altairForkEpoch.ifPresent(builder::altairForkEpoch);
                   bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
+                  capellaForkEpoch.ifPresent(builder::capellaForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
@@ -532,9 +533,6 @@ public class Eth2NetworkConfiguration {
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
-                  builder.capellaBuilder(
-                      capellaBuilder ->
-                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
                   builder.denebBuilder(
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
