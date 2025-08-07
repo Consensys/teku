@@ -141,7 +141,9 @@ public class SpecConfigLoaderTest {
         "ALTAIR_FORK_EPOCH",
         "ALTAIR_FORK_VERSION",
         "BELLATRIX_FORK_EPOCH",
-        "BELLATRIX_FORK_VERSION"
+        "BELLATRIX_FORK_VERSION",
+        "CAPELLA_FORK_EPOCH",
+        "CAPELLA_FORK_VERSION"
       })
   public void shouldFailToReadConfigMissingKeyVariablesIfStrict(
       final String parameter, @TempDir final Path tempDir) throws Exception {

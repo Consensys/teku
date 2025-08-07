@@ -70,9 +70,7 @@ public class GenesisGenerator {
   public GenesisGenerator withCapellaEpoch(final UInt64 capellaForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.capellaBuilder(
-                    capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.capellaForkEpoch(capellaForkEpoch));
     return this;
   }
 

@@ -173,6 +173,16 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getCapellaForkVersion() {
+    return specConfig.getCapellaForkVersion();
+  }
+
+  @Override
+  public UInt64 getCapellaForkEpoch() {
+    return specConfig.getCapellaForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
   }
