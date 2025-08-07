@@ -107,7 +107,7 @@ public class P2POptions {
       description = "List of ENRs of the bootnodes",
       split = ",",
       arity = "0..*")
-  private List<String> p2pDiscoveryBootnodes = new ArrayList<>();
+  private List<String> p2pDiscoveryBootnodes = null;
 
   @Option(
       names = {"--p2p-discovery-bootnodes-url"},
@@ -527,7 +527,11 @@ public class P2POptions {
   }
 
   private List<String> getBootnodes() {
-    final List<String> bootnodes = new ArrayList<>(p2pDiscoveryBootnodes);
+    final List<String> bootnodes = new ArrayList<>();
+
+    if (p2pDiscoveryBootnodes != null) {
+      bootnodes.addAll(p2pDiscoveryBootnodes);
+    }
 
     if (p2pDiscoveryBootnodesUrl != null) {
       try {
@@ -569,7 +573,9 @@ public class P2POptions {
             })
         .discovery(
             d -> {
-              d.bootnodes(getBootnodes());
+              if (p2pDiscoveryBootnodes != null || p2pDiscoveryBootnodesUrl != null) {
+                d.bootnodes(getBootnodes());
+              }
               if (minimumRandomlySelectedPeerCount != null) {
                 d.minRandomlySelectedPeers(minimumRandomlySelectedPeerCount);
               }
