@@ -128,11 +128,11 @@ public class Eth2IncomingRequestHandler<
                     "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
                     RECEIVE_INCOMING_REQUEST_TIMEOUT.toSeconds(),
                     protocolId);
-                stream.closeAbruptly().ifExceptionGetsHereRaiseABug();
+                stream.closeAbruptly().finishStackTrace();
               }
             },
             RECEIVE_INCOMING_REQUEST_TIMEOUT)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   @VisibleForTesting

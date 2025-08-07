@@ -284,7 +284,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
               transaction.commit();
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   public void onAttesterSlashing(
@@ -300,7 +300,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               storeEquivocatingIndices(slashing, transaction);
               transaction.commit();
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   public void subscribeToOptimisticHeadChangesAndUpdate(final OptimisticHeadSubscriber subscriber) {
@@ -316,7 +316,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
     final UInt64 currentSlot = spec.getCurrentSlot(store);
     if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
-      applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
+      applyDeferredAttestations(currentSlot).finishStackTrace();
     }
     performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
   }

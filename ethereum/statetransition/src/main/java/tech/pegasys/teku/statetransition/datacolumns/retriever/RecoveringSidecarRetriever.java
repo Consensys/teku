@@ -197,7 +197,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                 recovery.addRequest(columnId.columnIndex(), response);
               }
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private RecoveryEntry addRecovery(

@@ -38,18 +38,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   public static final SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
   private static final String UNKNOWN_ERROR = "UNKNOWN ERROR";
 
-  public static void ifExceptionGetsHereRaiseABug(final CompletionStage<?> future) {
+  private static void finishStackTrace(final CompletionStage<?> future) {
     future.exceptionally(
         error -> {
           final Thread currentThread = Thread.currentThread();
           currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, error);
           return null;
         });
-  }
-
-  public static <T, X extends CompletionStage<?>> Consumer<T> ifExceptionGetsHereRaiseABug(
-      final Function<T, X> action) {
-    return value -> ifExceptionGetsHereRaiseABug(action.apply(value));
   }
 
   public static <U> SafeFuture<U> completedFuture(final U value) {
@@ -313,8 +308,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return new SafeFuture<>();
   }
 
-  public void ifExceptionGetsHereRaiseABug() {
-    ifExceptionGetsHereRaiseABug(this);
+  /**
+   * Raise an error with full stack trace and 'PLEASE FIX OR REPORT'<br>
+   * <B>NOTE:</B> This should only be used if getting to that part of the future indicates a BUG.
+   */
+  public void finishStackTrace() {
+    finishStackTrace(this);
   }
 
   private String getMessageFromException(final Throwable error) {
@@ -325,6 +324,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return Throwables.getRootCause(error).getMessage();
   }
 
+  /**
+   * Raise an ERROR to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for error
+   */
   public void finishError(final Logger logger) {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
@@ -334,6 +338,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
+  /**
+   * Raise an WARN to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for warning
+   */
   public void finishWarn(final Logger logger) {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
@@ -343,6 +352,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
+  /**
+   * Raise an INFO to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for info
+   */
   public void finishInfo(final Logger logger) {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
@@ -352,6 +366,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
+  /**
+   * Raise a DEBUG to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for debug
+   */
   public void finishDebug(final Logger logger) {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
@@ -361,6 +380,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
+  /**
+   * Raise a TRACE to the specified logger, with the root cause message
+   *
+   * @param logger - class logger for trace
+   */
   public void finishTrace(final Logger logger) {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
@@ -391,11 +415,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   public void completeAsync(final T value, final AsyncRunner asyncRunner) {
-    asyncRunner.runAsync(() -> complete(value)).ifExceptionGetsHereRaiseABug();
+    asyncRunner.runAsync(() -> complete(value)).finishStackTrace();
   }
 
   public void completeExceptionallyAsync(final Throwable exception, final AsyncRunner asyncRunner) {
-    asyncRunner.runAsync(() -> completeExceptionally(exception)).ifExceptionGetsHereRaiseABug();
+    asyncRunner.runAsync(() -> completeExceptionally(exception)).finishStackTrace();
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {
@@ -408,12 +432,9 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void propagateToAsync(final SafeFuture<T> target, final AsyncRunner asyncRunner) {
     finish(
-        result ->
-            asyncRunner.runAsync(() -> target.complete(result)).ifExceptionGetsHereRaiseABug(),
+        result -> asyncRunner.runAsync(() -> target.complete(result)).finishStackTrace(),
         error ->
-            asyncRunner
-                .runAsync(() -> target.completeExceptionally(error))
-                .ifExceptionGetsHereRaiseABug());
+            asyncRunner.runAsync(() -> target.completeExceptionally(error)).finishStackTrace());
   }
 
   /**
@@ -452,7 +473,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               }
               return null;
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   public void finish(final Consumer<Throwable> onError) {
@@ -463,7 +484,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               }
               return null;
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   public void finishAsync(final Consumer<Throwable> onError, final Executor executor) {
@@ -487,7 +508,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               return null;
             },
             executor)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   /**
