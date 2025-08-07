@@ -53,25 +53,25 @@ class SpecFactoryTest {
                     builder
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
-                        .capellaBuilder(c -> c.capellaForkEpoch(forkEpoch));
+                        .capellaForkEpoch(forkEpoch);
                 case DENEB ->
                     builder
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                        .capellaForkEpoch(UInt64.ZERO)
                         .denebBuilder(d -> d.denebForkEpoch(forkEpoch));
                 case ELECTRA ->
                     builder
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                        .capellaForkEpoch(UInt64.ZERO)
                         .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
                         .electraBuilder(e -> e.electraForkEpoch(forkEpoch));
                 case FULU ->
                     builder
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                        .capellaForkEpoch(UInt64.ZERO)
                         .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
                         .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
                         .fuluBuilder(f -> f.fuluForkEpoch(forkEpoch));

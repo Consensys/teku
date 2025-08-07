@@ -14,8 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigCapella extends DelegatingSpecConfigBellatrix
     implements SpecConfigCapella {
@@ -29,16 +27,6 @@ public class DelegatingSpecConfigCapella extends DelegatingSpecConfigBellatrix
   @Override
   public Optional<SpecConfigCapella> toVersionCapella() {
     return Optional.of(this);
-  }
-
-  @Override
-  public Bytes4 getCapellaForkVersion() {
-    return specConfigCapella.getCapellaForkVersion();
-  }
-
-  @Override
-  public UInt64 getCapellaForkEpoch() {
-    return specConfigCapella.getCapellaForkEpoch();
   }
 
   @Override

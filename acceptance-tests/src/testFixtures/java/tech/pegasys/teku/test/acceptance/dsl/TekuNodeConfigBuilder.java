@@ -139,9 +139,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-capella-fork-epoch", capellaForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.capellaBuilder(
-                    capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.capellaForkEpoch(capellaForkEpoch));
     return this;
   }
 
