@@ -58,47 +58,52 @@ public class MultimodeGraffitiProvider implements GraffitiProvider {
 
   @Override
   public Optional<Bytes32> get() {
-    // Check if we need to reload the file
-    checkAndReloadFileIfNeeded();
+    try {
+      // Check if we need to reload the file
+      checkAndReloadFileIfNeeded();
 
-    // If we have a configuration from file, try to get graffiti from it
-    if (graffitiConfig.isPresent()) {
-      final GraffitiConfiguration config = graffitiConfig.get();
+      // If we have a configuration from file, try to get graffiti from it
+      if (graffitiConfig.isPresent()) {
+        final GraffitiConfiguration config = graffitiConfig.get();
 
-      // Priority 1: Check for specific validator entry if we have a public key
-      if (validatorPublicKey.isPresent()) {
-        final BLSPublicKey pubKey = validatorPublicKey.get();
+        // Priority 1: Check for specific validator entry if we have a public key
+        if (validatorPublicKey.isPresent()) {
+          final BLSPublicKey pubKey = validatorPublicKey.get();
 
-        // Try to find by full public key
-        final String pubKeyStr = pubKey.toSSZBytes().toUnprefixedHexString();
-        final Optional<Bytes32> specificGraffiti = findSpecificGraffiti(config, pubKeyStr);
-        if (specificGraffiti.isPresent()) {
-          return specificGraffiti;
+          // Try to find by full public key
+          final String pubKeyStr = pubKey.toSSZBytes().toUnprefixedHexString();
+          final Optional<Bytes32> specificGraffiti = findSpecificGraffiti(config, pubKeyStr);
+          if (specificGraffiti.isPresent()) {
+            return specificGraffiti;
+          }
+        }
+
+        // Priority 2: Try ordered list if available
+        if (config.ordered != null && !config.ordered.isEmpty()) {
+          final int index = orderedIndex.getAndIncrement() % config.ordered.size();
+          final String orderedGraffiti = config.ordered.get(index);
+          return Optional.of(Bytes32Parser.toBytes32(orderedGraffiti));
+        }
+
+        // Priority 3: Try random selection if available
+        if (config.random != null && !config.random.isEmpty()) {
+          final int randomIndex = RANDOM.nextInt(config.random.size());
+          final String randomGraffiti = config.random.get(randomIndex);
+          return Optional.of(Bytes32Parser.toBytes32(randomGraffiti));
+        }
+
+        // Priority 4: Use default from config file
+        if (config.defaultGraffiti != null) {
+          return Optional.of(Bytes32Parser.toBytes32(config.defaultGraffiti));
         }
       }
 
-      // Priority 2: Try ordered list if available
-      if (config.ordered != null && !config.ordered.isEmpty()) {
-        final int index = orderedIndex.getAndIncrement() % config.ordered.size();
-        final String orderedGraffiti = config.ordered.get(index);
-        return Optional.of(Bytes32Parser.toBytes32(orderedGraffiti));
-      }
-
-      // Priority 3: Try random selection if available
-      if (config.random != null && !config.random.isEmpty()) {
-        final int randomIndex = RANDOM.nextInt(config.random.size());
-        final String randomGraffiti = config.random.get(randomIndex);
-        return Optional.of(Bytes32Parser.toBytes32(randomGraffiti));
-      }
-
-      // Priority 4: Use default from config file
-      if (config.defaultGraffiti != null) {
-        return Optional.of(Bytes32Parser.toBytes32(config.defaultGraffiti));
-      }
+      // Last resort: Fall back to CLI provided default
+      return defaultGraffiti;
+    } catch (final Exception e) {
+      LOG.warn("Error getting graffiti from multimode graffiti provider: {}", e.getMessage(), e);
+      return Optional.empty();
     }
-
-    // Last resort: Fall back to CLI provided default
-    return defaultGraffiti;
   }
 
   private Optional<Bytes32> findSpecificGraffiti(
