@@ -284,9 +284,7 @@ public class TestSpecFactory {
       defaultModifier = defaultModifier.andThen(builder -> builder.bellatrixForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.capellaForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       defaultModifier =
@@ -363,7 +361,7 @@ public class TestSpecFactory {
             builder
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(ZERO)
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch)));
+                .capellaForkEpoch(capellaForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getCapellaSpecConfig(
@@ -372,10 +370,7 @@ public class TestSpecFactory {
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
-              builder
-                  .altairForkEpoch(ZERO)
-                  .bellatrixForkEpoch(ZERO)
-                  .capellaBuilder(c -> c.capellaForkEpoch(ZERO));
+              builder.altairForkEpoch(ZERO).bellatrixForkEpoch(ZERO).capellaForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -393,7 +388,7 @@ public class TestSpecFactory {
             builder
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(ZERO)
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
+                .capellaForkEpoch(capellaForkEpoch)
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch)));
   }
 
@@ -406,7 +401,7 @@ public class TestSpecFactory {
               builder
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(ZERO)
-                  .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
+                  .capellaForkEpoch(ZERO)
                   .denebBuilder(d -> d.denebForkEpoch(ZERO));
               configAdapter.accept(builder);
             }));
@@ -428,7 +423,7 @@ public class TestSpecFactory {
             builder
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(ZERO)
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
+                .capellaForkEpoch(capellaForkEpoch)
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
   }
@@ -442,7 +437,7 @@ public class TestSpecFactory {
               builder
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(ZERO)
-                  .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
+                  .capellaForkEpoch(ZERO)
                   .denebBuilder(d -> d.denebForkEpoch(ZERO))
                   .electraBuilder(e -> e.electraForkEpoch(ZERO));
               configAdapter.accept(builder);
@@ -466,7 +461,7 @@ public class TestSpecFactory {
             builder
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(UInt64.ZERO)
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
+                .capellaForkEpoch(capellaForkEpoch)
                 .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
                 .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
@@ -481,7 +476,7 @@ public class TestSpecFactory {
               builder
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(UInt64.ZERO)
-                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .capellaForkEpoch(UInt64.ZERO)
                   .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
                   .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
                   .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));

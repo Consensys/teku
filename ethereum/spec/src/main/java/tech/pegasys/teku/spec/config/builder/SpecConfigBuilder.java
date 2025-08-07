@@ -138,6 +138,8 @@ public class SpecConfigBuilder {
   private UInt64 altairForkEpoch;
   private Bytes4 bellatrixForkVersion;
   private UInt64 bellatrixForkEpoch;
+  private Bytes4 capellaForkVersion;
+  private UInt64 capellaForkEpoch;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
@@ -242,7 +244,9 @@ public class SpecConfigBuilder {
                 altairForkVersion,
                 altairForkEpoch,
                 bellatrixForkVersion,
-                bellatrixForkEpoch));
+                bellatrixForkEpoch,
+                capellaForkVersion,
+                capellaForkEpoch));
 
     return builderChain.build(config);
   }
@@ -318,6 +322,8 @@ public class SpecConfigBuilder {
     constants.put("altairForkVersion", altairForkVersion);
     constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
     constants.put("bellatrixForkVersion", bellatrixForkVersion);
+    constants.put("capellaForkVersion", capellaForkVersion);
+    constants.put("capellaForkEpoch", capellaForkEpoch);
     return constants;
   }
 
@@ -335,6 +341,12 @@ public class SpecConfigBuilder {
     }
     if (bellatrixForkVersion != null) {
       rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    }
+    if (capellaForkEpoch != null) {
+      rawConfig.put("CAPELLA_FORK_EPOCH", capellaForkEpoch);
+    }
+    if (capellaForkVersion != null) {
+      rawConfig.put("CAPELLA_FORK_VERSION", capellaForkVersion);
     }
   }
 
@@ -494,6 +506,18 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
     checkNotNull(bellatrixForkEpoch);
     this.bellatrixForkEpoch = bellatrixForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkVersion(final Bytes4 capellaForkVersion) {
+    checkNotNull(capellaForkVersion);
+    this.capellaForkVersion = capellaForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+    checkNotNull(capellaForkEpoch);
+    this.capellaForkEpoch = capellaForkEpoch;
     return this;
   }
 
