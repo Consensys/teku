@@ -47,7 +47,6 @@ public class NoOpKZG implements KZG {
   }
 
   @Override
-  @Deprecated(since = "Use computeCells instead, computeCellsAndProof is not for production")
   public List<KZGCellAndProof> computeCellsAndProofs(final Bytes blob) {
     return IntStream.range(0, KZG.CELLS_PER_EXT_BLOB)
         .mapToObj(__ -> new KZGCellAndProof(KZGCell.ZERO, KZGProof.ZERO))

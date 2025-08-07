@@ -86,7 +86,6 @@ public class BlobsUtil {
   }
 
   @VisibleForTesting
-  @SuppressWarnings("deprecation")
   public List<KZGProof> computeKzgCellProofs(final Blob blob) {
     return kzg.computeCellsAndProofs(blob.getBytes()).stream().map(KZGCellAndProof::proof).toList();
   }

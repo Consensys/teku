@@ -188,18 +188,13 @@ public class ChainBuilder {
         .orElse(Collections.emptyList());
   }
 
-  public Optional<List<DataColumnSidecar>> getDataColumnSidecars(
+  public List<DataColumnSidecar> getDataColumnSidecars(
       final DataColumnsByRootIdentifier dataColumnsIdentifier) {
-    final List<DataColumnSidecar> dataColumnSidecars =
-        getDataColumnSidecars(dataColumnsIdentifier.getBlockRoot()).stream()
-            .filter(
-                dataColumnSidecar ->
-                    dataColumnsIdentifier.getColumns().contains(dataColumnSidecar.getIndex()))
-            .toList();
-    if (dataColumnSidecars.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.of(dataColumnSidecars);
+    return getDataColumnSidecars(dataColumnsIdentifier.getBlockRoot()).stream()
+        .filter(
+            dataColumnSidecar ->
+                dataColumnsIdentifier.getColumns().contains(dataColumnSidecar.getIndex()))
+        .toList();
   }
 
   public Optional<UInt64> getEarliestBlobSidecarSlot() {

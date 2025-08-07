@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
+import tech.pegasys.teku.networking.p2p.mock.MockDiscoveryNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -65,6 +66,8 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 public class RespondingEth2Peer implements Eth2Peer {
 
   private static final MockNodeIdGenerator ID_GENERATOR = new MockNodeIdGenerator();
+  private static final MockDiscoveryNodeIdGenerator DISCOVERY_ID_GENERATOR =
+      new MockDiscoveryNodeIdGenerator();
   private static final Bytes4 FORK_DIGEST = Bytes4.fromHexString("0x11223344");
 
   private final Spec spec;
@@ -419,7 +422,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public Optional<UInt256> getDiscoveryNodeId() {
-    return Optional.empty();
+    return Optional.of(DISCOVERY_ID_GENERATOR.next());
   }
 
   @Override
@@ -520,7 +523,9 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   private Optional<List<DataColumnSidecar>> findDataColumnSidecarsByDataColumnsIdentifier(
       final DataColumnsByRootIdentifier dataColumnsIdentifier) {
-    return findObjectByKey(dataColumnsIdentifier, ChainBuilder::getDataColumnSidecars);
+    return findObjectByKey(
+        dataColumnsIdentifier,
+        (chainBuilder, id) -> Optional.of(chainBuilder.getDataColumnSidecars(id)));
   }
 
   public static class PendingRequest<ResponseT, HandlerT> {

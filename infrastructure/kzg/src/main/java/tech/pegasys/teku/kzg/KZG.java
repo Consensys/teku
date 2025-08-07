@@ -38,6 +38,8 @@ public interface KZG {
   KZG DISABLED =
       new KZG() {
 
+        private static final String DISABLED_ERROR_MESSAGE = "KZG is disabled";
+
         @Override
         public void loadTrustedSetup(final String trustedSetupFile, final int kzgPrecompute)
             throws KZGException {}
@@ -49,7 +51,7 @@ public interface KZG {
         public boolean verifyBlobKzgProof(
             final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
             throws KZGException {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
 
         @Override
@@ -58,28 +60,28 @@ public interface KZG {
             final List<KZGCommitment> kzgCommitments,
             final List<KZGProof> kzgProofs)
             throws KZGException {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
 
         @Override
         public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
 
         @Override
         public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
             throws KZGException {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
 
         @Override
         public List<KZGCell> computeCells(Bytes blob) {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
 
         @Override
         public List<KZGCellAndProof> computeCellsAndProofs(Bytes blob) {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
 
         @Override
@@ -87,12 +89,12 @@ public interface KZG {
             List<KZGCommitment> commitments,
             List<KZGCellWithColumnId> cellWithIDs,
             List<KZGProof> proofs) {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
 
         @Override
         public List<KZGCellAndProof> recoverCellsAndProofs(List<KZGCellWithColumnId> cells) {
-          throw new UnsupportedOperationException("KZG is disabled");
+          throw new UnsupportedOperationException(DISABLED_ERROR_MESSAGE);
         }
       };
 
@@ -115,7 +117,7 @@ public interface KZG {
 
   List<KZGCell> computeCells(Bytes blob);
 
-  @Deprecated(since = "Use computeCells instead, computeCellsAndProof is not for production")
+  // used only in testing, not required in production, because proofs are generated in EL
   List<KZGCellAndProof> computeCellsAndProofs(Bytes blob);
 
   boolean verifyCellProofBatch(
