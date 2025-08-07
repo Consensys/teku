@@ -202,7 +202,7 @@ public class BlockManager extends Service
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
     // we don't care about origin here because flow calls this function for retries only
     doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.empty())
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(

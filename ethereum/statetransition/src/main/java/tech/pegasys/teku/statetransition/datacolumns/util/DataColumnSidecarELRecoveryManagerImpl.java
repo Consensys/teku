@@ -337,7 +337,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                 // fetch blobs from EL with no delay
                 fetchMissingBlobsFromLocalEL(slotAndBlockRoot))
         .handleException(this::logLocalElBlobsLookupFailure)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private SafeFuture<Void> fetchMissingBlobsFromLocalEL(final SlotAndBlockRoot slotAndBlockRoot) {
