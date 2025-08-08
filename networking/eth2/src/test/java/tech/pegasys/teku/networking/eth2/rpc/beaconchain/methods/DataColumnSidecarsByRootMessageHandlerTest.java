@@ -39,8 +39,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -80,9 +80,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
       ArgumentCaptor.forClass(DataColumnSidecar.class);
   private final ArgumentCaptor<RpcException> rpcExceptionCaptor =
       ArgumentCaptor.forClass(RpcException.class);
-  private final Optional<ApprovedRequest> allowedObjectsRequest =
-      Optional.of(
-          new ApprovedRequest.RequestApprovalBuilder().requestSize(100).timeSeconds(ZERO).build());
+  private final Optional<RequestKey> allowedRequest = Optional.of(new RequestKey(ZERO, 100));
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<DataColumnSidecar> callback = mock(ResponseCallback.class);
@@ -98,7 +96,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
   private String protocolId;
-  private UInt64 currentForkFirstSlot;
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarsByRootMessageHandler handler;
   private SpecMilestone specMilestone;
@@ -118,7 +115,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
         spec.atEpoch(currentForkEpoch).getSchemaDefinitions().toVersionFulu().orElseThrow();
     messageSchema = schemaDefinitionsFulu.getDataColumnSidecarsByRootRequestMessageSchema();
     identifierSchema = schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema();
-    currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+    final UInt64 currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     protocolId = BeaconChainMethodIds.getDataColumnSidecarsByRootMethodId(1, rpcEncoding);
@@ -135,7 +132,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     when(peer.getDiscoveryNodeId()).thenReturn(Optional.of(dataStructureUtil.randomUInt256()));
 
     when(peer.approveRequest()).thenReturn(true);
-    when(peer.approveDataColumnSidecarsRequest(any(), anyLong())).thenReturn(allowedObjectsRequest);
+    when(peer.approveDataColumnSidecarsRequest(any(), anyLong())).thenReturn(allowedRequest);
     reset(combinedChainDataClient);
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
@@ -255,8 +252,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // Requesting 4 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Sending 3 data column sidecars
-    verify(peer)
-        .adjustDataColumnSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(3)));
+    verify(peer).adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(3)));
 
     verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
     verify(callback, times(3)).respond(datacolumnSidecarCaptor.capture());
@@ -306,7 +302,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Request cancelled due to error
     verify(peer, times(1))
-        .adjustDataColumnSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(0)));
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -335,7 +331,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     final List<DataColumnSidecar> generatedSidecars =
         IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomDataColumnSidecar()).toList();
     when(custodyGroupCountManager.getCustodyColumnIndices())
-        .thenReturn(List.of(dataColumnsByRootIdentifiers[0].getColumns().get(0)));
+        .thenReturn(List.of(dataColumnsByRootIdentifiers[0].getColumns().getFirst()));
 
     when(custody.getCustodyDataColumnSidecarByRoot(any()))
         .thenAnswer(
@@ -361,8 +357,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // Requesting 4 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Sending 3 data column sidecars
-    verify(peer)
-        .adjustDataColumnSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(3)));
+    verify(peer).adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(3)));
 
     verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
     verify(callback, times(3)).respond(datacolumnSidecarCaptor.capture());

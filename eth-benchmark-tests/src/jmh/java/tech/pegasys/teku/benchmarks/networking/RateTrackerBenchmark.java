@@ -31,9 +31,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.peers.RateTrackerImpl;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 
 @Fork(1)
 @State(Scope.Thread)
@@ -43,7 +43,7 @@ public class RateTrackerBenchmark {
   public static class ExecutionPlan {
     private final TimeProvider timeProvider = new SystemTimeProvider();
     public RateTracker config;
-    public final List<ApprovedRequest> requestList = new ArrayList<>();
+    public final List<RequestKey> requestList = new ArrayList<>();
     public final Random random = new Random();
 
     @Param({"true", "false"})
@@ -54,11 +54,11 @@ public class RateTrackerBenchmark {
       config = new RateTrackerImpl(DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT, 60, timeProvider, "org");
 
       if (!isEmpty) {
-        Optional<ApprovedRequest> request = config.approveObjectsRequest(random.nextLong(30));
-        request.ifPresent(requestList::add);
-        while (request.isPresent()) {
-          request = config.approveObjectsRequest(random.nextLong(30));
-          request.ifPresent(requestList::add);
+        Optional<RequestKey> maybeRequest = config.generateRequestKey(random.nextLong(30));
+        maybeRequest.ifPresent(requestList::add);
+        while (maybeRequest.isPresent()) {
+          maybeRequest = config.generateRequestKey(random.nextLong(30));
+          maybeRequest.ifPresent(requestList::add);
         }
       }
     }
@@ -68,7 +68,7 @@ public class RateTrackerBenchmark {
   @Warmup(iterations = 2, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public void addToList(final ExecutionPlan plan) {
-    plan.config.approveObjectsRequest(plan.random.nextLong(30));
+    plan.config.generateRequestKey(plan.random.nextLong(30));
   }
 
   @Benchmark
@@ -83,8 +83,8 @@ public class RateTrackerBenchmark {
   @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   public void adjustRequest(final ExecutionPlan plan) {
     if (plan.isEmpty) {
-      plan.config.approveObjectsRequest(plan.random.nextLong(30)).ifPresent(plan.requestList::add);
+      plan.config.generateRequestKey(plan.random.nextLong(30)).ifPresent(plan.requestList::add);
     }
-    plan.config.adjustObjectsRequest(plan.requestList.getFirst(), 1);
+    plan.config.adjustRequestObjectCount(plan.requestList.getFirst(), 1);
   }
 }

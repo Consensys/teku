@@ -20,23 +20,18 @@ import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE_ALL_SUBNETS;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.stream.Collectors;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
+import tech.pegasys.teku.cli.util.MultilineEntriesReader;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -92,7 +87,8 @@ public class P2POptions {
       names = {"--p2p-udp-port-ipv6"},
       paramLabel = "<INTEGER>",
       description =
-          "IPv6 UDP port used for discovery. This port is only used when listening over both IPv4 and IPv6. The default is the port specified in --p2p-port-ipv6",
+          "IPv6 UDP port used for discovery. This port is only used when listening over both IPv4 and IPv6. The "
+              + "default is the port specified in --p2p-port-ipv6",
       arity = "1")
   private Integer p2pUdpPortIpv6;
 
@@ -114,10 +110,19 @@ public class P2POptions {
   private List<String> p2pDiscoveryBootnodes = null;
 
   @Option(
+      names = {"--p2p-discovery-bootnodes-url"},
+      paramLabel = "<STRING>",
+      description =
+          "ENRs of bootnodes. This should be a file or URL pointing to a txt file with one ENR per line.",
+      arity = "1")
+  private String p2pDiscoveryBootnodesUrl;
+
+  @Option(
       names = {"--p2p-advertised-ip", "--p2p-advertised-ips"},
       paramLabel = "<NETWORK>",
       description =
-          "P2P advertised IP address(es). You can define up to 2 addresses, with one being IPv4 and the other IPv6. (Default: 127.0.0.1)",
+          "P2P advertised IP address(es). You can define up to 2 addresses, with one being IPv4 and the other IPv6. "
+              + "(Default: 127.0.0.1)",
       split = ",",
       arity = "1..2")
   private List<String> p2pAdvertisedIps;
@@ -161,7 +166,8 @@ public class P2POptions {
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description =
-          "This node's private key file in LibP2P format. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
+          "This node's private key file in LibP2P format. If not specified, uses or generates a key which is stored "
+              + "within the <beacon-data-dir>.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
 
@@ -220,7 +226,8 @@ public class P2POptions {
       names = {"--p2p-static-peers-url"},
       paramLabel = "<URL>",
       description =
-          "Specifies a URL or file containing a list of 'static' peers (one per line) with which to establish and maintain connections. Accepts multiaddr format.",
+          "Specifies a URL or file containing a list of 'static' peers (one per line) with which to establish and "
+              + "maintain connections. Accepts multiaddr format.",
       arity = "1")
   private String p2pStaticPeersUrl;
 
@@ -228,7 +235,8 @@ public class P2POptions {
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description =
-          "Specifies a comma-separated list of 'static' peers with which to establish and maintain connections. Accepts multiaddr format.",
+          "Specifies a comma-separated list of 'static' peers with which to establish and maintain connections. "
+              + "Accepts multiaddr format.",
       split = ",",
       arity = "1")
   private final List<String> p2pStaticPeers = new ArrayList<>();
@@ -261,7 +269,8 @@ public class P2POptions {
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Number of blocks/blobs being requested in a single batch to a single peer, while syncing historical data.\n"
-              + "NOTE: the actual size for blobs being requested in a single batch will be up to `maxBlobsPerBlock` times the value of this parameter.",
+              + "NOTE: the actual size for blobs being requested in a single batch will be up to `maxBlobsPerBlock` "
+              + "times the value of this parameter.",
       hidden = true,
       arity = "1")
   private Integer historicalSyncBatchSize = SyncConfig.DEFAULT_HISTORICAL_SYNC_BATCH_SIZE;
@@ -272,7 +281,8 @@ public class P2POptions {
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Number of blocks/blobs being requested in a single batch to a single peer, while syncing.\n"
-              + "NOTE: the actual size for blobs being requested in a single batch will be up to `maxBlobsPerBlock` times the value of this parameter.",
+              + "NOTE: the actual size for blobs being requested in a single batch will be up to `maxBlobsPerBlock` "
+              + "times the value of this parameter.",
       hidden = true,
       arity = "1")
   private Integer forwardSyncBatchSize = SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE;
@@ -369,7 +379,8 @@ public class P2POptions {
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Enables experimental behaviour in which blobs are gossiped after the block has been gossiped to at least one peer.",
+          "Enables experimental behaviour in which blobs are gossiped after the block has been gossiped to at least "
+              + "one peer.",
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
@@ -424,7 +435,8 @@ public class P2POptions {
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "When enabled, signature verification is entirely constrained to the max threads with no use of shared executor pools",
+          "When enabled, signature verification is entirely constrained to the max threads with no use of shared "
+              + "executor pools",
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
@@ -477,7 +489,8 @@ public class P2POptions {
       hidden = true,
       paramLabel = "<NUMBER>",
       description =
-          "Limits the number of concurrent queries to historical data when handling RPC requests. Use 0 to allow unlimited concurrent queries.",
+          "Limits the number of concurrent queries to historical data when handling RPC requests. Use 0 to allow "
+              + "unlimited concurrent queries.",
       showDefaultValue = Visibility.ALWAYS,
       arity = "1")
   private int historicalDataMaxConcurrentQueries =
@@ -502,31 +515,36 @@ public class P2POptions {
 
     if (p2pStaticPeersUrl != null) {
       try {
-        final Optional<InputStream> maybeStream =
-            ResourceLoader.urlOrFile().load(p2pStaticPeersUrl);
-        if (maybeStream.isPresent()) {
-          try (final BufferedReader reader =
-              new BufferedReader(
-                  new InputStreamReader(maybeStream.get(), StandardCharsets.UTF_8))) {
-            final List<String> peersFromUrl =
-                reader
-                    .lines()
-                    .map(String::trim)
-                    .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                    .collect(Collectors.toList());
-            staticPeers.addAll(peersFromUrl);
-          }
-        } else {
-          throw new InvalidConfigurationException(
-              String.format("Static peers URL not found: %s", p2pStaticPeersUrl));
-        }
-      } catch (Exception e) {
+        final List<String> peersFromUrl = MultilineEntriesReader.readEntries(p2pStaticPeersUrl);
+        staticPeers.addAll(peersFromUrl);
+      } catch (final Exception e) {
         throw new InvalidConfigurationException(
-            String.format("Failed to read static peers from URL: %s", p2pStaticPeersUrl), e);
+            "Error reading static peers from " + p2pStaticPeersUrl, e);
       }
     }
 
     return staticPeers;
+  }
+
+  private List<String> getBootnodes() {
+    final List<String> bootnodes = new ArrayList<>();
+
+    if (p2pDiscoveryBootnodes != null) {
+      bootnodes.addAll(p2pDiscoveryBootnodes);
+    }
+
+    if (p2pDiscoveryBootnodesUrl != null) {
+      try {
+        final List<String> bootnodesFromUrl =
+            MultilineEntriesReader.readEntries(p2pDiscoveryBootnodesUrl);
+        bootnodes.addAll(bootnodesFromUrl);
+      } catch (final Exception e) {
+        throw new InvalidConfigurationException(
+            "Error reading bootnodes from " + p2pDiscoveryBootnodesUrl, e);
+      }
+    }
+
+    return bootnodes;
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
@@ -555,8 +573,8 @@ public class P2POptions {
             })
         .discovery(
             d -> {
-              if (p2pDiscoveryBootnodes != null) {
-                d.bootnodes(p2pDiscoveryBootnodes);
+              if (p2pDiscoveryBootnodes != null || p2pDiscoveryBootnodesUrl != null) {
+                d.bootnodes(getBootnodes());
               }
               if (minimumRandomlySelectedPeerCount != null) {
                 d.minRandomlySelectedPeers(minimumRandomlySelectedPeerCount);

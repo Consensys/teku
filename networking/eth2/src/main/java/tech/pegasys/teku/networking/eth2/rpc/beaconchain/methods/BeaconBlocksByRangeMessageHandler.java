@@ -33,8 +33,8 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -137,10 +137,10 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
 
-    final Optional<ApprovedRequest> blocksRequestApproval =
+    final Optional<RequestKey> maybeRequestKey =
         peer.approveBlocksRequest(callback, message.getCount().longValue());
 
-    if (!peer.approveRequest() || blocksRequestApproval.isEmpty()) {
+    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -151,13 +151,12 @@ public class BeaconBlocksByRangeMessageHandler
         .finish(
             requestState -> {
               if (requestState.sentBlocks.get() != message.getCount().longValue()) {
-                peer.adjustBlocksRequest(
-                    blocksRequestApproval.get(), requestState.sentBlocks.get());
+                peer.adjustBlocksRequest(maybeRequestKey.get(), requestState.sentBlocks.get());
               }
               callback.completeSuccessfully();
             },
             error -> {
-              peer.adjustBlocksRequest(blocksRequestApproval.get(), 0);
+              peer.adjustBlocksRequest(maybeRequestKey.get(), 0);
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
