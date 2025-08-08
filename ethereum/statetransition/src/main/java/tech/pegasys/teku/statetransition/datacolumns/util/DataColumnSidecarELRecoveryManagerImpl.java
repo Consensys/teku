@@ -81,7 +81,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                     5.0, 7.5, 10.0
                   });
 
-  private final ConcurrentSkipListMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
+  private final ConcurrentSkipListMap<SlotAndBlockRoot, DataColumnsRecovery> recoveryTasks =
       new ConcurrentSkipListMap<>();
   private final Spec spec;
   private final AsyncRunner asyncRunner;
@@ -186,6 +186,10 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private boolean createRecoveryTaskFromDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar) {
     if (recoveryTasks.containsKey(dataColumnSidecar.getSlotAndBlockRoot())) {
+      recoveryTasks
+          .get(dataColumnSidecar.getSlotAndBlockRoot())
+          .recoveredColumnIndices()
+          .add(dataColumnSidecar.getIndex());
       return false;
     }
     if (!dataColumnSidecar.getSlot().equals(getCurrentSlot())) {
@@ -194,10 +198,12 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     makeRoomForNewTracker();
     return recoveryTasks.putIfAbsent(
             dataColumnSidecar.getSlotAndBlockRoot(),
-            new RecoveryTask(
-                dataColumnSidecar.getSignedBeaconBlockHeader(),
-                dataColumnSidecar.getSszKZGCommitments(),
-                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed()))
+            new DataColumnsRecovery(
+                new RecoveryTask(
+                    dataColumnSidecar.getSignedBeaconBlockHeader(),
+                    dataColumnSidecar.getSszKZGCommitments(),
+                    dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed()),
+                new HashSet<>()))
         == null;
   }
 
@@ -213,12 +219,14 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         BeaconBlockBodyDeneb.required(block.getMessage().getBody());
     return recoveryTasks.putIfAbsent(
             block.getSlotAndBlockRoot(),
-            new RecoveryTask(
-                block.asHeader(),
-                blockBodyDeneb.getBlobKzgCommitments(),
-                miscHelpersFuluSupplier
-                    .get()
-                    .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb)))
+            new DataColumnsRecovery(
+                new RecoveryTask(
+                    block.asHeader(),
+                    blockBodyDeneb.getBlobKzgCommitments(),
+                    miscHelpersFuluSupplier
+                        .get()
+                        .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb)),
+                new HashSet<>()))
         == null;
   }
 
@@ -253,7 +261,10 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
               .filter(sidecar -> myCustodyIndices.contains(sidecar.getIndex()))
               .toList();
     }
-
+    recoveryTasks
+        .get(recoveryTask.getSlotAndBlockRoot())
+        .recoveredColumnIndices()
+        .addAll(myCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
     LOG.debug(
         "Publishing {} data column sidecars for {}",
         myCustodySidecars.size(),
@@ -286,8 +297,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   @VisibleForTesting
-  RecoveryTask getRecoveryTask(final SlotAndBlockRoot slotAndBlockRoot) {
-    return recoveryTasks.get(slotAndBlockRoot);
+  public RecoveryTask getRecoveryTask(final SlotAndBlockRoot slotAndBlockRoot) {
+    return recoveryTasks.get(slotAndBlockRoot).recoveryTask();
   }
 
   @Override
@@ -296,7 +307,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     LOG.trace(
         "Recovery tasks: {}",
         () -> {
-          final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
+          final HashMap<SlotAndBlockRoot, DataColumnsRecovery> recoveryTasksCopy =
               new HashMap<>(recoveryTasks);
           return recoveryTasksCopy.toString();
         });
@@ -347,7 +358,13 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   private SafeFuture<Void> fetchMissingBlobsFromLocalEL(final SlotAndBlockRoot slotAndBlockRoot) {
-    final RecoveryTask recoveryTask = recoveryTasks.get(slotAndBlockRoot);
+    final DataColumnsRecovery dataColumnsRecovery = recoveryTasks.get(slotAndBlockRoot);
+    final RecoveryTask recoveryTask = dataColumnsRecovery.recoveryTask();
+    final HashSet<UInt64> recoveredColumns = dataColumnsRecovery.recoveredColumnIndices();
+
+    if (recoveredColumns.containsAll(custodyGroupCountManager.getCustodyColumnIndices())) {
+      return SafeFuture.COMPLETE;
+    }
 
     if (recoveryTask == null) {
       return SafeFuture.COMPLETE;
@@ -410,7 +427,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     LOG.debug("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
   }
 
-  record RecoveryTask(
+  public record RecoveryTask(
       SignedBeaconBlockHeader signedBeaconBlockHeader,
       SszList<SszKZGCommitment> sszKZGCommitments,
       List<Bytes32> kzgCommitmentsInclusionProof) {
@@ -418,4 +435,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       return signedBeaconBlockHeader.getMessage().getSlotAndBlockRoot();
     }
   }
+
+  record DataColumnsRecovery(RecoveryTask recoveryTask, HashSet<UInt64> recoveredColumnIndices) {}
 }
