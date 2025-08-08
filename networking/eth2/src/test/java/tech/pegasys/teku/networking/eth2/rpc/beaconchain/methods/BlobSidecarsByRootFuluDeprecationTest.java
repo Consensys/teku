@@ -33,8 +33,8 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -57,9 +57,7 @@ public class BlobSidecarsByRootFuluDeprecationTest {
   private BlobSidecarsByRootRequestMessageSchema messageSchema;
   private final ArgumentCaptor<BlobSidecar> blobSidecarCaptor =
       ArgumentCaptor.forClass(BlobSidecar.class);
-  private final Optional<ApprovedRequest> allowedObjectsRequest =
-      Optional.of(
-          new ApprovedRequest.RequestApprovalBuilder().requestSize(100).timeSeconds(ZERO).build());
+  private final Optional<RequestKey> allowedObjectsRequest = Optional.of(new RequestKey(ZERO, 0));
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> callback = mock(ResponseCallback.class);
@@ -171,7 +169,7 @@ public class BlobSidecarsByRootFuluDeprecationTest {
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
     // Sending 2 or 3 blob sidecars
     verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(2)));
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(2)));
 
     verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(firstBlockRoot);
     verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(secondBlockRoot);
