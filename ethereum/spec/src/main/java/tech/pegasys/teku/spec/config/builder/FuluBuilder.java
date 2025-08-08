@@ -78,6 +78,9 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
         specConfigAndParent);
   }
 
+  @Override
+  public void setForkEpoch(final UInt64 epoch) {}
+
   public FuluBuilder fuluForkEpoch(final UInt64 fuluForkEpoch) {
     checkNotNull(fuluForkEpoch);
     this.fuluForkEpoch = fuluForkEpoch;

@@ -26,7 +26,8 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAltairImpl;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 
-public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAltair> {
+public class AltairBuilder extends BaseForkBuilder
+    implements ForkConfigBuilder<SpecConfig, SpecConfigAltair> {
   private static final Logger LOG = LogManager.getLogger();
   // Updated penalties
   private UInt64 inactivityPenaltyQuotientAltair;
@@ -67,6 +68,7 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
 
   @Override
   public void validate() {
+    defaultValuesIfRequired(this);
     if (inactivityScoreBias == null) {
       LOG.warn("INACTIVITY_SCORE_BIAS was empty");
     }
@@ -76,7 +78,6 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
     if (updateTimeout == null) {
       LOG.warn("UPDATE_TIMEOUT was empty");
     }
-
     validateConstants();
   }
 

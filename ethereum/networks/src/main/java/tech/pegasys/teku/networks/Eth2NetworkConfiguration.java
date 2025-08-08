@@ -523,6 +523,7 @@ public class Eth2NetworkConfiguration {
                   altairForkEpoch.ifPresent(builder::altairForkEpoch);
                   bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
                   capellaForkEpoch.ifPresent(builder::capellaForkEpoch);
+                  denebForkEpoch.ifPresent(builder::denebForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
@@ -535,7 +536,6 @@ public class Eth2NetworkConfiguration {
                       });
                   builder.denebBuilder(
                       denebBuilder -> {
-                        denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
