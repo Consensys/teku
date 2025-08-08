@@ -106,6 +106,7 @@ public class CustodyGroupCountManagerImplTest {
                     fuluBuilder ->
                         fuluBuilder
                             .dataColumnSidecarSubnetCount(128)
+                            .cellsPerExtBlob(128)
                             .numberOfColumns(128)
                             .numberOfCustodyGroups(128)
                             .custodyRequirement(defaultCustodyRequirement)

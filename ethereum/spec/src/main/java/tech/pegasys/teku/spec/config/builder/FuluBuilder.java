@@ -41,6 +41,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   private UInt64 fieldElementsPerCell;
   private UInt64 fieldElementsPerExtBlob;
   private UInt64 kzgCommitmentsInclusionProofDepth;
+  private Integer cellsPerExtBlob;
   private Integer numberOfColumns;
   private Integer numberOfCustodyGroups;
   private Integer dataColumnSidecarSubnetCount;
@@ -65,6 +66,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             fieldElementsPerCell,
             fieldElementsPerExtBlob,
             kzgCommitmentsInclusionProofDepth,
+            cellsPerExtBlob,
             numberOfColumns,
             numberOfCustodyGroups,
             dataColumnSidecarSubnetCount,
@@ -102,6 +104,18 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
+  public FuluBuilder cellsPerExtBlob(final Integer cellsPerExtBlob) {
+    checkNotNull(cellsPerExtBlob);
+    this.cellsPerExtBlob = cellsPerExtBlob;
+    return this;
+  }
+
+  public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
+    checkNotNull(numberOfColumns);
+    this.numberOfColumns = numberOfColumns;
+    return this;
+  }
+
   public FuluBuilder kzgCommitmentsInclusionProofDepth(
       final UInt64 kzgCommitmentsInclusionProofDepth) {
     checkNotNull(kzgCommitmentsInclusionProofDepth);
@@ -128,12 +142,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
                 "There are duplicate entries for epoch %s in blob schedule.", entry.epoch()));
       }
     }
-  }
-
-  public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
-    checkNotNull(numberOfColumns);
-    this.numberOfColumns = numberOfColumns;
-    return this;
   }
 
   public FuluBuilder numberOfCustodyGroups(final Integer numberOfCustodyGroups) {
@@ -207,6 +215,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
 
     constants.put("fuluForkEpoch", fuluForkEpoch);
     constants.put("fuluForkVersion", fuluForkVersion);
+    constants.put("cellsPerExtBlob", cellsPerExtBlob);
     constants.put("numberOfColumns", numberOfColumns);
     constants.put("numberOfCustodyGroups", numberOfCustodyGroups);
     constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);

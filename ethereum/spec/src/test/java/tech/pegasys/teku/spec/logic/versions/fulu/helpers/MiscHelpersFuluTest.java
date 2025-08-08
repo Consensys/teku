@@ -60,6 +60,7 @@ public class MiscHelpersFuluTest {
               builder.fuluBuilder(
                   fuluBuilder ->
                       fuluBuilder
+                          .cellsPerExtBlob(128)
                           .numberOfColumns(128)
                           .numberOfCustodyGroups(128)
                           .custodyRequirement(4)
