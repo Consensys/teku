@@ -390,7 +390,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
-  @SuppressWarnings("deprecation")
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
       final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())
