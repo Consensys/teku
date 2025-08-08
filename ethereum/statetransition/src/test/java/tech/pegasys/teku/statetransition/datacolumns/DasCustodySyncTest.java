@@ -49,6 +49,7 @@ public class DasCustodySyncTest {
                   fuluBuilder ->
                       fuluBuilder
                           .dataColumnSidecarSubnetCount(4)
+                          .cellsPerExtBlob(8)
                           .numberOfColumns(8)
                           .numberOfCustodyGroups(8)
                           .custodyRequirement(2)

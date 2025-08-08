@@ -16,6 +16,15 @@
     BYTES_PER_LOGS_BLOOM: uint64 = 256
     </spec>
 
+- name: CELLS_PER_EXT_BLOB
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/fulu.yaml
+      search: CELLS_PER_EXT_BLOB:
+  spec: |
+    <spec preset_var="CELLS_PER_EXT_BLOB" fork="fulu" hash="217075f3">
+    CELLS_PER_EXT_BLOB = 128
+    </spec>
+
 - name: EFFECTIVE_BALANCE_INCREMENT
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/phase0.yaml
@@ -475,6 +484,15 @@
     MIN_SYNC_COMMITTEE_PARTICIPANTS = 1
     </spec>
 
+- name: NUMBER_OF_COLUMNS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/fulu.yaml
+      search: NUMBER_OF_COLUMNS:
+  spec: |
+    <spec preset_var="NUMBER_OF_COLUMNS" fork="fulu" hash="f6441e62">
+    NUMBER_OF_COLUMNS: uint64 = 128
+    </spec>
+
 - name: PENDING_CONSOLIDATIONS_LIMIT
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/electra.yaml
@@ -618,4 +636,3 @@
     <spec preset_var="WHISTLEBLOWER_REWARD_QUOTIENT_ELECTRA" fork="electra" hash="8021dedf">
     WHISTLEBLOWER_REWARD_QUOTIENT_ELECTRA: uint64 = 4096
     </spec>
-

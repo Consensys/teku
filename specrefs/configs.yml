@@ -79,6 +79,16 @@
     BELLATRIX_FORK_VERSION: Version = '0x02000000'
     </spec>
 
+- name: BLOB_SCHEDULE
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: BLOB_SCHEDULE:
+  spec: |
+    <spec config_var="BLOB_SCHEDULE" fork="fulu" hash="f3f1064a">
+    BLOB_SCHEDULE: tuple[frozendict[str, Any], ...] = (
+    )
+    </spec>
+
 - name: BLOB_SIDECAR_SUBNET_COUNT
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
@@ -449,15 +459,6 @@
     MIN_VALIDATOR_WITHDRAWABILITY_DELAY: uint64 = 256
     </spec>
 
-- name: NUMBER_OF_COLUMNS
-  sources:
-    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: NUMBER_OF_COLUMNS:
-  spec: |
-    <spec config_var="NUMBER_OF_COLUMNS" fork="fulu" hash="f6441e62">
-    NUMBER_OF_COLUMNS: uint64 = 128
-    </spec>
-
 - name: NUMBER_OF_CUSTODY_GROUPS
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
@@ -583,4 +584,3 @@
     <spec config_var="VALIDATOR_CUSTODY_REQUIREMENT" fork="fulu" hash="4dfc4457">
     VALIDATOR_CUSTODY_REQUIREMENT = 8
     </spec>
-

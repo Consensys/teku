@@ -1,4 +1,4 @@
-version: v1.6.0-alpha.3
+version: v1.6.0-alpha.4
 style: full
 
 specrefs:
@@ -11,11 +11,6 @@ specrefs:
     - presets.yml
 
   exceptions:
-    configs:
-      # A mistake in the pyspec broke this
-      # Remove exception in the next release
-      - BLOB_SCHEDULE
-
     constants:
       # Not defined as a constant, unnecessary
       - DOMAIN_APPLICATION_MASK
