@@ -33,8 +33,8 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -141,10 +141,10 @@ public class BlobSidecarsByRangeMessageHandler
     final int requestedCount =
         calculateRequestedCount(
             message, spec.getMaxBlobsPerBlockAtSlot(endSlotBeforeFulu).orElseThrow());
-    final Optional<ApprovedRequest> blobSidecarsRequestApproval =
+    final Optional<RequestKey> maybeRequestKey =
         peer.approveBlobSidecarsRequest(callback, requestedCount);
 
-    if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
+    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -208,13 +208,13 @@ public class BlobSidecarsByRangeMessageHandler
             requestState -> {
               final int sentBlobSidecars = requestState.sentBlobSidecars.get();
               if (sentBlobSidecars != requestedCount) {
-                peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), sentBlobSidecars);
+                peer.adjustBlobSidecarsRequest(maybeRequestKey.get(), sentBlobSidecars);
               }
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
             error -> {
-              peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
+              peer.adjustBlobSidecarsRequest(maybeRequestKey.get(), 0);
               handleProcessingRequestError(error, callback);
             });
   }

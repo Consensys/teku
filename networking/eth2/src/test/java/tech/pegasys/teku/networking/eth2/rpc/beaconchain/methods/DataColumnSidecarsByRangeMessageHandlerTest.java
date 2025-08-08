@@ -42,8 +42,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -71,8 +71,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 @TestSpecContext(milestone = SpecMilestone.FULU)
 public class DataColumnSidecarsByRangeMessageHandlerTest {
 
-  private static final ApprovedRequest ZERO_OBJECTS_REQUEST_APPROVAL =
-      new ApprovedRequest.RequestApprovalBuilder().timeSeconds(ZERO).requestSize(0).build();
+  private static final RequestKey ZERO_OBJECTS_REQUEST_APPROVAL = new RequestKey(ZERO, 101);
   private final UInt64 currentForkEpoch = UInt64.valueOf(1);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final Eth2Peer peer = mock(Eth2Peer.class);
@@ -88,9 +87,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize());
   private final String protocolId =
       BeaconChainMethodIds.getDataColumnSidecarsByRangeMethodId(1, RPC_ENCODING);
-  private final Optional<ApprovedRequest> allowedObjectsRequest =
-      Optional.of(
-          new ApprovedRequest.RequestApprovalBuilder().requestSize(100).timeSeconds(ZERO).build());
+  private final Optional<RequestKey> allowedObjectsRequest = Optional.of(new RequestKey(ZERO, 100));
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarsByRangeMessageHandler handler;
   private DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema
@@ -251,7 +248,8 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     verify(peer)
         .approveDataColumnSidecarsRequest(any(), eq(count.times(columnIndices.size()).longValue()));
     verify(peer)
-        .adjustDataColumnSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustDataColumnSidecarsRequest(
+            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
     verify(combinedChainDataClient, never()).getDataColumnSidecars(any(), any());
     verify(listener, never()).respond(any());
     verify(listener).completeSuccessfully();
@@ -271,7 +269,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     // Sending expectedSent data column sidecars
     verify(peer)
         .adjustDataColumnSidecarsRequest(
-            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
+            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
     final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
         ArgumentCaptor.forClass(DataColumnSidecar.class);
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
@@ -325,7 +323,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     // Sending expectedSent data column sidecars
     verify(peer)
         .adjustDataColumnSidecarsRequest(
-            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
+            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
 
     final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
         ArgumentCaptor.forClass(DataColumnSidecar.class);
@@ -352,7 +350,7 @@ public class DataColumnSidecarsByRangeMessageHandlerTest {
     // Sending expectedSent data column sidecars
     verify(peer)
         .adjustDataColumnSidecarsRequest(
-            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
+            eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(expectedSent.size())));
     final ArgumentCaptor<DataColumnSidecar> argumentCaptor =
         ArgumentCaptor.forClass(DataColumnSidecar.class);
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());

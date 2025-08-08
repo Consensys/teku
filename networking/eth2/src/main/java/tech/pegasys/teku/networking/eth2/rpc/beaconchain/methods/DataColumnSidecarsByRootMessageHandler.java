@@ -30,8 +30,8 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -146,11 +146,11 @@ public class DataColumnSidecarsByRootMessageHandler
     final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
         new LoggingResponseCallback<>(responseCallback, responseLogger);
 
-    final Optional<ApprovedRequest> dataColumnSidecarsRequestApproval =
+    final Optional<RequestKey> maybeRequestKey =
         peer.approveDataColumnSidecarsRequest(
             responseCallbackWithLogging, requestedDataColumnSidecarsCount);
 
-    if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
+    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -187,13 +187,13 @@ public class DataColumnSidecarsByRootMessageHandler
             sentDataColumnSidecarsCount -> {
               if (sentDataColumnSidecarsCount != requestedDataColumnSidecarsCount) {
                 peer.adjustDataColumnSidecarsRequest(
-                    dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecarsCount);
+                    maybeRequestKey.get(), sentDataColumnSidecarsCount);
               }
               responseCallbackWithLogging.completeSuccessfully();
             })
         .finish(
             err -> {
-              peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
+              peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
               handleError(responseCallbackWithLogging, err);
             });
   }
