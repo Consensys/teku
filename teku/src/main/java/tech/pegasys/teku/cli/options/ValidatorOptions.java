@@ -30,7 +30,7 @@ import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
-import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
+import tech.pegasys.teku.validator.api.GraffitiParser;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
@@ -139,27 +139,6 @@ public class ValidatorOptions {
   private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
   @Option(
-      names = {"--Xvalidator-client-beacon-api-executor-threads"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Set the number of threads for the validator beacon node API executor",
-      hidden = true,
-      converter = OptionalIntConverter.class,
-      arity = "1")
-  private OptionalInt beaconApiExecutorThreads = OptionalInt.empty();
-
-  @Option(
-      names = {"--Xvalidator-client-beacon-api-readiness-executor-threads"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description =
-          "Set the number of threads for the validator beacon node API readiness executor",
-      hidden = true,
-      converter = OptionalIntConverter.class,
-      arity = "1")
-  private OptionalInt beaconApiReadinessExecutorThreads = OptionalInt.empty();
-
-  @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable terminating the process if no validator keys are found during startup",
@@ -191,26 +170,27 @@ public class ValidatorOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.validator(
-        config ->
-            config
-                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                .validatorExternalSignerSlashingProtectionEnabled(
-                    validatorExternalSignerSlashingProtectionEnabled)
-                .isLocalSlashingProtectionSynchronizedModeEnabled(
-                    isLocalSlashingProtectionSynchronizedEnabled)
-                .graffitiProvider(
-                    new FileBackedGraffitiProvider(
-                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
-                .generateEarlyAttestations(generateEarlyAttestations)
-                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
-                .executorThreads(executorThreads)
-                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
-                .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed)
-                .executorMaxQueueSize(executorMaxQueueSize)
-                .beaconApiExecutorThreads(beaconApiExecutorThreads)
-                .beaconApiReadinessExecutorThreads(beaconApiReadinessExecutorThreads));
+        config -> {
+          config
+              .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+              .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+              .validatorExternalSignerSlashingProtectionEnabled(
+                  validatorExternalSignerSlashingProtectionEnabled)
+              .isLocalSlashingProtectionSynchronizedModeEnabled(
+                  isLocalSlashingProtectionSynchronizedEnabled)
+              .graffitiProvider(
+                  GraffitiParser.loadGraffitiProvider(
+                      Optional.ofNullable(graffiti),
+                      Optional.empty(),
+                      Optional.ofNullable(graffitiFile)))
+              .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
+              .generateEarlyAttestations(generateEarlyAttestations)
+              .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
+              .executorThreads(executorThreads)
+              .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
+              .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed);
+          executorMaxQueueSize.ifPresent(config::executorMaxQueueSize);
+        });
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
