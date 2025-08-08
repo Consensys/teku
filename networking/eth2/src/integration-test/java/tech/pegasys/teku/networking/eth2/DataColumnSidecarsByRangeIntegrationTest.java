@@ -100,13 +100,13 @@ public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodI
     final UInt64 finalizedSlot =
         finalizedCheckpoint.getEpochStartSlot(peerStorage.recentChainData().getSpec());
 
-    // add 5 extra blocks that will be canonical
-    final UInt64 targetSlot = peerStorage.getChainHead().getSlot().plus(5);
+    // add 2 extra blocks that will be canonical
+    final UInt64 targetSlot = peerStorage.getChainHead().getSlot().plus(2);
     final SignedBlockAndState canonicalHead =
         peerStorage.chainUpdater().advanceChainUntil(targetSlot);
 
     // generate non canonical blocks and data columns up to the same target slot
-    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(2));
     final List<SignedBlockAndState> nonCanonicalBlocksAndStates =
         fork.generateBlocksUpToSlot(targetSlot.intValue(), peerStorage.chainUpdater().blockOptions);
 

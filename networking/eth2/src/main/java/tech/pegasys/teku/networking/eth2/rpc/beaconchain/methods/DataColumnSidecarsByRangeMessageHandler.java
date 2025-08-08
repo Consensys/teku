@@ -283,21 +283,21 @@ public class DataColumnSidecarsByRangeMessageHandler
       }
     }
 
+    boolean isComplete() {
+      return endSlot.isLessThan(startSlot)
+          || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
+    }
+
     private SafeFuture<Optional<DataColumnSidecar>> getNextDataColumnSidecar(
         final Iterator<DataColumnSlotAndIdentifier> dataColumnSidecarIdentifiers) {
       if (dataColumnSidecarIdentifiers.hasNext()) {
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
             dataColumnSidecarIdentifiers.next();
-
-        if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())) {
+        if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
+            // not finalized, let's check if it is on canonical chain
+            || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
           return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
         }
-
-        // not finalized, let's check if it is on canonical chain
-        if (isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
-          return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
-        }
-
         // non-canonical, try next one
         return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
       }
@@ -310,11 +310,6 @@ public class DataColumnSidecarsByRangeMessageHandler
       return Optional.ofNullable(canonicalHotRoots.get(columnSlotAndIdentifier.slot()))
           .map(blockRoot -> blockRoot.equals(columnSlotAndIdentifier.blockRoot()))
           .orElse(false);
-    }
-
-    boolean isComplete() {
-      return endSlot.isLessThan(startSlot)
-          || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

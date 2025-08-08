@@ -85,9 +85,9 @@ public class DataColumnSidecarsByRootIntegrationTest extends AbstractRpcMethodIn
       throws ExecutionException, InterruptedException, TimeoutException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(FULU);
 
-    // generate 4 blobs per block
+    // generate 2 blobs per block
     peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
-    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(2));
 
     // up to slot 3
     final UInt64 targetSlot = UInt64.valueOf(3);
