@@ -138,29 +138,6 @@ public class ValidatorOptions {
       arity = "1")
   private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
-
-
-  @Option(
-      names = {"--Xvalidator-client-beacon-api-executor-threads"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Set the number of threads for the validator beacon node API executor",
-      hidden = true,
-      converter = OptionalIntConverter.class,
-      arity = "1")
-  private OptionalInt beaconApiExecutorThreads = OptionalInt.empty();
-
-  @Option(
-      names = {"--Xvalidator-client-beacon-api-readiness-executor-threads"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description =
-          "Set the number of threads for the validator beacon node API readiness executor",
-      hidden = true,
-      converter = OptionalIntConverter.class,
-      arity = "1")
-  private OptionalInt beaconApiReadinessExecutorThreads = OptionalInt.empty();
-
   @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
       paramLabel = "<BOOLEAN>",
