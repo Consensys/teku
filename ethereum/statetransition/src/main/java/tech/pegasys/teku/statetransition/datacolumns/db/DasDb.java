@@ -13,33 +13,38 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.db;
 
-import java.util.List;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
-abstract class AbstractDelegatingDasDb implements DataColumnSidecarDbAccessor {
-  private final DataColumnSidecarCoreDB delegateDb;
+class DasDb extends AbstractDelegatingDasDb {
 
-  public AbstractDelegatingDasDb(final DataColumnSidecarCoreDB delegateDb) {
-    this.delegateDb = delegateDb;
+  private final DataColumnSidecarDB delegate;
+
+  public DasDb(final DataColumnSidecarDB delegate) {
+    super(delegate);
+    this.delegate = checkNotNull(delegate);
   }
 
   @Override
-  public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
-      final DataColumnSlotAndIdentifier identifier) {
-    return delegateDb.getSidecar(identifier);
+  public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {
+    return delegate.getFirstCustodyIncompleteSlot();
   }
 
   @Override
-  public SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(final UInt64 slot) {
-    return delegateDb.getColumnIdentifiers(slot);
+  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
+    return delegate.getFirstSamplerIncompleteSlot();
   }
 
   @Override
-  public SafeFuture<Void> addSidecar(final DataColumnSidecar sidecar) {
-    return delegateDb.addSidecar(sidecar);
+  public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
+    return delegate.setFirstCustodyIncompleteSlot(slot);
+  }
+
+  @Override
+  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
+    return delegate.setFirstSamplerIncompleteSlot(slot);
   }
 }
