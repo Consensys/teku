@@ -15,14 +15,9 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements SpecConfigDeneb {
-
-  private final Bytes4 denebForkVersion;
-  private final UInt64 denebForkEpoch;
 
   private final int maxPerEpochActivationChurnLimit;
   private final int fieldElementsPerBlob;
@@ -37,8 +32,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
 
   public SpecConfigDenebImpl(
       final SpecConfigCapella specConfig,
-      final Bytes4 denebForkVersion,
-      final UInt64 denebForkEpoch,
       final int maxPerEpochActivationChurnLimit,
       final int fieldElementsPerBlob,
       final int maxBlobCommitmentsPerBlock,
@@ -50,8 +43,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final int blobSidecarSubnetCount,
       final Optional<Integer> maybeEpochsStoreBlobs) {
     super(specConfig);
-    this.denebForkVersion = denebForkVersion;
-    this.denebForkEpoch = denebForkEpoch;
     this.maxPerEpochActivationChurnLimit = maxPerEpochActivationChurnLimit;
     this.fieldElementsPerBlob = fieldElementsPerBlob;
     this.maxBlobCommitmentsPerBlock = maxBlobCommitmentsPerBlock;
@@ -62,16 +53,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
     this.blobSidecarSubnetCount = blobSidecarSubnetCount;
     this.maybeEpochsStoreBlobs = maybeEpochsStoreBlobs;
-  }
-
-  @Override
-  public Bytes4 getDenebForkVersion() {
-    return denebForkVersion;
-  }
-
-  @Override
-  public UInt64 getDenebForkEpoch() {
-    return denebForkEpoch;
   }
 
   @Override
@@ -146,8 +127,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     }
     final SpecConfigDenebImpl that = (SpecConfigDenebImpl) o;
     return Objects.equals(specConfig, that.specConfig)
-        && Objects.equals(denebForkVersion, that.denebForkVersion)
-        && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(maybeEpochsStoreBlobs, that.maybeEpochsStoreBlobs)
         && fieldElementsPerBlob == that.fieldElementsPerBlob
         && maxBlobCommitmentsPerBlock == that.maxBlobCommitmentsPerBlock
@@ -163,8 +142,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        denebForkVersion,
-        denebForkEpoch,
         fieldElementsPerBlob,
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,

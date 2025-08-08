@@ -149,9 +149,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-deneb-fork-epoch", denebForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.denebBuilder(
-                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.denebForkEpoch(denebForkEpoch));
     return this;
   }
 

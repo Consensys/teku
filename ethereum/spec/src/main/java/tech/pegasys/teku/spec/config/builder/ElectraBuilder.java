@@ -82,6 +82,9 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
         specConfigAndParent);
   }
 
+  @Override
+  public void setForkEpoch(final UInt64 epoch) {}
+
   public ElectraBuilder electraForkVersion(final Bytes4 electraForkVersion) {
     checkNotNull(electraForkVersion);
     this.electraForkVersion = electraForkVersion;

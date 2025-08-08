@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,6 +129,9 @@ public class SpecConfigBuilder {
   private Integer reorgHeadWeightThreshold = 20;
 
   private Integer reorgParentWeightThreshold = 160;
+  private final AltairBuilder altairBuilder = new AltairBuilder();
+  private final BellatrixBuilder bellatrixBuilder = new BellatrixBuilder();
+  private final CapellaBuilder capellaBuilder = new CapellaBuilder();
   private final DenebBuilder denebBuilder = new DenebBuilder();
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
@@ -135,17 +139,19 @@ public class SpecConfigBuilder {
   // forks
   // altair fork information
   private Bytes4 altairForkVersion;
-  private UInt64 altairForkEpoch;
   private Bytes4 bellatrixForkVersion;
-  private UInt64 bellatrixForkEpoch;
   private Bytes4 capellaForkVersion;
-  private UInt64 capellaForkEpoch;
+  private Bytes4 denebForkVersion;
+  private UInt64 altairForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 bellatrixForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 denebForkEpoch = FAR_FUTURE_EPOCH;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
-      BuilderChain.create(new AltairBuilder())
-          .appendBuilder(new BellatrixBuilder())
-          .appendBuilder(new CapellaBuilder())
+      BuilderChain.create(altairBuilder)
+          .appendBuilder(bellatrixBuilder)
+          .appendBuilder(capellaBuilder)
           .appendBuilder(denebBuilder)
           .appendBuilder(electraBuilder)
           .appendBuilder(fuluBuilder);
@@ -246,7 +252,9 @@ public class SpecConfigBuilder {
                 bellatrixForkVersion,
                 bellatrixForkEpoch,
                 capellaForkVersion,
-                capellaForkEpoch));
+                capellaForkEpoch,
+                denebForkVersion,
+                denebForkEpoch));
 
     return builderChain.build(config);
   }
@@ -324,30 +332,42 @@ public class SpecConfigBuilder {
     constants.put("bellatrixForkVersion", bellatrixForkVersion);
     constants.put("capellaForkVersion", capellaForkVersion);
     constants.put("capellaForkEpoch", capellaForkEpoch);
+    constants.put("denebForkVersion", denebForkVersion);
+    constants.put("denebForkEpoch", denebForkEpoch);
     return constants;
   }
 
   private void applyForkVersions() {
     // update raw config if epochs and fork versions are known
     // if they're not known, they'll result in a validation error (expected)
-    if (altairForkEpoch != null) {
-      rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH) && altairForkVersion == null) {
+      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
-    if (altairForkVersion != null) {
-      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
+    if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH) && bellatrixForkVersion == null) {
+      bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
-    if (bellatrixForkEpoch != null) {
-      rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
+    if (capellaForkEpoch.equals(FAR_FUTURE_EPOCH) && capellaForkVersion == null) {
+      capellaForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
-    if (bellatrixForkVersion != null) {
-      rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    if (denebForkEpoch.equals(FAR_FUTURE_EPOCH) && denebForkVersion == null) {
+      denebForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
-    if (capellaForkEpoch != null) {
-      rawConfig.put("CAPELLA_FORK_EPOCH", capellaForkEpoch);
-    }
-    if (capellaForkVersion != null) {
-      rawConfig.put("CAPELLA_FORK_VERSION", capellaForkVersion);
-    }
+    // ensure raw config is accurate
+    rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
+    rawConfig.put("CAPELLA_FORK_EPOCH", capellaForkEpoch);
+    rawConfig.put("DENEB_FORK_EPOCH", denebForkEpoch);
+
+    rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
+    rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    rawConfig.put("CAPELLA_FORK_VERSION", capellaForkVersion);
+    rawConfig.put("DENEB_FORK_VERSION", denebForkVersion);
+
+    // tell the fork builders their fork epoch
+    altairBuilder.setForkEpoch(altairForkEpoch);
+    bellatrixBuilder.setForkEpoch(bellatrixForkEpoch);
+    capellaBuilder.setForkEpoch(capellaForkEpoch);
+    denebBuilder.setForkEpoch(denebForkEpoch);
   }
 
   private void validate() {
@@ -518,6 +538,18 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
     checkNotNull(capellaForkEpoch);
     this.capellaForkEpoch = capellaForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder denebForkVersion(final Bytes4 denebForkVersion) {
+    checkNotNull(denebForkVersion);
+    this.denebForkVersion = denebForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
+    checkNotNull(denebForkEpoch);
+    this.denebForkEpoch = denebForkEpoch;
     return this;
   }
 

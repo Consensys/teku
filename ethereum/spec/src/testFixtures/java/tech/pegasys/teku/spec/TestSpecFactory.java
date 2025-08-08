@@ -287,9 +287,7 @@ public class TestSpecFactory {
       defaultModifier = defaultModifier.andThen(builder -> builder.capellaForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.denebForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
       defaultModifier =
@@ -389,7 +387,7 @@ public class TestSpecFactory {
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch)));
+                .denebForkEpoch(denebForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
@@ -402,7 +400,7 @@ public class TestSpecFactory {
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(ZERO)
                   .capellaForkEpoch(ZERO)
-                  .denebBuilder(d -> d.denebForkEpoch(ZERO));
+                  .denebForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -424,7 +422,7 @@ public class TestSpecFactory {
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
+                .denebForkEpoch(denebForkEpoch)
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
   }
 
@@ -438,7 +436,7 @@ public class TestSpecFactory {
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(ZERO)
                   .capellaForkEpoch(ZERO)
-                  .denebBuilder(d -> d.denebForkEpoch(ZERO))
+                  .denebForkEpoch(ZERO)
                   .electraBuilder(e -> e.electraForkEpoch(ZERO));
               configAdapter.accept(builder);
             }));
@@ -462,7 +460,7 @@ public class TestSpecFactory {
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(UInt64.ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
+                .denebForkEpoch(denebForkEpoch)
                 .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
                 .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
   }
@@ -477,7 +475,7 @@ public class TestSpecFactory {
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(UInt64.ZERO)
                   .capellaForkEpoch(UInt64.ZERO)
-                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
+                  .denebForkEpoch(UInt64.ZERO)
                   .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
                   .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));
               configAdapter.accept(builder);
