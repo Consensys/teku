@@ -1203,19 +1203,21 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  private boolean pruneDataColumnSidecars(
+  boolean pruneDataColumnSidecars(
       final int pruneLimit,
       final Stream<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifierStream,
       final boolean nonCanonicalBlobSidecars) {
 
     int pruned = 0;
 
-    // Group the DataColumnSidecar by slot. Potential for higher memory usage
-    // if it hasn't been pruned in a while
-    final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap =
-        dataColumnSlotAndIdentifierStream.collect(groupingBy(DataColumnSlotAndIdentifier::slot));
+    final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
 
-    final List<UInt64> slots = prunableMap.keySet().stream().sorted().limit(pruneLimit).toList();
+    dataColumnSlotAndIdentifierStream
+        .takeWhile(item -> prunableMap.size() < pruneLimit || prunableMap.containsKey(item.slot()))
+        .forEach(
+            item -> prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
+
+    final List<UInt64> slots = prunableMap.keySet().stream().sorted().toList();
 
     if (!slots.isEmpty()) {
       LOG.debug(
