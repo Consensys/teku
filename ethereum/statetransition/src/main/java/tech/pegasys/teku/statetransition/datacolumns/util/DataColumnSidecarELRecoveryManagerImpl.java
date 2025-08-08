@@ -81,7 +81,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                     5.0, 7.5, 10.0
                   });
 
-  private final ConcurrentSkipListMap<SlotAndBlockRoot, DataColumnsRecovery> recoveryTasks =
+  private final ConcurrentSkipListMap<SlotAndBlockRoot, RecoveryTask> recoveryTasks =
       new ConcurrentSkipListMap<>();
   private final Spec spec;
   private final AsyncRunner asyncRunner;
@@ -198,11 +198,10 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     makeRoomForNewTracker();
     return recoveryTasks.putIfAbsent(
             dataColumnSidecar.getSlotAndBlockRoot(),
-            new DataColumnsRecovery(
-                new RecoveryTask(
-                    dataColumnSidecar.getSignedBeaconBlockHeader(),
-                    dataColumnSidecar.getSszKZGCommitments(),
-                    dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed()),
+            new RecoveryTask(
+                dataColumnSidecar.getSignedBeaconBlockHeader(),
+                dataColumnSidecar.getSszKZGCommitments(),
+                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed(),
                 new HashSet<>()))
         == null;
   }
@@ -219,13 +218,12 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         BeaconBlockBodyDeneb.required(block.getMessage().getBody());
     return recoveryTasks.putIfAbsent(
             block.getSlotAndBlockRoot(),
-            new DataColumnsRecovery(
-                new RecoveryTask(
-                    block.asHeader(),
-                    blockBodyDeneb.getBlobKzgCommitments(),
-                    miscHelpersFuluSupplier
-                        .get()
-                        .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb)),
+            new RecoveryTask(
+                block.asHeader(),
+                blockBodyDeneb.getBlobKzgCommitments(),
+                miscHelpersFuluSupplier
+                    .get()
+                    .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb),
                 new HashSet<>()))
         == null;
   }
@@ -298,7 +296,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   @VisibleForTesting
   public RecoveryTask getRecoveryTask(final SlotAndBlockRoot slotAndBlockRoot) {
-    return recoveryTasks.get(slotAndBlockRoot).recoveryTask();
+    return recoveryTasks.get(slotAndBlockRoot);
   }
 
   @Override
@@ -307,7 +305,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     LOG.trace(
         "Recovery tasks: {}",
         () -> {
-          final HashMap<SlotAndBlockRoot, DataColumnsRecovery> recoveryTasksCopy =
+          final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
               new HashMap<>(recoveryTasks);
           return recoveryTasksCopy.toString();
         });
@@ -358,11 +356,11 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   private SafeFuture<Void> fetchMissingBlobsFromLocalEL(final SlotAndBlockRoot slotAndBlockRoot) {
-    final DataColumnsRecovery dataColumnsRecovery = recoveryTasks.get(slotAndBlockRoot);
-    final RecoveryTask recoveryTask = dataColumnsRecovery.recoveryTask();
-    final HashSet<UInt64> recoveredColumns = dataColumnsRecovery.recoveredColumnIndices();
+    final RecoveryTask recoveryTask = recoveryTasks.get(slotAndBlockRoot);
 
-    if (recoveredColumns.containsAll(custodyGroupCountManager.getCustodyColumnIndices())) {
+    if (recoveryTask
+        .recoveredColumnIndices()
+        .containsAll(custodyGroupCountManager.getCustodyColumnIndices())) {
       return SafeFuture.COMPLETE;
     }
 
@@ -430,11 +428,10 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   public record RecoveryTask(
       SignedBeaconBlockHeader signedBeaconBlockHeader,
       SszList<SszKZGCommitment> sszKZGCommitments,
-      List<Bytes32> kzgCommitmentsInclusionProof) {
+      List<Bytes32> kzgCommitmentsInclusionProof,
+      Set<UInt64> recoveredColumnIndices) {
     public SlotAndBlockRoot getSlotAndBlockRoot() {
       return signedBeaconBlockHeader.getMessage().getSlotAndBlockRoot();
     }
   }
-
-  record DataColumnsRecovery(RecoveryTask recoveryTask, HashSet<UInt64> recoveredColumnIndices) {}
 }
