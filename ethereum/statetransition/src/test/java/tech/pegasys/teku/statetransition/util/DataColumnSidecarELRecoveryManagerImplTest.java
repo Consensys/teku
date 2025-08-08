@@ -411,11 +411,13 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     verify(executionLayer).engineGetBlobAndCellProofsList(versionedHashes, currentSlot);
 
     // data columns received before the EL fetching is retried
-    for (int i = 0; i < custodyGroupCountManager.getCustodyGroupCount(); i++) {
-      dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(
-          dataStructureUtil.randomDataColumnSidecar(block.asHeader(), UInt64.valueOf(i)),
-          RemoteOrigin.GOSSIP);
-    }
+    custodyGroupCountManager
+        .getCustodyColumnIndices()
+        .forEach(
+            index ->
+                dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(
+                    dataStructureUtil.randomDataColumnSidecar(block.asHeader(), index),
+                    RemoteOrigin.GOSSIP));
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
     verifyNoMoreInteractions(executionLayer);
