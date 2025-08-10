@@ -27,7 +27,8 @@ import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrixImpl;
 
-public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, SpecConfigBellatrix> {
+public class BellatrixBuilder extends BaseForkBuilder
+    implements ForkConfigBuilder<SpecConfigAltair, SpecConfigBellatrix> {
 
   private UInt64 inactivityPenaltyQuotientBellatrix;
   private Integer minSlashingPenaltyQuotientBellatrix;
@@ -82,7 +83,7 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     if (terminalBlockHashActivationEpoch == null) {
       terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
     }
-
+    defaultValuesIfRequired(this);
     validateConstants();
   }
 

@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.math.BigInteger;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfigDeneb {
@@ -35,10 +34,6 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
                     "Expected Deneb spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
-
-  Bytes4 getDenebForkVersion();
-
-  UInt64 getDenebForkEpoch();
 
   int getMaxPerEpochActivationChurnLimit();
 

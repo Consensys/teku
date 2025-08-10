@@ -14,8 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
     implements SpecConfigDeneb {
@@ -29,16 +27,6 @@ public class DelegatingSpecConfigDeneb extends DelegatingSpecConfigCapella
   @Override
   public Optional<SpecConfigDeneb> toVersionDeneb() {
     return Optional.of(this);
-  }
-
-  @Override
-  public Bytes4 getDenebForkVersion() {
-    return specConfigDeneb.getDenebForkVersion();
-  }
-
-  @Override
-  public UInt64 getDenebForkEpoch() {
-    return specConfigDeneb.getDenebForkEpoch();
   }
 
   @Override

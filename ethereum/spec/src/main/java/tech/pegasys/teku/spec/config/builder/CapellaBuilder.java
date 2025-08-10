@@ -21,7 +21,8 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigCapellaImpl;
 
-public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, SpecConfigCapella> {
+public class CapellaBuilder extends BaseForkBuilder
+    implements ForkConfigBuilder<SpecConfigBellatrix, SpecConfigCapella> {
 
   private Integer maxBlsToExecutionChanges;
   private Integer maxWithdrawalsPerPayload;
@@ -59,6 +60,7 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
 
   @Override
   public void validate() {
+    defaultValuesIfRequired(this);
     validateConstants();
   }
 
