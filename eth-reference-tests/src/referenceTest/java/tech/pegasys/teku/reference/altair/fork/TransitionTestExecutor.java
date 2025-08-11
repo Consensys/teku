@@ -73,14 +73,14 @@ public class TransitionTestExecutor implements TestExecutor {
                         .bellatrixForkEpoch(UInt64.ZERO)
                         .capellaForkEpoch(UInt64.ZERO)
                         .denebForkEpoch(UInt64.ZERO)
-                        .electraBuilder(e -> e.electraForkEpoch(forkEpoch));
+                        .electraForkEpoch(forkEpoch);
                 case FULU ->
                     builder
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
                         .capellaForkEpoch(UInt64.ZERO)
                         .denebForkEpoch(UInt64.ZERO)
-                        .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                        .electraForkEpoch(UInt64.ZERO)
                         .fuluBuilder(f -> f.fuluForkEpoch(forkEpoch));
                 default ->
                     throw new IllegalStateException(

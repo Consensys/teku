@@ -142,10 +142,12 @@ public class SpecConfigBuilder {
   private Bytes4 bellatrixForkVersion;
   private Bytes4 capellaForkVersion;
   private Bytes4 denebForkVersion;
+  private Bytes4 electraForkVersion;
   private UInt64 altairForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 bellatrixForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 denebForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 electraForkEpoch = FAR_FUTURE_EPOCH;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
@@ -254,7 +256,9 @@ public class SpecConfigBuilder {
                 capellaForkVersion,
                 capellaForkEpoch,
                 denebForkVersion,
-                denebForkEpoch));
+                denebForkEpoch,
+                electraForkVersion,
+                electraForkEpoch));
 
     return builderChain.build(config);
   }
@@ -334,6 +338,8 @@ public class SpecConfigBuilder {
     constants.put("capellaForkEpoch", capellaForkEpoch);
     constants.put("denebForkVersion", denebForkVersion);
     constants.put("denebForkEpoch", denebForkEpoch);
+    constants.put("electraForkVersion", electraForkVersion);
+    constants.put("electraForkEpoch", electraForkEpoch);
     return constants;
   }
 
@@ -352,22 +358,28 @@ public class SpecConfigBuilder {
     if (denebForkEpoch.equals(FAR_FUTURE_EPOCH) && denebForkVersion == null) {
       denebForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+    if (electraForkEpoch.equals(FAR_FUTURE_EPOCH) && electraForkVersion == null) {
+      electraForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
     // ensure raw config is accurate
     rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
     rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
     rawConfig.put("CAPELLA_FORK_EPOCH", capellaForkEpoch);
     rawConfig.put("DENEB_FORK_EPOCH", denebForkEpoch);
+    rawConfig.put("ELECTRA_FORK_EPOCH", electraForkEpoch);
 
     rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
     rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
     rawConfig.put("CAPELLA_FORK_VERSION", capellaForkVersion);
     rawConfig.put("DENEB_FORK_VERSION", denebForkVersion);
+    rawConfig.put("ELECTRA_FORK_VERSION", electraForkVersion);
 
     // tell the fork builders their fork epoch
     altairBuilder.setForkEpoch(altairForkEpoch);
     bellatrixBuilder.setForkEpoch(bellatrixForkEpoch);
     capellaBuilder.setForkEpoch(capellaForkEpoch);
     denebBuilder.setForkEpoch(denebForkEpoch);
+    electraBuilder.setForkEpoch(electraForkEpoch);
   }
 
   private void validate() {
@@ -550,6 +562,18 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
     checkNotNull(denebForkEpoch);
     this.denebForkEpoch = denebForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder electraForkVersion(final Bytes4 electraForkVersion) {
+    checkNotNull(electraForkVersion);
+    this.electraForkVersion = electraForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
+    checkNotNull(electraForkEpoch);
+    this.electraForkEpoch = electraForkEpoch;
     return this;
   }
 

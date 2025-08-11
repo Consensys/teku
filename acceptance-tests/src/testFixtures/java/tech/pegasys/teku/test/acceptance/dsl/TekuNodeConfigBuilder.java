@@ -159,9 +159,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-electra-fork-epoch", electraForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.electraBuilder(
-                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.electraForkEpoch(electraForkEpoch));
     return this;
   }
 

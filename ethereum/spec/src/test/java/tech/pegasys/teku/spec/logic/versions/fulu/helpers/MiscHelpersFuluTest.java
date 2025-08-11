@@ -129,8 +129,8 @@ public class MiscHelpersFuluTest {
     final Spec spec =
         TestSpecFactory.createMinimalFulu(
             b ->
-                b.electraBuilder(
-                        eb -> eb.electraForkEpoch(UInt64.valueOf(9)).maxBlobsPerBlockElectra(9))
+                b.electraForkEpoch(UInt64.valueOf(9))
+                    .electraBuilder(eb -> eb.maxBlobsPerBlockElectra(9))
                     .fuluBuilder(
                         fb ->
                             fb.fuluForkEpoch(UInt64.valueOf(100))

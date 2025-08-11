@@ -59,6 +59,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getDenebForkEpoch();
 
+  Bytes4 getElectraForkVersion();
+
+  UInt64 getElectraForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
 

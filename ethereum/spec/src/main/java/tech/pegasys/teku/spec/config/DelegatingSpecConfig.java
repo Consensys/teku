@@ -193,6 +193,16 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getElectraForkVersion() {
+    return specConfig.getElectraForkVersion();
+  }
+
+  @Override
+  public UInt64 getElectraForkEpoch() {
+    return specConfig.getElectraForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
   }

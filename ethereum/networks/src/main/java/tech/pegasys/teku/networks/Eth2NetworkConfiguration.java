@@ -524,6 +524,7 @@ public class Eth2NetworkConfiguration {
                   bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
                   capellaForkEpoch.ifPresent(builder::capellaForkEpoch);
                   denebForkEpoch.ifPresent(builder::denebForkEpoch);
+                  electraForkEpoch.ifPresent(builder::electraForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
@@ -545,9 +546,6 @@ public class Eth2NetworkConfiguration {
                           trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME);
                         }
                       });
-                  builder.electraBuilder(
-                      electraBuilder ->
-                          electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
                   builder.fuluBuilder(
                       fuluBuilder -> fuluForkEpoch.ifPresent(fuluBuilder::fuluForkEpoch));
                 });

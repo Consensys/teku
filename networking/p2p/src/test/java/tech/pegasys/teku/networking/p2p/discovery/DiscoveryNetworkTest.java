@@ -76,7 +76,7 @@ class DiscoveryNetworkTest {
                   .bellatrixForkEpoch(UInt64.valueOf(20_000))
                   .capellaForkEpoch(UInt64.valueOf(30_000))
                   .denebForkEpoch(UInt64.valueOf(40_000))
-                  .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(50_000)))
+                  .electraForkEpoch(UInt64.valueOf(50_000))
                   .fuluBuilder(
                       fb ->
                           fb.fuluForkEpoch(UInt64.valueOf(60_000))
