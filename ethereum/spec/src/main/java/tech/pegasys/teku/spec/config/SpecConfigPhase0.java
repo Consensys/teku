@@ -141,6 +141,10 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Bytes4 electraForkVersion;
   private final UInt64 electraForkEpoch;
 
+  // fulu fork
+  private final Bytes4 fuluForkVersion;
+  private final UInt64 fuluForkEpoch;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -218,7 +222,9 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Bytes4 denebForkVersion,
       final UInt64 denebForkEpoch,
       final Bytes4 electraForkVersion,
-      final UInt64 electraForkEpoch) {
+      final UInt64 electraForkEpoch,
+      final Bytes4 fuluForkVersion,
+      final UInt64 fuluForkEpoch) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -297,6 +303,8 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.denebForkEpoch = denebForkEpoch;
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
+    this.fuluForkVersion = fuluForkVersion;
+    this.fuluForkEpoch = fuluForkEpoch;
   }
 
   @Override
@@ -472,6 +480,16 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public UInt64 getElectraForkEpoch() {
     return electraForkEpoch;
+  }
+
+  @Override
+  public Bytes4 getFuluForkVersion() {
+    return fuluForkVersion;
+  }
+
+  @Override
+  public UInt64 getFuluForkEpoch() {
+    return fuluForkEpoch;
   }
 
   @Override
@@ -787,6 +805,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(electraForkVersion, that.electraForkVersion)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
+        && Objects.equals(fuluForkVersion, that.fuluForkVersion)
+        && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
         && Objects.equals(genesisDelay, that.genesisDelay)
         && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
@@ -871,6 +891,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         denebForkEpoch,
         electraForkVersion,
         electraForkEpoch,
+        fuluForkVersion,
+        fuluForkEpoch,
         attestationSubnetPrefixBits);
   }
 }
