@@ -73,6 +73,24 @@ public class MiscHelpers {
     this.specConfig = specConfig;
   }
 
+  // compute_fork_version
+  public Bytes4 computeForkVersion(final UInt64 epoch) {
+    if (epoch.isGreaterThanOrEqualTo(specConfig.getFuluForkEpoch())) {
+      return specConfig.getFuluForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getElectraForkEpoch())) {
+      return specConfig.getElectraForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getDenebForkEpoch())) {
+      return specConfig.getDenebForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getCapellaForkEpoch())) {
+      return specConfig.getCapellaForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getBellatrixForkEpoch())) {
+      return specConfig.getBellatrixForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getAltairForkEpoch())) {
+      return specConfig.getAltairForkVersion();
+    }
+    return specConfig.getGenesisForkVersion();
+  }
+
   public int computeShuffledIndex(final int index, final int indexCount, final Bytes32 seed) {
     checkArgument(index < indexCount, "CommitteeUtil.computeShuffledIndex1");
 

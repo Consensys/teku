@@ -169,9 +169,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-fulu-fork-epoch", fuluForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.fuluBuilder(
-                    fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.fuluForkEpoch(fuluForkEpoch));
     return this;
   }
 

@@ -77,10 +77,10 @@ class Eth2GossipTopicFilterTest {
           case FULU ->
               TestSpecFactory.createMinimalFulu(
                   b ->
-                      b.fuluBuilder(
-                          fb ->
-                              fb.fuluForkEpoch(nextMilestoneForkEpoch)
-                                  .blobSchedule(
+                      b.fuluForkEpoch(nextMilestoneForkEpoch)
+                          .fuluBuilder(
+                              fb ->
+                                  fb.blobSchedule(
                                       List.of(
                                           new BlobScheduleEntry(
                                               bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
@@ -203,10 +203,10 @@ class Eth2GossipTopicFilterTest {
     spec =
         TestSpecFactory.createMinimalFulu(
             b ->
-                b.fuluBuilder(
-                    fb ->
-                        fb.fuluForkEpoch(nextMilestoneForkEpoch)
-                            .blobSchedule(
+                b.fuluForkEpoch(nextMilestoneForkEpoch)
+                    .fuluBuilder(
+                        fb ->
+                            fb.blobSchedule(
                                 List.of(
                                     new BlobScheduleEntry(
                                         bpoForkCustom.epoch(), bpoFork.maxBlobsPerBlock())))));

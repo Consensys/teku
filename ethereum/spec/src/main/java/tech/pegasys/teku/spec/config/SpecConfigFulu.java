@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigFulu extends SpecConfigElectra {
@@ -28,10 +27,6 @@ public interface SpecConfigFulu extends SpecConfigElectra {
                 new IllegalArgumentException(
                     "Expected Fulu spec config but got: " + specConfig.getClass().getSimpleName()));
   }
-
-  Bytes4 getFuluForkVersion();
-
-  UInt64 getFuluForkEpoch();
 
   UInt64 getFieldElementsPerCell();
 

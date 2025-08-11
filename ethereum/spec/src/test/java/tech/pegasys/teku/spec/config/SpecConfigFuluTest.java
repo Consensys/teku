@@ -93,10 +93,10 @@ public class SpecConfigFuluTest {
         SpecConfigLoader.loadConfig(
             "mainnet",
             b ->
-                b.fuluBuilder(
-                    fb ->
-                        fb.fuluForkEpoch(fuluEpoch)
-                            .blobSchedule(
+                b.fuluForkEpoch(fuluEpoch)
+                    .fuluBuilder(
+                        fb ->
+                            fb.blobSchedule(
                                 List.of(
                                     new BlobScheduleEntry(UInt64.valueOf(269568), 6),
                                     new BlobScheduleEntry(UInt64.valueOf(364032), 9),
@@ -122,10 +122,10 @@ public class SpecConfigFuluTest {
         SpecConfigLoader.loadConfig(
             "mainnet",
             b ->
-                b.fuluBuilder(
-                    fb ->
-                        fb.fuluForkEpoch(fuluEpoch)
-                            .blobSchedule(
+                b.fuluForkEpoch(fuluEpoch)
+                    .fuluBuilder(
+                        fb ->
+                            fb.blobSchedule(
                                 List.of(new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock)))));
     final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
 
@@ -149,10 +149,10 @@ public class SpecConfigFuluTest {
                 SpecConfigLoader.loadConfig(
                     "mainnet",
                     b ->
-                        b.fuluBuilder(
-                            fb ->
-                                fb.fuluForkEpoch(fuluEpoch)
-                                    .blobSchedule(
+                        b.fuluForkEpoch(fuluEpoch)
+                            .fuluBuilder(
+                                fb ->
+                                    fb.blobSchedule(
                                         List.of(
                                             new BlobScheduleEntry(fuluEpoch, 6),
                                             new BlobScheduleEntry(
@@ -174,7 +174,7 @@ public class SpecConfigFuluTest {
     final SpecConfigAndParent<?> specConfigAndParent =
         SpecConfigLoader.loadConfig(
             "mainnet",
-            b -> b.fuluBuilder(fb -> fb.fuluForkEpoch(fuluEpoch).blobSchedule(List.of())));
+            b -> b.fuluForkEpoch(fuluEpoch).fuluBuilder(fb -> fb.blobSchedule(List.of())));
     final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
     // max blobs per block will default to MAX_BLOBS_PER_BLOCK_ELECTRA if blob schedule is empty
     assertThat(
@@ -213,8 +213,6 @@ public class SpecConfigFuluTest {
 
     return new SpecConfigFuluImpl(
         electraConfig,
-        dataStructureUtil.randomBytes4(),
-        dataStructureUtil.randomUInt64(999_999),
         dataStructureUtil.randomUInt64(8192),
         dataStructureUtil.randomUInt64(8192),
         dataStructureUtil.randomUInt64(8192),
