@@ -338,8 +338,8 @@ public class SpecConfigBuilder {
     constants.put("capellaForkEpoch", capellaForkEpoch);
     constants.put("denebForkVersion", denebForkVersion);
     constants.put("denebForkEpoch", denebForkEpoch);
-    constants.put("electraForkVersion", electraForkEpoch);
-    constants.put("electraForkEpoch", electraForkVersion);
+    constants.put("electraForkVersion", electraForkVersion);
+    constants.put("electraForkEpoch", electraForkEpoch);
     return constants;
   }
 
