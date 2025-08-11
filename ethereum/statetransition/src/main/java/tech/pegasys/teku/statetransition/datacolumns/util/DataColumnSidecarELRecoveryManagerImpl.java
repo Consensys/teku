@@ -13,17 +13,19 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSAL;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -98,6 +100,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final MetricsHistogram getBlobsV2RuntimeSeconds;
 
   private final Supplier<MiscHelpersFulu> miscHelpersFuluSupplier;
+  private final Duration localElBlobsFetchingRetryDelay;
+  private final int localElBlobsFetchingMaxRetries;
 
   @VisibleForTesting
   public DataColumnSidecarELRecoveryManagerImpl(
@@ -112,7 +116,9 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
       final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final Duration localElBlobsFetchingRetryDelay,
+      final int localElBlobsFetchingMaxRetries) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -122,6 +128,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.kzg = kzg;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManager = custodyGroupCountManager;
+    this.localElBlobsFetchingRetryDelay = localElBlobsFetchingRetryDelay;
+    this.localElBlobsFetchingMaxRetries = localElBlobsFetchingMaxRetries;
     this.dataColumnSidecarComputationTimeSeconds =
         DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
     this.getBlobsV2RequestsCounter =
@@ -179,7 +187,9 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   private boolean createRecoveryTaskFromDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar) {
-    if (recoveryTasks.containsKey(dataColumnSidecar.getSlotAndBlockRoot())) {
+    final RecoveryTask existingTask = recoveryTasks.get(dataColumnSidecar.getSlotAndBlockRoot());
+    if (existingTask != null) {
+      existingTask.recoveredColumnIndices().add(dataColumnSidecar.getIndex());
       return false;
     }
     if (!dataColumnSidecar.getSlot().equals(getCurrentSlot())) {
@@ -191,12 +201,14 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
             new RecoveryTask(
                 dataColumnSidecar.getSignedBeaconBlockHeader(),
                 dataColumnSidecar.getSszKZGCommitments(),
-                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed()))
+                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed(),
+                Collections.newSetFromMap(new ConcurrentHashMap<>())))
         == null;
   }
 
   private boolean createRecoveryTaskFromBlock(final SignedBeaconBlock block) {
-    if (recoveryTasks.containsKey(block.getSlotAndBlockRoot())) {
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+    if (recoveryTasks.containsKey(slotAndBlockRoot)) {
       return false;
     }
     if (!block.getSlot().equals(getCurrentSlot())) {
@@ -212,7 +224,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                 blockBodyDeneb.getBlobKzgCommitments(),
                 miscHelpersFuluSupplier
                     .get()
-                    .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb)))
+                    .computeDataColumnKzgCommitmentsInclusionProof(blockBodyDeneb),
+                Collections.newSetFromMap(new ConcurrentHashMap<>())))
         == null;
   }
 
@@ -232,22 +245,24 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
-    final int custodyCount = custodyGroupCountManager.getCustodyGroupCount();
+    final int samplingGroupCount = custodyGroupCountManager.getSamplingGroupCount();
     final int maxCustodyGroups =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getNumberOfCustodyGroups();
     final List<DataColumnSidecar> myCustodySidecars;
-    if (custodyCount == maxCustodyGroups) {
+    if (samplingGroupCount == maxCustodyGroups) {
       myCustodySidecars = dataColumnSidecars;
     } else {
       final Set<UInt64> myCustodyIndices =
-          new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
+          new HashSet<>(custodyGroupCountManager.getSamplingColumnIndices());
       myCustodySidecars =
           dataColumnSidecars.stream()
               .filter(sidecar -> myCustodyIndices.contains(sidecar.getIndex()))
               .toList();
     }
-
+    recoveryTask
+        .recoveredColumnIndices()
+        .addAll(myCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
     LOG.debug(
         "Publishing {} data column sidecars for {}",
         myCustodySidecars.size(),
@@ -280,7 +295,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   @VisibleForTesting
-  RecoveryTask getRecoveryTask(final SlotAndBlockRoot slotAndBlockRoot) {
+  public RecoveryTask getRecoveryTask(final SlotAndBlockRoot slotAndBlockRoot) {
     return recoveryTasks.get(slotAndBlockRoot);
   }
 
@@ -332,10 +347,10 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     }
 
     asyncRunner
-        .runAsync(
-            () ->
-                // fetch blobs from EL with no delay
-                fetchMissingBlobsFromLocalEL(slotAndBlockRoot))
+        .runWithRetry(
+            () -> fetchMissingBlobsFromLocalEL(slotAndBlockRoot),
+            localElBlobsFetchingRetryDelay,
+            localElBlobsFetchingMaxRetries)
         .handleException(this::logLocalElBlobsLookupFailure)
         .finishStackTrace();
   }
@@ -346,6 +361,13 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     if (recoveryTask == null) {
       return SafeFuture.COMPLETE;
     }
+
+    if (recoveryTask
+        .recoveredColumnIndices()
+        .containsAll(custodyGroupCountManager.getSamplingColumnIndices())) {
+      return SafeFuture.COMPLETE;
+    }
+
     if (recoveryTask.sszKZGCommitments().isEmpty()) {
       return SafeFuture.COMPLETE;
     }
@@ -381,17 +403,16 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
             blobAndCellProofsList -> {
               LOG.debug("Found {} blobs", blobAndCellProofsList.size());
               if (blobAndCellProofsList.isEmpty()) {
-                LOG.debug(
-                    "Blobs for {} are not found on local EL, reconstruction is not possible",
-                    slotAndBlockRoot);
-                return;
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Blobs for %s are not found on local EL, reconstruction is not possible",
+                        slotAndBlockRoot));
+              } else if (blobAndCellProofsList.size() != versionedHashes.size()) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Queried %s versionedHashes but got %s blobAndProofs",
+                        versionedHashes.size(), blobAndCellProofsList.size()));
               }
-
-              checkArgument(
-                  blobAndCellProofsList.size() == versionedHashes.size(),
-                  "Queried %s versionedHashed but got %s blobAndProofs",
-                  versionedHashes.size(),
-                  blobAndCellProofsList.size());
 
               getBlobsV2ResponsesCounter.inc();
               LOG.debug(
@@ -405,10 +426,11 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     LOG.debug("Local EL blobs lookup failed: {}", getRootCauseMessage(error));
   }
 
-  record RecoveryTask(
+  public record RecoveryTask(
       SignedBeaconBlockHeader signedBeaconBlockHeader,
       SszList<SszKZGCommitment> sszKZGCommitments,
-      List<Bytes32> kzgCommitmentsInclusionProof) {
+      List<Bytes32> kzgCommitmentsInclusionProof,
+      Set<UInt64> recoveredColumnIndices) {
     public SlotAndBlockRoot getSlotAndBlockRoot() {
       return signedBeaconBlockHeader.getMessage().getSlotAndBlockRoot();
     }
