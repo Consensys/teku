@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -450,8 +451,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
     // all calls fail so we keep retrying
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")));
 
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
@@ -460,11 +459,12 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
         getVersionedHashes(dataColumnSidecarELRecoveryManager, block.getSlotAndBlockRoot());
 
     verify(executionLayer).engineGetBlobAndCellProofsList(versionedHashes, currentSlot);
+    reset(executionLayer);
     for (int i = 1; i <= EL_BLOBS_FETCHING_MAX_RETRIES; i++) {
       assertThat(asyncRunner.hasDelayedActions()).isTrue();
       asyncRunner.executeQueuedActions();
-      // already called once, hence the +1
-      verify(executionLayer, times(i + 1)).engineGetBlobAndCellProofsList(any(), any());
+      verify(executionLayer).engineGetBlobAndCellProofsList(any(), any());
+      reset(executionLayer);
     }
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     verifyNoInteractions(dataColumnSidecarPublisher);
