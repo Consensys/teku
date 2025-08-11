@@ -84,9 +84,7 @@ public class GenesisGenerator {
   public GenesisGenerator withElectraEpoch(final UInt64 electraForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.electraBuilder(
-                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.electraForkEpoch(electraForkEpoch));
     return this;
   }
 

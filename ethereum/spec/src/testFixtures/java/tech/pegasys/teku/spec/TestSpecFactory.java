@@ -290,9 +290,7 @@ public class TestSpecFactory {
       defaultModifier = defaultModifier.andThen(builder -> builder.denebForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.electraForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       defaultModifier =
@@ -423,7 +421,7 @@ public class TestSpecFactory {
                 .bellatrixForkEpoch(ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
                 .denebForkEpoch(denebForkEpoch)
-                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
+                .electraForkEpoch(electraForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
@@ -437,7 +435,7 @@ public class TestSpecFactory {
                   .bellatrixForkEpoch(ZERO)
                   .capellaForkEpoch(ZERO)
                   .denebForkEpoch(ZERO)
-                  .electraBuilder(e -> e.electraForkEpoch(ZERO));
+                  .electraForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -461,7 +459,7 @@ public class TestSpecFactory {
                 .bellatrixForkEpoch(UInt64.ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
                 .denebForkEpoch(denebForkEpoch)
-                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
+                .electraForkEpoch(electraForkEpoch)
                 .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
   }
 
@@ -476,7 +474,7 @@ public class TestSpecFactory {
                   .bellatrixForkEpoch(UInt64.ZERO)
                   .capellaForkEpoch(UInt64.ZERO)
                   .denebForkEpoch(UInt64.ZERO)
-                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
+                  .electraForkEpoch(UInt64.ZERO)
                   .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));
               configAdapter.accept(builder);
             }));
