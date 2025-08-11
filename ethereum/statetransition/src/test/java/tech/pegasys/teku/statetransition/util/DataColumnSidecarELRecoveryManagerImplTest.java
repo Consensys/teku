@@ -448,7 +448,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
-    // 2 first call fails and then the 3rd succeeds
+    // all calls fail so we keep retrying
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
