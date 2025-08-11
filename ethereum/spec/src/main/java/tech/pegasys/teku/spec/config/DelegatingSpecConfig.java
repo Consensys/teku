@@ -183,6 +183,26 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getDenebForkVersion() {
+    return specConfig.getDenebForkVersion();
+  }
+
+  @Override
+  public UInt64 getDenebForkEpoch() {
+    return specConfig.getDenebForkEpoch();
+  }
+
+  @Override
+  public Bytes4 getElectraForkVersion() {
+    return specConfig.getElectraForkVersion();
+  }
+
+  @Override
+  public UInt64 getElectraForkEpoch() {
+    return specConfig.getElectraForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
   }

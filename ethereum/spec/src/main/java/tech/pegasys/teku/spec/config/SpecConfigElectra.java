@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfigDeneb {
@@ -31,10 +30,6 @@ public interface SpecConfigElectra extends SpecConfigDeneb, NetworkingSpecConfig
                     "Expected Electra spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
-
-  Bytes4 getElectraForkVersion();
-
-  UInt64 getElectraForkEpoch();
 
   UInt64 getMinPerEpochChurnLimitElectra();
 

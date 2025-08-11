@@ -77,18 +77,14 @@ public class GenesisGenerator {
   public GenesisGenerator withDenebEpoch(final UInt64 denebForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.denebBuilder(
-                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.denebForkEpoch(denebForkEpoch));
     return this;
   }
 
   public GenesisGenerator withElectraEpoch(final UInt64 electraForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.electraBuilder(
-                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.electraForkEpoch(electraForkEpoch));
     return this;
   }
 

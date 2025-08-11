@@ -1,19 +1,6 @@
 # Minimal preset
 PRESET_BASE: minimal
-# Forking
-# ---------------------------------------------------------------
-# Values provided for illustrative purposes.
-# Individual tests/testnets may set different values.
 
-# Altair
-ALTAIR_FORK_VERSION: 0x01000001
-ALTAIR_FORK_EPOCH: 18446744073709551615
-# Bellatrix
-BELLATRIX_FORK_VERSION: 0x02000001
-BELLATRIX_FORK_EPOCH: 18446744073709551615
-# Capella
-CAPELLA_FORK_VERSION: 0x03000001
-CAPELLA_FORK_EPOCH: 18446744073709551615
 # Misc
 # ---------------------------------------------------------------
 
@@ -193,3 +180,18 @@ ATTESTATION_SUBNET_PREFIX_BITS: 6
 INACTIVITY_SCORE_BIAS: 4
 # 2**4 (= 16)
 INACTIVITY_SCORE_RECOVERY_RATE: 16
+
+# [New in Deneb:EIP7514] [customized]
+MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 4
+
+# Deneb
+# `2**7` (=128)
+MAX_REQUEST_BLOCKS_DENEB: 128
+# `2**12` (= 4096 epochs, ~18 days)
+MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS: 4096
+# `6`
+BLOB_SIDECAR_SUBNET_COUNT: 6
+# `6`
+MAX_BLOBS_PER_BLOCK: 6
+# MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
+MAX_REQUEST_BLOB_SIDECARS: 768

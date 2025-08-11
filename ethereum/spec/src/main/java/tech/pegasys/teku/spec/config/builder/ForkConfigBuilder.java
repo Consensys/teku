@@ -18,12 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 
 interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
 
   SpecConfigAndParent<ForkType> build(SpecConfigAndParent<ParentType> specConfigAndParent);
+
+  void setForkEpoch(UInt64 epoch);
 
   void validate();
 
