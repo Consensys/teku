@@ -245,16 +245,16 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
-    final int custodyCount = custodyGroupCountManager.getCustodyGroupCount();
+    final int samplingGroupCount = custodyGroupCountManager.getSamplingGroupCount();
     final int maxCustodyGroups =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getNumberOfCustodyGroups();
     final List<DataColumnSidecar> myCustodySidecars;
-    if (custodyCount == maxCustodyGroups) {
+    if (samplingGroupCount == maxCustodyGroups) {
       myCustodySidecars = dataColumnSidecars;
     } else {
       final Set<UInt64> myCustodyIndices =
-          new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
+          new HashSet<>(custodyGroupCountManager.getSamplingColumnIndices());
       myCustodySidecars =
           dataColumnSidecars.stream()
               .filter(sidecar -> myCustodyIndices.contains(sidecar.getIndex()))

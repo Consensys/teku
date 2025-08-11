@@ -75,6 +75,8 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   private final KZG kzg = mock(KZG.class);
+  private final int custodyGroupCount = 4;
+  private final int sampleGroupCount = 8;
 
   private final List<KZGCell> kzgCells =
       IntStream.range(0, 128).mapToObj(__ -> new KZGCell(Bytes.random(2048))).toList();
@@ -85,7 +87,8 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
   private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
 
-  final CustodyGroupCountManager custodyGroupCountManager = createCustodyGroupCountManager(4, 8);
+  final CustodyGroupCountManager custodyGroupCountManager =
+      createCustodyGroupCountManager(custodyGroupCount, sampleGroupCount);
 
   private final DataColumnSidecarELRecoveryManager dataColumnSidecarELRecoveryManager =
       new PoolFactory(metricsSystem)
@@ -243,7 +246,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     final ArgumentCaptor<List<DataColumnSidecar>> dataColumnSidecarsCaptor =
         ArgumentCaptor.forClass(List.class);
     verify(dataColumnSidecarPublisher).accept(dataColumnSidecarsCaptor.capture());
-    assertThat(dataColumnSidecarsCaptor.getValue().size()).isEqualTo(4);
+    assertThat(dataColumnSidecarsCaptor.getValue().size()).isEqualTo(sampleGroupCount);
   }
 
   @Test
@@ -521,7 +524,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     final ArgumentCaptor<List<DataColumnSidecar>> dataColumnSidecarsCaptor =
         ArgumentCaptor.forClass(List.class);
     verify(dataColumnSidecarPublisher).accept(dataColumnSidecarsCaptor.capture());
-    assertThat(dataColumnSidecarsCaptor.getValue().size()).isEqualTo(4);
+    assertThat(dataColumnSidecarsCaptor.getValue().size()).isEqualTo(sampleGroupCount);
   }
 
   private List<VersionedHash> getVersionedHashes(
