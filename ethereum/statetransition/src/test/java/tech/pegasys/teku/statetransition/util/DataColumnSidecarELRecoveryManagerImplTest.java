@@ -412,7 +412,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
 
     // data columns received before the EL fetching is retried
     custodyGroupCountManager
-        .getCustodyColumnIndices()
+        .getSamplingColumnIndices()
         .forEach(
             index ->
                 dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(
@@ -425,8 +425,51 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   }
 
   @Test
+  public void shouldStop_afterMaxRetries() {
+    final DataColumnSidecarELRecoveryManagerImpl dataColumnSidecarELRecoveryManager =
+        new DataColumnSidecarELRecoveryManagerImpl(
+            spec,
+            asyncRunner,
+            recentChainData,
+            executionLayer,
+            UInt64.valueOf(320),
+            FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+            10,
+            kzg,
+            dataColumnSidecarPublisher,
+            custodyGroupCountManager,
+            metricsSystem,
+            timeProvider,
+            EL_BLOBS_FETCHING_DELAY,
+            EL_BLOBS_FETCHING_MAX_RETRIES);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
+    // 2 first call fails and then the 3rd succeeds
+    when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")));
+
+    dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
+
+    final List<VersionedHash> versionedHashes =
+        getVersionedHashes(dataColumnSidecarELRecoveryManager, block.getSlotAndBlockRoot());
+
+    verify(executionLayer).engineGetBlobAndCellProofsList(versionedHashes, currentSlot);
+    for (int i = 1; i <= EL_BLOBS_FETCHING_MAX_RETRIES; i++) {
+      assertThat(asyncRunner.hasDelayedActions()).isTrue();
+      asyncRunner.executeQueuedActions();
+      // already called once, hence the +1
+      verify(executionLayer, times(i + 1)).engineGetBlobAndCellProofsList(any(), any());
+    }
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    verifyNoInteractions(dataColumnSidecarPublisher);
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
-  public void shouldStopRetry_whenElBlobsFetchingIsDone() {
+  public void shouldStopRetry_whenElBlobsAreFetched() {
     final DataColumnSidecarELRecoveryManagerImpl dataColumnSidecarELRecoveryManager =
         new DataColumnSidecarELRecoveryManagerImpl(
             spec,
@@ -460,7 +503,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     // 2 first call fails and then the 3rd succeeds
     when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
-        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("error")))
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
 
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
@@ -469,12 +511,12 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
         getVersionedHashes(dataColumnSidecarELRecoveryManager, block.getSlotAndBlockRoot());
 
     verify(executionLayer).engineGetBlobAndCellProofsList(versionedHashes, currentSlot);
-    for (int i = 1; i <= EL_BLOBS_FETCHING_MAX_RETRIES - 1; i++) {
-      assertThat(asyncRunner.hasDelayedActions()).isTrue();
-      asyncRunner.executeQueuedActions();
-      // already called once, hence the +1
-      verify(executionLayer, times(i + 1)).engineGetBlobAndCellProofsList(any(), any());
-    }
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+    // already called once with error
+    verify(executionLayer, times(2)).engineGetBlobAndCellProofsList(any(), any());
+
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     final ArgumentCaptor<List<DataColumnSidecar>> dataColumnSidecarsCaptor =
         ArgumentCaptor.forClass(List.class);

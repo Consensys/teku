@@ -364,7 +364,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
     if (recoveryTask
         .recoveredColumnIndices()
-        .containsAll(custodyGroupCountManager.getCustodyColumnIndices())) {
+        .containsAll(custodyGroupCountManager.getSamplingColumnIndices())) {
       return SafeFuture.COMPLETE;
     }
 
