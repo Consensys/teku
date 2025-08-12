@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -61,7 +62,7 @@ public class Eth2PeerManagerTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Eth2PeerFactory eth2PeerFactory = mock(Eth2PeerFactory.class);
   private final StatusMessageFactory statusMessageFactory =
-      new StatusMessageFactory(spec, recentChainData);
+      new StatusMessageFactory(spec, combinedChainDataClient);
 
   private final Map<Peer, Eth2Peer> eth2Peers = new HashMap<>();
 
@@ -84,6 +85,11 @@ public class Eth2PeerManagerTest {
           Eth2P2PNetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
           Eth2P2PNetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL,
           DasReqRespLogger.NOOP);
+
+  @BeforeEach
+  public void setUp() {
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
+  }
 
   @Test
   public void subscribeConnect_singleListener() {

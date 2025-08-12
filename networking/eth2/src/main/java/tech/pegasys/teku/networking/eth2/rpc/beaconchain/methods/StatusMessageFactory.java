@@ -14,8 +14,12 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -27,16 +31,21 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class StatusMessageFactory {
+public class StatusMessageFactory implements SlotEventsChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final RecentChainData recentChainData;
+  private final CombinedChainDataClient combinedChainDataClient;
+  private final AtomicReference<Optional<UInt64>> maybeEarliestAvailableSlot =
+      new AtomicReference<>(Optional.empty());
 
-  public StatusMessageFactory(final Spec spec, final RecentChainData recentChainData) {
+  public StatusMessageFactory(final Spec spec, final CombinedChainDataClient recentChainData) {
     this.spec = spec;
-    this.recentChainData = recentChainData;
+    this.combinedChainDataClient = recentChainData;
   }
 
   public Optional<RpcRequestBodySelector<StatusMessage>> createStatusMessage() {
@@ -61,6 +70,7 @@ public class StatusMessageFactory {
   }
 
   public Optional<StatusMessage> createStatusMessage(final StatusMessageSchema<?> schema) {
+    final RecentChainData recentChainData = combinedChainDataClient.getRecentChainData();
     if (recentChainData.isPreForkChoice()) {
       // We don't have chainhead information, so we can't generate an accurate status message
       return Optional.empty();
@@ -69,10 +79,6 @@ public class StatusMessageFactory {
     final Bytes4 forkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
     final MinimalBeaconBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
-
-    // TODO-9539: hook up logic to include earliest available slot (verify)
-    final UInt64 latestFinalizedSlot =
-        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch());
 
     return Optional.of(
         schema.create(
@@ -84,6 +90,28 @@ public class StatusMessageFactory {
             finalizedCheckpoint.getEpoch(),
             chainHead.getRoot(),
             chainHead.getSlot(),
-            Optional.of(latestFinalizedSlot)));
+            maybeEarliestAvailableSlot
+                .get()
+                .or(
+                    () ->
+                        Optional.of(
+                            spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch())))));
+  }
+
+  @Override
+  public void onSlot(final UInt64 slot) {
+    updateEarliestAvailableSlot();
+  }
+
+  private void updateEarliestAvailableSlot() {
+    combinedChainDataClient
+        .getEarliestAvailableBlockSlot()
+        .thenAccept(
+            maybeSlot -> {
+              maybeSlot.ifPresent(
+                  slot -> LOG.debug("Updating earliest available block slot to {}", slot));
+              maybeEarliestAvailableSlot.set(maybeSlot);
+            })
+        .finishWarn(LOG);
   }
 }
