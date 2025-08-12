@@ -26,12 +26,12 @@ class BooleanPrimitiveTypeDefinition extends PrimitiveTypeDefinition<Boolean> {
 
   @Override
   public void serialize(final Boolean value, final JsonGenerator gen) throws IOException {
-    gen.writeString(serializeToString(value));
+    gen.writeBoolean(value);
   }
 
   @Override
   public Boolean deserialize(final JsonParser parser) throws IOException {
-    return deserializeFromString(parser.getValueAsString());
+    return parser.getValueAsBoolean();
   }
 
   @Override
