@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -47,6 +49,7 @@ class StatusMessageFactoryTest {
   @BeforeEach
   public void setUp() {
     when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.ZERO);
     when(recentChainData.getCurrentForkDigest())
         .thenReturn(Optional.of(dataStructureUtil.randomBytes4()));
     when(recentChainData.getFinalizedCheckpoint())
@@ -83,6 +86,29 @@ class StatusMessageFactoryTest {
                     .apply("/eth2/beacon_chain/req/status/3/ssz_snappy"))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Unexpected protocol version: 3");
+  }
+
+  @Test
+  public void shouldOnlyUpdateEarliestSlotAvailableAtBeginningOfEpoch() {
+
+    when(combinedChainDataClient.getEarliestAvailableBlockSlot())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ZERO)));
+
+    final UInt64 currentEpoch = UInt64.ONE;
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(currentEpoch);
+
+    final UInt64 epoch1StartSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+    statusMessageFactory.onSlot(epoch1StartSlot);
+    statusMessageFactory.onSlot(epoch1StartSlot.plus(UInt64.ONE));
+
+    final UInt64 nextEpoch = currentEpoch.plus(UInt64.ONE);
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(nextEpoch);
+
+    final UInt64 epoch2StartSlot = spec.computeStartSlotAtEpoch(nextEpoch);
+    statusMessageFactory.onSlot(epoch2StartSlot);
+    statusMessageFactory.onSlot(epoch2StartSlot.plus(UInt64.ONE));
+
+    verify(combinedChainDataClient, times(2)).getEarliestAvailableBlockSlot();
   }
 
   @Test

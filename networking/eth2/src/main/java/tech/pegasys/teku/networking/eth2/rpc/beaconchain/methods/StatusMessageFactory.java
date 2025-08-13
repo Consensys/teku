@@ -100,7 +100,9 @@ public class StatusMessageFactory implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    updateEarliestAvailableSlot();
+    if (spec.computeStartSlotAtEpoch(combinedChainDataClient.getCurrentEpoch()).equals(slot)) {
+      updateEarliestAvailableSlot();
+    }
   }
 
   private void updateEarliestAvailableSlot() {
