@@ -74,7 +74,7 @@ class SpecFactoryTest {
                         .capellaForkEpoch(UInt64.ZERO)
                         .denebForkEpoch(UInt64.ZERO)
                         .electraForkEpoch(UInt64.ZERO)
-                        .fuluBuilder(f -> f.fuluForkEpoch(forkEpoch));
+                        .fuluForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "

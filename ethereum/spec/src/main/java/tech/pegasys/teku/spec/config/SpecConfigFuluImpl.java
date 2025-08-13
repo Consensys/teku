@@ -16,15 +16,10 @@ package tech.pegasys.teku.spec.config;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements SpecConfigFulu {
-
-  private final Bytes4 fuluForkVersion;
-  private final UInt64 fuluForkEpoch;
-
   private final int numberOfColumns;
   private final int numberOfCustodyGroups;
   private final int dataColumnSidecarSubnetCount;
@@ -41,8 +36,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
 
   public SpecConfigFuluImpl(
       final SpecConfigElectra specConfig,
-      final Bytes4 fuluForkVersion,
-      final UInt64 fuluForkEpoch,
       final UInt64 fieldElementsPerCell,
       final UInt64 fieldElementsPerExtBlob,
       final UInt64 kzgCommitmentsInclusionProofDepth,
@@ -57,8 +50,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final UInt64 balancePerAdditionalCustodyGroup,
       final List<BlobScheduleEntry> blobSchedule) {
     super(specConfig);
-    this.fuluForkVersion = fuluForkVersion;
-    this.fuluForkEpoch = fuluForkEpoch;
     this.fieldElementsPerCell = fieldElementsPerCell;
     this.fieldElementsPerExtBlob = fieldElementsPerExtBlob;
     this.kzgCommitmentsInclusionProofDepth = kzgCommitmentsInclusionProofDepth;
@@ -72,16 +63,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.maxRequestDataColumnSidecars = maxRequestDataColumnSidecars;
     this.balancePerAdditionalCustodyGroup = balancePerAdditionalCustodyGroup;
     this.blobSchedule = blobSchedule;
-  }
-
-  @Override
-  public Bytes4 getFuluForkVersion() {
-    return fuluForkVersion;
-  }
-
-  @Override
-  public UInt64 getFuluForkEpoch() {
-    return fuluForkEpoch;
   }
 
   @Override
@@ -169,8 +150,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     }
     final SpecConfigFuluImpl that = (SpecConfigFuluImpl) o;
     return Objects.equals(specConfig, that.specConfig)
-        && Objects.equals(fuluForkVersion, that.fuluForkVersion)
-        && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
         && Objects.equals(fieldElementsPerCell, that.fieldElementsPerCell)
         && Objects.equals(fieldElementsPerExtBlob, that.fieldElementsPerExtBlob)
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
@@ -190,8 +169,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        fuluForkVersion,
-        fuluForkEpoch,
         numberOfColumns,
         numberOfCustodyGroups,
         dataColumnSidecarSubnetCount,

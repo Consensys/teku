@@ -564,7 +564,7 @@ public class PeerSyncTest extends AbstractSyncTest {
                 builder
                     .denebForkEpoch(denebForkEpoch)
                     .electraForkEpoch(denebForkEpoch)
-                    .fuluBuilder(fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluEpoch)));
+                    .fuluForkEpoch(fuluEpoch));
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any()))
         .thenAnswer(

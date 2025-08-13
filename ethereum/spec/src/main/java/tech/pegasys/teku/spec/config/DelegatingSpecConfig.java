@@ -203,6 +203,16 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getFuluForkVersion() {
+    return specConfig.getFuluForkVersion();
+  }
+
+  @Override
+  public UInt64 getFuluForkEpoch() {
+    return specConfig.getFuluForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
   }

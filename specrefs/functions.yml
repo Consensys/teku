@@ -377,7 +377,7 @@
 
 - name: compute_fork_version
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
       search: public Bytes4 computeForkVersion(
   spec: |
     <spec fn="compute_fork_version" fork="fulu" hash="6d472038">

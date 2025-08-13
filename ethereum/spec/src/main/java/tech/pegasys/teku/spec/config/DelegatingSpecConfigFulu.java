@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
@@ -31,16 +30,6 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   @Override
   public Optional<SpecConfigFulu> toVersionFulu() {
     return Optional.of(this);
-  }
-
-  @Override
-  public Bytes4 getFuluForkVersion() {
-    return delegate.getFuluForkVersion();
-  }
-
-  @Override
-  public UInt64 getFuluForkEpoch() {
-    return delegate.getFuluForkEpoch();
   }
 
   @Override

@@ -1106,15 +1106,15 @@ class RecentChainDataTest {
         TestSpecFactory.createMinimalFulu(
             b ->
                 b.electraForkEpoch(UInt64.valueOf(9))
+                    .fuluForkEpoch(UInt64.valueOf(100))
                     .electraBuilder(eb -> eb.maxBlobsPerBlockElectra(9))
                     .fuluBuilder(
                         fb ->
-                            fb.fuluForkEpoch(UInt64.valueOf(100))
-                                .blobSchedule(
-                                    List.of(
-                                        new BlobScheduleEntry(UInt64.valueOf(120), 100),
-                                        new BlobScheduleEntry(UInt64.valueOf(150), 175),
-                                        new BlobScheduleEntry(UInt64.valueOf(200), 200)))));
+                            fb.blobSchedule(
+                                List.of(
+                                    new BlobScheduleEntry(UInt64.valueOf(120), 100),
+                                    new BlobScheduleEntry(UInt64.valueOf(150), 175),
+                                    new BlobScheduleEntry(UInt64.valueOf(200), 200)))));
 
     storageSystem =
         InMemoryStorageSystemBuilder.create()
@@ -1163,10 +1163,10 @@ class RecentChainDataTest {
     final Spec spec =
         TestSpecFactory.createMinimalFulu(
             b ->
-                b.fuluBuilder(
-                    fb ->
-                        fb.fuluForkEpoch(UInt64.valueOf(100))
-                            .blobSchedule(
+                b.fuluForkEpoch(UInt64.valueOf(100))
+                    .fuluBuilder(
+                        fb ->
+                            fb.blobSchedule(
                                 List.of(new BlobScheduleEntry(UInt64.valueOf(100), 100)))));
 
     storageSystem =

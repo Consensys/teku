@@ -293,9 +293,7 @@ public class TestSpecFactory {
       defaultModifier = defaultModifier.andThen(builder -> builder.electraForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.fuluForkEpoch(UInt64.ZERO));
     }
 
     return create(
@@ -460,7 +458,7 @@ public class TestSpecFactory {
                 .capellaForkEpoch(capellaForkEpoch)
                 .denebForkEpoch(denebForkEpoch)
                 .electraForkEpoch(electraForkEpoch)
-                .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
+                .fuluForkEpoch(fuluForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
@@ -475,7 +473,7 @@ public class TestSpecFactory {
                   .capellaForkEpoch(UInt64.ZERO)
                   .denebForkEpoch(UInt64.ZERO)
                   .electraForkEpoch(UInt64.ZERO)
-                  .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));
+                  .fuluForkEpoch(UInt64.ZERO);
               configAdapter.accept(builder);
             }));
   }
