@@ -43,6 +43,16 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   }
 
   @Override
+  public int getCellsPerExtBlob() {
+    return delegate.getCellsPerExtBlob();
+  }
+
+  @Override
+  public int getNumberOfColumns() {
+    return delegate.getNumberOfColumns();
+  }
+
+  @Override
   public List<BlobScheduleEntry> getBlobSchedule() {
     return delegate.getBlobSchedule();
   }
@@ -50,11 +60,6 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   @Override
   public UInt64 getKzgCommitmentsInclusionProofDepth() {
     return delegate.getKzgCommitmentsInclusionProofDepth();
-  }
-
-  @Override
-  public int getNumberOfColumns() {
-    return delegate.getNumberOfColumns();
   }
 
   @Override
