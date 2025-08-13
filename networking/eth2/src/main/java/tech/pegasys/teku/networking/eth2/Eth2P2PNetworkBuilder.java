@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -167,8 +168,8 @@ public class Eth2P2PNetworkBuilder {
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     if (statusMessageFactory == null) {
-      statusMessageFactory =
-          new StatusMessageFactory(spec, combinedChainDataClient.getRecentChainData());
+      statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient);
+      eventChannels.subscribe(SlotEventsChannel.class, statusMessageFactory);
     }
 
     final Optional<UInt64> dasTotalCustodyGroupCount =
