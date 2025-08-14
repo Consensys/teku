@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.executionlayer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
 import java.time.Duration;
@@ -171,8 +172,7 @@ public class ExecutionLayerConfiguration {
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
     private boolean exchangeCapabilitiesMonitoringEnabled =
         DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
-    private Duration builderProposalDelayTolerance =
-        tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
+    private Duration builderProposalDelayTolerance = BUILDER_PROPOSAL_DELAY_TOLERANCE;
 
     private Builder() {}
 
