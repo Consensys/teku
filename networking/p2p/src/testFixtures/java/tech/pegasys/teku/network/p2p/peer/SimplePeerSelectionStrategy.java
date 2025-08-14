@@ -24,6 +24,7 @@ import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -52,7 +53,9 @@ public class SimplePeerSelectionStrategy implements PeerSelectionStrategy {
 
   @Override
   public List<Peer> selectPeersToDisconnect(
-      final P2PNetwork<?> network, final PeerPools peerPools) {
+      final P2PNetwork<?> network,
+      final DiscoveryService discoveryService,
+      final PeerPools peerPools) {
     final int peersToDrop = targetPeerRange.getPeersToDrop(network.getPeerCount());
     return network
         .streamPeers()
