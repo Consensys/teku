@@ -66,10 +66,10 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
       final UInt64 builderBidCompareFactor,
-  final boolean builderSetUserAgentHeader,
-  final boolean useShouldOverrideBuilderFlag,
-  final boolean exchangeCapabilitiesMonitoringEnabled,
-  final java.time.Duration builderProposalDelayTolerance) {
+      final boolean builderSetUserAgentHeader,
+      final boolean useShouldOverrideBuilderFlag,
+      final boolean exchangeCapabilitiesMonitoringEnabled,
+      final java.time.Duration builderProposalDelayTolerance) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineJwtSecretFile = engineJwtSecretFile;
@@ -168,13 +168,14 @@ public class ExecutionLayerConfiguration {
     private String builderBidCompareFactor = DEFAULT_BUILDER_BID_COMPARE_FACTOR.toString();
     private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
-  private boolean exchangeCapabilitiesMonitoringEnabled =
-    DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
-  private java.time.Duration builderProposalDelayTolerance = tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
+    private boolean exchangeCapabilitiesMonitoringEnabled =
+        DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
+    private java.time.Duration builderProposalDelayTolerance =
+        tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
 
     private Builder() {}
 
-  public ExecutionLayerConfiguration build() {
+    public ExecutionLayerConfiguration build() {
       validateStubEndpoints();
       validateBuilderCircuitBreaker();
       final UInt64 builderBidCompareFactor = validateAndParseBuilderBidCompareFactor();
@@ -211,8 +212,9 @@ public class ExecutionLayerConfiguration {
           exchangeCapabilitiesMonitoringEnabled,
           builderProposalDelayTolerance);
     }
-    
-    public Builder builderProposalDelayTolerance(final java.time.Duration builderProposalDelayTolerance) {
+
+    public Builder builderProposalDelayTolerance(
+        final java.time.Duration builderProposalDelayTolerance) {
       this.builderProposalDelayTolerance = builderProposalDelayTolerance;
       return this;
     }

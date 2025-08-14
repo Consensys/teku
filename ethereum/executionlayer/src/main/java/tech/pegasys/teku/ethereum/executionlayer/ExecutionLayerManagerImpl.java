@@ -134,11 +134,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final boolean setUserAgentHeader,
       final java.time.Duration builderProposalDelayTolerance) {
 
-    final RestBuilderClientOptions options = new RestBuilderClientOptions(
-        tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT,
-        tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT,
-        tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT,
-        builderProposalDelayTolerance);
+    final RestBuilderClientOptions options =
+        new RestBuilderClientOptions(
+            tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT,
+            tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT,
+            tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT,
+            builderProposalDelayTolerance);
     final RestBuilderClient restBuilderClient =
         new RestBuilderClient(options, restClient, timeProvider, spec, setUserAgentHeader);
     final MetricRecordingBuilderClient metricRecordingBuilderClient =

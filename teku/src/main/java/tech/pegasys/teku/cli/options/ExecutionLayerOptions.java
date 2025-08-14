@@ -23,10 +23,11 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
-import tech.pegasys.teku.spec.config.Constants;
+
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.spec.config.Constants;
 
 public class ExecutionLayerOptions {
 
@@ -147,12 +148,14 @@ public class ExecutionLayerOptions {
       DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 
   @Option(
-        names = {"--builder-proposal-delay-tolerance"},
-        paramLabel = "<DURATION>",
-        description = "Maximum duration before timeout for builder proposal delay tolerance (e.g. 'PT1S' for 1 second). Default: 1s.",
-        showDefaultValue = Visibility.ALWAYS,
-        arity = "1")
-  private java.time.Duration builderProposalDelayTolerance = Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
+      names = {"--builder-proposal-delay-tolerance"},
+      paramLabel = "<DURATION>",
+      description =
+          "Maximum duration before timeout for builder proposal delay tolerance (e.g. 'PT1S' for 1 second). Default: 1s.",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "1")
+  private java.time.Duration builderProposalDelayTolerance =
+      Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
 
   public void configure(final Builder builder) {
     builder.executionLayer(
