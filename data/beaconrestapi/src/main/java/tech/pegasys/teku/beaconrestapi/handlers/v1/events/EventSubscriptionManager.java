@@ -133,16 +133,19 @@ public class EventSubscriptionManager
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
+    if (optionalReorgContext.isPresent() && optionalReorgContext.get().isLateBlockReorg()) {
+      return;
+    }
 
     optionalReorgContext.ifPresent(
         context -> {
           final ChainReorgEvent reorgEvent =
               new ChainReorgEvent(
                   slot,
-                  slot.minus(context.getCommonAncestorSlot()),
-                  context.getOldBestBlockRoot(),
+                  slot.minus(context.commonAncestorSlot()),
+                  context.oldBestBlockRoot(),
                   bestBlockRoot,
-                  context.getOldBestStateRoot(),
+                  context.oldBestStateRoot(),
                   stateRoot,
                   configProvider.computeEpochAtSlot(slot),
                   executionOptimistic);

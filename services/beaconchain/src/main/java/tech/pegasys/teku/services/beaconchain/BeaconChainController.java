@@ -1858,6 +1858,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blsToExecutionChangePool,
             recentChainData);
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
+    operationsReOrgManager.subscribeToOperationsReOrg(forkChoice);
   }
 
   protected void initStoredLatestCanonicalBlockUpdater() {
