@@ -348,7 +348,7 @@ class ConnectionManagerTest {
 
     final PeerConnectedSubscriber<Peer> peerConnectedSubscriber = getPeerConnectedSubscriber();
 
-    when(peerSelectionStrategy.selectPeersToDisconnect(eq(network), any()))
+    when(peerSelectionStrategy.selectPeersToDisconnect(eq(network), any(), any()))
         .thenReturn(List.of(peer1));
     peerConnectedSubscriber.onConnected(peer1);
 

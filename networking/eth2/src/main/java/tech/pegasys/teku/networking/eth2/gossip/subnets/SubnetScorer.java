@@ -33,6 +33,7 @@ public class SubnetScorer implements PeerScorer {
     return new SubnetScorer(peerSubscriptions);
   }
 
+  /** Score based on active subnet topic subscriptions */
   @Override
   public int scoreExistingPeer(final NodeId peerId) {
     final SszBitvector attSubscriptions =
@@ -48,16 +49,16 @@ public class SubnetScorer implements PeerScorer {
         this::scoreSubnetForExistingPeer);
   }
 
+  /** Score based on ENR advertising */
   @Override
   public int scoreCandidatePeer(final DiscoveryPeer candidate) {
     return scoreCandidatePeer(
         candidate.getPersistentAttestationSubnets(),
         candidate.getSyncCommitteeSubnets(),
         peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
-            UInt256.fromBytes(candidate.getNodeId()), candidate.getDasCustodySubnetCount()));
+            UInt256.fromBytes(candidate.getNodeId()), candidate.getDasCustodyGroupCount()));
   }
 
-  //  @Override
   public int scoreCandidatePeer(
       final SszBitvector attSubnetSubscriptions,
       final SszBitvector syncCommitteeSubnetSubscriptions,

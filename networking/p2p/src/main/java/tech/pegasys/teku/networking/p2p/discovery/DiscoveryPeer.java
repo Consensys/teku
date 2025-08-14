@@ -75,7 +75,7 @@ public class DiscoveryPeer {
     return syncCommitteeSubnets;
   }
 
-  public Optional<Integer> getDasCustodySubnetCount() {
+  public Optional<Integer> getDasCustodyGroupCount() {
     return dasCustodySubnetCount;
   }
 
@@ -97,7 +97,7 @@ public class DiscoveryPeer {
         && Objects.equal(getEnrForkId(), that.getEnrForkId())
         && Objects.equal(getPersistentAttestationSubnets(), that.getPersistentAttestationSubnets())
         && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets())
-        && Objects.equal(getDasCustodySubnetCount(), that.getDasCustodySubnetCount())
+        && Objects.equal(getDasCustodyGroupCount(), that.getDasCustodyGroupCount())
         && Objects.equal(getNextForkDigest(), that.getNextForkDigest());
   }
 
@@ -109,7 +109,7 @@ public class DiscoveryPeer {
         getEnrForkId(),
         getPersistentAttestationSubnets(),
         getSyncCommitteeSubnets(),
-        getDasCustodySubnetCount(),
+        getDasCustodyGroupCount(),
         getNextForkDigest());
   }
 

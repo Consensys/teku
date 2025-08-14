@@ -24,21 +24,29 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.networking.eth2.ActiveEth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
@@ -49,14 +57,22 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   private final ReputationManager reputationManager;
   private final Shuffler shuffler;
 
+  private final NodeIdToDataColumnSidecarSubnetsCalculator
+      nodeIdToDataColumnSidecarSubnetsCalculator;
+  private final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference;
+
   public Eth2PeerSelectionStrategy(
       final TargetPeerRange targetPeerCountRange,
       final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory,
       final ReputationManager reputationManager,
+      final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference,
+      final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
       final Shuffler shuffler) {
     this.targetPeerCountRange = targetPeerCountRange;
     this.peerSubnetSubscriptionsFactory = peerSubnetSubscriptionsFactory;
     this.reputationManager = reputationManager;
+    this.activeEth2P2PNetworkReference = activeEth2P2PNetworkReference;
+    this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
     this.shuffler = shuffler;
   }
 
@@ -151,7 +167,9 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
 
   @Override
   public List<Peer> selectPeersToDisconnect(
-      final P2PNetwork<?> network, final PeerPools peerPools) {
+      final P2PNetwork<?> network,
+      final DiscoveryService discoveryService,
+      final PeerPools peerPools) {
 
     final Map<PeerConnectionType, List<Peer>> peersBySource =
         network
@@ -164,9 +182,42 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
 
     final int currentPeerCount = network.getPeerCount();
     final int peersToDrop = targetPeerCountRange.getPeersToDrop(currentPeerCount);
+
+    final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
+    final Map<NodeId, List<String>> topicsBySubscriber =
+        subscribersByTopic.entrySet().stream()
+            .flatMap(
+                entry -> entry.getValue().stream().map(nodeId -> Map.entry(nodeId, entry.getKey())))
+            .collect(
+                Collectors.groupingBy(
+                    Map.Entry::getKey,
+                    Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+    final Map<UInt256, DiscoveryPeer> discoveryPeerMap =
+        discoveryService
+            .streamKnownPeers()
+            .collect(
+                Collectors.toMap(
+                    discoveryPeer -> UInt256.fromBytes(discoveryPeer.getNodeId()),
+                    Function.identity()));
+    final PeerSubnetSubscriptions peerSubnetSubscriptions =
+        peerSubnetSubscriptionsFactory.create(network);
+
+    final List<Peer> falseAdvertisingPeers =
+        Stream.concat(
+                peersBySource.getOrDefault(RANDOMLY_SELECTED, emptyList()).stream(),
+                peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
+            .map(
+                peer ->
+                    verifyPeerAdvertisement(
+                        peer, topicsBySubscriber, discoveryPeerMap, peerSubnetSubscriptions))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .toList();
+
     if (peersToDrop == 0) {
-      return emptyList();
+      return falseAdvertisingPeers;
     }
+
     final PeerScorer peerScorer = peerSubnetSubscriptionsFactory.create(network).createScorer();
     final int randomlySelectedPeersToDrop =
         targetPeerCountRange.getRandomlySelectedPeersToDrop(
@@ -180,12 +231,86 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     // for disconnection based on their score
     randomlySelectedPeersBeingDropped.forEach(
         peer -> peerPools.addPeerToPool(peer.getId(), SCORE_BASED));
-    return Stream.concat(
-            randomlySelectedPeersBeingDropped.stream(),
-            peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
-        .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
-        .limit(peersToDrop)
-        .toList();
+
+    if (peersToDrop > falseAdvertisingPeers.size()) {
+      return Stream.concat(
+              falseAdvertisingPeers.stream(),
+              Stream.concat(
+                      randomlySelectedPeersBeingDropped.stream(),
+                      peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
+                  .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
+                  .limit(peersToDrop - falseAdvertisingPeers.size()))
+          .toList();
+    } else {
+      return falseAdvertisingPeers;
+    }
+  }
+
+  private Optional<Peer> verifyPeerAdvertisement(
+      final Peer peer,
+      final Map<NodeId, List<String>> topicsBySubscriber,
+      final Map<UInt256, DiscoveryPeer> discoveryPeerMap,
+      final PeerSubnetSubscriptions peerSubnetSubscriptions) {
+    if (activeEth2P2PNetworkReference.get() == null) {
+      return Optional.empty();
+    }
+    final ActiveEth2P2PNetwork activeEth2P2PNetwork = activeEth2P2PNetworkReference.get();
+
+    final List<String> actualPeerTopics = topicsBySubscriber.get(peer.getId());
+    if (actualPeerTopics.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final Optional<Eth2Peer> eth2Peer = activeEth2P2PNetwork.getPeer(peer.getId());
+    if (eth2Peer.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final Optional<UInt256> discoveryNodeId = eth2Peer.get().getDiscoveryNodeId();
+    if (discoveryNodeId.isEmpty()) {
+      return Optional.empty();
+    }
+
+    if (!discoveryPeerMap.containsKey(discoveryNodeId.get())) {
+      return Optional.empty();
+    }
+
+    final DiscoveryPeer discoveryPeer = discoveryPeerMap.get(discoveryNodeId.get());
+
+    // Check for sync committee subnets
+    final SszBitvector advertisedSyncCommitteeSubnets = discoveryPeer.getSyncCommitteeSubnets();
+    final SszBitvector syncCommitteeSubnets =
+        peerSubnetSubscriptions.getAttestationSubnetSubscriptions(peer.getId());
+    if (!syncCommitteeSubnets.isSuperSetOf(advertisedSyncCommitteeSubnets)) {
+      reputationManager.adjustReputation(peer.getAddress(), ReputationAdjustment.LARGE_PENALTY);
+      return Optional.of(peer);
+    }
+
+    // Check for attestation subnets
+    final SszBitvector advertisedPersistentAttestationSubnets =
+        discoveryPeer.getPersistentAttestationSubnets();
+    final SszBitvector persistedAttestationSubnets =
+        peerSubnetSubscriptions.getAttestationSubnetSubscriptions(peer.getId());
+    if (!persistedAttestationSubnets.isSuperSetOf(advertisedPersistentAttestationSubnets)) {
+      reputationManager.adjustReputation(peer.getAddress(), ReputationAdjustment.LARGE_PENALTY);
+      return Optional.of(peer);
+    }
+
+    // for each check that there are subscriptions
+    final Optional<SszBitvector> maybeDasSubnets =
+        nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(
+            discoveryNodeId.get(), discoveryPeer.getDasCustodyGroupCount());
+    if (maybeDasSubnets.isPresent()) {
+      final SszBitvector advertisedDasSubnets = maybeDasSubnets.get();
+      final SszBitvector dasSubnets =
+          peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptions(peer.getId());
+      if (!dasSubnets.isSuperSetOf(advertisedDasSubnets)) {
+        reputationManager.adjustReputation(peer.getAddress(), ReputationAdjustment.LARGE_PENALTY);
+        return Optional.of(peer);
+      }
+    }
+
+    return Optional.empty();
   }
 
   @FunctionalInterface
