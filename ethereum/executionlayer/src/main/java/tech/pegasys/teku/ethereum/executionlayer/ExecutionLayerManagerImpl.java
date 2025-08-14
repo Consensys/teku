@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQU
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
