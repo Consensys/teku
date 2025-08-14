@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.validatorslashing;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Stream;
-import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -24,6 +20,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.provider.Arguments;
 
 /**
  * In order to cover all possible validator slashing scenarios, this acceptance test runs different

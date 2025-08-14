@@ -192,7 +192,8 @@ public class ExecutionLayerService extends Service {
                     config.getSpec(),
                     timeProvider,
                     metricsSystem,
-                    config.getBuilderSetUserAgentHeader()));
+                    config.getBuilderSetUserAgentHeader(),
+                    config.getBuilderProposalDelayTolerance()));
 
     return ExecutionLayerManagerImpl.create(
         EVENT_LOG,
