@@ -35,6 +35,7 @@ public class FuluBuilder extends BaseForkBuilder
   private UInt64 fieldElementsPerCell;
   private UInt64 fieldElementsPerExtBlob;
   private UInt64 kzgCommitmentsInclusionProofDepth;
+  private Integer cellsPerExtBlob;
   private Integer numberOfColumns;
   private Integer numberOfCustodyGroups;
   private Integer dataColumnSidecarSubnetCount;
@@ -57,6 +58,7 @@ public class FuluBuilder extends BaseForkBuilder
             fieldElementsPerCell,
             fieldElementsPerExtBlob,
             kzgCommitmentsInclusionProofDepth,
+            cellsPerExtBlob,
             numberOfColumns,
             numberOfCustodyGroups,
             dataColumnSidecarSubnetCount,
@@ -79,6 +81,18 @@ public class FuluBuilder extends BaseForkBuilder
   public FuluBuilder fieldElementsPerExtBlob(final UInt64 fieldElementsPerExtBlob) {
     checkNotNull(fieldElementsPerExtBlob);
     this.fieldElementsPerExtBlob = fieldElementsPerExtBlob;
+    return this;
+  }
+
+  public FuluBuilder cellsPerExtBlob(final Integer cellsPerExtBlob) {
+    checkNotNull(cellsPerExtBlob);
+    this.cellsPerExtBlob = cellsPerExtBlob;
+    return this;
+  }
+
+  public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
+    checkNotNull(numberOfColumns);
+    this.numberOfColumns = numberOfColumns;
     return this;
   }
 
@@ -108,12 +122,6 @@ public class FuluBuilder extends BaseForkBuilder
                 "There are duplicate entries for epoch %s in blob schedule.", entry.epoch()));
       }
     }
-  }
-
-  public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
-    checkNotNull(numberOfColumns);
-    this.numberOfColumns = numberOfColumns;
-    return this;
   }
 
   public FuluBuilder numberOfCustodyGroups(final Integer numberOfCustodyGroups) {
@@ -176,6 +184,7 @@ public class FuluBuilder extends BaseForkBuilder
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
 
+    constants.put("cellsPerExtBlob", cellsPerExtBlob);
     constants.put("numberOfColumns", numberOfColumns);
     constants.put("numberOfCustodyGroups", numberOfCustodyGroups);
     constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);

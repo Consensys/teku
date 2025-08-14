@@ -32,12 +32,14 @@ public interface SpecConfigFulu extends SpecConfigElectra {
 
   UInt64 getFieldElementsPerExtBlob();
 
+  int getCellsPerExtBlob();
+
+  int getNumberOfColumns();
+
   List<BlobScheduleEntry> getBlobSchedule();
 
   /** DataColumnSidecar's */
   UInt64 getKzgCommitmentsInclusionProofDepth();
-
-  int getNumberOfColumns();
 
   int getNumberOfCustodyGroups();
 

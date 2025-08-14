@@ -48,6 +48,8 @@ public interface SszPrimitiveListSchema<
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.create(maxLength);
     } else if (elementSchema.equals(SszPrimitiveSchemas.UINT8_SCHEMA)) {
       return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszByteListSchema.createUInt8(maxLength);
+    } else if (elementSchema.equals(SszPrimitiveSchemas.BOOLEAN_SCHEMA)) {
+      return (SszPrimitiveListSchema<PrimT, SszPrimT, ?>) SszBooleanListSchema.create(maxLength);
     } else {
       return new SszPrimitiveListSchemaImpl<>(elementSchema, maxLength);
     }
