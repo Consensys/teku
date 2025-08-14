@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import java.util.Optional;
 import java.util.function.IntUnaryOperator;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -45,35 +46,27 @@ public class SubnetScorer implements PeerScorer {
         attSubscriptions,
         syncCommitteeSubscriptions,
         dataColumnSidecarSubscriptions,
-        this::scoreSubnetForExistingPeer);
+        this::scoreSubnetForExistingPeer,
+        Optional.empty());
   }
 
   @Override
   public int scoreCandidatePeer(final DiscoveryPeer candidate) {
-    return scoreCandidatePeer(
+    return score(
         candidate.getPersistentAttestationSubnets(),
         candidate.getSyncCommitteeSubnets(),
         peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
-            UInt256.fromBytes(candidate.getNodeId()), candidate.getDasCustodySubnetCount()));
-  }
-
-  //  @Override
-  public int scoreCandidatePeer(
-      final SszBitvector attSubnetSubscriptions,
-      final SszBitvector syncCommitteeSubnetSubscriptions,
-      final SszBitvector dataColumnSidecarSubscriptions) {
-    return score(
-        attSubnetSubscriptions,
-        syncCommitteeSubnetSubscriptions,
-        dataColumnSidecarSubscriptions,
-        this::scoreSubnetForCandidatePeer);
+            UInt256.fromBytes(candidate.getNodeId()), candidate.getDasCustodySubnetCount()),
+        this::scoreSubnetForCandidatePeer,
+        candidate.getDasCustodySubnetCount());
   }
 
   private int score(
       final SszBitvector attestationSubnetSubscriptions,
       final SszBitvector syncCommitteeSubnetSubscriptions,
       final SszBitvector dataColumnSidecarSubnetSubscriptions,
-      final IntUnaryOperator subscriberCountToScore) {
+      final IntUnaryOperator subscriberCountToScore,
+      final Optional<Integer> dasCustodySubnetCount) {
     final int attestationSubnetScore =
         attestationSubnetSubscriptions
             .streamAllSetBits()
@@ -98,18 +91,27 @@ public class SubnetScorer implements PeerScorer {
                 })
             .sum();
 
-    final int dataColumnSidecarSubnetScore =
-        dataColumnSidecarSubnetSubscriptions
-            .streamAllSetBits()
-            .filter(peerSubnetSubscriptions::isDataColumnSidecarSubnetRelevant)
-            .map(
-                subnetId -> {
-                  int subscriberCount =
-                      peerSubnetSubscriptions.getSubscriberCountForDataColumnSidecarSubnet(
-                          subnetId);
-                  return subscriberCountToScore.applyAsInt(subscriberCount);
-                })
-            .sum();
+    final int dataColumnSidecarSubnetScore;
+
+    if (dasCustodySubnetCount.isPresent()
+        && dataColumnSidecarSubnetSubscriptions.getBitCount() < dasCustodySubnetCount.get()) {
+      // set data column sidecar subnet score to 0, if the advertised cgc value is greater than the
+      // subnets a peer is subscribed to
+      dataColumnSidecarSubnetScore = 0;
+    } else {
+      dataColumnSidecarSubnetScore =
+          dataColumnSidecarSubnetSubscriptions
+              .streamAllSetBits()
+              .filter(peerSubnetSubscriptions::isDataColumnSidecarSubnetRelevant)
+              .map(
+                  subnetId -> {
+                    int subscriberCount =
+                        peerSubnetSubscriptions.getSubscriberCountForDataColumnSidecarSubnet(
+                            subnetId);
+                    return subscriberCountToScore.applyAsInt(subscriberCount);
+                  })
+              .sum();
+    }
 
     return attestationSubnetScore + syncCommitteeSubnetScore + dataColumnSidecarSubnetScore;
   }
