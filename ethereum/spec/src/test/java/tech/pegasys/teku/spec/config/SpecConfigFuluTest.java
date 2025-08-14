@@ -218,6 +218,7 @@ public class SpecConfigFuluTest {
         dataStructureUtil.randomUInt64(8192),
         dataStructureUtil.randomPositiveInt(134217728),
         dataStructureUtil.randomPositiveInt(134217728),
+        dataStructureUtil.randomPositiveInt(134217728),
         dataStructureUtil.randomPositiveInt(262144),
         dataStructureUtil.randomPositiveInt(4096),
         dataStructureUtil.randomPositiveInt(4096),

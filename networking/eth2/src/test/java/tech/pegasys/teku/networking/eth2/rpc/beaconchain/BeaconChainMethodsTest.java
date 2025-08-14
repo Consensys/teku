@@ -15,12 +15,14 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -62,8 +64,14 @@ public class BeaconChainMethodsTest {
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
-  final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(spec, recentChainData);
+  final StatusMessageFactory statusMessageFactory =
+      new StatusMessageFactory(spec, combinedChainDataClient);
   final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+
+  @BeforeEach
+  public void setUp() {
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
+  }
 
   @Test
   void testStatusRoundtripSerialization() throws Exception {

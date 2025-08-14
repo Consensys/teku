@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements SpecConfigFulu {
+  private final int cellsPerExtBlob;
   private final int numberOfColumns;
   private final int numberOfCustodyGroups;
   private final int dataColumnSidecarSubnetCount;
@@ -39,6 +40,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
       final UInt64 fieldElementsPerCell,
       final UInt64 fieldElementsPerExtBlob,
       final UInt64 kzgCommitmentsInclusionProofDepth,
+      final int cellsPerExtBlob,
       final int numberOfColumns,
       final int numberOfCustodyGroups,
       final int dataColumnSidecarSubnetCount,
@@ -53,6 +55,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
     this.fieldElementsPerCell = fieldElementsPerCell;
     this.fieldElementsPerExtBlob = fieldElementsPerExtBlob;
     this.kzgCommitmentsInclusionProofDepth = kzgCommitmentsInclusionProofDepth;
+    this.cellsPerExtBlob = cellsPerExtBlob;
     this.numberOfColumns = numberOfColumns;
     this.numberOfCustodyGroups = numberOfCustodyGroups;
     this.dataColumnSidecarSubnetCount = dataColumnSidecarSubnetCount;
@@ -76,6 +79,16 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   }
 
   @Override
+  public int getCellsPerExtBlob() {
+    return cellsPerExtBlob;
+  }
+
+  @Override
+  public int getNumberOfColumns() {
+    return numberOfColumns;
+  }
+
+  @Override
   public List<BlobScheduleEntry> getBlobSchedule() {
     return blobSchedule;
   }
@@ -83,11 +96,6 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   @Override
   public UInt64 getKzgCommitmentsInclusionProofDepth() {
     return kzgCommitmentsInclusionProofDepth;
-  }
-
-  @Override
-  public int getNumberOfColumns() {
-    return numberOfColumns;
   }
 
   @Override
@@ -155,6 +163,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
         && Objects.equals(kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth)
         && Objects.equals(balancePerAdditionalCustodyGroup, that.balancePerAdditionalCustodyGroup)
         && Objects.equals(blobSchedule, that.blobSchedule)
+        && cellsPerExtBlob == that.cellsPerExtBlob
         && numberOfColumns == that.numberOfColumns
         && numberOfCustodyGroups == that.numberOfCustodyGroups
         && dataColumnSidecarSubnetCount == that.dataColumnSidecarSubnetCount
@@ -169,6 +178,7 @@ public class SpecConfigFuluImpl extends DelegatingSpecConfigElectra implements S
   public int hashCode() {
     return Objects.hash(
         specConfig,
+        cellsPerExtBlob,
         numberOfColumns,
         numberOfCustodyGroups,
         dataColumnSidecarSubnetCount,
