@@ -132,7 +132,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem,
       final boolean setUserAgentHeader,
-      final java.time.Duration builderProposalDelayTolerance) {
+      final Duration builderProposalDelayTolerance) {
 
     final RestBuilderClientOptions options =
         new RestBuilderClientOptions(

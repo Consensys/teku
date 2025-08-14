@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
+import java.time.Duration;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +54,7 @@ public class ExecutionLayerConfiguration {
   private final boolean builderSetUserAgentHeader;
   private final boolean useShouldOverrideBuilderFlag;
   private final boolean exchangeCapabilitiesMonitoringEnabled;
-  private final java.time.Duration builderProposalDelayTolerance;
+  private final Duration builderProposalDelayTolerance;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -69,7 +70,7 @@ public class ExecutionLayerConfiguration {
       final boolean builderSetUserAgentHeader,
       final boolean useShouldOverrideBuilderFlag,
       final boolean exchangeCapabilitiesMonitoringEnabled,
-      final java.time.Duration builderProposalDelayTolerance) {
+      final Duration builderProposalDelayTolerance) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineJwtSecretFile = engineJwtSecretFile;
@@ -87,7 +88,7 @@ public class ExecutionLayerConfiguration {
     this.builderProposalDelayTolerance = builderProposalDelayTolerance;
   }
 
-  public java.time.Duration getBuilderProposalDelayTolerance() {
+  public Duration getBuilderProposalDelayTolerance() {
     return builderProposalDelayTolerance;
   }
 
@@ -170,7 +171,7 @@ public class ExecutionLayerConfiguration {
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
     private boolean exchangeCapabilitiesMonitoringEnabled =
         DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
-    private java.time.Duration builderProposalDelayTolerance =
+    private Duration builderProposalDelayTolerance =
         tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
 
     private Builder() {}
@@ -213,8 +214,7 @@ public class ExecutionLayerConfiguration {
           builderProposalDelayTolerance);
     }
 
-    public Builder builderProposalDelayTolerance(
-        final java.time.Duration builderProposalDelayTolerance) {
+    public Builder builderProposalDelayTolerance(final Duration builderProposalDelayTolerance) {
       this.builderProposalDelayTolerance = builderProposalDelayTolerance;
       return this;
     }
