@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
+import static tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
@@ -137,9 +140,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     final RestBuilderClientOptions options =
         new RestBuilderClientOptions(
-            tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT,
-            tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT,
-            tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT,
+            BUILDER_STATUS_TIMEOUT,
+            BUILDER_GET_PAYLOAD_TIMEOUT,
+            BUILDER_REGISTER_VALIDATOR_TIMEOUT,
             builderProposalDelayTolerance);
     final RestBuilderClient restBuilderClient =
         new RestBuilderClient(options, restClient, timeProvider, spec, setUserAgentHeader);
