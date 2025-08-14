@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ForkChoiceTrigger {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final ForkChoiceRatchet forkChoiceRatchet;
   private final ForkChoice forkChoice;
 
@@ -32,7 +37,14 @@ public class ForkChoiceTrigger {
   }
 
   public void onAttestationsDueForSlot(final UInt64 nodeSlot) {
-    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
+    try {
+      forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).get(4L, TimeUnit.SECONDS);
+    } catch (InterruptedException | TimeoutException e) {
+      LOG.error("Failed to wait for fork choice to complete for slot " + nodeSlot, e);
+    } catch (ExecutionException e) {
+      LOG.error("Runtime exception waiting for fork choice at slot " + nodeSlot, e);
+      throw new RuntimeException(e);
+    }
   }
 
   public SafeFuture<Void> prepareForBlockProduction(
