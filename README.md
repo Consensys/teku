@@ -127,8 +127,6 @@ and <a href="https://www.yourkit.com/youmonitor/">YourKit YouMonitor</a>.
 
 **OrbStack**
 
-![OrbStack Logo](https://orbstack.dev/_next/image?url=%2Fimg%2Ficon128.png&w=64&q=75)
-
 For providing us free open source licenses for their application.
 
 OrbStack delivers a fast, light, and easy way to run Docker containers and Linux. Check it out on https://orbstack.dev/.
