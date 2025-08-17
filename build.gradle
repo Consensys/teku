@@ -21,7 +21,7 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '7.1.0'
+  id 'com.diffplug.spotless' version '7.2.1'
   id 'com.github.ben-manes.versions' version '0.52.0'
   id 'com.github.jk1.dependency-license-report' version '2.9'
   id 'io.spring.dependency-management' version '1.1.7'
@@ -252,6 +252,9 @@ allprojects {
 
       // ignore PatternMatchingInstanceof for now
       check("PatternMatchingInstanceof", net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
+      // ignore EffectivelyPrivate for now
+      check("EffectivelyPrivate", net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // These are experimental checks that we want enabled
       check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
