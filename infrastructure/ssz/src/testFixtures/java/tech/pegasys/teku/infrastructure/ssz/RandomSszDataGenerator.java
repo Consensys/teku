@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBoolean;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class RandomSszDataGenerator {
   private final Supplier<SszBit> bitSupplier;
   private final Supplier<SszByte> byteSupplier;
+  private final Supplier<SszBoolean> booleanSupplier;
   private final Supplier<SszBytes4> bytes4Supplier;
   private final Supplier<SszUInt64> uintSupplier;
   private final Supplier<SszUInt256> uint256Supplier;
@@ -60,6 +62,7 @@ public class RandomSszDataGenerator {
     this.maxListSize = maxListSize;
     bitSupplier = () -> SszBit.of(random.nextBoolean());
     byteSupplier = () -> SszByte.of(random.nextInt());
+    booleanSupplier = () -> SszBoolean.of(random.nextBoolean());
     bytes4Supplier = () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
     uintSupplier = () -> SszUInt64.of(UInt64.fromLongBits(random.nextLong()));
     uint256Supplier = () -> SszUInt256.of(UInt256.fromBytes(Bytes32.random(random)));
@@ -83,6 +86,8 @@ public class RandomSszDataGenerator {
         return (Stream<T>) Stream.generate(bitSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.BYTE_SCHEMA)) {
         return (Stream<T>) Stream.generate(byteSupplier);
+      } else if (schema.equals(SszPrimitiveSchemas.BOOLEAN_SCHEMA)) {
+        return (Stream<T>) Stream.generate(booleanSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT64_SCHEMA)) {
         return (Stream<T>) Stream.generate(uintSupplier);
       } else if (schema.equals(SszPrimitiveSchemas.UINT256_SCHEMA)) {

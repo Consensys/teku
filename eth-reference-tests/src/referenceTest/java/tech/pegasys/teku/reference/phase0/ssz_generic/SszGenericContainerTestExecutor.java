@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
@@ -71,6 +72,12 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
       case "FixedTestStruct" -> new FixedTestStructSchema();
       case "ComplexTestStruct" -> // Not implemented yet
           new ComplexTestStructSchema();
+      case "ProgressiveTestStruct" ->
+          throw new TestAbortedException(
+              "ProgressiveTestStruct type not supported: " + testDefinition.getTestName());
+      case "ProgressiveBitsStruct" ->
+          throw new TestAbortedException(
+              "ProgressiveBitsStruct type not supported: " + testDefinition.getTestName());
       default -> throw new UnsupportedOperationException("Unsupported container type: " + type);
     };
   }
