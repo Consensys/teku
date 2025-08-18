@@ -77,10 +77,10 @@ class Eth2GossipTopicFilterTest {
           case FULU ->
               TestSpecFactory.createMinimalFulu(
                   b ->
-                      b.fuluBuilder(
-                          fb ->
-                              fb.fuluForkEpoch(nextMilestoneForkEpoch)
-                                  .blobSchedule(
+                      b.fuluForkEpoch(nextMilestoneForkEpoch)
+                          .fuluBuilder(
+                              fb ->
+                                  fb.blobSchedule(
                                       List.of(
                                           new BlobScheduleEntry(
                                               bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
@@ -191,6 +191,39 @@ class Eth2GossipTopicFilterTest {
   void shouldAllowTopicsForBpoFork() {
     assumeThat(nextSpecMilestone).isEqualTo(FULU);
     final Bytes4 bpoForkDigest = recentChainData.getForkDigestByBpoFork(bpoFork).orElseThrow();
+    final String bpoTopic =
+        GossipTopics.getTopic(bpoForkDigest, GossipTopicName.BEACON_BLOCK, SSZ_SNAPPY);
+    assertThat(filter.isRelevantTopic(bpoTopic)).isTrue();
+  }
+
+  @TestTemplate
+  void shouldAllowTopicsForBpoForkSameEpochAsFulu() {
+    assumeThat(nextSpecMilestone).isEqualTo(FULU);
+    final BlobParameters bpoForkCustom = new BlobParameters(nextMilestoneForkEpoch, 64);
+    spec =
+        TestSpecFactory.createMinimalFulu(
+            b ->
+                b.fuluForkEpoch(nextMilestoneForkEpoch)
+                    .fuluBuilder(
+                        fb ->
+                            fb.blobSchedule(
+                                List.of(
+                                    new BlobScheduleEntry(
+                                        bpoForkCustom.epoch(), bpoFork.maxBlobsPerBlock())))));
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesis();
+
+    recentChainData = spy(storageSystem.recentChainData());
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
+
+    currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
+    nextForkDigest =
+        recentChainData
+            .getNextForkDigest(recentChainData.getCurrentEpoch().orElseThrow())
+            .orElseThrow();
+
+    final Bytes4 bpoForkDigest =
+        recentChainData.getForkDigestByBpoFork(bpoForkCustom).orElseThrow();
     final String bpoTopic =
         GossipTopics.getTopic(bpoForkDigest, GossipTopicName.BEACON_BLOCK, SSZ_SNAPPY);
     assertThat(filter.isRelevantTopic(bpoTopic)).isTrue();

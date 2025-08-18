@@ -129,6 +129,9 @@ public class SpecConfigBuilder {
   private Integer reorgHeadWeightThreshold = 20;
 
   private Integer reorgParentWeightThreshold = 160;
+  private final AltairBuilder altairBuilder = new AltairBuilder();
+  private final BellatrixBuilder bellatrixBuilder = new BellatrixBuilder();
+  private final CapellaBuilder capellaBuilder = new CapellaBuilder();
   private final DenebBuilder denebBuilder = new DenebBuilder();
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
@@ -136,13 +139,23 @@ public class SpecConfigBuilder {
   // forks
   // altair fork information
   private Bytes4 altairForkVersion;
-  private UInt64 altairForkEpoch;
+  private Bytes4 bellatrixForkVersion;
+  private Bytes4 capellaForkVersion;
+  private Bytes4 denebForkVersion;
+  private Bytes4 electraForkVersion;
+  private Bytes4 fuluForkVersion;
+  private UInt64 altairForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 bellatrixForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 denebForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 electraForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 fuluForkEpoch = FAR_FUTURE_EPOCH;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
-      BuilderChain.create(new AltairBuilder())
-          .appendBuilder(new BellatrixBuilder())
-          .appendBuilder(new CapellaBuilder())
+      BuilderChain.create(altairBuilder)
+          .appendBuilder(bellatrixBuilder)
+          .appendBuilder(capellaBuilder)
           .appendBuilder(denebBuilder)
           .appendBuilder(electraBuilder)
           .appendBuilder(fuluBuilder);
@@ -166,15 +179,7 @@ public class SpecConfigBuilder {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
       }
     }
-    if (altairForkEpoch == null) {
-      altairForkEpoch = FAR_FUTURE_EPOCH;
-      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-    rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
-    if (altairForkVersion == null) {
-      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-      rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
-    }
+    applyForkVersions();
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
@@ -247,7 +252,17 @@ public class SpecConfigBuilder {
                 reorgParentWeightThreshold,
                 maxPerEpochActivationExitChurnLimit,
                 altairForkVersion,
-                altairForkEpoch));
+                altairForkEpoch,
+                bellatrixForkVersion,
+                bellatrixForkEpoch,
+                capellaForkVersion,
+                capellaForkEpoch,
+                denebForkVersion,
+                denebForkEpoch,
+                electraForkVersion,
+                electraForkEpoch,
+                fuluForkVersion,
+                fuluForkEpoch));
 
     return builderChain.build(config);
   }
@@ -321,7 +336,62 @@ public class SpecConfigBuilder {
     constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
     constants.put("altairForkEpoch", altairForkEpoch);
     constants.put("altairForkVersion", altairForkVersion);
+    constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
+    constants.put("bellatrixForkVersion", bellatrixForkVersion);
+    constants.put("capellaForkVersion", capellaForkVersion);
+    constants.put("capellaForkEpoch", capellaForkEpoch);
+    constants.put("denebForkVersion", denebForkVersion);
+    constants.put("denebForkEpoch", denebForkEpoch);
+    constants.put("electraForkVersion", electraForkVersion);
+    constants.put("electraForkEpoch", electraForkEpoch);
+    constants.put("fuluForkVersion", fuluForkVersion);
+    constants.put("fuluForkEpoch", fuluForkEpoch);
     return constants;
+  }
+
+  private void applyForkVersions() {
+    // update raw config if epochs and fork versions are known
+    // if they're not known, they'll result in a validation error (expected)
+    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH) && altairForkVersion == null) {
+      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH) && bellatrixForkVersion == null) {
+      bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (capellaForkEpoch.equals(FAR_FUTURE_EPOCH) && capellaForkVersion == null) {
+      capellaForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (denebForkEpoch.equals(FAR_FUTURE_EPOCH) && denebForkVersion == null) {
+      denebForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (electraForkEpoch.equals(FAR_FUTURE_EPOCH) && electraForkVersion == null) {
+      electraForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (fuluForkEpoch.equals(FAR_FUTURE_EPOCH) && fuluForkVersion == null) {
+      fuluForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    // ensure raw config is accurate
+    rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
+    rawConfig.put("CAPELLA_FORK_EPOCH", capellaForkEpoch);
+    rawConfig.put("DENEB_FORK_EPOCH", denebForkEpoch);
+    rawConfig.put("ELECTRA_FORK_EPOCH", electraForkEpoch);
+    rawConfig.put("FULU_FORK_EPOCH", fuluForkEpoch);
+
+    rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
+    rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    rawConfig.put("CAPELLA_FORK_VERSION", capellaForkVersion);
+    rawConfig.put("DENEB_FORK_VERSION", denebForkVersion);
+    rawConfig.put("ELECTRA_FORK_VERSION", electraForkVersion);
+    rawConfig.put("FULU_FORK_VERSION", fuluForkVersion);
+
+    // tell the fork builders their fork epoch
+    altairBuilder.setForkEpoch(altairForkEpoch);
+    bellatrixBuilder.setForkEpoch(bellatrixForkEpoch);
+    capellaBuilder.setForkEpoch(capellaForkEpoch);
+    denebBuilder.setForkEpoch(denebForkEpoch);
+    electraBuilder.setForkEpoch(electraForkEpoch);
+    fuluBuilder.setForkEpoch(fuluForkEpoch);
   }
 
   private void validate() {
@@ -468,6 +538,66 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
     checkNotNull(altairForkEpoch);
     this.altairForkEpoch = altairForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkVersion(final Bytes4 bellatrixForkVersion) {
+    checkNotNull(bellatrixForkVersion);
+    this.bellatrixForkVersion = bellatrixForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+    checkNotNull(bellatrixForkEpoch);
+    this.bellatrixForkEpoch = bellatrixForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkVersion(final Bytes4 capellaForkVersion) {
+    checkNotNull(capellaForkVersion);
+    this.capellaForkVersion = capellaForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+    checkNotNull(capellaForkEpoch);
+    this.capellaForkEpoch = capellaForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder denebForkVersion(final Bytes4 denebForkVersion) {
+    checkNotNull(denebForkVersion);
+    this.denebForkVersion = denebForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
+    checkNotNull(denebForkEpoch);
+    this.denebForkEpoch = denebForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder electraForkVersion(final Bytes4 electraForkVersion) {
+    checkNotNull(electraForkVersion);
+    this.electraForkVersion = electraForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
+    checkNotNull(electraForkEpoch);
+    this.electraForkEpoch = electraForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder fuluForkVersion(final Bytes4 fuluForkVersion) {
+    checkNotNull(fuluForkVersion);
+    this.fuluForkVersion = fuluForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder fuluForkEpoch(final UInt64 fuluForkEpoch) {
+    checkNotNull(fuluForkEpoch);
+    this.fuluForkEpoch = fuluForkEpoch;
     return this;
   }
 

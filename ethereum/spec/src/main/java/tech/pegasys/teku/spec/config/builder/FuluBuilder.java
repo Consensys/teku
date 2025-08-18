@@ -14,30 +14,28 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigFuluImpl;
 
-public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecConfigFulu> {
-
-  private Bytes4 fuluForkVersion;
-  private UInt64 fuluForkEpoch;
-
+public class FuluBuilder extends BaseForkBuilder
+    implements ForkConfigBuilder<SpecConfigElectra, SpecConfigFulu> {
   private UInt64 fieldElementsPerCell;
   private UInt64 fieldElementsPerExtBlob;
   private UInt64 kzgCommitmentsInclusionProofDepth;
+  private Integer cellsPerExtBlob;
   private Integer numberOfColumns;
   private Integer numberOfCustodyGroups;
   private Integer dataColumnSidecarSubnetCount;
@@ -57,11 +55,10 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return SpecConfigAndParent.of(
         new SpecConfigFuluImpl(
             specConfigAndParent.specConfig(),
-            fuluForkVersion,
-            fuluForkEpoch,
             fieldElementsPerCell,
             fieldElementsPerExtBlob,
             kzgCommitmentsInclusionProofDepth,
+            cellsPerExtBlob,
             numberOfColumns,
             numberOfCustodyGroups,
             dataColumnSidecarSubnetCount,
@@ -73,18 +70,6 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
             balancePerAdditionalCustodyGroup,
             blobSchedule),
         specConfigAndParent);
-  }
-
-  public FuluBuilder fuluForkEpoch(final UInt64 fuluForkEpoch) {
-    checkNotNull(fuluForkEpoch);
-    this.fuluForkEpoch = fuluForkEpoch;
-    return this;
-  }
-
-  public FuluBuilder fuluForkVersion(final Bytes4 fuluForkVersion) {
-    checkNotNull(fuluForkVersion);
-    this.fuluForkVersion = fuluForkVersion;
-    return this;
   }
 
   public FuluBuilder fieldElementsPerCell(final UInt64 fieldElementsPerCell) {
@@ -99,6 +84,18 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
     return this;
   }
 
+  public FuluBuilder cellsPerExtBlob(final Integer cellsPerExtBlob) {
+    checkNotNull(cellsPerExtBlob);
+    this.cellsPerExtBlob = cellsPerExtBlob;
+    return this;
+  }
+
+  public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
+    checkNotNull(numberOfColumns);
+    this.numberOfColumns = numberOfColumns;
+    return this;
+  }
+
   public FuluBuilder kzgCommitmentsInclusionProofDepth(
       final UInt64 kzgCommitmentsInclusionProofDepth) {
     checkNotNull(kzgCommitmentsInclusionProofDepth);
@@ -107,17 +104,24 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   }
 
   public FuluBuilder blobSchedule(final List<BlobScheduleEntry> blobSchedule) {
-    checkNotNull(this.blobSchedule);
+    checkNotNull(blobSchedule);
+    verifyBlobSchedule(blobSchedule);
     this.blobSchedule.clear();
-    // copy list rather than use the one passed in case we need to add to the list during validation
-    this.blobSchedule.addAll(blobSchedule);
+    blobSchedule.stream()
+        .sorted(Comparator.comparing(BlobScheduleEntry::epoch))
+        .forEach(this.blobSchedule::add);
     return this;
   }
 
-  public FuluBuilder numberOfColumns(final Integer numberOfColumns) {
-    checkNotNull(numberOfColumns);
-    this.numberOfColumns = numberOfColumns;
-    return this;
+  private void verifyBlobSchedule(final List<BlobScheduleEntry> blobSchedule) {
+    final Set<UInt64> seenEpochs = new HashSet<>();
+    for (final BlobScheduleEntry entry : blobSchedule) {
+      if (!seenEpochs.add(entry.epoch())) {
+        throw new IllegalArgumentException(
+            String.format(
+                "There are duplicate entries for epoch %s in blob schedule.", entry.epoch()));
+      }
+    }
   }
 
   public FuluBuilder numberOfCustodyGroups(final Integer numberOfCustodyGroups) {
@@ -172,16 +176,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
 
   @Override
   public void validate() {
-    if (fuluForkEpoch == null) {
-      fuluForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
-      fuluForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-
-    // Fill default zeros if fork is unsupported
-    if (fuluForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      SpecBuilderUtil.fillMissingValuesWithZeros(this);
-    }
-
+    defaultValuesIfRequired(this);
     validateConstants();
   }
 
@@ -189,8 +184,7 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
 
-    constants.put("fuluForkEpoch", fuluForkEpoch);
-    constants.put("fuluForkVersion", fuluForkVersion);
+    constants.put("cellsPerExtBlob", cellsPerExtBlob);
     constants.put("numberOfColumns", numberOfColumns);
     constants.put("numberOfCustodyGroups", numberOfCustodyGroups);
     constants.put("dataColumnSidecarSubnetCount", dataColumnSidecarSubnetCount);
@@ -208,7 +202,5 @@ public class FuluBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCon
   }
 
   @Override
-  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
-    rawConfig.accept("FULU_FORK_EPOCH", fuluForkEpoch);
-  }
+  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
 }

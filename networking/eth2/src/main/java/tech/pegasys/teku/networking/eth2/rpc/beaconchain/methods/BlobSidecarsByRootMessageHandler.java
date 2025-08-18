@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -105,10 +105,10 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    final Optional<RequestApproval> blobSidecarsRequestApproval =
+    final Optional<RequestKey> maybeRequestKey =
         peer.approveBlobSidecarsRequest(callback, message.size());
 
-    if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
+    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -141,13 +141,12 @@ public class BlobSidecarsByRootMessageHandler
     future.finish(
         () -> {
           if (sentBlobSidecars.get() != message.size()) {
-            peer.adjustBlobSidecarsRequest(
-                blobSidecarsRequestApproval.get(), sentBlobSidecars.get());
+            peer.adjustBlobSidecarsRequest(maybeRequestKey.get(), sentBlobSidecars.get());
           }
           callback.completeSuccessfully();
         },
         err -> {
-          peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
+          peer.adjustBlobSidecarsRequest(maybeRequestKey.get(), 0);
           handleError(callback, err);
         });
   }

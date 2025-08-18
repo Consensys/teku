@@ -521,23 +521,23 @@ public class Eth2NetworkConfiguration {
                     EphemeryNetwork.updateConfig(builder);
                   }
                   altairForkEpoch.ifPresent(builder::altairForkEpoch);
+                  bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
+                  capellaForkEpoch.ifPresent(builder::capellaForkEpoch);
+                  denebForkEpoch.ifPresent(builder::denebForkEpoch);
+                  electraForkEpoch.ifPresent(builder::electraForkEpoch);
+                  fuluForkEpoch.ifPresent(builder::fuluForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
                             safeSlotsToImportOptimistically);
-                        bellatrixForkEpoch.ifPresent(bellatrixBuilder::bellatrixForkEpoch);
                         totalTerminalDifficultyOverride.ifPresent(
                             bellatrixBuilder::terminalTotalDifficulty);
                         terminalBlockHashEpochOverride.ifPresent(
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
-                  builder.capellaBuilder(
-                      capellaBuilder ->
-                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
                   builder.denebBuilder(
                       denebBuilder -> {
-                        denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
@@ -547,11 +547,6 @@ public class Eth2NetworkConfiguration {
                           trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME);
                         }
                       });
-                  builder.electraBuilder(
-                      electraBuilder ->
-                          electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
-                  builder.fuluBuilder(
-                      fuluBuilder -> fuluForkEpoch.ifPresent(fuluBuilder::fuluForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)

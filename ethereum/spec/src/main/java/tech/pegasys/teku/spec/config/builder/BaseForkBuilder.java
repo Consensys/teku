@@ -11,18 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.peers;
+package tech.pegasys.teku.spec.config.builder;
 
-import java.util.Comparator;
-import org.jetbrains.annotations.NotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public record RequestsKey(UInt64 timeSeconds, int requestId) implements Comparable<RequestsKey> {
+public class BaseForkBuilder {
+  private UInt64 forkEpoch = FAR_FUTURE_EPOCH;
 
-  @Override
-  public int compareTo(final @NotNull RequestsKey other) {
-    return Comparator.comparing(RequestsKey::timeSeconds)
-        .thenComparingInt(RequestsKey::requestId)
-        .compare(this, other);
+  public void setForkEpoch(final UInt64 epoch) {
+    this.forkEpoch = epoch;
+  }
+
+  public UInt64 getForkEpoch() {
+    return forkEpoch;
+  }
+
+  public void defaultValuesIfRequired(final ForkConfigBuilder<?, ?> builder) {
+    if (getForkEpoch().equals(FAR_FUTURE_EPOCH)) {
+      SpecBuilderUtil.fillMissingValuesWithZeros(builder);
+    }
   }
 }

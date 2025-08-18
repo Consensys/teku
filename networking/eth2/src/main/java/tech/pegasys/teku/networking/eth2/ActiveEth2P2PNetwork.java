@@ -227,7 +227,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     getEth2Context()
         .thenApply(gossipConfigurator::configureAllTopics)
         .thenAccept(discoveryNetwork::updateGossipTopicScoring)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private SafeFuture<?> updateDynamicTopicScoring() {

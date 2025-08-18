@@ -147,7 +147,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
                           retrievedColumns.stream()
                               .map(custody::onNewValidatedDataColumnSidecar)
-                              .forEach(updateFuture -> updateFuture.ifExceptionGetsHereRaiseABug());
+                              .forEach(updateFuture -> updateFuture.finishStackTrace());
                         } else {
                           throw new IllegalStateException(
                               String.format(

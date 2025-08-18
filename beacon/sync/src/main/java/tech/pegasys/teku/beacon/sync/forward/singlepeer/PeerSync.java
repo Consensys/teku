@@ -366,7 +366,7 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(final Eth2Peer peer) {
-    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).ifExceptionGetsHereRaiseABug();
+    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).finishStackTrace();
   }
 
   public UInt64 getStartingSlot() {

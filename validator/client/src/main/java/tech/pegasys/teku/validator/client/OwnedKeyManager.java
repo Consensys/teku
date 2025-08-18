@@ -250,7 +250,7 @@ public class OwnedKeyManager implements KeyManager {
                   validatorTimingChannel.onValidatorsAdded();
                   return null;
                 })
-            .ifExceptionGetsHereRaiseABug();
+            .finishError(LOG);
       }
     } else {
       reloadRequired =
@@ -420,7 +420,7 @@ public class OwnedKeyManager implements KeyManager {
                   validatorTimingChannel.onValidatorsAdded();
                   return null;
                 })
-            .ifExceptionGetsHereRaiseABug();
+            .finishStackTrace();
       }
     } else {
       for (ExternalValidator externalValidator : validators) {

@@ -15,15 +15,10 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
     implements SpecConfigCapella {
-
-  private final Bytes4 capellaForkVersion;
-  private final UInt64 capellaForkEpoch;
 
   private final int maxBlsToExecutionChanges;
   private final int maxWithdrawalsPerPayload;
@@ -31,27 +26,13 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
 
   public SpecConfigCapellaImpl(
       final SpecConfigBellatrix specConfig,
-      final Bytes4 capellaForkVersion,
-      final UInt64 capellaForkEpoch,
       final int maxBlsToExecutionChanges,
       final int maxWithdrawalsPerPayload,
       final int maxValidatorsPerWithdrawalSweep) {
     super(specConfig);
-    this.capellaForkVersion = capellaForkVersion;
-    this.capellaForkEpoch = capellaForkEpoch;
     this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
     this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
     this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
-  }
-
-  @Override
-  public Bytes4 getCapellaForkVersion() {
-    return capellaForkVersion;
-  }
-
-  @Override
-  public UInt64 getCapellaForkEpoch() {
-    return capellaForkEpoch;
   }
 
   @Override
@@ -64,8 +45,6 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
     }
     final SpecConfigCapellaImpl that = (SpecConfigCapellaImpl) o;
     return Objects.equals(specConfig, that.specConfig)
-        && Objects.equals(capellaForkVersion, that.capellaForkVersion)
-        && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && maxBlsToExecutionChanges == that.maxBlsToExecutionChanges
         && maxWithdrawalsPerPayload == that.maxWithdrawalsPerPayload
         && maxValidatorsPerWithdrawalSweep == that.maxValidatorsPerWithdrawalSweep;
@@ -75,8 +54,6 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        capellaForkVersion,
-        capellaForkEpoch,
         maxBlsToExecutionChanges,
         maxWithdrawalsPerPayload,
         maxValidatorsPerWithdrawalSweep);

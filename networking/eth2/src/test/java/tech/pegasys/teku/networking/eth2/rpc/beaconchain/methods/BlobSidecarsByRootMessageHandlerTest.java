@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -70,9 +70,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
       ArgumentCaptor.forClass(BlobSidecar.class);
   private final ArgumentCaptor<RpcException> rpcExceptionCaptor =
       ArgumentCaptor.forClass(RpcException.class);
-  private final Optional<RequestApproval> allowedObjectsRequest =
-      Optional.of(
-          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
+  private final Optional<RequestKey> allowedObjectsRequest = Optional.of(new RequestKey(ZERO, 0));
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> callback = mock(ResponseCallback.class);
@@ -84,7 +82,6 @@ public class BlobSidecarsByRootMessageHandlerTest {
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private String protocolId;
-  private UInt64 currentForkFirstSlot;
   private DataStructureUtil dataStructureUtil;
   private BlobSidecarsByRootMessageHandler handler;
   private SpecMilestone specMilestone;
@@ -117,7 +114,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
                 .toVersionElectra()
                 .orElseThrow()
                 .getBlobSidecarsByRootRequestMessageSchema();
-    currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+    final UInt64 currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
     protocolId = BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, rpcEncoding);
@@ -227,7 +224,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Sending 3 blob sidecars
     verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(3)));
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(3)));
 
     verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(secondBlockRoot);
     verify(callback, times(3)).respond(blobSidecarCaptor.capture());
@@ -252,7 +249,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
     // let blobSidecar being not there so block lookup fallback kicks in
     when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
-            blobIdentifiers.get(0).getBlockRoot(), blobIdentifiers.get(0).getIndex()))
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     // first slot will be earlier than the minimum_request_epoch (for this test it is
@@ -272,7 +269,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
     // Request cancelled due to error
     verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -283,7 +280,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
             "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
-            blobIdentifiers.get(0).getBlockRoot());
+            blobIdentifiers.getFirst().getBlockRoot());
   }
 
   @TestTemplate
@@ -296,7 +293,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     final BlobSidecar blobSidecar = mock(BlobSidecar.class);
     when(blobSidecar.getSlot()).thenReturn(UInt64.ONE);
     when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
-            blobIdentifiers.get(0).getBlockRoot(), blobIdentifiers.get(0).getIndex()))
+            blobIdentifiers.getFirst().getBlockRoot(), blobIdentifiers.getFirst().getIndex()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
 
     handler.onIncomingMessage(
@@ -309,7 +306,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
     // Request cancelled due to error
     verify(peer, times(1))
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -320,7 +317,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
             "BlobSidecarsByRoot: block root (%s) references a block outside of allowed request range: 1",
-            blobIdentifiers.get(0).getBlockRoot());
+            blobIdentifiers.getFirst().getBlockRoot());
   }
 
   @TestTemplate

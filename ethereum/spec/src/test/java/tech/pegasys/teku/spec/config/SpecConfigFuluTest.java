@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -92,10 +93,10 @@ public class SpecConfigFuluTest {
         SpecConfigLoader.loadConfig(
             "mainnet",
             b ->
-                b.fuluBuilder(
-                    fb ->
-                        fb.fuluForkEpoch(fuluEpoch)
-                            .blobSchedule(
+                b.fuluForkEpoch(fuluEpoch)
+                    .fuluBuilder(
+                        fb ->
+                            fb.blobSchedule(
                                 List.of(
                                     new BlobScheduleEntry(UInt64.valueOf(269568), 6),
                                     new BlobScheduleEntry(UInt64.valueOf(364032), 9),
@@ -114,6 +115,57 @@ public class SpecConfigFuluTest {
   }
 
   @Test
+  public void blobParameterSameEpochAsFuluForkEpoch() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    final SpecConfigAndParent<?> specConfigAndParent =
+        SpecConfigLoader.loadConfig(
+            "mainnet",
+            b ->
+                b.fuluForkEpoch(fuluEpoch)
+                    .fuluBuilder(
+                        fb ->
+                            fb.blobSchedule(
+                                List.of(new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock)))));
+    final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
+
+    // max blobs per block in fulu will start out at the same as electra
+    assertThat(
+            fuluSpec
+                .forMilestone(SpecMilestone.FULU)
+                .miscHelpers()
+                .toVersionFulu()
+                .orElseThrow()
+                .getBlobParameters(fuluEpoch))
+        .isEqualTo(new BlobParameters(fuluEpoch, maxBlobsPerBlock));
+  }
+
+  @Test
+  public void blobParametersShouldNotContainDuplicates() {
+    final UInt64 fuluEpoch = UInt64.valueOf(11223344);
+    final int maxBlobsPerBlock = 512;
+    assertThatThrownBy(
+            () ->
+                SpecConfigLoader.loadConfig(
+                    "mainnet",
+                    b ->
+                        b.fuluForkEpoch(fuluEpoch)
+                            .fuluBuilder(
+                                fb ->
+                                    fb.blobSchedule(
+                                        List.of(
+                                            new BlobScheduleEntry(fuluEpoch, 6),
+                                            new BlobScheduleEntry(
+                                                fuluEpoch.increment().increment(), 12),
+                                            // not ordered but it's ok
+                                            new BlobScheduleEntry(fuluEpoch.increment(), 9),
+                                            // duplicate
+                                            new BlobScheduleEntry(fuluEpoch, maxBlobsPerBlock))))))
+        .hasMessage("There are duplicate entries for epoch 11223344 in blob schedule.")
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   public void
       blobParametersFuluEpochDefaultsToElectraBlobParametersWhenBlobScheduleIsNotConfigured() {
     final UInt64 fuluEpoch = UInt64.valueOf(11223344);
@@ -122,7 +174,7 @@ public class SpecConfigFuluTest {
     final SpecConfigAndParent<?> specConfigAndParent =
         SpecConfigLoader.loadConfig(
             "mainnet",
-            b -> b.fuluBuilder(fb -> fb.fuluForkEpoch(fuluEpoch).blobSchedule(List.of())));
+            b -> b.fuluForkEpoch(fuluEpoch).fuluBuilder(fb -> fb.blobSchedule(List.of())));
     final Spec fuluSpec = TestSpecFactory.create(specConfigAndParent, SpecMilestone.FULU);
     // max blobs per block will default to MAX_BLOBS_PER_BLOCK_ELECTRA if blob schedule is empty
     assertThat(
@@ -161,11 +213,10 @@ public class SpecConfigFuluTest {
 
     return new SpecConfigFuluImpl(
         electraConfig,
-        dataStructureUtil.randomBytes4(),
-        dataStructureUtil.randomUInt64(999_999),
         dataStructureUtil.randomUInt64(8192),
         dataStructureUtil.randomUInt64(8192),
         dataStructureUtil.randomUInt64(8192),
+        dataStructureUtil.randomPositiveInt(134217728),
         dataStructureUtil.randomPositiveInt(134217728),
         dataStructureUtil.randomPositiveInt(134217728),
         dataStructureUtil.randomPositiveInt(262144),

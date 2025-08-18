@@ -73,22 +73,22 @@ class DiscoveryNetworkTest {
       TestSpecFactory.createMinimalFulu(
           b ->
               b.altairForkEpoch(UInt64.valueOf(10_000))
-                  .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.valueOf(20_000)))
-                  .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.valueOf(30_000)))
-                  .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(40_000)))
-                  .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(50_000)))
+                  .bellatrixForkEpoch(UInt64.valueOf(20_000))
+                  .capellaForkEpoch(UInt64.valueOf(30_000))
+                  .denebForkEpoch(UInt64.valueOf(40_000))
+                  .electraForkEpoch(UInt64.valueOf(50_000))
+                  .fuluForkEpoch(UInt64.valueOf(60_000))
                   .fuluBuilder(
                       fb ->
-                          fb.fuluForkEpoch(UInt64.valueOf(60_000))
-                              .blobSchedule(
-                                  List.of(new BlobScheduleEntry(UInt64.valueOf(65_000), 64)))));
+                          fb.blobSchedule(
+                              List.of(new BlobScheduleEntry(UInt64.valueOf(65_000), 64)))));
   private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final List<Fork> forks = spec.getForkSchedule().getForks();
   private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   final ForkInfo currentForkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
   final Bytes4 currentForkDigest =
-      spec.computeForkDigest(currentForkInfo.getFork().getCurrentVersion(), genesisValidatorsRoot);
+      spec.computeForkDigest(genesisValidatorsRoot, currentForkInfo.getFork().getEpoch());
   final Fork nextFork = forks.get(1);
 
   @SuppressWarnings("unchecked")

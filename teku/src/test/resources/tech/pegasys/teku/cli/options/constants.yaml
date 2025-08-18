@@ -1,6 +1,19 @@
 # Minimal preset
 PRESET_BASE: "minimal"
+# Forking
+# ---------------------------------------------------------------
+# Values provided for illustrative purposes.
+# Individual tests/testnets may set different values.
 
+# Altair
+ALTAIR_FORK_VERSION: 0x01000001
+ALTAIR_FORK_EPOCH: 18446744073709551615
+# Bellatrix
+BELLATRIX_FORK_VERSION: 0x02000001
+BELLATRIX_FORK_EPOCH: 18446744073709551615
+# Capella
+CAPELLA_FORK_VERSION: 0x03000001
+CAPELLA_FORK_EPOCH: 18446744073709551615
 # Misc
 # ---------------------------------------------------------------
 

@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -128,10 +128,10 @@ public class DataColumnSidecarsByRangeMessageHandler
 
     final int requestedCount = calculateRequestedCount(message);
 
-    final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
+    final Optional<RequestKey> maybeRequestKey =
         peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
 
-    if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
+    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -174,13 +174,12 @@ public class DataColumnSidecarsByRangeMessageHandler
         requestState -> {
           final int sentDataColumnSidecars = requestState.sentDataColumnSidecars.get();
           if (sentDataColumnSidecars != requestedCount) {
-            peer.adjustDataColumnSidecarsRequest(
-                dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecars);
+            peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sentDataColumnSidecars);
           }
           responseCallbackWithLogging.completeSuccessfully();
         },
         error -> {
-          peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
+          peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
           handleProcessingRequestError(error, responseCallbackWithLogging);
         });
   }
@@ -284,21 +283,21 @@ public class DataColumnSidecarsByRangeMessageHandler
       }
     }
 
+    boolean isComplete() {
+      return endSlot.isLessThan(startSlot)
+          || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
+    }
+
     private SafeFuture<Optional<DataColumnSidecar>> getNextDataColumnSidecar(
         final Iterator<DataColumnSlotAndIdentifier> dataColumnSidecarIdentifiers) {
       if (dataColumnSidecarIdentifiers.hasNext()) {
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
             dataColumnSidecarIdentifiers.next();
-
-        if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())) {
+        if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
+            // not finalized, let's check if it is on canonical chain
+            || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
           return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
         }
-
-        // not finalized, let's check if it is on canonical chain
-        if (isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
-          return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
-        }
-
         // non-canonical, try next one
         return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
       }
@@ -311,11 +310,6 @@ public class DataColumnSidecarsByRangeMessageHandler
       return Optional.ofNullable(canonicalHotRoots.get(columnSlotAndIdentifier.slot()))
           .map(blockRoot -> blockRoot.equals(columnSlotAndIdentifier.blockRoot()))
           .orElse(false);
-    }
-
-    boolean isComplete() {
-      return endSlot.isLessThan(startSlot)
-          || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

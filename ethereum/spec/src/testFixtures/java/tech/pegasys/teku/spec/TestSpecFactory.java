@@ -281,29 +281,19 @@ public class TestSpecFactory {
       defaultModifier = defaultModifier.andThen(builder -> builder.altairForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.bellatrixForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.capellaForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.denebForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.electraForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.fuluForkEpoch(UInt64.ZERO));
     }
 
     return create(
@@ -338,10 +328,7 @@ public class TestSpecFactory {
       final Eth2Network network, final UInt64 altairForkEpoch, final UInt64 bellatrixForkEpoch) {
     return getBellatrixSpecConfig(
         network,
-        builder ->
-            builder
-                .altairForkEpoch(altairForkEpoch)
-                .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch)));
+        builder -> builder.altairForkEpoch(altairForkEpoch).bellatrixForkEpoch(bellatrixForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getBellatrixSpecConfig(
@@ -350,7 +337,7 @@ public class TestSpecFactory {
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
-              builder.altairForkEpoch(ZERO).bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO));
+              builder.altairForkEpoch(ZERO).bellatrixForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -367,8 +354,8 @@ public class TestSpecFactory {
         builder ->
             builder
                 .altairForkEpoch(ZERO)
-                .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch)));
+                .bellatrixForkEpoch(ZERO)
+                .capellaForkEpoch(capellaForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getCapellaSpecConfig(
@@ -377,10 +364,7 @@ public class TestSpecFactory {
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
-              builder
-                  .altairForkEpoch(ZERO)
-                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                  .capellaBuilder(c -> c.capellaForkEpoch(ZERO));
+              builder.altairForkEpoch(ZERO).bellatrixForkEpoch(ZERO).capellaForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -397,9 +381,9 @@ public class TestSpecFactory {
         builder ->
             builder
                 .altairForkEpoch(ZERO)
-                .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch)));
+                .bellatrixForkEpoch(ZERO)
+                .capellaForkEpoch(capellaForkEpoch)
+                .denebForkEpoch(denebForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
@@ -410,9 +394,9 @@ public class TestSpecFactory {
             builder -> {
               builder
                   .altairForkEpoch(ZERO)
-                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                  .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
-                  .denebBuilder(d -> d.denebForkEpoch(ZERO));
+                  .bellatrixForkEpoch(ZERO)
+                  .capellaForkEpoch(ZERO)
+                  .denebForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -432,10 +416,10 @@ public class TestSpecFactory {
         builder ->
             builder
                 .altairForkEpoch(ZERO)
-                .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
-                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
+                .bellatrixForkEpoch(ZERO)
+                .capellaForkEpoch(capellaForkEpoch)
+                .denebForkEpoch(denebForkEpoch)
+                .electraForkEpoch(electraForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
@@ -446,10 +430,10 @@ public class TestSpecFactory {
             builder -> {
               builder
                   .altairForkEpoch(ZERO)
-                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(ZERO))
-                  .capellaBuilder(c -> c.capellaForkEpoch(ZERO))
-                  .denebBuilder(d -> d.denebForkEpoch(ZERO))
-                  .electraBuilder(e -> e.electraForkEpoch(ZERO));
+                  .bellatrixForkEpoch(ZERO)
+                  .capellaForkEpoch(ZERO)
+                  .denebForkEpoch(ZERO)
+                  .electraForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -470,11 +454,11 @@ public class TestSpecFactory {
         builder ->
             builder
                 .altairForkEpoch(ZERO)
-                .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
-                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
-                .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
+                .bellatrixForkEpoch(UInt64.ZERO)
+                .capellaForkEpoch(capellaForkEpoch)
+                .denebForkEpoch(denebForkEpoch)
+                .electraForkEpoch(electraForkEpoch)
+                .fuluForkEpoch(fuluForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
@@ -485,11 +469,11 @@ public class TestSpecFactory {
             builder -> {
               builder
                   .altairForkEpoch(ZERO)
-                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
-                  .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));
+                  .bellatrixForkEpoch(UInt64.ZERO)
+                  .capellaForkEpoch(UInt64.ZERO)
+                  .denebForkEpoch(UInt64.ZERO)
+                  .electraForkEpoch(UInt64.ZERO)
+                  .fuluForkEpoch(UInt64.ZERO);
               configAdapter.accept(builder);
             }));
   }

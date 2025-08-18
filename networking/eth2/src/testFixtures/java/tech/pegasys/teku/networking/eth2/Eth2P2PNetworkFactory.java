@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
@@ -80,6 +81,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
+import tech.pegasys.teku.networking.p2p.mock.MockDiscoveryNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
@@ -125,6 +127,8 @@ public class Eth2P2PNetworkFactory {
 
   private static final Logger LOG = LogManager.getLogger();
   protected static final NoOpMetricsSystem METRICS_SYSTEM = new NoOpMetricsSystem();
+  private static final MockDiscoveryNodeIdGenerator DISCOVERY_NODE_ID_GENERATOR =
+      new MockDiscoveryNodeIdGenerator();
   private static final int MIN_PORT = 6000;
   private static final int MAX_PORT = 9000;
 
@@ -236,6 +240,7 @@ public class Eth2P2PNetworkFactory {
                     UInt64.valueOf(
                         config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
                 : Optional.empty();
+        final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
@@ -247,7 +252,7 @@ public class Eth2P2PNetworkFactory {
                 attestationSubnetService,
                 syncCommitteeSubnetService,
                 rpcEncoding,
-                new StatusMessageFactory(spec, recentChainData),
+                new StatusMessageFactory(spec, combinedChainDataClient),
                 requiredCheckpoint,
                 eth2RpcPingInterval,
                 eth2RpcOutstandingPingThreshold,
@@ -258,7 +263,7 @@ public class Eth2P2PNetworkFactory {
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 NoOpKZG.INSTANCE,
-                (__) -> Optional.empty(),
+                __ -> Optional.of(discoveryNodeId),
                 dasTotalCustodySubnetCount,
                 DasReqRespLogger.NOOP);
 

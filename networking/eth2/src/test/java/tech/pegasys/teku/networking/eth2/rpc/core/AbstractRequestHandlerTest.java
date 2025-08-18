@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -61,6 +62,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
 
   @BeforeEach
   public void setup() {
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
     beaconChainMethods =
         BeaconChainMethods.create(
             spec,
@@ -71,7 +73,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             CustodyGroupCountManager.NOOP,
             recentChainData,
             new NoOpMetricsSystem(),
-            new StatusMessageFactory(spec, recentChainData),
+            new StatusMessageFactory(spec, combinedChainDataClient),
             new MetadataMessagesFactory(),
             getRpcEncoding(),
             DasReqRespLogger.NOOP);
