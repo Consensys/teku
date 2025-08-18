@@ -61,8 +61,14 @@ CAPELLA_FORK_EPOCH: 8100
 
 # Deneb
 # Date and time (GMT): Wednesday, 20 November 2024 16:20:00
+# Date and time: Wednesday, 20 November 2024 16:20:00 GMT
 DENEB_FORK_VERSION: 0x42000005
 DENEB_FORK_EPOCH: 123075
+
+# Electra
+# Date and time: Wednesday, 17 September 2025 16:20:00 GMT
+ELECTRA_FORK_VERSION: 0x42000006
+ELECTRA_FORK_EPOCH: 190800
 
 # Fork choice
 # ---------------------------------------------------------------
