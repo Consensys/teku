@@ -91,7 +91,7 @@ class ForkChoiceTriggerTest {
   @Test
   void shouldSucceedNoDebugOrWarn() throws Exception {
     try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceTrigger.class)) {
-      timedLoggingTest(DEBUG_TIME_MILLIS > 0 ? DEBUG_TIME_MILLIS - 1 : 0);
+      timedLoggingTest(Math.max(DEBUG_TIME_MILLIS - 1, 0));
       assertThat(logCaptor.getDebugLogs()).isEmpty();
       assertThat(logCaptor.getWarnLogs()).isEmpty();
     }
