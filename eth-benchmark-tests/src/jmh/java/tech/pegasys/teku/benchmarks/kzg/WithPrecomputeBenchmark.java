@@ -57,4 +57,13 @@ public class WithPrecomputeBenchmark {
         plan.config.signedBeaconBlock.asHeader(),
         plan.config.extendedMatrix);
   }
+
+  @Benchmark
+  public void reconstructDataColumnSidecars(final ExecutionPlan plan) {
+    final int size = plan.config.dataColumnSidecars.size();
+    final int halfSize = size / 2;
+    plan.config.miscHelpersFulu.reconstructAllDataColumnSidecars(
+        plan.config.dataColumnSidecars.subList(halfSize, size),
+        plan.config.getKzg(plan.isRustEnabled));
+  }
 }
