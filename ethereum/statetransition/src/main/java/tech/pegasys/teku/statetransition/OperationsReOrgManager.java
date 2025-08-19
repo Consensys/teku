@@ -94,11 +94,24 @@ public class OperationsReOrgManager implements ChainHeadChannel {
               recentChainData.getAncestorsOnFork(reorgContext.commonAncestorSlot(), bestBlockRoot);
 
           if (!notCanonicalBlockRoots.isEmpty()) {
+            var start = System.nanoTime();
             attestationPool.onReorg(reorgContext.commonAncestorSlot());
+            LOG.info("attestationPool reorg took {} ms", (System.nanoTime() - start) / 1_000_000);
           }
+          var start = System.nanoTime();
           SafeFuture.allOf(
-                  processNonCanonicalBlockOperations(notCanonicalBlockRoots.values()),
-                  processCanonicalBlockOperations(nowCanonicalBlockRoots.values()))
+                  processNonCanonicalBlockOperations(notCanonicalBlockRoots.values())
+                      .thenPeek(
+                          __ ->
+                              LOG.info(
+                                  "processNonCanonicalBlockOperations took {} ms",
+                                  (System.nanoTime() - start) / 1_000_000)),
+                  processCanonicalBlockOperations(nowCanonicalBlockRoots.values())
+                      .thenPeek(
+                          __ ->
+                              LOG.info(
+                                  "processCanonicalBlockOperations took {} ms",
+                                  (System.nanoTime() - start) / 1_000_000)))
               .always(
                   () ->
                       subscribers.deliver(
