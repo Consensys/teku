@@ -1213,7 +1213,8 @@ public class KvStoreDatabase implements Database {
     final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
 
     dataColumnSlotAndIdentifierStream
-        .takeWhile(item -> prunableMap.size() < pruneSlotLimit || prunableMap.containsKey(item.slot()))
+        .takeWhile(
+            item -> prunableMap.size() < pruneSlotLimit || prunableMap.containsKey(item.slot()))
         .forEach(
             item -> prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
 
