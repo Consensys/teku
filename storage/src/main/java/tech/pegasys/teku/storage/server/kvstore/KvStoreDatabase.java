@@ -1204,16 +1204,16 @@ public class KvStoreDatabase implements Database {
   }
 
   boolean pruneDataColumnSidecars(
-      final int pruneLimit,
+      final int pruneSlotLimit,
       final Stream<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifierStream,
       final boolean nonCanonicalBlobSidecars) {
 
-    int pruned = 0;
+    int prunedSlots = 0;
 
     final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
 
     dataColumnSlotAndIdentifierStream
-        .takeWhile(item -> prunableMap.size() < pruneLimit || prunableMap.containsKey(item.slot()))
+        .takeWhile(item -> prunableMap.size() < pruneSlotLimit || prunableMap.containsKey(item.slot()))
         .forEach(
             item -> prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
 
@@ -1234,16 +1234,16 @@ public class KvStoreDatabase implements Database {
             }
           }
 
-          ++pruned;
+          ++prunedSlots;
         }
         updater.commit();
       }
-      LOG.debug("Pruned {} data column sidecars", pruned);
+      LOG.debug("Pruned {} data column sidecars", prunedSlots);
     }
 
     // `pruned` will be greater when we reach pruneLimit not on the latest DataColumnSidecar in a
     // slot
-    return pruned >= pruneLimit;
+    return prunedSlots >= pruneSlotLimit;
   }
 
   @Override
