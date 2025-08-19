@@ -97,7 +97,9 @@ public abstract class AggregatingAttestationPool implements SlotEventsChannel {
       return false;
     }
 
+    var start = System.nanoTime();
     attestation.saveCommitteesSize(maybeState.get());
+    LOG.info("saveCommitteesSize took {} ms", (System.nanoTime() - start) / 1_000_000);
 
     return true;
   }
