@@ -45,13 +45,7 @@ class ForkChoiceRatchet {
     if (forkChoice.getLastProcessHeadSlot().isGreaterThanOrEqualTo(slot)) {
       return SafeFuture.COMPLETE;
     }
-    final ForkChoiceUpdate forkChoiceUpdate;
-    try {
-      forkChoiceUpdate = processHead(slot);
-    } catch (Throwable ex) {
-      LOG.error("process head failed", ex);
-      return SafeFuture.failedFuture(ex);
-    }
+    final ForkChoiceUpdate forkChoiceUpdate = processHead(slot);
     if (forkChoiceUpdate.nodeSlot.isGreaterThan(slot)) {
       return SafeFuture.COMPLETE;
     } else if (forkChoiceUpdate.nodeSlot.equals(slot)) {

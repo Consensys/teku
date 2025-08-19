@@ -20,16 +20,24 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ForkChoiceTrigger {
   private static final Logger LOG = LogManager.getLogger();
   private final ForkChoiceRatchet forkChoiceRatchet;
   private final ForkChoice forkChoice;
+  private final int attestationWaitLimitMillis;
+  private final TimeProvider timeProvider;
 
-  public ForkChoiceTrigger(final ForkChoice forkChoice) {
+  public ForkChoiceTrigger(
+      final ForkChoice forkChoice,
+      final int attestationWaitLimitMillis,
+      final TimeProvider timeProvider) {
     this.forkChoiceRatchet = new ForkChoiceRatchet(forkChoice);
     this.forkChoice = forkChoice;
+    this.attestationWaitLimitMillis = attestationWaitLimitMillis;
+    this.timeProvider = timeProvider;
   }
 
   public void onSlotStartedWhileSyncing(final UInt64 nodeSlot) {
@@ -38,11 +46,27 @@ public class ForkChoiceTrigger {
 
   public void onAttestationsDueForSlot(final UInt64 nodeSlot) {
     try {
-      forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).get(4L, TimeUnit.SECONDS);
+      final UInt64 startTimeMillis = timeProvider.getTimeInMillis();
+      forkChoiceRatchet
+          .ensureForkChoiceCompleteForSlot(nodeSlot)
+          .get(attestationWaitLimitMillis, TimeUnit.MILLISECONDS);
+      final UInt64 duration = timeProvider.getTimeInMillis().minusMinZero(startTimeMillis);
+      if (duration.isGreaterThanOrEqualTo(500)) {
+        LOG.warn(
+            "Took {} ms waiting for fork choice to complete at slot {}, when attestations were due.",
+            duration,
+            nodeSlot);
+      } else if (duration.isGreaterThan(0)) {
+        LOG.debug(
+            "Took {} ms waiting for fork choice to complete at slot {}, when attestations were due.",
+            duration,
+            nodeSlot);
+        ;
+      }
     } catch (InterruptedException | TimeoutException e) {
       LOG.error("Failed to wait for fork choice to complete for slot " + nodeSlot, e);
     } catch (ExecutionException e) {
-      LOG.error("Runtime exception waiting for fork choice at slot " + nodeSlot, e);
+      LOG.error("Execution exception waiting for fork choice at slot " + nodeSlot, e);
       throw new RuntimeException(e);
     }
   }
