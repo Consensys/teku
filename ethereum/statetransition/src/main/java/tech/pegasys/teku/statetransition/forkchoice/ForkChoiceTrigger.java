@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ForkChoiceTrigger {
+  public static final int WARNING_TIME_MILLIS = 250;
+  public static final int DEBUG_TIME_MILLIS = 10;
   private static final Logger LOG = LogManager.getLogger();
   private final ForkChoiceRatchet forkChoiceRatchet;
   private final ForkChoice forkChoice;
@@ -51,12 +53,12 @@ public class ForkChoiceTrigger {
           .ensureForkChoiceCompleteForSlot(nodeSlot)
           .get(attestationWaitLimitMillis, TimeUnit.MILLISECONDS);
       final UInt64 duration = timeProvider.getTimeInMillis().minusMinZero(startTimeMillis);
-      if (duration.isGreaterThanOrEqualTo(500)) {
+      if (duration.isGreaterThanOrEqualTo(WARNING_TIME_MILLIS)) {
         LOG.warn(
             "Took {} ms waiting for fork choice to complete at slot {}, when attestations were due.",
             duration,
             nodeSlot);
-      } else if (duration.isGreaterThan(0)) {
+      } else if (duration.isGreaterThanOrEqualTo(DEBUG_TIME_MILLIS)) {
         LOG.debug(
             "Took {} ms waiting for fork choice to complete at slot {}, when attestations were due.",
             duration,

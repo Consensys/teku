@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.DEBUG_TIME_MILLIS;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.WARNING_TIME_MILLIS;
 
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,23 +72,26 @@ class ForkChoiceTriggerTest {
   @Test
   void shouldSucceedWithWarning() throws Exception {
     try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceTrigger.class)) {
-      timedLoggingTest(500);
-      assertThat(logCaptor.getWarnLogs().getFirst()).containsIgnoringCase("Took 500 ms");
+      timedLoggingTest(WARNING_TIME_MILLIS);
+      assertThat(logCaptor.getWarnLogs().getFirst())
+          .containsIgnoringCase("Took " + WARNING_TIME_MILLIS + " ms");
     }
   }
 
   @Test
   void shouldSucceedWithDebug() throws Exception {
+    final int duration = WARNING_TIME_MILLIS - 1;
     try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceTrigger.class)) {
-      timedLoggingTest(499);
-      assertThat(logCaptor.getDebugLogs().getFirst()).containsIgnoringCase("Took 499 ms");
+      timedLoggingTest(duration);
+      assertThat(logCaptor.getDebugLogs().getFirst())
+          .containsIgnoringCase("Took " + duration + " ms");
     }
   }
 
   @Test
   void shouldSucceedNoDebugOrWarn() throws Exception {
     try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceTrigger.class)) {
-      timedLoggingTest(0);
+      timedLoggingTest(DEBUG_TIME_MILLIS > 0 ? DEBUG_TIME_MILLIS - 1 : 0);
       assertThat(logCaptor.getDebugLogs()).isEmpty();
       assertThat(logCaptor.getWarnLogs()).isEmpty();
     }
