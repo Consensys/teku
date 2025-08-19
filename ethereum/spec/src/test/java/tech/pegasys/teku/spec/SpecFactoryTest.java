@@ -59,22 +59,22 @@ class SpecFactoryTest {
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
                         .capellaForkEpoch(UInt64.ZERO)
-                        .denebBuilder(d -> d.denebForkEpoch(forkEpoch));
+                        .denebForkEpoch(forkEpoch);
                 case ELECTRA ->
                     builder
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
                         .capellaForkEpoch(UInt64.ZERO)
-                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                        .electraBuilder(e -> e.electraForkEpoch(forkEpoch));
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(forkEpoch);
                 case FULU ->
                     builder
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(UInt64.ZERO)
                         .capellaForkEpoch(UInt64.ZERO)
-                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                        .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
-                        .fuluBuilder(f -> f.fuluForkEpoch(forkEpoch));
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "

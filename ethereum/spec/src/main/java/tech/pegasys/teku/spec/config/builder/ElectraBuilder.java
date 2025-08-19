@@ -14,22 +14,18 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigElectraImpl;
 
-public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecConfigElectra> {
-  private Bytes4 electraForkVersion;
-  private UInt64 electraForkEpoch;
+public class ElectraBuilder extends BaseForkBuilder
+    implements ForkConfigBuilder<SpecConfigDeneb, SpecConfigElectra> {
 
   private UInt64 minPerEpochChurnLimitElectra;
 
@@ -59,8 +55,6 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     return SpecConfigAndParent.of(
         new SpecConfigElectraImpl(
             specConfigAndParent.specConfig(),
-            electraForkVersion,
-            electraForkEpoch,
             minPerEpochChurnLimitElectra,
             minActivationBalance,
             maxEffectiveBalanceElectra,
@@ -80,18 +74,6 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
             maxRequestBlobSidecarsElectra,
             blobSidecarSubnetCountElectra),
         specConfigAndParent);
-  }
-
-  public ElectraBuilder electraForkVersion(final Bytes4 electraForkVersion) {
-    checkNotNull(electraForkVersion);
-    this.electraForkVersion = electraForkVersion;
-    return this;
-  }
-
-  public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
-    checkNotNull(electraForkEpoch);
-    this.electraForkEpoch = electraForkEpoch;
-    return this;
   }
 
   public ElectraBuilder minPerEpochChurnLimitElectra(final UInt64 minPerEpochChurnLimitElectra) {
@@ -210,25 +192,13 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
 
   @Override
   public void validate() {
-    if (electraForkEpoch == null) {
-      electraForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
-      electraForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-
-    // Fill default zeros if fork is unsupported
-    if (electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      SpecBuilderUtil.fillMissingValuesWithZeros(this);
-    }
-
+    defaultValuesIfRequired(this);
     validateConstants();
   }
 
   @Override
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
-
-    constants.put("electraForkEpoch", electraForkEpoch);
-    constants.put("electraForkVersion", electraForkVersion);
     constants.put("minPerEpochChurnLimitElectra", minPerEpochChurnLimitElectra);
     constants.put("minActivationBalance", minActivationBalance);
     constants.put("maxEffectiveBalanceElectra", maxEffectiveBalanceElectra);
@@ -252,7 +222,5 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   }
 
   @Override
-  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
-    rawConfig.accept("ELECTRA_FORK_EPOCH", electraForkEpoch);
-  }
+  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
 }

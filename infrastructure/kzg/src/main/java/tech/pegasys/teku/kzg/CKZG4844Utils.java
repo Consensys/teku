@@ -59,16 +59,6 @@ class CKZG4844Utils {
     return flattenBytes(g2Points, BYTES_PER_G2 * g2Points.size());
   }
 
-  static List<Bytes> bytesChunked(final Bytes bytes, final int chunkSize) {
-    if (bytes.size() % chunkSize != 0) {
-      throw new IllegalArgumentException("Invalid bytes size: " + bytes.size());
-    }
-    return IntStream.range(0, bytes.size() / chunkSize)
-        .map(i -> i * chunkSize)
-        .mapToObj(startIdx -> bytes.slice(startIdx, chunkSize))
-        .toList();
-  }
-
   public static TrustedSetup parseTrustedSetupFile(final String trustedSetupFile)
       throws IOException {
     final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(trustedSetupFile);
@@ -107,6 +97,16 @@ class CKZG4844Utils {
       throw new IOException(
           String.format("Failed to parse trusted setup file\n: %s", trustedSetupFile));
     }
+  }
+
+  static List<Bytes> chunkBytes(final Bytes bytes, final int chunkSize) {
+    if (bytes.size() % chunkSize != 0) {
+      throw new IllegalArgumentException("Invalid bytes size: " + bytes.size());
+    }
+    return IntStream.range(0, bytes.size() / chunkSize)
+        .map(i -> i * chunkSize)
+        .mapToObj(startIdx -> bytes.slice(startIdx, chunkSize))
+        .toList();
   }
 
   static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {

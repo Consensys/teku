@@ -562,10 +562,9 @@ public class PeerSyncTest extends AbstractSyncTest {
         TestSpecFactory.createMinimalFulu(
             builder ->
                 builder
-                    .denebBuilder(denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch))
-                    .electraBuilder(
-                        electraBuilder -> electraBuilder.electraForkEpoch(denebForkEpoch))
-                    .fuluBuilder(fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluEpoch)));
+                    .denebForkEpoch(denebForkEpoch)
+                    .electraForkEpoch(denebForkEpoch)
+                    .fuluForkEpoch(fuluEpoch));
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any()))
         .thenAnswer(

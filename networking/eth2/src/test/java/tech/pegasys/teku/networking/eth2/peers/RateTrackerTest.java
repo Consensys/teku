@@ -35,58 +35,58 @@ public class RateTrackerTest {
   public void shouldAllowAddingItemsWithinLimit() {
     final RateTracker tracker = createTracker(1, 1);
     final long objectsCount = 1;
-    assertRequestsAllowed(tracker.approveObjectsRequest(objectsCount), timeProvider);
+    assertRequestsAllowed(tracker.generateRequestKey(objectsCount), timeProvider);
   }
 
   @Test
   public void shouldNotUnderflowWhenTimeWindowGreaterThanCurrentTime() {
     final RateTracker tracker = createTracker(1, 15000);
     final long objectsCount = 1;
-    assertRequestsAllowed(tracker.approveObjectsRequest(objectsCount), timeProvider);
+    assertRequestsAllowed(tracker.generateRequestKey(objectsCount), timeProvider);
   }
 
   @Test
   public void shouldAllowAddingItemsAfterTimeoutPasses() {
     final RateTracker tracker = createTracker(1, 1);
     long objectsCount = 1;
-    assertRequestsAllowed(tracker.approveObjectsRequest(objectsCount), timeProvider);
+    assertRequestsAllowed(tracker.generateRequestKey(objectsCount), timeProvider);
     timeProvider.advanceTimeBySeconds(2L);
-    assertRequestsAllowed(tracker.approveObjectsRequest(objectsCount), timeProvider);
+    assertRequestsAllowed(tracker.generateRequestKey(objectsCount), timeProvider);
   }
 
   @Test
   public void shouldReturnFalseIfCacheFull() {
     final RateTracker tracker = createTracker(1, 1);
     final long objectsCount = 1;
-    assertRequestsAllowed(tracker.approveObjectsRequest(objectsCount), timeProvider);
-    assertThat(tracker.approveObjectsRequest(objectsCount)).isEmpty();
+    assertRequestsAllowed(tracker.generateRequestKey(objectsCount), timeProvider);
+    assertThat(tracker.generateRequestKey(objectsCount)).isEmpty();
   }
 
   @Test
   public void shouldAddMultipleValuesToCache() {
     final RateTracker tracker = createTracker(10, 1);
     long objectsCount = 10;
-    assertRequestsAllowed(tracker.approveObjectsRequest(objectsCount), timeProvider);
-    assertThat(tracker.approveObjectsRequest(objectsCount)).isEmpty();
+    assertRequestsAllowed(tracker.generateRequestKey(objectsCount), timeProvider);
+    assertThat(tracker.generateRequestKey(objectsCount)).isEmpty();
 
     timeProvider.advanceTimeBySeconds(2L);
 
-    assertRequestsAllowed(tracker.approveObjectsRequest(1), timeProvider);
+    assertRequestsAllowed(tracker.generateRequestKey(1), timeProvider);
   }
 
   @Test
   void canAdjustRemainingRequests() {
     final RateTracker tracker = createTracker(10, 1);
-    Optional<ApprovedRequest> approvedRequest = tracker.approveObjectsRequest(10L);
-    assertThat(approvedRequest).isPresent();
-    tracker.adjustObjectsRequest(approvedRequest.get(), 5L);
+    Optional<RequestKey> maybeRequestKey = tracker.generateRequestKey(10L);
+    assertThat(maybeRequestKey).isPresent();
+    tracker.adjustRequestObjectCount(maybeRequestKey.get(), 5L);
     assertThat(tracker.getAvailableObjectCount()).isEqualTo(5L);
   }
 
   private void assertRequestsAllowed(
-      final Optional<ApprovedRequest> requestApproval, final StubTimeProvider timeProvider) {
-    assertThat(requestApproval).isPresent();
-    assertThat(requestApproval.get().getRequestKey())
+      final Optional<RequestKey> maybeRequestKey, final StubTimeProvider timeProvider) {
+    assertThat(maybeRequestKey).isPresent();
+    assertThat(maybeRequestKey.get())
         .isEqualTo(new RequestKey(timeProvider.getTimeInSeconds(), requestId.getAndIncrement()));
   }
 

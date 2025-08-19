@@ -37,8 +37,8 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.ApprovedRequest;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -59,9 +59,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BlobSidecarsByRangeFuluDeprecationTest {
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
-  private final Optional<ApprovedRequest> allowedObjectsRequest =
-      Optional.of(
-          new ApprovedRequest.RequestApprovalBuilder().requestSize(100).timeSeconds(ZERO).build());
+  private final Optional<RequestKey> allowedObjectsRequest = Optional.of(new RequestKey(ZERO, 0));
 
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
@@ -86,13 +84,14 @@ public class BlobSidecarsByRangeFuluDeprecationTest {
       TestSpecFactory.createMinimalFulu(
           builder ->
               builder
+                  .fuluForkEpoch(fuluForkEpoch)
                   .denebBuilder(
                       // save blobs for 8 epochs instead of 4096 (test performance)
                       denebBuilder -> denebBuilder.minEpochsForBlobSidecarsRequests(8))
                   .fuluBuilder(
                       fuluBuilder ->
                           fuluBuilder
-                              .fuluForkEpoch(fuluForkEpoch)
+
                               // save blobs for 8 epochs instead of 4096 (test performance)
                               .minEpochsForDataColumnSidecarsRequests(8)));
   private final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getSlotsPerEpoch(ZERO));

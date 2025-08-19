@@ -88,9 +88,9 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
     return blocksRateTracker
-        .approveObjectsRequest(count.longValue())
+        .generateRequestKey(count.longValue())
         .map(
-            requestApproval -> {
+            requestKey -> {
               LOG.debug("Sending request for {} blocks", count);
               final RpcResponseListenerWithCount<SignedBeaconBlock> listenerWithCount =
                   new RpcResponseListenerWithCount<>(listener);
@@ -99,8 +99,8 @@ public class ThrottlingSyncSource implements SyncSource {
                   .alwaysRun(
                       () ->
                           // adjust for slots with empty blocks
-                          blocksRateTracker.adjustObjectsRequest(
-                              requestApproval, listenerWithCount.count.get()));
+                          blocksRateTracker.adjustRequestObjectCount(
+                              requestKey, listenerWithCount.count.get()));
             })
         .orElseGet(
             () -> {
@@ -118,9 +118,9 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
     final UInt64 blobSidecarsCount = maybeMaxBlobsPerBlock.map(count::times).orElse(UInt64.ZERO);
     return blobSidecarsRateTracker
-        .approveObjectsRequest(blobSidecarsCount.longValue())
+        .generateRequestKey(blobSidecarsCount.longValue())
         .map(
-            requestApproval -> {
+            requestKey -> {
               LOG.debug("Sending request for approximately {} blob sidecars", blobSidecarsCount);
               final RpcResponseListenerWithCount<BlobSidecar> listenerWithCount =
                   new RpcResponseListenerWithCount<>(listener);
@@ -130,8 +130,8 @@ public class ThrottlingSyncSource implements SyncSource {
                       () ->
                           // adjust for slots with empty blocks and slots with blobs <
                           // maxBlobsPerBlock
-                          blobSidecarsRateTracker.adjustObjectsRequest(
-                              requestApproval, listenerWithCount.count.get()));
+                          blobSidecarsRateTracker.adjustRequestObjectCount(
+                              requestKey, listenerWithCount.count.get()));
             })
         .orElseGet(
             () -> {
@@ -151,7 +151,7 @@ public class ThrottlingSyncSource implements SyncSource {
       final List<UInt64> columns,
       final RpcResponseListener<DataColumnSidecar> listener) {
     final long maxColumnsSidecarsCount = count.times(columns.size()).longValue();
-    if (dataColumnSidecarsRateTracker.approveObjectsRequest(maxColumnsSidecarsCount).isPresent()) {
+    if (dataColumnSidecarsRateTracker.generateRequestKey(maxColumnsSidecarsCount).isPresent()) {
       LOG.debug("Sending request for {} data column sidecars on {} columns", count, columns.size());
       return delegate.requestDataColumnSidecarsByRange(startSlot, count, columns, listener);
     } else {

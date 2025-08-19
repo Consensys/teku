@@ -111,24 +111,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
-  // compute_fork_version
-  public Bytes4 computeForkVersion(final UInt64 epoch) {
-    if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())) {
-      return specConfigFulu.getFuluForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getElectraForkEpoch())) {
-      return specConfigFulu.getElectraForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getDenebForkEpoch())) {
-      return specConfigFulu.getDenebForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getCapellaForkEpoch())) {
-      return specConfigFulu.getCapellaForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getBellatrixForkEpoch())) {
-      return specConfigFulu.getBellatrixForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getAltairForkEpoch())) {
-      return specConfigFulu.getAltairForkVersion();
-    }
-    return specConfigFulu.getGenesisForkVersion();
-  }
-
   // compute_fork_digest
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Bytes4 forkVersion = computeForkVersion(epoch);
@@ -390,7 +372,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
-  @SuppressWarnings("deprecation")
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
       final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())

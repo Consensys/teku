@@ -109,12 +109,11 @@ public class ActiveEth2P2PNetworkTest {
                 b.altairForkEpoch(altairForkEpoch)
                     .bellatrixForkEpoch(UInt64.valueOf(3))
                     .capellaForkEpoch(UInt64.valueOf(4))
-                    .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
-                    .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
+                    .denebForkEpoch(UInt64.valueOf(5))
+                    .electraForkEpoch(UInt64.valueOf(6))
+                    .fuluForkEpoch(fuluForkEpoch)
                     .fuluBuilder(
-                        fb ->
-                            fb.fuluForkEpoch(fuluForkEpoch)
-                                .blobSchedule(List.of(new BlobScheduleEntry(bpoForkEpoch, 64)))));
+                        fb -> fb.blobSchedule(List.of(new BlobScheduleEntry(bpoForkEpoch, 64)))));
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     when(discoveryNetwork.start()).thenReturn(SafeFuture.completedFuture(null));
@@ -219,12 +218,11 @@ public class ActiveEth2P2PNetworkTest {
                 b.altairForkEpoch(altairForkEpoch)
                     .bellatrixForkEpoch(UInt64.valueOf(3))
                     .capellaForkEpoch(UInt64.valueOf(4))
-                    .denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(5)))
-                    .electraBuilder(eb -> eb.electraForkEpoch(UInt64.valueOf(6)))
+                    .denebForkEpoch(UInt64.valueOf(5))
+                    .electraForkEpoch(UInt64.valueOf(6))
+                    .fuluForkEpoch(fuluForkEpoch)
                     .fuluBuilder(
-                        fb ->
-                            fb.fuluForkEpoch(fuluForkEpoch)
-                                .blobSchedule(List.of(new BlobScheduleEntry(fuluForkEpoch, 64)))));
+                        fb -> fb.blobSchedule(List.of(new BlobScheduleEntry(fuluForkEpoch, 64)))));
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     when(discoveryNetwork.start()).thenReturn(SafeFuture.completedFuture(null));

@@ -28,7 +28,6 @@ import tech.pegasys.teku.kzg.KZGProof;
 public class KzgComputeCellsAndKzgProofsTestExecutor extends KzgTestExecutor {
 
   @Override
-  @SuppressWarnings("deprecation")
   public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
     final List<KZGCellAndProof> expectedKzgCellsAndProofs = data.getOutput();

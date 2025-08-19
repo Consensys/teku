@@ -25,4 +25,6 @@ public interface SidecarUpdateChannel extends ChannelInterface {
   SafeFuture<Void> onFirstSamplerIncompleteSlot(UInt64 slot);
 
   SafeFuture<Void> onNewSidecar(DataColumnSidecar sidecar);
+
+  SafeFuture<Void> onNewNonCanonicalSidecar(DataColumnSidecar sidecar);
 }

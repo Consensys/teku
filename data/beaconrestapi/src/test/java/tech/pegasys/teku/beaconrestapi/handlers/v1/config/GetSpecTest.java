@@ -75,6 +75,12 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
             Resources.toString(
                 Resources.getResource(GetSpecTest.class, "mainnetConfig.json"), UTF_8));
 
-    assertThat(resultNode).isEqualTo(referenceNode);
+    assertThat(resultNode)
+        .withFailMessage(
+            String.format(
+                "Expected: %s\nbut was: %s",
+                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(referenceNode),
+                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(resultNode)))
+        .isEqualTo(referenceNode);
   }
 }

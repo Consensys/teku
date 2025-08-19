@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBoolean;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
@@ -143,6 +144,19 @@ public final class SszPrimitiveSchemas {
         @Override
         public String toString() {
           return "Bytes";
+        }
+      };
+
+  public static final AbstractSszPrimitiveSchema<Boolean, SszBoolean> BOOLEAN_SCHEMA =
+      new SszBooleanSchema() {
+        @Override
+        public DeserializableTypeDefinition<SszBoolean> getJsonTypeDefinition() {
+          return SszPrimitiveTypeDefinitions.SSZ_BOOLEAN_TYPE_DEFINITION;
+        }
+
+        @Override
+        public String toString() {
+          return "Boolean";
         }
       };
 
@@ -306,6 +320,51 @@ public final class SszPrimitiveSchemas {
     @Override
     public TreeNode getDefaultTree() {
       return LeafNode.ZERO_LEAVES[1];
+    }
+  }
+
+  abstract static class SszBooleanSchema extends AbstractSszPrimitiveSchema<Boolean, SszBoolean> {
+
+    private SszBooleanSchema() {
+      super(8);
+    }
+
+    @Override
+    public Boolean createFromLeafBackingNode(final LeafDataNode node, final int internalIndex) {
+      final byte data = node.getData().get(internalIndex);
+      if (data != 0 && data != 1) {
+        throw new IllegalArgumentException("Invalid leaf value: " + data);
+      }
+      return data == 1;
+    }
+
+    @Override
+    public TreeNode updateBackingNode(
+        final TreeNode srcNode, final int index, final SszData newValue) {
+      boolean aNew = ((SszBoolean) newValue).get();
+      Bytes curVal = ((LeafNode) srcNode).getData();
+      Bytes newBytes = updateExtending(curVal, index, Bytes.of(aNew ? 1 : 0));
+      return LeafNode.create(newBytes);
+    }
+
+    @Override
+    public SszBoolean boxed(final Boolean rawValue) {
+      return SszBoolean.of(rawValue);
+    }
+
+    @Override
+    public TreeNode getDefaultTree() {
+      return LeafNode.ZERO_LEAVES[1];
+    }
+
+    @Override
+    protected LeafNode createNodeFromSszBytes(final Bytes bytes) {
+      for (byte current : bytes.toArrayUnsafe()) {
+        if (current != 0 && current != 1) {
+          throw new SszDeserializeException("Invalid serialized boolean value: " + current);
+        }
+      }
+      return super.createNodeFromSszBytes(bytes);
     }
   }
 }

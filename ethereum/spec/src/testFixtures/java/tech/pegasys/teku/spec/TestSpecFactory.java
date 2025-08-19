@@ -287,19 +287,13 @@ public class TestSpecFactory {
       defaultModifier = defaultModifier.andThen(builder -> builder.capellaForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.denebForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.ELECTRA)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.electraForkEpoch(UInt64.ZERO));
     }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      defaultModifier =
-          defaultModifier.andThen(
-              builder -> builder.fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO)));
+      defaultModifier = defaultModifier.andThen(builder -> builder.fuluForkEpoch(UInt64.ZERO));
     }
 
     return create(
@@ -389,7 +383,7 @@ public class TestSpecFactory {
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch)));
+                .denebForkEpoch(denebForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
@@ -402,7 +396,7 @@ public class TestSpecFactory {
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(ZERO)
                   .capellaForkEpoch(ZERO)
-                  .denebBuilder(d -> d.denebForkEpoch(ZERO));
+                  .denebForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -424,8 +418,8 @@ public class TestSpecFactory {
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
-                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
+                .denebForkEpoch(denebForkEpoch)
+                .electraForkEpoch(electraForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getElectraSpecConfig(
@@ -438,8 +432,8 @@ public class TestSpecFactory {
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(ZERO)
                   .capellaForkEpoch(ZERO)
-                  .denebBuilder(d -> d.denebForkEpoch(ZERO))
-                  .electraBuilder(e -> e.electraForkEpoch(ZERO));
+                  .denebForkEpoch(ZERO)
+                  .electraForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }
@@ -462,9 +456,9 @@ public class TestSpecFactory {
                 .altairForkEpoch(ZERO)
                 .bellatrixForkEpoch(UInt64.ZERO)
                 .capellaForkEpoch(capellaForkEpoch)
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch))
-                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch))
-                .fuluBuilder(f -> f.fuluForkEpoch(fuluForkEpoch)));
+                .denebForkEpoch(denebForkEpoch)
+                .electraForkEpoch(electraForkEpoch)
+                .fuluForkEpoch(fuluForkEpoch));
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
@@ -477,9 +471,9 @@ public class TestSpecFactory {
                   .altairForkEpoch(ZERO)
                   .bellatrixForkEpoch(UInt64.ZERO)
                   .capellaForkEpoch(UInt64.ZERO)
-                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
-                  .fuluBuilder(f -> f.fuluForkEpoch(UInt64.ZERO));
+                  .denebForkEpoch(UInt64.ZERO)
+                  .electraForkEpoch(UInt64.ZERO)
+                  .fuluForkEpoch(UInt64.ZERO);
               configAdapter.accept(builder);
             }));
   }

@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.19.1'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.19.2'
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.1'
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.19.1'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.1'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.40.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.41.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -37,11 +37,11 @@ dependencyManagement {
     dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.15'
     dependency 'io.consensys.protocols:jc-kzg-4844:2.1.1'
-    dependency 'io.github.crate-crypto:java-eth-kzg:0.7.1'
+    dependency 'io.github.crate-crypto:java-eth-kzg:0.8.0'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.2.2'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.2.0'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:2.2.10'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
@@ -53,21 +53,21 @@ dependencyManagement {
     }
 
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.26.2'
+    dependency 'org.webjars:swagger-ui:5.27.1'
 
     dependency 'org.thymeleaf:thymeleaf:3.1.3.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.181'
-    dependencySet(group: 'com.github.oshi', version: '6.8.2') {
+    dependencySet(group: 'com.github.oshi', version: '6.8.3') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.2.3.Final') {
+    dependencySet(group: 'io.netty', version: '4.2.4.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
 
-    dependencySet(group: 'io.vertx', version: '4.5.16') {
+    dependencySet(group: 'io.vertx', version: '4.5.18') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
@@ -86,9 +86,9 @@ dependencyManagement {
       entry 'tuweni-units'
     }
 
-    dependency 'org.apache.commons:commons-text:1.13.1'
+    dependency 'org.apache.commons:commons-text:1.14.0'
     dependency 'org.apache.commons:commons-lang3:3.18.0'
-    dependency 'commons-io:commons-io:2.19.0'
+    dependency 'commons-io:commons-io:2.20.0'
     dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
     dependencySet(group: 'org.apache.logging.log4j', version: '2.24.3') {
@@ -100,7 +100,7 @@ dependencyManagement {
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
 
-    dependency 'org.assertj:assertj-core:3.27.3'
+    dependency 'org.assertj:assertj-core:3.27.4'
 
     dependency 'org.awaitility:awaitility:4.3.0'
 
@@ -110,15 +110,16 @@ dependencyManagement {
       entry 'bcutil-jdk18on' // already used by dependencies, fixes offline building
     }
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.13.3') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.13.4') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
+    dependency 'org.junit.platform:junit-platform-launcher:1.13.4'
 
     dependency 'net.java.dev.jna:jna:5.17.0'
 
-    dependencySet(group: 'org.mockito', version: '5.18.0') {
+    dependencySet(group: 'org.mockito', version: '5.19.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -140,7 +141,7 @@ dependencyManagement {
       entry 'utils'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.10.7'
+    dependency 'org.xerial.snappy:snappy-java:1.1.10.8'
 
     dependency 'io.prometheus:prometheus-metrics-bom:1.3.10'
 
@@ -173,7 +174,7 @@ dependencyManagement {
       entry "org.jupnp.support"
     }
 
-    dependencySet(group: 'io.jsonwebtoken', version: '0.12.6') {
+    dependencySet(group: 'io.jsonwebtoken', version: '0.12.7') {
       entry 'jjwt-api'
       entry 'jjwt-impl'
       entry 'jjwt-jackson'

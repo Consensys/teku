@@ -60,6 +60,7 @@ public class MiscHelpersFuluTest {
               builder.fuluBuilder(
                   fuluBuilder ->
                       fuluBuilder
+                          .cellsPerExtBlob(128)
                           .numberOfColumns(128)
                           .numberOfCustodyGroups(128)
                           .custodyRequirement(4)
@@ -129,18 +130,18 @@ public class MiscHelpersFuluTest {
     final Spec spec =
         TestSpecFactory.createMinimalFulu(
             b ->
-                b.electraBuilder(
-                        eb -> eb.electraForkEpoch(UInt64.valueOf(9)).maxBlobsPerBlockElectra(9))
+                b.electraForkEpoch(UInt64.valueOf(9))
+                    .fuluForkEpoch(UInt64.valueOf(100))
+                    .electraBuilder(eb -> eb.maxBlobsPerBlockElectra(9))
                     .fuluBuilder(
                         fb ->
-                            fb.fuluForkEpoch(UInt64.valueOf(100))
-                                .blobSchedule(
-                                    List.of(
-                                        new BlobScheduleEntry(UInt64.valueOf(100), 100),
-                                        new BlobScheduleEntry(UInt64.valueOf(150), 175),
-                                        new BlobScheduleEntry(UInt64.valueOf(200), 200),
-                                        new BlobScheduleEntry(UInt64.valueOf(250), 275),
-                                        new BlobScheduleEntry(UInt64.valueOf(300), 300)))));
+                            fb.blobSchedule(
+                                List.of(
+                                    new BlobScheduleEntry(UInt64.valueOf(100), 100),
+                                    new BlobScheduleEntry(UInt64.valueOf(150), 175),
+                                    new BlobScheduleEntry(UInt64.valueOf(200), 200),
+                                    new BlobScheduleEntry(UInt64.valueOf(250), 275),
+                                    new BlobScheduleEntry(UInt64.valueOf(300), 300)))));
 
     return Stream.of(
         Arguments.of(spec, 100, "44a571e8"),
