@@ -63,7 +63,6 @@ public class ForkChoiceTrigger {
             "Took {} ms waiting for fork choice to complete at slot {}, when attestations were due.",
             duration,
             nodeSlot);
-        ;
       }
     } catch (InterruptedException | TimeoutException e) {
       LOG.error("Failed to wait for fork choice to complete for slot " + nodeSlot, e);
