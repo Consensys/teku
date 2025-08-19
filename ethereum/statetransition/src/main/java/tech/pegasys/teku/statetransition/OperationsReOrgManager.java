@@ -131,6 +131,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                       .thenCompose(
                           maybeBlock -> {
                             if (maybeBlock.isPresent()) {
+                              LOG.info("processNonCanonicalBlockOperations block retrieved");
                               final BeaconBlockBody blockBody = maybeBlock.get().getBody();
                               proposerSlashingPool.addAll(blockBody.getProposerSlashings());
                               attesterSlashingPool.addAll(blockBody.getAttesterSlashings());
@@ -172,6 +173,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                     .onAttestation(
                         ValidatableAttestation.fromReorgedBlock(
                             recentChainData.getSpec(), attestation))
+                    .thenPeek(__ -> LOG.info("attestationManager.onAttestation"))
                     .thenAccept(
                         result ->
                             result.ifInvalid(
@@ -202,12 +204,17 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                       maybeBlock ->
                           maybeBlock.ifPresentOrElse(
                               block -> {
+                                LOG.info("processCanonicalBlockOperations block retrieved");
                                 final BeaconBlockBody blockBody = block.getBody();
                                 proposerSlashingPool.removeAll(blockBody.getProposerSlashings());
                                 attesterSlashingPool.removeAll(blockBody.getAttesterSlashings());
                                 exitPool.removeAll(blockBody.getVoluntaryExits());
+                                var start = System.nanoTime();
                                 attestationPool.onAttestationsIncludedInBlock(
                                     block.getSlot(), blockBody.getAttestations());
+                                LOG.info(
+                                    "attestationPool.onAttestationsIncludedInBlock took {} ms",
+                                    (System.nanoTime() - start) / 1_000_000);
                                 blockBody
                                     .getOptionalBlsToExecutionChanges()
                                     .ifPresent(blsToExecutionOperationPool::removeAll);
