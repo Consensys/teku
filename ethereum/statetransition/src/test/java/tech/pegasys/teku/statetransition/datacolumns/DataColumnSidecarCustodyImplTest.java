@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -48,6 +49,8 @@ public class DataColumnSidecarCustodyImplTest {
       DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
   final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+  final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier =
+      () -> custodyGroupCountManager;
 
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
@@ -67,7 +70,7 @@ public class DataColumnSidecarCustodyImplTest {
             blockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             groupCount);
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
@@ -122,7 +125,7 @@ public class DataColumnSidecarCustodyImplTest {
             blockResolver,
             dbAccessorMock,
             minCustodyPeriodSlotCalculator,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             0);
     custody.onSlot(UInt64.ZERO);
     // next epoch
