@@ -54,6 +54,15 @@ public class TestPeer {
     return nodeId;
   }
 
+  public void onDisconnect() {
+    requests.stream()
+        .filter(r -> !r.response.isDone())
+        .forEach(
+            r ->
+                r.response.completeExceptionally(
+                    new DataColumnReqResp.DasPeerDisconnectedException()));
+  }
+
   public SafeFuture<DataColumnSidecar> requestSidecar(
       final DataColumnIdentifier dataColumnIdentifier) {
     final SafeFuture<DataColumnSidecar> promise = new SafeFuture<>();
