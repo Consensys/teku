@@ -15,3 +15,4 @@
 
 ### Bug Fixes
 - Limited the allowed time to wait for fork choice before proceeding with attestation duties, and added a development flag to adjust the timing if required.
+- Allowed voluntary exits to be periodically re-broadcast if they have been submitted locally and they have been in the queue for a long time (2 hours).

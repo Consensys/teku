@@ -1121,7 +1121,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
-    VoluntaryExitValidator validator = new VoluntaryExitValidator(spec, recentChainData);
+    VoluntaryExitValidator validator =
+        new VoluntaryExitValidator(spec, recentChainData, timeProvider);
     voluntaryExitPool =
         new MappedOperationPool<>(
             "VoluntaryExitPool",
