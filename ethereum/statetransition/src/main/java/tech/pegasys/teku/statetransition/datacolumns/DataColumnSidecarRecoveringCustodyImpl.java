@@ -64,7 +64,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final long columnCount;
   private final int recoverColumnCount;
   private final int groupCount;
-  private Optional<AtomicBoolean> maybeSuperNode;
+  private final AtomicBoolean isSuperNode;
 
   final Function<UInt64, Duration> slotToRecoveryDelay;
   private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
@@ -97,7 +97,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
-    this.maybeSuperNode = Optional.empty();
+    this.isSuperNode =
+        new AtomicBoolean(
+            custodyGroupCountManagerSupplier.get().getCustodyGroupCount() == groupCount);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
@@ -122,14 +124,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (!isActiveSuperNode(slot)) {
-      if (custodyGroupCountManagerSupplier.get().getCustodyGroupSyncedCount() == groupCount) {
-        LOG.debug(
-            "Number of required custody groups reached maximum custody groups. Activating super node reconstruction.");
-        maybeSuperNode.ifPresent(isSuperNode -> isSuperNode.set(true));
-      } else {
-        return;
-      }
+    if (!isActiveSuperNode(slot) && shouldSkipProcessing()) {
+      return;
     }
     asyncRunner
         .runAfterDelay(
@@ -152,7 +148,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (!isActiveSuperNode(block.getSlot())) {
+    if (!isActiveSuperNode(block.getSlot()) && shouldSkipProcessing()) {
       return;
     }
 
@@ -163,6 +159,18 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       return;
     }
     createOrUpdateRecoveryTaskForBlock(block.getMessage());
+  }
+
+  private boolean shouldSkipProcessing() {
+    if (custodyGroupCountManagerSupplier.get().getCustodyGroupSyncedCount() == groupCount) {
+      if (!isSuperNode.get()) {
+        LOG.debug(
+            "Number of required custody groups reached maximum. Activating super node reconstruction.");
+        isSuperNode.set(true);
+      }
+      return false;
+    }
+    return true;
   }
 
   private synchronized void createOrUpdateRecoveryTaskForBlock(final BeaconBlock block) {
@@ -221,13 +229,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private boolean isActiveSuperNode(final UInt64 slot) {
-    if (maybeSuperNode.isEmpty()) {
-      maybeSuperNode =
-          Optional.of(
-              new AtomicBoolean(
-                  custodyGroupCountManagerSupplier.get().getCustodyGroupCount() == groupCount));
-    }
-    return maybeSuperNode.get().get()
+    return isSuperNode.get()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU);
   }
 
