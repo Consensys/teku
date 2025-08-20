@@ -274,6 +274,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public long getSidecarColumnCount() {
+    return 0;
+  }
+
+  @Override
   public long getNonCanonicalBlobSidecarColumnCount() {
     return 0L;
   }
@@ -403,7 +408,7 @@ public class NoOpDatabase implements Database {
   public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {}
 
   @Override
-  public void pruneAllSidecars(final UInt64 tillSlotInclusive) {}
+  public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {}
 
   @Override
   public void close() {}

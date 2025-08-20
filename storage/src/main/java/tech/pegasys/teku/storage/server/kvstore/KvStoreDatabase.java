@@ -398,6 +398,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public long getSidecarColumnCount() {
+    return dao.getSidecarColumnCount();
+  }
+
+  @Override
   public long getNonCanonicalBlobSidecarColumnCount() {
     return dao.getNonCanonicalBlobSidecarColumnCount();
   }
@@ -1183,16 +1188,63 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void pruneAllSidecars(final UInt64 tillSlotInclusive) {
+  public void pruneAllSidecars(final UInt64 tillSlotInclusive, final int pruneLimit) {
     try (final Stream<DataColumnSlotAndIdentifier> prunableIdentifiers =
             streamDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
         final Stream<DataColumnSlotAndIdentifier> prunableNonCanonicalIdentifiers =
-            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive);
-        final FinalizedUpdater updater = finalizedUpdater()) {
-      prunableIdentifiers.forEach(updater::removeSidecar);
-      prunableNonCanonicalIdentifiers.forEach(updater::removeNonCanonicalSidecar);
-      updater.commit();
+            streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
+
+      if (pruneDataColumnSidecars(pruneLimit, prunableIdentifiers, false)) {
+        LOG.debug("Pruned reached the limit of {} data column sidecars", pruneLimit);
+      }
+      if (pruneDataColumnSidecars(pruneLimit, prunableNonCanonicalIdentifiers, true)) {
+        LOG.debug("Pruned reached the limit of {} non canonical data column sidecars", pruneLimit);
+      }
     }
+  }
+
+  boolean pruneDataColumnSidecars(
+      final int pruneSlotLimit,
+      final Stream<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifierStream,
+      final boolean nonCanonicalBlobSidecars) {
+
+    int prunedSlots = 0;
+
+    final Map<UInt64, List<DataColumnSlotAndIdentifier>> prunableMap = new HashMap<>();
+
+    dataColumnSlotAndIdentifierStream
+        .takeWhile(
+            item -> prunableMap.size() < pruneSlotLimit || prunableMap.containsKey(item.slot()))
+        .forEach(
+            item -> prunableMap.computeIfAbsent(item.slot(), k -> new ArrayList<>()).add(item));
+
+    final List<UInt64> slots = prunableMap.keySet().stream().sorted().toList();
+
+    if (!slots.isEmpty()) {
+      LOG.debug(
+          "Pruning data column sidecars from slots {} to {}", slots.getFirst(), slots.getLast());
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        for (final UInt64 slot : slots) {
+          final List<DataColumnSlotAndIdentifier> keys = prunableMap.get(slot);
+
+          for (final DataColumnSlotAndIdentifier key : keys) {
+            if (nonCanonicalBlobSidecars) {
+              updater.removeNonCanonicalSidecar(key);
+            } else {
+              updater.removeSidecar(key);
+            }
+          }
+
+          ++prunedSlots;
+        }
+        updater.commit();
+      }
+      LOG.debug("Pruned data column sidecars in {} slots", prunedSlots);
+    }
+
+    // `pruned` will be greater when we reach pruneLimit not on the latest DataColumnSidecar in a
+    // slot
+    return prunedSlots >= pruneSlotLimit;
   }
 
   @Override

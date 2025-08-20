@@ -138,9 +138,4 @@ class ColumnIdCachingDasDb implements DataColumnSidecarDB {
   public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
     return delegateDb.setFirstSamplerIncompleteSlot(slot);
   }
-
-  @Override
-  public SafeFuture<Void> pruneAllSidecars(final UInt64 tillSlot) {
-    return delegateDb.pruneAllSidecars(tillSlot);
-  }
 }
