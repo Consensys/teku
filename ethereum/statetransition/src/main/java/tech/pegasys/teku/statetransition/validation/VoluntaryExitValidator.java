@@ -131,7 +131,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     final UInt64 previousTime = receivedValidators.get(exit.getMessage().getValidatorIndex());
     // if we haven't seen the index or its outside our cache period, then we can just allow here.
     return previousTime == null
-        || previousTime.isLessThan(currentTimeMillis.minusMinZero(CACHE_DURATAION_MILLIS));
+        || previousTime.plus(CACHE_DURATAION_MILLIS).isLessThan(currentTimeMillis);
   }
 
   private SafeFuture<BeaconState> getState() {
