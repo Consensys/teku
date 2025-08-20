@@ -1239,7 +1239,7 @@ public class KvStoreDatabase implements Database {
         }
         updater.commit();
       }
-      LOG.debug("Pruned {} data column sidecars", prunedSlots);
+      LOG.debug("Pruned data column sidecars in {} slots", prunedSlots);
     }
 
     // `pruned` will be greater when we reach pruneLimit not on the latest DataColumnSidecar in a
