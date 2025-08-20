@@ -140,8 +140,11 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                                   .getOptionalBlsToExecutionChanges()
                                   .ifPresent(blsToExecutionOperationPool::addAll);
 
-                              return processNonCanonicalBlockAttestations(
-                                  blockBody.getAttestations().stream(), root);
+                              LOG.info("pools done");
+                              var att = blockBody.getAttestations().stream();
+                              LOG.info("attestation stream done");
+
+                              return processNonCanonicalBlockAttestations(att, root);
                             }
                             LOG.debug(
                                 "Failed to re-queue operations for now non-canonical block: {}",
