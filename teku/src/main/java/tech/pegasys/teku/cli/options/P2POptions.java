@@ -39,7 +39,6 @@ import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrPeerAddress;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptions {
-
   @Mixin private final NatOptions natOptions = new NatOptions();
 
   @Option(
@@ -537,7 +536,21 @@ public class P2POptions {
       try {
         final List<String> bootnodesFromUrl =
             MultilineEntriesReader.readEntries(p2pDiscoveryBootnodesUrl);
-        bootnodes.addAll(bootnodesFromUrl);
+        for (final String bootnode : bootnodesFromUrl) {
+          if (bootnode.startsWith("- enr:-")) {
+            // clean up yaml entries
+            bootnodes.add(bootnode.substring(2));
+          } else if (bootnode.startsWith("enr")) {
+            // require they start with ENR
+            bootnodes.add(bootnode);
+          } else {
+            throw new InvalidConfigurationException(
+                String.format(
+                    "Invalid bootnode found in URL (%s): %s", p2pDiscoveryBootnodesUrl, bootnode));
+          }
+        }
+      } catch (final InvalidConfigurationException e) {
+        throw e;
       } catch (final Exception e) {
         throw new InvalidConfigurationException(
             "Error reading bootnodes from " + p2pDiscoveryBootnodesUrl, e);

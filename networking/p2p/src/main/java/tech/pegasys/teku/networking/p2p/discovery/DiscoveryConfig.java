@@ -252,6 +252,12 @@ public class DiscoveryConfig {
 
     public Builder bootnodes(final List<String> bootnodes) {
       checkNotNull(bootnodes);
+      for (final String bootnode : bootnodes) {
+        if (!bootnode.startsWith("enr:-")) {
+          throw new IllegalArgumentException(
+              String.format("The bootnode (%s) does not start with `enr:-`", bootnode));
+        }
+      }
       this.bootnodes = bootnodes;
       return this;
     }

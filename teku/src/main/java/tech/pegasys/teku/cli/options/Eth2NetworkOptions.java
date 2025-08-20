@@ -156,6 +156,17 @@ public class Eth2NetworkOptions {
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
 
   @Option(
+      names = {"--Xfork-choice-attestation-wait-limit"},
+      paramLabel = "<MILLISECONDS>",
+      description = "If fork choice isn't complete when attestations are due (Defaults to 1500ms).",
+      arity = "1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private int attestationWaitlimitMillis =
+      Eth2NetworkConfiguration.DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
+
+  @Option(
       names = {"--Xnetwork-altair-fork-epoch"},
       hidden = true,
       paramLabel = "<epoch>",
@@ -476,6 +487,7 @@ public class Eth2NetworkOptions {
         .aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(
             aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
         .epochsStoreBlobs(epochsStoreBlobs)
+        .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
         .rustKzgEnabled(rustKzgEnabled);
     kzgPrecompute.ifPresent(builder::kzgPrecompute);

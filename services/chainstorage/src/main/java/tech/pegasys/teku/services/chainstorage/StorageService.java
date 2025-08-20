@@ -52,6 +52,7 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.network.EphemeryException;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
+import tech.pegasys.teku.storage.server.pruner.DataColumnSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.StatePruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
@@ -64,8 +65,10 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private volatile Optional<BlobSidecarPruner> blobsPruner = Optional.empty();
   private volatile Optional<StatePruner> statePruner = Optional.empty();
+  private volatile Optional<DataColumnSidecarPruner> dataColumnSidecarPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
+  private final boolean dataColumnSidecarsStorageCountersEnabled;
   private static final Logger LOG = LogManager.getLogger();
   private final Optional<Eth2Network> maybeNetwork;
 
@@ -74,11 +77,13 @@ public class StorageService extends Service implements StorageServiceFacade {
       final StorageConfiguration storageConfiguration,
       final boolean depositSnapshotStorageEnabled,
       final boolean blobSidecarsStorageCountersEnabled,
+      final boolean dataColumnSidecarsStorageCountersEnabled,
       final Optional<Eth2Network> eth2Network) {
     this.serviceConfig = serviceConfig;
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
+    this.dataColumnSidecarsStorageCountersEnabled = dataColumnSidecarsStorageCountersEnabled;
     this.maybeNetwork = eth2Network;
   }
 
@@ -185,6 +190,22 @@ public class StorageService extends Service implements StorageServiceFacade {
                             pruningActiveLabelledGauge,
                             config.isStoreNonCanonicalBlocksEnabled()));
               }
+              if (config.getSpec().isMilestoneSupported(SpecMilestone.FULU)) {
+                dataColumnSidecarPruner =
+                    Optional.of(
+                        new DataColumnSidecarPruner(
+                            config.getSpec(),
+                            database,
+                            serviceConfig.getMetricsSystem(),
+                            storagePrunerAsyncRunner,
+                            serviceConfig.getTimeProvider(),
+                            config.getDataColumnPruningInterval(),
+                            config.getDataColumnPruningLimit(),
+                            dataColumnSidecarsStorageCountersEnabled,
+                            "data_column_sidecar",
+                            pruningTimingsLabelledGauge,
+                            pruningActiveLabelledGauge));
+              }
               chainStorage =
                   ChainStorage.create(
                       database,
@@ -231,6 +252,11 @@ public class StorageService extends Service implements StorageServiceFacade {
             __ ->
                 blobsPruner
                     .map(BlobSidecarPruner::start)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .thenCompose(
+            __ ->
+                dataColumnSidecarPruner
+                    .map(DataColumnSidecarPruner::start)
                     .orElseGet(() -> SafeFuture.completedFuture(null)))
         .thenCompose(
             __ ->
@@ -283,7 +309,11 @@ public class StorageService extends Service implements StorageServiceFacade {
                 .map(BlobSidecarPruner::stop)
                 .map(SafeFuture::toVoid)
                 .orElse(SafeFuture.COMPLETE),
-            statePruner.map(StatePruner::stop).map(SafeFuture::toVoid).orElse(SafeFuture.COMPLETE))
+            statePruner.map(StatePruner::stop).map(SafeFuture::toVoid).orElse(SafeFuture.COMPLETE),
+            dataColumnSidecarPruner
+                .map(DataColumnSidecarPruner::stop)
+                .map(SafeFuture::toVoid)
+                .orElse(SafeFuture.COMPLETE))
         .thenCompose(__ -> SafeFuture.fromRunnable(database::close));
   }
 
