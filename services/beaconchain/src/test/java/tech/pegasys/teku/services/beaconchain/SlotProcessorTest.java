@@ -56,6 +56,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.validator.coordinator.BlockProductionPreparationTrigger;
 
 public class SlotProcessorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -74,6 +75,8 @@ public class SlotProcessorTest {
   private final SyncService syncService = mock(SyncService.class);
   private final ForwardSync forwardSync = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
+  private final BlockProductionPreparationTrigger blockProductionPreparationTrigger =
+      mock(BlockProductionPreparationTrigger.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
@@ -89,6 +92,7 @@ public class SlotProcessorTest {
         recentChainData,
         syncService,
         forkChoiceTrigger,
+        blockProductionPreparationTrigger,
         forkChoiceNotifier,
         p2pNetwork,
         slotEventsChannel,
@@ -404,6 +408,7 @@ public class SlotProcessorTest {
             recentChainData,
             syncService,
             forkChoiceTrigger,
+            blockProductionPreparationTrigger,
             forkChoiceNotifier,
             p2pNetwork,
             slotEventsChannel,

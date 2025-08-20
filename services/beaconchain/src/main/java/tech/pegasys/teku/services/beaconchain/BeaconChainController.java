@@ -256,6 +256,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
+import tech.pegasys.teku.validator.coordinator.BlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
@@ -378,6 +379,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected Path debugDataDirectory;
   protected volatile UInt256 nodeId;
   protected volatile BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
+  protected volatile ValidatorApiHandler validatorApiHandler;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -1425,7 +1427,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
-    final ValidatorApiHandler validatorApiHandler =
+    this.validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(
                 spec,
@@ -1455,6 +1457,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)
+        .subscribe(SlotEventsChannel.class, validatorApiHandler)
         .subscribeMultithreaded(
             ValidatorApiChannel.class,
             validatorApiHandler,
@@ -1677,6 +1680,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             syncService,
             forkChoiceTrigger,
+            new BlockProductionPreparationTrigger(
+                recentChainData,
+                beaconAsyncRunner,
+                slot -> validatorApiHandler.prepareBlockProduction(slot)),
             forkChoiceNotifier,
             p2pNetwork,
             slotEventsChannelPublisher,

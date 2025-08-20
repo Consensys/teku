@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.validator.coordinator.BlockProductionPreparationTrigger;
 
 public class SlotProcessor {
   private static final Logger LOG = LogManager.getLogger();
@@ -44,6 +46,7 @@ public class SlotProcessor {
   private final RecentChainData recentChainData;
   private final SyncService syncService;
   private final ForkChoiceTrigger forkChoiceTrigger;
+  private final BlockProductionPreparationTrigger blockProductionPreparationTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
@@ -54,6 +57,7 @@ public class SlotProcessor {
   private volatile UInt64 onTickSlotStart;
   private volatile UInt64 onTickSlotAttestation;
   private volatile UInt64 onTickEpochPrecompute;
+  private volatile UInt64 onTickBlockProductionPreparation;
 
   @VisibleForTesting
   SlotProcessor(
@@ -61,6 +65,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
+      final BlockProductionPreparationTrigger blockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
@@ -70,6 +75,7 @@ public class SlotProcessor {
     this.recentChainData = recentChainData;
     this.syncService = syncService;
     this.forkChoiceTrigger = forkChoiceTrigger;
+    this.blockProductionPreparationTrigger = blockProductionPreparationTrigger;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
@@ -82,6 +88,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
+      final BlockProductionPreparationTrigger blockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
@@ -91,6 +98,7 @@ public class SlotProcessor {
         recentChainData,
         syncService,
         forkChoiceTrigger,
+        blockProductionPreparationTrigger,
         forkChoiceNotifier,
         p2pNetwork,
         slotEventsChannelPublisher,
@@ -146,6 +154,11 @@ public class SlotProcessor {
     if (isEpochPrecalculationDue(epoch, currentTimeMillis, genesisTimeMillis)) {
       processEpochPrecompute(epoch);
       performanceRecord.ifPresent(TickProcessingPerformance::precomputeEpochComplete);
+    }
+
+    if (isBlockProductionPreparationDue(calculatedSlot, currentTimeMillis, genesisTimeMillis)) {
+      onTickBlockProductionPreparation = calculatedSlot;
+      blockProductionPreparationTrigger.onBlockProductionPreparationDue(calculatedSlot);
     }
   }
 
@@ -246,6 +259,19 @@ public class SlotProcessor {
         isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
     final boolean timeReached = isTimeReached(currentTimeMillis, earliestTimeInMillis);
     return processingDueForSlot && timeReached;
+  }
+
+  boolean isBlockProductionPreparationDue(
+      final UInt64 calculatedSlot, final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
+    if (!isProcessingDueForSlot(calculatedSlot, onTickBlockProductionPreparation)) {
+      return false;
+    }
+
+    final UInt64 earliestTimeInMillis =
+        spec.computeTimeMillisAtSlot(calculatedSlot.increment(), genesisTimeMillis)
+            .minus(BLOCK_CREATION_TOLERANCE_MS);
+
+    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   private UInt64 oneThirdSlotMillis(final UInt64 slot) {
