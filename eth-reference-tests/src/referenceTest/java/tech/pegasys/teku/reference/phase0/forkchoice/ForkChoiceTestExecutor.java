@@ -109,12 +109,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .put("fork_choice/deposit_with_reorg", new ForkChoiceTestExecutor())
           // Fork choice generated test types
-          .put("fork_choice_generated/block_weight_test", new ForkChoiceTestExecutor())
-          .put("fork_choice_generated/block_tree_test", new ForkChoiceTestExecutor())
-          .put("fork_choice_generated/attester_slashing_test", new ForkChoiceTestExecutor())
-          .put("fork_choice_generated/invalid_message_test", new ForkChoiceTestExecutor())
-          .put("fork_choice_generated/block_cover_test", new ForkChoiceTestExecutor())
-          .put("fork_choice_generated/shuffling_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/block_weight_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/block_tree_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/attester_slashing_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/invalid_message_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/block_cover_test", new ForkChoiceTestExecutor())
+          .put("fork_choice_compliance/shuffling_test", new ForkChoiceTestExecutor())
           .build();
 
   private final List<?> testsToSkip;
