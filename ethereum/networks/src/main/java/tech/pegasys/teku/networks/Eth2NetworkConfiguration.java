@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfiguration {
+  public static final int DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS = 1_500;
   private static final Logger LOG = LogManager.getLogger();
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
@@ -143,6 +144,7 @@ public class Eth2NetworkConfiguration {
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
+  private final int attestationWaitLimitMillis;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -178,7 +180,8 @@ public class Eth2NetworkConfiguration {
       final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
-      final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit) {
+      final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
+      final int attestationWaitLimitMillis) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -219,6 +222,9 @@ public class Eth2NetworkConfiguration {
         aggregatingAttestationPoolV2BlockAggregationTimeLimit;
     this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
+    this.attestationWaitLimitMillis = attestationWaitLimitMillis;
+
+    LOG.debug("Attestation wait time limit in ratchet: {} ms", attestationWaitLimitMillis);
 
     LOG.debug(
         "P2P async queue - {} threads, max queue size {} ", asyncP2pMaxThreads, asyncP2pMaxQueue);
@@ -279,6 +285,10 @@ public class Eth2NetworkConfiguration {
 
   public Optional<String> getTrustedSetup() {
     return trustedSetup;
+  }
+
+  public int getAttestationWaitLimitMillis() {
+    return attestationWaitLimitMillis;
   }
 
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
@@ -499,6 +509,7 @@ public class Eth2NetworkConfiguration {
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
+    private int attestationWaitLimitMillis = DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -598,7 +609,8 @@ public class Eth2NetworkConfiguration {
           aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
-          aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit);
+          aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
+          attestationWaitLimitMillis);
     }
 
     private void validateCommandLineParameters() {
@@ -1155,6 +1167,11 @@ public class Eth2NetworkConfiguration {
     public Builder aggregatingAttestationPoolProfilingEnabled(
         final boolean aggregatingAttestationPoolProfilingEnabled) {
       this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
+      return this;
+    }
+
+    public Builder attestationWaitLimitMillis(final int attestationWaitLimitMillis) {
+      this.attestationWaitLimitMillis = attestationWaitLimitMillis;
       return this;
     }
 

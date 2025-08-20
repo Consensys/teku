@@ -1227,7 +1227,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
             metricsSystem);
-    forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
+    forkChoiceTrigger =
+        new ForkChoiceTrigger(
+            forkChoice,
+            beaconConfig.eth2NetworkConfig().getAttestationWaitLimitMillis(),
+            timeProvider);
   }
 
   public void initMetrics() {
