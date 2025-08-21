@@ -34,7 +34,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidator implements OperationValidator<SignedVoluntaryExit> {
 
-  // 117 minutes as millis
+  // 117 minutes as millis (MappedOperationPool retries at 2 hrs)
   static final int CACHE_DURATAION_MILLIS = 117 * 60_000;
   private static final Logger LOG = LogManager.getLogger();
 
