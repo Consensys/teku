@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -188,7 +191,16 @@ public class NodeDataProvider {
                     .thenApply(
                         result -> {
                           if (result.isAccept()) {
-                            return voluntaryExitPool.addLocal(exit).join();
+                            try {
+                              // if we can't add this in a reasonable time we should fail.
+                              return voluntaryExitPool.addLocal(exit).get(5, TimeUnit.SECONDS);
+                            } catch (InterruptedException
+                                | ExecutionException
+                                | TimeoutException e) {
+                              return InternalValidationResult.reject(
+                                  "Failed to add voluntary exit for validator index %s to pool: %s",
+                                  exit.getValidatorId(), e.getMessage());
+                            }
                           }
                           return result;
                         }))
