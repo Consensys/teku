@@ -172,7 +172,7 @@ public class NodeDataProvider {
                         state -> {
                           final SszList<Validator> validators = state.getValidators();
                           final int validatorId = exit.getValidatorId();
-                          if (validators.size() < validatorId) {
+                          if (validators.size() <= validatorId) {
                             return InternalValidationResult.reject(
                                 "Validator index %s was not found", exit.getValidatorId());
                           } else if (validators
