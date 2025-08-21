@@ -143,6 +143,17 @@ public class Eth2NetworkOptions {
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 
   @Option(
+      names = {"--Xprepare-block-production-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable block production to be prepared in advance.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean prepareBlockProductionEnabled =
+      Eth2NetworkConfiguration.DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
+
+  @Option(
       names = {"--Xfork-choice-updated-always-send-payload-attributes"},
       paramLabel = "<BOOLEAN>",
       description =
@@ -480,6 +491,7 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .prepareBlockProductionEnabled(prepareBlockProductionEnabled)
         .aggregatingAttestationPoolV2Enabled(aggregatingAttestationPoolV2Enabled)
         .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
         .aggregatingAttestationPoolV2BlockAggregationTimeLimit(

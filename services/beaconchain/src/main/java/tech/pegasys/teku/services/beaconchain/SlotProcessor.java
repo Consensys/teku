@@ -251,16 +251,20 @@ public class SlotProcessor {
           firstSlotOfNextEpoch.minusMinZero(spec.getSlotsPerEpoch(firstSlotOfNextEpoch));
       return false;
     }
+    if (!isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute)) {
+      return false;
+    }
     final UInt64 nextEpochStartTimeMillis =
         spec.computeTimeMillisAtSlot(firstSlotOfNextEpoch, genesisTimeMillis);
     final UInt64 earliestTimeInMillis =
         nextEpochStartTimeMillis.minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
-    final boolean processingDueForSlot =
-        isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
-    final boolean timeReached = isTimeReached(currentTimeMillis, earliestTimeInMillis);
-    return processingDueForSlot && timeReached;
+    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
+  // This must happen safely after isEpochPrecalculationDue in the slot, so we have access to
+  // primed state caches when preparing for block production.
+  // Ideally we need some buffer to allow priming to finish (at least 1s?).
+  // Now is at "end-of-slot - 500ms", which is safely after 2/3 of the slot (11.5s vs 8s).
   boolean isBlockProductionPreparationDue(
       final UInt64 calculatedSlot, final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
     if (!isProcessingDueForSlot(calculatedSlot, onTickBlockProductionPreparation)) {

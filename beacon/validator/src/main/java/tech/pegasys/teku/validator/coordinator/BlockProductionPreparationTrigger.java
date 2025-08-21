@@ -21,6 +21,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockProductionPreparationTrigger {
+  public static BlockProductionPreparationTrigger NOOP =
+      new BlockProductionPreparationTrigger(null, null, null) {
+        @Override
+        public void onBlockProductionPreparationDue(final UInt64 slot) {}
+      };
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;

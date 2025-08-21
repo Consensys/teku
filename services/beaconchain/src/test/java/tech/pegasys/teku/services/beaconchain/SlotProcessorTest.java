@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -375,6 +376,10 @@ public class SlotProcessorTest {
     // Attestation due
     slotProcessor.onTick(genesisTimeMillis.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
     verify(forkChoiceTrigger).onAttestationsDueForSlot(ZERO);
+    // Block preparation due
+    slotProcessor.onTick(
+        genesisTimeMillis.plus(millisPerSlot - BLOCK_CREATION_TOLERANCE_MS), Optional.empty());
+    verify(blockProductionPreparationTrigger).onBlockProductionPreparationDue(ZERO);
 
     // Slot 2 start
     final UInt64 slot1Start = genesisTimeMillis.plus(millisPerSlot);
@@ -383,6 +388,11 @@ public class SlotProcessorTest {
     // Attestation due
     slotProcessor.onTick(slot1Start.plus(oneThirdMillis(millisPerSlot)), Optional.empty());
     verify(forkChoiceTrigger).onAttestationsDueForSlot(ONE);
+
+    // Block preparation due
+    slotProcessor.onTick(
+        slot1Start.plus(millisPerSlot - BLOCK_CREATION_TOLERANCE_MS), Optional.empty());
+    verify(blockProductionPreparationTrigger).onBlockProductionPreparationDue(ONE);
   }
 
   @ParameterizedTest
@@ -399,8 +409,8 @@ public class SlotProcessorTest {
     when(recentChainData.retrieveStateAtSlot(any())).thenReturn(new SafeFuture<>());
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
-    int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+    final Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
+    final int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
 
     final SlotProcessor slotProcessor =
         new SlotProcessor(
@@ -415,9 +425,9 @@ public class SlotProcessorTest {
             epochCachePrimer,
             eventLogger);
 
-    int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
+    final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
 
-    UInt64 currentSlot = UInt64.valueOf(slotsPerEpoch - 2);
+    final UInt64 currentSlot = UInt64.valueOf(slotsPerEpoch - 2);
     slotProcessor.setCurrentSlot(currentSlot);
     final UInt64 nextEpochSlotMinusTwo =
         secondsToMillis(spec.computeTimeAtSlot(currentSlot, genesisTime));
@@ -439,7 +449,7 @@ public class SlotProcessorTest {
 
     // But just before the last slot of the epoch ends, we should precompute the next epoch
     slotProcessor.onTick(
-        nextEpochSlotMinusOne.plus(((millisPerSlot / 3) * 2L) + 5L), Optional.empty());
+        nextEpochSlotMinusOne.plus((oneThirdMillis(millisPerSlot) * 2L) + 5L), Optional.empty());
     verify(epochCachePrimer).primeCacheForEpoch(ONE);
 
     // Should not repeat computation
@@ -448,6 +458,18 @@ public class SlotProcessorTest {
     slotProcessor.onTick(
         nextEpochSlotMinusOne.plus(oneThirdMillis(millisPerSlot) * 2 + 2000), Optional.empty());
     verify(recentChainData, atMostOnce()).retrieveStateAtSlot(any());
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = Eth2Network.class,
+      names = {"MAINNET", "MINIMAL", "GNOSIS"})
+  void shouldPrecomputeEpochTransitionBeforeBlockPreparationDue(final Eth2Network eth2Network) {
+    final Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
+    final int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+
+    // check that precomputation happens before block preparation due, by more than 1s
+    assertThat(oneThirdMillis(millisPerSlot) - BLOCK_CREATION_TOLERANCE_MS).isGreaterThan(1000);
   }
 
   private long oneThirdMillis(final long millis) {
