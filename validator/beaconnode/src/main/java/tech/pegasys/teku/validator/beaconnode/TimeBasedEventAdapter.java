@@ -92,7 +92,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
         .isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
       final UInt64 eip7805StartTimeMillis =
           secondsToMillis(
-              spec.getSlotStartTime(
+              spec.computeTimeAtSlot(
                   spec.computeStartSlotAtEpoch(
                       spec.getForkSchedule().getFork(SpecMilestone.EIP7805).getEpoch()),
                   genesisTime));
