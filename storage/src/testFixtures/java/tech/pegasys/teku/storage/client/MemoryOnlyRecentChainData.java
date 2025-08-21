@@ -89,7 +89,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     private ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
 
     private ValidatorIsConnectedProvider validatorIsConnectedProvider =
-        ValidatorIsConnectedProvider.NOOP;
+        ValidatorIsConnectedProvider.NEVER;
 
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(

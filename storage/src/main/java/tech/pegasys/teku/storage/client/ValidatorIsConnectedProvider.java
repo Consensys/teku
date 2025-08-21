@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ValidatorIsConnectedProvider {
-  ValidatorIsConnectedProvider NOOP =
+  ValidatorIsConnectedProvider NEVER =
       new ValidatorIsConnectedProvider() {
         @Override
         public boolean isValidatorConnected(final int validatorId, final UInt64 slot) {
