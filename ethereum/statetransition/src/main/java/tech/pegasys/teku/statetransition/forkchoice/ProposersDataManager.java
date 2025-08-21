@@ -148,9 +148,8 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
               if (maybeState.isEmpty()) {
                 return false;
               }
-              final BeaconState state = maybeState.get();
-
-              return isValidatorConnected(spec.getBeaconProposerIndex(state, blockSlot), blockSlot);
+              return isValidatorConnected(
+                  spec.getBeaconProposerIndex(maybeState.get(), blockSlot), blockSlot);
             });
   }
 
