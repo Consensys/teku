@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.ActiveEth2P2PNetwork;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 /** Verifies peer advertisement in ENR against its actual subnet topic subscriptions */
 public class PeerAdvertisementChecker {
+  private static final Logger LOG = LogManager.getLogger();
   private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory;
   private final ReputationManager reputationManager;
 
@@ -135,6 +138,11 @@ public class PeerAdvertisementChecker {
     final SszBitvector syncCommitteeSubnets =
         peerSubnetSubscriptions.getSyncCommitteeSubscriptions(peer.getId());
     if (!syncCommitteeSubnets.isSuperSetOf(advertisedSyncCommitteeSubnets)) {
+      LOG.debug(
+          "Sync committee subnet subscriptions ({}) doesn't include ENR advertised subnets ({}) for peer {}. Downscoring.",
+          () -> syncCommitteeSubnets.sszSerialize().toHexString(),
+          () -> advertisedSyncCommitteeSubnets.sszSerialize().toHexString(),
+          peer::getId);
       reputationManager.adjustReputation(peer.getAddress(), ReputationAdjustment.LARGE_PENALTY);
       return false;
     }
@@ -145,6 +153,11 @@ public class PeerAdvertisementChecker {
     final SszBitvector persistedAttestationSubnets =
         peerSubnetSubscriptions.getAttestationSubnetSubscriptions(peer.getId());
     if (!persistedAttestationSubnets.isSuperSetOf(advertisedPersistentAttestationSubnets)) {
+      LOG.debug(
+          "Attestation subnet subscriptions ({}) doesn't include ENR advertised subnets ({}) for peer {}. Downscoring.",
+          () -> persistedAttestationSubnets.sszSerialize().toHexString(),
+          () -> advertisedPersistentAttestationSubnets.sszSerialize().toHexString(),
+          peer::getId);
       reputationManager.adjustReputation(peer.getAddress(), ReputationAdjustment.LARGE_PENALTY);
       return false;
     }
@@ -158,6 +171,11 @@ public class PeerAdvertisementChecker {
       final SszBitvector dasSubnets =
           peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptions(peer.getId());
       if (!dasSubnets.isSuperSetOf(advertisedDasSubnets)) {
+        LOG.debug(
+            "Data column sidecar subnet subscriptions ({}) doesn't include ENR advertised subnets ({}) for peer {}. Downscoring.",
+            () -> dasSubnets.sszSerialize().toHexString(),
+            () -> advertisedDasSubnets.sszSerialize().toHexString(),
+            peer::getId);
         reputationManager.adjustReputation(peer.getAddress(), ReputationAdjustment.LARGE_PENALTY);
         return false;
       }
