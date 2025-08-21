@@ -66,7 +66,7 @@ public class StorageBackedRecentChainDataTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider =
-      ValidatorIsConnectedProvider.NEVER;
+      ValidatorIsConnectedProvider.ALWAYS;
 
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()

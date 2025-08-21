@@ -17,16 +17,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ValidatorIsConnectedProvider {
-  ValidatorIsConnectedProvider NEVER =
+  ValidatorIsConnectedProvider ALWAYS =
       new ValidatorIsConnectedProvider() {
         @Override
         public boolean isValidatorConnected(final int validatorId, final UInt64 slot) {
-          return false;
+          return true;
         }
 
         @Override
         public SafeFuture<Boolean> isBlockProposerConnected(final UInt64 slot) {
-          return SafeFuture.completedFuture(false);
+          return SafeFuture.completedFuture(true);
         }
       };
 
