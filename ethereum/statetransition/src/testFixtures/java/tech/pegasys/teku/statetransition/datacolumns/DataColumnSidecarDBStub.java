@@ -88,13 +88,6 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
             .toList());
   }
 
-  @Override
-  public SafeFuture<Void> pruneAllSidecars(final UInt64 tillSlot) {
-    dbWriteCounter.incrementAndGet();
-    db.headMap(minimalComparableForSlot(tillSlot)).clear();
-    return SafeFuture.COMPLETE;
-  }
-
   public AtomicLong getDbReadCounter() {
     return dbReadCounter;
   }

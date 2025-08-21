@@ -57,20 +57,23 @@ public class ThrottlingBuilderClient implements BuilderClient {
         () -> delegate.registerValidators(slot, signedValidatorRegistrations));
   }
 
+  // avoid throttling for getHeader and getPayload methods
+  // as they are used in the block production path and should not be delayed
+
   @Override
   public SafeFuture<Response<Optional<SignedBuilderBid>>> getHeader(
       final UInt64 slot, final BLSPublicKey pubKey, final Bytes32 parentHash) {
-    return taskQueue.queueTask(() -> delegate.getHeader(slot, pubKey, parentHash));
+    return delegate.getHeader(slot, pubKey, parentHash);
   }
 
   @Override
   public SafeFuture<Response<BuilderPayload>> getPayload(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return taskQueue.queueTask(() -> delegate.getPayload(signedBlindedBeaconBlock));
+    return delegate.getPayload(signedBlindedBeaconBlock);
   }
 
   @Override
   public SafeFuture<Response<Void>> getPayloadV2(final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return taskQueue.queueTask(() -> delegate.getPayloadV2(signedBlindedBeaconBlock));
+    return delegate.getPayloadV2(signedBlindedBeaconBlock);
   }
 }

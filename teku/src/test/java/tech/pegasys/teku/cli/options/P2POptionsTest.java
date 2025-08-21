@@ -122,13 +122,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReadBootnodesFromConfigurationFile(@TempDir final Path tempDir)
       throws Exception {
     final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
-    final List<String> expectedBootnodes =
-        List.of(
-            "enr:-Iq4QPOida1SQLknUHJqlGuDadJO_jtQ7FnxbVGjC9WTvAaSZEMTaQcetA"
-                + "-wdOBAg8wcw3yyl0hacrZHUBzo4OO07liGAZg3XXaFgmlkgnY0gmlwhLI-72SJc2VjcDI1NmsxoQJJ3h8aUO3GJHv"
-                + "-bdvHtsQZ2OEisutelYfGjXO4lSg8BYN1ZHCCIzI",
-            "enr:-Iq4QCxbKw-XHdkvUcbd5"
-                + "-bJ8vEtyJr5jD3sg3XCwnkWXWwOEcuWWTrev8TnIcSsatTVd2LseQy1wH8u97vPGlxismiGAZerck1AgmlkgnY0gmlwhKdHDm2Jc2VjcDI1NmsxoQJJ3h8aUO3GJHv-bdvHtsQZ2OEisutelYfGjXO4lSg8BYN1ZHCCIzI");
+    final List<String> expectedBootnodes = List.of("enr:-1", "enr:-2");
     writeLinesToFile(bootnodesFile, expectedBootnodes);
 
     final Path configPath = tempDir.resolve("config.yaml");
@@ -142,6 +136,49 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();
     assertThat(discoConfig.getBootnodes()).isEqualTo(expectedBootnodes);
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS)
+  public void shouldReadBootnodesFromYamlConfigurationFile(@TempDir final Path tempDir)
+      throws Exception {
+    final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
+    final List<String> expectedBootnodes = List.of("- enr:-1", "- enr:-2");
+    writeLinesToFile(bootnodesFile, expectedBootnodes);
+
+    final Path configPath = tempDir.resolve("config.yaml");
+    Files.writeString(
+        configPath,
+        String.format("p2p-discovery-bootnodes-url: \"%s\"", bootnodesFile.toAbsolutePath()),
+        StandardCharsets.UTF_8);
+
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--config-file", configPath.toAbsolutePath().toString());
+
+    final DiscoveryConfig discoConfig = tekuConfig.discovery();
+    assertThat(discoConfig.getBootnodes())
+        .isEqualTo(expectedBootnodes.stream().map(s -> s.substring(2)).toList());
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS)
+  public void shouldGiveGoodErrorMessageReadingBootnodeUrl(@TempDir final Path tempDir)
+      throws Exception {
+    final Path bootnodesFile = Files.createFile(tempDir.resolve("bootnodes.txt"));
+    final List<String> expectedBootnodes = List.of("enode:");
+    writeLinesToFile(bootnodesFile, expectedBootnodes);
+
+    final Path configPath = tempDir.resolve("config.yaml");
+    Files.writeString(
+        configPath,
+        String.format("p2p-discovery-bootnodes-url: \"%s\"", bootnodesFile.toAbsolutePath()),
+        StandardCharsets.UTF_8);
+    assertThatThrownBy(
+            () ->
+                getTekuConfigurationFromArguments(
+                    "--config-file", configPath.toAbsolutePath().toString()))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageContaining("Invalid bootnode found in URL");
   }
 
   @Test

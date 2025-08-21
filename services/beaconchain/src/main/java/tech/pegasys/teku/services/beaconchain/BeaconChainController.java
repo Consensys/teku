@@ -776,13 +776,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             combinedChainDataClient,
             eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
     final DataColumnSidecarDbAccessor dbAccessor =
-        DataColumnSidecarDbAccessor.builder(sidecarDB)
-            .spec(spec)
-            .minCustodyPeriodSlotCalculator(minCustodyPeriodSlotCalculator)
-            .withAutoPrune(
-                pruneBuilder ->
-                    pruneBuilder.pruneMarginSlots(slotsPerEpoch).prunePeriodSlots(slotsPerEpoch))
-            .build();
+        DataColumnSidecarDbAccessor.builder(sidecarDB).spec(spec).build();
     final CanonicalBlockResolver canonicalBlockResolver =
         slot ->
             combinedChainDataClient
@@ -1121,7 +1115,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
-    VoluntaryExitValidator validator = new VoluntaryExitValidator(spec, recentChainData);
+    final VoluntaryExitValidator validator =
+        new VoluntaryExitValidator(spec, recentChainData, timeProvider);
     voluntaryExitPool =
         new MappedOperationPool<>(
             "VoluntaryExitPool",
@@ -1233,7 +1228,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
             metricsSystem);
-    forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
+    forkChoiceTrigger =
+        new ForkChoiceTrigger(
+            forkChoice,
+            beaconConfig.eth2NetworkConfig().getAttestationWaitLimitMillis(),
+            timeProvider);
   }
 
   public void initMetrics() {

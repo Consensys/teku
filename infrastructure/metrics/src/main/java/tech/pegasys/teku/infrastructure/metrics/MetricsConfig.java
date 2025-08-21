@@ -49,6 +49,7 @@ public class MetricsConfig {
   public static final int DEFAULT_BLOCK_PUBLISHING_PERFORMANCE_WARNING_BUILDER_THRESHOLD = 1500;
 
   public static final boolean DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED = false;
+  public static final boolean DEFAULT_DATA_COLUMN_SIDECARS_STORAGE_COUNTERS_ENABLED = false;
 
   private final boolean metricsEnabled;
   private final int metricsPort;
@@ -62,6 +63,7 @@ public class MetricsConfig {
   private final boolean blockProductionPerformanceEnabled;
   private final boolean tickPerformanceEnabled;
   private final boolean blobSidecarsStorageCountersEnabled;
+  private final boolean dataColumnSidecarsStorageCountersEnabled;
   private final boolean blockProductionAndPublishingPerformanceEnabled;
   private final int blockProductionPerformanceWarningLocalThreshold;
   private final int blockProductionPerformanceWarningBuilderThreshold;
@@ -81,6 +83,7 @@ public class MetricsConfig {
       final boolean blockProductionPerformanceEnabled,
       final boolean tickPerformanceEnabled,
       final boolean blobSidecarsStorageCountersEnabled,
+      final boolean dataColumnSidecarsStorageCountersEnabled,
       final boolean blockProductionAndPublishingPerformanceEnabled,
       final int blockProductionPerformanceWarningLocalThreshold,
       final int blockProductionPerformanceWarningBuilderThreshold,
@@ -98,6 +101,7 @@ public class MetricsConfig {
     this.blockProductionPerformanceEnabled = blockProductionPerformanceEnabled;
     this.tickPerformanceEnabled = tickPerformanceEnabled;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
+    this.dataColumnSidecarsStorageCountersEnabled = dataColumnSidecarsStorageCountersEnabled;
     this.blockProductionAndPublishingPerformanceEnabled =
         blockProductionAndPublishingPerformanceEnabled;
     this.blockProductionPerformanceWarningLocalThreshold =
@@ -182,6 +186,10 @@ public class MetricsConfig {
     return blobSidecarsStorageCountersEnabled;
   }
 
+  public boolean isDataColumnSidecarsStorageCountersEnabled() {
+    return dataColumnSidecarsStorageCountersEnabled;
+  }
+
   public static final class MetricsConfigBuilder {
 
     private boolean metricsEnabled = false;
@@ -208,6 +216,8 @@ public class MetricsConfig {
     private boolean tickPerformanceEnabled = DEFAULT_TICK_PERFORMANCE_ENABLED;
     private boolean blobSidecarsStorageCountersEnabled =
         DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED;
+    private boolean dataColumnSidecarsStorageCountersEnabled =
+        DEFAULT_DATA_COLUMN_SIDECARS_STORAGE_COUNTERS_ENABLED;
 
     private MetricsConfigBuilder() {}
 
@@ -320,6 +330,12 @@ public class MetricsConfig {
       return this;
     }
 
+    public MetricsConfigBuilder dataColumnSidecarsStorageCountersEnabled(
+        final boolean dataColumnSidecarsStorageCountersEnabled) {
+      this.dataColumnSidecarsStorageCountersEnabled = dataColumnSidecarsStorageCountersEnabled;
+      return this;
+    }
+
     public MetricsConfig build() {
       return new MetricsConfig(
           metricsEnabled,
@@ -334,6 +350,7 @@ public class MetricsConfig {
           blockProductionPerformanceEnabled,
           tickPerformanceEnabled,
           blobSidecarsStorageCountersEnabled,
+          dataColumnSidecarsStorageCountersEnabled,
           blockProductionAndPublishingPerformanceEnabled,
           blockProductionPerformanceWarningLocalThreshold,
           blockProductionPerformanceWarningBuilderThreshold,
