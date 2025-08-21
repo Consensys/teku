@@ -2435,7 +2435,7 @@ public class DatabaseTest {
     database.addSidecar(dataColumnSidecar1_1);
     database.addSidecar(dataColumnSidecar2_0);
 
-    database.pruneAllSidecars(ZERO);
+    database.pruneAllSidecars(ZERO, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
@@ -2443,15 +2443,86 @@ public class DatabaseTest {
               columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1, columnSlotAndIdentifier2_0);
     }
 
-    database.pruneAllSidecars(ONE);
+    database.pruneAllSidecars(ONE, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
     }
 
-    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot());
+    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot(), 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+  }
+
+  @TestTemplate
+  @SuppressWarnings("JavaCase")
+  public void pruneAllSidecars_pruneBasedOnSlots(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar dataColumnSidecar1_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
+    final DataColumnSidecar dataColumnSidecar1_1 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+    final DataColumnSidecar dataColumnSidecar1_2 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, UInt64.valueOf(2));
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_2 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_2);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar dataColumnSidecar2_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+    final SignedBeaconBlockHeader blockHeader3 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(200));
+    final DataColumnSidecar dataColumnSidecar3_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader3, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier3_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar3_0);
+
+    database.addSidecar(dataColumnSidecar1_0);
+    database.addSidecar(dataColumnSidecar1_1);
+    database.addSidecar(dataColumnSidecar1_2);
+    database.addSidecar(dataColumnSidecar2_0);
+    database.addSidecar(dataColumnSidecar3_0);
+
+    // not pruned yet should contain all sidecars
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(
+              columnSlotAndIdentifier1_0,
+              columnSlotAndIdentifier1_1,
+              columnSlotAndIdentifier1_2,
+              columnSlotAndIdentifier2_0,
+              columnSlotAndIdentifier3_0);
+    }
+
+    // prune sidecars passing 2 as the limit should prune sidecars from the first 2 slots that it
+    // can find,
+    // leaving the sidecar from block header 3
+    database.pruneAllSidecars(dataColumnSidecar3_0.getSlot(), 2);
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier3_0);
+    }
+
+    database.pruneAllSidecars(dataColumnSidecar3_0.getSlot(), 2);
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
   }

@@ -19,8 +19,6 @@ public interface DataColumnPeerManager {
 
   void addPeerListener(PeerListener listener);
 
-  void banNode(UInt256 node);
-
   interface PeerListener {
 
     void peerConnected(UInt256 nodeId);
