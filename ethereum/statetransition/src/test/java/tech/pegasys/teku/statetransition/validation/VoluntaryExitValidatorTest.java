@@ -23,6 +23,7 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -60,6 +62,7 @@ public class VoluntaryExitValidatorTest {
 
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1_000_000_000);
 
   private VoluntaryExitValidator voluntaryExitValidator;
 
@@ -68,7 +71,7 @@ public class VoluntaryExitValidatorTest {
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
 
-    voluntaryExitValidator = new VoluntaryExitValidator(mockSpec, recentChainData);
+    voluntaryExitValidator = new VoluntaryExitValidator(mockSpec, recentChainData, timeProvider);
   }
 
   @Test
@@ -82,6 +85,20 @@ public class VoluntaryExitValidatorTest {
     assertValidationResult(exit, ACCEPT);
   }
 
+  @Test
+  public void shouldAcceptVoluntaryExitThatWasSeenTooLongAgo() throws Exception {
+    beaconChainUtil.initializeStorage();
+    beaconChainUtil.createAndImportBlockAtSlot(6);
+    SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
+    when(mockSpec.validateVoluntaryExit(getBestState(), exit)).thenReturn(Optional.empty());
+    when(mockSpec.verifyVoluntaryExitSignature(getBestState(), exit, BLSSignatureVerifier.SIMPLE))
+        .thenReturn(true);
+    assertValidationResult(exit, ACCEPT);
+    assertValidationResult(exit, IGNORE, "Exit is not the first one");
+    timeProvider.advanceTimeBy(Duration.ofHours(2));
+    assertValidationResult(exit, ACCEPT);
+  }
+
   @ParameterizedTest
   @EnumSource(SpecMilestone.class)
   public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
@@ -92,7 +109,7 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     // cannot exit before epoch 64
     beaconChainUtil.createAndImportBlockAtSlot(spec.slotsPerEpoch(UInt64.ZERO) * 64L);
-    this.voluntaryExitValidator = new VoluntaryExitValidator(spec, recentChainData);
+    this.voluntaryExitValidator = new VoluntaryExitValidator(spec, recentChainData, timeProvider);
 
     final UInt64 currentEpoch = spec.getCurrentEpoch(getBestState());
     assertThat(spec.atEpoch(currentEpoch).getMilestone()).isEqualTo(specMilestone);
