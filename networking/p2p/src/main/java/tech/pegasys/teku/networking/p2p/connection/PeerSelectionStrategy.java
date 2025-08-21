@@ -20,6 +20,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public interface PeerSelectionStrategy {
@@ -28,6 +29,8 @@ public interface PeerSelectionStrategy {
       PeerPools peerPools,
       Supplier<? extends Collection<DiscoveryPeer>> candidates);
 
-  List<Peer> selectPeersToDisconnect(
+  List<PeerToDisconnect> selectPeersToDisconnect(
       P2PNetwork<?> network, DiscoveryService discoveryService, PeerPools peerPools);
+
+  record PeerToDisconnect(Peer peer, DisconnectReason reason) {}
 }

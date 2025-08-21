@@ -35,12 +35,14 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy.Shuffler;
 import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
+import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
@@ -234,7 +236,9 @@ class Eth2PeerSelectionStrategyTest {
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
     assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools))
-        .containsExactlyInAnyOrder(peer1, peer3);
+        .containsExactlyInAnyOrder(
+            new PeerSelectionStrategy.PeerToDisconnect(peer1, DisconnectReason.TOO_MANY_PEERS),
+            new PeerSelectionStrategy.PeerToDisconnect(peer3, DisconnectReason.TOO_MANY_PEERS));
   }
 
   @Test
@@ -248,7 +252,9 @@ class Eth2PeerSelectionStrategyTest {
 
     peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.STATIC);
     assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools))
-        .containsExactlyInAnyOrder(peer1, peer3);
+        .containsExactlyInAnyOrder(
+            new PeerSelectionStrategy.PeerToDisconnect(peer1, DisconnectReason.TOO_MANY_PEERS),
+            new PeerSelectionStrategy.PeerToDisconnect(peer3, DisconnectReason.TOO_MANY_PEERS));
   }
 
   @Test
@@ -266,7 +272,8 @@ class Eth2PeerSelectionStrategyTest {
     peerScorer.setScore(peer3.getId(), 50);
     // peer2 has the lowest score but is safe because it's in the randomly selected pool
     assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools))
-        .containsExactlyInAnyOrder(peer3);
+        .containsExactlyInAnyOrder(
+            new PeerSelectionStrategy.PeerToDisconnect(peer3, DisconnectReason.TOO_MANY_PEERS));
   }
 
   @Test
@@ -288,7 +295,8 @@ class Eth2PeerSelectionStrategyTest {
 
     // Peer2 was dropped from the random pool but had a better score than peer3 so was kept
     assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools))
-        .containsExactlyInAnyOrder(peer3);
+        .containsExactlyInAnyOrder(
+            new PeerSelectionStrategy.PeerToDisconnect(peer3, DisconnectReason.TOO_MANY_PEERS));
     assertThat(peerPools.getPeerConnectionType(peer2.getId()))
         .isEqualTo(PeerConnectionType.SCORE_BASED);
   }
@@ -312,7 +320,8 @@ class Eth2PeerSelectionStrategyTest {
 
     // Peer2 was dropped from the random pool and had the worst score so got dropped
     assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools))
-        .containsExactlyInAnyOrder(peer2);
+        .containsExactlyInAnyOrder(
+            new PeerSelectionStrategy.PeerToDisconnect(peer2, DisconnectReason.TOO_MANY_PEERS));
   }
 
   private Eth2PeerSelectionStrategy createStrategy() {

@@ -38,7 +38,6 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
 
@@ -184,7 +183,7 @@ public class ConnectionManager extends Service {
         .selectPeersToDisconnect(network, discoveryService, peerPools)
         .forEach(
             peerToDrop ->
-                peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS).finishTrace(LOG));
+                peerToDrop.peer().disconnectCleanly(peerToDrop.reason()).finishTrace(LOG));
   }
 
   @Override

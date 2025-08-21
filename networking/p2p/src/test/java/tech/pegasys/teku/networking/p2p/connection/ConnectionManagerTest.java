@@ -48,6 +48,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
@@ -349,7 +350,10 @@ class ConnectionManagerTest {
     final PeerConnectedSubscriber<Peer> peerConnectedSubscriber = getPeerConnectedSubscriber();
 
     when(peerSelectionStrategy.selectPeersToDisconnect(eq(network), any(), any()))
-        .thenReturn(List.of(peer1));
+        .thenReturn(
+            List.of(
+                new PeerSelectionStrategy.PeerToDisconnect(
+                    peer1, DisconnectReason.TOO_MANY_PEERS)));
     peerConnectedSubscriber.onConnected(peer1);
 
     assertThat(peer2.isConnected()).isTrue();

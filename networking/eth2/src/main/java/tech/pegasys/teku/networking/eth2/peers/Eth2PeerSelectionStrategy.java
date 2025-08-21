@@ -43,6 +43,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
@@ -164,7 +165,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   }
 
   @Override
-  public List<Peer> selectPeersToDisconnect(
+  public List<PeerToDisconnect> selectPeersToDisconnect(
       final P2PNetwork<?> network,
       final DiscoveryService discoveryService,
       final PeerPools peerPools) {
@@ -203,7 +204,9 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     // TODO: end of debug logging, for removal
 
     if (peersToDropCount == 0 || falseAdvertisingPeers.size() >= peersToDropCount) {
-      return falseAdvertisingPeers;
+      return falseAdvertisingPeers.stream()
+          .map(peer -> new PeerToDisconnect(peer, DisconnectReason.BAD_SCORE))
+          .toList();
     }
 
     final PeerScorer peerScorer = peerSubnetSubscriptionsFactory.create(network).createScorer();
@@ -221,12 +224,14 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         peer -> peerPools.addPeerToPool(peer.getId(), SCORE_BASED));
 
     return Stream.concat(
-            falseAdvertisingPeers.stream(),
+            falseAdvertisingPeers.stream()
+                .map(peer -> new PeerToDisconnect(peer, DisconnectReason.BAD_SCORE)),
             Stream.concat(
                     randomlySelectedPeersBeingDropped.stream(),
                     peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
                 .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
-                .limit(peersToDropCount - falseAdvertisingPeers.size()))
+                .limit(peersToDropCount - falseAdvertisingPeers.size())
+                .map(peer -> new PeerToDisconnect(peer, DisconnectReason.TOO_MANY_PEERS)))
         .toList();
   }
 
