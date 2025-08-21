@@ -78,25 +78,25 @@ class ProposersDataManagerTest {
   }
 
   @TestTemplate
-  void validatorIsConnected_notFound_withEmptyPreparedList() {
-    assertThat(manager.validatorIsConnected(UInt64.ZERO, UInt64.ZERO)).isFalse();
+  void isValidatorConnected_notFound_withEmptyPreparedList() {
+    assertThat(manager.isValidatorConnected(0, UInt64.ZERO)).isFalse();
   }
 
   @TestTemplate
-  void validatorIsConnected_found_withPreparedProposer() {
+  void isValidatorConnected_found_withPreparedProposer() {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
-    assertThat(manager.validatorIsConnected(UInt64.ONE, UInt64.valueOf(1))).isTrue();
+    assertThat(manager.isValidatorConnected(1, UInt64.valueOf(1))).isTrue();
   }
 
   @TestTemplate
-  void validatorIsConnected_notFound_withDifferentPreparedProposer() {
+  void isValidatorConnected_notFound_withDifferentPreparedProposer() {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
-    assertThat(manager.validatorIsConnected(UInt64.valueOf(2), UInt64.valueOf(2))).isFalse();
+    assertThat(manager.isValidatorConnected(2, UInt64.valueOf(2))).isFalse();
   }
 
   @TestTemplate
-  void validatorIsConnected_notFound_withExpiredPreparedProposer() {
+  void isValidatorConnected_notFound_withExpiredPreparedProposer() {
     manager.updatePreparedProposers(proposers, UInt64.ONE);
-    assertThat(manager.validatorIsConnected(UInt64.ONE, UInt64.valueOf(26))).isFalse();
+    assertThat(manager.isValidatorConnected(1, UInt64.valueOf(26))).isFalse();
   }
 }
