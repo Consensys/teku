@@ -15,14 +15,10 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements SpecConfigEip7805 {
 
-  private final Bytes4 eip7805ForkVersion;
-  private final UInt64 eip7805ForkEpoch;
   private final int inclusionListCommitteeSize;
   private final int maxRequestInclusionList;
   private final int maxBytesPerInclusionList;
@@ -32,8 +28,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
 
   public SpecConfigEip7805Impl(
       final SpecConfigFulu specConfig,
-      final Bytes4 eip7805ForkVersion,
-      final UInt64 eip7805ForkEpoch,
       final int inclusionListCommitteeSize,
       final int maxRequestInclusionList,
       final int maxBytesPerInclusionList,
@@ -41,24 +35,12 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
       final int proposerInclusionListCutOff,
       final int viewFreezeDeadline) {
     super(specConfig);
-    this.eip7805ForkVersion = eip7805ForkVersion;
-    this.eip7805ForkEpoch = eip7805ForkEpoch;
     this.inclusionListCommitteeSize = inclusionListCommitteeSize;
     this.maxRequestInclusionList = maxRequestInclusionList;
     this.maxBytesPerInclusionList = maxBytesPerInclusionList;
     this.attestationDeadline = attestationDeadline;
     this.proposerInclusionListCutOff = proposerInclusionListCutOff;
     this.viewFreezeDeadline = viewFreezeDeadline;
-  }
-
-  @Override
-  public Bytes4 getEip7805ForkVersion() {
-    return eip7805ForkVersion;
-  }
-
-  @Override
-  public UInt64 getEip7805ForkEpoch() {
-    return eip7805ForkEpoch;
   }
 
   @Override
@@ -111,8 +93,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
     }
     final SpecConfigEip7805Impl that = (SpecConfigEip7805Impl) o;
     return Objects.equals(specConfig, that.specConfig)
-        && Objects.equals(eip7805ForkVersion, that.eip7805ForkVersion)
-        && Objects.equals(eip7805ForkEpoch, that.eip7805ForkEpoch)
         && inclusionListCommitteeSize == that.inclusionListCommitteeSize
         && maxRequestInclusionList == that.maxRequestInclusionList
         && maxBytesPerInclusionList == that.maxBytesPerInclusionList
@@ -125,8 +105,6 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements S
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        eip7805ForkVersion,
-        eip7805ForkEpoch,
         inclusionListCommitteeSize,
         maxRequestInclusionList,
         maxBytesPerInclusionList,

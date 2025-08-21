@@ -146,7 +146,9 @@ public class GenesisGenerator {
     }
 
     // Process proposer lookahead
-    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    // TODO EIP7805
+    if (genesisSpec.getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)
+        && genesisSpec.getMilestone().isLessThan(SpecMilestone.EIP7805)) {
 
       final SchemaDefinitionsFulu schemaDefinitionsFulu =
           SchemaDefinitionsFulu.required(genesisSpec.getSchemaDefinitions());

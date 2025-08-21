@@ -179,9 +179,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-eip7805-fork-epoch", eip7805ForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.eip7805Builder(
-                    eip7805Builder -> eip7805Builder.eip7805ForkEpoch(eip7805ForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.eip7805ForkEpoch(eip7805ForkEpoch));
     return this;
   }
 
