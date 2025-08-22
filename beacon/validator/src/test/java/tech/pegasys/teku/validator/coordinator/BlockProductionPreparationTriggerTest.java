@@ -49,7 +49,7 @@ public class BlockProductionPreparationTriggerTest {
   }
 
   @Test
-  void shouldNotCallPreparatorWhenInSyncAndProposerIsConnected() {
+  void shouldCallPreparatorWhenInSyncAndProposerIsConnected() {
     when(recentChainData.isBlockProposerConnected(blockPreparationSlot))
         .thenReturn(SafeFuture.completedFuture(true));
     trigger.onSyncingStatusChanged(true);
