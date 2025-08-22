@@ -277,7 +277,7 @@ public class LateBlockReorgLogic {
     try {
       final BeaconState proposerPreState = spec.processSlots(maybeParentState.get(), proposalSlot);
       final int proposerIndex = getProposerIndex(proposerPreState, proposalSlot);
-      if (!recentChainData.validatorIsConnected(proposerIndex, proposalSlot)) {
+      if (!recentChainData.isValidatorConnected(proposerIndex, proposalSlot)) {
         LOG.debug(
             "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
         return false;
