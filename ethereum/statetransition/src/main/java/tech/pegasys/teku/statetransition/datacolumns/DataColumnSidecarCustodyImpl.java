@@ -76,11 +76,6 @@ public class DataColumnSidecarCustodyImpl
       return AsyncStream.createUnsafe(getIncompleteColumns().iterator());
     }
 
-    @SuppressWarnings("UnusedMethod")
-    public boolean isComplete() {
-      return canonicalBlockRoot().isPresent() && !isIncomplete();
-    }
-
     public boolean isIncomplete() {
       return !getIncompleteColumns().isEmpty();
     }
@@ -232,11 +227,9 @@ public class DataColumnSidecarCustodyImpl
               final UInt64 firstIncompleteSlot =
                   maybeFirstIncompleteSlot.orElseGet(
                       () -> minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot));
-              Stream<UInt64> slotStream =
-                  Stream.iterate(
-                      firstIncompleteSlot,
-                      slot -> slot.isLessThanOrEqualTo(toSlotIncluded),
-                      UInt64::increment);
+              // LOG.debug("Retrieving incomplete slot custodies from {}", firstIncompleteSlot);
+              final Stream<UInt64> slotStream =
+                  UInt64.rangeClosed(firstIncompleteSlot, toSlotIncluded);
               return AsyncStream.createUnsafe(slotStream.iterator())
                   .mapAsync(this::retrieveSlotCustody);
             });
