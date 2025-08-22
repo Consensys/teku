@@ -1379,7 +1379,7 @@ public class DatabaseTest {
 
   @TestTemplate
   @Disabled
-  // TOOD #9793
+  // TODO #9793
   public void storeNonCanonicalBlobsTest_multiple(final DatabaseContext context)
       throws IOException {
     createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
