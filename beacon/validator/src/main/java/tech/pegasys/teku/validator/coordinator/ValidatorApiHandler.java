@@ -118,14 +118,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
   private final Map<UInt64, SafeFuture<Optional<BlockContainerAndMetaData>>>
-      localBlockProductionBySlotCache = new ConcurrentHashMap<>();
-
-  private record BlockProductionContext(
-      SafeFuture<Optional<BeaconState>> state,
-      BlockProductionPerformance blockProductionPerformance) {}
-
-  private final Map<UInt64, BlockProductionContext> blockProductionStateCache =
-      new ConcurrentHashMap<>();
+      blockProductionBySlotCache = new ConcurrentHashMap<>();
+  private final Map<UInt64, BlockProductionPreparationContext>
+      blockProductionPreparationContextBySlotCache = new ConcurrentHashMap<>();
 
   private final BlockProductionAndPublishingPerformanceFactory
       blockProductionAndPublishingPerformanceFactory;
@@ -199,8 +194,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   @Override
   public void onSlot(final UInt64 slot) {
-    blockProductionStateCache.keySet().removeIf(cachedSlot -> cachedSlot.isLessThan(slot));
-    localBlockProductionBySlotCache.keySet().removeIf(cachedSlot -> cachedSlot.isLessThan(slot));
+    blockProductionPreparationContextBySlotCache
+        .keySet()
+        .removeIf(cachedSlot -> cachedSlot.isLessThan(slot));
+    blockProductionBySlotCache.keySet().removeIf(cachedSlot -> cachedSlot.isLessThan(slot));
   }
 
   @Override
@@ -335,7 +332,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
-    return localBlockProductionBySlotCache
+    return blockProductionBySlotCache
         .computeIfAbsent(
             slot,
             __ ->
@@ -344,7 +341,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         .whenException(
             __ -> {
               // allow further block production attempts for this slot
-              localBlockProductionBySlotCache.remove(slot);
+              blockProductionBySlotCache.remove(slot);
             });
   }
 
@@ -355,22 +352,23 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     prepareBlockProductionInternal(slot);
   }
 
-  private BlockProductionContext prepareBlockProductionInternal(final UInt64 slot) {
-    return blockProductionStateCache.computeIfAbsent(
+  private BlockProductionPreparationContext prepareBlockProductionInternal(final UInt64 slot) {
+    return blockProductionPreparationContextBySlotCache.computeIfAbsent(
         slot,
-        __ -> {
-          LOG.info("Preparing block production for slot {}", slot);
+        keySlot -> {
+          LOG.info("Preparing block production for slot {}", keySlot);
           final BlockProductionPerformance productionPerformance =
-              blockProductionAndPublishingPerformanceFactory.createForProduction(slot);
+              blockProductionAndPublishingPerformanceFactory.createForProduction(keySlot);
           final SafeFuture<Optional<BeaconState>> state =
               forkChoiceTrigger
-                  .prepareForBlockProduction(slot, productionPerformance)
+                  .prepareForBlockProduction(keySlot, productionPerformance)
                   .thenCompose(
                       ignored ->
                           combinedChainDataClient.getStateForBlockProduction(
-                              slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()));
+                              keySlot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
+                  .thenPeek(__ -> productionPerformance.getStateAtSlot());
 
-          return new BlockProductionContext(state, productionPerformance);
+          return new BlockProductionPreparationContext(state, productionPerformance);
         });
   }
 
@@ -385,12 +383,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       return NodeSyncingException.failedFuture();
     }
 
-    final BlockProductionContext blockProductionContext = prepareBlockProductionInternal(slot);
+    final BlockProductionPreparationContext blockProductionContext =
+        prepareBlockProductionInternal(slot);
     final BlockProductionPerformance blockProductionPerformance =
         blockProductionContext.blockProductionPerformance;
+
     return blockProductionContext
-        .state
-        .thenPeek(__ -> blockProductionPerformance.getStateAtSlot())
+        .stateFuture
         .thenCompose(
             blockSlotState ->
                 createBlock(
@@ -919,7 +918,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private boolean isLocallyCreatedBlock(final SignedBlockContainer signedBlockContainer) {
     final SafeFuture<Optional<BlockContainerAndMetaData>> localBlockProduction =
-        localBlockProductionBySlotCache.get(signedBlockContainer.getSlot());
+        blockProductionBySlotCache.get(signedBlockContainer.getSlot());
     if (localBlockProduction == null || !localBlockProduction.isCompletedNormally()) {
       return false;
     }
@@ -945,4 +944,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final List<SyncCommitteeSelectionProof> requests) {
     throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
+
+  private record BlockProductionPreparationContext(
+      SafeFuture<Optional<BeaconState>> stateFuture,
+      BlockProductionPerformance blockProductionPerformance) {}
 }
