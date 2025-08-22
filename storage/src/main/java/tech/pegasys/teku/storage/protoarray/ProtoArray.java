@@ -665,6 +665,14 @@ public class ProtoArray {
         || isFinalizedRootOrDescendant(node);
   }
 
+  boolean isJustifiedRootOrDescendant(final ProtoNode node) {
+    return getProtoNode(justifiedCheckpoint.getRoot())
+        .map(
+            justifiedNode ->
+                hasAncestorAtSlot(node, justifiedNode.getBlockSlot(), justifiedNode.getBlockRoot()))
+        .orElse(false);
+  }
+
   private boolean isFinalizedRootOrDescendant(final ProtoNode node) {
     final UInt64 finalizedEpoch = finalizedCheckpoint.getEpoch();
     final Bytes32 finalizedRoot = finalizedCheckpoint.getRoot();

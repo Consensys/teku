@@ -102,7 +102,11 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
     processOperationsNoValidation(
-        state, block.getBody(), indexedAttestationCache, getValidatorExitContextSupplier(state));
+        state,
+        block.getBody(),
+        indexedAttestationCache,
+        getValidatorExitContextSupplier(state),
+        signatureVerifier);
     processSyncAggregate(
         state, blockBody.getOptionalSyncAggregate().orElseThrow(), signatureVerifier);
   }

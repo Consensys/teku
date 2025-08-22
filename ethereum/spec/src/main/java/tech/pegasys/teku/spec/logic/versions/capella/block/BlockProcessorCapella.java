@@ -132,10 +132,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final IndexedAttestationCache indexedAttestationCache,
-      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     super.processOperationsNoValidation(
-        state, body, indexedAttestationCache, validatorExitContextSupplier);
+        state, body, indexedAttestationCache, validatorExitContextSupplier, signatureVerifier);
 
     safelyProcess(
         () ->

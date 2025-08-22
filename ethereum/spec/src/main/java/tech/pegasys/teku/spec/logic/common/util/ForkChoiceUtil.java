@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -262,8 +263,12 @@ public class ForkChoiceUtil {
               if (maybeState.isEmpty()) {
                 return AttestationProcessingResult.UNKNOWN_BLOCK;
               } else {
+                final BLSSignatureVerifier signatureVerifier =
+                    specConfig.isBlsDisabled()
+                        ? BLSSignatureVerifier.NO_OP
+                        : BLSSignatureVerifier.SIMPLE;
                 return attestationUtil.isValidIndexedAttestation(
-                    fork, maybeState.get(), validatableAttestation);
+                    fork, maybeState.get(), validatableAttestation, signatureVerifier);
               }
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));

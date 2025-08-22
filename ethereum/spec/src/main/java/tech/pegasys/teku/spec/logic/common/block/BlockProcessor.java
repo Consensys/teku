@@ -111,7 +111,8 @@ public interface BlockProcessor {
   void processAttesterSlashings(
       MutableBeaconState state,
       SszList<AttesterSlashing> attesterSlashings,
-      Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      Supplier<ValidatorExitContext> validatorExitContextSupplier,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
   void processAttestations(
