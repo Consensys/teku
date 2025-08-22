@@ -388,7 +388,7 @@ public class SpecConfigBuilder {
     rawConfig.put("DENEB_FORK_EPOCH", denebForkEpoch);
     rawConfig.put("ELECTRA_FORK_EPOCH", electraForkEpoch);
     rawConfig.put("FULU_FORK_EPOCH", fuluForkEpoch);
-    rawConfig.put("EIP7805_FORK_EPOCH", eip7805ForkVersion);
+    rawConfig.put("EIP7805_FORK_EPOCH", eip7805ForkEpoch);
 
     rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
     rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
