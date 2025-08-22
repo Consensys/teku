@@ -33,7 +33,7 @@ public class BlockProductionPreparationTrigger {
   private final Consumer<UInt64> blockProductionPreparator;
   private final AsyncRunner asyncRunner;
 
-  private boolean inSync;
+  private volatile boolean inSync;
 
   public BlockProductionPreparationTrigger(
       final RecentChainData recentChainData,
