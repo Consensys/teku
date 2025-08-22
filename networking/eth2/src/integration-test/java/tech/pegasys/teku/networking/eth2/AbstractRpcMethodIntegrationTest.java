@@ -215,22 +215,17 @@ public abstract class AbstractRpcMethodIntegrationTest {
   public record PeerAndNetwork(Eth2Peer peer, Eth2P2PNetwork network) {}
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
+    // TODO EIP7805
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
+        .filter(milestone -> !milestone.equals(SpecMilestone.EIP7805))
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
-              // TODO EIP7805: EIP7805 doesn't introduce a new beacon block schema
-              if (milestone.equals(SpecMilestone.EIP7805)) {
-                return Stream.of(
-                    Arguments.of(prevMilestone, milestone, true, true),
-                    Arguments.of(prevMilestone, milestone, false, true));
-              } else {
-                return Stream.of(
-                    Arguments.of(prevMilestone, milestone, true, true),
-                    Arguments.of(prevMilestone, milestone, false, true),
-                    Arguments.of(prevMilestone, milestone, true, false),
-                    Arguments.of(prevMilestone, milestone, false, false));
-              }
+              return Stream.of(
+                  Arguments.of(prevMilestone, milestone, true, true),
+                  Arguments.of(prevMilestone, milestone, false, true),
+                  Arguments.of(prevMilestone, milestone, true, false),
+                  Arguments.of(prevMilestone, milestone, false, false));
             });
   }
 

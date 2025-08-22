@@ -62,7 +62,9 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
     this.debugDataDumper = debugDataDumper;
     this.forkInfo = forkInfo;
     this.forkDigest = forkDigest;
-    final SpecVersion specVersion = spec.forMilestone(SpecMilestone.getHighestMilestone());
+    // TODO EIP7805 this should be set back to
+    // spec.forMilestone(SpecMilestone.getHighestMilestone())
+    final SpecVersion specVersion = spec.forMilestone(SpecMilestone.FULU);
     this.dataColumnSidecarSchema =
         SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
             .getDataColumnSidecarSchema();
