@@ -19,14 +19,13 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.InclusionListByCommitteeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.InclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
-public class SchemaDefinitionsEip7805 extends SchemaDefinitionsElectra {
+public class SchemaDefinitionsEip7805 extends SchemaDefinitionsFulu {
 
   private final InclusionListSchema inclusionListSchema;
   private final SignedInclusionListSchema signedInclusionListSchema;
@@ -34,8 +33,7 @@ public class SchemaDefinitionsEip7805 extends SchemaDefinitionsElectra {
       inclusionListByCommitteeRequestMessageSchema;
   private final SszPrimitiveVectorSchema<UInt64, SszUInt64, ?> inclusionListCommitteeSchema;
 
-  public SchemaDefinitionsEip7805(
-      final SchemaRegistry schemaRegistry, final SpecConfigEip7805 specConfigEip7805) {
+  public SchemaDefinitionsEip7805(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     this.inclusionListSchema = schemaRegistry.get(SchemaTypes.INCLUSION_LIST_SCHEMA);
     this.signedInclusionListSchema = schemaRegistry.get(SchemaTypes.SIGNED_INCLUSION_LIST_SCHEMA);

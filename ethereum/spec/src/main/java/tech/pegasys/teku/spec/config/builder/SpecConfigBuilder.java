@@ -396,7 +396,7 @@ public class SpecConfigBuilder {
     rawConfig.put("DENEB_FORK_VERSION", denebForkVersion);
     rawConfig.put("ELECTRA_FORK_VERSION", electraForkVersion);
     rawConfig.put("FULU_FORK_VERSION", fuluForkVersion);
-    rawConfig.put("EIP7805_FORK_VERSION", eip7805ForkEpoch);
+    rawConfig.put("EIP7805_FORK_VERSION", eip7805ForkVersion);
 
     // tell the fork builders their fork epoch
     altairBuilder.setForkEpoch(altairForkEpoch);
