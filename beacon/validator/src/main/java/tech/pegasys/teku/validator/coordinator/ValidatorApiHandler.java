@@ -143,7 +143,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
-
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
