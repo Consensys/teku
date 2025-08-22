@@ -33,6 +33,8 @@ public class BlockProductionPreparationTrigger {
   private final Consumer<UInt64> blockProductionPreparator;
   private final AsyncRunner asyncRunner;
 
+  private boolean inSync;
+
   public BlockProductionPreparationTrigger(
       final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
@@ -43,29 +45,27 @@ public class BlockProductionPreparationTrigger {
   }
 
   public void onBlockProductionPreparationDue(final UInt64 slot) {
+    if (!inSync) {
+      return;
+    }
     asyncRunner
         .runAsync(
             () -> {
               final UInt64 productionSlot = slot.increment();
               recentChainData
-                  .getBestState()
-                  .ifPresent(
-                      stateFuture ->
-                          stateFuture
-                              .thenAccept(
-                                  state -> {
-                                    if (recentChainData.validatorIsConnected(
-                                        recentChainData
-                                            .getSpec()
-                                            .atSlot(productionSlot)
-                                            .beaconStateAccessors()
-                                            .getBeaconProposerIndex(state, productionSlot),
-                                        productionSlot)) {
-                                      blockProductionPreparator.accept(productionSlot);
-                                    }
-                                  })
-                              .finishError(LOG));
+                  .isBlockProposerConnected(productionSlot)
+                  .thenAccept(
+                      isConnected -> {
+                        if (isConnected) {
+                          blockProductionPreparator.accept(productionSlot);
+                        }
+                      })
+                  .finishError(LOG);
             })
         .finishError(LOG);
+  }
+
+  public void onSyncingStatusChanged(final boolean inSync) {
+    this.inSync = inSync;
   }
 }

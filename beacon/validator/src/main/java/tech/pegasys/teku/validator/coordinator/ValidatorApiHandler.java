@@ -348,7 +348,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
             });
   }
 
-  public void prepareBlockProduction(final UInt64 slot) {
+  public void onBlockProductionPreparationDue(final UInt64 slot) {
     if (isSyncActive()) {
       return;
     }
