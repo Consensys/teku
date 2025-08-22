@@ -20,31 +20,31 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlockProductionPreparationTrigger {
-  public static final BlockProductionPreparationTrigger NOOP =
-      new BlockProductionPreparationTrigger(null, null, null) {
+public class FutureBlockProductionPreparationTrigger {
+  public static final FutureBlockProductionPreparationTrigger NOOP =
+      new FutureBlockProductionPreparationTrigger(null, null, null) {
         @Override
-        public void onBlockProductionPreparationDue(final UInt64 slot) {}
+        public void onFutureBlockProductionPreparationDue(final UInt64 slot) {}
       };
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
-  private final Consumer<UInt64> blockProductionPreparator;
+  private final Consumer<UInt64> futureBlockProductionPreparator;
   private final AsyncRunner asyncRunner;
 
   private volatile boolean inSync;
 
-  public BlockProductionPreparationTrigger(
+  public FutureBlockProductionPreparationTrigger(
       final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
-      final Consumer<UInt64> blockProductionPreparator) {
+      final Consumer<UInt64> futureBlockProductionPreparator) {
     this.recentChainData = recentChainData;
-    this.blockProductionPreparator = blockProductionPreparator;
+    this.futureBlockProductionPreparator = futureBlockProductionPreparator;
     this.asyncRunner = asyncRunner;
   }
 
-  public void onBlockProductionPreparationDue(final UInt64 slot) {
+  public void onFutureBlockProductionPreparationDue(final UInt64 slot) {
     if (!inSync) {
       return;
     }
@@ -57,7 +57,7 @@ public class BlockProductionPreparationTrigger {
                   .thenAccept(
                       isConnected -> {
                         if (isConnected) {
-                          blockProductionPreparator.accept(productionSlot);
+                          futureBlockProductionPreparator.accept(productionSlot);
                         }
                       })
                   .finishError(LOG);

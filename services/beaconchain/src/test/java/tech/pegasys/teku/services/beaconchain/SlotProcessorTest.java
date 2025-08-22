@@ -57,7 +57,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.validator.coordinator.BlockProductionPreparationTrigger;
+import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 
 public class SlotProcessorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -76,8 +76,8 @@ public class SlotProcessorTest {
   private final SyncService syncService = mock(SyncService.class);
   private final ForwardSync forwardSync = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
-  private final BlockProductionPreparationTrigger blockProductionPreparationTrigger =
-      mock(BlockProductionPreparationTrigger.class);
+  private final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger =
+      mock(FutureBlockProductionPreparationTrigger.class);
   private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
@@ -379,7 +379,7 @@ public class SlotProcessorTest {
     // Block preparation due
     slotProcessor.onTick(
         genesisTimeMillis.plus(millisPerSlot - BLOCK_CREATION_TOLERANCE_MS), Optional.empty());
-    verify(blockProductionPreparationTrigger).onBlockProductionPreparationDue(ZERO);
+    verify(blockProductionPreparationTrigger).onFutureBlockProductionPreparationDue(ZERO);
 
     // Slot 2 start
     final UInt64 slot1Start = genesisTimeMillis.plus(millisPerSlot);
@@ -392,7 +392,7 @@ public class SlotProcessorTest {
     // Block preparation due
     slotProcessor.onTick(
         slot1Start.plus(millisPerSlot - BLOCK_CREATION_TOLERANCE_MS), Optional.empty());
-    verify(blockProductionPreparationTrigger).onBlockProductionPreparationDue(ONE);
+    verify(blockProductionPreparationTrigger).onFutureBlockProductionPreparationDue(ONE);
   }
 
   @ParameterizedTest

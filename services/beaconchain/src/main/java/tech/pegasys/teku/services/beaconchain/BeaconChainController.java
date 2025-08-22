@@ -256,12 +256,12 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
-import tech.pegasys.teku.validator.coordinator.BlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
@@ -1674,11 +1674,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initSlotProcessor() {
-    final BlockProductionPreparationTrigger blockProductionPreparationTrigger;
+    final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger;
 
     if (beaconConfig.eth2NetworkConfig().isPrepareBlockProductionEnabled()) {
       blockProductionPreparationTrigger =
-          new BlockProductionPreparationTrigger(
+          new FutureBlockProductionPreparationTrigger(
               recentChainData,
               beaconAsyncRunner,
               slot -> validatorApiHandler.onBlockProductionPreparationDue(slot));
@@ -1686,7 +1686,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
       syncService.subscribeToSyncStateChangesAndUpdate(
           event -> blockProductionPreparationTrigger.onSyncingStatusChanged(event.isInSync()));
     } else {
-      blockProductionPreparationTrigger = BlockProductionPreparationTrigger.NOOP;
+      blockProductionPreparationTrigger = FutureBlockProductionPreparationTrigger.NOOP;
     }
 
     slotProcessor =

@@ -37,7 +37,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.validator.coordinator.BlockProductionPreparationTrigger;
+import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 
 public class SlotProcessor {
   private static final Logger LOG = LogManager.getLogger();
@@ -46,7 +46,7 @@ public class SlotProcessor {
   private final RecentChainData recentChainData;
   private final SyncService syncService;
   private final ForkChoiceTrigger forkChoiceTrigger;
-  private final BlockProductionPreparationTrigger blockProductionPreparationTrigger;
+  private final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
@@ -65,7 +65,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
-      final BlockProductionPreparationTrigger blockProductionPreparationTrigger,
+      final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
@@ -88,7 +88,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
-      final BlockProductionPreparationTrigger blockProductionPreparationTrigger,
+      final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
@@ -159,7 +159,7 @@ public class SlotProcessor {
 
     if (isBlockProductionPreparationDue(calculatedSlot, currentTimeMillis, genesisTimeMillis)) {
       onTickBlockProductionPreparation = calculatedSlot;
-      blockProductionPreparationTrigger.onBlockProductionPreparationDue(calculatedSlot);
+      blockProductionPreparationTrigger.onFutureBlockProductionPreparationDue(calculatedSlot);
     }
   }
 

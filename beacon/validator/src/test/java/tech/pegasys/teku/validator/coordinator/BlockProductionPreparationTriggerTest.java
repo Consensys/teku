@@ -33,8 +33,8 @@ public class BlockProductionPreparationTriggerTest {
   @SuppressWarnings("unchecked")
   private final Consumer<UInt64> blockProductionPreparator = mock(Consumer.class);
 
-  private final BlockProductionPreparationTrigger trigger =
-      new BlockProductionPreparationTrigger(
+  private final FutureBlockProductionPreparationTrigger trigger =
+      new FutureBlockProductionPreparationTrigger(
           recentChainData, asyncRunner, blockProductionPreparator);
 
   private final UInt64 currentSlot = UInt64.valueOf(10);
@@ -43,7 +43,7 @@ public class BlockProductionPreparationTriggerTest {
   @Test
   void shouldNotCallPreparatorWhenNotInSync() {
     trigger.onSyncingStatusChanged(false);
-    trigger.onBlockProductionPreparationDue(currentSlot);
+    trigger.onFutureBlockProductionPreparationDue(currentSlot);
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     verifyNoInteractions(blockProductionPreparator);
   }
@@ -53,7 +53,7 @@ public class BlockProductionPreparationTriggerTest {
     when(recentChainData.isBlockProposerConnected(blockPreparationSlot))
         .thenReturn(SafeFuture.completedFuture(true));
     trigger.onSyncingStatusChanged(true);
-    trigger.onBlockProductionPreparationDue(currentSlot);
+    trigger.onFutureBlockProductionPreparationDue(currentSlot);
     asyncRunner.executeQueuedActions();
     verify(recentChainData).isBlockProposerConnected(blockPreparationSlot);
     verify(blockProductionPreparator).accept(blockPreparationSlot);
@@ -64,7 +64,7 @@ public class BlockProductionPreparationTriggerTest {
     when(recentChainData.isBlockProposerConnected(blockPreparationSlot))
         .thenReturn(SafeFuture.completedFuture(false));
     trigger.onSyncingStatusChanged(true);
-    trigger.onBlockProductionPreparationDue(currentSlot);
+    trigger.onFutureBlockProductionPreparationDue(currentSlot);
     asyncRunner.executeQueuedActions();
     verify(recentChainData).isBlockProposerConnected(blockPreparationSlot);
     verifyNoInteractions(blockProductionPreparator);
