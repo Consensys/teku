@@ -261,6 +261,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.StoredLatestCanonicalBlockUpdater;
@@ -378,6 +379,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected Path debugDataDirectory;
   protected volatile UInt256 nodeId;
   protected volatile BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
+  protected volatile ValidatorApiHandler validatorApiHandler;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -1425,7 +1427,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
-    final ValidatorApiHandler validatorApiHandler =
+    this.validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(
                 spec,
@@ -1455,6 +1457,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)
+        .subscribe(SlotEventsChannel.class, validatorApiHandler)
         .subscribeMultithreaded(
             ValidatorApiChannel.class,
             validatorApiHandler,
@@ -1671,12 +1674,29 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initSlotProcessor() {
+    final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger;
+
+    if (beaconConfig.eth2NetworkConfig().isPrepareBlockProductionEnabled()) {
+      futureBlockProductionPreparationTrigger =
+          new FutureBlockProductionPreparationTrigger(
+              recentChainData,
+              beaconAsyncRunner,
+              slot -> validatorApiHandler.onBlockProductionPreparationDue(slot));
+
+      syncService.subscribeToSyncStateChangesAndUpdate(
+          event ->
+              futureBlockProductionPreparationTrigger.onSyncingStatusChanged(event.isInSync()));
+    } else {
+      futureBlockProductionPreparationTrigger = FutureBlockProductionPreparationTrigger.NOOP;
+    }
+
     slotProcessor =
         new SlotProcessor(
             spec,
             recentChainData,
             syncService,
             forkChoiceTrigger,
+            futureBlockProductionPreparationTrigger,
             forkChoiceNotifier,
             p2pNetwork,
             slotEventsChannelPublisher,

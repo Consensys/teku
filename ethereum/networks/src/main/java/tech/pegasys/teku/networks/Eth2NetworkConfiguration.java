@@ -59,6 +59,8 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
+  public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = false;
+
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = true;
   public static final int
@@ -135,6 +137,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
+  private final boolean prepareBlockProductionEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
   private final boolean rustKzgEnabled;
@@ -172,6 +175,7 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean prepareBlockProductionEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
       final boolean rustKzgEnabled,
@@ -210,6 +214,7 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
@@ -343,6 +348,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public boolean isPrepareBlockProductionEnabled() {
+    return prepareBlockProductionEnabled;
+  }
+
   public boolean isAggregatingAttestationPoolV2Enabled() {
     return aggregatingAttestationPoolV2Enabled;
   }
@@ -400,6 +409,7 @@ public class Eth2NetworkConfiguration {
         && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
+        && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
         && aggregatingAttestationPoolV2Enabled == that.aggregatingAttestationPoolV2Enabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
@@ -458,6 +468,7 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
+        prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled);
   }
@@ -494,6 +505,7 @@ public class Eth2NetworkConfiguration {
     private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean prepareBlockProductionEnabled = DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
@@ -601,6 +613,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
+          prepareBlockProductionEnabled,
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
@@ -1155,6 +1168,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder forkChoiceLateBlockReorgEnabled(final boolean forkChoiceLateBlockReorgEnabled) {
       this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+      return this;
+    }
+
+    public Builder prepareBlockProductionEnabled(final boolean prepareBlockProductionEnabled) {
+      this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
       return this;
     }
 
