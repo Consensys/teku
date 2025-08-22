@@ -464,11 +464,11 @@ public class SlotProcessorTest {
   @EnumSource(
       value = Eth2Network.class,
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
-  void shouldPrecomputeEpochTransitionBeforeBlockPreparationDue(final Eth2Network eth2Network) {
+  void blockPreparationDueShouldNotHappenTooEarly(final Eth2Network eth2Network) {
     final Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
     final int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
 
-    // check that precomputation happens before block preparation due, by more than 1s
+    // let's check that we do not trigger block preparation too early compared to slot time
     assertThat(oneThirdMillis(millisPerSlot) - BLOCK_CREATION_TOLERANCE_MS).isGreaterThan(1000);
   }
 
