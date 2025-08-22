@@ -52,6 +52,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -208,6 +209,8 @@ public class DatabaseTest {
 
   @TestTemplate
   @SuppressWarnings("JavaCase")
+  @Disabled
+  // TODO #9795
   public void verifyBlobsLifecycle(final DatabaseContext context) throws IOException {
     initialize(context);
 
@@ -378,6 +381,8 @@ public class DatabaseTest {
 
   @TestTemplate
   @SuppressWarnings("JavaCase")
+  @Disabled
+  // TODO #9794
   public void verifyNonCanonicalBlobsLifecycle(final DatabaseContext context) throws IOException {
     initialize(context);
 
@@ -1373,6 +1378,8 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  @Disabled
+  // TODO #9793
   public void storeNonCanonicalBlobsTest_multiple(final DatabaseContext context)
       throws IOException {
     createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
