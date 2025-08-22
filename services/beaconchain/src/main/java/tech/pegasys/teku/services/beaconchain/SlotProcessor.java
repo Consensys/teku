@@ -46,7 +46,7 @@ public class SlotProcessor {
   private final RecentChainData recentChainData;
   private final SyncService syncService;
   private final ForkChoiceTrigger forkChoiceTrigger;
-  private final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger;
+  private final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
@@ -57,7 +57,7 @@ public class SlotProcessor {
   private volatile UInt64 onTickSlotStart;
   private volatile UInt64 onTickSlotAttestation;
   private volatile UInt64 onTickEpochPrecompute;
-  private volatile UInt64 onTickBlockProductionPreparation;
+  private volatile UInt64 onTickFutureBlockProductionPreparation;
 
   @VisibleForTesting
   SlotProcessor(
@@ -65,7 +65,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
-      final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger,
+      final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
@@ -75,7 +75,7 @@ public class SlotProcessor {
     this.recentChainData = recentChainData;
     this.syncService = syncService;
     this.forkChoiceTrigger = forkChoiceTrigger;
-    this.blockProductionPreparationTrigger = blockProductionPreparationTrigger;
+    this.futureBlockProductionPreparationTrigger = futureBlockProductionPreparationTrigger;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
@@ -88,7 +88,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
-      final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger,
+      final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
@@ -98,7 +98,7 @@ public class SlotProcessor {
         recentChainData,
         syncService,
         forkChoiceTrigger,
-        blockProductionPreparationTrigger,
+        futureBlockProductionPreparationTrigger,
         forkChoiceNotifier,
         p2pNetwork,
         slotEventsChannelPublisher,
@@ -157,9 +157,10 @@ public class SlotProcessor {
       performanceRecord.ifPresent(TickProcessingPerformance::precomputeEpochComplete);
     }
 
-    if (isBlockProductionPreparationDue(calculatedSlot, currentTimeMillis, genesisTimeMillis)) {
-      onTickBlockProductionPreparation = calculatedSlot;
-      blockProductionPreparationTrigger.onFutureBlockProductionPreparationDue(calculatedSlot);
+    if (isFutureBlockProductionPreparationDue(
+        calculatedSlot, currentTimeMillis, genesisTimeMillis)) {
+      onTickFutureBlockProductionPreparation = calculatedSlot;
+      futureBlockProductionPreparationTrigger.onFutureBlockProductionPreparationDue(calculatedSlot);
     }
   }
 
@@ -265,9 +266,9 @@ public class SlotProcessor {
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
-  boolean isBlockProductionPreparationDue(
+  boolean isFutureBlockProductionPreparationDue(
       final UInt64 calculatedSlot, final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
-    if (!isProcessingDueForSlot(calculatedSlot, onTickBlockProductionPreparation)) {
+    if (!isProcessingDueForSlot(calculatedSlot, onTickFutureBlockProductionPreparation)) {
       return false;
     }
 

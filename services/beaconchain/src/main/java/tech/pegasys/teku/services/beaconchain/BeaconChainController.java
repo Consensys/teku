@@ -1674,19 +1674,20 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initSlotProcessor() {
-    final FutureBlockProductionPreparationTrigger blockProductionPreparationTrigger;
+    final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger;
 
     if (beaconConfig.eth2NetworkConfig().isPrepareBlockProductionEnabled()) {
-      blockProductionPreparationTrigger =
+      futureBlockProductionPreparationTrigger =
           new FutureBlockProductionPreparationTrigger(
               recentChainData,
               beaconAsyncRunner,
               slot -> validatorApiHandler.onBlockProductionPreparationDue(slot));
 
       syncService.subscribeToSyncStateChangesAndUpdate(
-          event -> blockProductionPreparationTrigger.onSyncingStatusChanged(event.isInSync()));
+          event ->
+              futureBlockProductionPreparationTrigger.onSyncingStatusChanged(event.isInSync()));
     } else {
-      blockProductionPreparationTrigger = FutureBlockProductionPreparationTrigger.NOOP;
+      futureBlockProductionPreparationTrigger = FutureBlockProductionPreparationTrigger.NOOP;
     }
 
     slotProcessor =
@@ -1695,7 +1696,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             syncService,
             forkChoiceTrigger,
-            blockProductionPreparationTrigger,
+            futureBlockProductionPreparationTrigger,
             forkChoiceNotifier,
             p2pNetwork,
             slotEventsChannelPublisher,
