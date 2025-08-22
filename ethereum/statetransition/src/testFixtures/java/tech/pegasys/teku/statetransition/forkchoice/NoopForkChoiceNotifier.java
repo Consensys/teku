@@ -44,9 +44,4 @@ public class NoopForkChoiceNotifier implements ForkChoiceNotifier {
 
   @Override
   public void onTerminalBlockReached(final Bytes32 executionBlockHash) {}
-
-  @Override
-  public boolean validatorIsConnected(final UInt64 validatorIndex, final UInt64 currentSlot) {
-    return true;
-  }
 }

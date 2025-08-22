@@ -104,11 +104,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
     eventThread.execute(() -> internalTerminalBlockReached(executionBlockHash));
   }
 
-  @Override
-  public boolean validatorIsConnected(final UInt64 validatorIndex, final UInt64 currentSlot) {
-    return proposersDataManager.validatorIsConnected(validatorIndex, currentSlot);
-  }
-
   private void internalTerminalBlockReached(final Bytes32 executionBlockHash) {
     eventThread.checkOnEventThread();
     LOG.debug("internalTerminalBlockReached executionBlockHash {}", executionBlockHash);
