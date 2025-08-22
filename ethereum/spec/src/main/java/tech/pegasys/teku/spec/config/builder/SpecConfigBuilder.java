@@ -268,7 +268,7 @@ public class SpecConfigBuilder {
                 fuluForkVersion,
                 fuluForkEpoch,
                 eip7805ForkVersion,
-                electraForkEpoch));
+                eip7805ForkEpoch));
 
     return builderChain.build(config);
   }

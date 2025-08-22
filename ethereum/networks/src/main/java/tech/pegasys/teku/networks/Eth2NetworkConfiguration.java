@@ -544,6 +544,7 @@ public class Eth2NetworkConfiguration {
                   denebForkEpoch.ifPresent(builder::denebForkEpoch);
                   electraForkEpoch.ifPresent(builder::electraForkEpoch);
                   fuluForkEpoch.ifPresent(builder::fuluForkEpoch);
+                  eip7805ForkEpoch.ifPresent(builder::eip7805ForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
