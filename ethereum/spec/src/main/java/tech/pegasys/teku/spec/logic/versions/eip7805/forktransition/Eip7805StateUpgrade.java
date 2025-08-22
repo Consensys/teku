@@ -18,40 +18,45 @@ import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
+import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 
-public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateElectra> {
+public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateFulu> {
 
   private final SpecConfigEip7805 specConfig;
   private final SchemaDefinitionsEip7805 schemaDefinitions;
   private final BeaconStateAccessorsEip7805 beaconStateAccessors;
+  private final MiscHelpersEip7805 miscHelpers;
 
   public Eip7805StateUpgrade(
       final SpecConfigEip7805 specConfig,
       final SchemaDefinitionsEip7805 schemaDefinitions,
-      final BeaconStateAccessorsEip7805 beaconStateAccessors) {
+      final BeaconStateAccessorsEip7805 beaconStateAccessors,
+      final MiscHelpersEip7805 miscHelpers) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;
+    this.miscHelpers = miscHelpers;
   }
 
   @Override
-  public BeaconStateElectra upgrade(final BeaconState preState) {
+  public BeaconStateFulu upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
-    final BeaconStateElectra preStateElectra = BeaconStateElectra.required(preState);
-    return BeaconStateElectra.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
-        .updatedElectra(
+    final BeaconStateFulu preStateFulu = BeaconStateFulu.required(preState);
+    return BeaconStateFulu.required(schemaDefinitions.getBeaconStateSchema().createEmpty())
+        .updatedFulu(
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-              state.setCurrentEpochParticipation(preStateElectra.getCurrentEpochParticipation());
-              state.setPreviousEpochParticipation(preStateElectra.getPreviousEpochParticipation());
-              state.setCurrentSyncCommittee(preStateElectra.getCurrentSyncCommittee());
-              state.setNextSyncCommittee(preStateElectra.getNextSyncCommittee());
-              state.setInactivityScores(preStateElectra.getInactivityScores());
+              state.setCurrentEpochParticipation(preStateFulu.getCurrentEpochParticipation());
+              state.setPreviousEpochParticipation(preStateFulu.getPreviousEpochParticipation());
+              state.setCurrentSyncCommittee(preStateFulu.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateFulu.getNextSyncCommittee());
+              state.setInactivityScores(preStateFulu.getInactivityScores());
 
               state.setFork(
                   new Fork(
@@ -59,19 +64,27 @@ public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateElectra> {
                       specConfig.getEip7805ForkVersion(),
                       epoch));
 
-              state.setLatestExecutionPayloadHeader(
-                  preStateElectra.getLatestExecutionPayloadHeader());
-              state.setNextWithdrawalValidatorIndex(
-                  preStateElectra.getNextWithdrawalValidatorIndex());
-              state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
-              state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
-              state.setDepositRequestsStartIndex(preStateElectra.getDepositRequestsStartIndex());
+              state.setLatestExecutionPayloadHeader(preStateFulu.getLatestExecutionPayloadHeader());
+              state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
+              state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
+              state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());
+              state.setDepositRequestsStartIndex(preStateFulu.getDepositRequestsStartIndex());
               state.setDepositBalanceToConsume(UInt64.ZERO);
-              state.setExitBalanceToConsume(preStateElectra.getExitBalanceToConsume());
-              state.setEarliestExitEpoch(preStateElectra.getEarliestExitEpoch());
+              state.setExitBalanceToConsume(preStateFulu.getExitBalanceToConsume());
+              state.setEarliestExitEpoch(preStateFulu.getEarliestExitEpoch());
               state.setConsolidationBalanceToConsume(
-                  preStateElectra.getConsolidationBalanceToConsume());
-              state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
+                  preStateFulu.getConsolidationBalanceToConsume());
+              state.setEarliestConsolidationEpoch(preStateFulu.getEarliestConsolidationEpoch());
+              state.setPendingDeposits(preStateFulu.getPendingDeposits());
+              state.setPendingPartialWithdrawals(preStateFulu.getPendingPartialWithdrawals());
+              state.setPendingDeposits(preStateFulu.getPendingDeposits());
+
+              state.setProposerLookahead(
+                  BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
+                      .getProposerLookaheadSchema()
+                      .of(
+                          miscHelpers.initializeProposerLookahead(
+                              preStateFulu, beaconStateAccessors)));
             });
   }
 }

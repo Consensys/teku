@@ -186,10 +186,9 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
 
     final InclusionListUtil inclusionListUtil =
         new InclusionListUtil(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
-
     // State upgrade
     final Eip7805StateUpgrade stateUpgrade =
-        new Eip7805StateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+        new Eip7805StateUpgrade(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
 
     return new SpecLogicEip7805(
         predicates,
