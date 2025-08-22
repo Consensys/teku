@@ -90,8 +90,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
         checkState(nextSpecMilestone.equals(SpecMilestone.FULU), "next spec should be fulu");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
       }
-      case FULU, EIP7805 ->
-          throw new RuntimeException("Base spec is already latest supported milestone");
+      case FULU -> {
+        checkState(nextSpecMilestone.equals(SpecMilestone.EIP7805), "next spec should be eip7805");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
+      }
+      case EIP7805 -> throw new RuntimeException("Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
