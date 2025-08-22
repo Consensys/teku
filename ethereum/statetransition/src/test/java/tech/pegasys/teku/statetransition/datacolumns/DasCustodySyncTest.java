@@ -238,9 +238,7 @@ public class DasCustodySyncTest {
 
   @Test
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
-    // TODO-fulu this is too high and needs to be fixed
-    // (https://github.com/Consensys/teku/issues/9470)
-    final int maxAverageColumnDbReadsPerSlot = 400;
+    // all the block data will be coming from the proto array, so it's not a problem
     final int maxAverageBlockDbReadsPerSlot = 400;
 
     custodyStand.setCurrentSlot(0);
@@ -257,7 +255,7 @@ public class DasCustodySyncTest {
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
-        .isLessThan(maxAverageColumnDbReadsPerSlot);
+        .isLessThan(MAX_AVERAGE_COLUMN_DB_READS_PER_SLOT);
     assertThat(custodyStand.blockResolver.getBlockAccessCounter().get() / 1000)
         .isLessThan(maxAverageBlockDbReadsPerSlot);
 
@@ -268,7 +266,7 @@ public class DasCustodySyncTest {
     advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
-    List<DataColumnSlotAndIdentifier> missingColumns =
+    final List<DataColumnSlotAndIdentifier> missingColumns =
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();

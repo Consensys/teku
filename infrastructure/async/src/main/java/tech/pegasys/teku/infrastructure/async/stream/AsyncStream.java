@@ -35,12 +35,6 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
     return of();
   }
 
-  static <T> AsyncStream<T> exceptional(final Throwable error) {
-    final AsyncStreamPublisher<T> ret = createPublisher(1);
-    ret.onError(error);
-    return ret;
-  }
-
   @SafeVarargs
   static <T> AsyncStream<T> of(final T... elements) {
     return createUnsafe(List.of(elements).iterator());
@@ -96,10 +90,6 @@ public interface AsyncStream<T> extends AsyncStreamBase<T> {
 
   default AsyncStream<T> limit(final long count) {
     return slice(AsyncStreamSlicer.limit(count));
-  }
-
-  default AsyncStream<T> takeWhile(final Predicate<T> whileCondition) {
-    return slice(AsyncStreamSlicer.takeWhile(whileCondition));
   }
 
   default AsyncStream<T> takeUntil(final Predicate<T> untilCondition, final boolean includeLast) {
