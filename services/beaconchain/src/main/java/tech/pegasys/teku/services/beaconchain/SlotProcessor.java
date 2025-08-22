@@ -265,7 +265,7 @@ public class SlotProcessor {
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
-  // We want block preparation to hapen after isEpochPrecalculationDue in the slot,
+  // We want block preparation to happen after isEpochPrecalculationDue in the slot,
   // so we have access to primed state caches when preparing for block production.
   // Ideally we need some buffer to allow priming to finish (at least 1s?).
   // Now is at "end-of-slot - 500ms", which is safely after 2/3 of the slot (11.5s vs 8s).
