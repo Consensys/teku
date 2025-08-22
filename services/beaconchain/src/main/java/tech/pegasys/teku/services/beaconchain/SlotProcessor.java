@@ -145,6 +145,7 @@ public class SlotProcessor {
       processSlotStart(epoch);
       performanceRecord.ifPresent(TickProcessingPerformance::startSlotComplete);
     }
+
     if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
       processSlotAttestation(performanceRecord);
       nodeSlot.inc();
@@ -235,11 +236,14 @@ public class SlotProcessor {
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,
       final UInt64 nodeSlotStartTimeMillis) {
+    if (!isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)) {
+      return false;
+    }
+
     final UInt64 earliestTimeInMillis =
         nodeSlotStartTimeMillis.plus(oneThirdSlotMillis(calculatedSlot));
-    final boolean processingDueForSlot =
-        isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation);
-    return processingDueForSlot && isTimeReached(currentTimeMillis, earliestTimeInMillis);
+
+    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   // Precalculate epoch transition 2/3 of the way through the last slot of the epoch
@@ -261,8 +265,8 @@ public class SlotProcessor {
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
-  // This must happen safely after isEpochPrecalculationDue in the slot, so we have access to
-  // primed state caches when preparing for block production.
+  // We want block preparation to hapen after isEpochPrecalculationDue in the slot,
+  // so we have access to primed state caches when preparing for block production.
   // Ideally we need some buffer to allow priming to finish (at least 1s?).
   // Now is at "end-of-slot - 500ms", which is safely after 2/3 of the slot (11.5s vs 8s).
   boolean isBlockProductionPreparationDue(
