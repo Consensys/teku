@@ -24,7 +24,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
@@ -46,29 +45,22 @@ public class SpecFactory {
   }
 
   public static Spec create(final SpecConfigAndParent<? extends SpecConfig> config) {
-    final UInt64 altairForkEpoch = config.specConfig().getAltairForkEpoch();
-    final UInt64 bellatrixForkEpoch = config.specConfig().getBellatrixForkEpoch();
-    final UInt64 capellaForkEpoch = config.specConfig().getCapellaForkEpoch();
-    final UInt64 denebForkEpoch = config.specConfig().getDenebForkEpoch();
-    final UInt64 electraForkEpoch = config.specConfig().getElectraForkEpoch();
-    final UInt64 fuluForkEpoch = config.specConfig().getFuluForkEpoch();
-    final UInt64 gloasForkEpoch = config.specConfig().getGloasForkEpoch();
-
+    final SpecConfig specConfig = config.specConfig();
     final SpecMilestone highestMilestoneSupported;
 
-    if (!gloasForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    if (!specConfig.getGloasForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = GLOAS;
-    } else if (!fuluForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    } else if (!specConfig.getFuluForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = FULU;
-    } else if (!electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    } else if (!specConfig.getElectraForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = ELECTRA;
-    } else if (!denebForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    } else if (!specConfig.getDenebForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = DENEB;
-    } else if (!capellaForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    } else if (!specConfig.getCapellaForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = CAPELLA;
-    } else if (!bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    } else if (!specConfig.getBellatrixForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = BELLATRIX;
-    } else if (!altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    } else if (!specConfig.getAltairForkEpoch().equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = ALTAIR;
     } else {
       highestMilestoneSupported = PHASE0;
