@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -65,6 +65,12 @@ public class SpecConfigBuilder {
   // Time parameters
   private UInt64 genesisDelay;
   private Integer secondsPerSlot;
+
+  private Integer slotDurationMs;
+  private Integer proposerReorgCutoffBps;
+  private Integer attestationDueBps;
+  private Integer aggregateDueBps;
+
   private Integer minAttestationInclusionDelay;
   private Integer slotsPerEpoch;
   private Integer minSeedLookahead;
@@ -135,6 +141,7 @@ public class SpecConfigBuilder {
   private final DenebBuilder denebBuilder = new DenebBuilder();
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
+  private final GloasBuilder gloasBuilder = new GloasBuilder();
 
   // forks
   // altair fork information
@@ -144,23 +151,26 @@ public class SpecConfigBuilder {
   private Bytes4 denebForkVersion;
   private Bytes4 electraForkVersion;
   private Bytes4 fuluForkVersion;
+  private Bytes4 gloasForkVersion;
   private UInt64 altairForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 bellatrixForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 denebForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 electraForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 fuluForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 gloasForkEpoch = FAR_FUTURE_EPOCH;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
-  private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
+  private final BuilderChain<SpecConfig, SpecConfigGloas> builderChain =
       BuilderChain.create(altairBuilder)
           .appendBuilder(bellatrixBuilder)
           .appendBuilder(capellaBuilder)
           .appendBuilder(denebBuilder)
           .appendBuilder(electraBuilder)
-          .appendBuilder(fuluBuilder);
+          .appendBuilder(fuluBuilder)
+          .appendBuilder(gloasBuilder);
 
-  public SpecConfigAndParent<SpecConfigFulu> build() {
+  public SpecConfigAndParent<SpecConfigGloas> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
           if (value != null) {
@@ -251,6 +261,10 @@ public class SpecConfigBuilder {
                 reorgHeadWeightThreshold,
                 reorgParentWeightThreshold,
                 maxPerEpochActivationExitChurnLimit,
+                slotDurationMs,
+                attestationDueBps,
+                aggregateDueBps,
+                proposerReorgCutoffBps,
                 altairForkVersion,
                 altairForkEpoch,
                 bellatrixForkVersion,
@@ -262,7 +276,9 @@ public class SpecConfigBuilder {
                 electraForkVersion,
                 electraForkEpoch,
                 fuluForkVersion,
-                fuluForkEpoch));
+                fuluForkEpoch,
+                gloasForkVersion,
+                gloasForkEpoch));
 
     return builderChain.build(config);
   }
@@ -289,6 +305,10 @@ public class SpecConfigBuilder {
     constants.put("genesisForkVersion", genesisForkVersion);
     constants.put("genesisDelay", genesisDelay);
     constants.put("secondsPerSlot", secondsPerSlot);
+    constants.put("slotDurationMs", slotDurationMs);
+    constants.put("proposerReorgCutoffBps", proposerReorgCutoffBps);
+    constants.put("attestationDueBps", attestationDueBps);
+    constants.put("aggregateDueBps", aggregateDueBps);
     constants.put("minAttestationInclusionDelay", minAttestationInclusionDelay);
     constants.put("slotsPerEpoch", slotsPerEpoch);
     constants.put("minSeedLookahead", minSeedLookahead);
@@ -346,6 +366,8 @@ public class SpecConfigBuilder {
     constants.put("electraForkEpoch", electraForkEpoch);
     constants.put("fuluForkVersion", fuluForkVersion);
     constants.put("fuluForkEpoch", fuluForkEpoch);
+    constants.put("gloasForkVersion", gloasForkVersion);
+    constants.put("gloasForkEpoch", gloasForkEpoch);
     return constants;
   }
 
@@ -370,6 +392,9 @@ public class SpecConfigBuilder {
     if (fuluForkEpoch.equals(FAR_FUTURE_EPOCH) && fuluForkVersion == null) {
       fuluForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+    if (gloasForkEpoch.equals(FAR_FUTURE_EPOCH) && gloasForkVersion == null) {
+      gloasForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
     // ensure raw config is accurate
     rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
     rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
@@ -377,6 +402,7 @@ public class SpecConfigBuilder {
     rawConfig.put("DENEB_FORK_EPOCH", denebForkEpoch);
     rawConfig.put("ELECTRA_FORK_EPOCH", electraForkEpoch);
     rawConfig.put("FULU_FORK_EPOCH", fuluForkEpoch);
+    rawConfig.put("GLOAS_FORK_EPOCH", gloasForkEpoch);
 
     rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
     rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
@@ -384,6 +410,7 @@ public class SpecConfigBuilder {
     rawConfig.put("DENEB_FORK_VERSION", denebForkVersion);
     rawConfig.put("ELECTRA_FORK_VERSION", electraForkVersion);
     rawConfig.put("FULU_FORK_VERSION", fuluForkVersion);
+    rawConfig.put("GLOAS_FORK_VERSION", gloasForkVersion);
 
     // tell the fork builders their fork epoch
     altairBuilder.setForkEpoch(altairForkEpoch);
@@ -392,6 +419,7 @@ public class SpecConfigBuilder {
     denebBuilder.setForkEpoch(denebForkEpoch);
     electraBuilder.setForkEpoch(electraForkEpoch);
     fuluBuilder.setForkEpoch(fuluForkEpoch);
+    gloasBuilder.setForkEpoch(gloasForkEpoch);
   }
 
   private void validate() {
@@ -601,6 +629,18 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  public SpecConfigBuilder gloasForkVersion(final Bytes4 gloasForkVersion) {
+    checkNotNull(gloasForkVersion);
+    this.gloasForkVersion = gloasForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder gloasForkEpoch(final UInt64 gloasForkEpoch) {
+    checkNotNull(gloasForkEpoch);
+    this.gloasForkEpoch = gloasForkEpoch;
+    return this;
+  }
+
   public SpecConfigBuilder genesisDelay(final UInt64 genesisDelay) {
     checkNotNull(genesisDelay);
     this.genesisDelay = genesisDelay;
@@ -610,6 +650,30 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder secondsPerSlot(final Integer secondsPerSlot) {
     checkNotNull(secondsPerSlot);
     this.secondsPerSlot = secondsPerSlot;
+    return this;
+  }
+
+  public SpecConfigBuilder slotDurationMs(final Integer slotDurationMs) {
+    checkNotNull(slotDurationMs);
+    this.slotDurationMs = slotDurationMs;
+    return this;
+  }
+
+  public SpecConfigBuilder proposerReorgCutoffBps(final Integer proposerReorgCutoffBps) {
+    checkNotNull(proposerReorgCutoffBps);
+    this.proposerReorgCutoffBps = proposerReorgCutoffBps;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationDueBps(final Integer attestationDueBps) {
+    checkNotNull(attestationDueBps);
+    this.attestationDueBps = attestationDueBps;
+    return this;
+  }
+
+  public SpecConfigBuilder aggregateDueBps(final Integer aggregateDueBps) {
+    checkNotNull(aggregateDueBps);
+    this.aggregateDueBps = aggregateDueBps;
     return this;
   }
 
@@ -904,6 +968,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder fuluBuilder(final Consumer<FuluBuilder> consumer) {
     builderChain.withBuilder(FuluBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder gloasBuilder(final Consumer<GloasBuilder> consumer) {
+    builderChain.withBuilder(GloasBuilder.class, consumer);
     return this;
   }
 }

@@ -213,8 +213,38 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getGloasForkVersion() {
+    return specConfig.getGloasForkVersion();
+  }
+
+  @Override
+  public UInt64 getGloasForkEpoch() {
+    return specConfig.getGloasForkEpoch();
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
+  }
+
+  @Override
+  public int getProposerReorgCutoffBps() {
+    return specConfig.getProposerReorgCutoffBps();
+  }
+
+  @Override
+  public int getAttestationDueBps() {
+    return specConfig.getAttestationDueBps();
+  }
+
+  @Override
+  public int getAggregateDueBps() {
+    return specConfig.getAggregateDueBps();
+  }
+
+  @Override
+  public int getSlotDurationMillis() {
+    return specConfig.getSlotDurationMillis();
   }
 
   @Override

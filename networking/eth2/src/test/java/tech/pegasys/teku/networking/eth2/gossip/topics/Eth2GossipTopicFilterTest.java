@@ -58,6 +58,7 @@ class Eth2GossipTopicFilterTest {
   private Eth2GossipTopicFilter filter;
   private Bytes4 nextForkDigest;
 
+  // TODO fix for Gloas
   @BeforeEach
   void setUp(final SpecContext specContext) {
     // we set up a spec that will be transitioning to specContext.getSpecMilestone() in
@@ -67,11 +68,8 @@ class Eth2GossipTopicFilterTest {
     nextSpecMilestone = specContext.getSpecMilestone();
     spec =
         switch (nextSpecMilestone) {
-          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
-          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
-          case BELLATRIX ->
-              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
-          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case PHASE0, ALTAIR, BELLATRIX, CAPELLA, GLOAS ->
+              throw new IllegalArgumentException(nextSpecMilestone + " is a unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(nextMilestoneForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(nextMilestoneForkEpoch);
           case FULU ->

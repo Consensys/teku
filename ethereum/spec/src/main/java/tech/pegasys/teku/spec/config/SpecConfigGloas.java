@@ -14,42 +14,29 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SpecConfigAltair extends SpecConfig {
+public interface SpecConfigGloas extends SpecConfigFulu {
 
-  static SpecConfigAltair required(final SpecConfig specConfig) {
+  static SpecConfigGloas required(final SpecConfig specConfig) {
     return specConfig
-        .toVersionAltair()
+        .toVersionGloas()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected altair spec config but got: "
+                    "Expected gloas spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
 
-  UInt64 getInactivityPenaltyQuotientAltair();
-
-  int getMinSlashingPenaltyQuotientAltair();
-
-  int getProportionalSlashingMultiplierAltair();
-
-  int getSyncCommitteeSize();
-
-  UInt64 getInactivityScoreBias();
-
-  UInt64 getInactivityScoreRecoveryRate();
-
-  int getEpochsPerSyncCommitteePeriod();
-
-  int getMinSyncCommitteeParticipants();
-
-  int getUpdateTimeout();
-
-  int getSyncMessageDueBps();
-
-  int getContributionDueBps();
-
   @Override
-  Optional<SpecConfigAltair> toVersionAltair();
+  Optional<SpecConfigGloas> toVersionGloas();
+
+  int getMaxRequestPayloads();
+
+  int getPayloadAttestationDueBps();
+
+  int getKzgCommitmentsInclusionProofDepthGloas();
+
+  int getPtcSize();
+
+  int getMaxPayloadAttestations();
 }

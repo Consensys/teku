@@ -2011,7 +2011,7 @@ public final class DataStructureUtil {
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
-      case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
+      case FULU, GLOAS -> stateBuilderFulu(validatorCount, numItemsInSszLists);
     };
   }
 

@@ -109,6 +109,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
           case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA ->
               throw new IllegalArgumentException("Milestone is not supported");
           case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
+          case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
     final SchemaDefinitionsFulu schemaDefinitionsFulu =

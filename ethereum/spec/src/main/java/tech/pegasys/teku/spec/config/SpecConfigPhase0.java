@@ -68,6 +68,10 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int slotsPerHistoricalRoot;
   private final int minValidatorWithdrawabilityDelay;
   private final UInt64 shardCommitteePeriod;
+  private final int slotDurationMillis;
+  private final int attestationDueBps;
+  private final int aggregateDueBps;
+  private final int proposerReorgCutoffBps;
 
   // State list lengths
   private final int epochsPerHistoricalVector;
@@ -144,6 +148,9 @@ public class SpecConfigPhase0 implements SpecConfig {
   // fulu fork
   private final Bytes4 fuluForkVersion;
   private final UInt64 fuluForkEpoch;
+  // gloas fork
+  private final Bytes4 gloasForkVersion;
+  private final UInt64 gloasForkEpoch;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -213,6 +220,10 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgHeadWeightThreshold,
       final int reorgParentWeightThreshold,
       final UInt64 maxPerEpochActivationExitChurnLimit,
+      final int slotDurationMillis,
+      final int attestationDueBps,
+      final int aggregateDueBps,
+      final int proposerReorgCutoffBps,
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
       final Bytes4 bellatrixForkVersion,
@@ -224,7 +235,9 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Bytes4 electraForkVersion,
       final UInt64 electraForkEpoch,
       final Bytes4 fuluForkVersion,
-      final UInt64 fuluForkEpoch) {
+      final UInt64 fuluForkEpoch,
+      final Bytes4 gloasForkVersion,
+      final UInt64 gloasForkEpoch) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -293,6 +306,10 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
     this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
+    this.slotDurationMillis = slotDurationMillis;
+    this.attestationDueBps = attestationDueBps;
+    this.aggregateDueBps = aggregateDueBps;
+    this.proposerReorgCutoffBps = proposerReorgCutoffBps;
     this.altairForkVersion = altairForkVersion;
     this.altairForkEpoch = altairForkEpoch;
     this.bellatrixForkVersion = bellatrixForkVersion;
@@ -305,6 +322,8 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.electraForkEpoch = electraForkEpoch;
     this.fuluForkVersion = fuluForkVersion;
     this.fuluForkEpoch = fuluForkEpoch;
+    this.gloasForkVersion = gloasForkVersion;
+    this.gloasForkEpoch = gloasForkEpoch;
   }
 
   @Override
@@ -493,8 +512,38 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public Bytes4 getGloasForkVersion() {
+    return gloasForkVersion;
+  }
+
+  @Override
+  public UInt64 getGloasForkEpoch() {
+    return gloasForkEpoch;
+  }
+
+  @Override
   public int getSecondsPerSlot() {
     return secondsPerSlot;
+  }
+
+  @Override
+  public int getProposerReorgCutoffBps() {
+    return proposerReorgCutoffBps;
+  }
+
+  @Override
+  public int getAttestationDueBps() {
+    return attestationDueBps;
+  }
+
+  @Override
+  public int getAggregateDueBps() {
+    return aggregateDueBps;
+  }
+
+  @Override
+  public int getSlotDurationMillis() {
+    return slotDurationMillis;
   }
 
   @Override

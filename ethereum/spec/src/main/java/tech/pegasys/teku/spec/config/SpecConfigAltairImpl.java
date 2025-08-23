@@ -32,6 +32,8 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
 
   // Time
   private final int epochsPerSyncCommitteePeriod;
+  private final int syncMessageDueBps;
+  private final int contributionDueBps;
 
   // Sync protocol
   private final int minSyncCommitteeParticipants;
@@ -47,7 +49,9 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
       final UInt64 inactivityScoreRecoveryRate,
       final int epochsPerSyncCommitteePeriod,
       final int minSyncCommitteeParticipants,
-      final int updateTimeout) {
+      final int updateTimeout,
+      final int syncMessageDueBps,
+      final int contributionDueBps) {
     super(specConfig);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
     this.minSlashingPenaltyQuotientAltair = altairMinSlashingPenaltyQuotient;
@@ -58,6 +62,8 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
     this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
     this.updateTimeout = updateTimeout;
+    this.syncMessageDueBps = syncMessageDueBps;
+    this.contributionDueBps = contributionDueBps;
   }
 
   public static SpecConfigAltair required(final SpecConfig specConfig) {
@@ -113,6 +119,16 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
   @Override
   public int getUpdateTimeout() {
     return updateTimeout;
+  }
+
+  @Override
+  public int getSyncMessageDueBps() {
+    return syncMessageDueBps;
+  }
+
+  @Override
+  public int getContributionDueBps() {
+    return contributionDueBps;
   }
 
   @Override
