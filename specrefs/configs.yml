@@ -234,6 +234,24 @@
     FULU_FORK_VERSION: Version = '0x06000000'
     </spec>
 
+- name: GLOAS_FORK_EPOCH
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: GLOAS_FORK_EPOCH:
+  spec: |
+    <spec config_var="GLOAS_FORK_EPOCH" fork="gloas" hash="c25152cf">
+    GLOAS_FORK_EPOCH: Epoch = 18446744073709551615
+    </spec>
+
+- name: GLOAS_FORK_VERSION
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: GLOAS_FORK_VERSION:
+  spec: |
+    <spec config_var="GLOAS_FORK_VERSION" fork="gloas" hash="c1c5c007">
+    GLOAS_FORK_VERSION: Version = '0x07000000'
+    </spec>
+
 - name: GENESIS_DELAY
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
@@ -268,6 +286,23 @@
   spec: |
     <spec config_var="INACTIVITY_SCORE_RECOVERY_RATE" fork="altair" hash="d7876320">
     INACTIVITY_SCORE_RECOVERY_RATE: uint64 = 16
+    </spec>
+- name: CONTRIBUTION_DUE_BPS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: CONTRIBUTION_DUE_BPS:
+  spec: |
+    <spec config_var="CONTRIBUTION_DUE_BPS" fork="altair" hash="a3808203">
+    CONTRIBUTION_DUE_BPS: uint64 = 6667
+    </spec>
+
+- name: SYNC_MESSAGE_DUE_BPS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: SYNC_MESSAGE_DUE_BPS:
+  spec: |
+    <spec config_var="SYNC_MESSAGE_DUE_BPS" fork="altair" hash="791b29d8">
+    SYNC_MESSAGE_DUE_BPS: uint64 = 3333
     </spec>
 
 - name: MAXIMUM_GOSSIP_CLOCK_DISPARITY
@@ -531,6 +566,31 @@
     SECONDS_PER_SLOT: uint64 = 12
     </spec>
 
+- name: SLOT_DURATION_MS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: SLOT_DURATION_MS:
+  spec: |
+    <spec config_var="SLOT_DURATION_MS" fork="phase0" hash="b6d4ba6d">
+    SLOT_DURATION_MS: uint64 = 12000
+    </spec>
+
+- name: ATTESTATION_DUE_BPS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: ATTESTATION_DUE_BPS:
+  spec: |
+    <spec config_var="ATTESTATION_DUE_BPS" fork="phase0" hash="929dd1c9">
+    ATTESTATION_DUE_BPS: uint64 = 3333
+    </spec>
+- name: PROPOSER_REORG_CUTOFF_BPS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: PROPOSER_REORG_CUTOFF_BPS:
+  spec: |
+    <spec config_var="PROPOSER_REORG_CUTOFF_BPS" fork="phase0" hash="a487cc43">
+    PROPOSER_REORG_CUTOFF_BPS: uint64 = 1667
+    </spec>
 - name: SHARD_COMMITTEE_PERIOD
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
@@ -583,4 +643,49 @@
   spec: |
     <spec config_var="VALIDATOR_CUSTODY_REQUIREMENT" fork="fulu" hash="4dfc4457">
     VALIDATOR_CUSTODY_REQUIREMENT = 8
+    </spec>
+
+- name: ATTESTATION_DUE_BPS_GLOAS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: ATTESTATION_DUE_BPS_GLOAS:
+  spec: |
+    <spec config_var="ATTESTATION_DUE_BPS_GLOAS" fork="gloas" hash="3863c1ef">
+    ATTESTATION_DUE_BPS_GLOAS: uint64 = 2500
+    </spec>
+
+- name: CONTRIBUTION_DUE_BPS_GLOAS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: CONTRIBUTION_DUE_BPS_GLOAS:
+  spec: |
+    <spec config_var="CONTRIBUTION_DUE_BPS_GLOAS" fork="gloas" hash="0ead2ac1">
+    CONTRIBUTION_DUE_BPS_GLOAS: uint64 = 5000
+    </spec>
+
+- name: MAX_REQUEST_PAYLOADS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: MAX_REQUEST_PAYLOADS:
+  spec: |
+    <spec config_var="MAX_REQUEST_PAYLOADS" fork="gloas" hash="23399ee5">
+    MAX_REQUEST_PAYLOADS = 128
+    </spec>
+
+- name: PAYLOAD_ATTESTATION_DUE_BPS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: PAYLOAD_ATTESTATION_DUE_BPS:
+  spec: |
+    <spec config_var="PAYLOAD_ATTESTATION_DUE_BPS" fork="gloas" hash="17307d0e">
+    PAYLOAD_ATTESTATION_DUE_BPS: uint64 = 7500
+    </spec>
+
+- name: SYNC_MESSAGE_DUE_BPS_GLOAS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: SYNC_MESSAGE_DUE_BPS_GLOAS:
+  spec: |
+    <spec config_var="SYNC_MESSAGE_DUE_BPS_GLOAS" fork="gloas" hash="47f14d95">
+    SYNC_MESSAGE_DUE_BPS_GLOAS: uint64 = 2500
     </spec>

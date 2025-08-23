@@ -13,24 +13,10 @@ specrefs:
   exceptions:
     configs:
       # added at alpha.5 for basis points spec change
-      - AGGREGATE_DUE_BPS#phase0
-      - ATTESTATION_DUE_BPS#phase0
-      - CONTRIBUTION_DUE_BPS#altair
-      - PROPOSER_REORG_CUTOFF_BPS#phase0
-      - SLOT_DURATION_MS#phase0
-      - SYNC_MESSAGE_DUE_BPS#altair
+      - AGGREGRATE_DUE_BPS#phase0
 
       # added at alpha.5 for Gloas fork (not yet implemented)
-      - AGGREGATE_DUE_BPS_GLOAS#gloas
-      - ATTESTATION_DUE_BPS_GLOAS#gloas
-      - CONTRIBUTION_DUE_BPS_GLOAS#gloas
-      - GLOAS_FORK_EPOCH#gloas
-      - GLOAS_FORK_VERSION#gloas
-      - MAX_REQUEST_PAYLOADS#gloas
-      - PAYLOAD_ATTESTATION_DUE_BPS#gloas
-
-
-      - SYNC_MESSAGE_DUE_BPS_GLOAS#gloas
+      - AGGREGRATE_DUE_BPS_GLOAS#gloas
     constants:
       # added at alpha.5 for basis points spec change
       - BASIS_POINTS#phase0
