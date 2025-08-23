@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
@@ -44,15 +43,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-@TestSpecContext(
-    milestone = {
-      SpecMilestone.ALTAIR,
-      SpecMilestone.BELLATRIX,
-      SpecMilestone.CAPELLA,
-      SpecMilestone.DENEB,
-      SpecMilestone.ELECTRA,
-      SpecMilestone.FULU,
-    })
+@TestSpecContext(allMilestones = true)
 class ProposersDataManagerTest {
 
   private final UInt64 currentForkEpoch = UInt64.valueOf(1);
@@ -81,7 +72,7 @@ class ProposersDataManagerTest {
               case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(currentForkEpoch);
               case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(currentForkEpoch);
               case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
-              case GLOAS -> throw new IllegalArgumentException("Gloas not supported");
+              case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
             });
     dataStructureUtil = specContext.getDataStructureUtil();
     defaultAddress = dataStructureUtil.randomEth1Address();

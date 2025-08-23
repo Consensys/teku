@@ -141,6 +141,12 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.FULU);
   }
 
+  public static Spec createMinimalGloas(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getGloasSpecConfig(Eth2Network.MINIMAL, configAdapter);
+    return create(specConfig, SpecMilestone.GLOAS);
+  }
+
   /**
    * Create a spec that forks to altair at the provided slot
    *
