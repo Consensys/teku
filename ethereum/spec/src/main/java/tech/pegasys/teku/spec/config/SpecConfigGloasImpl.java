@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements SpecConfigGloas {
   private static final Logger LOG = LogManager.getLogger();
@@ -102,6 +103,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   @Override
   public int getSyncMessageDueBps() {
     return syncMessageDueBps;
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.GLOAS;
   }
 
   @Override

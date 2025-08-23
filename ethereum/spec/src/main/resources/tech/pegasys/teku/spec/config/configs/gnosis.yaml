@@ -52,9 +52,9 @@ ELECTRA_FORK_EPOCH: 1337856  # 2025-04-30T14:03:40.000Z
 
 # Time parameters
 # ---------------------------------------------------------------
-# 5 seconds
+# 5 seconds (*deprecated*)
 SECONDS_PER_SLOT: 5
-# 12000 milliseconds
+# 5000 milliseconds
 SLOT_DURATION_MS: 5000
 # 6 (estimate from Gnosis Chain)
 SECONDS_PER_ETH1_BLOCK: 6

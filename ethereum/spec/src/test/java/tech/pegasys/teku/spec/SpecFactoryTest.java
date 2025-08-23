@@ -94,7 +94,7 @@ class SpecFactoryTest {
             });
     final Spec testSpec = SpecFactory.create(config);
     for (SpecMilestone currentMilestone : SpecMilestone.getAllPriorMilestones(milestone)) {
-      LOG.info("Previous milestone " + currentMilestone);
+      LOG.info("Previous milestone {}", currentMilestone);
       assertThat(testSpec.getForkSchedule().getFork(currentMilestone).getEpoch())
           .isEqualTo(UInt64.ZERO);
     }

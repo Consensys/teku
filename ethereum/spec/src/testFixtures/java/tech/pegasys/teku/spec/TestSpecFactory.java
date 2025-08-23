@@ -277,7 +277,7 @@ public class TestSpecFactory {
 
   public static Spec createMainnetGloas() {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
-        getFuluSpecConfig(Eth2Network.MAINNET);
+        getGloasSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.GLOAS);
   }
 

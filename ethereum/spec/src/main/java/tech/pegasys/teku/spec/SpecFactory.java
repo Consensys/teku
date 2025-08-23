@@ -19,19 +19,14 @@ import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
@@ -51,45 +46,19 @@ public class SpecFactory {
   }
 
   public static Spec create(final SpecConfigAndParent<? extends SpecConfig> config) {
-    final UInt64 altairForkEpoch =
-        config
-            .specConfig()
-            .toVersionAltair()
-            .map(SpecConfigAltair::getAltairForkEpoch)
-            .orElse(FAR_FUTURE_EPOCH);
-    final UInt64 bellatrixForkEpoch =
-        config
-            .specConfig()
-            .toVersionBellatrix()
-            .map(SpecConfigBellatrix::getBellatrixForkEpoch)
-            .orElse(FAR_FUTURE_EPOCH);
-    final UInt64 capellaForkEpoch =
-        config
-            .specConfig()
-            .toVersionCapella()
-            .map(SpecConfigCapella::getCapellaForkEpoch)
-            .orElse(FAR_FUTURE_EPOCH);
-    final UInt64 denebForkEpoch =
-        config
-            .specConfig()
-            .toVersionDeneb()
-            .map(SpecConfigDeneb::getDenebForkEpoch)
-            .orElse(FAR_FUTURE_EPOCH);
-    final UInt64 electraForkEpoch =
-        config
-            .specConfig()
-            .toVersionElectra()
-            .map(SpecConfigElectra::getElectraForkEpoch)
-            .orElse(FAR_FUTURE_EPOCH);
-    final UInt64 fuluForkEpoch =
-        config
-            .specConfig()
-            .toVersionFulu()
-            .map(SpecConfigFulu::getFuluForkEpoch)
-            .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 altairForkEpoch = config.specConfig().getAltairForkEpoch();
+    final UInt64 bellatrixForkEpoch = config.specConfig().getBellatrixForkEpoch();
+    final UInt64 capellaForkEpoch = config.specConfig().getCapellaForkEpoch();
+    final UInt64 denebForkEpoch = config.specConfig().getDenebForkEpoch();
+    final UInt64 electraForkEpoch = config.specConfig().getElectraForkEpoch();
+    final UInt64 fuluForkEpoch = config.specConfig().getFuluForkEpoch();
+    final UInt64 gloasForkEpoch = config.specConfig().getGloasForkEpoch();
+
     final SpecMilestone highestMilestoneSupported;
 
-    if (!fuluForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+    if (!gloasForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = GLOAS;
+    } else if (!fuluForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = FULU;
     } else if (!electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       highestMilestoneSupported = ELECTRA;
