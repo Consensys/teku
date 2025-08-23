@@ -799,11 +799,13 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder trustedSetup(final String trustedSetup) {
+      checkNotNull(trustedSetup);
       this.trustedSetup = Optional.of(trustedSetup);
       return this;
     }
 
     public Builder trustedSetupFromClasspath(final String filename) {
+      checkNotNull(filename);
       this.trustedSetup =
           Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
               .map(URL::toExternalForm);
@@ -811,36 +813,43 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder altairForkEpoch(final UInt64 altairForkEpoch) {
+      checkNotNull(altairForkEpoch);
       this.altairForkEpoch = Optional.of(altairForkEpoch);
       return this;
     }
 
     public Builder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+      checkNotNull(bellatrixForkEpoch);
       this.bellatrixForkEpoch = Optional.of(bellatrixForkEpoch);
       return this;
     }
 
     public Builder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+      checkNotNull(capellaForkEpoch);
       this.capellaForkEpoch = Optional.of(capellaForkEpoch);
       return this;
     }
 
     public Builder denebForkEpoch(final UInt64 denebForkEpoch) {
+      checkNotNull(denebForkEpoch);
       this.denebForkEpoch = Optional.of(denebForkEpoch);
       return this;
     }
 
     public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
+      checkNotNull(electraForkEpoch);
       this.electraForkEpoch = Optional.of(electraForkEpoch);
       return this;
     }
 
     public Builder fuluForkEpoch(final UInt64 fuluForkEpoch) {
+      checkNotNull(fuluForkEpoch);
       this.fuluForkEpoch = Optional.of(fuluForkEpoch);
       return this;
     }
 
     public Builder gloasForkEpoch(final UInt64 gloasForkEpoch) {
+      checkNotNull(gloasForkEpoch);
       this.gloasForkEpoch = Optional.of(gloasForkEpoch);
       return this;
     }
@@ -856,16 +865,19 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder totalTerminalDifficultyOverride(final UInt256 totalTerminalDifficultyOverride) {
+      checkNotNull(totalTerminalDifficultyOverride);
       this.totalTerminalDifficultyOverride = Optional.of(totalTerminalDifficultyOverride);
       return this;
     }
 
     public Builder terminalBlockHashOverride(final Bytes32 terminalBlockHashOverride) {
+      checkNotNull(terminalBlockHashOverride);
       this.terminalBlockHashOverride = Optional.of(terminalBlockHashOverride);
       return this;
     }
 
     public Builder terminalBlockHashEpochOverride(final UInt64 terminalBlockHashEpochOverride) {
+      checkNotNull(terminalBlockHashEpochOverride);
       this.terminalBlockHashEpochOverride = Optional.of(terminalBlockHashEpochOverride);
       return this;
     }
@@ -887,12 +899,14 @@ public class Eth2NetworkConfiguration {
 
     public Builder dataColumnSidecarRecoveryMaxDelayMillis(
         final Long dataColumnSidecarRecoveryMaxDelayMillis) {
+      checkNotNull(dataColumnSidecarRecoveryMaxDelayMillis);
       this.dataColumnSidecarRecoveryMaxDelayMillis =
           OptionalLong.of(dataColumnSidecarRecoveryMaxDelayMillis);
       return this;
     }
 
     public Builder applyNetworkDefaults(final String networkName) {
+      checkNotNull(networkName);
       Eth2Network.fromStringLenient(networkName)
           .ifPresentOrElse(
               this::applyNetworkDefaults, () -> resetAndApplyBasicDefaults(networkName));
@@ -900,6 +914,7 @@ public class Eth2NetworkConfiguration {
     }
 
     private Builder resetAndApplyBasicDefaults(final String networkName) {
+      checkNotNull(networkName);
       return reset()
           .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .constants(networkName);
