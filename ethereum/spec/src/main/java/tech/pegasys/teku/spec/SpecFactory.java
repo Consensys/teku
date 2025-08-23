@@ -46,26 +46,23 @@ public class SpecFactory {
 
   public static Spec create(final SpecConfigAndParent<? extends SpecConfig> config) {
     final SpecConfig specConfig = config.specConfig();
-    final SpecMilestone highestMilestoneSupported;
 
     if (!specConfig.getGloasForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      highestMilestoneSupported = GLOAS;
+      return Spec.create(config, GLOAS);
     } else if (!specConfig.getFuluForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      highestMilestoneSupported = FULU;
+      return Spec.create(config, FULU);
     } else if (!specConfig.getElectraForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      highestMilestoneSupported = ELECTRA;
+      return Spec.create(config, ELECTRA);
     } else if (!specConfig.getDenebForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      highestMilestoneSupported = DENEB;
+      return Spec.create(config, DENEB);
     } else if (!specConfig.getCapellaForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      highestMilestoneSupported = CAPELLA;
+      return Spec.create(config, CAPELLA);
     } else if (!specConfig.getBellatrixForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      highestMilestoneSupported = BELLATRIX;
+      return Spec.create(config, BELLATRIX);
     } else if (!specConfig.getAltairForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      highestMilestoneSupported = ALTAIR;
-    } else {
-      highestMilestoneSupported = PHASE0;
+      return Spec.create(config, ALTAIR);
     }
 
-    return Spec.create(config, highestMilestoneSupported);
+    return Spec.create(config, PHASE0);
   }
 }
