@@ -14,6 +14,7 @@ specrefs:
     configs:
       # added at alpha.5 for basis points spec change
       - AGGREGRATE_DUE_BPS#phase0
+      - ATTESTATION_DUE_BPS#phase0
 
       # added at alpha.5 for Gloas fork (not yet implemented)
       - AGGREGRATE_DUE_BPS_GLOAS#gloas
