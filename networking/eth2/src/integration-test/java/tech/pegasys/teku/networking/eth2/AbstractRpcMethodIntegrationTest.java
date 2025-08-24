@@ -92,7 +92,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       }
       case FULU -> {
         checkState(nextSpecMilestone.equals(SpecMilestone.GLOAS), "next spec should be gloas");
-        nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithGloasForkEpoch(nextSpecEpoch));
       }
       case GLOAS -> throw new RuntimeException("Base spec is already latest supported milestone");
     }

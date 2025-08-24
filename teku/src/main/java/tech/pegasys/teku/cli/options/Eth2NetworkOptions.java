@@ -479,7 +479,7 @@ public class Eth2NetworkOptions {
       builder.fuluForkEpoch(fuluForkEpoch);
     }
     if (gloasForkEpoch != null) {
-      builder.gloasForkEpoch(fuluForkEpoch);
+      builder.gloasForkEpoch(gloasForkEpoch);
     }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
