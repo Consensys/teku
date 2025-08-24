@@ -189,6 +189,34 @@ public class SpecConfigBuilder {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
       }
     }
+
+    if (slotDurationMs == null && secondsPerSlot != null) {
+      LOG.debug("Defaulting slot duration ms from secondsPerSlot: " + secondsPerSlot);
+      slotDurationMs = secondsPerSlot * 1000;
+    } else if (slotDurationMs != null
+        && secondsPerSlot != null
+        && slotDurationMs != secondsPerSlot * 1000) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The specified network configuration had both SLOT_DURATION_MS (%d) and SECONDS_PER_SLOT(%d) defined, and they were inconsistent.",
+              slotDurationMs, secondsPerSlot));
+    }
+    // defaulting for compatibility
+    if (attestationDueBps == null) {
+      attestationDueBps = 3333;
+      LOG.debug("Defaulting attestationDueBps to {}", attestationDueBps);
+    }
+
+    if (aggregateDueBps == null) {
+      aggregateDueBps = 3333;
+      LOG.debug("Defaulting aggregateDueBps to {}", aggregateDueBps);
+    }
+
+    if (proposerReorgCutoffBps == null) {
+      proposerReorgCutoffBps = 1667;
+      LOG.debug("Defaulting proposerReorgCutoffBps to {}", proposerReorgCutoffBps);
+    }
+
     applyForkVersions();
     validate();
     final SpecConfigAndParent<SpecConfig> config =
@@ -395,6 +423,7 @@ public class SpecConfigBuilder {
     if (gloasForkEpoch.equals(FAR_FUTURE_EPOCH) && gloasForkVersion == null) {
       gloasForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+
     // ensure raw config is accurate
     rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
     rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
@@ -649,6 +678,10 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder secondsPerSlot(final Integer secondsPerSlot) {
     checkNotNull(secondsPerSlot);
+    if (slotDurationMs != null) {
+      slotDurationMs = secondsPerSlot * 1000;
+      LOG.debug("also defaulting slotDurationMs to {}", slotDurationMs);
+    }
     this.secondsPerSlot = secondsPerSlot;
     return this;
   }

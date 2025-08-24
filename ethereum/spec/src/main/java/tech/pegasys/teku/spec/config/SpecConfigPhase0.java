@@ -856,6 +856,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && Objects.equals(fuluForkVersion, that.fuluForkVersion)
         && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
+        && Objects.equals(gloasForkVersion, that.gloasForkVersion)
+        && Objects.equals(gloasForkEpoch, that.gloasForkEpoch)
         && Objects.equals(genesisDelay, that.genesisDelay)
         && Objects.equals(minEpochsToInactivityPenalty, that.minEpochsToInactivityPenalty)
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
@@ -942,6 +944,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         electraForkEpoch,
         fuluForkVersion,
         fuluForkEpoch,
+        gloasForkVersion,
+        gloasForkEpoch,
         attestationSubnetPrefixBits);
   }
 }

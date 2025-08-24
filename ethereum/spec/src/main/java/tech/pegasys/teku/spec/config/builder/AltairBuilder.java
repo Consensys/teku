@@ -72,6 +72,15 @@ public class AltairBuilder extends BaseForkBuilder
 
   @Override
   public void validate() {
+    // compatibility
+    if (syncMessageDueBps == null) {
+      syncMessageDueBps = 3333;
+      LOG.debug("Defaulting syncMessageDueBps to {}", syncMessageDueBps);
+    }
+    if (contributionDueBps == null) {
+      contributionDueBps = 6667;
+      LOG.debug("Defaulting contributionDueBps to {}", contributionDueBps);
+    }
     defaultValuesIfRequired(this);
     if (inactivityScoreBias == null) {
       LOG.warn("INACTIVITY_SCORE_BIAS was empty");
