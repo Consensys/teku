@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
 
-public interface SpecConfigGloas extends SpecConfigFulu {
+public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGloas {
 
   static SpecConfigGloas required(final SpecConfig specConfig) {
     return specConfig
@@ -29,8 +29,6 @@ public interface SpecConfigGloas extends SpecConfigFulu {
 
   @Override
   Optional<SpecConfigGloas> toVersionGloas();
-
-  int getMaxRequestPayloads();
 
   int getPayloadAttestationDueBps();
 
