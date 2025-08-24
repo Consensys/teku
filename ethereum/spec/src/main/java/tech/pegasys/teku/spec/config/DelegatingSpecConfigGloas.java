@@ -49,11 +49,6 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
-  public int getKzgCommitmentsInclusionProofDepthGloas() {
-    return delegate.getKzgCommitmentsInclusionProofDepthGloas();
-  }
-
-  @Override
   public int getPtcSize() {
     return delegate.getPtcSize();
   }

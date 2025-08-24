@@ -32,8 +32,6 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
 
   int getPayloadAttestationDueBps();
 
-  int getKzgCommitmentsInclusionProofDepthGloas();
-
   int getPtcSize();
 
   int getMaxPayloadAttestations();

@@ -86,11 +86,6 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
-  public int getKzgCommitmentsInclusionProofDepthGloas() {
-    return 0;
-  }
-
-  @Override
   public int getPtcSize() {
     return ptcSize;
   }
