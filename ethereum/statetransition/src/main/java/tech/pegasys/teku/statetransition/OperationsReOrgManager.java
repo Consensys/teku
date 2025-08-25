@@ -93,6 +93,8 @@ public class OperationsReOrgManager implements ChainHeadChannel {
           final NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
               recentChainData.getAncestorsOnFork(reorgContext.commonAncestorSlot(), bestBlockRoot);
 
+          LOG.info("nowCanonicalBlockRoots: {}", nowCanonicalBlockRoots);
+
           if (!notCanonicalBlockRoots.isEmpty()) {
             var start = System.nanoTime();
             attestationPool.onReorg(reorgContext.commonAncestorSlot());
