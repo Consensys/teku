@@ -347,7 +347,7 @@ jobs:
       - capture_test_results
 
   integrationTests:
-    executor: large_executor
+    executor: medium_plus_executor
     steps:
       - prepare
       - attach_workspace:
