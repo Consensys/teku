@@ -62,6 +62,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSA
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_AGGREGATE_AND_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BEACON_BLOCK_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED_BEACON_BLOCK_SCHEMA;
@@ -79,6 +80,7 @@ import java.util.HashSet;
 import java.util.Set;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
@@ -230,6 +232,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createDataColumnSidecarSchemaProvider())
         .addProvider(createDataColumnsByRootIdentifierSchemaProvider())
         .addProvider(createMatrixEntrySchemaProvider())
+        .addProvider(createProposerLookaheadSchemaProvider())
         .addProvider(createDataColumnSidecarsByRootRequestMessageSchemaProvider())
         .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider())
         .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider());
@@ -760,6 +763,16 @@ public class SchemaRegistryBuilder {
                     SignedBeaconBlockHeader.SSZ_SCHEMA,
                     registry.get(DATA_COLUMN_SCHEMA),
                     SpecConfigFulu.required(specConfig)))
+        .build();
+  }
+
+  private static SchemaProvider<?> createProposerLookaheadSchemaProvider() {
+    return providerBuilder(PROPOSER_LOOKAHEAD_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                SszUInt64VectorSchema.create(
+                    (long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch()))
         .build();
   }
 

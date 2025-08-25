@@ -100,6 +100,11 @@ public class StateUpgradeTransitionTest {
             afterBeaconStateClass = BeaconStateFulu.class;
             yield TestSpecFactory.createMinimalWithFuluForkEpoch(milestoneTransitionEpoch);
           }
+          case GLOAS -> {
+            beforeBeaconStateClass = BeaconStateFulu.class;
+            afterBeaconStateClass = BeaconStateFulu.class;
+            yield TestSpecFactory.createMinimalWithGloasForkEpoch(milestoneTransitionEpoch);
+          }
         };
 
     genesis = createGenesis(spec);

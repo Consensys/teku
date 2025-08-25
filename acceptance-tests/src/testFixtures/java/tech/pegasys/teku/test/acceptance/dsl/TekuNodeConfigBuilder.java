@@ -173,6 +173,16 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withGloasEpoch(final UInt64 gloasForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-gloas-fork-epoch={}", gloasForkEpoch);
+    configMap.put("Xnetwork-gloas-fork-epoch", gloasForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder -> specConfigBuilder.gloasForkEpoch(gloasForkEpoch));
+    return this;
+  }
+
   public TekuNodeConfigBuilder withTrustedSetupFromClasspath(final String trustedSetup)
       throws Exception {
     mustBe(NodeType.BEACON_NODE);

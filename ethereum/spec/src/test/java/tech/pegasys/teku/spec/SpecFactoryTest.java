@@ -75,6 +75,15 @@ class SpecFactoryTest {
                         .denebForkEpoch(UInt64.ZERO)
                         .electraForkEpoch(UInt64.ZERO)
                         .fuluForkEpoch(forkEpoch);
+                case GLOAS ->
+                    builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(UInt64.ZERO)
+                        .gloasForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "
@@ -85,7 +94,7 @@ class SpecFactoryTest {
             });
     final Spec testSpec = SpecFactory.create(config);
     for (SpecMilestone currentMilestone : SpecMilestone.getAllPriorMilestones(milestone)) {
-      LOG.info("Previous milestone " + currentMilestone);
+      LOG.info("Previous milestone {}", currentMilestone);
       assertThat(testSpec.getForkSchedule().getFork(currentMilestone).getEpoch())
           .isEqualTo(UInt64.ZERO);
     }

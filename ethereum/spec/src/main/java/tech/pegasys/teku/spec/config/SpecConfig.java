@@ -67,8 +67,20 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getFuluForkEpoch();
 
+  Bytes4 getGloasForkVersion();
+
+  UInt64 getGloasForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
+
+  int getProposerReorgCutoffBps();
+
+  int getAttestationDueBps();
+
+  int getAggregateDueBps();
+
+  int getSlotDurationMillis();
 
   default int getMillisPerSlot() {
     return getSecondsPerSlot() * 1000;
@@ -213,6 +225,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
   }
 
   default Optional<SpecConfigFulu> toVersionFulu() {
+    return Optional.empty();
+  }
+
+  default Optional<SpecConfigGloas> toVersionGloas() {
     return Optional.empty();
   }
 

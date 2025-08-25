@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.networks.Eth2Presets;
 public class SpecConfigLoader {
   private static final Logger LOG = LogManager.getLogger();
   private static final List<String> AVAILABLE_PRESETS =
-      List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu");
+      List.of("phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu", "gloas");
   private static final List<String> BUILTIN_NETWORKS =
       List.of(
           "chiado",
