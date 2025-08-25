@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -205,10 +204,6 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
       final SpecMilestone nextMilestone,
       final boolean nextSpecEnabledLocally,
       final boolean nextSpecEnabledRemotely) {
-    if (nextMilestone.equals(GLOAS) && nextSpecEnabledRemotely) {
-      // TODO gloas
-      return;
-    }
     setUp(baseMilestone, Optional.of(nextMilestone));
     setupPeerStorage(true);
     final Eth2Peer peer = createPeer(nextSpecEnabledLocally, nextSpecEnabledRemotely);
