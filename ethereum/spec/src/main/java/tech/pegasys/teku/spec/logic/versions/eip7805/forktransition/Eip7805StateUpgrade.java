@@ -77,6 +77,7 @@ public class Eip7805StateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setEarliestConsolidationEpoch(preStateFulu.getEarliestConsolidationEpoch());
               state.setPendingDeposits(preStateFulu.getPendingDeposits());
               state.setPendingPartialWithdrawals(preStateFulu.getPendingPartialWithdrawals());
+              state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
               state.setProposerLookahead(
                   BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
                       .getProposerLookaheadSchema()
