@@ -11,28 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 
-public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGloas {
-
-  static SpecConfigGloas required(final SpecConfig specConfig) {
-    return specConfig
-        .toVersionGloas()
+public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconStateGloas {
+  static MutableBeaconStateGloas required(final MutableBeaconState state) {
+    return state
+        .toMutableVersionGloas()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Gloas spec config but got: "
-                        + specConfig.getClass().getSimpleName()));
+                    "Expected a Gloas state but got: " + state.getClass().getSimpleName()));
   }
 
-  int getPayloadAttestationDueBps();
-
-  int getPtcSize();
-
-  int getMaxPayloadAttestations();
+  @Override
+  BeaconStateGloas commitChanges();
 
   @Override
-  Optional<SpecConfigGloas> toVersionGloas();
+  default Optional<MutableBeaconStateGloas> toMutableVersionGloas() {
+    return Optional.of(this);
+  }
 }

@@ -143,8 +143,7 @@ public class SpecConfigBuilder {
   private final FuluBuilder fuluBuilder = new FuluBuilder();
   private final GloasBuilder gloasBuilder = new GloasBuilder();
 
-  // forks
-  // altair fork information
+  // Forks
   private Bytes4 altairForkVersion;
   private Bytes4 bellatrixForkVersion;
   private Bytes4 capellaForkVersion;

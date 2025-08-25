@@ -11,14 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
@@ -30,34 +28,23 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class BeaconStateSchemaFulu
-    extends AbstractBeaconStateSchema<BeaconStateFulu, MutableBeaconStateFulu> {
-  public static final int PROPOSER_LOOKAHEAD_FIELD_INDEX = 37;
+public class BeaconStateSchemaGloas
+    extends AbstractBeaconStateSchema<BeaconStateGloas, MutableBeaconStateGloas> {
 
   @VisibleForTesting
-  BeaconStateSchemaFulu(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    super("BeaconStateFulu", getUniqueFields(specConfig, schemaRegistry), specConfig);
+  BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    super("BeaconStateGloas", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  public static List<SszField> getUniqueFields(
+  private static List<SszField> getUniqueFields(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    final List<SszField> newFields =
-        List.of(
-            new SszField(
-                PROPOSER_LOOKAHEAD_FIELD_INDEX,
-                BeaconStateFields.PROPOSER_LOOKAHEAD,
-                () -> schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA)));
-
-    return Stream.concat(
-            BeaconStateSchemaElectra.getUniqueFields(specConfig, schemaRegistry).stream(),
-            newFields.stream())
-        .toList();
+    return BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry);
   }
 
   @SuppressWarnings("unchecked")
@@ -78,21 +65,21 @@ public class BeaconStateSchemaFulu
   }
 
   @Override
-  public MutableBeaconStateFulu createBuilder() {
-    return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
+  public MutableBeaconStateGloas createBuilder() {
+    return new MutableBeaconStateGloasImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaFulu create(
+  public static BeaconStateSchemaGloas create(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
+    return new BeaconStateSchemaGloas(specConfig, schemaRegistry);
   }
 
-  public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
+  public static BeaconStateSchemaGloas required(final BeaconStateSchema<?, ?> schema) {
     checkArgument(
-        schema instanceof BeaconStateSchemaFulu,
-        "Expected a BeaconStateSchemaFulu but was %s",
+        schema instanceof BeaconStateSchemaGloas,
+        "Expected a BeaconStateSchemaGloas but was %s",
         schema.getClass());
-    return (BeaconStateSchemaFulu) schema;
+    return (BeaconStateSchemaGloas) schema;
   }
 
   @SuppressWarnings("unchecked")
@@ -119,16 +106,16 @@ public class BeaconStateSchemaFulu
   }
 
   @Override
-  public BeaconStateFulu createEmpty() {
+  public BeaconStateGloas createEmpty() {
     return createEmptyBeaconStateImpl();
   }
 
-  private BeaconStateFuluImpl createEmptyBeaconStateImpl() {
-    return new BeaconStateFuluImpl(this);
+  private BeaconStateGloasImpl createEmptyBeaconStateImpl() {
+    return new BeaconStateGloasImpl(this);
   }
 
   @Override
-  public BeaconStateFuluImpl createFromBackingNode(final TreeNode node) {
-    return new BeaconStateFuluImpl(this, node);
+  public BeaconStateGloasImpl createFromBackingNode(final TreeNode node) {
+    return new BeaconStateGloasImpl(this, node);
   }
 }

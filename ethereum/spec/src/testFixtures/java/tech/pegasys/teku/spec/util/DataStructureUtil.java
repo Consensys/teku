@@ -2011,7 +2011,8 @@ public final class DataStructureUtil {
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
-      case FULU, GLOAS -> stateBuilderFulu(validatorCount, numItemsInSszLists);
+      case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
+      case GLOAS -> stateBuilderGloas(validatorCount, numItemsInSszLists);
     };
   }
 
@@ -2065,6 +2066,12 @@ public final class DataStructureUtil {
   public BeaconStateBuilderFulu stateBuilderFulu(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderFulu.create(this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderGloas stateBuilderGloas(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderGloas.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {

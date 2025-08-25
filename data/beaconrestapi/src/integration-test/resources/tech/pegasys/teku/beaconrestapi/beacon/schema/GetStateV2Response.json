@@ -28,9 +28,11 @@
         "$ref" : "#/components/schemas/BeaconStateDeneb"
       }, {
         "$ref" : "#/components/schemas/BeaconStateElectra"
-      },{
+      }, {
         "$ref" : "#/components/schemas/BeaconStateFulu"
-      }  ]
+      }, {
+        "$ref" : "#/components/schemas/BeaconStateGloas"
+      } ]
     }
   }
 }

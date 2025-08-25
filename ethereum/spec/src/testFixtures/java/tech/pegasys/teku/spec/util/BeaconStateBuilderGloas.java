@@ -27,16 +27,16 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
-public class BeaconStateBuilderFulu
+public class BeaconStateBuilderGloas
     extends AbstractBeaconStateBuilder<
-        BeaconStateFulu, MutableBeaconStateFulu, BeaconStateBuilderFulu> {
+        BeaconStateGloas, MutableBeaconStateGloas, BeaconStateBuilderGloas> {
   private UInt64 nextWithdrawalIndex;
   private UInt64 nextWithdrawalValidatorIndex;
 
@@ -61,7 +61,7 @@ public class BeaconStateBuilderFulu
   private SszList<PendingConsolidation> pendingConsolidations;
   private SszUInt64Vector proposerLookahead;
 
-  protected BeaconStateBuilderFulu(
+  protected BeaconStateBuilderGloas(
       final SpecVersion spec,
       final DataStructureUtil dataStructureUtil,
       final int defaultValidatorCount,
@@ -70,14 +70,14 @@ public class BeaconStateBuilderFulu
   }
 
   @Override
-  protected BeaconStateFulu getEmptyState() {
-    return BeaconStateSchemaFulu.create(
+  protected BeaconStateGloas getEmptyState() {
+    return BeaconStateSchemaGloas.create(
             spec.getConfig(), spec.getSchemaDefinitions().getSchemaRegistry())
         .createEmpty();
   }
 
   @Override
-  protected void setUniqueFields(final MutableBeaconStateFulu state) {
+  protected void setUniqueFields(final MutableBeaconStateGloas state) {
     state.setPreviousEpochParticipation(previousEpochParticipation);
     state.setCurrentEpochParticipation(currentEpochParticipation);
     state.setInactivityScores(inactivityScores);
@@ -98,51 +98,51 @@ public class BeaconStateBuilderFulu
     state.setProposerLookahead(proposerLookahead);
   }
 
-  public static BeaconStateBuilderFulu create(
+  public static BeaconStateBuilderGloas create(
       final DataStructureUtil dataStructureUtil,
       final Spec spec,
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
-    return new BeaconStateBuilderFulu(
-        spec.forMilestone(SpecMilestone.FULU),
+    return new BeaconStateBuilderGloas(
+        spec.forMilestone(SpecMilestone.GLOAS),
         dataStructureUtil,
         defaultValidatorCount,
         defaultItemsInSSZLists);
   }
 
-  public BeaconStateBuilderFulu nextWithdrawalIndex(final UInt64 nextWithdrawalIndex) {
+  public BeaconStateBuilderGloas nextWithdrawalIndex(final UInt64 nextWithdrawalIndex) {
     checkNotNull(nextWithdrawalIndex);
     this.nextWithdrawalIndex = nextWithdrawalIndex;
     return this;
   }
 
-  public BeaconStateBuilderFulu nextWithdrawalValidatorIndex(
+  public BeaconStateBuilderGloas nextWithdrawalValidatorIndex(
       final UInt64 nextWithdrawalValidatorIndex) {
     checkNotNull(nextWithdrawalValidatorIndex);
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
     return this;
   }
 
-  public BeaconStateBuilderFulu depositRequestsStartIndex(final UInt64 depositRequestsStartIndex) {
+  public BeaconStateBuilderGloas depositRequestsStartIndex(final UInt64 depositRequestsStartIndex) {
     checkNotNull(depositRequestsStartIndex);
     this.depositRequestsStartIndex = depositRequestsStartIndex;
     return this;
   }
 
-  public BeaconStateBuilderFulu depositBalanceToConsume(final UInt64 depositBalanceToConsume) {
+  public BeaconStateBuilderGloas depositBalanceToConsume(final UInt64 depositBalanceToConsume) {
     checkNotNull(depositBalanceToConsume);
     this.depositBalanceToConsume = depositBalanceToConsume;
     return this;
   }
 
-  public BeaconStateBuilderFulu pendingDeposits(final List<PendingDeposit> pendingDeposits) {
+  public BeaconStateBuilderGloas pendingDeposits(final List<PendingDeposit> pendingDeposits) {
     checkNotNull(pendingDeposits);
     this.pendingDeposits =
         getBeaconStateSchema().getPendingDepositsSchema().createFromElements(pendingDeposits);
     return this;
   }
 
-  public BeaconStateBuilderFulu pendingPartialWithdrawals(
+  public BeaconStateBuilderGloas pendingPartialWithdrawals(
       final List<PendingPartialWithdrawal> pendingPartialWithdrawals) {
     checkNotNull(pendingPartialWithdrawals);
     this.pendingPartialWithdrawals =
@@ -152,7 +152,7 @@ public class BeaconStateBuilderFulu
     return this;
   }
 
-  public BeaconStateBuilderFulu pendingConsolidations(
+  public BeaconStateBuilderGloas pendingConsolidations(
       final List<PendingConsolidation> pendingConsolidations) {
     checkNotNull(pendingConsolidations);
     this.pendingConsolidations =
@@ -162,21 +162,21 @@ public class BeaconStateBuilderFulu
     return this;
   }
 
-  public BeaconStateBuilderFulu proposerLookahead(final SszUInt64Vector proposerLookahead) {
+  public BeaconStateBuilderGloas proposerLookahead(final SszUInt64Vector proposerLookahead) {
     checkNotNull(proposerLookahead);
     this.proposerLookahead = proposerLookahead;
     return this;
   }
 
-  private BeaconStateSchemaFulu getBeaconStateSchema() {
-    return (BeaconStateSchemaFulu) spec.getSchemaDefinitions().getBeaconStateSchema();
+  private BeaconStateSchemaGloas getBeaconStateSchema() {
+    return (BeaconStateSchemaGloas) spec.getSchemaDefinitions().getBeaconStateSchema();
   }
 
   @Override
   protected void initDefaults() {
     super.initDefaults();
 
-    final BeaconStateSchemaFulu schema = getBeaconStateSchema();
+    final BeaconStateSchemaGloas schema = getBeaconStateSchema();
 
     previousEpochParticipation =
         dataStructureUtil.randomSszList(

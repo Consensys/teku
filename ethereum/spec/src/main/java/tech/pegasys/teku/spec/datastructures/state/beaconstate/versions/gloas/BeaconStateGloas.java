@@ -11,28 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu;
-
-import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 
-public interface BeaconStateFulu extends BeaconStateElectra {
-  static BeaconStateFulu required(final BeaconState state) {
+public interface BeaconStateGloas extends BeaconStateFulu {
+  static BeaconStateGloas required(final BeaconState state) {
     return state
-        .toVersionFulu()
+        .toVersionGloas()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected a Fulu state but got: " + state.getClass().getSimpleName()));
+                    "Expected a Gloas state but got: " + state.getClass().getSimpleName()));
   }
 
+  @SuppressWarnings("unused")
   private static <T extends SszData> void addItems(
       final MoreObjects.ToStringHelper stringBuilder,
       final String keyPrefix,
@@ -42,30 +40,24 @@ public interface BeaconStateFulu extends BeaconStateElectra {
     }
   }
 
-  static void describeCustomFuluFields(
-      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateFulu state) {
-    BeaconStateElectra.describeCustomElectraFields(stringBuilder, state);
-    addItems(stringBuilder, "proposer_lookahead", state.getProposerLookahead());
+  static void describeCustomGloasFields(
+      final MoreObjects.ToStringHelper stringBuilder, final BeaconStateGloas state) {
+    BeaconStateFulu.describeCustomFuluFields(stringBuilder, state);
   }
 
   @Override
-  MutableBeaconStateFulu createWritableCopy();
+  MutableBeaconStateGloas createWritableCopy();
 
   default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateFulu updatedFulu(final Mutator<MutableBeaconStateFulu, E1, E2, E3> mutator)
+      BeaconStateGloas updatedGloas(final Mutator<MutableBeaconStateGloas, E1, E2, E3> mutator)
           throws E1, E2, E3 {
-    MutableBeaconStateFulu writableCopy = createWritableCopy();
+    MutableBeaconStateGloas writableCopy = createWritableCopy();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
   }
 
   @Override
-  default Optional<BeaconStateFulu> toVersionFulu() {
+  default Optional<BeaconStateGloas> toVersionGloas() {
     return Optional.of(this);
-  }
-
-  default SszUInt64Vector getProposerLookahead() {
-    final int index = getSchema().getFieldIndex(PROPOSER_LOOKAHEAD);
-    return getAny(index);
   }
 }
