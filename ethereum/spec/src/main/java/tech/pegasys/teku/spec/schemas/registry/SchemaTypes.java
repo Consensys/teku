@@ -176,11 +176,11 @@ public class SchemaTypes {
       PENDING_CONSOLIDATIONS_SCHEMA = create("PENDING_CONSOLIDATIONS_SCHEMA");
   public static final SchemaId<SszListSchema<PendingDeposit, ?>> PENDING_DEPOSITS_SCHEMA =
       create("PENDING_DEPOSITS_SCHEMA");
-  public static final SchemaId<SszUInt64VectorSchema<?>> PROPOSER_LOOKAHEAD_SCHEMA =
-      create("PROPOSER_LOOKAHEAD_SCHEMA");
   public static final SchemaId<ExecutionPayloadAndBlobsBundleSchema>
       EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA =
           create("EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA");
+  public static final SchemaId<SszUInt64VectorSchema<?>> PROPOSER_LOOKAHEAD_SCHEMA =
+      create("PROPOSER_LOOKAHEAD_SCHEMA");
   public static final SchemaId<ExecutionPayloadAndBlobsCellBundleSchema>
       EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA =
           create("EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA");

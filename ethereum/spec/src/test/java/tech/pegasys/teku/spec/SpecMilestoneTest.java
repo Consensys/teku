@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Collection;
@@ -41,16 +40,10 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
-  private static final SpecConfigGloas GLOAS_SPEC_CONFIG =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
-          .specConfig()
-          .toVersionGloas()
-          .orElseThrow();
   private static final SpecConfigFulu FULU_SPEC_CONFIG =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName())
           .specConfig()
@@ -128,15 +121,7 @@ public class SpecMilestoneTest {
         Arguments.of(FULU, CAPELLA, false),
         Arguments.of(FULU, DENEB, false),
         Arguments.of(FULU, ELECTRA, false),
-        Arguments.of(FULU, FULU, false),
-        Arguments.of(GLOAS, PHASE0, false),
-        Arguments.of(GLOAS, ALTAIR, false),
-        Arguments.of(GLOAS, BELLATRIX, false),
-        Arguments.of(GLOAS, CAPELLA, false),
-        Arguments.of(GLOAS, DENEB, false),
-        Arguments.of(GLOAS, ELECTRA, false),
-        Arguments.of(GLOAS, FULU, false),
-        Arguments.of(GLOAS, GLOAS, false));
+        Arguments.of(FULU, FULU, false));
   }
 
   public static Stream<Arguments> isGreaterThanOrEqualToPermutations() {
@@ -183,15 +168,7 @@ public class SpecMilestoneTest {
         Arguments.of(FULU, CAPELLA, true),
         Arguments.of(FULU, DENEB, true),
         Arguments.of(FULU, ELECTRA, true),
-        Arguments.of(FULU, FULU, true),
-        Arguments.of(GLOAS, PHASE0, true),
-        Arguments.of(GLOAS, ALTAIR, true),
-        Arguments.of(GLOAS, BELLATRIX, true),
-        Arguments.of(GLOAS, CAPELLA, true),
-        Arguments.of(GLOAS, DENEB, true),
-        Arguments.of(GLOAS, ELECTRA, true),
-        Arguments.of(GLOAS, FULU, true),
-        Arguments.of(GLOAS, GLOAS, true));
+        Arguments.of(FULU, FULU, true));
   }
 
   public static Stream<Arguments> getPreviousPermutations() {
@@ -201,8 +178,7 @@ public class SpecMilestoneTest {
         Arguments.of(CAPELLA, BELLATRIX),
         Arguments.of(DENEB, CAPELLA),
         Arguments.of(ELECTRA, DENEB),
-        Arguments.of(FULU, ELECTRA),
-        Arguments.of(GLOAS, FULU));
+        Arguments.of(FULU, ELECTRA));
   }
 
   @ParameterizedTest
@@ -239,7 +215,6 @@ public class SpecMilestoneTest {
     assertThat(DENEB.getPreviousMilestoneIfExists()).contains(CAPELLA);
     assertThat(ELECTRA.getPreviousMilestoneIfExists()).contains(DENEB);
     assertThat(FULU.getPreviousMilestoneIfExists()).contains(ELECTRA);
-    assertThat(GLOAS.getPreviousMilestoneIfExists()).contains(FULU);
   }
 
   @ParameterizedTest
@@ -257,8 +232,7 @@ public class SpecMilestoneTest {
         Arguments.of(CAPELLA, List.of(PHASE0, ALTAIR, BELLATRIX)),
         Arguments.of(DENEB, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA)),
         Arguments.of(ELECTRA, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB)),
-        Arguments.of(FULU, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA)),
-        Arguments.of(GLOAS, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU)));
+        Arguments.of(FULU, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA)));
   }
 
   @ParameterizedTest
@@ -276,9 +250,7 @@ public class SpecMilestoneTest {
         Arguments.of(CAPELLA, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA)),
         Arguments.of(DENEB, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB)),
         Arguments.of(ELECTRA, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA)),
-        Arguments.of(FULU, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU)),
-        Arguments.of(
-            GLOAS, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU, GLOAS)));
+        Arguments.of(FULU, List.of(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA, FULU)));
   }
 
   @Test
@@ -354,12 +326,6 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkVersion_gloas() {
-    final Bytes4 expected = GLOAS_SPEC_CONFIG.getGloasForkVersion();
-    assertThat(SpecMilestone.getForkVersion(GLOAS_SPEC_CONFIG, GLOAS)).contains(expected);
-  }
-
-  @Test
   public void getForkEpoch_phase0() {
     final UInt64 expected = UInt64.ZERO;
     assertThat(SpecMilestone.getForkEpoch(PHASE0_SPEC_CONFIG, PHASE0)).contains(expected);
@@ -402,12 +368,6 @@ public class SpecMilestoneTest {
   public void getForkEpoch_fulu() {
     final UInt64 expected = FULU_SPEC_CONFIG.getElectraForkEpoch();
     assertThat(SpecMilestone.getForkEpoch(FULU_SPEC_CONFIG, FULU)).contains(expected);
-  }
-
-  @Test
-  public void getForkEpoch_gloas() {
-    final UInt64 expected = GLOAS_SPEC_CONFIG.getGloasForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(GLOAS_SPEC_CONFIG, GLOAS)).contains(expected);
   }
 
   @Test

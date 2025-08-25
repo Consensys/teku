@@ -44,11 +44,11 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Volun
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch.EpochProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.forktransition.GloasStateUpgrade;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SpecLogicGloas extends AbstractSpecLogic {
@@ -73,7 +73,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
-      final GloasStateUpgrade stateUpgrade) {
+      final FuluStateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -181,8 +181,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     final BlindBlockUtilFulu blindBlockUtil = new BlindBlockUtilFulu(schemaDefinitions);
 
     // State upgrade
-    final GloasStateUpgrade stateUpgrade =
-        new GloasStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
+    final FuluStateUpgrade stateUpgrade =
+        new FuluStateUpgrade(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
 
     return new SpecLogicGloas(
         predicates,

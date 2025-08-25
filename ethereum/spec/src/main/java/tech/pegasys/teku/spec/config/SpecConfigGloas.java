@@ -23,16 +23,16 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Gloas spec config but got: "
+                    "Expected gloas spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
+
+  @Override
+  Optional<SpecConfigGloas> toVersionGloas();
 
   int getPayloadAttestationDueBps();
 
   int getPtcSize();
 
   int getMaxPayloadAttestations();
-
-  @Override
-  Optional<SpecConfigGloas> toVersionGloas();
 }

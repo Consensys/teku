@@ -15,10 +15,13 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements SpecConfigGloas {
+  private static final Logger LOG = LogManager.getLogger();
   private final int aggregateDueBps;
   private final int attestationDueBps;
   private final int contributionDueBps;
@@ -104,6 +107,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
 
   @Override
   public Optional<SpecConfigGloas> toVersionGloas() {
+    LOG.info("SpecConfig version Gloas");
     return Optional.of(this);
   }
 

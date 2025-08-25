@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.schemas.registry.BaseSchemaProvider.providerBuilder;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.AGGREGATE_AND_PROOF_SCHEMA;
@@ -89,7 +88,6 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -160,7 +158,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.HistoricalSummarySchema;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation.PendingConsolidationSchema;
@@ -399,10 +396,6 @@ public class SchemaRegistryBuilder {
             FULU,
             (registry, specConfig, schemaName) ->
                 BeaconStateSchemaFulu.create(SpecConfigFulu.required(specConfig), registry))
-        .withCreator(
-            GLOAS,
-            (registry, specConfig, schemaName) ->
-                BeaconStateSchemaGloas.create(SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
@@ -773,6 +766,16 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
+  private static SchemaProvider<?> createProposerLookaheadSchemaProvider() {
+    return providerBuilder(PROPOSER_LOOKAHEAD_SCHEMA)
+        .withCreator(
+            FULU,
+            (registry, specConfig, schemaName) ->
+                SszUInt64VectorSchema.create(
+                    (long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch()))
+        .build();
+  }
+
   private static SchemaProvider<?> createDataColumnsByRootIdentifierSchemaProvider() {
     return providerBuilder(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA)
         .withCreator(
@@ -788,16 +791,6 @@ public class SchemaRegistryBuilder {
             FULU,
             (registry, specConfig, schemaName) ->
                 MatrixEntrySchema.create(registry.get(CELL_SCHEMA)))
-        .build();
-  }
-
-  private static SchemaProvider<?> createProposerLookaheadSchemaProvider() {
-    return providerBuilder(PROPOSER_LOOKAHEAD_SCHEMA)
-        .withCreator(
-            FULU,
-            (registry, specConfig, schemaName) ->
-                SszUInt64VectorSchema.create(
-                    (long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch()))
         .build();
   }
 

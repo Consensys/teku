@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 
 public interface MutableBeaconState extends BeaconState, SszMutableRefContainer {
@@ -227,10 +226,6 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   }
 
   default Optional<MutableBeaconStateFulu> toMutableVersionFulu() {
-    return Optional.empty();
-  }
-
-  default Optional<MutableBeaconStateGloas> toMutableVersionGloas() {
     return Optional.empty();
   }
 }

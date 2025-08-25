@@ -217,8 +217,10 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   public record PeerAndNetwork(Eth2Peer peer, Eth2P2PNetwork network) {}
 
+  // TODO gloas
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
+        .filter(p -> p.isLessThan(SpecMilestone.GLOAS))
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
