@@ -129,16 +129,16 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.FULU);
   }
 
-  private static Spec createMinimalGloas() {
-    final SpecConfigAndParent<? extends SpecConfig> specConfig =
-        getGloasSpecConfig(Eth2Network.MINIMAL);
-    return create(specConfig, SpecMilestone.GLOAS);
-  }
-
   public static Spec createMinimalFulu(final Consumer<SpecConfigBuilder> configAdapter) {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getFuluSpecConfig(Eth2Network.MINIMAL, configAdapter);
     return create(specConfig, SpecMilestone.FULU);
+  }
+
+  public static Spec createMinimalGloas() {
+    final SpecConfigAndParent<? extends SpecConfig> specConfig =
+        getGloasSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.GLOAS);
   }
 
   public static Spec createMinimalGloas(final Consumer<SpecConfigBuilder> configAdapter) {
@@ -221,6 +221,12 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.FULU);
   }
 
+  /**
+   * Create a spec that forks to Gloas at the provided epoch
+   *
+   * @param gloasForkEpoch The Gloas fork epoch
+   * @return A spec with Gloas enabled, forking to Gloas at the given epoch
+   */
   public static Spec createMinimalWithGloasForkEpoch(final UInt64 gloasForkEpoch) {
     final SpecConfigAndParent<? extends SpecConfig> config =
         getGloasSpecConfig(
@@ -478,12 +484,6 @@ public class TestSpecFactory {
     return getFuluSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigAndParent<? extends SpecConfig> getGloasSpecConfig(
-      final Eth2Network network) {
-    return getGloasSpecConfig(
-        network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
-  }
-
   private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
       final Eth2Network network,
       final UInt64 capellaForkEpoch,
@@ -500,6 +500,29 @@ public class TestSpecFactory {
                 .denebForkEpoch(denebForkEpoch)
                 .electraForkEpoch(electraForkEpoch)
                 .fuluForkEpoch(fuluForkEpoch));
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return requireFulu(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder
+                  .altairForkEpoch(ZERO)
+                  .bellatrixForkEpoch(UInt64.ZERO)
+                  .capellaForkEpoch(UInt64.ZERO)
+                  .denebForkEpoch(UInt64.ZERO)
+                  .electraForkEpoch(UInt64.ZERO)
+                  .fuluForkEpoch(UInt64.ZERO);
+              configAdapter.accept(builder);
+            }));
+  }
+
+  private static SpecConfigAndParent<? extends SpecConfig> getGloasSpecConfig(
+      final Eth2Network network) {
+    return getGloasSpecConfig(
+        network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getGloasSpecConfig(
@@ -522,23 +545,6 @@ public class TestSpecFactory {
                 .gloasForkEpoch(gloasForkEpoch));
   }
 
-  private static SpecConfigAndParent<? extends SpecConfig> getFuluSpecConfig(
-      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
-    return requireFulu(
-        SpecConfigLoader.loadConfig(
-            network.configName(),
-            builder -> {
-              builder
-                  .altairForkEpoch(ZERO)
-                  .bellatrixForkEpoch(UInt64.ZERO)
-                  .capellaForkEpoch(UInt64.ZERO)
-                  .denebForkEpoch(UInt64.ZERO)
-                  .electraForkEpoch(UInt64.ZERO)
-                  .fuluForkEpoch(UInt64.ZERO);
-              configAdapter.accept(builder);
-            }));
-  }
-
   private static SpecConfigAndParent<? extends SpecConfig> getGloasSpecConfig(
       final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
     return requireGloas(
@@ -552,7 +558,7 @@ public class TestSpecFactory {
                   .denebForkEpoch(UInt64.ZERO)
                   .electraForkEpoch(UInt64.ZERO)
                   .fuluForkEpoch(UInt64.ZERO)
-                  .gloasForkEpoch(UInt64.ZERO);
+                  .gloasForkEpoch(ZERO);
               configAdapter.accept(builder);
             }));
   }

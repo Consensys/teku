@@ -152,6 +152,10 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final Bytes4 gloasForkVersion;
   private final UInt64 gloasForkEpoch;
 
+  // gloas fork
+  private final Bytes4 gloasForkVersion;
+  private final UInt64 gloasForkEpoch;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,

@@ -35,6 +35,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
+
   public GossipForkSubscriptionsGloas(
       final Fork fork,
       final Spec spec,

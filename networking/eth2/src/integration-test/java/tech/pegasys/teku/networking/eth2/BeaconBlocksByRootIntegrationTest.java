@@ -256,17 +256,17 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
       // We should receive a successful response
       assertThat(res).isCompleted();
       assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
+    } else if (milestoneToBeaconBlockBodyClass(baseMilestone)
+        .equals(milestoneToBeaconBlockBodyClass(nextMilestone))) {
+      // no changes in BeaconBlockBody, so we should receive a successful response
+      assertThat(res).isCompleted();
+      assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
     } else if (!nextSpecEnabledLocally && nextSpecEnabledRemotely) {
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get)
           .hasCauseInstanceOf(RpcException.class)
           .hasRootCauseInstanceOf(UnrecognizedContextBytesException.class)
           .hasMessageContaining("Must request blocks with compatible fork.");
-    } else if (milestoneToBeaconBlockBodyClass(baseMilestone)
-        .equals(milestoneToBeaconBlockBodyClass(nextMilestone))) {
-      // no changes in BeaconBlockBody, so we should receive a successful response
-      assertThat(res).isCompleted();
-      assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
     } else {
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get)
