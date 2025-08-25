@@ -121,9 +121,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             miscHelpersFulu,
             NoOpKZG.INSTANCE,
             dataColumnSidecarPublisher,
-            () ->
-                createCustodyGroupCountManager(
-                    config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+            () -> createCustodyGroupCountManager(0, config.getSamplesPerSlot()),
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2),
