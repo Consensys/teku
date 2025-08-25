@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -90,6 +91,8 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
 
   final CustodyGroupCountManager custodyGroupCountManager =
       createCustodyGroupCountManager(custodyGroupCount, sampleGroupCount);
+  final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier =
+      () -> custodyGroupCountManager;
 
   private final DataColumnSidecarELRecoveryManager dataColumnSidecarELRecoveryManager =
       new PoolFactory(metricsSystem)
@@ -100,7 +103,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
               executionLayer,
               kzg,
               dataColumnSidecarPublisher,
-              custodyGroupCountManager,
+              custodyGroupCountManagerSupplier,
               metricsSystem,
               timeProvider);
 
@@ -133,7 +136,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
                 executionLayer,
                 kzg,
                 dataColumnSidecarPublisher,
-                custodyGroupCountManager,
+                custodyGroupCountManagerSupplier,
                 metricsSystem,
                 timeProvider);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
@@ -263,7 +266,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             10,
             kzg,
             dataColumnSidecarPublisher,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
@@ -297,7 +300,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             10,
             kzg,
             dataColumnSidecarPublisher,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
@@ -346,7 +349,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             10,
             kzg,
             dataColumnSidecarPublisher,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
@@ -383,7 +386,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             10,
             kzg,
             dataColumnSidecarPublisher,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
@@ -441,7 +444,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             10,
             kzg,
             dataColumnSidecarPublisher,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,
@@ -484,7 +487,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             10,
             kzg,
             dataColumnSidecarPublisher,
-            custodyGroupCountManager,
+            custodyGroupCountManagerSupplier,
             metricsSystem,
             timeProvider,
             EL_BLOBS_FETCHING_DELAY,

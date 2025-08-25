@@ -95,8 +95,9 @@ public class DataColumnSidecarRecoveryCustodyTest {
           miscHelpersFulu,
           NoOpKZG.INSTANCE,
           dataColumnSidecarPublisher,
-          createCustodyGroupCountManager(
-              config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+          () ->
+              createCustodyGroupCountManager(
+                  config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
           config.getNumberOfColumns(),
           config.getNumberOfCustodyGroups(),
           __ -> Duration.ofSeconds(2),
@@ -120,8 +121,9 @@ public class DataColumnSidecarRecoveryCustodyTest {
             miscHelpersFulu,
             NoOpKZG.INSTANCE,
             dataColumnSidecarPublisher,
-            createCustodyGroupCountManager(
-                config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+            () ->
+                createCustodyGroupCountManager(
+                    config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2),
@@ -142,7 +144,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
             miscHelpersFulu,
             NoOpKZG.INSTANCE,
             dataColumnSidecarPublisher,
-            CustodyGroupCountManager.NOOP,
+            () -> CustodyGroupCountManager.NOOP,
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2),

@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -116,8 +117,8 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
-  protected DataColumnSidecarByRootCustody dataColumnSidecarCustody;
-  protected CustodyGroupCountManager custodyGroupCountManager;
+  protected Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
+  protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   protected MetadataMessagesFactory metadataMessagesFactory;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
@@ -185,8 +186,8 @@ public class Eth2P2PNetworkBuilder {
         Eth2PeerManager.create(
             asyncRunner,
             combinedChainDataClient,
-            dataColumnSidecarCustody,
-            custodyGroupCountManager,
+            dataColumnSidecarCustodySupplier,
+            custodyGroupCountManagerSupplier,
             metadataMessagesFactory,
             metricsSystem,
             attestationSubnetService,
@@ -590,8 +591,8 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
-    assertNotNull("dataColumnSidecarCustody", dataColumnSidecarCustody);
-    assertNotNull("custodyGroupCountManager", custodyGroupCountManager);
+    assertNotNull("dataColumnSidecarCustodySupplier", dataColumnSidecarCustodySupplier);
+    assertNotNull("custodyGroupCountManagerSupplier", custodyGroupCountManagerSupplier);
     assertNotNull("metadataMessagesFactory", metadataMessagesFactory);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
@@ -633,16 +634,16 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder dataColumnSidecarCustody(
-      final DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
-    checkNotNull(dataColumnSidecarCustody);
-    this.dataColumnSidecarCustody = dataColumnSidecarCustody;
+      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier) {
+    checkNotNull(dataColumnSidecarCustodySupplier);
+    this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     return this;
   }
 
-  public Eth2P2PNetworkBuilder custodyGroupCountManager(
-      final CustodyGroupCountManager custodyGroupCountManager) {
-    checkNotNull(custodyGroupCountManager);
-    this.custodyGroupCountManager = custodyGroupCountManager;
+  public Eth2P2PNetworkBuilder custodyGroupCountManagerSupplier(
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier) {
+    checkNotNull(custodyGroupCountManagerSupplier);
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     return this;
   }
 

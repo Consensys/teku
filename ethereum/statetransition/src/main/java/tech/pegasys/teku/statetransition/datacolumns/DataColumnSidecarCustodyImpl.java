@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -93,7 +94,7 @@ public class DataColumnSidecarCustodyImpl
   private final CanonicalBlockResolver blockResolver;
   private final AtomicInteger totalCustodyGroupCount;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
-  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
 
   private volatile UInt64 currentSlot = null;
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
@@ -103,7 +104,7 @@ public class DataColumnSidecarCustodyImpl
       final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor db,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final int totalCustodyGroupCount) {
     checkNotNull(spec);
     checkNotNull(blockResolver);
@@ -114,7 +115,7 @@ public class DataColumnSidecarCustodyImpl
     this.db = db;
     this.blockResolver = blockResolver;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
-    this.custodyGroupCountManager = custodyGroupCountManager;
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.totalCustodyGroupCount = new AtomicInteger(totalCustodyGroupCount);
     LOG.debug(
         "Initialized DataColumnSidecar Custody with custody group count {}",
@@ -132,7 +133,7 @@ public class DataColumnSidecarCustodyImpl
   }
 
   private boolean isMyCustody(final UInt64 columnIndex) {
-    return custodyGroupCountManager.getCustodyColumnIndices().contains(columnIndex);
+    return custodyGroupCountManagerSupplier.get().getCustodyColumnIndices().contains(columnIndex);
   }
 
   @Override
@@ -154,7 +155,7 @@ public class DataColumnSidecarCustodyImpl
     if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
       return;
     }
-    final int newCustodyGroupCount = custodyGroupCountManager.getCustodyGroupCount();
+    final int newCustodyGroupCount = custodyGroupCountManagerSupplier.get().getCustodyGroupCount();
     final int oldCustodyGroupCount = totalCustodyGroupCount.getAndSet(newCustodyGroupCount);
     if (newCustodyGroupCount == oldCustodyGroupCount) {
       return;
@@ -213,8 +214,9 @@ public class DataColumnSidecarCustodyImpl
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.debug(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());
-                            custodyGroupCountManager.setCustodyGroupSyncedCount(
-                                totalCustodyGroupCount.get());
+                            custodyGroupCountManagerSupplier
+                                .get()
+                                .setCustodyGroupSyncedCount(totalCustodyGroupCount.get());
                           }
                           return db.setFirstCustodyIncompleteSlot(
                               firstIncompleteOrLastComplete.slot());
@@ -247,7 +249,8 @@ public class DataColumnSidecarCustodyImpl
               slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
     }
     final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootWithBlobs(slot);
-    final List<UInt64> requiredColumns = custodyGroupCountManager.getCustodyColumnIndices();
+    final List<UInt64> requiredColumns =
+        custodyGroupCountManagerSupplier.get().getCustodyColumnIndices();
     final SafeFuture<List<DataColumnSlotAndIdentifier>> existingColumns =
         db.getColumnIdentifiers(slot);
     return SafeFuture.allOf(maybeCanonicalBlockRoot, existingColumns)

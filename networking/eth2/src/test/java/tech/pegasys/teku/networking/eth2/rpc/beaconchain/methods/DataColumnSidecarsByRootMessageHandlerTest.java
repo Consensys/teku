@@ -30,6 +30,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
+import com.google.common.base.Supplier;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -95,8 +96,11 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   private final NodeId nodeId = new MockNodeId(1);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final DataColumnSidecarByRootCustody custody = mock(DataColumnSidecarByRootCustody.class);
+  private final Supplier<? extends DataColumnSidecarByRootCustody> custodySupplier = () -> custody;
   private final CustodyGroupCountManager custodyGroupCountManager =
       mock(CustodyGroupCountManager.class);
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier =
+      () -> custodyGroupCountManager;
   private String protocolId;
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarsByRootMessageHandler handler;
@@ -127,8 +131,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
             spec,
             metricsSystem,
             combinedChainDataClient,
-            custody,
-            custodyGroupCountManager,
+            custodySupplier,
+            custodyGroupCountManagerSupplier,
             DasReqRespLogger.NOOP);
 
     when(peer.getId()).thenReturn(nodeId);

@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,8 +65,8 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final DataColumnSidecarByRootCustody dataColumnSidecarCustody;
-  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
 
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
@@ -76,13 +77,13 @@ public class DataColumnSidecarsByRootMessageHandler
       final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
-      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final DasReqRespLogger dasLogger) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.custodyGroupCountManager = custodyGroupCountManager;
-    this.dataColumnSidecarCustody = dataColumnSidecarCustody;
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     this.dasLogger = dasLogger;
     this.specConfigFulu =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
@@ -159,7 +160,7 @@ public class DataColumnSidecarsByRootMessageHandler
     totalDataColumnSidecarsRequestedCounter.inc(requestedDataColumnSidecarsCount);
 
     final Set<UInt64> myCustodyColumns =
-        new HashSet<>(custodyGroupCountManager.getCustodyColumnIndices());
+        new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
     final Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
             .flatMap(
@@ -250,7 +251,8 @@ public class DataColumnSidecarsByRootMessageHandler
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
       final DataColumnIdentifier identifier) {
-    return dataColumnSidecarCustody
+    return dataColumnSidecarCustodySupplier
+        .get()
         .getCustodyDataColumnSidecarByRoot(identifier)
         .thenCompose(
             maybeSidecar -> {
