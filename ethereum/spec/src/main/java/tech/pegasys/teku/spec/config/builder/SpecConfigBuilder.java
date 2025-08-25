@@ -678,10 +678,6 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder secondsPerSlot(final Integer secondsPerSlot) {
     checkNotNull(secondsPerSlot);
-    if (slotDurationMs != null) {
-      slotDurationMs = secondsPerSlot * 1000;
-      LOG.debug("also defaulting slotDurationMs to {}", slotDurationMs);
-    }
     this.secondsPerSlot = secondsPerSlot;
     return this;
   }
