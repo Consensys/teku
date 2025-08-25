@@ -235,11 +235,14 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
       assertThat(res).isCompleted();
       assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
     } else if (!nextSpecEnabledLocally && nextSpecEnabledRemotely) {
-      assertThat(res).isCompletedExceptionally();
-      assertThatThrownBy(res::get)
-          .hasCauseInstanceOf(RpcException.class)
-          .hasRootCauseInstanceOf(UnrecognizedContextBytesException.class)
-          .hasMessageContaining("Must request blocks with compatible fork.");
+      // TODO EIP7805
+      if (nextMilestone != SpecMilestone.EIP7805) {
+        assertThat(res).isCompletedExceptionally();
+        assertThatThrownBy(res::get)
+            .hasCauseInstanceOf(RpcException.class)
+            .hasRootCauseInstanceOf(UnrecognizedContextBytesException.class)
+            .hasMessageContaining("Must request blocks with compatible fork.");
+      }
     } else if (milestoneToBeaconBlockBodyClass(baseMilestone)
         .equals(milestoneToBeaconBlockBodyClass(nextMilestone))) {
       // no changes in BeaconBlockBody, so we should receive a successful response

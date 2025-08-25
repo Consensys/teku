@@ -92,7 +92,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       }
       case FULU -> {
         checkState(nextSpecMilestone.equals(SpecMilestone.EIP7805), "next spec should be eip7805");
-        nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithEip7805ForkEpoch(nextSpecEpoch));
       }
       case EIP7805 -> throw new RuntimeException("Base spec is already latest supported milestone");
     }
@@ -218,9 +218,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
   public record PeerAndNetwork(Eth2Peer peer, Eth2P2PNetwork network) {}
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
-    // TODO EIP7805
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
-        .filter(milestone -> !milestone.equals(SpecMilestone.EIP7805))
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
