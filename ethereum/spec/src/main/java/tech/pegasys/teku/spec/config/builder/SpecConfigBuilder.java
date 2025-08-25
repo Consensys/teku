@@ -266,7 +266,9 @@ public class SpecConfigBuilder {
                 electraForkVersion,
                 electraForkEpoch,
                 fuluForkVersion,
-                fuluForkEpoch));
+                fuluForkEpoch,
+                eip7805ForkVersion,
+                eip7805ForkEpoch));
 
     return builderChain.build(config);
   }
@@ -386,6 +388,7 @@ public class SpecConfigBuilder {
     rawConfig.put("DENEB_FORK_EPOCH", denebForkEpoch);
     rawConfig.put("ELECTRA_FORK_EPOCH", electraForkEpoch);
     rawConfig.put("FULU_FORK_EPOCH", fuluForkEpoch);
+    rawConfig.put("EIP7805_FORK_EPOCH", eip7805ForkEpoch);
 
     rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
     rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
@@ -393,6 +396,7 @@ public class SpecConfigBuilder {
     rawConfig.put("DENEB_FORK_VERSION", denebForkVersion);
     rawConfig.put("ELECTRA_FORK_VERSION", electraForkVersion);
     rawConfig.put("FULU_FORK_VERSION", fuluForkVersion);
+    rawConfig.put("EIP7805_FORK_VERSION", eip7805ForkVersion);
 
     // tell the fork builders their fork epoch
     altairBuilder.setForkEpoch(altairForkEpoch);
