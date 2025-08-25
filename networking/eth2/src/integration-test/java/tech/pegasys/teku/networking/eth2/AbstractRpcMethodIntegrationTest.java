@@ -303,7 +303,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case BELLATRIX -> BeaconBlockBodyBellatrix.class;
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
-      // TODO update for EIP7805
       case ELECTRA, FULU, EIP7805 -> BeaconBlockBodyElectra.class;
     };
   }
