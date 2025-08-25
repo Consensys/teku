@@ -232,10 +232,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
             });
   }
 
-  // TODO gloas
   protected static Stream<Arguments> generateSpecTransition() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
-        .filter(p -> p.isLessThan(SpecMilestone.GLOAS))
         .map(milestone -> Arguments.of(milestone.getPreviousMilestone(), milestone));
   }
 
