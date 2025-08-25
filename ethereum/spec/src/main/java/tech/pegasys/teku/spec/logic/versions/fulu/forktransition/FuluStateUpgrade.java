@@ -80,6 +80,7 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
               state.setEarliestConsolidationEpoch(preStateElectra.getEarliestConsolidationEpoch());
               state.setPendingDeposits(preStateElectra.getPendingDeposits());
               state.setPendingPartialWithdrawals(preStateElectra.getPendingPartialWithdrawals());
+              state.setPendingConsolidations(preStateElectra.getPendingConsolidations());
 
               state.setProposerLookahead(
                   schemaDefinitions

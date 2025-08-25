@@ -60,10 +60,6 @@ FULU_FORK_EPOCH: 18446744073709551615 # temporary stub
 GLOAS_FORK_VERSION: 0x07000000
 GLOAS_FORK_EPOCH: 18446744073709551615 # temporary stub
 
-# Gloas
-GLOAS_FORK_VERSION: 0x07000000  # temporary stub
-GLOAS_FORK_EPOCH: 18446744073709551615
-
 # Time parameters
 # ---------------------------------------------------------------
 # 12 seconds (*deprecated*)

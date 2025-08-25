@@ -773,16 +773,6 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static SchemaProvider<?> createProposerLookaheadSchemaProvider() {
-    return providerBuilder(PROPOSER_LOOKAHEAD_SCHEMA)
-        .withCreator(
-            FULU,
-            (registry, specConfig, schemaName) ->
-                SszUInt64VectorSchema.create(
-                    (long) (specConfig.getMinSeedLookahead() + 1) * specConfig.getSlotsPerEpoch()))
-        .build();
-  }
-
   private static SchemaProvider<?> createDataColumnsByRootIdentifierSchemaProvider() {
     return providerBuilder(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA)
         .withCreator(

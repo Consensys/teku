@@ -74,6 +74,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setEarliestConsolidationEpoch(preStateFulu.getEarliestConsolidationEpoch());
               state.setPendingDeposits(preStateFulu.getPendingDeposits());
               state.setPendingPartialWithdrawals(preStateFulu.getPendingPartialWithdrawals());
+              state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
 
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
             });

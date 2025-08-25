@@ -59,10 +59,6 @@ FULU_FORK_EPOCH: 18446744073709551615
 GLOAS_FORK_VERSION: 0x07000001
 GLOAS_FORK_EPOCH: 18446744073709551615
 
-# Gloas
-GLOAS_FORK_VERSION: 0x07000001
-GLOAS_FORK_EPOCH: 18446744073709551615
-
 # Time parameters
 # ---------------------------------------------------------------
 # [customized] 6 seconds (*deprecated*)
