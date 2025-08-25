@@ -124,7 +124,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (!isActiveSuperNode(slot) && shouldSkipProcessing()) {
+    if (shouldSkipProcessing(slot)) {
       return;
     }
     asyncRunner
@@ -148,7 +148,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (!isActiveSuperNode(block.getSlot()) && shouldSkipProcessing()) {
+    if (shouldSkipProcessing(block.getSlot())) {
       return;
     }
 
@@ -161,8 +161,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     createOrUpdateRecoveryTaskForBlock(block.getMessage());
   }
 
-  private boolean shouldSkipProcessing() {
-    if (custodyGroupCountManagerSupplier.get().getCustodyGroupSyncedCount() == groupCount) {
+  private boolean shouldSkipProcessing(final UInt64 slot) {
+    if (isActiveSuperNode(slot)) {
+      return false;
+    }
+    if (custodyGroupCountManagerSupplier.get().getCustodyGroupCount() == groupCount) {
       if (!isSuperNode.get()) {
         LOG.debug(
             "Number of required custody groups reached maximum. Activating super node reconstruction.");
