@@ -31,7 +31,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
   Optional<SszBitvector> calculateSubnets(UInt256 nodeId, Optional<Integer> groupCount);
 
-  NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, subnetCount) -> Optional.empty();
+  NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (nodeId, groupCount) -> Optional.empty();
 
   static NodeIdToDataColumnSidecarSubnetsCalculator create(
       final Spec spec, final Supplier<Optional<UInt64>> currentSlotSupplier) {

@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.RANDOMLY_SELECTED;
 import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.SCORE_BASED;
+import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.STATIC;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,20 +25,25 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.networking.eth2.ActiveEth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
@@ -48,15 +54,24 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory;
   private final ReputationManager reputationManager;
   private final Shuffler shuffler;
+  private final PeerAdvertisementChecker peerAdvertisementChecker;
 
   public Eth2PeerSelectionStrategy(
       final TargetPeerRange targetPeerCountRange,
       final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory,
       final ReputationManager reputationManager,
+      final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference,
+      final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
       final Shuffler shuffler) {
     this.targetPeerCountRange = targetPeerCountRange;
     this.peerSubnetSubscriptionsFactory = peerSubnetSubscriptionsFactory;
     this.reputationManager = reputationManager;
+    this.peerAdvertisementChecker =
+        new PeerAdvertisementChecker(
+            peerSubnetSubscriptionsFactory,
+            reputationManager,
+            nodeIdToDataColumnSidecarSubnetsCalculator,
+            activeEth2P2PNetworkReference);
     this.shuffler = shuffler;
   }
 
@@ -150,8 +165,10 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   }
 
   @Override
-  public List<Peer> selectPeersToDisconnect(
-      final P2PNetwork<?> network, final PeerPools peerPools) {
+  public List<PeerToDisconnect> selectPeersToDisconnect(
+      final P2PNetwork<?> network,
+      final DiscoveryService discoveryService,
+      final PeerPools peerPools) {
 
     final Map<PeerConnectionType, List<Peer>> peersBySource =
         network
@@ -163,10 +180,35 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final int randomlySelectedPeerCount = randomlySelectedPeers.size();
 
     final int currentPeerCount = network.getPeerCount();
-    final int peersToDrop = targetPeerCountRange.getPeersToDrop(currentPeerCount);
-    if (peersToDrop == 0) {
-      return emptyList();
+    final int peersToDropCount = targetPeerCountRange.getPeersToDrop(currentPeerCount);
+
+    // TODO: beginning of debug logging, for removal
+    final long startTime = System.currentTimeMillis();
+    // TODO: end of debug logging, for removal
+
+    final List<Peer> falseAdvertisingPeers =
+        peerAdvertisementChecker.findFalseAdvertisingPeers(
+            peersBySource.entrySet().stream()
+                .filter(entry -> !entry.getKey().equals(STATIC))
+                .flatMap(entry -> entry.getValue().stream()),
+            network,
+            discoveryService);
+
+    // TODO: beginning of debug logging, for removal
+    final long endTime = System.currentTimeMillis();
+    LOG.warn(
+        "Found {} false advertising peers in {} ms. Ordered to drop: {}",
+        falseAdvertisingPeers.size(),
+        endTime - startTime,
+        peersToDropCount);
+    // TODO: end of debug logging, for removal
+
+    if (peersToDropCount == 0 || falseAdvertisingPeers.size() >= peersToDropCount) {
+      return falseAdvertisingPeers.stream()
+          .map(peer -> new PeerToDisconnect(peer, DisconnectReason.BAD_SCORE))
+          .toList();
     }
+
     final PeerScorer peerScorer = peerSubnetSubscriptionsFactory.create(network).createScorer();
     final int randomlySelectedPeersToDrop =
         targetPeerCountRange.getRandomlySelectedPeersToDrop(
@@ -180,11 +222,16 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     // for disconnection based on their score
     randomlySelectedPeersBeingDropped.forEach(
         peer -> peerPools.addPeerToPool(peer.getId(), SCORE_BASED));
+
     return Stream.concat(
-            randomlySelectedPeersBeingDropped.stream(),
-            peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
-        .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
-        .limit(peersToDrop)
+            falseAdvertisingPeers.stream()
+                .map(peer -> new PeerToDisconnect(peer, DisconnectReason.BAD_SCORE)),
+            Stream.concat(
+                    randomlySelectedPeersBeingDropped.stream(),
+                    peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
+                .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
+                .limit(peersToDropCount - falseAdvertisingPeers.size())
+                .map(peer -> new PeerToDisconnect(peer, DisconnectReason.TOO_MANY_PEERS)))
         .toList();
   }
 
