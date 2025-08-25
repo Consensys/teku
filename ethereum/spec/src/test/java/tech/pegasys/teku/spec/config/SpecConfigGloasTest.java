@@ -82,9 +82,14 @@ public class SpecConfigGloasTest {
 
     return new SpecConfigGloasImpl(
         fuluConfig,
-        dataStructureUtil.randomPositiveInt(512),
+        dataStructureUtil.randomPositiveInt(12000),
+        dataStructureUtil.randomPositiveInt(12000),
+        dataStructureUtil.randomPositiveInt(12000),
+        dataStructureUtil.randomUInt64(64),
         dataStructureUtil.randomPositiveInt(128),
-        dataStructureUtil.randomPositiveInt(64),
-        dataStructureUtil.randomPositiveInt(256)) {};
+        dataStructureUtil.randomPositiveInt(512),
+        dataStructureUtil.randomPositiveInt(12000),
+        dataStructureUtil.randomPositiveInt(512),
+        dataStructureUtil.randomPositiveInt(12000)) {};
   }
 }

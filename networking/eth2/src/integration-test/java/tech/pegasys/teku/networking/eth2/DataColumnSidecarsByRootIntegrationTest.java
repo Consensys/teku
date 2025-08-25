@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsBy
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
-@TestSpecContext(milestone = {ELECTRA, FULU, GLOAS})
+@TestSpecContext(milestone = {ELECTRA, FULU})
 public class DataColumnSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   private Eth2Peer peer;

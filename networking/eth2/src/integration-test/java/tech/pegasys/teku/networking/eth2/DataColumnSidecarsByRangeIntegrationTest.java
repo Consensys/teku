@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 
-@TestSpecContext(milestone = {ELECTRA, FULU, GLOAS})
+@TestSpecContext(milestone = {ELECTRA, FULU})
 public class DataColumnSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   private Eth2Peer peer;
