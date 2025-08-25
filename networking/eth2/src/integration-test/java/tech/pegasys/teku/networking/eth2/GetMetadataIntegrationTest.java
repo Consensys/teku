@@ -154,7 +154,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     final MetadataMessage metadata = safeJoin(res);
     assertThat(metadata).isInstanceOf(expectedType);
     // There will be update of custody_group_count in this case
-    if (!(nextMilestone == SpecMilestone.FULU && nextSpecEnabledRemotely)) {
+    if (!(nextMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU) && nextSpecEnabledRemotely)) {
       assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
     }
   }
