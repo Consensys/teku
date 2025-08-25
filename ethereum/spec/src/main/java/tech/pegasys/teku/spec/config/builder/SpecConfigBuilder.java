@@ -208,7 +208,7 @@ public class SpecConfigBuilder {
     }
 
     if (aggregateDueBps == null) {
-      aggregateDueBps = 3333;
+      aggregateDueBps = 6667;
       LOG.debug("Defaulting aggregateDueBps to {}", aggregateDueBps);
     }
 
