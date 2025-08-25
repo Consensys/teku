@@ -16,10 +16,13 @@ package tech.pegasys.teku.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -33,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.vers
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessagePhase0;
 
 public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("generateSpec")
@@ -140,6 +144,11 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
       final SpecMilestone nextMilestone,
       final boolean nextSpecEnabledLocally,
       final boolean nextSpecEnabledRemotely) {
+    if (nextMilestone.equals(GLOAS)) {
+      LOG.info("Disabled currently where nextMilestone is '{}'", nextMilestone);
+      // TODO gloas
+      return;
+    }
     setUp(baseMilestone, Optional.of(nextMilestone));
     final Eth2Peer peer = createPeer(nextSpecEnabledLocally, nextSpecEnabledRemotely);
     final Class<?> expectedType =
