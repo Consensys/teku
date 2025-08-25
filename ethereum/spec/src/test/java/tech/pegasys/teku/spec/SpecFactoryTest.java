@@ -75,6 +75,15 @@ class SpecFactoryTest {
                         .denebForkEpoch(UInt64.ZERO)
                         .electraForkEpoch(UInt64.ZERO)
                         .fuluForkEpoch(forkEpoch);
+                case EIP7805 ->
+                    builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(UInt64.ZERO)
+                        .eip7805ForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "

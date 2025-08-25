@@ -21,23 +21,23 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
-public class BeaconStateAccessorsEip7805 extends BeaconStateAccessorsElectra {
+public class BeaconStateAccessorsEip7805 extends BeaconStateAccessorsFulu {
 
   private final SpecConfigEip7805 specConfigEip7805;
 
   public BeaconStateAccessorsEip7805(
       final SpecConfig specConfig,
       final PredicatesElectra predicatesElectra,
-      final MiscHelpersElectra miscHelpers) {
-    super(SpecConfigElectra.required(specConfig), predicatesElectra, miscHelpers);
+      final MiscHelpersFulu miscHelpers) {
+    super(SpecConfigFulu.required(specConfig), predicatesElectra, miscHelpers);
     this.specConfigEip7805 = config.toVersionEip7805().orElseThrow();
   }
 

@@ -67,6 +67,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getFuluForkEpoch();
 
+  Bytes4 getEip7805ForkVersion();
+
+  UInt64 getEip7805ForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
 

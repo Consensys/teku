@@ -76,7 +76,9 @@ public class MiscHelpers {
 
   // compute_fork_version
   public Bytes4 computeForkVersion(final UInt64 epoch) {
-    if (epoch.isGreaterThanOrEqualTo(specConfig.getFuluForkEpoch())) {
+    if (epoch.isGreaterThanOrEqualTo(specConfig.getEip7805ForkEpoch())) {
+      return specConfig.getEip7805ForkVersion();
+    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getFuluForkEpoch())) {
       return specConfig.getFuluForkVersion();
     } else if (epoch.isGreaterThanOrEqualTo(specConfig.getElectraForkEpoch())) {
       return specConfig.getElectraForkVersion();
@@ -516,11 +518,11 @@ public class MiscHelpers {
     return Optional.empty();
   }
 
-  public Optional<MiscHelpersEip7805> toVersionEip7805() {
+  public Optional<MiscHelpersFulu> toVersionFulu() {
     return Optional.empty();
   }
 
-  public Optional<MiscHelpersFulu> toVersionFulu() {
+  public Optional<MiscHelpersEip7805> toVersionEip7805() {
     return Optional.empty();
   }
 }

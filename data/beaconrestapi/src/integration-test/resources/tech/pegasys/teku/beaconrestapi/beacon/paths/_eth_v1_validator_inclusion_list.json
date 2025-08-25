@@ -10,7 +10,7 @@
       "in" : "header",
       "schema" : {
         "type" : "string",
-        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "eip7805" ],
+        "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra", "fulu","eip7805" ],
         "description" : "The active consensus version to which the inclusion list being submitted belongs."
         }
     } ],

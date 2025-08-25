@@ -90,8 +90,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
         checkState(nextSpecMilestone.equals(SpecMilestone.FULU), "next spec should be fulu");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
       }
-      case FULU, EIP7805 ->
-          throw new RuntimeException("Base spec is already latest supported milestone");
+      case FULU -> {
+        checkState(nextSpecMilestone.equals(SpecMilestone.EIP7805), "next spec should be eip7805");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithEip7805ForkEpoch(nextSpecEpoch));
+      }
+      case EIP7805 -> throw new RuntimeException("Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -219,18 +222,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
-              // TODO EIP7805: EIP7805 doesn't introduce a new beacon block schema
-              if (milestone.equals(SpecMilestone.EIP7805)) {
-                return Stream.of(
-                    Arguments.of(prevMilestone, milestone, true, true),
-                    Arguments.of(prevMilestone, milestone, false, true));
-              } else {
-                return Stream.of(
-                    Arguments.of(prevMilestone, milestone, true, true),
-                    Arguments.of(prevMilestone, milestone, false, true),
-                    Arguments.of(prevMilestone, milestone, true, false),
-                    Arguments.of(prevMilestone, milestone, false, false));
-              }
+              return Stream.of(
+                  Arguments.of(prevMilestone, milestone, true, true),
+                  Arguments.of(prevMilestone, milestone, false, true),
+                  Arguments.of(prevMilestone, milestone, true, false),
+                  Arguments.of(prevMilestone, milestone, false, false));
             });
   }
 
@@ -307,7 +303,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case BELLATRIX -> BeaconBlockBodyBellatrix.class;
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
-      // TODO update for EIP7805
       case ELECTRA, FULU, EIP7805 -> BeaconBlockBodyElectra.class;
     };
   }

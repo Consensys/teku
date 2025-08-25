@@ -14,14 +14,10 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805Impl;
@@ -29,9 +25,6 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public class Eip7805Builder extends BaseForkBuilder
     implements ForkConfigBuilder<SpecConfigFulu, SpecConfigEip7805> {
-
-  private Bytes4 eip7805ForkVersion;
-  private UInt64 eip7805ForkEpoch;
 
   private Integer inclusionListCommitteeSize;
   private Integer maxRequestInclusionList;
@@ -48,8 +41,6 @@ public class Eip7805Builder extends BaseForkBuilder
     return SpecConfigAndParent.of(
         new SpecConfigEip7805Impl(
             specConfigAndParent.specConfig(),
-            eip7805ForkVersion,
-            eip7805ForkEpoch,
             inclusionListCommitteeSize,
             maxRequestInclusionList,
             maxBytesPerInclusionList,
@@ -57,18 +48,6 @@ public class Eip7805Builder extends BaseForkBuilder
             proposerInclusionListCutOff,
             viewFreezeDeadline),
         specConfigAndParent);
-  }
-
-  public Eip7805Builder eip7805ForkEpoch(final UInt64 eip7805ForkEpoch) {
-    checkNotNull(eip7805ForkEpoch);
-    this.eip7805ForkEpoch = eip7805ForkEpoch;
-    return this;
-  }
-
-  public Eip7805Builder eip7805ForkVersion(final Bytes4 eip7805ForkVersion) {
-    checkNotNull(eip7805ForkVersion);
-    this.eip7805ForkVersion = eip7805ForkVersion;
-    return this;
   }
 
   public Eip7805Builder inclusionListCommitteeSize(final Integer inclusionListCommitteeSize) {
@@ -109,16 +88,7 @@ public class Eip7805Builder extends BaseForkBuilder
 
   @Override
   public void validate() {
-    if (eip7805ForkEpoch == null) {
-      eip7805ForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
-      eip7805ForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-
-    // Fill default zeros if fork is unsupported
-    if (eip7805ForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      SpecBuilderUtil.fillMissingValuesWithZeros(this);
-    }
-
+    defaultValuesIfRequired(this);
     validateConstants();
   }
 
@@ -126,8 +96,6 @@ public class Eip7805Builder extends BaseForkBuilder
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
 
-    constants.put("eip7805ForkEpoch", eip7805ForkEpoch);
-    constants.put("eip7805ForkVersion", eip7805ForkVersion);
     constants.put("inclusionListCommitteeSize", inclusionListCommitteeSize);
     constants.put("maxRequestInclusionList", maxRequestInclusionList);
     constants.put("maxBytesPerInclusionList", maxBytesPerInclusionList);
@@ -139,7 +107,5 @@ public class Eip7805Builder extends BaseForkBuilder
   }
 
   @Override
-  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
-    rawConfig.accept("EIP7805_FORK_EPOCH", eip7805ForkEpoch);
-  }
+  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
 }

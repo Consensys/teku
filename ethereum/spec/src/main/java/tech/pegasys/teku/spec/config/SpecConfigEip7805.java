@@ -14,8 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigEip7805 extends SpecConfigFulu {
 
@@ -28,10 +26,6 @@ public interface SpecConfigEip7805 extends SpecConfigFulu {
                     "Expected Eip7805 spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
-
-  Bytes4 getEip7805ForkVersion();
-
-  UInt64 getEip7805ForkEpoch();
 
   int getInclusionListCommitteeSize();
 

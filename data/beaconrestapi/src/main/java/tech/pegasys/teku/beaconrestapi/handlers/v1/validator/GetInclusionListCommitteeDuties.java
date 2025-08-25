@@ -56,16 +56,16 @@ public class GetInclusionListCommitteeDuties extends RestApiEndpoint {
             .operationId("getInclusionListCommitteeDuties")
             .summary("Get inclusion list committee duties")
             .description(
-                "Requests the beacon node to provide a set of inclusion list committee duties for a particular epoch.\n"
-                    + " Duties should only need to be checked once per epoch,\n"
-                    + " however a chain reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur,\n"
-                    + " resulting in a change of duties. For full safety, you should monitor head events and confirm the\n"
-                    + " dependent root in this response matches:\n"
-                    + " - event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
-                    + " - event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`\n"
-                    + " - event.block otherwise\n"
-                    + " The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)`\n"
-                    + " or the genesis block root in the case of underflow.")
+                "Requests the beacon node to provide a set of inclusion list committee duties for a particular epoch.\n\n"
+                    + "Duties should only need to be checked once per epoch, "
+                    + "however a chain reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
+                    + "resulting in a change of duties. For full safety, you should monitor head events and confirm the "
+                    + "dependent root in this response matches:\n"
+                    + "- event.previous_duty_dependent_root when `compute_epoch_at_slot(event.slot) == epoch`\n"
+                    + "- event.current_duty_dependent_root when `compute_epoch_at_slot(event.slot) + 1 == epoch`\n"
+                    + "- event.block otherwise\n\n"
+                    + "The dependent_root value is `get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
+                    + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(
                 DeserializableTypeDefinition.listOf(
