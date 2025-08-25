@@ -351,7 +351,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
-  protected final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
+  protected volatile AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
       new AtomicReference<>(CustodyGroupCountManager.NOOP);
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile AtomicReference<DataColumnSidecarRecoveringCustody>
