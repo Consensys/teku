@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor.depositSignatureVerifier;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
@@ -416,8 +415,10 @@ public class MiscHelpers {
       final UInt64 amount,
       final BLSSignature signature) {
     try {
-      return depositSignatureVerifier.verify(
-          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
+      return specConfig
+          .getBLSSignatureVerifier()
+          .verify(
+              pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
     } catch (final BlsException e) {
       return false;
     }

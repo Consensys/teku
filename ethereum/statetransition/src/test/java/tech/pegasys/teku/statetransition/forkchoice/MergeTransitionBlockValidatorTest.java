@@ -18,8 +18,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -34,7 +32,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -46,26 +43,17 @@ class MergeTransitionBlockValidatorTest {
   private final UInt64 terminalEpoch = UInt64.ZERO;
   private final Spec spec =
       TestSpecFactory.createMinimalBellatrix(
-          b ->
-              b.bellatrixBuilder(
-                  bb ->
-                      bb.terminalBlockHash(terminalBlockHash)
-                          .terminalBlockHashActivationEpoch(terminalEpoch)));
+          b -> {
+            b.blsSignatureVerifier(BLSSignatureVerifier.NO_OP);
+            b.bellatrixBuilder(
+                bb ->
+                    bb.terminalBlockHash(terminalBlockHash)
+                        .terminalBlockHashActivationEpoch(terminalEpoch));
+          });
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionLayerChannelStub executionLayer =
       new ExecutionLayerChannelStub(spec, false);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-
-  @BeforeAll
-  public static void initSession() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  }
-
-  @AfterAll
-  public static void resetSession() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  }
 
   /**
    * The details of how we validate the merge block are all handled by {@link
