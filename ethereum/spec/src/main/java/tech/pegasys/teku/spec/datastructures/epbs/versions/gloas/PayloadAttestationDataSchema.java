@@ -31,17 +31,17 @@ public class PayloadAttestationDataSchema
         "PayloadAttestationData",
         namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema("payload_status", SszPrimitiveSchemas.BOOLEAN_SCHEMA),
+        namedSchema("payload_present", SszPrimitiveSchemas.BOOLEAN_SCHEMA),
         namedSchema("blob_data_available", SszPrimitiveSchemas.BOOLEAN_SCHEMA));
   }
 
   public PayloadAttestationData create(
       final Bytes32 beaconBlockRoot,
       final UInt64 slot,
-      final boolean payloadStatus,
+      final boolean payloadPresent,
       final boolean blobDataAvailable) {
     return new PayloadAttestationData(
-        this, beaconBlockRoot, slot, payloadStatus, blobDataAvailable);
+        this, beaconBlockRoot, slot, payloadPresent, blobDataAvailable);
   }
 
   @Override
