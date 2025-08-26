@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.google.common.base.Supplier;
 import java.net.BindException;
@@ -92,6 +93,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -235,13 +237,14 @@ public class Eth2P2PNetworkFactory {
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
+        final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
                 DataColumnSidecarByRootCustody.NOOP,
                 CustodyGroupCountManager.NOOP,
-                new MetadataMessagesFactory(),
+                metadataMessagesFactory,
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -259,6 +262,11 @@ public class Eth2P2PNetworkFactory {
                 NoOpKZG.INSTANCE,
                 __ -> Optional.of(discoveryNodeId),
                 DasReqRespLogger.NOOP);
+
+        if (spec.isMilestoneSupported(FULU)) {
+          metadataMessagesFactory.onCustodyGroupCountSynced(
+              SpecConfigFulu.required(spec.forMilestone(FULU).getConfig()).getCustodyRequirement());
+        }
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
