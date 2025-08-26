@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
@@ -44,7 +45,12 @@ public class BeaconStateSchemaGloas
 
   private static List<SszField> getUniqueFields(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry);
+    final List<SszField> newFields = List.of();
+
+    return Stream.concat(
+            BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry).stream(),
+            newFields.stream())
+        .toList();
   }
 
   @SuppressWarnings("unchecked")
@@ -62,24 +68,6 @@ public class BeaconStateSchemaGloas
   public SszUInt64ListSchema<?> getInactivityScoresSchema() {
     return (SszUInt64ListSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
-  }
-
-  @Override
-  public MutableBeaconStateGloas createBuilder() {
-    return new MutableBeaconStateGloasImpl(createEmptyBeaconStateImpl(), true);
-  }
-
-  public static BeaconStateSchemaGloas create(
-      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return new BeaconStateSchemaGloas(specConfig, schemaRegistry);
-  }
-
-  public static BeaconStateSchemaGloas required(final BeaconStateSchema<?, ?> schema) {
-    checkArgument(
-        schema instanceof BeaconStateSchemaGloas,
-        "Expected a BeaconStateSchemaGloas but was %s",
-        schema.getClass());
-    return (BeaconStateSchemaGloas) schema;
   }
 
   @SuppressWarnings("unchecked")
@@ -103,6 +91,24 @@ public class BeaconStateSchemaGloas
   public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
     return (SszUInt64VectorSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
+  }
+
+  @Override
+  public MutableBeaconStateGloas createBuilder() {
+    return new MutableBeaconStateGloasImpl(createEmptyBeaconStateImpl(), true);
+  }
+
+  public static BeaconStateSchemaGloas create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaGloas(specConfig, schemaRegistry);
+  }
+
+  public static BeaconStateSchemaGloas required(final BeaconStateSchema<?, ?> schema) {
+    checkArgument(
+        schema instanceof BeaconStateSchemaGloas,
+        "Expected a BeaconStateSchemaGloas but was %s",
+        schema.getClass());
+    return (BeaconStateSchemaGloas) schema;
   }
 
   @Override
