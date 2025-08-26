@@ -60,6 +60,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUM
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
@@ -124,6 +125,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPay
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -243,6 +245,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider())
 
         // GLOAS
+        .addProvider(createPayloadAttestationDataSchemaProvider())
         .addProvider(createSignedExecutionPayloadHeaderSchemaProvider());
   }
 
@@ -856,6 +859,13 @@ public class SchemaRegistryBuilder {
 
   private static long getMaxValidatorsPerAttestationElectra(final SpecConfig specConfig) {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+  }
+
+  private static SchemaProvider<?> createPayloadAttestationDataSchemaProvider() {
+    return providerBuilder(PAYLOAD_ATTESTATION_DATA_SCHEMA)
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new PayloadAttestationDataSchema())
+        .build();
   }
 
   private static SchemaProvider<?> createSignedExecutionPayloadHeaderSchemaProvider() {

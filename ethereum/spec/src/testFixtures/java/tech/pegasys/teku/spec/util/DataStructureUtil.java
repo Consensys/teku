@@ -138,6 +138,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFu
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
@@ -3016,6 +3017,12 @@ public final class DataStructureUtil {
     return getGloasSchemaDefinitions(randomSlot())
         .getSignedExecutionPayloadHeaderSchema()
         .create(randomExecutionPayloadHeader(), randomSignature());
+  }
+
+  public PayloadAttestationData randomPayloadAttestationData() {
+    return getGloasSchemaDefinitions(randomSlot())
+        .getPayloadAttestationDataSchema()
+        .create(randomBytes32(), randomSlot(), true, true);
   }
 
   private int randomInt(final int origin, final int bound) {
