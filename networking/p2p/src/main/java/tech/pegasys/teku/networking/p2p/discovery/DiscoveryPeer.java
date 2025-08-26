@@ -93,6 +93,7 @@ public class DiscoveryPeer {
     }
     DiscoveryPeer that = (DiscoveryPeer) o;
     return Objects.equal(getPublicKey(), that.getPublicKey())
+        && Objects.equal(getNodeId(), that.getNodeId())
         && Objects.equal(getNodeAddress(), that.getNodeAddress())
         && Objects.equal(getEnrForkId(), that.getEnrForkId())
         && Objects.equal(getPersistentAttestationSubnets(), that.getPersistentAttestationSubnets())
@@ -105,6 +106,7 @@ public class DiscoveryPeer {
   public int hashCode() {
     return Objects.hashCode(
         getPublicKey(),
+        getNodeId(),
         getNodeAddress(),
         getEnrForkId(),
         getPersistentAttestationSubnets(),
@@ -117,6 +119,7 @@ public class DiscoveryPeer {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("publicKey", publicKey)
+        .add("nodeId", nodeId)
         .add("nodeAddress", nodeAddress)
         .add("enrForkId", enrForkId)
         .add("persistentSubnets", persistentAttestationSubnets)
