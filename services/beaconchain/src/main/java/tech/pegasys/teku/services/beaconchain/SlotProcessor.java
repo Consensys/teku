@@ -15,7 +15,6 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -242,7 +241,7 @@ public class SlotProcessor {
     }
 
     final UInt64 earliestTimeInMillis =
-        nodeSlotStartTimeMillis.plus(oneThirdSlotMillis(calculatedSlot));
+        nodeSlotStartTimeMillis.plus(spec.getAttestationDueMillis(calculatedSlot));
 
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
@@ -262,7 +261,7 @@ public class SlotProcessor {
     final UInt64 nextEpochStartTimeMillis =
         spec.computeTimeMillisAtSlot(firstSlotOfNextEpoch, genesisTimeMillis);
     final UInt64 earliestTimeInMillis =
-        nextEpochStartTimeMillis.minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
+        nextEpochStartTimeMillis.minusMinZero(spec.getAttestationDueMillis(firstSlotOfNextEpoch));
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
@@ -277,10 +276,6 @@ public class SlotProcessor {
             .minus(BLOCK_CREATION_TOLERANCE_MS);
 
     return isTimeReached(currentTimeMillis, earliestTimeInMillis);
-  }
-
-  private UInt64 oneThirdSlotMillis(final UInt64 slot) {
-    return spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT);
   }
 
   boolean isTimeReached(final UInt64 currentTime, final UInt64 earliestTime) {

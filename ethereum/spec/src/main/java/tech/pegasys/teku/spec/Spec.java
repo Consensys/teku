@@ -548,6 +548,22 @@ public class Spec {
     return atState(state).beaconStateAccessors().getCommitteeCountPerSlot(state, epoch);
   }
 
+  public int getAttestationDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAttestationDueMillis();
+  }
+
+  public int getAggregateDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAggregateDueMillis();
+  }
+
+  public int getProposerReorgCutoffMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getProposerReorgCutoffMillis();
+  }
+
+  public int getSlotDurationMillis(final UInt64 slot) {
+    return atSlot(slot).getConfig().getSlotDurationMillis();
+  }
+
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }

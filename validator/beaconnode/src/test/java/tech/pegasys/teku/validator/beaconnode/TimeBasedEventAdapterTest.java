@@ -20,6 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -84,7 +85,7 @@ class TimeBasedEventAdapterTest {
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 26;
     final UInt64 firstSlotToFire = UInt64.valueOf(nextSlot);
-    final int timeUntilNextSlot = secondsPerSlot / 2;
+    final int timeUntilNextSlot = (secondsPerSlot / 2) - 1;
     timeProvider.advanceTimeBySeconds(secondsPerSlot * nextSlot - timeUntilNextSlot);
 
     assertThat(eventAdapter.start()).isCompleted();
@@ -195,7 +196,7 @@ class TimeBasedEventAdapterTest {
   @Test
   void shouldScheduleAggregateEventsStartingFromNextSlotForGnosis() {
     // ensure seconds per slot not divisible by 3 is tested
-    assertThat(secondsPerSlotGnosis % 3).isNotZero();
+    assertThat(gnosisSpec.getAttestationDueMillis(ZERO)).isNotZero();
 
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));

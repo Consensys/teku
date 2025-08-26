@@ -147,14 +147,14 @@ class LateBlockReorgLogicTest {
 
   @Test
   void isProposingOnTime_shouldDetectOnTimeBeforeCutoff() {
-    /// 999 ms into slot, cutoff is 1000ms
-    timeProvider.advanceTimeByMillis(millisPerSlot + 999);
+    /// 1000 ms into slot, cutoff is 1001ms
+    timeProvider.advanceTimeByMillis(millisPerSlot + 1000);
     assertThat(reorgLogicInstrumented.isProposingOnTime(slot)).isTrue();
   }
 
   @Test
   void isProposingOnTime_shouldDetectLateIfHalfWayToAttestationDue() {
-    timeProvider.advanceTimeByMillis(millisPerSlot + 1000);
+    timeProvider.advanceTimeByMillis(millisPerSlot + 1001);
     assertThat(reorgLogicInstrumented.isProposingOnTime(slot)).isFalse();
   }
 

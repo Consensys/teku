@@ -488,6 +488,23 @@ public class ForkChoiceUtil {
         .isLessThanOrEqualTo(getCurrentSlot(store));
   }
 
+  // get_slot_component_duration_ms
+  public int getSlotComponentDurationMillis(final int basisPoints) {
+    return (basisPoints * specConfig.getSlotDurationMillis()) / 10_000;
+  }
+
+  public int getAttestationDueMillis() {
+    return getSlotComponentDurationMillis(specConfig.getAttestationDueBps());
+  }
+
+  public int getAggregateDueMillis() {
+    return getSlotComponentDurationMillis(specConfig.getAggregateDueBps());
+  }
+
+  public int getProposerReorgCutoffMillis() {
+    return getSlotComponentDurationMillis(specConfig.getProposerReorgCutoffBps());
+  }
+
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
     // post-Bellatrix: always true
     final BeaconBlockBody body = block.getMessage().getBody();
