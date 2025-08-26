@@ -28,14 +28,14 @@ public class PayloadAttestationData
       final PayloadAttestationDataSchema schema,
       final Bytes32 beaconBlockRoot,
       final UInt64 slot,
-      final boolean payloadStatus,
-      final boolean blobDataPresent) {
+      final boolean payloadPresent,
+      final boolean blobDataAvailable) {
     super(
         schema,
         SszBytes32.of(beaconBlockRoot),
         SszUInt64.of(slot),
-        SszBoolean.of(payloadStatus),
-        SszBoolean.of(blobDataPresent));
+        SszBoolean.of(payloadPresent),
+        SszBoolean.of(blobDataAvailable));
   }
 
   public Bytes32 getBeaconBlockRoot() {
@@ -46,11 +46,11 @@ public class PayloadAttestationData
     return getField1().get();
   }
 
-  public boolean getPayloadStatus() {
+  public boolean getPayloadPresent() {
     return getField2().get();
   }
 
-  public boolean getBlobDataPresent() {
+  public boolean getBlobDataAvailable() {
     return getField3().get();
   }
 

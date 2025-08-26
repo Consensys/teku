@@ -219,8 +219,7 @@ public class SchemaTypes {
   public static final SchemaId<PayloadAttestationSchema> PAYLOAD_ATTESTATION_SCHEMA =
       create("PAYLOAD_ATTESTATION_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadHeaderSchema>
-      SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA =
-          create("SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA_SCHEMA");
+      SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation
