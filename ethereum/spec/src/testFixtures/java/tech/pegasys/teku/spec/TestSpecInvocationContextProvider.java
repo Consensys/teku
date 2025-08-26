@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -72,7 +73,10 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
                 invocations.add(
                     generateContext(
                         new SpecContext(
-                            specMilestone, eth2Network, testSpecContext.doNotGenerateSpec())));
+                            specMilestone,
+                            eth2Network,
+                            testSpecContext.doNotGenerateSpec(),
+                            testSpecContext.signatureVerifierNoop())));
               });
         });
 
@@ -105,13 +109,20 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     SpecContext(
         final SpecMilestone specMilestone,
         final Eth2Network network,
-        final boolean doNotGenerateSpec) {
+        final boolean doNotGenerateSpec,
+        final boolean signatureVerifierNoop) {
       if (doNotGenerateSpec) {
         spec = null;
         dataStructureUtil = null;
         schemaDefinitions = null;
       } else {
-        this.spec = TestSpecFactory.create(specMilestone, network);
+        final BLSSignatureVerifier blsSignatureVerifier =
+            signatureVerifierNoop ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+        this.spec =
+            TestSpecFactory.create(
+                specMilestone,
+                network,
+                builder -> builder.blsSignatureVerifier(blsSignatureVerifier));
         this.dataStructureUtil = new DataStructureUtil(spec);
         this.schemaDefinitions = spec.forMilestone(specMilestone).getSchemaDefinitions();
       }

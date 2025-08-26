@@ -77,24 +77,6 @@ public class BeaconStateSchemaFulu
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
-  @Override
-  public MutableBeaconStateFulu createBuilder() {
-    return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
-  }
-
-  public static BeaconStateSchemaFulu create(
-      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
-  }
-
-  public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
-    checkArgument(
-        schema instanceof BeaconStateSchemaFulu,
-        "Expected a BeaconStateSchemaFulu but was %s",
-        schema.getClass());
-    return (BeaconStateSchemaFulu) schema;
-  }
-
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
     return (SszListSchema<PendingDeposit, ?>)
@@ -116,6 +98,24 @@ public class BeaconStateSchemaFulu
   public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
     return (SszUInt64VectorSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
+  }
+
+  @Override
+  public MutableBeaconStateFulu createBuilder() {
+    return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
+  }
+
+  public static BeaconStateSchemaFulu create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
+  }
+
+  public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
+    checkArgument(
+        schema instanceof BeaconStateSchemaFulu,
+        "Expected a BeaconStateSchemaFulu but was %s",
+        schema.getClass());
+    return (BeaconStateSchemaFulu) schema;
   }
 
   @Override
