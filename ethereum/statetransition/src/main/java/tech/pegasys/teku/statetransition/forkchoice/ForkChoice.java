@@ -439,7 +439,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber, Operations
                           new IllegalStateException(
                               "Unable to retrieve the slot of fork choice head: "
                                   + lateBlockReorgResult.headBlockRoot))),
-          lateBlockReorgResult.isLateBlockReorg);
+          lateBlockReorgResult.isLateBlockReorgPreparation);
     } finally {
       // here we just make sure to commit, because protoarray has been updated. We just had an
       // exception while updating recentChainData which will become consistent again on the next
@@ -451,7 +451,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber, Operations
   }
 
   private record LateBlockReorgResult(
-      Bytes32 headBlockRoot, boolean isLateBlockReorg, SafeFuture<Void> updateHeadFuture) {}
+      Bytes32 headBlockRoot,
+      boolean isLateBlockReorgPreparation,
+      SafeFuture<Void> updateHeadFuture) {}
 
   private LateBlockReorgResult evaluateLateBlockReorg(
       final Bytes32 headBlockRoot, final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
@@ -606,6 +608,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber, Operations
       final BeaconState postState,
       final PayloadValidationResult payloadValidationResult,
       final DataAndValidationResult<?> dataAndValidationResult) {
+    LOG.info("Importing block {} at slot {}", block.getRoot(), block.getSlot());
     blockImportPerformance.ifPresent(BlockImportPerformance::beginImporting);
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
@@ -854,14 +857,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber, Operations
     final ChainHead currentHead = recentChainData.getChainHead().orElseThrow();
 
     final SlotAndBlockRoot bestHeadBlock = findNewChainHead(forkChoiceStrategy);
-    if (!bestHeadBlock.getBlockRoot().equals(currentHead.getRoot())) {
-      recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
-      if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
-        result.markAsCanonical();
-      }
-    }
+    final boolean isCanonical = bestHeadBlock.getBlockRoot().equals(block.getRoot());
 
-    if (!result.isBlockOnCanonicalChain() && shouldApplyProposerBoost) {
+    if (!isCanonical && shouldApplyProposerBoost) {
       // This is likely a reorging block that requires a full processHead to update the head.
       // Running processHead here will ensure:
       //
@@ -874,6 +872,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber, Operations
       // cover attestation generation and not sync committee message, since it is generated
       // VC side and requires head event to be sent before attestationDue.
       processHead().finish(error -> LOG.error("Fork choice updating head failed", error));
+      return;
+    }
+
+    if (!bestHeadBlock.getBlockRoot().equals(currentHead.getRoot())) {
+      recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
+      if (isCanonical) {
+        result.markAsCanonical();
+      }
     }
   }
 

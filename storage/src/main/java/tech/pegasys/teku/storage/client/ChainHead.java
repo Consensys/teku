@@ -89,6 +89,10 @@ public class ChainHead implements MinimalBeaconBlockSummary {
     return stateAndBlockSummaryFuture;
   }
 
+  public MinimalBeaconBlockSummary getMinimalBlockSummary() {
+    return blockData;
+  }
+
   public boolean isOptimistic() {
     return isOptimistic;
   }

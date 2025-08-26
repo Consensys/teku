@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.storage.api.ReorgContext.LateBlockReorgStage;
 
 public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscriber {
 
@@ -48,7 +49,10 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     if (!syncing) {
       optionalReorgContext.ifPresent(
           reorg -> {
-            if (reorg.isLateBlockReorg()) {
+            if (reorg
+                .lateBlockReorgContext()
+                .map(context -> context.stage() == LateBlockReorgStage.PREPARATION)
+                .orElse(false)) {
               return;
             }
             eventLogger.reorgEvent(

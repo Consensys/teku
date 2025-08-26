@@ -66,6 +66,8 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.storage.api.ReorgContext.LateBlockReorgContext;
+import tech.pegasys.teku.storage.api.ReorgContext.LateBlockReorgStage;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -106,6 +108,8 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   private final Map<Bytes4, BlobParameters> forkDigestToBpoFork = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
+  private volatile Optional<MinimalBeaconBlockSummary> currentLateBlockReorgTarget =
+      Optional.empty();
 
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
@@ -346,7 +350,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   }
 
   public void updateHead(
-      final Bytes32 root, final UInt64 currentSlot, final boolean isLateBlockReorg) {
+      final Bytes32 root, final UInt64 currentSlot, final boolean isLateBlockReorgPreparation) {
     synchronized (this) {
       if (chainHead.map(head -> head.getRoot().equals(root)).orElse(false)) {
         LOG.trace("Skipping head update because new head is same as previous head");
@@ -363,9 +367,11 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
       }
       final ChainHead newChainHead = createNewChainHead(root, currentSlot, maybeBlockData.get());
       this.chainHead = Optional.of(newChainHead);
+      LOG.info("updated head slot {} root {}", newChainHead.getSlot(), newChainHead.getRoot());
+
       final Optional<ReorgContext> optionalReorgContext =
           computeReorgContext(
-              forkChoiceStrategy, originalChainHead, newChainHead, isLateBlockReorg);
+              forkChoiceStrategy, originalChainHead, newChainHead, isLateBlockReorgPreparation);
       final boolean epochTransition =
           originalChainHead
               .map(
@@ -401,11 +407,75 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     bestBlockInitialized.complete(null);
   }
 
+  private boolean isLateBlockReorgCompletion(
+      final Optional<ChainHead> maybeOriginalChainHead, final ChainHead newChainHead) {
+    if (currentLateBlockReorgTarget.isEmpty() || maybeOriginalChainHead.isEmpty()) {
+      return false;
+    }
+    final ChainHead originalChainHead = maybeOriginalChainHead.orElseThrow();
+    final MinimalBeaconBlockSummary lateBlockReorgContext =
+        this.currentLateBlockReorgTarget.orElseThrow();
+
+    return originalChainHead.getRoot().equals(lateBlockReorgContext.getParentRoot())
+        && newChainHead.getSlot().decrement().equals(lateBlockReorgContext.getSlot());
+  }
+
   private Optional<ReorgContext> computeReorgContext(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       final Optional<ChainHead> originalChainHead,
       final ChainHead newChainHead,
-      final boolean isLateBlockReorg) {
+      final boolean isLateBlockReorgPreparation) {
+
+    if (isLateBlockReorgPreparation) {
+      LOG.info("Late block reorg preparation detected");
+      final ChainHead previousChainHead = originalChainHead.orElseThrow();
+      final Optional<LateBlockReorgContext> lateBlockReorgContext =
+          Optional.of(
+              new LateBlockReorgContext(
+                  previousChainHead.getRoot(),
+                  previousChainHead.getSlot(),
+                  newChainHead.getRoot(),
+                  LateBlockReorgStage.PREPARATION));
+
+      this.currentLateBlockReorgTarget = Optional.of(previousChainHead.getMinimalBlockSummary());
+
+      return ReorgContext.of(
+          previousChainHead.getRoot(),
+          previousChainHead.getSlot(),
+          previousChainHead.getStateRoot(),
+          newChainHead.getSlot(),
+          newChainHead.getRoot(),
+          lateBlockReorgContext);
+    }
+
+    if (isLateBlockReorgCompletion(originalChainHead, newChainHead)) {
+      LOG.info("Late block reorg completion detected");
+      final ChainHead previousChainHead = originalChainHead.orElseThrow();
+
+      final Optional<LateBlockReorgContext> lateBlockReorgContext =
+          Optional.of(
+              new LateBlockReorgContext(
+                  previousChainHead.getRoot(),
+                  previousChainHead.getSlot(),
+                  newChainHead.getRoot(),
+                  LateBlockReorgStage.COMPLETION));
+
+      reorgCounter.inc();
+
+      final Optional<ReorgContext> reorgContext =
+          ReorgContext.of(
+              currentLateBlockReorgTarget.orElseThrow().getRoot(),
+              currentLateBlockReorgTarget.orElseThrow().getSlot(),
+              currentLateBlockReorgTarget.orElseThrow().getStateRoot(),
+              previousChainHead.getSlot(),
+              previousChainHead.getRoot(),
+              lateBlockReorgContext);
+
+      currentLateBlockReorgTarget = Optional.empty();
+
+      return reorgContext;
+    }
+
     final Optional<ReorgContext> optionalReorgContext;
     if (originalChainHead
         .map(head -> hasReorgedFrom(head.getRoot(), head.getSlot()))
@@ -418,6 +488,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
               .orElseGet(() -> store.getFinalizedCheckpoint().toSlotAndBlockRoot(spec));
 
       reorgCounter.inc();
+
       optionalReorgContext =
           ReorgContext.of(
               previousChainHead.getRoot(),
@@ -425,7 +496,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
               previousChainHead.getStateRoot(),
               commonAncestorSlotAndBlockRoot.getSlot(),
               commonAncestorSlotAndBlockRoot.getBlockRoot(),
-              isLateBlockReorg);
+              Optional.empty());
     } else {
       optionalReorgContext = ReorgContext.empty();
     }

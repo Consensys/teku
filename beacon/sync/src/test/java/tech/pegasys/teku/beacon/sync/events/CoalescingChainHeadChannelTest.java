@@ -279,7 +279,7 @@ class CoalescingChainHeadChannelTest {
                 oldBestStateRoot,
                 commonAncestorSlot,
                 commonAncestorRoot,
-                false));
+                Optional.empty()));
     channel.onSyncingChange(false);
 
     channel.chainHeadUpdated(
@@ -319,7 +319,7 @@ class CoalescingChainHeadChannelTest {
                 dataStructureUtil.randomBytes32(),
                 UInt64.valueOf(100),
                 dataStructureUtil.randomBytes32(),
-                false));
+                Optional.empty()));
     final Optional<ReorgContext> reorgContext2 =
         Optional.of(
             new ReorgContext(
@@ -328,7 +328,7 @@ class CoalescingChainHeadChannelTest {
                 dataStructureUtil.randomBytes32(),
                 UInt64.valueOf(80),
                 dataStructureUtil.randomBytes32(),
-                false));
+                Optional.empty()));
 
     channel.onSyncingChange(true);
 

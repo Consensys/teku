@@ -57,6 +57,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.storage.api.ReorgContext.LateBlockReorgContext;
 
 public class EventSubscriptionManager
     implements ChainHeadChannel, FinalizedCheckpointChannel, ReceivedBlockEventsChannel {
@@ -133,7 +134,11 @@ public class EventSubscriptionManager
       final Bytes32 previousDutyDependentRoot,
       final Bytes32 currentDutyDependentRoot,
       final Optional<ReorgContext> optionalReorgContext) {
-    if (optionalReorgContext.isPresent() && optionalReorgContext.get().isLateBlockReorg()) {
+    if (optionalReorgContext
+        .map(ReorgContext::lateBlockReorgContext)
+        .flatMap(ctx -> ctx.map(LateBlockReorgContext::stage))
+        .map(stage -> stage == ReorgContext.LateBlockReorgStage.PREPARATION)
+        .orElse(false)) {
       return;
     }
 

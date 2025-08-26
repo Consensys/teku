@@ -35,6 +35,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.storage.api.ReorgContext.LateBlockReorgStage;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class OperationsReOrgManager implements ChainHeadChannel {
@@ -87,12 +88,23 @@ public class OperationsReOrgManager implements ChainHeadChannel {
       final Optional<ReorgContext> optionalReorgContext) {
     optionalReorgContext.ifPresent(
         reorgContext -> {
+          if (reorgContext.lateBlockReorgContext().isPresent()) {
+            if (reorgContext.lateBlockReorgContext().get().stage()
+                == LateBlockReorgStage.COMPLETION) {
+              return;
+            }
+            if (reorgContext.lateBlockReorgContext().get().stage() == LateBlockReorgStage.FAILED) {
+              return;
+            }
+          }
+
           final NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
               recentChainData.getAncestorsOnFork(
                   reorgContext.commonAncestorSlot(), reorgContext.oldBestBlockRoot());
           final NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
               recentChainData.getAncestorsOnFork(reorgContext.commonAncestorSlot(), bestBlockRoot);
 
+          LOG.info("notCanonicalBlockRoots: {}", notCanonicalBlockRoots);
           LOG.info("nowCanonicalBlockRoots: {}", nowCanonicalBlockRoots);
 
           if (!notCanonicalBlockRoots.isEmpty()) {

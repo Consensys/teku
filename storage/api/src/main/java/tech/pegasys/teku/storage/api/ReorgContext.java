@@ -23,7 +23,7 @@ public record ReorgContext(
     Bytes32 oldBestStateRoot,
     UInt64 commonAncestorSlot,
     Bytes32 commonAncestorRoot,
-    boolean isLateBlockReorg) {
+    Optional<LateBlockReorgContext> lateBlockReorgContext) {
 
   public static Optional<ReorgContext> of(
       final Bytes32 oldBestBlockRoot,
@@ -31,7 +31,7 @@ public record ReorgContext(
       final Bytes32 oldBestStateRoot,
       final UInt64 commonAncestorSlot,
       final Bytes32 commonAncestorRoot,
-      final boolean isLateBlockReorg) {
+      final Optional<LateBlockReorgContext> lateBlockReorgContext) {
     return Optional.of(
         new ReorgContext(
             oldBestBlockRoot,
@@ -39,10 +39,23 @@ public record ReorgContext(
             oldBestStateRoot,
             commonAncestorSlot,
             commonAncestorRoot,
-            isLateBlockReorg));
+            lateBlockReorgContext));
   }
 
   public static Optional<ReorgContext> empty() {
     return Optional.empty();
+  }
+
+  public record LateBlockReorgContext(
+      Bytes32 lateBlockRoot,
+      UInt64 lateBlockSlot,
+      Bytes32 lateBlockParentRoot,
+      LateBlockReorgStage stage) {}
+
+  public enum LateBlockReorgStage {
+    PREPARATION, // when head is set to late block's parent
+    COMPLETION, // when we import our locally produced block reorging the late block
+    FAILED // when we fail to generate a block and we end up importing a block building on top of
+    // the late block which then becomes canonical
   }
 }
