@@ -14,16 +14,22 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
+  private final SignedExecutionPayloadHeaderSchema signedExecutionPayloadHeaderSchema;
+
   public SchemaDefinitionsGloas(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
+    this.signedExecutionPayloadHeaderSchema =
+        schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA);
   }
 
   public static SchemaDefinitionsGloas required(final SchemaDefinitions schemaDefinitions) {
@@ -40,6 +46,10 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     return new BeaconBlockBodyBuilderGloas(
         getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
         getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
+  }
+
+  public SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema() {
+    return signedExecutionPayloadHeaderSchema;
   }
 
   @Override
