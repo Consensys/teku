@@ -21,19 +21,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
 
   private final SpecConfigGloas specConfig;
-  private final BeaconStateAccessorsFulu beaconStateAccessors;
+  private final BeaconStateAccessorsGloas beaconStateAccessors;
   private final SchemaDefinitionsGloas schemaDefinitions;
 
   public GloasStateUpgrade(
       final SpecConfigGloas specConfig,
       final SchemaDefinitionsGloas schemaDefinitions,
-      final BeaconStateAccessorsFulu beaconStateAccessors) {
+      final BeaconStateAccessorsGloas beaconStateAccessors) {
     this.specConfig = specConfig;
     this.schemaDefinitions = schemaDefinitions;
     this.beaconStateAccessors = beaconStateAccessors;

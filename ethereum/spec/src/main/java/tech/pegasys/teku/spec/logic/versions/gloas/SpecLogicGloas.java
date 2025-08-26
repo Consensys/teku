@@ -18,37 +18,31 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.AttestationDataValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
-import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch.EpochProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.forktransition.GloasStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SpecLogicGloas extends AbstractSpecLogic {
@@ -56,21 +50,21 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
 
   private SpecLogicGloas(
-      final Predicates predicates,
-      final MiscHelpersDeneb miscHelpers,
-      final BeaconStateAccessorsElectra beaconStateAccessors,
-      final BeaconStateMutatorsBellatrix beaconStateMutators,
+      final PredicatesGloas predicates,
+      final MiscHelpersGloas miscHelpers,
+      final BeaconStateAccessorsGloas beaconStateAccessors,
+      final BeaconStateMutatorsElectra beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
-      final EpochProcessorElectra epochProcessor,
-      final BlockProcessorFulu blockProcessor,
+      final EpochProcessorGloas epochProcessor,
+      final BlockProcessorGloas blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
-      final BlindBlockUtil blindBlockUtil,
+      final BlindBlockUtilFulu blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
       final LightClientUtil lightClientUtil,
       final GloasStateUpgrade stateUpgrade) {
@@ -100,10 +94,11 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final SchemaDefinitionsGloas schemaDefinitions,
       final TimeProvider timeProvider) {
     // Helpers
-    final PredicatesElectra predicates = new PredicatesElectra(config);
-    final MiscHelpersFulu miscHelpers = new MiscHelpersFulu(config, predicates, schemaDefinitions);
-    final BeaconStateAccessorsFulu beaconStateAccessors =
-        new BeaconStateAccessorsFulu(config, predicates, miscHelpers);
+    final PredicatesGloas predicates = new PredicatesGloas(config);
+    final MiscHelpersGloas miscHelpers =
+        new MiscHelpersGloas(config, predicates, schemaDefinitions);
+    final BeaconStateAccessorsGloas beaconStateAccessors =
+        new BeaconStateAccessorsGloas(config, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
         new BeaconStateMutatorsElectra(
             config, miscHelpers, beaconStateAccessors, schemaDefinitions);
@@ -139,8 +134,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             predicates,
             miscHelpers,
             beaconStateAccessors);
-    final EpochProcessorFulu epochProcessor =
-        new EpochProcessorFulu(
+    final EpochProcessorGloas epochProcessor =
+        new EpochProcessorGloas(
             config,
             miscHelpers,
             beaconStateAccessors,
@@ -157,8 +152,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
-    final BlockProcessorFulu blockProcessor =
-        new BlockProcessorFulu(
+    final BlockProcessorGloas blockProcessor =
+        new BlockProcessorGloas(
             config,
             predicates,
             miscHelpers,

@@ -128,7 +128,7 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final BLSSignatureVerifier blsSignatureVerifier;
 
-  // altair fork information
+  // altair fork
   private final Bytes4 altairForkVersion;
   private final UInt64 altairForkEpoch;
 
@@ -151,6 +151,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   // fulu fork
   private final Bytes4 fuluForkVersion;
   private final UInt64 fuluForkEpoch;
+
   // gloas fork
   private final Bytes4 gloasForkVersion;
   private final UInt64 gloasForkEpoch;
