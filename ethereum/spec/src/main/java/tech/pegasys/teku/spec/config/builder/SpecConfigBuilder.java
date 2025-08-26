@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
@@ -192,9 +194,14 @@ public class SpecConfigBuilder {
       }
     }
 
+    // we need to make sure we have both fields set as we may only get one or the other from config
+    // currently.
     if (slotDurationMs == null && secondsPerSlot != null) {
-      LOG.debug("Defaulting slot duration ms from secondsPerSlot: " + secondsPerSlot);
-      slotDurationMs = secondsPerSlot * 1000;
+      LOG.debug("Defaulting slotDurationMs from secondsPerSlot: {}", secondsPerSlot);
+      slotDurationMs = secondsToMillis(secondsPerSlot).intValue();
+    } else if (secondsPerSlot == null && slotDurationMs != null) {
+      LOG.debug("Defaulting secondsPerSlot from slotDurationMs: {}", slotDurationMs);
+      secondsPerSlot = millisToSeconds(slotDurationMs).intValue();
     } else if (slotDurationMs != null
         && secondsPerSlot != null
         && slotDurationMs != secondsPerSlot * 1000) {
