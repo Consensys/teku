@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -199,6 +200,8 @@ public class SchemaTypes {
       DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA = create("DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA");
   public static final SchemaId<MatrixEntrySchema> MATRIX_ENTRY_SCHEMA =
       create("MATRIX_ENTRY_SCHEMA");
+  public static final SchemaId<SszUInt64VectorSchema<?>> PROPOSER_LOOKAHEAD_SCHEMA =
+      create("PROPOSER_LOOKAHEAD_SCHEMA");
   public static final SchemaId<DataColumnSidecarsByRootRequestMessageSchema>
       DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");

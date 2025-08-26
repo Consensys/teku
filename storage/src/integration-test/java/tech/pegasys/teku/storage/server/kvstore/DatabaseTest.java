@@ -217,12 +217,9 @@ public class DatabaseTest {
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
-    final BlobSidecar blobSidecar2_0 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 0);
-    final BlobSidecar blobSidecar2_1 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 1);
+    final SignedBeaconBlock blockAt2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 0);
+    final BlobSidecar blobSidecar2_1 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 1);
     final BlobSidecar blobSidecar3_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(3), 0);
@@ -384,12 +381,9 @@ public class DatabaseTest {
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
-    final BlobSidecar blobSidecar2_0 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 0);
-    final BlobSidecar blobSidecar2_1 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 1);
+    final SignedBeaconBlock blockAt2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 0);
+    final BlobSidecar blobSidecar2_1 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 1);
     final BlobSidecar blobSidecar3_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(3), 0);

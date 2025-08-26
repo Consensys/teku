@@ -41,6 +41,8 @@ public class AltairBuilder extends BaseForkBuilder
 
   // Time
   private Integer epochsPerSyncCommitteePeriod;
+  private Integer syncMessageDueBps;
+  private Integer contributionDueBps;
 
   // Sync protocol
   private Integer minSyncCommitteeParticipants;
@@ -62,12 +64,23 @@ public class AltairBuilder extends BaseForkBuilder
             inactivityScoreRecoveryRate,
             epochsPerSyncCommitteePeriod,
             minSyncCommitteeParticipants,
-            updateTimeout),
+            updateTimeout,
+            syncMessageDueBps,
+            contributionDueBps),
         specConfigAndParent);
   }
 
   @Override
   public void validate() {
+    // compatibility
+    if (syncMessageDueBps == null) {
+      syncMessageDueBps = 3333;
+      LOG.debug("Defaulting syncMessageDueBps to {}", syncMessageDueBps);
+    }
+    if (contributionDueBps == null) {
+      contributionDueBps = 6667;
+      LOG.debug("Defaulting contributionDueBps to {}", contributionDueBps);
+    }
     defaultValuesIfRequired(this);
     if (inactivityScoreBias == null) {
       LOG.warn("INACTIVITY_SCORE_BIAS was empty");
@@ -93,6 +106,8 @@ public class AltairBuilder extends BaseForkBuilder
     constants.put("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
     constants.put("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
     constants.put("updateTimeout", updateTimeout);
+    constants.put("syncMessageDueBps", syncMessageDueBps);
+    constants.put("contributionDueBps", contributionDueBps);
     return constants;
   }
 
@@ -103,6 +118,18 @@ public class AltairBuilder extends BaseForkBuilder
       final UInt64 inactivityPenaltyQuotientAltair) {
     checkNotNull(inactivityPenaltyQuotientAltair);
     this.inactivityPenaltyQuotientAltair = inactivityPenaltyQuotientAltair;
+    return this;
+  }
+
+  public AltairBuilder syncMessageDueBps(final Integer syncMessageDueBps) {
+    checkNotNull(syncMessageDueBps);
+    this.syncMessageDueBps = syncMessageDueBps;
+    return this;
+  }
+
+  public AltairBuilder contributionDueBps(final Integer contributionDueBps) {
+    checkNotNull(contributionDueBps);
+    this.contributionDueBps = contributionDueBps;
     return this;
   }
 

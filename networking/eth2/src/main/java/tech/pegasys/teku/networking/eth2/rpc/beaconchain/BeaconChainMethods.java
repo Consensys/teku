@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -132,8 +133,8 @@ public class BeaconChainMethods {
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
-      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
@@ -174,8 +175,8 @@ public class BeaconChainMethods {
             metricsSystem,
             asyncRunner,
             combinedChainDataClient,
-            dataColumnSidecarCustody,
-            custodyGroupCountManager,
+            dataColumnSidecarCustodySupplier,
+            custodyGroupCountManagerSupplier,
             peerLookup,
             rpcEncoding,
             recentChainData,
@@ -427,8 +428,8 @@ public class BeaconChainMethods {
           final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
-          final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
-          final CustodyGroupCountManager custodyGroupCountManager,
+          final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
+          final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData,
@@ -446,8 +447,8 @@ public class BeaconChainMethods {
             spec,
             metricsSystem,
             combinedChainDataClient,
-            dataColumnSidecarCustody,
-            custodyGroupCountManager,
+            dataColumnSidecarCustodySupplier,
+            custodyGroupCountManagerSupplier,
             dasLogger);
     final DataColumnSidecarsByRootRequestMessageSchema
         dataColumnSidecarsByRootRequestMessageSchema =

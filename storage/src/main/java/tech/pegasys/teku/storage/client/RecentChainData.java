@@ -77,7 +77,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 
 /** This class is the ChainStorage client-side logic */
-public abstract class RecentChainData implements StoreUpdateHandler {
+public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIsConnectedProvider {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -751,8 +751,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return lateBlockReorgLogic.shouldOverrideForkChoiceUpdate(headRoot);
   }
 
-  public boolean validatorIsConnected(final int validatorIndex, final UInt64 slot) {
+  @Override
+  public boolean isValidatorConnected(final int validatorIndex, final UInt64 slot) {
     return validatorIsConnectedProvider.isValidatorConnected(validatorIndex, slot);
+  }
+
+  @Override
+  public SafeFuture<Boolean> isBlockProposerConnected(final UInt64 slot) {
+    return validatorIsConnectedProvider.isBlockProposerConnected(slot);
   }
 
   public void setBlockTimelinessFromArrivalTime(

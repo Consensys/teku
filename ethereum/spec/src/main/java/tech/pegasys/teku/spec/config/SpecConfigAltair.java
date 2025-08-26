@@ -46,6 +46,10 @@ public interface SpecConfigAltair extends SpecConfig {
 
   int getUpdateTimeout();
 
+  int getSyncMessageDueBps();
+
+  int getContributionDueBps();
+
   @Override
   Optional<SpecConfigAltair> toVersionAltair();
 }

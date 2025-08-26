@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -44,6 +45,8 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFuluBpo;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsGloas;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsGloasBpo;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -115,8 +118,8 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
-  protected DataColumnSidecarByRootCustody dataColumnSidecarCustody;
-  protected CustodyGroupCountManager custodyGroupCountManager;
+  protected Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
+  protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   protected MetadataMessagesFactory metadataMessagesFactory;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
@@ -184,8 +187,8 @@ public class Eth2P2PNetworkBuilder {
         Eth2PeerManager.create(
             asyncRunner,
             combinedChainDataClient,
-            dataColumnSidecarCustody,
-            custodyGroupCountManager,
+            dataColumnSidecarCustodySupplier,
+            custodyGroupCountManagerSupplier,
             metadataMessagesFactory,
             metricsSystem,
             attestationSubnetService,
@@ -409,6 +412,28 @@ public class Eth2P2PNetworkBuilder {
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
               dasGossipLogger);
+      case GLOAS ->
+          new GossipForkSubscriptionsGloas(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              debugDataDumper,
+              dasGossipLogger);
     };
   }
 
@@ -417,32 +442,57 @@ public class Eth2P2PNetworkBuilder {
       final DiscoveryNetwork<?> network,
       final GossipEncoding gossipEncoding,
       final BlobParameters bpo) {
-    if (forkAndSpecMilestone.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return new GossipForkSubscriptionsFuluBpo(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedBlobSidecarProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer,
-          gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor,
-          dataColumnSidecarOperationProcessor,
-          debugDataDumper,
-          dasGossipLogger,
-          bpo);
-    }
-    throw new IllegalStateException(
-        "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
+    return switch (forkAndSpecMilestone.getSpecMilestone()) {
+      case FULU ->
+          new GossipForkSubscriptionsFuluBpo(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              debugDataDumper,
+              dasGossipLogger,
+              bpo);
+      case GLOAS ->
+          new GossipForkSubscriptionsGloasBpo(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              debugDataDumper,
+              dasGossipLogger,
+              bpo);
+      default ->
+          throw new IllegalStateException(
+              "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
+    };
   }
 
   protected DiscoveryNetwork<?> buildNetwork(
@@ -554,8 +604,8 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("combinedChainDataClient", combinedChainDataClient);
-    assertNotNull("dataColumnSidecarCustody", dataColumnSidecarCustody);
-    assertNotNull("custodyGroupCountManager", custodyGroupCountManager);
+    assertNotNull("dataColumnSidecarCustodySupplier", dataColumnSidecarCustodySupplier);
+    assertNotNull("custodyGroupCountManagerSupplier", custodyGroupCountManagerSupplier);
     assertNotNull("metadataMessagesFactory", metadataMessagesFactory);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
@@ -597,16 +647,16 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder dataColumnSidecarCustody(
-      final DataColumnSidecarByRootCustody dataColumnSidecarCustody) {
-    checkNotNull(dataColumnSidecarCustody);
-    this.dataColumnSidecarCustody = dataColumnSidecarCustody;
+      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier) {
+    checkNotNull(dataColumnSidecarCustodySupplier);
+    this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     return this;
   }
 
-  public Eth2P2PNetworkBuilder custodyGroupCountManager(
-      final CustodyGroupCountManager custodyGroupCountManager) {
-    checkNotNull(custodyGroupCountManager);
-    this.custodyGroupCountManager = custodyGroupCountManager;
+  public Eth2P2PNetworkBuilder custodyGroupCountManagerSupplier(
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier) {
+    checkNotNull(custodyGroupCountManagerSupplier);
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     return this;
   }
 

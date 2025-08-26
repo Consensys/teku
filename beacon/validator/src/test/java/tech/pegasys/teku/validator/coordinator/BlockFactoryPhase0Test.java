@@ -16,13 +16,21 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateAssert.assertThatSyncAggregate;
+import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -35,25 +43,36 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
+  private final Consumer<SpecConfigBuilder> configAdapter =
+      builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP);
+
   @Test
   public void shouldCreateBlockAfterNormalSlot() {
-    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false, state -> {}, false);
+    assertBlockCreated(
+        1, TestSpecFactory.create(PHASE0, MINIMAL, configAdapter), false, state -> {}, false);
   }
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() {
-    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false, state -> {}, false);
+    assertBlockCreated(
+        2, TestSpecFactory.create(PHASE0, MINIMAL, configAdapter), false, state -> {}, false);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() {
-    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false, state -> {}, false);
+    assertBlockCreated(
+        5, TestSpecFactory.create(PHASE0, MINIMAL, configAdapter), false, state -> {}, false);
   }
 
   @Test
   void shouldIncludeSyncAggregateWhenAltairIsActive() {
     final BeaconBlock block =
-        assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false, state -> {}, false)
+        assertBlockCreated(
+                1,
+                TestSpecFactory.create(ALTAIR, MINIMAL, configAdapter),
+                false,
+                state -> {},
+                false)
             .blockContainer()
             .getBlock();
     final SyncAggregate result = getSyncAggregate(block);
@@ -64,7 +83,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void shouldIncludeExecutionPayloadWhenBellatrixIsActive() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final Spec spec = TestSpecFactory.create(BELLATRIX, MINIMAL, configAdapter);
     final BeaconBlock block =
         assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), false)
             .blockContainer()
@@ -75,7 +94,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void shouldCreateCapellaBlock() {
-    final Spec spec = TestSpecFactory.createMinimalCapella();
+    final Spec spec = TestSpecFactory.create(CAPELLA, MINIMAL, configAdapter);
     final BeaconBlock block =
         assertBlockCreated(1, spec, true, state -> prepareValidPayload(spec, state), false)
             .blockContainer()
@@ -87,7 +106,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndBlindedBlockRequested() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final Spec spec = TestSpecFactory.create(BELLATRIX, MINIMAL, configAdapter);
     final BeaconBlock block =
         assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), true)
             .blockContainer()
@@ -98,7 +117,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void shouldThrowPostMergeWithWrongPayload() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final Spec spec = TestSpecFactory.create(BELLATRIX, MINIMAL, configAdapter);
     assertThatThrownBy(
             () -> assertBlockCreated(1, spec, true, state -> prepareDefaultPayload(spec), false))
         .hasCauseInstanceOf(StateTransitionException.class);
@@ -106,7 +125,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void unblindSignedBlock_shouldThrowWhenUnblindingBlockWithInconsistentExecutionPayload() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final Spec spec = TestSpecFactory.create(BELLATRIX, MINIMAL, configAdapter);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     final SignedBeaconBlock signedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock(1);
@@ -118,7 +137,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void unblindSignedBlock_shouldPassthroughUnblindedBlocks() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final Spec spec = TestSpecFactory.create(BELLATRIX, MINIMAL, configAdapter);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     final SignedBeaconBlock originalUnblindedSignedBlock =
@@ -132,7 +151,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void unblindSignedBlock_shouldPassthroughInNonBellatrixBlocks() {
-    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final Spec spec = TestSpecFactory.create(ALTAIR, MINIMAL, configAdapter);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     final SignedBeaconBlock originalAltairSignedBlock =
@@ -146,7 +165,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void unblindSignedBlock_shouldUnblindBlockWhenBellatrixIsActive() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
+    final Spec spec = TestSpecFactory.create(BELLATRIX, MINIMAL, configAdapter);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     final SignedBeaconBlock originalUnblindedSignedBlock =
@@ -170,7 +189,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateEmptyBlobSidecarsForBlock() {
     final BlockAndBlobSidecars blockAndBlobSidecars =
-        createBlockAndBlobSidecars(false, TestSpecFactory.createMinimalPhase0());
+        createBlockAndBlobSidecars(false, TestSpecFactory.create(PHASE0, MINIMAL, configAdapter));
 
     assertThat(blockAndBlobSidecars.blobSidecars()).isEmpty();
   }
@@ -178,7 +197,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateEmptyBlobSidecarsForBlindedBlock() {
     final BlockAndBlobSidecars blockAndBlobSidecars =
-        createBlockAndBlobSidecars(true, TestSpecFactory.createMinimalPhase0());
+        createBlockAndBlobSidecars(true, TestSpecFactory.create(PHASE0, MINIMAL, configAdapter));
 
     assertThat(blockAndBlobSidecars.blobSidecars()).isEmpty();
   }

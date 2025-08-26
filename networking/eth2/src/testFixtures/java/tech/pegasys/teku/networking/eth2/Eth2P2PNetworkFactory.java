@@ -60,6 +60,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsGloas;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -246,8 +247,8 @@ public class Eth2P2PNetworkFactory {
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
-                DataColumnSidecarByRootCustody.NOOP,
-                CustodyGroupCountManager.NOOP,
+                () -> DataColumnSidecarByRootCustody.NOOP,
+                () -> CustodyGroupCountManager.NOOP,
                 new MetadataMessagesFactory(),
                 METRICS_SYSTEM,
                 attestationSubnetService,
@@ -511,6 +512,28 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper);
         case FULU ->
             new GossipForkSubscriptionsFulu(
+                forkAndSpecMilestone.getFork(),
+                spec,
+                asyncRunner,
+                metricsSystem,
+                network,
+                recentChainData,
+                gossipEncoding,
+                gossipedBlockProcessor,
+                gossipedBlobSidecarProcessor,
+                gossipedAttestationProcessor,
+                gossipedAggregateProcessor,
+                attesterSlashingProcessor,
+                proposerSlashingProcessor,
+                voluntaryExitProcessor,
+                signedContributionAndProofProcessor,
+                syncCommitteeMessageProcessor,
+                signedBlsToExecutionChangeProcessor,
+                dataColumnSidecarOperationProcessor,
+                debugDataDumper,
+                DasGossipLogger.NOOP);
+        case GLOAS ->
+            new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
                 spec,
                 asyncRunner,
