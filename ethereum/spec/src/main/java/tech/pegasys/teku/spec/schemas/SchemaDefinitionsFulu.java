@@ -63,13 +63,13 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     this.dataColumnsByRootIdentifierSchema =
         schemaRegistry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA);
     this.matrixEntrySchema = schemaRegistry.get(MATRIX_ENTRY_SCHEMA);
+    this.proposerLookaheadSchema = schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA);
     this.executionPayloadAndBlobsCellBundleSchema =
         schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA);
     this.dataColumnSidecarsByRootRequestMessageSchema =
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA);
     this.dataColumnSidecarsByRangeRequestMessageSchema =
         schemaRegistry.get(DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA);
-    this.proposerLookaheadSchema = schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA);
   }
 
   public static SchemaDefinitionsFulu required(final SchemaDefinitions schemaDefinitions) {

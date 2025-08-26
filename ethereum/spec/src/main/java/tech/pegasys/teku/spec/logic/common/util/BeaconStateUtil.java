@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.logic.common.util;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -35,10 +33,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-@SuppressWarnings("unused")
 public class BeaconStateUtil {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final SpecConfig specConfig;
   private final SchemaDefinitions schemaDefinitions;
