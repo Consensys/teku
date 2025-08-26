@@ -92,6 +92,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -138,6 +139,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFu
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -3025,6 +3027,13 @@ public final class DataStructureUtil {
         .create(randomBytes32(), randomSlot(), true, true);
   }
 
+  public PayloadAttestation randomPayloadAttestation() {
+    return getGloasSchemaDefinitions(randomSlot())
+        .getPayloadAttestationSchema()
+        .create(
+            randomSszBitvector(getPtcSize()), randomPayloadAttestationData(), randomSignature());
+  }
+
   private int randomInt(final int origin, final int bound) {
     return new Random(nextSeed()).ints(origin, bound).findFirst().orElse(0);
   }
@@ -3067,6 +3076,10 @@ public final class DataStructureUtil {
 
   int getSlotsPerEpoch() {
     return getConstant(SpecConfig::getSlotsPerEpoch);
+  }
+
+  int getPtcSize() {
+    return getConstant(specConfig -> SpecConfigGloas.required(specConfig).getPtcSize());
   }
 
   int getJustificationBitsLength() {
