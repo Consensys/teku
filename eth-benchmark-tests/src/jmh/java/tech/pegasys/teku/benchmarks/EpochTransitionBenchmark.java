@@ -99,7 +99,6 @@ public class EpochTransitionBenchmark {
   @Setup(Level.Trial)
   @SuppressWarnings("deprecation")
   public void init() throws Exception {
-    //    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
     spec =
         TestSpecFactory.createMainnetAltair(

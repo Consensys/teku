@@ -137,17 +137,6 @@ public abstract class AbstractBlockFactoryTest {
   protected GraffitiBuilder graffitiBuilder =
       new GraffitiBuilder(ClientGraffitiAppendFormat.DISABLED);
 
-  //  @BeforeAll
-  //  public static void initSession() {
-  ////    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  //  }
-  //
-  //  @AfterAll
-  //  public static void resetSession() {
-  ////    AbstractBlockProcessor.depositSignatureVerifier =
-  ////        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  //  }
-
   abstract BlockFactory createBlockFactory(Spec spec);
 
   protected SyncAggregate getSyncAggregate(final BeaconBlock block) {
