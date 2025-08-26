@@ -192,7 +192,14 @@ public class TestSpecFactory {
    */
   public static Spec createMinimalWithDenebForkEpoch(final UInt64 denebForkEpoch) {
     final SpecConfigAndParent<? extends SpecConfig> config =
-        getDenebSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, denebForkEpoch);
+        getDenebSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, denebForkEpoch, __ -> {});
+    return create(config, SpecMilestone.DENEB);
+  }
+
+  public static Spec createMinimalWithDenebForkEpoch(
+      final UInt64 denebForkEpoch, final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigAndParent<? extends SpecConfig> config =
+        getDenebSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, denebForkEpoch, configAdapter);
     return create(config, SpecMilestone.DENEB);
   }
 
@@ -239,6 +246,10 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.GLOAS);
   }
 
+  public static Spec createMinimalPhase0(final Consumer<SpecConfigBuilder> configAdapter) {
+    return create(SpecMilestone.PHASE0, Eth2Network.MINIMAL, configAdapter);
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfigAndParent<? extends SpecConfig> configAndParent =
         SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
@@ -251,6 +262,10 @@ public class TestSpecFactory {
     return create(configAndParent, SpecMilestone.PHASE0);
   }
 
+  public static Spec createMainnetPhase0(final Consumer<SpecConfigBuilder> configAdapter) {
+    return create(SpecMilestone.PHASE0, Eth2Network.MAINNET, configAdapter);
+  }
+
   public static Spec createMainnetBellatrix() {
     final SpecConfigAndParent<? extends SpecConfig> configAndParent =
         getBellatrixSpecConfig(Eth2Network.MAINNET);
@@ -261,6 +276,10 @@ public class TestSpecFactory {
     final SpecConfigAndParent<? extends SpecConfig> specConfig =
         getAltairSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.ALTAIR);
+  }
+
+  public static Spec createMainnetAltair(final Consumer<SpecConfigBuilder> configAdapter) {
+    return create(SpecMilestone.ALTAIR, Eth2Network.MAINNET, configAdapter);
   }
 
   public static Spec createMainnetCapella() {
@@ -412,19 +431,24 @@ public class TestSpecFactory {
 
   private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
       final Eth2Network network) {
-    return getDenebSpecConfig(network, ZERO, ZERO);
+    return getDenebSpecConfig(network, ZERO, ZERO, __ -> {});
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
-      final Eth2Network network, final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch) {
+      final Eth2Network network,
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final Consumer<SpecConfigBuilder> configAdapter) {
     return getDenebSpecConfig(
         network,
-        builder ->
-            builder
-                .altairForkEpoch(ZERO)
-                .bellatrixForkEpoch(ZERO)
-                .capellaForkEpoch(capellaForkEpoch)
-                .denebForkEpoch(denebForkEpoch));
+        builder -> {
+          builder
+              .altairForkEpoch(ZERO)
+              .bellatrixForkEpoch(ZERO)
+              .capellaForkEpoch(capellaForkEpoch)
+              .denebForkEpoch(denebForkEpoch);
+          configAdapter.accept(builder);
+        });
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getDenebSpecConfig(
