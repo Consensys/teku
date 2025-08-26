@@ -174,13 +174,6 @@ public class Eth2P2PNetworkBuilder {
       eventChannels.subscribe(SlotEventsChannel.class, statusMessageFactory);
     }
 
-    final Optional<UInt64> dasTotalCustodyGroupCount =
-        spec.isMilestoneSupported(SpecMilestone.FULU)
-            ? Optional.of(
-                UInt64.valueOf(
-                    config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
-            : Optional.empty();
-
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -204,7 +197,6 @@ public class Eth2P2PNetworkBuilder {
             spec,
             kzg,
             discoveryNodeIdExtractor,
-            dasTotalCustodyGroupCount,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -217,6 +209,13 @@ public class Eth2P2PNetworkBuilder {
         buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
+
+    final Optional<UInt64> dasTotalCustodyGroupCount =
+        spec.isMilestoneSupported(SpecMilestone.FULU)
+            ? Optional.of(
+                UInt64.valueOf(
+                    config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
+            : Optional.empty();
 
     return new ActiveEth2P2PNetwork(
         config.getSpec(),

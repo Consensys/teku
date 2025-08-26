@@ -89,7 +89,6 @@ import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
@@ -235,12 +234,6 @@ public class Eth2P2PNetworkFactory {
           rpcEncoding =
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
-        final Optional<UInt64> dasTotalCustodySubnetCount =
-            spec.isMilestoneSupported(SpecMilestone.FULU)
-                ? Optional.of(
-                    UInt64.valueOf(
-                        config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
-                : Optional.empty();
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
@@ -265,7 +258,6 @@ public class Eth2P2PNetworkFactory {
                 spec,
                 NoOpKZG.INSTANCE,
                 __ -> Optional.of(discoveryNodeId),
-                dasTotalCustodySubnetCount,
                 DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
