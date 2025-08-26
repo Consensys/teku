@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -215,6 +216,8 @@ public class SchemaTypes {
   // Gloas
   public static final SchemaId<PayloadAttestationDataSchema> PAYLOAD_ATTESTATION_DATA_SCHEMA =
       create("PAYLOAD_ATTESTATION_DATA_SCHEMA");
+  public static final SchemaId<PayloadAttestationSchema> PAYLOAD_ATTESTATION_SCHEMA =
+      create("PAYLOAD_ATTESTATION_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadHeaderSchema>
       SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA =
           create("SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA_SCHEMA");

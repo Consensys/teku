@@ -61,6 +61,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTEST
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_PARTIAL_WITHDRAWALS_SCHEMA;
@@ -126,6 +127,7 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBid
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -173,6 +175,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingParti
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SchemaId;
 
 public class SchemaRegistryBuilder {
+
   private final Set<SchemaProvider<?>> providers = new HashSet<>();
   private final Set<SchemaId<?>> schemaIds = new HashSet<>();
   private final SchemaCache cache;
@@ -246,6 +249,7 @@ public class SchemaRegistryBuilder {
 
         // GLOAS
         .addProvider(createPayloadAttestationDataSchemaProvider())
+        .addProvider(createPayloadAttestationSchemaProvider())
         .addProvider(createSignedExecutionPayloadHeaderSchemaProvider());
   }
 
@@ -865,6 +869,15 @@ public class SchemaRegistryBuilder {
     return providerBuilder(PAYLOAD_ATTESTATION_DATA_SCHEMA)
         .withCreator(
             GLOAS, (registry, specConfig, schemaName) -> new PayloadAttestationDataSchema())
+        .build();
+  }
+
+  private static SchemaProvider<?> createPayloadAttestationSchemaProvider() {
+    return providerBuilder(PAYLOAD_ATTESTATION_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new PayloadAttestationSchema(SpecConfigGloas.required(specConfig), registry))
         .build();
   }
 
