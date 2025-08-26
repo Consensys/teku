@@ -25,6 +25,7 @@ specrefs:
       # Not defined as a constant, unnecessary
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
+      - INTERVALS_PER_SLOT#phase0
 
       # Constants for max values, defined elsewhere
       - UINT256_MAX
