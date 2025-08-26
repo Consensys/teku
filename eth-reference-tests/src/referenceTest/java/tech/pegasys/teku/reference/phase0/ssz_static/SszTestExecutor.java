@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -242,6 +243,24 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               "ssz_static/MatrixEntry",
               new SszTestExecutor<>(
                   schemas -> SchemaDefinitionsFulu.required(schemas).getMatrixEntrySchema()))
+
+          // Gloas types
+          .put(
+              "ssz_static/PayloadAttestationData",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getPayloadAttestationDataSchema()))
+          .put(
+              "ssz_static/PayloadAttestation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getPayloadAttestationSchema()))
+          .put(
+              "ssz_static/SignedExecutionPayloadHeader",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getSignedExecutionPayloadHeaderSchema()))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
