@@ -377,7 +377,6 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            0,
             config.isAllTopicsFilterEnabled());
       }
     }

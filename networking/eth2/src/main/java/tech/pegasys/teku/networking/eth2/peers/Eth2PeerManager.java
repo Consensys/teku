@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -134,6 +136,9 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
       final DasReqRespLogger dasLogger) {
 
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      metadataMessagesFactory.updateCustodyGroupCount(UInt64.ZERO);
+    }
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(

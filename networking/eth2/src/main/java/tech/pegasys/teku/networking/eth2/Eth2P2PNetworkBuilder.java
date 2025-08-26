@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
@@ -210,13 +209,6 @@ public class Eth2P2PNetworkBuilder {
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
-    final Optional<UInt64> dasTotalCustodyGroupCount =
-        spec.isMilestoneSupported(SpecMilestone.FULU)
-            ? Optional.of(
-                UInt64.valueOf(
-                    config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
-            : Optional.empty();
-
     return new ActiveEth2P2PNetwork(
         config.getSpec(),
         asyncRunner,
@@ -231,7 +223,6 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
-        dasTotalCustodyGroupCount.orElse(UInt64.ZERO).intValue(),
         config.isAllTopicsFilterEnabled());
   }
 
