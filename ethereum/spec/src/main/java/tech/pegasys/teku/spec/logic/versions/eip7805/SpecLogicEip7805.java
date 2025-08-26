@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutato
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.eip7805.block.BlockProcessorEip7805;
 import tech.pegasys.teku.spec.logic.versions.eip7805.forktransition.Eip7805StateUpgrade;
@@ -58,7 +57,7 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
 
   private SpecLogicEip7805(
       final Predicates predicates,
-      final MiscHelpersDeneb miscHelpers,
+      final MiscHelpersEip7805 miscHelpers,
       final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsBellatrix beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,

@@ -352,8 +352,7 @@ public class AttestationGenerator {
         final Committee committee = new Committee(committeeIndex, committeeIndices);
         final int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
         final AttestationData genericAttestationData =
-            spec.getGenericAttestationData(
-                assignedSlot, headState, headBlock.getRoot(), committeeIndex);
+            spec.getGenericAttestationData(assignedSlot, headState, headBlock, committeeIndex);
         final BLSKeyPair validatorKeyPair = validatorKeySupplier.apply(validatorIndex);
         nextAttestation =
             Optional.of(
@@ -383,7 +382,7 @@ public class AttestationGenerator {
         final BLSKeyPair validatorKeyPair = validatorKeySupplier.apply(validatorIndex);
         final AttestationData genericAttestationData =
             spec.getGenericAttestationData(
-                assignedSlot, headState, headBlock.getRoot(), currentCommitteeIndex);
+                assignedSlot, headState, headBlock, currentCommitteeIndex);
         nextAttestation =
             Optional.of(
                 createAttestation(

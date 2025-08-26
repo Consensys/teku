@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
@@ -30,10 +29,11 @@ import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.Epoch
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class EpochProcessorFulu extends EpochProcessorElectra {
   private final BeaconStateAccessorsFulu stateAccessorsFulu;
-  private final SchemaDefinitions schemaDefinitions;
+  private final SchemaDefinitionsFulu schemaDefinitionsFulu;
 
   public EpochProcessorFulu(
       final SpecConfigFulu specConfig,
@@ -56,7 +56,7 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
         schemaDefinitions,
         timeProvider);
     this.stateAccessorsFulu = BeaconStateAccessorsFulu.required(beaconStateAccessors);
-    this.schemaDefinitions = schemaDefinitions;
+    this.schemaDefinitionsFulu = SchemaDefinitionsFulu.required(schemaDefinitions);
   }
 
   /** process_proposer_lookahead */
@@ -88,8 +88,6 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     proposerLookahead.addAll(lastEpochProposerIndices);
 
     stateFulu.setProposerLookahead(
-        BeaconStateSchemaFulu.required(schemaDefinitions.getBeaconStateSchema())
-            .getProposerLookaheadSchema()
-            .of(proposerLookahead));
+        schemaDefinitionsFulu.getProposerLookaheadSchema().of(proposerLookahead));
   }
 }

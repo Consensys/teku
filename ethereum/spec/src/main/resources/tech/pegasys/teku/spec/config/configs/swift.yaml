@@ -55,6 +55,8 @@ FULU_FORK_EPOCH: 18446744073709551615
 # ---------------------------------------------------------------
 # [customized] Faster for testing purposes
 SECONDS_PER_SLOT: 2
+# 2000 milliseconds
+SLOT_DURATION_MS: 2000
 # 14 (estimate from Eth1 mainnet)
 # [ customized] faster for testing
 SECONDS_PER_ETH1_BLOCK: 1
@@ -64,7 +66,18 @@ MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 SHARD_COMMITTEE_PERIOD: 3
 # [customized] process deposits more quickly, but insecure
 ETH1_FOLLOW_DISTANCE: 16
+# 1667 basis points, ~17% of SLOT_DURATION_MS
+PROPOSER_REORG_CUTOFF_BPS: 1667
+# 3333 basis points, ~33% of SLOT_DURATION_MS
+ATTESTATION_DUE_BPS: 3333
+# 6667 basis points, ~67% of SLOT_DURATION_MS
+AGGREGATE_DUE_BPS: 6667
 
+# Altair
+# 3333 basis points, ~33% of SLOT_DURATION_MS
+SYNC_MESSAGE_DUE_BPS: 3333
+# 6667 basis points, ~67% of SLOT_DURATION_MS
+CONTRIBUTION_DUE_BPS: 6667
 
 # Validator cycle
 # ---------------------------------------------------------------

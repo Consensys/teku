@@ -205,6 +205,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   @Override
   public SafeFuture<InternalValidationResult> addLocal(final T item) {
     final int validatorIndex = item.getValidatorId();
+    LOG.debug("Adding local validator id {} to {}", validatorIndex, metricType);
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))
           .thenPeek(result -> validationReasonCounter.labels(result.code().toString()).inc());
@@ -216,6 +217,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   public SafeFuture<InternalValidationResult> addRemote(
       final T item, final Optional<UInt64> arrivalTimestamp) {
     final int validatorIndex = item.getValidatorId();
+    LOG.debug("Adding remote validator id {} to {}", validatorIndex, metricType);
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))
           .thenPeek(result -> validationReasonCounter.labels(result.code().toString()).inc());

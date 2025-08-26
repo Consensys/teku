@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.beaconchain;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
+import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.InclusionListsBlockUpdater;
 
 public class SlotProcessor {
@@ -49,6 +51,7 @@ public class SlotProcessor {
   private final RecentChainData recentChainData;
   private final SyncService syncService;
   private final ForkChoiceTrigger forkChoiceTrigger;
+  private final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final InclusionListsBlockUpdater inclusionListsBlockUpdater;
   private final Eth2P2PNetwork p2pNetwork;
@@ -60,6 +63,7 @@ public class SlotProcessor {
   private volatile UInt64 onTickSlotStart;
   private volatile UInt64 onTickSlotAttestation;
   private volatile UInt64 onTickEpochPrecompute;
+  private volatile UInt64 onTickFutureBlockProductionPreparation;
 
   @VisibleForTesting
   SlotProcessor(
@@ -67,6 +71,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
+      final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final InclusionListsBlockUpdater inclusionListsBlockUpdater,
       final Eth2P2PNetwork p2pNetwork,
@@ -77,6 +82,7 @@ public class SlotProcessor {
     this.recentChainData = recentChainData;
     this.syncService = syncService;
     this.forkChoiceTrigger = forkChoiceTrigger;
+    this.futureBlockProductionPreparationTrigger = futureBlockProductionPreparationTrigger;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.inclusionListsBlockUpdater = inclusionListsBlockUpdater;
     this.p2pNetwork = p2pNetwork;
@@ -90,6 +96,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final SyncService syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
+      final FutureBlockProductionPreparationTrigger futureBlockProductionPreparationTrigger,
       final ForkChoiceNotifier forkChoiceNotifier,
       final InclusionListsBlockUpdater inclusionListsBlockUpdater,
       final Eth2P2PNetwork p2pNetwork,
@@ -100,6 +107,7 @@ public class SlotProcessor {
         recentChainData,
         syncService,
         forkChoiceTrigger,
+        futureBlockProductionPreparationTrigger,
         forkChoiceNotifier,
         inclusionListsBlockUpdater,
         p2pNetwork,
@@ -151,6 +159,7 @@ public class SlotProcessor {
       processSlotStart(epoch);
       performanceRecord.ifPresent(TickProcessingPerformance::startSlotComplete);
     }
+
     if (isSlotAttestationDue(calculatedSlot, currentTimeMillis, nodeSlotStartTimeMillis)) {
       processSlotAttestation(performanceRecord);
       if (spec.atSlot(calculatedSlot).getMilestone().isLessThan(SpecMilestone.EIP7805)) {
@@ -166,6 +175,12 @@ public class SlotProcessor {
     if (isEpochPrecalculationDue(epoch, currentTimeMillis, genesisTimeMillis)) {
       processEpochPrecompute(epoch);
       performanceRecord.ifPresent(TickProcessingPerformance::precomputeEpochComplete);
+    }
+
+    if (isFutureBlockProductionPreparationDue(
+        calculatedSlot, currentTimeMillis, genesisTimeMillis)) {
+      onTickFutureBlockProductionPreparation = calculatedSlot;
+      futureBlockProductionPreparationTrigger.onFutureBlockProductionPreparationDue(calculatedSlot);
     }
   }
 
@@ -259,11 +274,14 @@ public class SlotProcessor {
       final UInt64 calculatedSlot,
       final UInt64 currentTimeMillis,
       final UInt64 nodeSlotStartTimeMillis) {
+    if (!isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)) {
+      return false;
+    }
+
     final UInt64 earliestTimeInMillis =
         nodeSlotStartTimeMillis.plus(oneThirdSlotMillis(calculatedSlot));
-    final boolean processingDueForSlot =
-        isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation);
-    return processingDueForSlot && isTimeReached(currentTimeMillis, earliestTimeInMillis);
+
+    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   // Precalculate epoch transition 2/3 of the way through the last slot of the epoch
@@ -275,14 +293,27 @@ public class SlotProcessor {
           firstSlotOfNextEpoch.minusMinZero(spec.getSlotsPerEpoch(firstSlotOfNextEpoch));
       return false;
     }
+    if (!isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute)) {
+      return false;
+    }
     final UInt64 nextEpochStartTimeMillis =
         spec.computeTimeMillisAtSlot(firstSlotOfNextEpoch, genesisTimeMillis);
     final UInt64 earliestTimeInMillis =
         nextEpochStartTimeMillis.minusMinZero(oneThirdSlotMillis(firstSlotOfNextEpoch));
-    final boolean processingDueForSlot =
-        isProcessingDueForSlot(firstSlotOfNextEpoch, onTickEpochPrecompute);
-    final boolean timeReached = isTimeReached(currentTimeMillis, earliestTimeInMillis);
-    return processingDueForSlot && timeReached;
+    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
+  }
+
+  boolean isFutureBlockProductionPreparationDue(
+      final UInt64 calculatedSlot, final UInt64 currentTimeMillis, final UInt64 genesisTimeMillis) {
+    if (!isProcessingDueForSlot(calculatedSlot, onTickFutureBlockProductionPreparation)) {
+      return false;
+    }
+
+    final UInt64 earliestTimeInMillis =
+        spec.computeTimeMillisAtSlot(calculatedSlot.increment(), genesisTimeMillis)
+            .minus(BLOCK_CREATION_TOLERANCE_MS);
+
+    return isTimeReached(currentTimeMillis, earliestTimeInMillis);
   }
 
   private UInt64 oneThirdSlotMillis(final UInt64 slot) {

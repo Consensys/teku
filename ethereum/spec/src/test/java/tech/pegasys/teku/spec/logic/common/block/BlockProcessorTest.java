@@ -25,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -59,6 +60,8 @@ public abstract class BlockProcessorTest {
 
   @Test
   void ensureDepositSignatureVerifierHasDefaultValue() {
+    assertThat(spec.getSpecConfig(UInt64.ZERO).getBLSSignatureVerifier())
+        .isEqualTo(BLSSignatureVerifier.SIMPLE);
     assertThat(AbstractBlockProcessor.depositSignatureVerifier)
         .isSameAs(AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER);
   }

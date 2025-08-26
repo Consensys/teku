@@ -22,8 +22,10 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
@@ -44,6 +46,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
   private final DataColumnSidecarSchema dataColumnSidecarSchema;
   private final DataColumnsByRootIdentifierSchema dataColumnsByRootIdentifierSchema;
   private final MatrixEntrySchema matrixEntrySchema;
+  private final SszUInt64VectorSchema<?> proposerLookaheadSchema;
   private final ExecutionPayloadAndBlobsCellBundleSchema executionPayloadAndBlobsCellBundleSchema;
 
   private final DataColumnSidecarsByRootRequestMessageSchema
@@ -60,6 +63,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     this.dataColumnsByRootIdentifierSchema =
         schemaRegistry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA);
     this.matrixEntrySchema = schemaRegistry.get(MATRIX_ENTRY_SCHEMA);
+    this.proposerLookaheadSchema = schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA);
     this.executionPayloadAndBlobsCellBundleSchema =
         schemaRegistry.get(EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA);
     this.dataColumnSidecarsByRootRequestMessageSchema =
@@ -102,6 +106,10 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
 
   public MatrixEntrySchema getMatrixEntrySchema() {
     return matrixEntrySchema;
+  }
+
+  public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
+    return proposerLookaheadSchema;
   }
 
   public ExecutionPayloadAndBlobsCellBundleSchema getExecutionPayloadAndBlobsCellBundleSchema() {

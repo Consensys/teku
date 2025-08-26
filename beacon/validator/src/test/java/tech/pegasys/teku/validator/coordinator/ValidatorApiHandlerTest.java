@@ -595,6 +595,39 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void onBlockProductionPreparationDue_shouldPrepareBlock() {
+    final UInt64 newSlot = UInt64.valueOf(25);
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
+
+    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
+
+    validatorApiHandler.onBlockProductionPreparationDue(newSlot);
+
+    verify(chainDataClient).getStateForBlockProduction(newSlot, false);
+
+    when(blockFactory.createUnsignedBlock(
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            Optional.of(ONE),
+            BlockProductionPerformance.NOOP))
+        .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
+
+    SafeFuture<Optional<BlockContainerAndMetaData>> result =
+        validatorApiHandler.createUnsignedBlock(
+            newSlot, randaoReveal, Optional.empty(), Optional.of(ONE));
+
+    assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
+
+    verify(chainDataClient).getStateForBlockProduction(newSlot, false);
+  }
+
+  @Test
   public void createAttestationData_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<AttestationData>> result =
@@ -659,7 +692,7 @@ class ValidatorApiHandlerTest {
             spec.getGenericAttestationData(
                 slot,
                 blockAndState.getState(),
-                blockAndState.getBlock().getRoot(),
+                blockAndState.getBlock(),
                 UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
     final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
@@ -718,7 +751,7 @@ class ValidatorApiHandlerTest {
     assertThat(attestationData)
         .isEqualTo(
             spec.getGenericAttestationData(
-                slot, rightState, block.getMessage().getRoot(), UInt64.valueOf(committeeIndex)));
+                slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
 

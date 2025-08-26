@@ -260,7 +260,7 @@ class AttestationManagerIntegrationTest {
         spec.getGenericAttestationData(
             attestationSlot,
             targetBlockAndState.getState(),
-            targetBlockAndState.getBlock().getRoot(),
+            targetBlockAndState.getBlock(),
             COMMITTEE_INDEX);
 
     final ForkInfo forkInfo =

@@ -27,6 +27,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +71,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-@TestSpecContext(milestone = {SpecMilestone.FULU})
+@TestSpecContext(milestone = {FULU, GLOAS})
 public class DataColumnSidecarsByRootMessageHandlerTest {
 
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
@@ -109,6 +111,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
           case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA ->
               throw new IllegalArgumentException("Milestone is not supported");
           case FULU -> TestSpecFactory.createMinimalWithFuluForkEpoch(currentForkEpoch);
+          case GLOAS -> TestSpecFactory.createMinimalWithGloasForkEpoch(currentForkEpoch);
           case EIP7805 -> TestSpecFactory.createMinimalWithEip7805ForkEpoch(currentForkEpoch);
         };
     dataStructureUtil = new DataStructureUtil(spec);
