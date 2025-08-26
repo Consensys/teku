@@ -309,6 +309,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   private final AsyncRunner operationPoolAsyncRunner;
   private final AsyncRunner dasAsyncRunner;
+  protected final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
+      new AtomicReference<>(CustodyGroupCountManager.NOOP);
+  protected final AtomicReference<DataColumnSidecarRecoveringCustody> dataColumnSidecarCustodyRef =
+      new AtomicReference<>(DataColumnSidecarRecoveringCustody.NOOP);
 
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
@@ -351,11 +355,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
-  protected volatile AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
-      new AtomicReference<>(CustodyGroupCountManager.NOOP);
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
-  protected volatile AtomicReference<DataColumnSidecarRecoveringCustody>
-      dataColumnSidecarCustodyRef = new AtomicReference<>(DataColumnSidecarRecoveringCustody.NOOP);
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<RecoveringSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();

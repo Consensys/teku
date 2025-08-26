@@ -64,7 +64,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final long columnCount;
   private final int recoverColumnCount;
   private final int groupCount;
-  private final AtomicBoolean isSuperNode;
+  private final AtomicBoolean isSuperNode = new AtomicBoolean();
 
   final Function<UInt64, Duration> slotToRecoveryDelay;
   private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
@@ -97,9 +97,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
-    this.isSuperNode =
-        new AtomicBoolean(
-            custodyGroupCountManagerSupplier.get().getCustodyGroupCount() == groupCount);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
