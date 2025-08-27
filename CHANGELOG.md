@@ -13,6 +13,7 @@
 - Added `--p2p-discovery-bootnodes-url` CLI option.
 - Updated LUKSO configuration with Electra fork scheduled for epoch 190800 (September 17th, 2025, 16:20:00 UTC)
 - Avoid builder validator registration calls potentially delaying block production builder calls.
+- removed ttfb_timeout and resp_timeout from configuration in line with consensus-specs #4532
 
 ### Bug Fixes
 - Limited the allowed time to wait for fork choice before proceeding with attestation duties, and added a development flag to adjust the timing if required.
