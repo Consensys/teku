@@ -227,7 +227,10 @@ public class DataColumnSidecarCustodyImpl
               final UInt64 firstIncompleteSlot =
                   maybeFirstIncompleteSlot.orElseGet(
                       () -> minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot));
-              // LOG.debug("Retrieving incomplete slot custodies from {}", firstIncompleteSlot);
+              LOG.debug(
+                  "Retrieving incomplete slot custodies from {} to {}",
+                  firstIncompleteSlot,
+                  toSlotIncluded);
               final Stream<UInt64> slotStream =
                   UInt64.rangeClosed(firstIncompleteSlot, toSlotIncluded);
               return AsyncStream.createUnsafe(slotStream.iterator())
