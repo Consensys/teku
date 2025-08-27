@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -53,10 +54,13 @@ class CombinedChainDataClientTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+  private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler =
+      mock(LateBlockReorgPreparationHandler.class);
 
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+      new CombinedChainDataClient(recentChainData, historicalChainData, spec,
+              lateBlockReorgPreparationHandler);
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();

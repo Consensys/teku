@@ -235,6 +235,7 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -327,6 +328,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile AttestationManager attestationManager;
   protected volatile SignatureVerificationService signatureVerificationService;
   protected volatile CombinedChainDataClient combinedChainDataClient;
+  protected volatile OperationsReOrgManager operationsReOrgManager;
   protected volatile Eth1DataCache eth1DataCache;
   protected volatile SlotProcessor slotProcessor;
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -1183,7 +1185,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
+        new CombinedChainDataClient(
+            recentChainData,
+            storageQueryChannel,
+            spec,
+            (a, b) ->
+                beaconAsyncRunner.runAsync(
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(a, b)));
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1574,7 +1582,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(
-              new CombinedChainDataClient(recentChainData, throttlingStorageQueryChannel, spec));
+              new CombinedChainDataClient(
+                  recentChainData,
+                  throttlingStorageQueryChannel,
+                  spec,
+                  new EarliestAvailableBlockSlot(
+                      throttlingStorageQueryChannel,
+                      timeProvider,
+                      beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())));
     }
 
     this.p2pNetwork =
@@ -1843,7 +1858,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initOperationsReOrgManager() {
     LOG.debug("BeaconChainController.initOperationsReOrgManager()");
-    OperationsReOrgManager operationsReOrgManager =
+    this.operationsReOrgManager =
         new OperationsReOrgManager(
             proposerSlashingPool,
             attesterSlashingPool,
