@@ -641,8 +641,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     final UInt64 nowMillis = timeProvider.getTimeInMillis();
     final UInt64 slotStartTimeMillis = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
-    final int millisPerSlot = spec.getSlotDurationMillis(slot);
-    final UInt64 attestationDueMillis = slotStartTimeMillis.plus(millisPerSlot / 3);
+    final UInt64 attestationDueMillis =
+        slotStartTimeMillis.plus(spec.getAttestationDueMillis(slot));
 
     if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
       // late block, we already produced attestations on previous head,

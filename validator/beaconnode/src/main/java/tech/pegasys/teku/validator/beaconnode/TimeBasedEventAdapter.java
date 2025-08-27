@@ -51,8 +51,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     this.genesisTimeMillis = secondsToMillis(genesisTime);
     final UInt64 currentSlot = getCurrentSlot();
 
-    final UInt64 millisPerSlot =
-        UInt64.valueOf(spec.atSlot(currentSlot).getConfig().getSlotDurationMillis());
+    final UInt64 millisPerSlot = UInt64.valueOf(spec.getSlotDurationMillis(currentSlot));
 
     // NOTE: seconds_per_slot currently based on genesis slot, and timings set up based on this
     //       if seconds_per_slot ever changes, timers would have to be updated, which isn't
