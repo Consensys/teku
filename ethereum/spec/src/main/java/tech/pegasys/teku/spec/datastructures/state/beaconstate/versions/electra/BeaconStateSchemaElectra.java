@@ -119,6 +119,24 @@ public class BeaconStateSchemaElectra
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return (SszListSchema<PendingDeposit, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_DEPOSITS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
+    return (SszListSchema<PendingPartialWithdrawal, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
+    return (SszListSchema<PendingConsolidation, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
+  }
+
   @Override
   public MutableBeaconStateElectra createBuilder() {
     return new MutableBeaconStateElectraImpl(createEmptyBeaconStateImpl(), true);
@@ -149,23 +167,5 @@ public class BeaconStateSchemaElectra
   @Override
   public BeaconStateElectraImpl createFromBackingNode(final TreeNode node) {
     return new BeaconStateElectraImpl(this, node);
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
-    return (SszListSchema<PendingDeposit, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_DEPOSITS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
-    return (SszListSchema<PendingPartialWithdrawal, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
-    return (SszListSchema<PendingConsolidation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
   }
 }

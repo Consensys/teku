@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -53,6 +54,8 @@ public class DasLongPollCustodyTest {
       DataColumnSidecarDbAccessor.builder(delayedDb).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
   final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+  final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier =
+      () -> custodyGroupCountManager;
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
   final int groupCount = config.getNumberOfCustodyGroups();
@@ -63,7 +66,7 @@ public class DasLongPollCustodyTest {
           blockResolver,
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
-          custodyGroupCountManager,
+          custodyGroupCountManagerSupplier,
           groupCount);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);

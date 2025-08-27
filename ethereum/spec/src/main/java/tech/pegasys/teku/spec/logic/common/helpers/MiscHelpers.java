@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 
 public class MiscHelpers {
 
@@ -519,6 +520,10 @@ public class MiscHelpers {
   }
 
   public Optional<MiscHelpersFulu> toVersionFulu() {
+    return Optional.empty();
+  }
+
+  public Optional<MiscHelpersGloas> toVersionGloas() {
     return Optional.empty();
   }
 }
