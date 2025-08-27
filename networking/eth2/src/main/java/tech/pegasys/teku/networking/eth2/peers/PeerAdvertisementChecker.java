@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -73,15 +72,14 @@ public class PeerAdvertisementChecker {
                 Collectors.groupingBy(
                     Map.Entry::getKey,
                     Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
-    // discovery stream is not concurrency safe
-    final Set<DiscoveryPeer> temporaryPeersSet =
-        discoveryService.streamKnownPeers().collect(Collectors.toSet());
     final Map<UInt256, DiscoveryPeer> discoveryPeerMap =
-        temporaryPeersSet.stream()
+        discoveryService
+            .streamKnownPeers()
             .collect(
                 Collectors.toMap(
                     discoveryPeer -> UInt256.fromBytes(discoveryPeer.getNodeId()),
-                    Function.identity()));
+                    Function.identity(),
+                    (existing, replacement) -> existing));
     final PeerSubnetSubscriptions peerSubnetSubscriptions =
         peerSubnetSubscriptionsFactory.create(network);
 
@@ -135,6 +133,10 @@ public class PeerAdvertisementChecker {
 
     // Actual check
     final DiscoveryPeer discoveryPeer = discoveryPeerMap.get(discoveryNodeId.get());
+
+    // TODO: remove debug logging under this
+    LOG.info("Checking peer advertisement for {}", peer.getId());
+    // TODO: remove debug logging above this
 
     // Check for sync committee subnets
     final SszBitvector advertisedSyncCommitteeSubnets = discoveryPeer.getSyncCommitteeSubnets();
