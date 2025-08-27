@@ -91,7 +91,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final ExecutionLayerChannel executionLayer;
   private final int maxTrackers;
   private final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher;
-  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   private final KZG kzg;
 
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
@@ -114,7 +114,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       final int maxTrackers,
       final KZG kzg,
       final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final Duration localElBlobsFetchingRetryDelay,
@@ -127,7 +127,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.maxTrackers = maxTrackers;
     this.kzg = kzg;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
-    this.custodyGroupCountManager = custodyGroupCountManager;
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.localElBlobsFetchingRetryDelay = localElBlobsFetchingRetryDelay;
     this.localElBlobsFetchingMaxRetries = localElBlobsFetchingMaxRetries;
     this.dataColumnSidecarComputationTimeSeconds =
@@ -245,7 +245,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
-    final int samplingGroupCount = custodyGroupCountManager.getSamplingGroupCount();
+    final int samplingGroupCount = custodyGroupCountManagerSupplier.get().getSamplingGroupCount();
     final int maxCustodyGroups =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getNumberOfCustodyGroups();
@@ -254,7 +254,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       myCustodySidecars = dataColumnSidecars;
     } else {
       final Set<UInt64> myCustodyIndices =
-          new HashSet<>(custodyGroupCountManager.getSamplingColumnIndices());
+          new HashSet<>(custodyGroupCountManagerSupplier.get().getSamplingColumnIndices());
       myCustodySidecars =
           dataColumnSidecars.stream()
               .filter(sidecar -> myCustodyIndices.contains(sidecar.getIndex()))
@@ -364,7 +364,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
     if (recoveryTask
         .recoveredColumnIndices()
-        .containsAll(custodyGroupCountManager.getSamplingColumnIndices())) {
+        .containsAll(custodyGroupCountManagerSupplier.get().getSamplingColumnIndices())) {
       return SafeFuture.COMPLETE;
     }
 

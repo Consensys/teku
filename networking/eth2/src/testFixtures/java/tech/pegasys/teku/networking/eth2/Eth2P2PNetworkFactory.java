@@ -242,8 +242,8 @@ public class Eth2P2PNetworkFactory {
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
-                DataColumnSidecarByRootCustody.NOOP,
-                CustodyGroupCountManager.NOOP,
+                () -> DataColumnSidecarByRootCustody.NOOP,
+                () -> CustodyGroupCountManager.NOOP,
                 metadataMessagesFactory,
                 METRICS_SYSTEM,
                 attestationSubnetService,
