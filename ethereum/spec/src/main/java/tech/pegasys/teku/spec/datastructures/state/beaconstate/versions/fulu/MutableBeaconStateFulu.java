@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 
 public interface MutableBeaconStateFulu extends MutableBeaconStateElectra, BeaconStateFulu {
@@ -36,6 +37,11 @@ public interface MutableBeaconStateFulu extends MutableBeaconStateElectra, Beaco
   @Override
   default Optional<MutableBeaconStateFulu> toMutableVersionFulu() {
     return Optional.of(this);
+  }
+
+  default void setProposerLookahead(final SszUInt64Vector proposerLookahead) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD);
+    set(fieldIndex, proposerLookahead);
   }
 
   @Override

@@ -29,7 +29,6 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -74,13 +73,6 @@ public abstract class BlockProcessorTest {
             .updated(
                 state -> {
                   state.getValidators().get(1).withSlashed(true);
-                  // TODO EIP7805
-                  if (spec.getGenesisSpec()
-                      .getMilestone()
-                      .isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-                    state.setProposerLookahead(
-                        SszUInt64VectorSchema.create(64).of(UInt64.ZERO, UInt64.ONE));
-                  }
                 });
     final MutableBeaconState mutablePreState = (MutableBeaconState) preState.createWritableCopy();
     final BeaconBlockHeader header =

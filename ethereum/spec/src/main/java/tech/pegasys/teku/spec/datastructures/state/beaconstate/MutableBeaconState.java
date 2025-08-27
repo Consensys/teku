@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -68,11 +67,6 @@ public interface MutableBeaconState extends BeaconState, SszMutableRefContainer 
   default void setFork(final Fork fork) {
     final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.FORK);
     set(fieldIndex, fork);
-  }
-
-  default void setProposerLookahead(final SszUInt64Vector proposerLookahead) {
-    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD);
-    set(fieldIndex, proposerLookahead);
   }
 
   // History
