@@ -120,8 +120,6 @@ public class SpecConfigBuilder {
   private Integer maxPayloadSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
-  private Integer ttfbTimeout;
-  private Integer respTimeout;
   private Integer attestationPropagationSlotRange;
   private Integer maximumGossipClockDisparity;
   private Bytes4 messageDomainInvalidSnappy;
@@ -284,8 +282,6 @@ public class SpecConfigBuilder {
                 maxRequestBlocks,
                 epochsPerSubnetSubscription,
                 minEpochsForBlockRequests,
-                ttfbTimeout,
-                respTimeout,
                 attestationPropagationSlotRange,
                 maximumGossipClockDisparity,
                 messageDomainInvalidSnappy,
@@ -379,8 +375,6 @@ public class SpecConfigBuilder {
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
-    constants.put("ttfbTimeout", ttfbTimeout);
-    constants.put("respTimeout", respTimeout);
     constants.put("attestationPropagationSlotRange", attestationPropagationSlotRange);
     constants.put("maximumGossipClockDisparity", maximumGossipClockDisparity);
     constants.put("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
@@ -910,16 +904,6 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder minEpochsForBlockRequests(final Integer minEpochsForBlockRequests) {
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
-    return this;
-  }
-
-  public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
-    this.ttfbTimeout = ttfbTimeout;
-    return this;
-  }
-
-  public SpecConfigBuilder respTimeout(final Integer respTimeout) {
-    this.respTimeout = respTimeout;
     return this;
   }
 
