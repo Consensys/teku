@@ -45,6 +45,7 @@ public class MetadataMessagesFactory implements CustodyGroupCountChannel {
   }
 
   public synchronized void updateCustodyGroupCount(final UInt64 custodyGroupCount) {
+    LOG.info("Updating custody group count in Metadata: {}", custodyGroupCount);
     this.custodyGroupCount = Optional.of(custodyGroupCount);
     handleUpdate();
   }

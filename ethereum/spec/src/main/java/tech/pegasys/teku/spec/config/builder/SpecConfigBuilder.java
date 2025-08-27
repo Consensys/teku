@@ -205,10 +205,11 @@ public class SpecConfigBuilder {
     } else if (slotDurationMs != null
         && secondsPerSlot != null
         && slotDurationMs != secondsPerSlot * 1000) {
-      throw new IllegalArgumentException(
-          String.format(
-              "The specified network configuration had both SLOT_DURATION_MS (%d) and SECONDS_PER_SLOT(%d) defined, and they were inconsistent.",
-              slotDurationMs, secondsPerSlot));
+      slotDurationMs = secondsToMillis(secondsPerSlot).intValue();
+//      throw new IllegalArgumentException(
+//          String.format(
+//              "The specified network configuration had both SLOT_DURATION_MS (%d) and SECONDS_PER_SLOT(%d) defined, and they were inconsistent.",
+//              slotDurationMs, secondsPerSlot));
     }
     // defaulting for compatibility
     if (attestationDueBps == null) {
