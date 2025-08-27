@@ -1,6 +1,8 @@
 # Changelog
 
 ## Upcoming Breaking Changes
+ - `GOSSIP_MAX_SIZE` and `MAX_CHUNK_SIZE` will be removed from config items post fusaka.
+ - `TTFB_TIMEOUT` and `RESP_TIMEOUT` will be removed from config items post fusaka.
 
 ## Current Releases
 
