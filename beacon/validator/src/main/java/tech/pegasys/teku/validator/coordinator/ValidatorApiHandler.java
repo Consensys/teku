@@ -577,7 +577,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   private AttestationData createAttestationData(
-      final BeaconBlockSummary block,
+      final BeaconBlock block,
       final BeaconState state,
       final UInt64 slot,
       final int committeeIndex) {
