@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -63,8 +64,8 @@ public class SlotProcessorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
-  private final int millisPerSlot = secondsPerSlot * 1000;
+  private final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
+  private final int secondsPerSlot = millisToSeconds(millisPerSlot).intValue();
 
   private final BeaconState beaconState = dataStructureUtil.randomBeaconState(ZERO);
   private final EventLogger eventLogger = mock(EventLogger.class);
@@ -309,7 +310,7 @@ public class SlotProcessorTest {
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
   public void onTick_shouldRunAttestationsDuringProcessing(final Eth2Network eth2Network) {
     Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
-    int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+    int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
 
     SlotProcessor slotProcessor = createSlotProcessor(spec);
 
@@ -366,7 +367,7 @@ public class SlotProcessorTest {
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
-    int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+    int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
 
     SlotProcessor slotProcessor = createSlotProcessor(spec);
 
@@ -410,7 +411,7 @@ public class SlotProcessorTest {
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
-    final int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
 
     final SlotProcessor slotProcessor =
         new SlotProcessor(
@@ -466,7 +467,7 @@ public class SlotProcessorTest {
       names = {"MAINNET", "MINIMAL", "GNOSIS"})
   void blockPreparationDueShouldNotHappenTooEarly(final Eth2Network eth2Network) {
     final Spec spec = TestSpecFactory.create(SpecMilestone.PHASE0, eth2Network);
-    final int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+    final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
 
     // let's check that we do not trigger block preparation too early compared to slot time
     assertThat(oneThirdMillis(millisPerSlot) - BLOCK_CREATION_TOLERANCE_MS).isGreaterThan(1000);

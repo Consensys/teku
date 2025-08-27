@@ -140,6 +140,6 @@ public class BlobSidecarsAvailabilityChecker implements AvailabilityChecker<Blob
   }
 
   static Duration calculateCompletionTimeout(final Spec spec, final UInt64 slot) {
-    return Duration.ofMillis((spec.atSlot(slot).getConfig().getSecondsPerSlot() * 1000L) / 3);
+    return Duration.ofMillis(spec.getSlotDurationMillis(slot) / 3);
   }
 }

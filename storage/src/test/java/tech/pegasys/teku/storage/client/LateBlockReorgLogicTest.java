@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 class LateBlockReorgLogicTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+  private final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UInt64 slot = UInt64.ONE;
 

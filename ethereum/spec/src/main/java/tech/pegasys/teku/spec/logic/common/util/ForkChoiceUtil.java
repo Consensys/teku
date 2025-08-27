@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -497,8 +498,18 @@ public class ForkChoiceUtil {
     return getSlotComponentDurationMillis(specConfig.getAttestationDueBps());
   }
 
+  public int getSyncMessageDueMillis() {
+    final SpecConfigAltair configAltair = SpecConfigAltair.required(specConfig);
+    return getSlotComponentDurationMillis(configAltair.getSyncMessageDueBps());
+  }
+
   public int getAggregateDueMillis() {
     return getSlotComponentDurationMillis(specConfig.getAggregateDueBps());
+  }
+
+  public int getContributionDueMillis() {
+    final SpecConfigAltair configAltair = SpecConfigAltair.required(specConfig);
+    return getSlotComponentDurationMillis(configAltair.getContributionDueBps());
   }
 
   public int getProposerReorgCutoffMillis() {

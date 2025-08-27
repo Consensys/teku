@@ -555,6 +555,14 @@ public class Spec {
     return atSlot(slot).getConfig().getSlotDurationMillis();
   }
 
+  public int getSyncMessageDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getSyncMessageDueMillis();
+  }
+
+  public int getContributionDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
+  }
+
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }
