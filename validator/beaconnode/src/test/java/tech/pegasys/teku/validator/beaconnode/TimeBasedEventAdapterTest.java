@@ -187,8 +187,8 @@ class TimeBasedEventAdapterTest {
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never()).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
 
-    // But does fire 2/3rds through the slot
-    timeProvider.advanceTimeByMillis(millisPerSlot / 3 * 2);
+    // But does fire when aggregation is due
+    timeProvider.advanceTimeByMillis(spec.getAggregateDueMillis(UInt64.valueOf(nextSlot)));
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationAggregationDue(UInt64.valueOf(nextSlot));
   }
