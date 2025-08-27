@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -274,9 +273,8 @@ public class DataColumnSidecarCustodyImpl
                     .filter(
                         block ->
                             block
-                                .getBeaconBlock()
-                                .flatMap(b -> b.getBody().toVersionDeneb())
-                                .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+                                .getBody()
+                                .getOptionalBlobKzgCommitments()
                                 .map(commitments -> !commitments.isEmpty())
                                 .orElse(false))
                     .map(BeaconBlock::getRoot));
