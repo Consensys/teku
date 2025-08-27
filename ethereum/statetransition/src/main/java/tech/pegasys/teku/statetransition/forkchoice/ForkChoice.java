@@ -656,8 +656,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return false;
     }
     // is_before_attesting_interval
-    final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
-    final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
+    final UInt64 timeIntoSlotMillis =
+        getMillisIntoSlot(transaction, spec.getSlotDurationMillis(block.getSlot()));
     if (!timeIntoSlotMillis.isLessThan(spec.getAttestationDueMillis(block.getSlot()))) {
       return false;
     }
@@ -724,7 +724,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
   }
 
-  private UInt64 getMillisIntoSlot(final StoreTransaction transaction, final UInt64 millisPerSlot) {
+  private UInt64 getMillisIntoSlot(final StoreTransaction transaction, final int millisPerSlot) {
     return transaction
         .getTimeInMillis()
         .minus(secondsToMillis(transaction.getGenesisTime()))

@@ -1087,7 +1087,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     final UInt64 blockArrivalTimeMillis =
         startSlotInMillis
             .plus(4_000)
-            .minus(MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS.minus(millisecondsIntoAttDueLimit))
+            .minus(MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS)
+            .plus(millisecondsIntoAttDueLimit)
             .minus(TARGET_WAIT_MILLIS);
 
     timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());

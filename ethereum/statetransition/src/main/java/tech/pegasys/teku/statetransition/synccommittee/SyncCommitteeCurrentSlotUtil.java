@@ -37,10 +37,9 @@ public class SyncCommitteeCurrentSlotUtil {
       return false;
     }
 
-    final UInt64 slotMillis = spec.getMillisPerSlot(slot);
     final UInt64 slotStartTimeMillis =
         secondsToMillis(spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()));
-    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(slotMillis);
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
     final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
     final int maximumGossipClockDisparityMillis =
         spec.getNetworkingConfig().getMaximumGossipClockDisparity();

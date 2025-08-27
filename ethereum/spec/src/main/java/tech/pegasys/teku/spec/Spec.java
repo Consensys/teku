@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
@@ -301,14 +300,6 @@ public class Spec {
 
   public int getSlotsPerEpoch(final UInt64 slot) {
     return atSlot(slot).getConfig().getSlotsPerEpoch();
-  }
-
-  public int getSecondsPerSlot(final UInt64 slot) {
-    return atSlot(slot).getConfig().getSecondsPerSlot();
-  }
-
-  public UInt64 getMillisPerSlot(final UInt64 slot) {
-    return secondsToMillis(getSecondsPerSlot(slot));
   }
 
   public long getMaxDeposits(final BeaconState state) {
