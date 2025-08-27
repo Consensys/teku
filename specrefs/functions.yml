@@ -1929,6 +1929,19 @@
         return hash(domain_type + uint_to_bytes(epoch) + mix)
     </spec>
 
+- name: get_slot_component_duration_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getSlotComponentDurationMillis(
+  spec: |
+    <spec fn="get_slot_component_duration_ms" fork="phase0" hash="b81504df">
+    def get_slot_component_duration_ms(basis_points: uint64) -> uint64:
+        """
+        Calculate the duration of a slot component in milliseconds.
+        """
+        return basis_points * SLOT_DURATION_MS // BASIS_POINTS
+    </spec>
+
 - name: get_slot_signature
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/signatures/SigningRootUtil.java

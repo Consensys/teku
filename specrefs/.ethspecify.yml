@@ -330,7 +330,6 @@ specrefs:
       - get_payload_status_tiebreaker#gloas
       - get_ptc#gloas
       - get_ptc_assignment#gloas
-      - get_slot_component_duration_ms#phase0
       - get_weight#gloas
       - has_builder_withdrawal_credential#gloas
       - has_compounding_withdrawal_credential#gloas
