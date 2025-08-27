@@ -161,9 +161,9 @@ public class SpecConfigBuilder {
   private UInt64 electraForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 fuluForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 gloasForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 eip7805ForkEpoch = FAR_FUTURE_EPOCH;
 
   private BLSSignatureVerifier blsSignatureVerifier = BLSSignatureVerifier.SIMPLE;
-  private UInt64 eip7805ForkEpoch = FAR_FUTURE_EPOCH;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigEip7805> builderChain =
