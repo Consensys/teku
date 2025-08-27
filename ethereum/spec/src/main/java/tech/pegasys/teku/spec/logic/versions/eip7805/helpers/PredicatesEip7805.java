@@ -14,32 +14,28 @@
 package tech.pegasys.teku.spec.logic.versions.eip7805.helpers;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 
-public class MiscHelpersEip7805 extends MiscHelpersGloas {
+public class PredicatesEip7805 extends PredicatesGloas {
 
-  public MiscHelpersEip7805(
-      final SpecConfigEip7805 specConfig,
-      final PredicatesEip7805 predicates,
-      final SchemaDefinitionsEip7805 schemaDefinitions) {
-    super(specConfig, predicates, schemaDefinitions);
-  }
-
-  public static MiscHelpersEip7805 required(final MiscHelpers miscHelpers) {
-    return miscHelpers
+  public static PredicatesEip7805 required(final Predicates predicates) {
+    return predicates
         .toVersionEip7805()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Eip7805 misc helpers but got: "
-                        + miscHelpers.getClass().getSimpleName()));
+                    "Expected Eip7805 predicates but got "
+                        + predicates.getClass().getSimpleName()));
+  }
+
+  public PredicatesEip7805(final SpecConfig specConfig) {
+    super(specConfig);
   }
 
   @Override
-  public Optional<MiscHelpersEip7805> toVersionEip7805() {
+  public Optional<PredicatesEip7805> toVersionEip7805() {
     return Optional.of(this);
   }
 }

@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionListSchem
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaTypes;
 
-public class SchemaDefinitionsEip7805 extends SchemaDefinitionsFulu {
+public class SchemaDefinitionsEip7805 extends SchemaDefinitionsGloas {
 
   private final InclusionListSchema inclusionListSchema;
   private final SignedInclusionListSchema signedInclusionListSchema;

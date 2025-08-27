@@ -347,14 +347,14 @@ jobs:
       - capture_test_results
 
   integrationTests:
-    executor: medium_plus_executor
+    executor: large_executor
     steps:
       - prepare
       - attach_workspace:
           at: ~/project
       - run:
           name: IntegrationTests
-          no_output_timeout: 25m
+          no_output_timeout: 20m
           command: |
             ./gradlew --no-daemon --parallel integrationTest
       - notify

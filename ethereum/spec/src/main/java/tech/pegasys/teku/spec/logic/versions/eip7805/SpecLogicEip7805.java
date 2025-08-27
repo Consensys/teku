@@ -41,10 +41,10 @@ import tech.pegasys.teku.spec.logic.versions.eip7805.block.BlockProcessorEip7805
 import tech.pegasys.teku.spec.logic.versions.eip7805.forktransition.Eip7805StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
+import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.PredicatesEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.AttestationDataValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
@@ -102,7 +102,7 @@ public class SpecLogicEip7805 extends AbstractSpecLogic {
       final SchemaDefinitionsEip7805 schemaDefinitions,
       final TimeProvider timeProvider) {
     // Helpers
-    final PredicatesElectra predicates = new PredicatesElectra(config);
+    final PredicatesEip7805 predicates = new PredicatesEip7805(config);
     final MiscHelpersEip7805 miscHelpers =
         new MiscHelpersEip7805(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsEip7805 beaconStateAccessors =
