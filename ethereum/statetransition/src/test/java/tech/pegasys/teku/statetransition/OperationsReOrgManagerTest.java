@@ -235,4 +235,59 @@ public class OperationsReOrgManagerTest {
     verify(blsToExecutionOperationPool)
         .removeAll(block1.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
   }
+
+  @Test
+  public void onLateBlockReorgPreparation_shouldRequeueOperations() {
+    final UInt64 lateBlockParentSlot = UInt64.valueOf(10);
+    final BeaconBlock lateBlock = dataStructureUtil.randomBeaconBlock(11);
+
+    final NavigableMap<UInt64, Bytes32> nowNotCanonicalBlockRoots = new TreeMap<>();
+    nowNotCanonicalBlockRoots.put(UInt64.valueOf(11), lateBlock.hashTreeRoot());
+    when(recentChainData.getAncestorsOnFork(lateBlockParentSlot, lateBlock.hashTreeRoot()))
+        .thenReturn(nowNotCanonicalBlockRoots);
+
+    when(recentChainData.retrieveBlockByRoot(lateBlock.hashTreeRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(lateBlock)));
+
+    final List<ValidatableAttestation> attestationList =
+        lateBlock.getBody().getAttestations().stream()
+            .map(attestation -> ValidatableAttestation.from(spec, attestation))
+            .toList();
+
+    when(attestationManager.onAttestation(any()))
+        .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
+
+    final SafeFuture<AttestationProcessingResult> firstOnAttestationFuture = new SafeFuture<>();
+    when(attestationManager.onAttestation(attestationList.getFirst()))
+        .thenReturn(firstOnAttestationFuture);
+
+    final SafeFuture<Void> result =
+        operationsReOrgManager.onLateBlockReorgPreparation(
+            lateBlockParentSlot, lateBlock.hashTreeRoot());
+
+    // must wait for all attestations to be processed
+    assertThat(result).isNotDone();
+
+    // complete the first attestation processing, the rest are already completed
+    firstOnAttestationFuture.complete(AttestationProcessingResult.SUCCESSFUL);
+
+    assertThat(result).isCompleted();
+
+    verify(recentChainData).getAncestorsOnFork(lateBlockParentSlot, lateBlock.hashTreeRoot());
+
+    verify(attestationPool).onReorg(lateBlockParentSlot);
+    verify(proposerSlashingOperationPool).addAll(lateBlock.getBody().getProposerSlashings());
+    verify(attesterSlashingOperationPool).addAll(lateBlock.getBody().getAttesterSlashings());
+    verify(exitOperationPool).addAll(lateBlock.getBody().getVoluntaryExits());
+    verify(blsToExecutionOperationPool)
+        .addAll(lateBlock.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
+
+    final ArgumentCaptor<ValidatableAttestation> argument =
+        ArgumentCaptor.forClass(ValidatableAttestation.class);
+    verify(attestationManager, atLeastOnce()).onAttestation(argument.capture());
+
+    assertThat(argument.getAllValues())
+        .containsExactlyInAnyOrderElementsOf(attestationList)
+        .allMatch(ValidatableAttestation::isValidIndexedAttestation);
+  }
 }
