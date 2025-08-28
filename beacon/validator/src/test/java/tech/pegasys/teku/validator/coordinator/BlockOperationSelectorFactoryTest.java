@@ -53,6 +53,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -1031,6 +1033,18 @@ class BlockOperationSelectorFactoryTest {
     public BeaconBlockBodyBuilder blobKzgCommitments(
         final SszList<SszKZGCommitment> blobKzgCommitments) {
       this.blobKzgCommitments = blobKzgCommitments;
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder signedExecutionPayloadHeader(
+        final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder payloadAttestations(
+        final SszList<PayloadAttestation> payloadAttestations) {
       return this;
     }
 
