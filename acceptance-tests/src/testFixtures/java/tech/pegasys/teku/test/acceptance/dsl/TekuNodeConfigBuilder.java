@@ -173,6 +173,16 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withGloasEpoch(final UInt64 gloasForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-gloas-fork-epoch={}", gloasForkEpoch);
+    configMap.put("Xnetwork-gloas-fork-epoch", gloasForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder -> specConfigBuilder.gloasForkEpoch(gloasForkEpoch));
+    return this;
+  }
+
   public TekuNodeConfigBuilder withEip7805Epoch(final UInt64 eip7805ForkEpoch) {
     mustBe(NodeType.BEACON_NODE);
     LOG.debug("Xnetwork-eip7805-fork-epoch={}", eip7805ForkEpoch);

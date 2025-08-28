@@ -16,22 +16,21 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -73,7 +72,8 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 abstract class AbstractAttestationValidatorTest {
   private static final Logger LOG = LogManager.getLogger();
 
-  protected final Spec spec = createSpec();
+  protected final Spec spec =
+      createSpec(builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   protected final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   protected final StorageSystem storageSystem =
@@ -93,23 +93,12 @@ abstract class AbstractAttestationValidatorTest {
   protected final AttestationValidator validator =
       new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
 
-  @BeforeAll
-  public static void init() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  }
-
-  @AfterAll
-  public static void reset() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  }
-
   @BeforeEach
   public void setUp() {
     storageSystem.chainUpdater().initializeGenesis(false);
   }
 
-  public abstract Spec createSpec();
+  public abstract Spec createSpec(final Consumer<SpecConfigBuilder> configAdapter);
 
   protected Predicate<? super CompletableFuture<InternalValidationResult>> rejected(
       final String messageContents) {

@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
@@ -455,6 +456,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   public void checkBlockInclusionValidation(
       final TestDefinition testDefinition, final BeaconState state, final boolean expectInclusion) {
     final Spec spec = testDefinition.getSpec();
+    final TimeProvider timeProvider = new SystemTimeProvider();
     switch (operation) {
       case ATTESTER_SLASHING -> {
         final AttesterSlashing attesterSlashing = loadAttesterSlashing(testDefinition);
@@ -471,14 +473,14 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case VOLUNTARY_EXIT -> {
         final SignedVoluntaryExit voluntaryExit = loadVoluntaryExit(testDefinition);
         final VoluntaryExitValidator voluntaryExitValidator =
-            new VoluntaryExitValidator(spec, null);
+            new VoluntaryExitValidator(spec, null, timeProvider);
         checkValidationForBlockInclusion(
             voluntaryExitValidator, state, voluntaryExit, expectInclusion);
       }
       case BLS_TO_EXECUTION_CHANGE -> {
         final SignedBlsToExecutionChangeValidator blsToExecutionChangeValidator =
             new SignedBlsToExecutionChangeValidator(
-                spec, new SystemTimeProvider(), null, new SimpleSignatureVerificationService());
+                spec, timeProvider, null, new SimpleSignatureVerificationService());
         final SignedBlsToExecutionChange blsToExecutionChange =
             loadBlsToExecutionChange(testDefinition);
         checkValidationForBlockInclusion(

@@ -23,13 +23,6 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
-import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public enum SpecMilestone {
   PHASE0,
@@ -39,6 +32,7 @@ public enum SpecMilestone {
   DENEB,
   ELECTRA,
   FULU,
+  GLOAS,
   EIP7805;
 
   /**
@@ -133,14 +127,14 @@ public enum SpecMilestone {
       final SpecConfig specConfig, final SpecMilestone milestone) {
     return switch (milestone) {
       case PHASE0 -> Optional.of(specConfig.getGenesisForkVersion());
-      case ALTAIR -> specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkVersion);
-      case BELLATRIX ->
-          specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkVersion);
-      case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
-      case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkVersion);
-      case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkVersion);
-      case FULU -> specConfig.toVersionFulu().map(SpecConfigFulu::getFuluForkVersion);
-      case EIP7805 -> specConfig.toVersionEip7805().map(SpecConfigEip7805::getEip7805ForkVersion);
+      case ALTAIR -> specConfig.toVersionAltair().map(SpecConfig::getAltairForkVersion);
+      case BELLATRIX -> specConfig.toVersionBellatrix().map(SpecConfig::getBellatrixForkVersion);
+      case CAPELLA -> specConfig.toVersionCapella().map(SpecConfig::getCapellaForkVersion);
+      case DENEB -> specConfig.toVersionDeneb().map(SpecConfig::getDenebForkVersion);
+      case ELECTRA -> specConfig.toVersionElectra().map(SpecConfig::getElectraForkVersion);
+      case FULU -> specConfig.toVersionFulu().map(SpecConfig::getFuluForkVersion);
+      case GLOAS -> specConfig.toVersionGloas().map(SpecConfig::getGloasForkVersion);
+      case EIP7805 -> specConfig.toVersionEip7805().map(SpecConfig::getEip7805ForkVersion);
     };
   }
 
@@ -150,14 +144,14 @@ public enum SpecMilestone {
           // Phase0 can only ever start at epoch 0 - no non-zero slot is valid. However, another
           // fork may also be configured to start at epoch 0, effectively overriding phase0
           Optional.of(UInt64.ZERO);
-      case ALTAIR -> specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch);
-      case BELLATRIX ->
-          specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkEpoch);
-      case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
-      case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch);
-      case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkEpoch);
-      case FULU -> specConfig.toVersionFulu().map(SpecConfigFulu::getFuluForkEpoch);
-      case EIP7805 -> specConfig.toVersionEip7805().map(SpecConfigEip7805::getEip7805ForkEpoch);
+      case ALTAIR -> specConfig.toVersionAltair().map(SpecConfig::getAltairForkEpoch);
+      case BELLATRIX -> specConfig.toVersionBellatrix().map(SpecConfig::getBellatrixForkEpoch);
+      case CAPELLA -> specConfig.toVersionCapella().map(SpecConfig::getCapellaForkEpoch);
+      case DENEB -> specConfig.toVersionDeneb().map(SpecConfig::getDenebForkEpoch);
+      case ELECTRA -> specConfig.toVersionElectra().map(SpecConfig::getElectraForkEpoch);
+      case FULU -> specConfig.toVersionFulu().map(SpecConfig::getFuluForkEpoch);
+      case GLOAS -> specConfig.toVersionGloas().map(SpecConfig::getGloasForkEpoch);
+      case EIP7805 -> specConfig.toVersionEip7805().map(SpecConfig::getEip7805ForkEpoch);
     };
   }
 

@@ -25,6 +25,7 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.ge
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {DENEB, ELECTRA, FULU})
+@TestSpecContext(milestone = {DENEB, ELECTRA, FULU, GLOAS})
 class Eth2GossipTopicFilterTest {
   private final UInt64 nextMilestoneForkEpoch = UInt64.valueOf(10);
   private final BlobParameters bpoFork = new BlobParameters(UInt64.valueOf(11), 64);
@@ -67,11 +68,8 @@ class Eth2GossipTopicFilterTest {
     nextSpecMilestone = specContext.getSpecMilestone();
     spec =
         switch (nextSpecMilestone) {
-          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
-          case ALTAIR -> throw new IllegalArgumentException("Altair is an unsupported milestone");
-          case BELLATRIX ->
-              throw new IllegalArgumentException("Bellatrix is an unsupported milestone");
-          case CAPELLA -> throw new IllegalArgumentException("Capella is an unsupported milestone");
+          case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
+              throw new IllegalArgumentException(nextSpecMilestone + " is a unsupported milestone");
           case DENEB -> TestSpecFactory.createMinimalWithDenebForkEpoch(nextMilestoneForkEpoch);
           case ELECTRA -> TestSpecFactory.createMinimalWithElectraForkEpoch(nextMilestoneForkEpoch);
           case FULU ->
@@ -84,7 +82,26 @@ class Eth2GossipTopicFilterTest {
                                       List.of(
                                           new BlobScheduleEntry(
                                               bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
-          case EIP7805 -> TestSpecFactory.createMinimalWithEip7805ForkEpoch(nextMilestoneForkEpoch);
+          case GLOAS ->
+              TestSpecFactory.createMinimalGloas(
+                  b ->
+                      b.gloasForkEpoch(nextMilestoneForkEpoch)
+                          .fuluBuilder(
+                              fb ->
+                                  fb.blobSchedule(
+                                      List.of(
+                                          new BlobScheduleEntry(
+                                              bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
+          case EIP7805 ->
+              TestSpecFactory.createMinimalEip7805(
+                  b ->
+                      b.eip7805ForkEpoch(nextMilestoneForkEpoch)
+                          .fuluBuilder(
+                              fb ->
+                                  fb.blobSchedule(
+                                      List.of(
+                                          new BlobScheduleEntry(
+                                              bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
         };
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);

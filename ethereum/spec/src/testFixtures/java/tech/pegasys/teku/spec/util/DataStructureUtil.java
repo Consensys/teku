@@ -2020,7 +2020,7 @@ public final class DataStructureUtil {
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
       case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
       case FULU -> stateBuilderFulu(validatorCount, numItemsInSszLists);
-      case EIP7805 -> stateBuilderFulu(validatorCount, numItemsInSszLists);
+      case GLOAS, EIP7805 -> stateBuilderGloas(validatorCount, numItemsInSszLists);
     };
   }
 
@@ -2076,10 +2076,17 @@ public final class DataStructureUtil {
     return BeaconStateBuilderFulu.create(this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
-  public BeaconStateBuilderFulu stateBuilderEip7805(
+  public BeaconStateBuilderGloas stateBuilderGloas(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderGloas.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderGloas stateBuilderEip7805(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     // TODO EIP7805
-    return BeaconStateBuilderFulu.create(this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+    return BeaconStateBuilderGloas.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 
   public BeaconState randomBeaconState(final UInt64 slot) {

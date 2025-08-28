@@ -991,11 +991,11 @@ public class Spec {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final Bytes32 blockRoot,
+      final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     return atSlot(slot)
         .getAttestationUtil()
-        .getGenericAttestationData(slot, state, blockRoot, committeeIndex);
+        .getGenericAttestationData(slot, state, block, committeeIndex);
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
@@ -1192,7 +1192,7 @@ public class Spec {
       case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> Optional.empty();
       case DENEB, ELECTRA ->
           Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
-      case FULU, EIP7805 -> {
+      case FULU, GLOAS, EIP7805 -> {
         final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
         yield Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())

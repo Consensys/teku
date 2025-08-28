@@ -41,9 +41,12 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsEip7805;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsEip7805Bpo;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFulu;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsFuluBpo;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsGloas;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsGloasBpo;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
@@ -406,6 +409,28 @@ public class Eth2P2PNetworkBuilder {
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
               dasGossipLogger);
+      case GLOAS ->
+          new GossipForkSubscriptionsGloas(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              debugDataDumper,
+              dasGossipLogger);
       case EIP7805 ->
           new GossipForkSubscriptionsEip7805(
               forkAndSpecMilestone.getFork(),
@@ -425,8 +450,10 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedContributionAndProofProcessor,
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
               gossipedSignedInclusionListProcessor,
-              debugDataDumper);
+              debugDataDumper,
+              dasGossipLogger);
     };
   }
 
@@ -435,32 +462,81 @@ public class Eth2P2PNetworkBuilder {
       final DiscoveryNetwork<?> network,
       final GossipEncoding gossipEncoding,
       final BlobParameters bpo) {
-    if (forkAndSpecMilestone.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      return new GossipForkSubscriptionsFuluBpo(
-          forkAndSpecMilestone.getFork(),
-          spec,
-          asyncRunner,
-          metricsSystem,
-          network,
-          combinedChainDataClient.getRecentChainData(),
-          gossipEncoding,
-          gossipedBlockProcessor,
-          gossipedBlobSidecarProcessor,
-          gossipedAttestationConsumer,
-          gossipedAggregateProcessor,
-          gossipedAttesterSlashingConsumer,
-          gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer,
-          gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor,
-          dataColumnSidecarOperationProcessor,
-          debugDataDumper,
-          dasGossipLogger,
-          bpo);
-    }
-    throw new IllegalStateException(
-        "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
+    return switch (forkAndSpecMilestone.getSpecMilestone()) {
+      case FULU ->
+          new GossipForkSubscriptionsFuluBpo(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              debugDataDumper,
+              dasGossipLogger,
+              bpo);
+      case GLOAS ->
+          new GossipForkSubscriptionsGloasBpo(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              debugDataDumper,
+              dasGossipLogger,
+              bpo);
+      case EIP7805 ->
+          new GossipForkSubscriptionsEip7805Bpo(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              combinedChainDataClient.getRecentChainData(),
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationConsumer,
+              gossipedAggregateProcessor,
+              gossipedAttesterSlashingConsumer,
+              gossipedProposerSlashingConsumer,
+              gossipedVoluntaryExitConsumer,
+              gossipedSignedContributionAndProofProcessor,
+              gossipedSyncCommitteeMessageProcessor,
+              gossipedSignedBlsToExecutionChangeProcessor,
+              dataColumnSidecarOperationProcessor,
+              gossipedSignedInclusionListProcessor,
+              debugDataDumper,
+              dasGossipLogger,
+              bpo);
+      default ->
+          throw new IllegalStateException(
+              "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
+    };
   }
 
   protected DiscoveryNetwork<?> buildNetwork(

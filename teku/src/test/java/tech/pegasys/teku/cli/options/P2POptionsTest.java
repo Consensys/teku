@@ -396,7 +396,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
                 "/some/file2");
     assertThatThrownBy(tekuConfigurationSupplier::get)
         .isInstanceOf(AssertionError.class)
-        .hasMessageContaining("Only single private key option should be specified");
+        .hasMessageContaining("Only a single private key option should be specified");
   }
 
   @Test

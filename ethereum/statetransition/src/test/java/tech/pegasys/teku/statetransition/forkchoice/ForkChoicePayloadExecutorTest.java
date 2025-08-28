@@ -22,8 +22,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.executionlayer.PayloadStatus.VALID;
 
 import java.util.Optional;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -37,13 +35,14 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ForkChoicePayloadExecutorTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec =
+      TestSpecFactory.createMinimalBellatrix(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   private final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
       spec.getGenesisSchemaDefinitions().toVersionBellatrix().orElseThrow();
   private final ExecutionPayload defaultPayload =
@@ -61,17 +60,6 @@ class ForkChoicePayloadExecutorTest {
   private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(0);
   private final NewPayloadRequest payloadRequest = new NewPayloadRequest(payload);
   private final NewPayloadRequest defaultPayloadRequest = new NewPayloadRequest(defaultPayload);
-
-  @BeforeAll
-  public static void initSession() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  }
-
-  @AfterAll
-  public static void resetSession() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  }
 
   @BeforeEach
   void setUp() {

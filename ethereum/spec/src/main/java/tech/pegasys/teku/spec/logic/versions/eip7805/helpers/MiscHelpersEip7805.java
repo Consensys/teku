@@ -15,23 +15,17 @@ package tech.pegasys.teku.spec.logic.versions.eip7805.helpers;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
-import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
-public class MiscHelpersEip7805 extends MiscHelpersFulu {
+public class MiscHelpersEip7805 extends MiscHelpersGloas {
 
   public MiscHelpersEip7805(
       final SpecConfigEip7805 specConfig,
-      final PredicatesElectra predicates,
+      final PredicatesEip7805 predicates,
       final SchemaDefinitionsEip7805 schemaDefinitions) {
-    super(
-        SpecConfigFulu.required(specConfig),
-        predicates,
-        SchemaDefinitionsFulu.required(schemaDefinitions));
+    super(specConfig, predicates, schemaDefinitions);
   }
 
   public static MiscHelpersEip7805 required(final MiscHelpers miscHelpers) {

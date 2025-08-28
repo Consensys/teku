@@ -87,6 +87,9 @@ public class MergedGenesisInteropModeAcceptanceTest extends AcceptanceTestBase {
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       tekuNodeConfigBuilder.withFuluEpoch(UInt64.ZERO);
     }
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      tekuNodeConfigBuilder.withGloasEpoch(UInt64.ZERO);
+    }
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP7805)) {
       tekuNodeConfigBuilder.withEip7805Epoch(UInt64.ZERO);
     }
