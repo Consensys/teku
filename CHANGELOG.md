@@ -1,6 +1,8 @@
 # Changelog
 
 ## Upcoming Breaking Changes
+ - `GOSSIP_MAX_SIZE` and `MAX_CHUNK_SIZE` will be removed from config items post fusaka.
+ - `TTFB_TIMEOUT` and `RESP_TIMEOUT` will be removed from config items post fusaka.
 
 ## Current Releases
 
@@ -13,6 +15,7 @@
 - Added `--p2p-discovery-bootnodes-url` CLI option.
 - Updated LUKSO configuration with Electra fork scheduled for epoch 190800 (September 17th, 2025, 16:20:00 UTC)
 - Avoid builder validator registration calls potentially delaying block production builder calls.
+- removed `TTFB_TIMEOUT` and `RESP_TIMEOUT` from configuration in line with consensus-specs #4532
 
 ### Bug Fixes
 - Limited the allowed time to wait for fork choice before proceeding with attestation duties, and added a development flag to adjust the timing if required.
