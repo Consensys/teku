@@ -1932,7 +1932,7 @@
 - name: get_slot_component_duration_ms#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
-      search: public int getSlotComponentDurationMillis(
+      search: int getSlotComponentDurationMillis(
   spec: |
     <spec fn="get_slot_component_duration_ms" fork="phase0" hash="b81504df">
     def get_slot_component_duration_ms(basis_points: uint64) -> uint64:

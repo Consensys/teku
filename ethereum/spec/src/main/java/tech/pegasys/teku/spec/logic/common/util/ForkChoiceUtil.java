@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -473,7 +474,7 @@ public class ForkChoiceUtil {
     return isBellatrixBlockOld(store, block.getSlot());
   }
 
-  /** non-functional in early forks */
+  /* non-functional in early forks */
   public Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
       final Spec spec, final ReadOnlyStore store, final UInt64 slot) {
     return Optional.empty();
@@ -489,8 +490,9 @@ public class ForkChoiceUtil {
         .isLessThanOrEqualTo(getCurrentSlot(store));
   }
 
+  @VisibleForTesting
   // get_slot_component_duration_ms
-  public int getSlotComponentDurationMillis(final int basisPoints) {
+  int getSlotComponentDurationMillis(final int basisPoints) {
     return (basisPoints * specConfig.getSlotDurationMillis()) / 10_000;
   }
 
