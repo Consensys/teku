@@ -17,6 +17,9 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.InetAddress;
@@ -324,6 +327,30 @@ class Eth2PeerSelectionStrategyTest {
     assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools))
         .containsExactlyInAnyOrder(
             new PeerSelectionStrategy.PeerToDisconnect(peer2, DisconnectReason.TOO_MANY_PEERS));
+    verify(discoveryService).streamKnownPeers();
+  }
+
+  @Test
+  void selectPeersToDisconnect_shouldNotCheckFalseAdvertisementTooOften() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(2, 2, 1);
+    when(network.getPeerCount()).thenReturn(0);
+    when(network.streamPeers()).thenAnswer(__ -> Stream.of());
+
+    assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools)).isEmpty();
+    // Only false advertisement is using discovery service data
+    verify(discoveryService).streamKnownPeers();
+
+    assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools)).isEmpty();
+    verifyNoMoreInteractions(discoveryService);
+
+    timeProvider.advanceTimeBySeconds(2);
+    assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools)).isEmpty();
+    verifyNoMoreInteractions(discoveryService);
+
+    timeProvider.advanceTimeByMillis(3001);
+    assertThat(strategy.selectPeersToDisconnect(network, discoveryService, peerPools)).isEmpty();
+    // > 5 seconds, new check
+    verify(discoveryService, times(2)).streamKnownPeers();
   }
 
   private Eth2PeerSelectionStrategy createStrategy() {

@@ -15,11 +15,9 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,7 +26,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.ActiveEth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -45,27 +42,20 @@ public class PeerAdvertisementChecker {
   private static final Logger LOG = LogManager.getLogger();
   private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory;
   private final ReputationManager reputationManager;
-  private final TimeProvider timeProvider;
 
   private final NodeIdToDataColumnSidecarSubnetsCalculator
       nodeIdToDataColumnSidecarSubnetsCalculator;
   private final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference;
-  private final AtomicLong lastRunTime = new AtomicLong();
-  private final long minimalDelayBetweenChecksInMillis;
 
   public PeerAdvertisementChecker(
       final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory,
       final ReputationManager reputationManager,
-      final TimeProvider timeProvider,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
-      final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference,
-      final long minimalDelayBetweenChecksInMillis) {
+      final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference) {
     this.peerSubnetSubscriptionsFactory = peerSubnetSubscriptionsFactory;
     this.reputationManager = reputationManager;
-    this.timeProvider = timeProvider;
     this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
     this.activeEth2P2PNetworkReference = activeEth2P2PNetworkReference;
-    this.minimalDelayBetweenChecksInMillis = minimalDelayBetweenChecksInMillis;
   }
 
   /** List of peers that are not subscribed to the topics for which they advertise the data */
@@ -73,10 +63,6 @@ public class PeerAdvertisementChecker {
       final Stream<Peer> candidatePeers,
       final P2PNetwork<?> network,
       final DiscoveryService discoveryService) {
-    if (!readyToCheckAgain()) {
-      return Collections.emptyList();
-    }
-
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
     final Map<NodeId, List<String>> topicsBySubscriber =
         subscribersByTopic.entrySet().stream()
@@ -103,15 +89,6 @@ public class PeerAdvertisementChecker {
                 !verifyPeerAdvertisement(
                     peer, topicsBySubscriber, discoveryPeerMap, peerSubnetSubscriptions))
         .toList();
-  }
-
-  private boolean readyToCheckAgain() {
-    final long now = timeProvider.getTimeInMillis().longValue();
-    final long lastRunTimeValue = lastRunTime.get();
-    if (now > lastRunTimeValue + minimalDelayBetweenChecksInMillis) {
-      return lastRunTime.compareAndSet(lastRunTimeValue, now);
-    }
-    return false;
   }
 
   /**

@@ -17,9 +17,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -34,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.eth2.ActiveEth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -58,10 +54,8 @@ public class PeerAdvertisementCheckerTest {
       new AtomicReference<>();
   private final P2PNetwork<?> network = mock(P2PNetwork.class);
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(50);
   private final NodeId nodeId1 = new MockNodeId(1);
   private final UInt256 discoveryNodeId1 = UInt256.valueOf(1);
-  private final long delayBetweenRun = 5_000;
 
   private final SszBitvectorSchema<SszBitvector> subscriptionSchema =
       SszBitvectorSchema.create(128);
@@ -76,10 +70,8 @@ public class PeerAdvertisementCheckerTest {
         new PeerAdvertisementChecker(
             peerSubnetSubscriptionsFactory,
             reputationManager,
-            timeProvider,
             nodeIdToDataColumnSidecarSubnetsCalculator,
-            activeEth2P2PNetworkReference,
-            delayBetweenRun);
+            activeEth2P2PNetworkReference);
     this.subnetSubscriptions = mock(PeerSubnetSubscriptions.class);
     this.activeEth2P2PNetwork = mock(ActiveEth2P2PNetwork.class);
     activeEth2P2PNetworkReference.set(activeEth2P2PNetwork);
@@ -411,38 +403,6 @@ public class PeerAdvertisementCheckerTest {
         checker.findFalseAdvertisingPeers(Stream.of(), network, discoveryService);
 
     assertThat(falseAdvertisingPeers.isEmpty()).isTrue();
-  }
-
-  @Test
-  public void findFalseAdvertisingPeers_doesNotRunMoreOftenThanConfiguredDelay() {
-    when(network.getSubscribersByTopic()).thenReturn(Map.of());
-
-    when(discoveryService.streamKnownPeers()).thenAnswer(__ -> Stream.of());
-    when(peerSubnetSubscriptionsFactory.create(any())).thenReturn(subnetSubscriptions);
-
-    final List<Peer> falseAdvertisingPeers1 =
-        checker.findFalseAdvertisingPeers(Stream.of(), network, discoveryService);
-    assertThat(falseAdvertisingPeers1.isEmpty()).isTrue();
-
-    verify(discoveryService).streamKnownPeers();
-
-    final List<Peer> falseAdvertisingPeers2 =
-        checker.findFalseAdvertisingPeers(Stream.of(), network, discoveryService);
-    assertThat(falseAdvertisingPeers2.isEmpty()).isTrue();
-    verifyNoMoreInteractions(discoveryService);
-
-    timeProvider.advanceTimeBySeconds(2);
-    final List<Peer> falseAdvertisingPeers3 =
-        checker.findFalseAdvertisingPeers(Stream.of(), network, discoveryService);
-    assertThat(falseAdvertisingPeers3.isEmpty()).isTrue();
-    verifyNoMoreInteractions(discoveryService);
-
-    timeProvider.advanceTimeByMillis(3_001);
-    final List<Peer> falseAdvertisingPeers4 =
-        checker.findFalseAdvertisingPeers(Stream.of(), network, discoveryService);
-    assertThat(falseAdvertisingPeers4.isEmpty()).isTrue();
-    // 2 + 3.001 seconds >5 seconds passed, need to recheck again
-    verify(discoveryService, times(2)).streamKnownPeers();
   }
 
   private void setupSubscriptions(

@@ -21,10 +21,12 @@ import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.STA
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -54,9 +56,11 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   private final TargetPeerRange targetPeerCountRange;
   private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory;
   private final ReputationManager reputationManager;
+  private final TimeProvider timeProvider;
   private final Shuffler shuffler;
   private final PeerAdvertisementChecker peerAdvertisementChecker;
 
+  private final AtomicLong lastFalseAdvertisingCheck = new AtomicLong();
   private static final long MINIMAL_DELAY_BETWEEN_FALSE_AD_CHECKS_MILLIS = 5_000;
 
   public Eth2PeerSelectionStrategy(
@@ -70,14 +74,13 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     this.targetPeerCountRange = targetPeerCountRange;
     this.peerSubnetSubscriptionsFactory = peerSubnetSubscriptionsFactory;
     this.reputationManager = reputationManager;
+    this.timeProvider = timeProvider;
     this.peerAdvertisementChecker =
         new PeerAdvertisementChecker(
             peerSubnetSubscriptionsFactory,
             reputationManager,
-            timeProvider,
             nodeIdToDataColumnSidecarSubnetsCalculator,
-            activeEth2P2PNetworkReference,
-            MINIMAL_DELAY_BETWEEN_FALSE_AD_CHECKS_MILLIS);
+            activeEth2P2PNetworkReference);
     this.shuffler = shuffler;
   }
 
@@ -193,12 +196,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     // TODO: end of debug logging, for removal
 
     final List<Peer> falseAdvertisingPeers =
-        peerAdvertisementChecker.findFalseAdvertisingPeers(
-            peersBySource.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals(STATIC))
-                .flatMap(entry -> entry.getValue().stream()),
-            network,
-            discoveryService);
+        findFalseAdvertisingPeers(peersBySource, network, discoveryService);
 
     // TODO: beginning of debug logging, for removal
     final long endTime = System.currentTimeMillis();
@@ -239,6 +237,31 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
                 .limit(peersToDropCount - falseAdvertisingPeers.size())
                 .map(peer -> new PeerToDisconnect(peer, DisconnectReason.TOO_MANY_PEERS)))
         .toList();
+  }
+
+  private List<Peer> findFalseAdvertisingPeers(
+      final Map<PeerConnectionType, List<Peer>> peersBySource,
+      final P2PNetwork<?> network,
+      final DiscoveryService discoveryService) {
+    if (readyToCheckFalseAdvertisingPeersAgain()) {
+      return peerAdvertisementChecker.findFalseAdvertisingPeers(
+          peersBySource.entrySet().stream()
+              .filter(entry -> !entry.getKey().equals(STATIC))
+              .flatMap(entry -> entry.getValue().stream()),
+          network,
+          discoveryService);
+    } else {
+      return Collections.emptyList();
+    }
+  }
+
+  private boolean readyToCheckFalseAdvertisingPeersAgain() {
+    final long now = timeProvider.getTimeInMillis().longValue();
+    final long lastFalseAdvertisingCheckValue = lastFalseAdvertisingCheck.get();
+    if (now > lastFalseAdvertisingCheckValue + MINIMAL_DELAY_BETWEEN_FALSE_AD_CHECKS_MILLIS) {
+      return lastFalseAdvertisingCheck.compareAndSet(lastFalseAdvertisingCheckValue, now);
+    }
+    return false;
   }
 
   @FunctionalInterface
