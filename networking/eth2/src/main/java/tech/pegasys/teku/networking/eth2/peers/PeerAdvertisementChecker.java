@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -26,7 +25,6 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.ActiveEth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
@@ -48,7 +46,6 @@ public class PeerAdvertisementChecker {
   private final NodeIdToDataColumnSidecarSubnetsCalculator
       nodeIdToDataColumnSidecarSubnetsCalculator;
   private final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference;
-  private final Set<NodeId> verifiedNodeIds = LimitedSet.createSynchronized(500);
 
   public PeerAdvertisementChecker(
       final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory,
@@ -88,13 +85,9 @@ public class PeerAdvertisementChecker {
 
     return candidatePeers
         .filter(
-            peer -> {
-              if (verifiedNodeIds.contains(peer.getId())) {
-                return false;
-              }
-              return !verifyPeerAdvertisement(
-                  peer, topicsBySubscriber, discoveryPeerMap, peerSubnetSubscriptions);
-            })
+            peer ->
+                !verifyPeerAdvertisement(
+                    peer, topicsBySubscriber, discoveryPeerMap, peerSubnetSubscriptions))
         .toList();
   }
 
@@ -193,7 +186,6 @@ public class PeerAdvertisementChecker {
       }
     }
 
-    verifiedNodeIds.add(peer.getId());
     return true;
   }
 }
