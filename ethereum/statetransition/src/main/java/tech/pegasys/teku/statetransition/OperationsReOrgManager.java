@@ -87,8 +87,8 @@ public class OperationsReOrgManager implements ChainHeadChannel, LateBlockReorgP
           if (!notCanonicalBlockRoots.isEmpty()) {
             attestationPool.onReorg(reorgContext.getCommonAncestorSlot());
           }
-          processNonCanonicalBlockOperations(notCanonicalBlockRoots.values()).finishError(LOG);
-          processCanonicalBlockOperations(nowCanonicalBlockRoots.values());
+          processNonCanonicalBlockOperations(notCanonicalBlockRoots.values())
+              .alwaysRun(() -> processCanonicalBlockOperations(nowCanonicalBlockRoots.values()));
         });
   }
 
