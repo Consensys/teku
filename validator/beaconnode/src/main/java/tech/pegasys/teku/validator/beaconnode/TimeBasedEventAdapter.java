@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
@@ -72,6 +73,16 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
         nextSlotStartTimeMillis.plus(spec.getAggregateDueMillis(nextSlot)),
         millisPerSlot,
         this::onAggregationDue);
+    if (spec.atSlot(nextSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(spec.getSyncMessageDueMillis(nextSlot)),
+          millisPerSlot,
+          this::onSyncCommitteeCreationDue);
+      taskScheduler.scheduleRepeatingEventInMillis(
+          nextSlotStartTimeMillis.plus(spec.getContributionDueMillis(nextSlot)),
+          millisPerSlot,
+          this::onContributionCreationDue);
+    }
   }
 
   private UInt64 getCurrentSlot() {
@@ -97,6 +108,30 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       return;
     }
     validatorTimingChannel.onAttestationCreationDue(slot);
+  }
+
+  private void onSyncCommitteeCreationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = spec.getCurrentSlotFromTimeMillis(scheduledTimeInMillis, genesisTimeMillis);
+    if (isTooLate(scheduledTimeInMillis, actualTimeInMillis)) {
+      LOG.warn(
+          "Skipping sync committee message for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    validatorTimingChannel.onSyncCommitteeCreationDue(slot);
+  }
+
+  private void onContributionCreationDue(
+      final UInt64 scheduledTimeInMillis, final UInt64 actualTimeInMillis) {
+    final UInt64 slot = spec.getCurrentSlotFromTimeMillis(scheduledTimeInMillis, genesisTimeMillis);
+    if (isTooLate(scheduledTimeInMillis, actualTimeInMillis)) {
+      LOG.warn(
+          "Skipping contribution message for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    validatorTimingChannel.onContributionCreationDue(slot);
   }
 
   private void onAggregationDue(
