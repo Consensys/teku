@@ -245,6 +245,13 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas -> SchemaDefinitionsFulu.required(schemas).getMatrixEntrySchema()))
 
           // Gloas types
+          .put("ssz_static/BuilderPendingPayment", IGNORE_TESTS)
+          .put("ssz_static/BuilderPendingWithdrawal", IGNORE_TESTS)
+          .put("ssz_static/PayloadAttestationMessage", IGNORE_TESTS)
+          .put("ssz_static/IndexedPayloadAttestation", IGNORE_TESTS)
+          .put("ssz_static/ExecutionPayloadEnvelope", IGNORE_TESTS)
+          .put("ssz_static/SignedExecutionPayloadEnvelope", IGNORE_TESTS)
+          .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
           .put(
               "ssz_static/PayloadAttestationData",
               new SszTestExecutor<>(
@@ -296,6 +303,13 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
+    if (testDefinition.getFork().equals("gloas")
+        && testDefinition.getTestType().contains("ssz_static/BeaconState")) {
+      // TODO-GLOAS this ignore will be removed as part of
+      // https://github.com/Consensys/teku/issues/9807
+      return;
+    }
+
     final Bytes inputData = TestDataUtils.readSszData(testDefinition, "serialized.ssz_snappy");
     final Bytes32 expectedRoot =
         TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
