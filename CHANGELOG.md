@@ -1,8 +1,7 @@
 # Changelog
 
 ## Upcoming Breaking Changes
- - `GOSSIP_MAX_SIZE` and `MAX_CHUNK_SIZE` will be removed from config items post fusaka.
- - `TTFB_TIMEOUT` and `RESP_TIMEOUT` will be removed from config items post fusaka.
+ - `GOSSIP_MAX_SIZE`, `MAX_CHUNK_SIZE`, `TTFB_TIMEOUT` and `RESP_TIMEOUT` configuration variables will NOT be supported after the Fusaka Mainnet release. These variables should be removed from any custom network configs.
 
 ## Current Releases
 
@@ -13,9 +12,9 @@
 ### Additions and Improvements
 - Enabled, by default, a new attestation pool implementation that improves the attestation packing during block and aggregation production. It can still be disabled by setting `--Xaggregating-attestation-pool-v2-enabled=false` if needed
 - Added `--p2p-discovery-bootnodes-url` CLI option.
-- Updated LUKSO configuration with Electra fork scheduled for epoch 190800 (September 17th, 2025, 16:20:00 UTC)
+- Updated `LUKSO` configuration with Electra fork scheduled for epoch `190800` (September 17th, 2025, 16:20:00 UTC)
 - Avoid builder validator registration calls potentially delaying block production builder calls.
-- removed `TTFB_TIMEOUT` and `RESP_TIMEOUT` from configuration in line with consensus-specs #4532
+- Removed `TTFB_TIMEOUT` and `RESP_TIMEOUT` from the default network configurations in line with https://github.com/ethereum/consensus-specs/pull/4532
 
 ### Bug Fixes
 - Limited the allowed time to wait for fork choice before proceeding with attestation duties, and added a development flag to adjust the timing if required.
