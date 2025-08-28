@@ -18,8 +18,10 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
@@ -45,5 +47,15 @@ public class SignedExecutionPayloadHeaderSchema
   @Override
   public SignedExecutionPayloadHeader createFromBackingNode(final TreeNode node) {
     return new SignedExecutionPayloadHeader(this, node);
+  }
+
+  public ExecutionPayloadHeaderSchema<?> getMessageSchema() {
+    return (ExecutionPayloadHeaderSchema<?>) getChildSchema(getFieldIndex("message"));
+  }
+
+  public long getBlobKzgCommitmentsRootGeneralizedIndex() {
+    return GIndexUtil.gIdxCompose(
+        getChildGeneralizedIndex(getFieldIndex("message")),
+        getMessageSchema().toVersionGloasRequired().getBlobKzgCommitmentsRootGeneralizedIndex());
   }
 }
