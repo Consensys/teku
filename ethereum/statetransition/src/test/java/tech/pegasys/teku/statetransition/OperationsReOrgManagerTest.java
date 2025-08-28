@@ -109,6 +109,16 @@ public class OperationsReOrgManagerTest {
     when(attestationManager.onAttestation(any()))
         .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
+    final List<ValidatableAttestation> fork1Block2AttestationList =
+        fork1Block2.getBody().getAttestations().stream()
+            .map(attestation -> ValidatableAttestation.from(spec, attestation))
+            .toList();
+
+    final SafeFuture<AttestationProcessingResult> firstFork1Block2OnAttestationFuture =
+        new SafeFuture<>();
+    when(attestationManager.onAttestation(fork1Block2AttestationList.getFirst()))
+        .thenReturn(firstFork1Block2OnAttestationFuture);
+
     operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
         fork2Block2.getStateRoot(),
@@ -148,13 +158,23 @@ public class OperationsReOrgManagerTest {
         fork1Block1.getBody().getAttestations().stream()
             .map(attestation -> ValidatableAttestation.from(spec, attestation))
             .toList());
-    attestationList.addAll(
-        fork1Block2.getBody().getAttestations().stream()
-            .map(attestation -> ValidatableAttestation.from(spec, attestation))
-            .toList());
+    attestationList.addAll(fork1Block2AttestationList);
     assertThat(argument.getAllValues())
         .containsExactlyInAnyOrderElementsOf(attestationList)
         .allMatch(ValidatableAttestation::isValidIndexedAttestation);
+
+    // no new-canonical operations (removal) before non-canonical operations (re-adding) is
+    // completed
+    verify(proposerSlashingOperationPool, never()).removeAll(any());
+    verify(attesterSlashingOperationPool, never()).removeAll(any());
+    verify(exitOperationPool, never()).removeAll(any());
+    verify(attestationPool, never()).onAttestationsIncludedInBlock(any(), any());
+    verify(blsToExecutionOperationPool, never()).removeAll(any());
+
+    // complete non-canonical
+    firstFork1Block2OnAttestationFuture.complete(AttestationProcessingResult.SUCCESSFUL);
+
+    // verify new-canonical operations (removal) are done
 
     verify(proposerSlashingOperationPool).removeAll(fork2Block1.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(fork2Block1.getBody().getAttesterSlashings());
