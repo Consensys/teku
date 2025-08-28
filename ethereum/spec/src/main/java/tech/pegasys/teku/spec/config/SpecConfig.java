@@ -83,10 +83,6 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   int getSlotDurationMillis();
 
-  default int getMillisPerSlot() {
-    return getSecondsPerSlot() * 1000;
-  }
-
   int getSecondsPerEth1Block();
 
   int getMinValidatorWithdrawabilityDelay();
