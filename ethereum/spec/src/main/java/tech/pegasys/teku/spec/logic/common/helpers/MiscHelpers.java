@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
@@ -186,9 +185,7 @@ public class MiscHelpers {
     if (currentTimeMillis.isLessThan(genesisTimeMillis)) {
       return UInt64.ZERO;
     }
-    return currentTimeMillis
-        .minus(genesisTimeMillis)
-        .dividedBy(secondsToMillis(specConfig.getSecondsPerSlot()));
+    return currentTimeMillis.minus(genesisTimeMillis).dividedBy(specConfig.getSlotDurationMillis());
   }
 
   // compute_time_at_slot, spec function takes state, but otherwise the same.
@@ -200,8 +197,7 @@ public class MiscHelpers {
   // compute_time_at_slot - milliseconds version
   public UInt64 computeTimeMillisAtSlot(final UInt64 genesisTimeMillis, final UInt64 slot) {
     final UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
-    return genesisTimeMillis.plus(
-        slotsSinceGenesis.times(secondsToMillis(specConfig.getSecondsPerSlot())));
+    return genesisTimeMillis.plus(slotsSinceGenesis.times(specConfig.getSlotDurationMillis()));
   }
 
   public boolean isSlotAtNthEpochBoundary(
