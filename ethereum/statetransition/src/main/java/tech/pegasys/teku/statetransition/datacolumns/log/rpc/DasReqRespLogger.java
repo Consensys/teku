@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsBy
 
 public interface DasReqRespLogger {
 
-  record ByRangeRequest(UInt64 startSlot, int slotCount, List<UInt64> columnIndexes) {}
+  record ByRangeRequest(UInt64 startSlot, int slotCount, List<UInt64> columnIndices) {}
 
   static DasReqRespLogger create(final TimeProvider timeProvider) {
     return new DasReqRespLoggerImpl(timeProvider);

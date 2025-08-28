@@ -236,7 +236,7 @@ class SyncCommitteeMessageValidatorTest {
     setupWithDefaultSpec();
     // slot 2
     storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(2));
-    timeProvider.advanceTimeBySeconds(spec.getSecondsPerSlot(UInt64.ONE) * 2L);
+    timeProvider.advanceTimeByMillis(spec.getSlotDurationMillis(UInt64.ONE) * 2L);
 
     storageSystem.chainUpdater().advanceChain();
     storageSystem.chainUpdater().advanceChain();
@@ -269,9 +269,9 @@ class SyncCommitteeMessageValidatorTest {
             SpecConfigLoader.loadConfig(
                 "minimal",
                 phase0Builder ->
-                    phase0Builder.altairBuilder(
-                        altairBuilder ->
-                            altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO)))));
+                    phase0Builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .altairBuilder(altairBuilder -> altairBuilder.syncCommitteeSize(16)))));
     final SignedBlockAndState target = chainBuilder.getLatestBlockAndState();
     final BeaconStateAltair state = BeaconStateAltair.required(target.getState());
     final List<SszPublicKey> committeePubkeys =

@@ -27,8 +27,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -46,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -71,30 +68,16 @@ public class TerminalPowBlockMonitorTest {
   private RecentChainData recentChainData;
   private TerminalPowBlockMonitor terminalPowBlockMonitor;
 
-  @BeforeAll
-  public static void initSession() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  }
-
-  @AfterAll
-  public static void resetSession() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  }
-
   private void setUpTerminalBlockHashConfig() {
     setUpCommon(
         bellatrixBuilder ->
             bellatrixBuilder
-                .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
   }
 
   private void setUpTTDConfig() {
-    setUpCommon(
-        bellatrixBuilder ->
-            bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
+    setUpCommon(bellatrixBuilder -> bellatrixBuilder.terminalTotalDifficulty(TTD));
   }
 
   private void setUpCommon(final Consumer<BellatrixBuilder> bellatrixBuilder) {
@@ -104,7 +87,9 @@ public class TerminalPowBlockMonitorTest {
                 "minimal",
                 phase0Builder ->
                     phase0Builder
-                        .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                        .blsSignatureVerifier(BLSSignatureVerifier.NO_OP)
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                         .bellatrixBuilder(bellatrixBuilder)));
     dataStructureUtil = new DataStructureUtil(spec);
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);

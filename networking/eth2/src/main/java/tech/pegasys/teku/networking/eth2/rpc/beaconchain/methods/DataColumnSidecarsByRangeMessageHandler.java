@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
+import tech.pegasys.teku.networking.eth2.peers.RequestKey;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
  * <a
- * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/fulu/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
+ * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#datacolumnsidecarsbyrange-v1">DataColumnSidecarsByRange
  * v1</a>
  */
 public class DataColumnSidecarsByRangeMessageHandler
@@ -88,6 +88,24 @@ public class DataColumnSidecarsByRangeMessageHandler
   }
 
   @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final DataColumnSidecarsByRangeRequestMessage request) {
+    final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
+    final int requestedCount = calculateRequestedCount(request);
+
+    if (requestedCount == -1 || requestedCount > maxRequestDataColumnSidecars) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Only a maximum of %s data column sidecars can be requested per request",
+                  maxRequestDataColumnSidecars)));
+    }
+    return Optional.empty();
+  }
+
+  @Override
   public void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
@@ -108,23 +126,12 @@ public class DataColumnSidecarsByRangeMessageHandler
     final LoggingResponseCallback<DataColumnSidecar> responseCallbackWithLogging =
         new LoggingResponseCallback<>(responseCallback, responseLogger);
 
-    final int requestedCount = message.getMaximumResponseChunks();
+    final int requestedCount = calculateRequestedCount(message);
 
-    if (requestedCount > specConfigFulu.getMaxRequestDataColumnSidecars()) {
-      requestCounter.labels("count_too_big").inc();
-      responseCallbackWithLogging.completeWithErrorResponse(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              String.format(
-                  "Only a maximum of %s blob sidecars can be requested per request. Requested: %s",
-                  specConfigFulu.getMaxRequestDataColumnSidecars(), requestedCount)));
-      return;
-    }
-
-    final Optional<RequestApproval> dataColumnSidecarsRequestApproval =
+    final Optional<RequestKey> maybeRequestKey =
         peer.approveDataColumnSidecarsRequest(responseCallbackWithLogging, requestedCount);
 
-    if (!peer.approveRequest() || dataColumnSidecarsRequestApproval.isEmpty()) {
+    if (!peer.approveRequest() || maybeRequestKey.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -157,7 +164,7 @@ public class DataColumnSidecarsByRangeMessageHandler
             finalizedSlot);
 
     final SafeFuture<RequestState> response;
-    if (initialState.isComplete()) {
+    if (requestedCount == 0 || initialState.isComplete()) {
       response = SafeFuture.completedFuture(initialState);
     } else {
       response = sendDataColumnSidecars(initialState);
@@ -167,16 +174,22 @@ public class DataColumnSidecarsByRangeMessageHandler
         requestState -> {
           final int sentDataColumnSidecars = requestState.sentDataColumnSidecars.get();
           if (sentDataColumnSidecars != requestedCount) {
-            peer.adjustDataColumnSidecarsRequest(
-                dataColumnSidecarsRequestApproval.get(), sentDataColumnSidecars);
+            peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), sentDataColumnSidecars);
           }
           responseCallbackWithLogging.completeSuccessfully();
         },
         error -> {
-          peer.adjustDataColumnSidecarsRequest(dataColumnSidecarsRequestApproval.get(), 0);
+          peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
           handleProcessingRequestError(error, responseCallbackWithLogging);
         });
-    ;
+  }
+
+  private int calculateRequestedCount(final DataColumnSidecarsByRangeRequestMessage message) {
+    try {
+      return message.getCount().times(message.getColumns().size()).intValue();
+    } catch (final ArithmeticException e) {
+      return -1;
+    }
   }
 
   private SafeFuture<RequestState> sendDataColumnSidecars(final RequestState requestState) {
@@ -227,8 +240,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     private final Map<UInt64, Bytes32> canonicalHotRoots;
 
     // since our storage stores hot and finalized data columns sidecar on the same "table", this
-    // iterator can span
-    // over hot and finalized data column sidecar
+    // iterator can span over hot and finalized data column sidecar
     private Optional<Iterator<DataColumnSlotAndIdentifier>> dataColumnSidecarKeysIterator =
         Optional.empty();
 
@@ -271,21 +283,21 @@ public class DataColumnSidecarsByRangeMessageHandler
       }
     }
 
+    boolean isComplete() {
+      return endSlot.isLessThan(startSlot)
+          || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
+    }
+
     private SafeFuture<Optional<DataColumnSidecar>> getNextDataColumnSidecar(
         final Iterator<DataColumnSlotAndIdentifier> dataColumnSidecarIdentifiers) {
       if (dataColumnSidecarIdentifiers.hasNext()) {
         final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
             dataColumnSidecarIdentifiers.next();
-
-        if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())) {
+        if (finalizedSlot.isGreaterThanOrEqualTo(columnSlotAndIdentifier.slot())
+            // not finalized, let's check if it is on canonical chain
+            || isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
           return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
         }
-
-        // not finalized, let's check if it is on canonical chain
-        if (isCanonicalHotDataColumnSidecar(columnSlotAndIdentifier)) {
-          return combinedChainDataClient.getSidecar(columnSlotAndIdentifier);
-        }
-
         // non-canonical, try next one
         return getNextDataColumnSidecar(dataColumnSidecarIdentifiers);
       }
@@ -298,11 +310,6 @@ public class DataColumnSidecarsByRangeMessageHandler
       return Optional.ofNullable(canonicalHotRoots.get(columnSlotAndIdentifier.slot()))
           .map(blockRoot -> blockRoot.equals(columnSlotAndIdentifier.blockRoot()))
           .orElse(false);
-    }
-
-    boolean isComplete() {
-      return endSlot.isLessThan(startSlot)
-          || dataColumnSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

@@ -25,13 +25,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncStreamTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Test
   void sanityTest() {
@@ -185,7 +187,7 @@ public class AsyncStreamTest {
   }
 
   @Test
-  @DisabledOnOs(OS.WINDOWS)
+  @Disabled // https://github.com/Consensys/teku/issues/9718
   void testConcurrentExceptionHasUsefulWrap() throws Exception {
     final int baseNumber = 10000;
     final int threadCount = 10;
@@ -224,7 +226,7 @@ public class AsyncStreamTest {
       AsyncStream.createUnsafe(ints.iterator())
           .map(i -> i)
           .forEach(collector::add)
-          .ifExceptionGetsHereRaiseABug();
+          .finishDebug(LOG);
     }
 
     final boolean rc = finishLatch.await(10, TimeUnit.SECONDS);

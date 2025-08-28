@@ -135,12 +135,10 @@ class DutyMetricsTest {
   }
 
   private UInt64 expectedAttestationTime(final UInt64 slot, final Spec spec) {
-    UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
-    return slot.times(millisPerSlot).plus(millisPerSlot.dividedBy(3));
+    return slot.times(spec.getSlotDurationMillis(slot)).plus(spec.getAttestationDueMillis(slot));
   }
 
   private UInt64 expectedBlockTime(final UInt64 slot, final Spec spec) {
-    UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
-    return slot.times(millisPerSlot);
+    return slot.times(spec.getSlotDurationMillis(slot));
   }
 }

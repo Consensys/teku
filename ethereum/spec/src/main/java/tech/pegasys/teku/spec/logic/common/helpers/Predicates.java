@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
+import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 
 public class Predicates {
 
@@ -169,6 +170,10 @@ public class Predicates {
   }
 
   public Optional<PredicatesElectra> toVersionElectra() {
+    return Optional.empty();
+  }
+
+  public Optional<PredicatesGloas> toVersionGloas() {
     return Optional.empty();
   }
 }

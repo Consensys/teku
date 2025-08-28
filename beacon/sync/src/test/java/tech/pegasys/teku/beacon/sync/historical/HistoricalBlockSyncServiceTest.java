@@ -159,6 +159,7 @@ public class HistoricalBlockSyncServiceTest {
     // Set up a peer to respond
     final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
+        spec,
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
     when(network.streamPeers()).thenAnswer(i -> Stream.of(peer));
@@ -207,6 +208,7 @@ public class HistoricalBlockSyncServiceTest {
     // When should succeed on the next retry
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     peer.updateStatus(
+        spec,
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
     asyncRunner.executeQueuedActions();
@@ -236,6 +238,7 @@ public class HistoricalBlockSyncServiceTest {
     // Set up a peer to respond
     final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
+        spec,
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
     when(network.streamPeers()).thenAnswer(i -> Stream.of(peer));
@@ -272,6 +275,7 @@ public class HistoricalBlockSyncServiceTest {
     // Set up a peer to respond
     final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
+        spec,
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
     when(network.streamPeers()).thenAnswer(i -> Stream.of(peer));
@@ -303,6 +307,7 @@ public class HistoricalBlockSyncServiceTest {
     // Set up a peer to respond
     final RespondingEth2Peer peer = RespondingEth2Peer.create(spec, storageSystem.chainBuilder());
     peer.updateStatus(
+        spec,
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO),
         new Checkpoint(UInt64.valueOf(epochHeight * 2), Bytes32.ZERO));
     when(network.streamPeers()).thenAnswer(i -> Stream.of(peer));

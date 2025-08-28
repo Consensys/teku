@@ -76,7 +76,7 @@ public class DvtAttestationAggregations {
                     this::handleBeaconCommitteeSelectionProofsResponse,
                     () -> handleEmptyResponse(slot)))
         .exceptionally(unexpectedErrorHandler())
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private void handleBeaconCommitteeSelectionProofsResponse(

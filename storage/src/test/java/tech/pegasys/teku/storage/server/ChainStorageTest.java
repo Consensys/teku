@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 
 public class ChainStorageTest {
+  private static final Logger LOG = LogManager.getLogger();
   @TempDir Path dataDirectory;
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
@@ -212,13 +215,13 @@ public class ChainStorageTest {
         final List<SignedBeaconBlock> batch = batches.get(i);
         chainStorage
             .onFinalizedBlocks(batch, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
-            .ifExceptionGetsHereRaiseABug();
+            .finishDebug(LOG);
       }
     } else {
       chainStorage
           .onFinalizedBlocks(
               missingHistoricalBlocks, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
-          .ifExceptionGetsHereRaiseABug();
+          .finishDebug(LOG);
     }
 
     // Verify blocks and blob sidecars are now available
@@ -322,7 +325,7 @@ public class ChainStorageTest {
       // earliestBlobSidecarSlot: 2, 1, 0. Correct only in the last batch
       chainStorage
           .onFinalizedBlocks(batch, missingHistoricalBlobSidecars, Optional.of(UInt64.valueOf(i)))
-          .ifExceptionGetsHereRaiseABug();
+          .finishDebug(LOG);
     }
 
     // The correct earliest BlobSidecar slot, no matter of order saving

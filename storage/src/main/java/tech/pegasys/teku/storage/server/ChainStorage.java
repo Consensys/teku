@@ -454,8 +454,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onSidecarsAvailabilitySlot(final UInt64 earliestSlotRequired) {
-    return SafeFuture.fromRunnable(
-        () -> database.pruneAllSidecars(earliestSlotRequired.minusMinZero(1)));
+  public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
+    return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecar(sidecar));
   }
 }

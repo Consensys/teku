@@ -62,6 +62,11 @@ public class BeaconChainMethodIds {
     return getMethodId(DATA_COLUMN_SIDECARS_BY_ROOT, version, encoding);
   }
 
+  public static String getDataColumnSidecarsByRangeMethodId(
+      final int version, final RpcEncoding encoding) {
+    return getMethodId(DATA_COLUMN_SIDECARS_BY_RANGE, version, encoding);
+  }
+
   public static String getStatusMethodId(final int version, final RpcEncoding encoding) {
     return getMethodId(STATUS, version, encoding);
   }
@@ -76,6 +81,10 @@ public class BeaconChainMethodIds {
 
   public static int extractGetMetadataVersion(final String methodId) {
     return extractVersion(methodId, GET_METADATA);
+  }
+
+  public static int extractStatusVersion(final String methodId) {
+    return extractVersion(methodId, STATUS);
   }
 
   @VisibleForTesting

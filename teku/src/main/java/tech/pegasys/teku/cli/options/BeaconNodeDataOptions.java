@@ -172,6 +172,28 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
 
   @CommandLine.Option(
+      names = {"--Xdata-storage-data-column-pruning-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Interval in seconds between data column sidecars pruning",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private long dataColumnPruningIntervalSeconds =
+      StorageConfiguration.DEFAULT_DATA_COLUMN_PRUNING_INTERVAL.toSeconds();
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-data-column-pruning-limit"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Maximum number of blocks of data column sidecars that can be pruned in each pruning session",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private int dataColumnPruningLimit = StorageConfiguration.DEFAULT_DATA_COLUMN_PRUNING_LIMIT;
+
+  @CommandLine.Option(
       names = {"--Xdata-storage-blobs-archive-path"},
       hidden = true,
       paramLabel = "<STRING>",
@@ -223,6 +245,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .stateRebuildTimeoutSeconds(stateRebuildTimeoutSeconds)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
                 .blobsPruningLimit(blobsPruningLimit)
+                .dataColumnPruningInterval(Duration.ofSeconds(dataColumnPruningIntervalSeconds))
+                .dataColumnPruningLimit(dataColumnPruningLimit)
                 .blobsArchivePath(blobsArchivePath)
                 .retainedSlots(dataStorageRetainedSlots)
                 .statePruningInterval(Duration.ofSeconds(statePruningIntervalSeconds))

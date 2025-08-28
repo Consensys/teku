@@ -18,19 +18,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
-import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaDeneb
@@ -63,16 +59,6 @@ public class BeaconStateSchemaDeneb
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
-  }
-
-  public ExecutionPayloadHeaderSchemaDeneb getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaDeneb)
-        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
-  }
-
   @Override
   public MutableBeaconStateDeneb createBuilder() {
     return new MutableBeaconStateDenebImpl(createEmptyBeaconStateImpl(), true);
@@ -89,12 +75,6 @@ public class BeaconStateSchemaDeneb
         "Expected a BeaconStateSchemaDeneb but was %s",
         schema.getClass());
     return (BeaconStateSchemaDeneb) schema;
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
-    return (SszListSchema<HistoricalSummary, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
   }
 
   @Override

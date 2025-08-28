@@ -226,7 +226,7 @@ public class HistoricalBlockSyncService extends Service {
         .always(
             () -> {
               if (isSyncDone()) {
-                stop().ifExceptionGetsHereRaiseABug();
+                stop().finishStackTrace();
 
                 reconstructHistoricalStatesService.ifPresent(
                     service ->

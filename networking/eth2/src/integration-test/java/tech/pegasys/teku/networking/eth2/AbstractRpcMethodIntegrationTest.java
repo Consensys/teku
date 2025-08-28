@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.provider.Arguments;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
@@ -88,7 +90,11 @@ public abstract class AbstractRpcMethodIntegrationTest {
         checkState(nextSpecMilestone.equals(SpecMilestone.FULU), "next spec should be fulu");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithFuluForkEpoch(nextSpecEpoch));
       }
-      case FULU -> throw new RuntimeException("Base spec is already latest supported milestone");
+      case FULU -> {
+        checkState(nextSpecMilestone.equals(SpecMilestone.GLOAS), "next spec should be gloas");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithGloasForkEpoch(nextSpecEpoch));
+      }
+      case GLOAS -> throw new RuntimeException("Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -213,10 +219,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
-        .filter(
-            specMilestone ->
-                specMilestone.isLessThan(
-                    SpecMilestone.FULU)) // TODO-fulu eventually we remove this ignore
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
@@ -239,7 +241,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected List<BlobSidecar> retrieveCanonicalBlobSidecarsFromPeerStorage(
       final Stream<UInt64> slots) {
-
     return slots
         .map(
             slot ->
@@ -253,10 +254,43 @@ public abstract class AbstractRpcMethodIntegrationTest {
         .toList();
   }
 
+  protected List<DataColumnSidecar> retrieveCanonicalDataColumnSidecarsFromPeerStorage(
+      final Stream<UInt64> slots, final List<UInt64> columns) {
+    return slots
+        .map(slot -> safeRetrieveDataColumnSidecars(slot, columns))
+        .flatMap(Collection::stream)
+        .toList();
+  }
+
   private List<BlobSidecar> safeRetrieveBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     try {
       return Waiter.waitFor(
           peerStorage.chainStorage().getBlobSidecarsBySlotAndBlockRoot(slotAndBlockRoot));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private List<DataColumnSidecar> safeRetrieveDataColumnSidecars(
+      final UInt64 slot, final List<UInt64> columns) {
+    try {
+      return Waiter.waitFor(
+              peerStorage
+                  .chainStorage()
+                  .getDataColumnIdentifiers(slot)
+                  .thenApply(
+                      identifiers ->
+                          identifiers.stream()
+                              .filter(identifier -> columns.contains(identifier.columnIndex()))
+                              .toList())
+                  .thenCompose(
+                      identifiers ->
+                          SafeFuture.collectAll(
+                              identifiers.stream().map(peerStorage.chainStorage()::getSidecar))))
+          .stream()
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .toList();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -269,7 +303,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case BELLATRIX -> BeaconBlockBodyBellatrix.class;
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
-      case ELECTRA, FULU -> BeaconBlockBodyElectra.class;
+      case ELECTRA, FULU, GLOAS -> BeaconBlockBodyElectra.class;
     };
   }
 }

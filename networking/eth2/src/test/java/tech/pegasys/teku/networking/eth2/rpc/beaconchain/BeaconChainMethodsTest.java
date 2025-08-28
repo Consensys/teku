@@ -15,12 +15,14 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -34,7 +36,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcRequestDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -47,7 +50,7 @@ public class BeaconChainMethodsTest {
       Bytes.fromHexString(
           "0x54ff060000734e61507059002d00007e8c1ea2540000aa01007c30a903798306695d21d1faa76363a0070677130835e503760b0e84479b7819e6114b");
   private static final StatusMessage RECORDED_STATUS_MESSAGE_DATA =
-      new StatusMessage(
+      new StatusMessagePhase0(
           new Bytes4(Bytes.of(0, 0, 0, 0)),
           Bytes32.ZERO,
           UInt64.ZERO,
@@ -55,19 +58,26 @@ public class BeaconChainMethodsTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UInt64.ZERO);
 
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   final AsyncRunner asyncRunner = new StubAsyncRunner();
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
-  final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
+  final StatusMessageFactory statusMessageFactory =
+      new StatusMessageFactory(spec, combinedChainDataClient);
   final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+
+  @BeforeEach
+  public void setUp() {
+    when(combinedChainDataClient.getRecentChainData()).thenReturn(recentChainData);
+  }
 
   @Test
   void testStatusRoundtripSerialization() throws Exception {
     final BeaconChainMethods methods = getMethods();
     final StatusMessage expected =
-        new StatusMessage(
+        new StatusMessagePhase0(
             Bytes4.rightPad(Bytes.of(4)),
             Bytes32.random(),
             UInt64.ZERO,
@@ -143,6 +153,30 @@ public class BeaconChainMethodsTest {
                     .containsExactly("/eth2/beacon_chain/req/blob_sidecars_by_range/1/ssz_snappy"));
   }
 
+  @Test
+  public void shouldCreateStatusVersionWithSupportToVersion1BeforeFuluEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalElectra());
+
+    assertThat(methods.status())
+        .satisfies(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly("/eth2/beacon_chain/req/status/1/ssz_snappy"));
+  }
+
+  @Test
+  public void shouldCreateStatusVersionWithSupportToVersion1And2FromFuluEnableOnwards() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalFulu());
+
+    assertThat(methods.status())
+        .satisfies(
+            method ->
+                assertThat(method.getIds())
+                    .contains(
+                        "/eth2/beacon_chain/req/status/1/ssz_snappy",
+                        "/eth2/beacon_chain/req/status/2/ssz_snappy"));
+  }
+
   private BeaconChainMethods getMethods() {
     return getMethods(TestSpecFactory.createMinimalPhase0());
   }
@@ -153,8 +187,8 @@ public class BeaconChainMethodsTest {
         asyncRunner,
         peerLookup,
         combinedChainDataClient,
-        DataColumnSidecarByRootCustody.NOOP,
-        CustodyGroupCountManager.NOOP,
+        () -> DataColumnSidecarByRootCustody.NOOP,
+        () -> CustodyGroupCountManager.NOOP,
         recentChainData,
         metricsSystem,
         statusMessageFactory,

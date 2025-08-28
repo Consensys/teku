@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,18 +52,21 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfiguration {
+  public static final int DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS = 1_500;
   private static final Logger LOG = LogManager.getLogger();
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
+  public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = false;
+
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
-  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = false;
+  public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = true;
   public static final int
       DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 150;
   public static final int
-      DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 500;
+      DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS = 350;
 
   // should fit attestations for a slot given validator set size
   // so DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS * slots_per_epoch should be >= validator set size
@@ -79,6 +83,17 @@ public class Eth2NetworkConfiguration {
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
   public static final boolean DEFAULT_RUST_KZG_ENABLED = false;
+
+  // For regular nodes which will not recover data column sidecars, default
+  // to a low value which uses less memory. A higher precompute value only
+  // benefits nodes which compute KZG proofs for cells.
+  public static final int DEFAULT_KZG_PRECOMPUTE = 0;
+
+  // For supernodes which might recover data column sidecars, default to a
+  // higher value which makes recovery faster at the cost of higher memory
+  // usage. A value of 9 will result in approximately 2x performance increase
+  // but use an extra 196 MiB of memory.
+  public static final int DEFAULT_KZG_PRECOMPUTE_SUPERNODE = 9;
 
   // at least 5, but happily up to 12
   public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS =
@@ -109,6 +124,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> denebForkEpoch;
   private final Optional<UInt64> electraForkEpoch;
   private final Optional<UInt64> fuluForkEpoch;
+  private final Optional<UInt64> gloasForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -122,13 +138,17 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
+  private final boolean prepareBlockProductionEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
   private final boolean rustKzgEnabled;
+  private final OptionalInt kzgPrecompute;
+  private final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis;
   private final boolean aggregatingAttestationPoolV2Enabled;
   private final boolean aggregatingAttestationPoolProfilingEnabled;
   private final int aggregatingAttestationPoolV2BlockAggregationTimeLimit;
   private final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
+  private final int attestationWaitLimitMillis;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -146,6 +166,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> denebForkEpoch,
       final Optional<UInt64> electraForkEpoch,
       final Optional<UInt64> fuluForkEpoch,
+      final Optional<UInt64> gloasForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -156,13 +177,17 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean prepareBlockProductionEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
       final boolean rustKzgEnabled,
+      final OptionalInt kzgPrecompute,
+      final OptionalLong dataColumnSidecarRecoveryMaxDelayMillis,
       final boolean aggregatingAttestationPoolV2Enabled,
       final boolean aggregatingAttestationPoolProfilingEnabled,
       final int aggregatingAttestationPoolV2BlockAggregationTimeLimit,
-      final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit) {
+      final int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
+      final int attestationWaitLimitMillis) {
     this.spec = spec;
     this.constants = constants;
     this.stateBoostrapConfig = stateBoostrapConfig;
@@ -175,6 +200,7 @@ public class Eth2NetworkConfiguration {
     this.denebForkEpoch = denebForkEpoch;
     this.electraForkEpoch = electraForkEpoch;
     this.fuluForkEpoch = fuluForkEpoch;
+    this.gloasForkEpoch = gloasForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -191,16 +217,22 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
     this.rustKzgEnabled = rustKzgEnabled;
+    this.kzgPrecompute = kzgPrecompute;
+    this.dataColumnSidecarRecoveryMaxDelayMillis = dataColumnSidecarRecoveryMaxDelayMillis;
     this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
     this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
     this.aggregatingAttestationPoolV2BlockAggregationTimeLimit =
         aggregatingAttestationPoolV2BlockAggregationTimeLimit;
     this.aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit;
+    this.attestationWaitLimitMillis = attestationWaitLimitMillis;
+
+    LOG.debug("Attestation wait time limit in ratchet: {} ms", attestationWaitLimitMillis);
 
     LOG.debug(
         "P2P async queue - {} threads, max queue size {} ", asyncP2pMaxThreads, asyncP2pMaxQueue);
@@ -263,6 +295,10 @@ public class Eth2NetworkConfiguration {
     return trustedSetup;
   }
 
+  public int getAttestationWaitLimitMillis() {
+    return attestationWaitLimitMillis;
+  }
+
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
     return switch (specMilestone) {
       case ALTAIR -> altairForkEpoch;
@@ -271,6 +307,7 @@ public class Eth2NetworkConfiguration {
       case DENEB -> denebForkEpoch;
       case ELECTRA -> electraForkEpoch;
       case FULU -> fuluForkEpoch;
+      case GLOAS -> gloasForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -315,6 +352,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public boolean isPrepareBlockProductionEnabled() {
+    return prepareBlockProductionEnabled;
+  }
+
   public boolean isAggregatingAttestationPoolV2Enabled() {
     return aggregatingAttestationPoolV2Enabled;
   }
@@ -343,6 +384,14 @@ public class Eth2NetworkConfiguration {
     return rustKzgEnabled;
   }
 
+  public OptionalInt getKzgPrecompute() {
+    return kzgPrecompute;
+  }
+
+  public OptionalLong getDataColumnSidecarRecoveryMaxDelayMillis() {
+    return dataColumnSidecarRecoveryMaxDelayMillis;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -364,6 +413,7 @@ public class Eth2NetworkConfiguration {
         && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
+        && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
         && aggregatingAttestationPoolV2Enabled == that.aggregatingAttestationPoolV2Enabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
@@ -384,6 +434,7 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
+        && Objects.equals(gloasForkEpoch, that.gloasForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
         && Objects.equals(trustedSetup, that.trustedSetup)
@@ -409,6 +460,7 @@ public class Eth2NetworkConfiguration {
         denebForkEpoch,
         electraForkEpoch,
         fuluForkEpoch,
+        gloasForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
         trustedSetup,
@@ -422,6 +474,7 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
+        prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled);
   }
@@ -451,6 +504,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<UInt64> electraForkEpoch = Optional.empty();
     private Optional<UInt64> fuluForkEpoch = Optional.empty();
+    private Optional<UInt64> gloasForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -458,10 +512,13 @@ public class Eth2NetworkConfiguration {
     private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean prepareBlockProductionEnabled = DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
     private boolean rustKzgEnabled = DEFAULT_RUST_KZG_ENABLED;
+    private OptionalInt kzgPrecompute = OptionalInt.empty();
+    private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
     private boolean strictConfigLoadingEnabled;
     private boolean aggregatingAttestationPoolV2Enabled =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED;
@@ -471,6 +528,7 @@ public class Eth2NetworkConfiguration {
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
     private int aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit =
         DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_TOTAL_BLOCK_AGGREGATION_TIME_LIMIT_MILLIS;
+    private int attestationWaitLimitMillis = DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
 
     public void spec(final Spec spec) {
       this.spec = spec;
@@ -492,27 +550,25 @@ public class Eth2NetworkConfiguration {
                   if (constants.equals(EPHEMERY.configName())) {
                     EphemeryNetwork.updateConfig(builder);
                   }
-                  altairForkEpoch.ifPresent(
-                      forkEpoch ->
-                          builder.altairBuilder(
-                              altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch)));
+                  altairForkEpoch.ifPresent(builder::altairForkEpoch);
+                  bellatrixForkEpoch.ifPresent(builder::bellatrixForkEpoch);
+                  capellaForkEpoch.ifPresent(builder::capellaForkEpoch);
+                  denebForkEpoch.ifPresent(builder::denebForkEpoch);
+                  electraForkEpoch.ifPresent(builder::electraForkEpoch);
+                  fuluForkEpoch.ifPresent(builder::fuluForkEpoch);
+                  gloasForkEpoch.ifPresent(builder::gloasForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
                         bellatrixBuilder.safeSlotsToImportOptimistically(
                             safeSlotsToImportOptimistically);
-                        bellatrixForkEpoch.ifPresent(bellatrixBuilder::bellatrixForkEpoch);
                         totalTerminalDifficultyOverride.ifPresent(
                             bellatrixBuilder::terminalTotalDifficulty);
                         terminalBlockHashEpochOverride.ifPresent(
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
-                  builder.capellaBuilder(
-                      capellaBuilder ->
-                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
                   builder.denebBuilder(
                       denebBuilder -> {
-                        denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
@@ -522,11 +578,6 @@ public class Eth2NetworkConfiguration {
                           trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME);
                         }
                       });
-                  builder.electraBuilder(
-                      electraBuilder ->
-                          electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
-                  builder.fuluBuilder(
-                      fuluBuilder -> fuluForkEpoch.ifPresent(fuluBuilder::fuluForkEpoch));
                 });
       }
       if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
@@ -560,6 +611,7 @@ public class Eth2NetworkConfiguration {
           denebForkEpoch,
           electraForkEpoch,
           fuluForkEpoch,
+          gloasForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -570,13 +622,17 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
+          prepareBlockProductionEnabled,
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
+          kzgPrecompute,
+          dataColumnSidecarRecoveryMaxDelayMillis,
           aggregatingAttestationPoolV2Enabled,
           aggregatingAttestationPoolProfilingEnabled,
           aggregatingAttestationPoolV2BlockAggregationTimeLimit,
-          aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit);
+          aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit,
+          attestationWaitLimitMillis);
     }
 
     private void validateCommandLineParameters() {
@@ -744,11 +800,13 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder trustedSetup(final String trustedSetup) {
+      checkNotNull(trustedSetup);
       this.trustedSetup = Optional.of(trustedSetup);
       return this;
     }
 
     public Builder trustedSetupFromClasspath(final String filename) {
+      checkNotNull(filename);
       this.trustedSetup =
           Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
               .map(URL::toExternalForm);
@@ -756,32 +814,44 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder altairForkEpoch(final UInt64 altairForkEpoch) {
+      checkNotNull(altairForkEpoch);
       this.altairForkEpoch = Optional.of(altairForkEpoch);
       return this;
     }
 
     public Builder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+      checkNotNull(bellatrixForkEpoch);
       this.bellatrixForkEpoch = Optional.of(bellatrixForkEpoch);
       return this;
     }
 
     public Builder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+      checkNotNull(capellaForkEpoch);
       this.capellaForkEpoch = Optional.of(capellaForkEpoch);
       return this;
     }
 
     public Builder denebForkEpoch(final UInt64 denebForkEpoch) {
+      checkNotNull(denebForkEpoch);
       this.denebForkEpoch = Optional.of(denebForkEpoch);
       return this;
     }
 
     public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
+      checkNotNull(electraForkEpoch);
       this.electraForkEpoch = Optional.of(electraForkEpoch);
       return this;
     }
 
     public Builder fuluForkEpoch(final UInt64 fuluForkEpoch) {
+      checkNotNull(fuluForkEpoch);
       this.fuluForkEpoch = Optional.of(fuluForkEpoch);
+      return this;
+    }
+
+    public Builder gloasForkEpoch(final UInt64 gloasForkEpoch) {
+      checkNotNull(gloasForkEpoch);
+      this.gloasForkEpoch = Optional.of(gloasForkEpoch);
       return this;
     }
 
@@ -796,16 +866,19 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder totalTerminalDifficultyOverride(final UInt256 totalTerminalDifficultyOverride) {
+      checkNotNull(totalTerminalDifficultyOverride);
       this.totalTerminalDifficultyOverride = Optional.of(totalTerminalDifficultyOverride);
       return this;
     }
 
     public Builder terminalBlockHashOverride(final Bytes32 terminalBlockHashOverride) {
+      checkNotNull(terminalBlockHashOverride);
       this.terminalBlockHashOverride = Optional.of(terminalBlockHashOverride);
       return this;
     }
 
     public Builder terminalBlockHashEpochOverride(final UInt64 terminalBlockHashEpochOverride) {
+      checkNotNull(terminalBlockHashEpochOverride);
       this.terminalBlockHashEpochOverride = Optional.of(terminalBlockHashEpochOverride);
       return this;
     }
@@ -820,7 +893,21 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder kzgPrecompute(final int kzgPrecompute) {
+      this.kzgPrecompute = OptionalInt.of(kzgPrecompute);
+      return this;
+    }
+
+    public Builder dataColumnSidecarRecoveryMaxDelayMillis(
+        final Long dataColumnSidecarRecoveryMaxDelayMillis) {
+      checkNotNull(dataColumnSidecarRecoveryMaxDelayMillis);
+      this.dataColumnSidecarRecoveryMaxDelayMillis =
+          OptionalLong.of(dataColumnSidecarRecoveryMaxDelayMillis);
+      return this;
+    }
+
     public Builder applyNetworkDefaults(final String networkName) {
+      checkNotNull(networkName);
       Eth2Network.fromStringLenient(networkName)
           .ifPresentOrElse(
               this::applyNetworkDefaults, () -> resetAndApplyBasicDefaults(networkName));
@@ -828,6 +915,7 @@ public class Eth2NetworkConfiguration {
     }
 
     private Builder resetAndApplyBasicDefaults(final String networkName) {
+      checkNotNull(networkName);
       return reset()
           .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .constants(networkName);
@@ -1112,6 +1200,11 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder prepareBlockProductionEnabled(final boolean prepareBlockProductionEnabled) {
+      this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
+      return this;
+    }
+
     public Builder aggregatingAttestationPoolV2Enabled(
         final boolean aggregatingAttestationPoolV2Enabled) {
       this.aggregatingAttestationPoolV2Enabled = aggregatingAttestationPoolV2Enabled;
@@ -1121,6 +1214,11 @@ public class Eth2NetworkConfiguration {
     public Builder aggregatingAttestationPoolProfilingEnabled(
         final boolean aggregatingAttestationPoolProfilingEnabled) {
       this.aggregatingAttestationPoolProfilingEnabled = aggregatingAttestationPoolProfilingEnabled;
+      return this;
+    }
+
+    public Builder attestationWaitLimitMillis(final int attestationWaitLimitMillis) {
+      this.attestationWaitLimitMillis = attestationWaitLimitMillis;
       return this;
     }
 

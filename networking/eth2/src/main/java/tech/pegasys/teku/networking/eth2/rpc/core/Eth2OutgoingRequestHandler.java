@@ -91,7 +91,7 @@ public class Eth2OutgoingRequestHandler<
 
   public void handleInitialPayloadSent(final RpcStream stream) {
     // Close the write side of the stream
-    stream.closeWriteStream().ifExceptionGetsHereRaiseABug();
+    stream.closeWriteStream().finishStackTrace();
     if (shouldReceiveResponse) {
       // Setup initial chunk timeout
       ensureNextResponseChunkArrivesInTime(stream, currentChunkCount.get(), currentChunkCount);
@@ -223,7 +223,7 @@ public class Eth2OutgoingRequestHandler<
               abortRequest(rpcStream, err, true);
               return null;
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private void abortRequest(final RpcStream rpcStream, final Throwable error) {
@@ -240,7 +240,7 @@ public class Eth2OutgoingRequestHandler<
     // releasing any resources
     try {
       responseDecoder.close();
-      rpcStream.closeAbruptly().ifExceptionGetsHereRaiseABug();
+      rpcStream.closeAbruptly().finishStackTrace();
     } finally {
       getResponseProcessor(rpcStream)
           .finishProcessing()
@@ -264,7 +264,7 @@ public class Eth2OutgoingRequestHandler<
               }
             },
             RESPONSE_CHUNK_ARRIVAL_TIMEOUT)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
@@ -279,7 +279,7 @@ public class Eth2OutgoingRequestHandler<
               }
             },
             READ_COMPLETE_TIMEOUT)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   @VisibleForTesting

@@ -56,45 +56,35 @@ public class GenesisGenerator {
   public GenesisGenerator withAltairEpoch(final UInt64 altairForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.altairBuilder(
-                    altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.altairForkEpoch(altairForkEpoch));
     return this;
   }
 
   public GenesisGenerator withBellatrixEpoch(final UInt64 bellatrixForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.bellatrixBuilder(
-                    bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.bellatrixForkEpoch(bellatrixForkEpoch));
     return this;
   }
 
   public GenesisGenerator withCapellaEpoch(final UInt64 capellaForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.capellaBuilder(
-                    capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.capellaForkEpoch(capellaForkEpoch));
     return this;
   }
 
   public GenesisGenerator withDenebEpoch(final UInt64 denebForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.denebBuilder(
-                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.denebForkEpoch(denebForkEpoch));
     return this;
   }
 
   public GenesisGenerator withElectraEpoch(final UInt64 electraForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.electraBuilder(
-                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.electraForkEpoch(electraForkEpoch));
     return this;
   }
 

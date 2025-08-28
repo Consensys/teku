@@ -62,11 +62,6 @@ public class DataColumnPeerManagerImpl
   }
 
   @Override
-  public void banNode(final UInt256 node) {
-    // TODO-fulu (https://github.com/Consensys/teku/issues/9460)
-  }
-
-  @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
       final UInt256 nodeId, final List<DataColumnsByRootIdentifier> byRootIdentifiers) {
     final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
@@ -87,7 +82,7 @@ public class DataColumnPeerManagerImpl
       final UInt256 nodeId,
       final UInt64 startSlot,
       final int slotCount,
-      final List<UInt64> columnIndexes) {
+      final List<UInt64> columnIndices) {
     final Eth2Peer eth2Peer = connectedPeers.get(nodeId);
     final AsyncStreamPublisher<DataColumnSidecar> ret =
         AsyncStream.createPublisher(Integer.MAX_VALUE);
@@ -96,7 +91,7 @@ public class DataColumnPeerManagerImpl
     } else {
       eth2Peer
           .requestDataColumnSidecarsByRange(
-              startSlot, UInt64.valueOf(slotCount), columnIndexes, ret::onNext)
+              startSlot, UInt64.valueOf(slotCount), columnIndices, ret::onNext)
           .finish(__ -> ret.onComplete(), ret::onError);
     }
     return ret;

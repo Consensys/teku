@@ -81,6 +81,21 @@ public class OkHttpRestClient implements RestClient {
   }
 
   @Override
+  public <TReq extends SszData> SafeFuture<Response<Void>> postAsync(
+      final String apiPath,
+      final Map<String, String> headers,
+      final TReq requestBodyObject,
+      final boolean postAsSsz,
+      final Duration timeout) {
+    final RequestBody requestBody =
+        postAsSsz
+            ? createOctetStreamRequestBody(requestBodyObject)
+            : createJsonRequestBody(requestBodyObject);
+    final Request request = createPostRequest(apiPath, requestBody, headers);
+    return makeAsyncVoidRequest(request, timeout);
+  }
+
+  @Override
   public <TResp extends SszData, TReq extends SszData>
       SafeFuture<Response<BuilderApiResponse<TResp>>> postAsync(
           final String apiPath,

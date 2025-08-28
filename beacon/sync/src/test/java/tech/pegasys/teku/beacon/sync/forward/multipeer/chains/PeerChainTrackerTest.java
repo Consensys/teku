@@ -61,7 +61,8 @@ class PeerChainTrackerTest {
           dataStructureUtil.randomBytes32(),
           dataStructureUtil.randomEpoch(),
           dataStructureUtil.randomBytes32(),
-          dataStructureUtil.randomUInt64());
+          dataStructureUtil.randomUInt64(),
+          Optional.of(dataStructureUtil.randomUInt64()));
 
   private final PeerChainTracker tracker =
       new PeerChainTracker(

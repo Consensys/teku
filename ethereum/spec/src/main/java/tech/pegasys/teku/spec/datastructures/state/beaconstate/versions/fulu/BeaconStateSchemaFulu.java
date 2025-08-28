@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -26,13 +27,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSc
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
-import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
@@ -47,17 +45,14 @@ public class BeaconStateSchemaFulu
     super("BeaconStateFulu", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(
+  public static List<SszField> getUniqueFields(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> newFields =
         List.of(
             new SszField(
                 PROPOSER_LOOKAHEAD_FIELD_INDEX,
                 BeaconStateFields.PROPOSER_LOOKAHEAD,
-                () ->
-                    SszUInt64VectorSchema.create(
-                        (long) (specConfig.getMinSeedLookahead() + 1)
-                            * specConfig.getSlotsPerEpoch())));
+                () -> schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA)));
 
     return Stream.concat(
             BeaconStateSchemaElectra.getUniqueFields(specConfig, schemaRegistry).stream(),
@@ -82,40 +77,6 @@ public class BeaconStateSchemaFulu
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
-  }
-
-  public ExecutionPayloadHeaderSchemaDeneb getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaDeneb)
-        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
-  }
-
-  @Override
-  public MutableBeaconStateFulu createBuilder() {
-    return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
-  }
-
-  public static BeaconStateSchemaFulu create(
-      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
-  }
-
-  public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
-    checkArgument(
-        schema instanceof BeaconStateSchemaFulu,
-        "Expected a BeaconStateSchemaFulu but was %s",
-        schema.getClass());
-    return (BeaconStateSchemaFulu) schema;
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
-    return (SszListSchema<HistoricalSummary, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
-  }
-
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
     return (SszListSchema<PendingDeposit, ?>)
@@ -137,6 +98,24 @@ public class BeaconStateSchemaFulu
   public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
     return (SszUInt64VectorSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
+  }
+
+  @Override
+  public MutableBeaconStateFulu createBuilder() {
+    return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
+  }
+
+  public static BeaconStateSchemaFulu create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
+  }
+
+  public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
+    checkArgument(
+        schema instanceof BeaconStateSchemaFulu,
+        "Expected a BeaconStateSchemaFulu but was %s",
+        schema.getClass());
+    return (BeaconStateSchemaFulu) schema;
   }
 
   @Override

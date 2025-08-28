@@ -48,12 +48,16 @@ public class BeaconNodeServiceController extends ServiceController {
                 .getDepositTreeSnapshotConfiguration()
                 .isBundledDepositSnapshotEnabled(),
             tekuConfig.metricsConfig().isBlobSidecarsStorageCountersEnabled(),
+            tekuConfig.metricsConfig().isDataColumnSidecarsStorageCountersEnabled(),
             tekuConfig.beaconChain().eth2NetworkConfig().getEth2Network()));
     Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain
       final ExecutionLayerService executionLayerService =
-          ExecutionLayerService.create(serviceConfig, tekuConfig.executionLayer());
+          ExecutionLayerService.create(
+              serviceConfig,
+              tekuConfig.executionLayer(),
+              tekuConfig.eth2NetworkConfiguration().getSpec());
       services.add(executionLayerService);
       maybeExecutionWeb3jClientProvider = executionLayerService.getEngineWeb3jClientProvider();
     }

@@ -49,6 +49,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.SingleRpcRequestBodySelector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class Eth2PeerTest {
@@ -190,7 +193,10 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRoot()).thenReturn(Optional.of(blobSidecarsByRootMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(RpcRequest.class), any()))
+        .thenReturn(SafeFuture.completedFuture(rpcStreamController));
+
+    when(peer.sendRequest(any(), any(RpcRequestBodySelector.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     final List<BlobIdentifier> blobIdentifiers =
@@ -198,12 +204,12 @@ class Eth2PeerTest {
 
     peer.requestBlobSidecarsByRoot(blobIdentifiers, __ -> SafeFuture.COMPLETE);
 
-    final ArgumentCaptor<BlobSidecarsByRootRequestMessage> requestCaptor =
-        ArgumentCaptor.forClass(BlobSidecarsByRootRequestMessage.class);
+    final ArgumentCaptor<RpcRequestBodySelector<BlobSidecarsByRootRequestMessage>> requestCaptor =
+        ArgumentCaptor.forClass(RpcRequestBodySelector.class);
 
     verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
 
-    final BlobSidecarsByRootRequestMessage request = requestCaptor.getValue();
+    final BlobSidecarsByRootRequestMessage request = resolveSingleRpcRequestBody(requestCaptor);
 
     assertThat(request.getMaximumResponseChunks()).isEqualTo(3);
   }
@@ -220,19 +226,19 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRoot()).thenReturn(Optional.of(blobSidecarsByRootMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(RpcRequestBodySelector.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
 
     peer.requestBlobSidecarByRoot(blobIdentifier);
 
-    final ArgumentCaptor<BlobSidecarsByRootRequestMessage> requestCaptor =
-        ArgumentCaptor.forClass(BlobSidecarsByRootRequestMessage.class);
+    final ArgumentCaptor<RpcRequestBodySelector<BlobSidecarsByRootRequestMessage>> requestCaptor =
+        ArgumentCaptor.forClass(RpcRequestBodySelector.class);
 
     verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
 
-    final BlobSidecarsByRootRequestMessage request = requestCaptor.getValue();
+    final BlobSidecarsByRootRequestMessage request = resolveSingleRpcRequestBody(requestCaptor);
 
     assertThat(request.getMaximumResponseChunks()).isEqualTo(1);
   }
@@ -249,7 +255,7 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(RpcRequestBodySelector.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     final SpecConfigDeneb specConfigDeneb =
@@ -262,12 +268,12 @@ class Eth2PeerTest {
 
     peer.requestBlobSidecarsByRange(startSlot, count, __ -> SafeFuture.COMPLETE);
 
-    final ArgumentCaptor<BlobSidecarsByRangeRequestMessage> requestCaptor =
-        ArgumentCaptor.forClass(BlobSidecarsByRangeRequestMessage.class);
+    final ArgumentCaptor<RpcRequestBodySelector<BlobSidecarsByRangeRequestMessage>> requestCaptor =
+        ArgumentCaptor.forClass(RpcRequestBodySelector.class);
 
     verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
 
-    final BlobSidecarsByRangeRequestMessage request = requestCaptor.getValue();
+    final BlobSidecarsByRangeRequestMessage request = resolveSingleRpcRequestBody(requestCaptor);
 
     assertThat(request.getStartSlot()).isEqualTo(startSlot);
     assertThat(request.getCount()).isEqualTo(count);
@@ -286,17 +292,17 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(RpcRequestBodySelector.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(13), __ -> SafeFuture.COMPLETE);
 
-    final ArgumentCaptor<BlobSidecarsByRangeRequestMessage> requestCaptor =
-        ArgumentCaptor.forClass(BlobSidecarsByRangeRequestMessage.class);
+    final ArgumentCaptor<RpcRequestBodySelector<BlobSidecarsByRangeRequestMessage>> requestCaptor =
+        ArgumentCaptor.forClass(RpcRequestBodySelector.class);
 
     verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
 
-    final BlobSidecarsByRangeRequestMessage request = requestCaptor.getValue();
+    final BlobSidecarsByRangeRequestMessage request = resolveSingleRpcRequestBody(requestCaptor);
 
     // Deneb starts from epoch 1, so request start slot should be 8 and the count should be 6
     assertThat(request.getStartSlot()).isEqualTo(UInt64.valueOf(8));
@@ -316,12 +322,20 @@ class Eth2PeerTest {
 
     when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
-    when(peer.sendRequest(any(), any(), any()))
+    when(peer.sendRequest(any(), any(RpcRequest.class), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
     peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(7), __ -> SafeFuture.COMPLETE);
 
-    verify(delegate, never()).sendRequest(any(), any(), any());
+    verify(delegate, never()).sendRequest(any(), any(RpcRequest.class), any());
+  }
+
+  private <T extends RpcRequest> T resolveSingleRpcRequestBody(
+      final ArgumentCaptor<RpcRequestBodySelector<T>> argumentCaptor) {
+    final RpcRequestBodySelector<T> rpcRequestBodySelector = argumentCaptor.getValue();
+    assertThat(rpcRequestBodySelector).isInstanceOf(SingleRpcRequestBodySelector.class);
+    // For SingleRpcRequestBodySelector, the key applied to the function is irrelevant
+    return rpcRequestBodySelector.getBody().apply("").orElseThrow();
   }
 
   private PeerStatus randomPeerStatus() {
@@ -330,6 +344,7 @@ class Eth2PeerTest {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomUInt64());
+        dataStructureUtil.randomUInt64(),
+        Optional.of(dataStructureUtil.randomUInt64()));
   }
 }

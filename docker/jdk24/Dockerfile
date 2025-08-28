@@ -58,12 +58,12 @@ ENTRYPOINT ["/opt/teku/bin/teku"]
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
-LABEL org.label-schema.build-date=$BUILD_DATE \
-      org.label-schema.name="Teku" \
-      org.label-schema.description="Ethereum Consensus Client" \
-      org.label-schema.url="https://docs.teku.consensys.io/" \
-      org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://github.com/Consensys/teku.git" \
-      org.label-schema.vendor="Consensys" \
-      org.label-schema.version=$VERSION \
-      org.label-schema.schema-version="1.0"
+LABEL org.opencontainers.image.title="Teku" \
+      org.opencontainers.image.description="Ethereum Consensus Client" \
+      org.opencontainers.image.version=$VERSION \
+      org.opencontainers.image.url="https://docs.teku.consensys.io/" \
+      org.opencontainers.image.source="https://github.com/Consensys/teku.git" \
+      org.opencontainers.image.revision=$VCS_REF \
+      org.opencontainers.image.vendor="Consensys" \
+      org.opencontainers.image.created=$BUILD_DATE \
+      org.opencontainers.image.licenses="Apache 2.0"

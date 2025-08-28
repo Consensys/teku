@@ -16,13 +16,14 @@ package tech.pegasys.teku.statetransition.validation;
 import static tech.pegasys.teku.spec.config.Constants.VALID_VALIDATOR_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -33,21 +34,26 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidator implements OperationValidator<SignedVoluntaryExit> {
 
+  // 117 minutes as millis (MappedOperationPool retries at 2 hrs)
+  static final int CACHE_DURATAION_MILLIS = 117 * 60_000;
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final Set<UInt64> receivedValidExitSet =
-      LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
+  private final Map<UInt64, UInt64> receivedValidators =
+      LimitedMap.createSynchronizedNatural(VALID_VALIDATOR_SET_SIZE);
+  private final TimeProvider timeProvider;
 
-  public VoluntaryExitValidator(final Spec spec, final RecentChainData recentChainData) {
+  public VoluntaryExitValidator(
+      final Spec spec, final RecentChainData recentChainData, final TimeProvider timeProvider) {
     this.spec = spec;
     this.recentChainData = recentChainData;
+    this.timeProvider = timeProvider;
   }
 
   @Override
   public SafeFuture<InternalValidationResult> validateForGossip(final SignedVoluntaryExit exit) {
-    if (!isFirstValidExitForValidator(exit)) {
+    if (!canAcceptExitForValidator(exit)) {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
           exit.getMessage().getValidatorIndex());
@@ -67,10 +73,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
                     "Exit for validator %s is invalid: %s",
                     exit.getMessage().getValidatorIndex(), failureReason.get().describe());
               }
-
-              if (receivedValidExitSet.add(exit.getMessage().getValidatorIndex())) {
-                return InternalValidationResult.ACCEPT;
-              } else {
+              if (!cacheValidatorSeenEntry(exit)) {
                 LOG.trace(
                     "VoluntaryExitValidator: Exit is not the first one for validator {}.",
                     exit.getMessage().getValidatorIndex());
@@ -80,7 +83,23 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
                         "Exit is not the first one for validator %s.",
                         exit.getMessage().getValidatorIndex()));
               }
+              return InternalValidationResult.ACCEPT;
             });
+  }
+
+  private boolean cacheValidatorSeenEntry(final SignedVoluntaryExit exit) {
+    final UInt64 validatorIndex = exit.getMessage().getValidatorIndex();
+    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+    final UInt64 previousTime = receivedValidators.putIfAbsent(validatorIndex, currentTimeMillis);
+    if (previousTime == null) {
+      return true;
+    } else if (previousTime.plus(CACHE_DURATAION_MILLIS).isLessThan(currentTimeMillis)) {
+      // the previous entry was seen too long
+      // we also don't care if this is not concurrently perfect so just update it.
+      receivedValidators.put(validatorIndex, currentTimeMillis);
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -107,8 +126,12 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     return Optional.empty();
   }
 
-  private boolean isFirstValidExitForValidator(final SignedVoluntaryExit exit) {
-    return !receivedValidExitSet.contains(exit.getMessage().getValidatorIndex());
+  private boolean canAcceptExitForValidator(final SignedVoluntaryExit exit) {
+    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+    final UInt64 previousTime = receivedValidators.get(exit.getMessage().getValidatorIndex());
+    // if we haven't seen the index or its outside our cache period, then we can just allow here.
+    return previousTime == null
+        || previousTime.plus(CACHE_DURATAION_MILLIS).isLessThan(currentTimeMillis);
   }
 
   private SafeFuture<BeaconState> getState() {

@@ -20,9 +20,11 @@ import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellat
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 
 import com.google.common.io.Resources;
+import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -131,6 +133,33 @@ public class SpecConfigLoaderTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             "The specified network configuration had missing or invalid values for constants");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "ALTAIR_FORK_VERSION",
+        "BELLATRIX_FORK_VERSION",
+        "CAPELLA_FORK_VERSION",
+        "DENEB_FORK_VERSION"
+      })
+  public void shouldFailToReadConfigMissingKeyVariablesIfStrict(
+      final String parameter, @TempDir final Path tempDir) throws Exception {
+    final Path file = tempDir.resolve("mainnet.yml");
+    try (final InputStream inputStream = getMainnetConfigAsStream();
+        final FileWriter writer = new FileWriter(file.toFile(), StandardCharsets.UTF_8)) {
+      final InputStreamReader isr = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+      final BufferedReader reader = new BufferedReader(isr);
+      String line;
+      while ((line = reader.readLine()) != null) {
+        if (!line.contains(parameter)) {
+          writer.write(line + "\n");
+        }
+      }
+    }
+    assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toString(), true, true, __ -> {}))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(parameter);
   }
 
   @Test

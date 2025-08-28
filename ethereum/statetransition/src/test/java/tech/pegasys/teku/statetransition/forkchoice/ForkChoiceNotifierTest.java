@@ -34,8 +34,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -63,7 +61,6 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -73,7 +70,9 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 class ForkChoiceNotifierTest {
 
   private final InlineEventThread eventThread = new InlineEventThread();
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec =
+      TestSpecFactory.createMinimalBellatrix(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 
@@ -92,17 +91,6 @@ class ForkChoiceNotifierTest {
 
   private ForkChoiceNotifierImpl notifier;
   private ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification;
-
-  @BeforeAll
-  public static void initSession() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  }
-
-  @AfterAll
-  public static void resetSession() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  }
 
   @BeforeEach
   void setUp() {

@@ -29,6 +29,9 @@ public class CoreTypes {
 
   public static final StringValueTypeDefinition<Byte> BYTE_TYPE = new ByteTypeDefinition();
 
+  public static final StringValueTypeDefinition<Boolean> BOOLEAN_PRIMITIVE_TYPE =
+      new BooleanPrimitiveTypeDefinition();
+
   public static final StringValueTypeDefinition<Bytes32> BYTES32_TYPE =
       DeserializableTypeDefinition.string(Bytes32.class)
           .formatter(Bytes32::toHexString)

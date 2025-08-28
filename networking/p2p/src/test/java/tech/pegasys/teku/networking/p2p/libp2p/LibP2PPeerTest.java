@@ -14,12 +14,16 @@
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.Connection;
+import io.libp2p.core.PeerId;
+import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.security.SecureChannel.Session;
 import java.util.List;
 import java.util.Optional;
@@ -40,9 +44,10 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 
 public class LibP2PPeerTest {
-
+  public static final String PEER_ID = "16Uiu2HAmFxCpRh2nZevFR3KGXJ3jhpixMYFSuawqKZyZYHrYoiK5";
   private final Connection connection = mock(Connection.class);
 
   @SuppressWarnings("unchecked")
@@ -63,11 +68,14 @@ public class LibP2PPeerTest {
     final Session secureSession = mock(Session.class);
     when(connection.secureSession()).thenReturn(secureSession);
     when(connection.closeFuture()).thenReturn(closeFuture);
+    when(connection.remoteAddress())
+        .thenReturn(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/"));
+    when(secureSession.getRemoteId()).thenReturn(PeerId.fromBase58(PEER_ID));
     libP2PPeer =
         new LibP2PPeer(connection, List.of(rpcHandler), ReputationManager.NOOP, peer -> 0.0);
   }
 
-  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
+  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored", "rawtypes"})
   @Test
   public void sendRequest_throttlesRequests() {
 
@@ -78,8 +86,9 @@ public class LibP2PPeerTest {
                 __ -> {
                   final SafeFuture<RpcStreamController<RpcRequestHandler>> future =
                       new SafeFuture<>();
-                  when(rpcHandler.sendRequest(connection, null, null)).thenReturn(future);
-                  libP2PPeer.sendRequest(rpcMethod, null, null);
+                  when(rpcHandler.sendRequestWithBodySelector(eq(connection), any(), any()))
+                      .thenReturn(future);
+                  libP2PPeer.sendRequest(rpcMethod, (RpcRequestBodySelector) null, null);
                   return future;
                 })
             .toList();
@@ -88,7 +97,7 @@ public class LibP2PPeerTest {
         .thenReturn(SafeFuture.completedFuture(mock(RpcStreamController.class)));
 
     final SafeFuture<RpcStreamController<RpcRequestHandler>> throttledRequest =
-        libP2PPeer.sendRequest(rpcMethod, null, null);
+        libP2PPeer.sendRequest(rpcMethod, (RpcRequestBodySelector) null, null);
 
     // completed request should be throttled
     assertThat(throttledRequest).isNotDone();

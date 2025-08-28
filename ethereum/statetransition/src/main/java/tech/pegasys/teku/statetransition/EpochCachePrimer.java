@@ -52,7 +52,7 @@ public class EpochCachePrimer {
             headBlock ->
                 asyncRunner
                     .runAsync(() -> primeCacheForBlockAtSlot(headBlock, firstSlot))
-                    .ifExceptionGetsHereRaiseABug());
+                    .finishStackTrace());
   }
 
   private void primeCacheForBlockAtSlot(

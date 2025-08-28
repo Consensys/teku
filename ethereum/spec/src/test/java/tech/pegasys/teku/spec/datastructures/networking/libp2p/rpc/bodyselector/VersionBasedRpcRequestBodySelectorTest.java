@@ -41,8 +41,9 @@ class VersionBasedRpcRequestBodySelectorTest {
   }
 
   @Test
+  @SuppressWarnings({"unchecked"})
   public void cannotCreateBodySelectorWithNullMap() {
-    assertThatThrownBy(() -> new VersionBasedRpcRequestBodySelector<>(null))
+    assertThatThrownBy(() -> new VersionBasedRpcRequestBodySelector<>((Map) null))
         .isInstanceOf(NullPointerException.class);
   }
 

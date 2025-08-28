@@ -15,14 +15,10 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements SpecConfigElectra {
-
-  private final Bytes4 electraForkVersion;
-  private final UInt64 electraForkEpoch;
 
   private final UInt64 minPerEpochChurnLimitElectra;
 
@@ -46,8 +42,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
-      final Bytes4 electraForkVersion,
-      final UInt64 electraForkEpoch,
       final UInt64 minPerEpochChurnLimitElectra,
       final UInt64 minActivationBalance,
       final UInt64 maxEffectiveBalanceElectra,
@@ -67,8 +61,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
       final int maxRequestBlobSidecarsElectra,
       final int blobSidecarSubnetCountElectra) {
     super(specConfig);
-    this.electraForkVersion = electraForkVersion;
-    this.electraForkEpoch = electraForkEpoch;
     this.minPerEpochChurnLimitElectra = minPerEpochChurnLimitElectra;
     this.minActivationBalance = minActivationBalance;
     this.maxEffectiveBalanceElectra = maxEffectiveBalanceElectra;
@@ -87,16 +79,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     this.maxBlobsPerBlockElectra = maxBlobsPerBlockElectra;
     this.maxRequestBlobSidecarsElectra = maxRequestBlobSidecarsElectra;
     this.blobSidecarSubnetCountElectra = blobSidecarSubnetCountElectra;
-  }
-
-  @Override
-  public Bytes4 getElectraForkVersion() {
-    return electraForkVersion;
-  }
-
-  @Override
-  public UInt64 getElectraForkEpoch() {
-    return electraForkEpoch;
   }
 
   @Override
@@ -209,8 +191,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     }
     final SpecConfigElectraImpl that = (SpecConfigElectraImpl) o;
     return Objects.equals(specConfig, that.specConfig)
-        && Objects.equals(electraForkVersion, that.electraForkVersion)
-        && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && Objects.equals(minPerEpochChurnLimitElectra, that.minPerEpochChurnLimitElectra)
         && Objects.equals(minActivationBalance, that.minActivationBalance)
         && Objects.equals(maxEffectiveBalanceElectra, that.maxEffectiveBalanceElectra)
@@ -235,8 +215,6 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        electraForkVersion,
-        electraForkEpoch,
         minPerEpochChurnLimitElectra,
         minActivationBalance,
         maxEffectiveBalanceElectra,

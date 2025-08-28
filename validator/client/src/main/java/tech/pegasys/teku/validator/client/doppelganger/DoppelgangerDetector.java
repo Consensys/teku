@@ -319,7 +319,7 @@ public class DoppelgangerDetector {
               mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()),
               detectedDoppelgangers.entrySet().stream()
                   .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
-          stopDoppelgangerDetectorTask(detectedDoppelgangers).ifExceptionGetsHereRaiseABug();
+          stopDoppelgangerDetectorTask(detectedDoppelgangers).finishError(LOG);
         }
       }
     }

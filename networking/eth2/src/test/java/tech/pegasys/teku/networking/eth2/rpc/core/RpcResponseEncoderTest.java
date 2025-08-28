@@ -23,15 +23,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessageSchemaPhase0;
 
 final class RpcResponseEncoderTest {
 
   private static final Bytes RECORDED_STATUS_RESPONSE_BYTES =
       Bytes.fromHexString(
           "0x0054ff060000734e61507059002d00007e8c1ea2540000aa01007c30a903798306695d21d1faa76363a0070677130835e503760b0e84479b7819e6114b");
-  private static final StatusMessage RECORDED_STATUS_MESSAGE_DATA =
-      new StatusMessage(
+  private static final StatusMessagePhase0 RECORDED_STATUS_MESSAGE_DATA =
+      new StatusMessagePhase0(
           new Bytes4(Bytes.of(0, 0, 0, 0)),
           Bytes32.ZERO,
           UInt64.ZERO,
@@ -39,9 +40,9 @@ final class RpcResponseEncoderTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UInt64.ZERO);
 
-  private final RpcContextCodec<?, StatusMessage> contextCodec =
-      RpcContextCodec.noop(StatusMessage.SSZ_SCHEMA);
-  private final RpcResponseEncoder<StatusMessage, ?> responseEncoder =
+  private final RpcContextCodec<?, StatusMessagePhase0> contextCodec =
+      RpcContextCodec.noop(new StatusMessageSchemaPhase0());
+  private final RpcResponseEncoder<StatusMessagePhase0, ?> responseEncoder =
       new RpcResponseEncoder<>(
           RpcEncoding.createSszSnappyEncoding(
               TestSpecFactory.createDefault().getNetworkingConfig().getMaxPayloadSize()),

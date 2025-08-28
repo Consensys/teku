@@ -36,15 +36,15 @@ public class LoggingBatchDataColumnsByRangeReqResp implements BatchDataColumnsBy
       final UInt256 nodeId,
       final UInt64 startSlot,
       final int slotCount,
-      final List<UInt64> columnIndexes) {
+      final List<UInt64> columnIndices) {
     final ReqRespResponseLogger<DataColumnSidecar> responseLogger =
         logger
             .getDataColumnSidecarsByRangeLogger()
             .onOutboundRequest(
                 LoggingPeerId.fromNodeId(nodeId),
-                new DasReqRespLogger.ByRangeRequest(startSlot, slotCount, columnIndexes));
+                new DasReqRespLogger.ByRangeRequest(startSlot, slotCount, columnIndices));
     return delegate
-        .requestDataColumnSidecarsByRange(nodeId, startSlot, slotCount, columnIndexes)
+        .requestDataColumnSidecarsByRange(nodeId, startSlot, slotCount, columnIndices)
         .peek(responseLogger.asAsyncStreamVisitor());
   }
 

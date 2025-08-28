@@ -48,11 +48,12 @@ class SyncCommitteeStateUtilsTest {
           SpecConfigLoader.loadConfig(
               "minimal",
               builder ->
-                  builder.altairBuilder(
-                      altairBuilder ->
-                          altairBuilder
-                              .altairForkEpoch(ALTAIR_FORK_EPOCH)
-                              .epochsPerSyncCommitteePeriod(EPOCHS_PER_SYNC_COMMITTEE_PERIOD))));
+                  builder
+                      .altairForkEpoch(ALTAIR_FORK_EPOCH)
+                      .altairBuilder(
+                          altairBuilder ->
+                              altairBuilder.epochsPerSyncCommitteePeriod(
+                                  EPOCHS_PER_SYNC_COMMITTEE_PERIOD))));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SyncCommitteeUtil syncCommitteeUtil =
       spec.atEpoch(ALTAIR_FORK_EPOCH).getSyncCommitteeUtil().orElseThrow();

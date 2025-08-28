@@ -31,16 +31,10 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
     connectedPeers.put(peer.getNodeId(), peer);
   }
 
-  public void disconnectPeer(final TestPeer peer) {
-    dataColumnPeerManagerStub.removeNode(peer.getNodeId());
-    peer.onDisconnect();
-    connectedPeers.remove(peer.getNodeId());
-  }
-
   @Override
   public SafeFuture<DataColumnSidecar> requestDataColumnSidecar(
       final UInt256 nodeId, final DataColumnSlotAndIdentifier columnIdentifier) {
-    TestPeer peer = connectedPeers.get(nodeId);
+    final TestPeer peer = connectedPeers.get(nodeId);
     if (peer == null) {
       return SafeFuture.failedFuture(new DasPeerDisconnectedException());
     } else {
@@ -53,7 +47,7 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
 
   @Override
   public int getCurrentRequestLimit(final UInt256 nodeId) {
-    TestPeer peer = connectedPeers.get(nodeId);
+    final TestPeer peer = connectedPeers.get(nodeId);
     if (peer == null) {
       return 0;
     } else {
@@ -64,10 +58,5 @@ public class TestPeerManager implements DataColumnPeerManager, DataColumnReqResp
   @Override
   public void addPeerListener(final PeerListener listener) {
     dataColumnPeerManagerStub.addPeerListener(listener);
-  }
-
-  @Override
-  public void banNode(final UInt256 node) {
-    dataColumnPeerManagerStub.banNode(node);
   }
 }

@@ -82,6 +82,16 @@ public class DelegatingSpecConfigAltair extends DelegatingSpecConfig implements 
   }
 
   @Override
+  public int getSyncMessageDueBps() {
+    return specConfigAltair.getSyncMessageDueBps();
+  }
+
+  @Override
+  public int getContributionDueBps() {
+    return specConfigAltair.getContributionDueBps();
+  }
+
+  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }

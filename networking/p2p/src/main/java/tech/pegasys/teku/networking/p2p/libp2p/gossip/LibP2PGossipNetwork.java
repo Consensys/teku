@@ -83,7 +83,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
-    Map<PeerId, Set<Topic>> peerTopics = gossip.getPeerTopics().join();
+    final Map<PeerId, Set<Topic>> peerTopics = gossip.getPeerTopics().join();
     final Map<String, Collection<NodeId>> result = new HashMap<>();
     for (Map.Entry<PeerId, Set<Topic>> peerTopic : peerTopics.entrySet()) {
       final LibP2PNodeId nodeId = new LibP2PNodeId(peerTopic.getKey());

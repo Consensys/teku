@@ -20,8 +20,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Bytes;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,7 +76,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class MiscHelpersFulu extends MiscHelpersElectra {
   private static final Logger LOG = LogManager.getLogger();
-  private static final MathContext BIGDECIMAL_PRECISION = MathContext.DECIMAL128;
 
   public static MiscHelpersFulu required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -113,24 +111,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return Optional.of(this);
   }
 
-  // compute_fork_version
-  public Bytes4 computeForkVersion(final UInt64 epoch) {
-    if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getFuluForkEpoch())) {
-      return specConfigFulu.getFuluForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getElectraForkEpoch())) {
-      return specConfigFulu.getElectraForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getDenebForkEpoch())) {
-      return specConfigFulu.getDenebForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getCapellaForkEpoch())) {
-      return specConfigFulu.getCapellaForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getBellatrixForkEpoch())) {
-      return specConfigFulu.getBellatrixForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfigFulu.getAltairForkEpoch())) {
-      return specConfigFulu.getAltairForkVersion();
-    }
-    return specConfigFulu.getGenesisForkVersion();
-  }
-
   // compute_fork_digest
   public Bytes4 computeForkDigest(final Bytes32 genesisValidatorsRoot, final UInt64 epoch) {
     final Bytes4 forkVersion = computeForkVersion(epoch);
@@ -140,25 +120,29 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return new Bytes4(baseDigest.xor(blobParameters.hash()).slice(0, 4));
   }
 
-  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
-    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
-  }
-
   // get_blob_parameters
   public BlobParameters getBlobParameters(final UInt64 epoch) {
-    return bpoForkSchedule
-        .getBpoFork(epoch)
+    return getBpoFork(epoch)
         .orElse(
             new BlobParameters(
                 specConfigFulu.getElectraForkEpoch(), specConfigFulu.getMaxBlobsPerBlock()));
   }
 
-  private UInt256 incrementByModule(final UInt256 n) {
-    if (n.equals(UInt256.MAX_VALUE)) {
-      return UInt256.ZERO;
-    } else {
-      return n.plus(1);
-    }
+  // BPO
+  public Optional<BlobParameters> getBpoFork(final UInt64 epoch) {
+    return bpoForkSchedule.getBpoFork(epoch);
+  }
+
+  public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
+    return bpoForkSchedule.getNextBpoFork(epoch);
+  }
+
+  public Optional<Integer> getHighestMaxBlobsPerBlockFromBpoForkSchedule() {
+    return bpoForkSchedule.getHighestMaxBlobsPerBlock();
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    return bpoForkSchedule.getBpoForks();
   }
 
   public UInt64 computeSubnetForDataColumnSidecar(final UInt64 columnIndex) {
@@ -166,12 +150,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<UInt64> computeDataColumnSidecarBackboneSubnets(
-      final UInt256 nodeId, final UInt64 epoch, final int groupCount) {
-    final List<UInt64> columns = computeCustodyColumnIndexes(nodeId, groupCount);
+      final UInt256 nodeId, final int groupCount) {
+    final List<UInt64> columns = computeCustodyColumnIndices(nodeId, groupCount);
     return columns.stream().map(this::computeSubnetForDataColumnSidecar).toList();
   }
 
-  public List<UInt64> computeCustodyColumnIndexes(final UInt256 nodeId, final int groupCount) {
+  public List<UInt64> computeCustodyColumnIndices(final UInt256 nodeId, final int groupCount) {
     final List<UInt64> custodyGroups = getCustodyGroups(nodeId, groupCount);
     return custodyGroups.stream()
         .flatMap(group -> computeColumnsForCustodyGroup(group).stream())
@@ -182,7 +166,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroup.isGreaterThanOrEqualTo(specConfigFulu.getNumberOfCustodyGroups())) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group %s couldn't exceed number of groups %s",
+              "Custody group (%s) cannot exceed number of groups (%s)",
               custodyGroup, specConfigFulu.getNumberOfCustodyGroups()));
     }
 
@@ -192,7 +176,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return IntStream.range(0, columnsPerGroup)
         .mapToLong(
             i -> (long) specConfigFulu.getNumberOfCustodyGroups() * i + custodyGroup.intValue())
-        .sorted()
         .mapToObj(UInt64::valueOf)
         .toList();
   }
@@ -206,8 +189,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     if (custodyGroupCount > specConfigFulu.getNumberOfCustodyGroups()) {
       throw new IllegalArgumentException(
           String.format(
-              "Custody group count %s couldn't exceed number of groups %s",
+              "Custody group count (%s) cannot exceed number of groups (%s)",
               custodyGroupCount, specConfigFulu.getNumberOfCustodyGroups()));
+    }
+
+    // Skip computation if all groups are custodied
+    if (custodyGroupCount == specConfigFulu.getNumberOfCustodyGroups()) {
+      return LongStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
     }
 
     return Stream.iterate(nodeId, this::incrementByModule)
@@ -216,6 +204,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .limit(custodyGroupCount)
         .sorted()
         .toList();
+  }
+
+  private UInt256 incrementByModule(final UInt256 n) {
+    if (n.equals(UInt256.MAX_VALUE)) {
+      return UInt256.ZERO;
+    } else {
+      return n.plus(1);
+    }
   }
 
   public UInt64 getValidatorsCustodyRequirement(
@@ -267,7 +263,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return true;
   }
 
-  public boolean verifyDataColumnSidecarKzgProof(
+  public boolean verifyDataColumnSidecarKzgProofs(
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
 
     final List<KZGCellWithColumnId> cellWithIds =
@@ -278,13 +274,39 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         new KZGCell(dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
                         dataColumnSidecar.getIndex().intValue()))
             .collect(Collectors.toList());
-
     return kzg.verifyCellProofBatch(
         dataColumnSidecar.getSszKZGCommitments().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .toList(),
         cellWithIds,
         dataColumnSidecar.getSszKZGProofs().stream().map(SszKZGProof::getKZGProof).toList());
+  }
+
+  public boolean verifyDataColumnSidecarKzgProofsBatch(
+      final KZG kzg, final List<DataColumnSidecar> dataColumnSidecars) {
+
+    final List<KZGCellWithColumnId> cellWithIds =
+        dataColumnSidecars.stream()
+            .flatMap(
+                dataColumnSidecar ->
+                    IntStream.range(0, dataColumnSidecar.getDataColumn().size())
+                        .mapToObj(
+                            rowIndex ->
+                                KZGCellWithColumnId.fromCellAndColumn(
+                                    new KZGCell(
+                                        dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
+                                    dataColumnSidecar.getIndex().intValue())))
+            .toList();
+    return kzg.verifyCellProofBatch(
+        dataColumnSidecars.stream()
+            .flatMap(sidecar -> sidecar.getSszKZGCommitments().stream())
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList(),
+        cellWithIds,
+        dataColumnSidecars.stream()
+            .flatMap(sidecar -> sidecar.getSszKZGProofs().stream())
+            .map(SszKZGProof::getKZGProof)
+            .toList());
   }
 
   public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
@@ -350,7 +372,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
-  @SuppressWarnings("deprecation")
   public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
       final List<Blob> blobs, final KZG kzg) {
     return IntStream.range(0, blobs.size())
@@ -471,22 +492,27 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
       final Collection<DataColumnSidecar> existingSidecars, final KZG kzg) {
     if (existingSidecars.size() < (specConfigFulu.getNumberOfColumns() / 2)) {
+      final Optional<DataColumnSidecar> maybeSidecar = existingSidecars.stream().findAny();
       throw new IllegalArgumentException(
-          "Number of sidecars must be greater than or equal to the half of column count");
+          String.format(
+              "Number of sidecars must be greater than or equal to the half of column count, slot: %s; columns: found %s, needed at least %d",
+              maybeSidecar.isPresent() ? maybeSidecar.get().getSlot().toString() : "unknown",
+              existingSidecars.size(),
+              specConfigFulu.getNumberOfColumns() / 2));
     }
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
             .map(
-                sideCar ->
-                    IntStream.range(0, sideCar.getDataColumn().size())
+                sidecar ->
+                    IntStream.range(0, sidecar.getDataColumn().size())
                         .mapToObj(
                             rowIndex ->
                                 schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
-                                        sideCar.getDataColumn().get(rowIndex),
-                                        sideCar.getSszKZGProofs().get(rowIndex).getKZGProof(),
-                                        sideCar.getIndex(),
+                                        sidecar.getDataColumn().get(rowIndex),
+                                        sidecar.getSszKZGProofs().get(rowIndex).getKZGProof(),
+                                        sidecar.getIndex(),
                                         UInt64.valueOf(rowIndex)))
                         .toList())
             .toList();
@@ -542,45 +568,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .toList();
   }
 
-  /**
-   * NOTE: this method was part of the spec for lossy sampling. Not it is only being used on tests
-   * (eventually it will be removed).
-   *
-   * <p>Return the sample count if allowing failures.
-   *
-   * <p>This helper demonstrates how to calculate the number of columns to query per slot when
-   * allowing given number of failures, assuming uniform random selection without replacement.
-   * Nested functions are direct replacements of Python library functions math.comb and
-   * scipy.stats.hypergeom.cdf, with the same signatures.
-   */
-  public UInt64 getExtendedSampleCount(final UInt64 allowedFailures) {
-    if (allowedFailures.isGreaterThan(specConfigFulu.getNumberOfColumns() / 2)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Allowed failures (%s) should be less than half of columns number (%s)",
-              allowedFailures, specConfigFulu.getNumberOfColumns()));
-    }
-    final UInt64 worstCaseMissing = UInt64.valueOf(specConfigFulu.getNumberOfColumns() / 2 + 1);
-    final double falsePositiveThreshold =
-        hypergeomCdf(
-            UInt64.ZERO,
-            UInt64.valueOf(specConfigFulu.getNumberOfColumns()),
-            worstCaseMissing,
-            UInt64.valueOf(specConfigFulu.getSamplesPerSlot()));
-    UInt64 sampleCount = UInt64.valueOf(specConfigFulu.getSamplesPerSlot());
-    for (;
-        sampleCount.isLessThanOrEqualTo(specConfigFulu.getNumberOfColumns());
-        sampleCount = sampleCount.increment()) {
-      if (hypergeomCdf(
-              allowedFailures,
-              UInt64.valueOf(specConfigFulu.getNumberOfColumns()),
-              worstCaseMissing,
-              sampleCount)
-          <= falsePositiveThreshold) {
-        break;
-      }
-    }
-    return sampleCount;
+  public int getSamplingGroupCount(final int custodyRequirement) {
+    return Math.max(custodyRequirement, specConfigFulu.getSamplesPerSlot());
   }
 
   private static <T> List<List<T>> transpose(final List<List<T>> matrix) {
@@ -599,37 +588,6 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       }
     }
     return ret;
-  }
-
-  private UInt256 mathComb(final UInt64 n, final UInt64 k) {
-    if (n.isGreaterThanOrEqualTo(k)) {
-      UInt256 r = UInt256.ONE;
-      for (UInt64 i = UInt64.ZERO;
-          i.isLessThan(k.isGreaterThan(n.minus(k)) ? n.minus(k) : k);
-          i = i.plus(1)) {
-        r = r.multiply(n.minus(i).longValue()).divide(i.plus(1).longValue());
-      }
-      return r;
-    } else {
-      return UInt256.ZERO;
-    }
-  }
-
-  @SuppressWarnings("JavaCase")
-  private double hypergeomCdf(final UInt64 k, final UInt64 M, final UInt64 n, final UInt64 N) {
-    return Stream.iterate(UInt64.ZERO, i -> i.isLessThanOrEqualTo(k), UInt64::increment)
-        .mapToDouble(
-            i ->
-                N.isLessThan(i)
-                    ? 0d
-                    : new BigDecimal(
-                            mathComb(n, i)
-                                .multiply(mathComb(M.minus(n), N.minus(i)))
-                                .toBigInteger(),
-                            BIGDECIMAL_PRECISION)
-                        .divide(new BigDecimal(mathComb(M, N).toBigInteger()), BIGDECIMAL_PRECISION)
-                        .doubleValue())
-        .sum();
   }
 
   @Override

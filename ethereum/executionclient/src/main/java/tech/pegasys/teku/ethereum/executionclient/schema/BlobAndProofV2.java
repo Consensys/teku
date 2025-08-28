@@ -75,7 +75,7 @@ public class BlobAndProofV2 {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("blob", bytesToBriefString(blob))
-        .add("proof", proofs.stream().map(this::bytesToBriefString).toList())
+        .add("proofs", proofs.stream().map(this::bytesToBriefString).toList())
         .toString();
   }
 

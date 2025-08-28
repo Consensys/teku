@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
@@ -74,7 +75,7 @@ public class AbstractBlockPublisherTest {
   public void setUp() {
     when(blockPublisher.publishBlock(any(), any())).thenReturn(SafeFuture.COMPLETE);
     when(blockFactory.unblindSignedBlockIfBlinded(signedBlock, BlockPublishingPerformance.NOOP))
-        .thenReturn(SafeFuture.completedFuture(signedBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBlock)));
     when(blockFactory.createBlobSidecars(signedBlockContents)).thenReturn(blobSidecars);
   }
 

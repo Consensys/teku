@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -238,6 +239,16 @@ class MiscHelpersTest {
               committeeIndex,
               2048);
         });
+  }
+
+  @ParameterizedTest
+  @EnumSource(SpecMilestone.class)
+  void computeForkVersion_seesAllForks(final SpecMilestone milestone) {
+    // This test would fail if computeForkVersion is not seeing a spec milestone
+    final Spec spec = TestSpecFactory.create(milestone, Eth2Network.MINIMAL);
+    final MiscHelpers miscHelpers = spec.atSlot(UInt64.ZERO).miscHelpers();
+    assertThat(spec.getForkSchedule().getFork(milestone).getCurrentVersion())
+        .isEqualTo(miscHelpers.computeForkVersion(UInt64.ZERO));
   }
 
   @Test

@@ -90,6 +90,6 @@ public class AttestationUtilDeneb extends AttestationUtilPhase0 {
   }
 
   private int calculateMaximumGossipClockDisparityInSlots() {
-    return (specConfig.getMaximumGossipClockDisparity() / specConfig.getMillisPerSlot()) + 1;
+    return (specConfig.getMaximumGossipClockDisparity() / specConfig.getSlotDurationMillis()) + 1;
   }
 }

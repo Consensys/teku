@@ -67,8 +67,7 @@ public class BlockImportPerformance {
       final Optional<UInt64> arrivalTimestamp) {
     timeAtSlotStartTimeStamp = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
     timeWarningLimitTimeStamp =
-        timeAtSlotStartTimeStamp.plus(
-            recentChainData.getSpec().getMillisPerSlot(slot).dividedBy(3));
+        timeAtSlotStartTimeStamp.plus(recentChainData.getSpec().getAttestationDueMillis(slot));
     if (arrivalTimestamp.isPresent()) {
       performanceTracker.addEvent(ARRIVAL_EVENT_LABEL, arrivalTimestamp.get());
     } else {

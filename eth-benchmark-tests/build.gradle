@@ -23,6 +23,7 @@ dependencies {
   jmhImplementation 'io.consensys.tuweni:tuweni-ssz'
   jmhImplementation testFixtures(project(':ethereum:weaksubjectivity'))
   jmhImplementation testFixtures(project(':infrastructure:async'))
+  jmhImplementation testFixtures(project('::networking:eth2'))
 
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation project(':infrastructure:bls')

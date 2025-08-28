@@ -21,9 +21,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.EXECUTION_CLIENT_OFFLINE;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
-import static tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult.SERVICE_OFFLINE;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchAssert.assertThatBatch;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
@@ -939,7 +939,7 @@ class BatchSyncTest {
         batch2, chainBuilder.generateBlockAtSlot(batch2.getFirstSlot()).getBlock());
 
     // But then it turns out that a batch0 is not processed because importing is offline
-    batches.getImportResult(batch0).complete(SERVICE_OFFLINE);
+    batches.getImportResult(batch0).complete(EXECUTION_CLIENT_OFFLINE);
 
     // This shouldn't make batches invalid
     batches.assertNotMarkedInvalid(batch0);

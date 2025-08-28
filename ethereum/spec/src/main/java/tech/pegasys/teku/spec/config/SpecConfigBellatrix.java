@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigBellatrix extends SpecConfigAltair {
@@ -33,10 +32,6 @@ public interface SpecConfigBellatrix extends SpecConfigAltair {
 
   @Override
   Optional<SpecConfigBellatrix> toVersionBellatrix();
-
-  Bytes4 getBellatrixForkVersion();
-
-  UInt64 getBellatrixForkEpoch();
 
   UInt64 getInactivityPenaltyQuotientBellatrix();
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,12 +44,44 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getGenesisDelay();
 
+  Bytes4 getAltairForkVersion();
+
+  UInt64 getAltairForkEpoch();
+
+  Bytes4 getBellatrixForkVersion();
+
+  UInt64 getBellatrixForkEpoch();
+
+  Bytes4 getCapellaForkVersion();
+
+  UInt64 getCapellaForkEpoch();
+
+  Bytes4 getDenebForkVersion();
+
+  UInt64 getDenebForkEpoch();
+
+  Bytes4 getElectraForkVersion();
+
+  UInt64 getElectraForkEpoch();
+
+  Bytes4 getFuluForkVersion();
+
+  UInt64 getFuluForkEpoch();
+
+  Bytes4 getGloasForkVersion();
+
+  UInt64 getGloasForkEpoch();
+
   // Config: Time parameters
   int getSecondsPerSlot();
 
-  default int getMillisPerSlot() {
-    return getSecondsPerSlot() * 1000;
-  }
+  int getProposerReorgCutoffBps();
+
+  int getAttestationDueBps();
+
+  int getAggregateDueBps();
+
+  int getSlotDurationMillis();
 
   int getSecondsPerEth1Block();
 
@@ -192,5 +225,11 @@ public interface SpecConfig extends NetworkingSpecConfig {
     return Optional.empty();
   }
 
+  default Optional<SpecConfigGloas> toVersionGloas() {
+    return Optional.empty();
+  }
+
   SpecMilestone getMilestone();
+
+  BLSSignatureVerifier getBLSSignatureVerifier();
 }

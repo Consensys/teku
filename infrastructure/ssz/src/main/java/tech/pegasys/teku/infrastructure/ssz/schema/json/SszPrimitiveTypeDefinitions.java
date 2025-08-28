@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBoolean;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
@@ -53,6 +54,10 @@ public final class SszPrimitiveTypeDefinitions {
 
   public static final DeserializableTypeDefinition<SszByte> SSZ_BYTE_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.BYTE_SCHEMA, CoreTypes.BYTE_TYPE);
+
+  public static final DeserializableTypeDefinition<SszBoolean> SSZ_BOOLEAN_TYPE_DEFINITION =
+      new SszTypeDefinitionWrapper<>(
+          SszPrimitiveSchemas.BOOLEAN_SCHEMA, CoreTypes.BOOLEAN_PRIMITIVE_TYPE);
 
   public static final DeserializableTypeDefinition<SszByte> SSZ_UINT8_TYPE_DEFINITION =
       new SszTypeDefinitionWrapper<>(SszPrimitiveSchemas.UINT8_SCHEMA, CoreTypes.UINT8_TYPE);

@@ -114,7 +114,7 @@ class SpecConfigBuilderTest {
   }
 
   @Test
-  @Disabled("There is no non-active config at the moment, revisit this when we add FULU")
+  @Disabled("There is no non-active config at the moment, revisit this when we add Fulu")
   public void shouldCreateSpecExposingNonActiveConfig() {
     final Spec spec = getSpec(__ -> {});
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isNotEqualTo(ELECTRA);
@@ -127,11 +127,7 @@ class SpecConfigBuilderTest {
     final Spec spec =
         getSpec(
             phase0Builder ->
-                phase0Builder
-                    .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(randomEpoch))
-                    .bellatrixBuilder(
-                        bellatrixBuilder ->
-                            bellatrixBuilder.bellatrixForkEpoch(randomEpoch.plus(1))));
+                phase0Builder.altairForkEpoch(randomEpoch).bellatrixForkEpoch(randomEpoch.plus(1)));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("ALTAIR_FORK_EPOCH"))
         .isEqualTo(randomEpoch);
@@ -140,11 +136,7 @@ class SpecConfigBuilderTest {
   @Test
   public void shouldLoadBellatrixForkEpoch() {
     final UInt64 randomEpoch = dataStructureUtil.randomUInt64(100_000);
-    final Spec spec =
-        getSpec(
-            phase0Builder ->
-                phase0Builder.bellatrixBuilder(
-                    mergeBuilder -> mergeBuilder.bellatrixForkEpoch(randomEpoch)));
+    final Spec spec = getSpec(phase0Builder -> phase0Builder.bellatrixForkEpoch(randomEpoch));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("BELLATRIX_FORK_EPOCH"))
         .isEqualTo(randomEpoch);

@@ -54,7 +54,7 @@ class DasByRangeResponseLogger extends AbstractDasResponseLogger<DasReqRespLogge
 
   @Override
   protected int requestedMaxCount() {
-    return request.slotCount() * request.columnIndexes().size();
+    return request.slotCount() * request.columnIndices().size();
   }
 
   private String requestToString() {
@@ -64,7 +64,7 @@ class DasByRangeResponseLogger extends AbstractDasResponseLogger<DasReqRespLogge
         + request.slotCount()
         + ", columns = "
         + StringifyUtil.toIntRangeString(
-            request.columnIndexes().stream().map(UInt64::intValue).toList())
+            request.columnIndices().stream().map(UInt64::intValue).toList())
         + "]";
   }
 }

@@ -30,7 +30,7 @@ public interface BeaconStateFulu extends BeaconStateElectra {
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected an Fulu state but got: " + state.getClass().getSimpleName()));
+                    "Expected a Fulu state but got: " + state.getClass().getSimpleName()));
   }
 
   private static <T extends SszData> void addItems(

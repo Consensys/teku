@@ -119,8 +119,6 @@ public class SpecConfigElectraTest {
 
     return new SpecConfigElectraImpl(
         denebConfig,
-        dataStructureUtil.randomBytes4(),
-        dataStructureUtil.randomUInt64(999_999),
         dataStructureUtil.randomUInt64(128000000000L),
         dataStructureUtil.randomUInt64(32000000000L),
         dataStructureUtil.randomUInt64(2048000000000L),

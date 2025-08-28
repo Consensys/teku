@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_NON_CRITICAL_EB_REQUESTS;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
@@ -77,6 +77,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public static ExecutionLayerManagerImpl create(
       final EventLogger eventLogger,
       final ExecutionClientHandler executionClientHandler,
+      final Spec spec,
       final Optional<BuilderClient> builderClient,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
@@ -104,6 +105,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
     return new ExecutionLayerManagerImpl(
         executionClientHandler,
+        spec,
         builderClient,
         eventLogger,
         builderBidValidator,
@@ -137,11 +139,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     final MetricRecordingBuilderClient metricRecordingBuilderClient =
         new MetricRecordingBuilderClient(restBuilderClient, timeProvider, metricsSystem);
     return new ThrottlingBuilderClient(
-        metricRecordingBuilderClient, MAXIMUM_CONCURRENT_EB_REQUESTS, metricsSystem);
+        metricRecordingBuilderClient, MAXIMUM_CONCURRENT_NON_CRITICAL_EB_REQUESTS, metricsSystem);
   }
 
   private ExecutionLayerManagerImpl(
       final ExecutionClientHandler executionClientHandler,
+      final Spec spec,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
@@ -154,6 +157,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     this.executionBuilderModule =
         new ExecutionBuilderModule(
             this,
+            spec,
             builderBidValidator,
             builderCircuitBreaker,
             builderClient,

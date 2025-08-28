@@ -46,6 +46,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
@@ -104,7 +106,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 @TestDatabaseContext
 @Execution(ExecutionMode.CONCURRENT)
 public class DatabaseTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
   protected Spec spec;
@@ -215,12 +217,9 @@ public class DatabaseTest {
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
-    final BlobSidecar blobSidecar2_0 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 0);
-    final BlobSidecar blobSidecar2_1 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 1);
+    final SignedBeaconBlock blockAt2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 0);
+    final BlobSidecar blobSidecar2_1 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 1);
     final BlobSidecar blobSidecar3_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(3), 0);
@@ -382,12 +381,9 @@ public class DatabaseTest {
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(1), 0);
-    final BlobSidecar blobSidecar2_0 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 0);
-    final BlobSidecar blobSidecar2_1 =
-        dataStructureUtil.randomBlobSidecarForBlock(
-            dataStructureUtil.randomSignedBeaconBlock(2), 1);
+    final SignedBeaconBlock blockAt2 = dataStructureUtil.randomSignedBeaconBlock(2);
+    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 0);
+    final BlobSidecar blobSidecar2_1 = dataStructureUtil.randomBlobSidecarForBlock(blockAt2, 1);
     final BlobSidecar blobSidecar3_0 =
         dataStructureUtil.randomBlobSidecarForBlock(
             dataStructureUtil.randomSignedBeaconBlock(3), 0);
@@ -1764,7 +1760,7 @@ public class DatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock, spec.calculateBlockCheckpoints(newBlock.getState()));
     transaction.setFinalizedCheckpoint(newCheckpoint, false);
-    transaction.commit().ifExceptionGetsHereRaiseABug();
+    transaction.commit().finishError(LOG);
     // Close db
     database.close();
 
@@ -2433,7 +2429,7 @@ public class DatabaseTest {
     database.addSidecar(dataColumnSidecar1_1);
     database.addSidecar(dataColumnSidecar2_0);
 
-    database.pruneAllSidecars(ZERO);
+    database.pruneAllSidecars(ZERO, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList())
@@ -2441,15 +2437,86 @@ public class DatabaseTest {
               columnSlotAndIdentifier1_0, columnSlotAndIdentifier1_1, columnSlotAndIdentifier2_0);
     }
 
-    database.pruneAllSidecars(ONE);
+    database.pruneAllSidecars(ONE, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier2_0);
     }
 
-    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot());
+    database.pruneAllSidecars(dataColumnSidecar2_0.getSlot(), 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar2_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+  }
+
+  @TestTemplate
+  @SuppressWarnings("JavaCase")
+  public void pruneAllSidecars_pruneBasedOnSlots(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar dataColumnSidecar1_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_0);
+    final DataColumnSidecar dataColumnSidecar1_1 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_1);
+    final DataColumnSidecar dataColumnSidecar1_2 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, UInt64.valueOf(2));
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier1_2 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar1_2);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar dataColumnSidecar2_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier2_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar2_0);
+    final SignedBeaconBlockHeader blockHeader3 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(200));
+    final DataColumnSidecar dataColumnSidecar3_0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader3, ZERO);
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier3_0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar3_0);
+
+    database.addSidecar(dataColumnSidecar1_0);
+    database.addSidecar(dataColumnSidecar1_1);
+    database.addSidecar(dataColumnSidecar1_2);
+    database.addSidecar(dataColumnSidecar2_0);
+    database.addSidecar(dataColumnSidecar3_0);
+
+    // not pruned yet should contain all sidecars
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(
+              columnSlotAndIdentifier1_0,
+              columnSlotAndIdentifier1_1,
+              columnSlotAndIdentifier1_2,
+              columnSlotAndIdentifier2_0,
+              columnSlotAndIdentifier3_0);
+    }
+
+    // prune sidecars passing 2 as the limit should prune sidecars from the first 2 slots that it
+    // can find,
+    // leaving the sidecar from block header 3
+    database.pruneAllSidecars(dataColumnSidecar3_0.getSlot(), 2);
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(columnSlotAndIdentifier3_0);
+    }
+
+    database.pruneAllSidecars(dataColumnSidecar3_0.getSlot(), 2);
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, dataColumnSidecar3_0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
   }

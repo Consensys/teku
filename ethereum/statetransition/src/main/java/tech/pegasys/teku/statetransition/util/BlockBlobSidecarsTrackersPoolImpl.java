@@ -93,7 +93,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
 
   // RPC fetching delay timings
-  static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = UInt64.valueOf(1500);
+  static final long MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = 1500L;
   static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
   static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
@@ -261,7 +261,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   private void publishRecoveredBlobSidecar(final BlobSidecar blobSidecar) {
     LOG.debug("Publishing recovered blob sidecar {}", blobSidecar::toLogString);
     gossipValidatorSupplier.get().markForEquivocation(blobSidecar);
-    blobSidecarGossipPublisher.apply(blobSidecar).ifExceptionGetsHereRaiseABug();
+    blobSidecarGossipPublisher.apply(blobSidecar).finishStackTrace();
   }
 
   private void countBlobSidecar(final RemoteOrigin origin) {
@@ -530,7 +530,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                                       }
                                     })
                                 .handleException(this::logBlockOrBlobsRPCFailure))
-                    .ifExceptionGetsHereRaiseABug();
+                    .finishStackTrace();
               }
             });
 
@@ -627,7 +627,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                     .thenCompose(__ -> rpcFetchDelay)
                     .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
                     .handleException(this::logBlockOrBlobsRPCFailure))
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   @VisibleForTesting
@@ -641,8 +641,8 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
     final UInt64 nowMillis = timeProvider.getTimeInMillis();
     final UInt64 slotStartTimeMillis = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
-    final UInt64 millisPerSlot = spec.getMillisPerSlot(slot);
-    final UInt64 attestationDueMillis = slotStartTimeMillis.plus(millisPerSlot.dividedBy(3));
+    final UInt64 attestationDueMillis =
+        slotStartTimeMillis.plus(spec.getAttestationDueMillis(slot));
 
     if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
       // late block, we already produced attestations on previous head,

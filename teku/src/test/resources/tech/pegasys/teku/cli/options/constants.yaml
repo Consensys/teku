@@ -1,6 +1,19 @@
 # Minimal preset
 PRESET_BASE: "minimal"
+# Forking
+# ---------------------------------------------------------------
+# Values provided for illustrative purposes.
+# Individual tests/testnets may set different values.
 
+# Altair
+ALTAIR_FORK_VERSION: 0x01000001
+ALTAIR_FORK_EPOCH: 18446744073709551615
+# Bellatrix
+BELLATRIX_FORK_VERSION: 0x02000001
+BELLATRIX_FORK_EPOCH: 18446744073709551615
+# Capella
+CAPELLA_FORK_VERSION: 0x03000001
+CAPELLA_FORK_EPOCH: 18446744073709551615
 # Misc
 # ---------------------------------------------------------------
 
@@ -74,6 +87,8 @@ BLS_WITHDRAWAL_PREFIX: 0x00
 GENESIS_DELAY: 300
 # [customized] Faster for testing purposes
 SECONDS_PER_SLOT: 6
+# [customized] 6000 milliseconds
+SLOT_DURATION_MS: 6000
 # 2**0 (= 1) slots 6 seconds
 MIN_ATTESTATION_INCLUSION_DELAY: 1
 # [customized] fast epochs
@@ -92,7 +107,18 @@ MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 SHARD_COMMITTEE_PERIOD: 64
 # 2**2 (= 4) epochs
 MIN_EPOCHS_TO_INACTIVITY_PENALTY: 4
+# 1667 basis points, ~17% of SLOT_DURATION_MS
+PROPOSER_REORG_CUTOFF_BPS: 1667
+# 3333 basis points, ~33% of SLOT_DURATION_MS
+ATTESTATION_DUE_BPS: 3333
+# 6667 basis points, ~67% of SLOT_DURATION_MS
+AGGREGATE_DUE_BPS: 6667
 
+# Altair
+# 3333 basis points, ~33% of SLOT_DURATION_MS
+SYNC_MESSAGE_DUE_BPS: 3333
+# 6667 basis points, ~67% of SLOT_DURATION_MS
+CONTRIBUTION_DUE_BPS: 6667
 
 # State vector lengths
 # ---------------------------------------------------------------
@@ -159,10 +185,7 @@ EPOCHS_PER_SUBNET_SUBSCRIPTION: 256
 MIN_EPOCHS_FOR_BLOCK_REQUESTS: 33024
 # `10 * 2**20` (=10485760, 10 MiB)
 MAX_CHUNK_SIZE: 10485760
-# 5s
-TTFB_TIMEOUT: 5
-# 10s
-RESP_TIMEOUT: 10
+
 ATTESTATION_PROPAGATION_SLOT_RANGE: 32
 # 500ms
 MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500
@@ -175,3 +198,7 @@ ATTESTATION_SUBNET_COUNT: 64
 ATTESTATION_SUBNET_EXTRA_BITS: 0
 # ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
 ATTESTATION_SUBNET_PREFIX_BITS: 6
+
+INACTIVITY_SCORE_BIAS: 4
+# 2**4 (= 16)
+INACTIVITY_SCORE_RECOVERY_RATE: 16

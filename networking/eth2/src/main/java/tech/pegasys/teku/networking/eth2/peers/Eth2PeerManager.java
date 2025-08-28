@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,8 +77,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
-      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
@@ -98,8 +99,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             asyncRunner,
             this,
             combinedChainDataClient,
-            dataColumnSidecarCustody,
-            custodyGroupCountManager,
+            dataColumnSidecarCustodySupplier,
+            custodyGroupCountManagerSupplier,
             recentChainData,
             metricsSystem,
             statusMessageFactory,
@@ -114,8 +115,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   public static Eth2PeerManager create(
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
-      final DataColumnSidecarByRootCustody dataColumnSidecarCustody,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetadataMessagesFactory metadataMessagesFactory,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
@@ -148,8 +149,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         spec,
         asyncRunner,
         combinedChainDataClient,
-        dataColumnSidecarCustody,
-        custodyGroupCountManager,
+        dataColumnSidecarCustodySupplier,
+        custodyGroupCountManagerSupplier,
         combinedChainDataClient.getRecentChainData(),
         metricsSystem,
         new Eth2PeerFactory(
@@ -254,8 +255,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.NO_STATUS_RECEIVED)
-                    .ifExceptionGetsHereRaiseABug();
+                peer.disconnectCleanly(DisconnectReason.NO_STATUS_RECEIVED).finishStackTrace();
               }
             },
             STATUS_RECEIVED_TIMEOUT)
@@ -273,7 +273,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   void sendPeriodicPing(final Eth2Peer peer) {
     if (peer.getUnansweredPingCount() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).ifExceptionGetsHereRaiseABug();
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).finishStackTrace();
     } else {
       peer.sendPing()
           .finish(

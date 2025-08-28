@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,7 +49,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
   private final Spec spec;
   private final CurrentSlotProvider currentSlotProvider;
   private final DataColumnSidecarDbAccessor db;
-  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -56,7 +57,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
       final DataColumnSidecarDbAccessor db,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final CustodyGroupCountManager custodyGroupCountManager) {
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
     checkNotNull(db);
@@ -66,7 +67,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
     this.db = db;
     this.custody = custody;
     this.retriever = retriever;
-    this.custodyGroupCountManager = custodyGroupCountManager;
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
   }
 
   private int getColumnCount(final UInt64 slot) {
@@ -75,7 +76,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
   private List<DataColumnSlotAndIdentifier> calculateSamplingColumnIds(
       final UInt64 slot, final Bytes32 blockRoot) {
-    return custodyGroupCountManager.getCustodyColumnIndices().stream()
+    return custodyGroupCountManagerSupplier.get().getSamplingColumnIndices().stream()
         .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
         .toList();
   }
@@ -114,11 +115,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
           final Set<DataColumnSlotAndIdentifier> columnsInCustody =
               new HashSet<>(columnsInCustodyList);
 
-          final Set<DataColumnSlotAndIdentifier> missingColumn =
+          final Set<DataColumnSlotAndIdentifier> missingColumns =
               Sets.difference(requiredColumnIdentifiers, columnsInCustody);
 
           if (LOG.isDebugEnabled()) {
-            final List<Integer> existingColumnIndexes =
+            final List<Integer> existingColumnIndices =
                 Sets.intersection(requiredColumnIdentifiers, columnsInCustody).stream()
                     .map(it -> it.columnIndex().intValue())
                     .sorted()
@@ -126,28 +127,38 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
 
             LOG.debug(
                 "checkDataAvailability(): got {} (of {}) columns from custody (or received by Gossip) for block {} ({}), columns: {}",
-                existingColumnIndexes.size(),
+                existingColumnIndices.size(),
                 requiredColumnIdentifiers.size(),
                 slot,
                 blockRoot,
-                StringifyUtil.columnIndexesToString(existingColumnIndexes, getColumnCount(slot)));
+                StringifyUtil.columnIndicesToString(existingColumnIndices, getColumnCount(slot)));
           }
 
           final SafeFuture<List<DataColumnSidecar>> columnsRetrievedFuture =
-              SafeFuture.collectAll(missingColumn.stream().map(retriever::retrieve))
+              SafeFuture.collectAll(missingColumns.stream().map(retriever::retrieve))
                   .thenPeek(
                       retrievedColumns -> {
-                        if (!retrievedColumns.isEmpty()) {
+                        if (retrievedColumns.size() == missingColumns.size()) {
                           LOG.debug(
                               "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                               retrievedColumns.size(),
                               requiredColumnIdentifiers.size(),
                               slot,
                               blockRoot);
+
+                          retrievedColumns.stream()
+                              .map(custody::onNewValidatedDataColumnSidecar)
+                              .forEach(updateFuture -> updateFuture.finishStackTrace());
+                        } else {
+                          throw new IllegalStateException(
+                              String.format(
+                                  "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
+                                  retrievedColumns.size(),
+                                  missingColumns.size(),
+                                  slot,
+                                  blockRoot,
+                                  requiredColumnIdentifiers.size()));
                         }
-                        retrievedColumns.stream()
-                            .map(custody::onNewValidatedDataColumnSidecar)
-                            .forEach(updateFuture -> updateFuture.ifExceptionGetsHereRaiseABug());
                       });
 
           return columnsRetrievedFuture.thenApply(

@@ -1,16 +1,22 @@
 # Changelog
 
 ## Upcoming Breaking Changes
+ - `GOSSIP_MAX_SIZE` and `MAX_CHUNK_SIZE` will be removed from config items post fusaka.
+ - `TTFB_TIMEOUT` and `RESP_TIMEOUT` will be removed from config items post fusaka.
 
 ## Current Releases
 
 ## Unreleased Changes
 
 ### Breaking Changes
-- Removed `--validators-proposer-blinded-blocks-enabled` unused option. This option is not used anymore and should be removed from any config
 
 ### Additions and Improvements
-- Increase the default gas limit (`--validators-builder-registration-default-gas-limit`) to 45 million
+- Enabled, by default, a new attestation pool implementation that improves the attestation packing during block and aggregation production. It can still be disabled by setting `--Xaggregating-attestation-pool-v2-enabled=false` if needed
+- Added `--p2p-discovery-bootnodes-url` CLI option.
+- Updated LUKSO configuration with Electra fork scheduled for epoch 190800 (September 17th, 2025, 16:20:00 UTC)
+- Avoid builder validator registration calls potentially delaying block production builder calls.
+- removed `TTFB_TIMEOUT` and `RESP_TIMEOUT` from configuration in line with consensus-specs #4532
 
 ### Bug Fixes
-- fix a regression introduced in the previous release causing a validator client configured with sentry nodes to not work properly
+- Limited the allowed time to wait for fork choice before proceeding with attestation duties, and added a development flag to adjust the timing if required.
+- Allowed voluntary exits to be periodically re-broadcast if they have been submitted locally and they have been in the queue for a long time (2 hours).

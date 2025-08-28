@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config.builder;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 
@@ -83,6 +84,11 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
   }
 
   @Override
+  public void setForkEpoch(final UInt64 epoch) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void validate() {
     builderToApply.validate();
     tail.validate();
@@ -98,6 +104,11 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
     @Override
     public SpecConfigAndParent<T> build(final SpecConfigAndParent<T> specConfig) {
       return specConfig;
+    }
+
+    @Override
+    public void setForkEpoch(final UInt64 epoch) {
+      throw new UnsupportedOperationException();
     }
 
     @Override

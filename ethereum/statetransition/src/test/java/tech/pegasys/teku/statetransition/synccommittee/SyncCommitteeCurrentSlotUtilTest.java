@@ -32,11 +32,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
   private final Spec spec =
       TestSpecFactory.createAltair(
           SpecConfigLoader.loadConfig(
-              "minimal",
-              phase0Builder ->
-                  phase0Builder.altairBuilder(
-                      altairBuilder ->
-                          altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO))));
+              "minimal", phase0Builder -> phase0Builder.altairForkEpoch(UInt64.ZERO)));
   private final int maximumGossipClockDisparity =
       spec.getNetworkingConfig().getMaximumGossipClockDisparity();
   private final StorageSystem storageSystem =

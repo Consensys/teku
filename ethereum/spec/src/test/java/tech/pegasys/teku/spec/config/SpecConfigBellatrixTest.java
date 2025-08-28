@@ -85,8 +85,6 @@ public class SpecConfigBellatrixTest {
 
     return new SpecConfigBellatrixImpl(
         altairConfig,
-        dataStructureUtil.randomBytes4(),
-        dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt(),

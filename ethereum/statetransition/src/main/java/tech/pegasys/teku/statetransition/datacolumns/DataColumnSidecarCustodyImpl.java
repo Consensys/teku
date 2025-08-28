@@ -15,12 +15,14 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -83,15 +86,15 @@ public class DataColumnSidecarCustodyImpl
     }
   }
 
-  // for how long the custody will wait for a missing column to be gossiped
-  private final int gossipWaitSlots = 2;
+  // How long the custody will wait for a missing column to be gossiped
+  private static final int GOSSIP_WAIT_SLOTS = 2;
 
   private final Spec spec;
   private final DataColumnSidecarDbAccessor db;
   private final CanonicalBlockResolver blockResolver;
   private final AtomicInteger totalCustodyGroupCount;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
-  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
 
   private volatile UInt64 currentSlot = null;
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
@@ -101,7 +104,7 @@ public class DataColumnSidecarCustodyImpl
       final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor db,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final int totalCustodyGroupCount) {
     checkNotNull(spec);
     checkNotNull(blockResolver);
@@ -112,7 +115,7 @@ public class DataColumnSidecarCustodyImpl
     this.db = db;
     this.blockResolver = blockResolver;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
-    this.custodyGroupCountManager = custodyGroupCountManager;
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.totalCustodyGroupCount = new AtomicInteger(totalCustodyGroupCount);
     LOG.debug(
         "Initialized DataColumnSidecar Custody with custody group count {}",
@@ -130,7 +133,7 @@ public class DataColumnSidecarCustodyImpl
   }
 
   private boolean isMyCustody(final UInt64 columnIndex) {
-    return custodyGroupCountManager.getCustodyColumnIndices().contains(columnIndex);
+    return custodyGroupCountManagerSupplier.get().getCustodyColumnIndices().contains(columnIndex);
   }
 
   @Override
@@ -149,25 +152,45 @@ public class DataColumnSidecarCustodyImpl
   @Override
   public void onSlot(final UInt64 slot) {
     currentSlot = slot;
-    if (updateEpoch(spec.computeEpochAtSlot(slot))) {
-      int groupCount = custodyGroupCountManager.getCustodyGroupCount();
-      final int oldGroupCount = totalCustodyGroupCount.getAndSet(groupCount);
-      // TODO-fulu: ignoring the case when it's less, let's skip pruning in early version, to
-      // implement in future invalidating current custody as number of required groups have
-      // increased (https://github.com/Consensys/teku/issues/9468)
-      if (groupCount > oldGroupCount) {
-        LOG.debug("Custody group count changed from {} to {}", oldGroupCount, groupCount);
-        final UInt64 minCustodyPeriodSlot =
-            minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
-        db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot).ifExceptionGetsHereRaiseABug();
-      }
+    if (!updateEpoch(spec.computeEpochAtSlot(slot))) {
+      return;
+    }
+    final int newCustodyGroupCount = custodyGroupCountManagerSupplier.get().getCustodyGroupCount();
+    final int oldCustodyGroupCount = totalCustodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (newCustodyGroupCount == oldCustodyGroupCount) {
+      return;
+    }
+    LOG.debug(
+        "Custody group count changed from {} to {}", oldCustodyGroupCount, newCustodyGroupCount);
+    if (newCustodyGroupCount > oldCustodyGroupCount) {
+      final UInt64 minCustodyPeriodSlot =
+          minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot);
+      db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
+          .finish(
+              error ->
+                  LOG.error(
+                      "Unexpected error while updating first custody incomplete slot with a new value: {}.",
+                      minCustodyPeriodSlot,
+                      error));
     }
   }
 
   @Override
   public void onNewFinalizedCheckpoint(
       final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    advanceFirstIncompleteSlot(checkpoint.getEpoch()).ifExceptionGetsHereRaiseABug();
+    advanceFirstIncompleteSlot(checkpoint.getEpoch())
+        .finish(
+            error ->
+                LOG.error(
+                    "Unexpected error while advancing first custody incomplete slot for checkpoint {}{}",
+                    checkpoint,
+                    fromOptimisticBlock ? " (from optimistic block)" : "",
+                    error));
+  }
+
+  @VisibleForTesting
+  public int getTotalCustodyGroupCount() {
+    return totalCustodyGroupCount.get();
   }
 
   private synchronized boolean updateEpoch(final UInt64 epoch) {
@@ -188,15 +211,12 @@ public class DataColumnSidecarCustodyImpl
                 maybeFirstIncompleteOrLastComplete
                     .map(
                         firstIncompleteOrLastComplete -> {
-                          // TODO-fulu: if we don't have finalization, we will not advance it and
-                          // it's an issue
-                          //  non-finalized epochs could be still not synced with up-to-date custody
-                          // (https://github.com/Consensys/teku/issues/9469)
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
                             LOG.debug(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());
-                            custodyGroupCountManager.setCustodyGroupSyncedCount(
-                                totalCustodyGroupCount.get());
+                            custodyGroupCountManagerSupplier
+                                .get()
+                                .setCustodyGroupSyncedCount(totalCustodyGroupCount.get());
                           }
                           return db.setFirstCustodyIncompleteSlot(
                               firstIncompleteOrLastComplete.slot());
@@ -228,8 +248,9 @@ public class DataColumnSidecarCustodyImpl
           new SlotCustody(
               slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
     }
-    final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootIfHaveBlobs(slot);
-    final List<UInt64> requiredColumns = custodyGroupCountManager.getCustodyColumnIndices();
+    final SafeFuture<Optional<Bytes32>> maybeCanonicalBlockRoot = getBlockRootWithBlobs(slot);
+    final List<UInt64> requiredColumns =
+        custodyGroupCountManagerSupplier.get().getCustodyColumnIndices();
     final SafeFuture<List<DataColumnSlotAndIdentifier>> existingColumns =
         db.getColumnIdentifiers(slot);
     return SafeFuture.allOf(maybeCanonicalBlockRoot, existingColumns)
@@ -242,7 +263,13 @@ public class DataColumnSidecarCustodyImpl
                     existingColumns.getImmediately()));
   }
 
-  private SafeFuture<Optional<Bytes32>> getBlockRootIfHaveBlobs(final UInt64 slot) {
+  /**
+   * Get the block root for a slot that has at least one blob.
+   *
+   * @param slot The slot to get the block root for.
+   * @return The block root if it has at least one blob, otherwise nothing.
+   */
+  private SafeFuture<Optional<Bytes32>> getBlockRootWithBlobs(final UInt64 slot) {
     return blockResolver
         .getBlockAtSlot(slot)
         .thenApply(
@@ -251,19 +278,18 @@ public class DataColumnSidecarCustodyImpl
                     .filter(
                         block ->
                             block
-                                    .getBeaconBlock()
-                                    .flatMap(b -> b.getBody().toVersionDeneb())
-                                    .map(b -> b.getBlobKzgCommitments().size())
-                                    .orElse(0)
-                                > 0)
+                                .getBeaconBlock()
+                                .flatMap(b -> b.getBody().toVersionDeneb())
+                                .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+                                .map(commitments -> !commitments.isEmpty())
+                                .orElse(false))
                     .map(BeaconBlock::getRoot));
   }
 
   @Override
   public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
-    // waiting a column for [gossipWaitSlots] to be delivered by gossip
-    // and not considering it missing yet
-    return retrievePotentiallyIncompleteSlotCustodies(currentSlot.minusMinZero(gossipWaitSlots))
+    // Wait GOSSIP_WAIT_SLOTS for the column to be delivered by gossip before considering it missing
+    return retrievePotentiallyIncompleteSlotCustodies(currentSlot.minusMinZero(GOSSIP_WAIT_SLOTS))
         .flatMap(SlotCustody::streamIncompleteColumns);
   }
 }

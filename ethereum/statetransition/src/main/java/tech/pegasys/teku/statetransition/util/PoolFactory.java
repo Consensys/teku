@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -49,6 +50,8 @@ public class PoolFactory {
 
   private static final int DEFAULT_MAX_BLOCKS = 5000;
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;
+  private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
+  private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
 
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blockBlobSidecarsTrackersPoolSizeGauge;
@@ -150,7 +153,7 @@ public class PoolFactory {
       final ExecutionLayerChannel executionLayer,
       final KZG kzg,
       final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     return new DataColumnSidecarELRecoveryManagerImpl(
@@ -163,9 +166,11 @@ public class PoolFactory {
         EL_RECOVERY_TASKS_LIMIT,
         kzg,
         dataColumnSidecarPublisher,
-        custodyGroupCountManager,
+        custodyGroupCountManagerSupplier,
         metricsSystem,
-        timeProvider);
+        timeProvider,
+        EL_BLOBS_FETCHING_DELAY,
+        EL_BLOBS_FETCHING_MAX_RETRIES);
   }
 
   public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(

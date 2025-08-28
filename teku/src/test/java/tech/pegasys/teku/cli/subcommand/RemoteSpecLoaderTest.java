@@ -79,8 +79,6 @@ class RemoteSpecLoaderTest {
     assertThat(specConfig.getMaxRequestBlocks()).isEqualTo(1024);
     assertThat(specConfig.getEpochsPerSubnetSubscription()).isEqualTo(256);
     assertThat(specConfig.getMinEpochsForBlockRequests()).isEqualTo(33024);
-    assertThat(specConfig.getTtfbTimeout()).isEqualTo(5);
-    assertThat(specConfig.getRespTimeout()).isEqualTo(10);
     assertThat(specConfig.getAttestationPropagationSlotRange()).isEqualTo(32);
     assertThat(specConfig.getMaximumGossipClockDisparity()).isEqualTo(500);
   }

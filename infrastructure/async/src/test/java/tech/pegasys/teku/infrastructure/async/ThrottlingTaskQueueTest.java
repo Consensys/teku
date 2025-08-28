@@ -16,13 +16,17 @@ package tech.pegasys.teku.infrastructure.async;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueueTest {
 
+  private static final Logger LOG = LogManager.getLogger();
   private static final int MAXIMUM_CONCURRENT_TASKS = 3;
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
@@ -35,26 +39,48 @@ public class ThrottlingTaskQueueTest {
 
   @Test
   public void throttlesRequests() {
+    // queue tasks to run, they shouldn't start straight away.
     final List<SafeFuture<Void>> requests =
-        IntStream.range(0, 100)
+        IntStream.range(0, 10)
             .mapToObj(
-                element -> {
-                  final SafeFuture<Void> request =
-                      stubAsyncRunner.runAsync(
-                          () -> {
-                            assertThat(taskQueue.getInflightTaskCount())
-                                .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
-                          });
-                  return taskQueue.queueTask(() -> request);
-                })
+                element ->
+                    taskQueue.queueTask(
+                        () ->
+                            stubAsyncRunner.runAsync(
+                                () -> {
+                                  LOG.info("Running task {}", element);
+                                  assertThat(taskQueue.getInflightTaskCount())
+                                      .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
+                                })))
             .toList();
 
-    assertThat(getQueuedTasksGaugeValue()).isEqualTo(97);
-    assertThat(taskQueue.getInflightTaskCount()).isEqualTo(3);
+    // queueTask will start tasks up to the maximum, so expect 3 to be running, 7 in a queue
+    checkQueueProgress(requests, 7, 3, 0);
+
+    // stubRunner will run whatever is active
+    stubAsyncRunner.executeQueuedActions();
+    checkQueueProgress(requests, 4, 3, 3);
+
+    // run another 3 tasks
+    stubAsyncRunner.executeQueuedActions();
+    checkQueueProgress(requests, 1, 3, 6);
+
+    // only 1 task left to run, so no items left in queue
+    stubAsyncRunner.executeQueuedActions();
+    checkQueueProgress(requests, 0, 1, 9);
 
     stubAsyncRunner.executeQueuedActions();
+    checkQueueProgress(requests, 0, 0, 10);
+  }
 
-    requests.forEach(request -> assertThat(request).isCompleted());
+  private void checkQueueProgress(
+      final List<SafeFuture<Void>> requests,
+      final int queueSize,
+      final int inFlight,
+      final int done) {
+    assertThat(getQueuedTasksGaugeValue()).isEqualTo(queueSize);
+    assertThat(taskQueue.getInflightTaskCount()).isEqualTo(inFlight);
+    assertThat(requests.stream().filter(CompletableFuture::isDone).count()).isEqualTo(done);
   }
 
   private double getQueuedTasksGaugeValue() {

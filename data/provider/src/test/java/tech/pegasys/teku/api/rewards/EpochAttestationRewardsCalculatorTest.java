@@ -149,7 +149,7 @@ class EpochAttestationRewardsCalculatorTest {
   }
 
   @Test
-  public void shouldHandleValidatorPublicKeysAndIndexesAsId() {
+  public void shouldHandleValidatorPublicKeysAndIndicesAsId() {
     final ValidatorStatus validatorStatus = mock(ValidatorStatus.class);
     when(validatorStatus.isEligibleValidator()).thenReturn(true);
     final ValidatorStatuses validatorStatuses =
@@ -166,7 +166,7 @@ class EpochAttestationRewardsCalculatorTest {
 
     calculator = new EpochAttestationRewardsCalculator(specVersion, beaconState, validatorIds);
 
-    final List<Integer> validatorIndexes = calculator.getValidatorIndexes();
-    assertThat(validatorIndexes).contains(0, 1);
+    final List<Integer> validatorIndices = calculator.getValidatorIndices();
+    assertThat(validatorIndices).contains(0, 1);
   }
 }

@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -63,7 +61,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.signatures.Signer;
@@ -83,7 +80,9 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
   private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec =
+      TestSpecFactory.createMinimalPhase0(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
@@ -124,17 +123,6 @@ public class BlockImporterTest {
           forkChoice,
           weakSubjectivityValidator,
           ExecutionLayerChannel.NOOP);
-
-  @BeforeAll
-  public static void init() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  }
-
-  @AfterAll
-  public static void dispose() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  }
 
   @BeforeEach
   public void setup() {

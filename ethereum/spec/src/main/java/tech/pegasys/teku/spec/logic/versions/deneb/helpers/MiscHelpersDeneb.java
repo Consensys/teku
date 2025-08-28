@@ -81,7 +81,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
 
   /**
    * Performs <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof">verify_blob_kzg_proof</a>
+   * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof">verify_blob_kzg_proof</a>
    * on the given blob sidecar
    *
    * @param kzg the kzg implementation which will be used for verification
@@ -108,7 +108,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
 
   /**
    * Performs <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof_batch">verify_blob_kzg_proof_batch</a>
+   * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof_batch">verify_blob_kzg_proof_batch</a>
    * on the given blob sidecars
    *
    * @param kzg the kzg implementation which will be used for verification
@@ -166,7 +166,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   /**
-   * Verifies that blob sidecars are complete and with expected indexes
+   * Verifies that blob sidecars are complete and with expected indices
    *
    * @param completeVerifiedBlobSidecars blob sidecars to verify, It is assumed that it is an
    *     ordered list based on BlobSidecar index
@@ -203,7 +203,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
 
   /**
    * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#kzg_commitment_to_versioned_hash">kzg_commitment_to_versioned_hash</a>
+   * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/beacon-chain.md#kzg_commitment_to_versioned_hash">kzg_commitment_to_versioned_hash</a>
    */
   @Override
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {

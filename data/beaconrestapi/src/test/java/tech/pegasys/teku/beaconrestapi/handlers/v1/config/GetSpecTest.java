@@ -63,6 +63,7 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     final ConfigProvider configProvider = new ConfigProvider(SpecFactory.create("mainnet"));
     setHandler(new GetSpec(configProvider));
     handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
 
     final String json = request.getResponseBodyAsJson(handler);
 
@@ -75,6 +76,12 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
             Resources.toString(
                 Resources.getResource(GetSpecTest.class, "mainnetConfig.json"), UTF_8));
 
-    assertThat(resultNode).isEqualTo(referenceNode);
+    assertThat(resultNode)
+        .withFailMessage(
+            String.format(
+                "Expected: %s\nbut was: %s",
+                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(referenceNode),
+                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(resultNode)))
+        .isEqualTo(referenceNode);
   }
 }

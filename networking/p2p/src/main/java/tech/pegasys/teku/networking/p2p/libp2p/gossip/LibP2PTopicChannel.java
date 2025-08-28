@@ -15,11 +15,15 @@ package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
 import io.libp2p.core.pubsub.PubsubSubscription;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class LibP2PTopicChannel implements TopicChannel {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final GossipHandler topicHandler;
   private final PubsubSubscription subscription;
   private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -41,6 +45,7 @@ public class LibP2PTopicChannel implements TopicChannel {
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
+      LOG.trace("Unsubscribe from topic: {}", topicHandler.getTopic());
       subscription.unsubscribe();
     }
   }

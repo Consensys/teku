@@ -21,16 +21,21 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFa
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.versions.phase0.StatusMessagePhase0;
 
 public class DefaultRpcPayloadEncoderTest {
   private final Spec spec = TestSpecFactory.createDefault();
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private final DefaultRpcPayloadEncoder<StatusMessage> statusMessageEncoder =
-      new DefaultRpcPayloadEncoder<>(StatusMessage.SSZ_SCHEMA);
+      new DefaultRpcPayloadEncoder<>(
+          (StatusMessageSchema) spec.getGenesisSchemaDefinitions().getStatusMessageSchema());
 
   @Test
   public void decode_truncatedMessage() {
-    final StatusMessage statusMessage = StatusMessage.createPreGenesisStatus(spec);
+    final StatusMessage statusMessage = StatusMessagePhase0.createPreGenesisStatus(spec);
     final Bytes encoded = statusMessageEncoder.encode(statusMessage);
 
     for (int i = 0; i < encoded.size(); i++) {

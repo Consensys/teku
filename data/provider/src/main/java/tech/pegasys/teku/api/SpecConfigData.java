@@ -61,10 +61,8 @@ public class SpecConfigData {
     configAttributes.put("DOMAIN_SELECTION_PROOF", getDomainSelectionProof().toHexString());
     configAttributes.put("DOMAIN_AGGREGATE_AND_PROOF", getDomainAggregateAndProof().toHexString());
     configAttributes.put("DOMAIN_APPLICATION_BUILDER", getDomainApplicationBuilder().toHexString());
-    // Backwards compatibility with old phase0 constants, otherwise nodes won't start
-    configAttributes.put("GOSSIP_MAX_SIZE", configAttributes.get("MAX_PAYLOAD_SIZE"));
-    // Backwards compatibility with old phase0 constants, otherwise nodes won't start
-    configAttributes.put("MAX_CHUNK_SIZE", configAttributes.get("MAX_PAYLOAD_SIZE"));
+    addBackwardsCompatibilityItems(configAttributes);
+
     getDomainSyncCommittee()
         .ifPresent(
             committee -> configAttributes.put("DOMAIN_SYNC_COMMITTEE", committee.toHexString()));
@@ -85,6 +83,13 @@ public class SpecConfigData {
         .ifPresent(subnetCount -> configAttributes.put("SYNC_COMMITTEE_SUBNET_COUNT", subnetCount));
 
     return configAttributes;
+  }
+
+  private void addBackwardsCompatibilityItems(final Map<String, Object> configAttributes) {
+    configAttributes.put("GOSSIP_MAX_SIZE", configAttributes.get("MAX_PAYLOAD_SIZE"));
+    configAttributes.put("MAX_CHUNK_SIZE", configAttributes.get("MAX_PAYLOAD_SIZE"));
+    configAttributes.put("TTFB_TIMEOUT", "5");
+    configAttributes.put("RESP_TIMEOUT", "10");
   }
 
   private Bytes getBlsWithdrawalPrefix() {

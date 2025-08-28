@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -37,10 +35,9 @@ public class SyncCommitteeCurrentSlotUtil {
       return false;
     }
 
-    final UInt64 slotMillis = spec.getMillisPerSlot(slot);
     final UInt64 slotStartTimeMillis =
-        secondsToMillis(spec.computeTimeAtSlot(slot, recentChainData.getGenesisTime()));
-    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(slotMillis);
+        spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
+    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(spec.getSlotDurationMillis(slot));
     final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
     final int maximumGossipClockDisparityMillis =
         spec.getNetworkingConfig().getMaximumGossipClockDisparity();

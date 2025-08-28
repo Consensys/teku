@@ -119,9 +119,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-altair-fork-epoch", altairForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.altairBuilder(
-                    altairBuilder -> altairBuilder.altairForkEpoch(altairForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.altairForkEpoch(altairForkEpoch));
     return this;
   }
 
@@ -131,9 +129,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-bellatrix-fork-epoch", bellatrixForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.bellatrixBuilder(
-                    bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(bellatrixForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.bellatrixForkEpoch(bellatrixForkEpoch));
     return this;
   }
 
@@ -143,9 +139,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-capella-fork-epoch", capellaForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.capellaBuilder(
-                    capellaBuilder -> capellaBuilder.capellaForkEpoch(capellaForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.capellaForkEpoch(capellaForkEpoch));
     return this;
   }
 
@@ -155,9 +149,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-deneb-fork-epoch", denebForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.denebBuilder(
-                    denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.denebForkEpoch(denebForkEpoch));
     return this;
   }
 
@@ -167,9 +159,7 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-electra-fork-epoch", electraForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.electraBuilder(
-                    electraBuilder -> electraBuilder.electraForkEpoch(electraForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.electraForkEpoch(electraForkEpoch));
     return this;
   }
 
@@ -179,9 +169,17 @@ public class TekuNodeConfigBuilder {
     configMap.put("Xnetwork-fulu-fork-epoch", fuluForkEpoch.toString());
     specConfigModifier =
         specConfigModifier.andThen(
-            specConfigBuilder ->
-                specConfigBuilder.fuluBuilder(
-                    fuluBuilder -> fuluBuilder.fuluForkEpoch(fuluForkEpoch)));
+            specConfigBuilder -> specConfigBuilder.fuluForkEpoch(fuluForkEpoch));
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withGloasEpoch(final UInt64 gloasForkEpoch) {
+    mustBe(NodeType.BEACON_NODE);
+    LOG.debug("Xnetwork-gloas-fork-epoch={}", gloasForkEpoch);
+    configMap.put("Xnetwork-gloas-fork-epoch", gloasForkEpoch.toString());
+    specConfigModifier =
+        specConfigModifier.andThen(
+            specConfigBuilder -> specConfigBuilder.gloasForkEpoch(gloasForkEpoch));
     return this;
   }
 

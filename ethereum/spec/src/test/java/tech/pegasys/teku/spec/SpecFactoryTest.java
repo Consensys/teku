@@ -46,37 +46,44 @@ class SpecFactoryTest {
             builder -> {
               switch (milestone) {
                 case PHASE0 -> LOG.info("PHASE0");
-                case ALTAIR -> builder.altairBuilder(a -> a.altairForkEpoch(forkEpoch));
+                case ALTAIR -> builder.altairForkEpoch(forkEpoch);
                 case BELLATRIX ->
-                    builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(forkEpoch));
+                    builder.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(forkEpoch);
                 case CAPELLA ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(forkEpoch);
                 case DENEB ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.denebForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(forkEpoch);
                 case ELECTRA ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                        .electraBuilder(e -> e.electraForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(forkEpoch);
                 case FULU ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                        .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
-                        .fuluBuilder(f -> f.fuluForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(forkEpoch);
+                case GLOAS ->
+                    builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(UInt64.ZERO)
+                        .gloasForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "
@@ -87,7 +94,7 @@ class SpecFactoryTest {
             });
     final Spec testSpec = SpecFactory.create(config);
     for (SpecMilestone currentMilestone : SpecMilestone.getAllPriorMilestones(milestone)) {
-      LOG.info("Previous milestone " + currentMilestone);
+      LOG.info("Previous milestone {}", currentMilestone);
       assertThat(testSpec.getForkSchedule().getFork(currentMilestone).getEpoch())
           .isEqualTo(UInt64.ZERO);
     }

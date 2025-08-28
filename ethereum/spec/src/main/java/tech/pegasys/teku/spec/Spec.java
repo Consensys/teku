@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
@@ -26,6 +25,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
@@ -252,6 +254,27 @@ public class Spec {
     return forkSchedule.getActiveMilestones();
   }
 
+  public Optional<BlobParameters> getBpoFork(final UInt64 epoch) {
+    if (!isMilestoneSupported(FULU)) {
+      return Optional.empty();
+    }
+    return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getBpoFork(epoch);
+  }
+
+  public Optional<BlobParameters> getNextBpoFork(final UInt64 epoch) {
+    if (!isMilestoneSupported(FULU)) {
+      return Optional.empty();
+    }
+    return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getNextBpoFork(epoch);
+  }
+
+  public Collection<BlobParameters> getBpoForks() {
+    if (!isMilestoneSupported(FULU)) {
+      return Collections.emptyList();
+    }
+    return MiscHelpersFulu.required(forMilestone(FULU).miscHelpers()).getBpoForks();
+  }
+
   /**
    * Returns true if the given milestone is at or prior to our highest supported milestone
    *
@@ -277,14 +300,6 @@ public class Spec {
 
   public int getSlotsPerEpoch(final UInt64 slot) {
     return atSlot(slot).getConfig().getSlotsPerEpoch();
-  }
-
-  public int getSecondsPerSlot(final UInt64 slot) {
-    return atSlot(slot).getConfig().getSecondsPerSlot();
-  }
-
-  public UInt64 getMillisPerSlot(final UInt64 slot) {
-    return secondsToMillis(getSecondsPerSlot(slot));
   }
 
   public long getMaxDeposits(final BeaconState state) {
@@ -432,7 +447,7 @@ public class Spec {
         .getSchemaDefinitions()
         .toVersionFulu()
         .orElseThrow(
-            () -> new RuntimeException("FULU milestone is required to deserialize column sidecar"))
+            () -> new RuntimeException("Fulu milestone is required to deserialize column sidecar"))
         .getDataColumnSidecarSchema()
         .sszDeserialize(serializedSidecar);
   }
@@ -496,7 +511,11 @@ public class Spec {
         object, miscHelpers.computeDomain(Domain.APPLICATION_BUILDER));
   }
 
-  public Bytes4 computeForkDigest(
+  /**
+   * This method should NOT be used for milestones >= Fulu. Use {@link #computeForkDigest(Bytes32,
+   * UInt64)} instead.
+   */
+  private Bytes4 computeForkDigest(
       final Bytes4 currentVersion, final Bytes32 genesisValidatorsRoot) {
     return atForkVersion(currentVersion)
         .miscHelpers()
@@ -518,6 +537,30 @@ public class Spec {
 
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getCommitteeCountPerSlot(state, epoch);
+  }
+
+  public int getAttestationDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAttestationDueMillis();
+  }
+
+  public int getAggregateDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAggregateDueMillis();
+  }
+
+  public int getProposerReorgCutoffMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getProposerReorgCutoffMillis();
+  }
+
+  public int getSlotDurationMillis(final UInt64 slot) {
+    return atSlot(slot).getConfig().getSlotDurationMillis();
+  }
+
+  public int getSyncMessageDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getSyncMessageDueMillis();
+  }
+
+  public int getContributionDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
@@ -758,7 +801,7 @@ public class Spec {
 
   // Blind Block Utils
 
-  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
+  public SafeFuture<Optional<SignedBeaconBlock>> unblindSignedBeaconBlock(
       final SignedBeaconBlock signedBlindedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
     return atSlot(signedBlindedBeaconBlock.getSlot())
@@ -773,7 +816,7 @@ public class Spec {
               checkState(
                   !signedBlindedBeaconBlock.isBlinded(),
                   "Unblinder not available for the current spec but the given block was blinded");
-              return SafeFuture.completedFuture(signedBlindedBeaconBlock);
+              return SafeFuture.completedFuture(Optional.of(signedBlindedBeaconBlock));
             });
   }
 
@@ -970,7 +1013,7 @@ public class Spec {
         .orElse(false);
   }
 
-  public UInt64 blobSidecarsAvailabilityDeprecationSlot() {
+  public UInt64 blobSidecarsDeprecationSlot() {
     return getSpecConfigFulu()
         .map(maybeConfig -> computeStartSlotAtEpoch(maybeConfig.getFuluForkEpoch()))
         .orElse(UInt64.MAX_VALUE);
@@ -985,12 +1028,14 @@ public class Spec {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
 
-    // query the blob_schedule after Fulu
+    // query the blob_schedule after FULU
     if (highestSupportedMilestone.isGreaterThanOrEqualTo(FULU)) {
       final Optional<Integer> maybeHighestMaxBlobsPerBlockFromBpoForkSchedule =
-          MiscHelpersFulu.required(forMilestone(FULU).miscHelpers())
-              .getHighestMaxBlobsPerBlockFromBpoForkSchedule();
-      // only use blob_schedule if it is present
+          forMilestone(FULU)
+              .miscHelpers()
+              .toVersionFulu()
+              .flatMap(MiscHelpersFulu::getHighestMaxBlobsPerBlockFromBpoForkSchedule);
+      // only use BPO fork max_blobs_per_block if it is present
       if (maybeHighestMaxBlobsPerBlockFromBpoForkSchedule.isPresent()) {
         return maybeHighestMaxBlobsPerBlockFromBpoForkSchedule;
       }
@@ -1125,20 +1170,17 @@ public class Spec {
 
   public Optional<Integer> getMaxBlobsPerBlockAtSlot(final UInt64 slot) {
     final SpecVersion specVersion = atSlot(slot);
-    switch (specVersion.getMilestone()) {
-      case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> {
-        return Optional.empty();
-      }
-      case DENEB, ELECTRA -> {
-        return Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
-      }
-      default -> {
+    return switch (specVersion.getMilestone()) {
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA -> Optional.empty();
+      case DENEB, ELECTRA ->
+          Optional.of(SpecConfigDeneb.required(specVersion.getConfig()).getMaxBlobsPerBlock());
+      case FULU, GLOAS -> {
         final UInt64 epoch = specVersion.miscHelpers().computeEpochAtSlot(slot);
-        return Optional.of(
+        yield Optional.of(
             MiscHelpersFulu.required(specVersion.miscHelpers())
                 .getBlobParameters(epoch)
                 .maxBlobsPerBlock());
       }
-    }
+    };
   }
 }

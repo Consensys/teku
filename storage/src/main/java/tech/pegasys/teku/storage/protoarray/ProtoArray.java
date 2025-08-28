@@ -699,7 +699,7 @@ public class ProtoArray {
 
   /**
    * This is similar to the <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/fork-choice.md#get_ancestor">get_ancestor</a>
+   * href="https://github.com/ethereum/consensus-specs/blob/master/specs/phase0/fork-choice.md#get_ancestor">get_ancestor</a>
    * function in the eth2 spec.
    *
    * <p>The difference is that this is checking if the ancestor at slot is the required one.

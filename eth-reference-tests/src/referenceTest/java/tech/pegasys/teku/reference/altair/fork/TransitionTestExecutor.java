@@ -53,37 +53,44 @@ public class TransitionTestExecutor implements TestExecutor {
             testDefinition.getConfigName(),
             builder -> {
               switch (milestone) {
-                case ALTAIR -> builder.altairBuilder(a -> a.altairForkEpoch(forkEpoch));
+                case ALTAIR -> builder.altairForkEpoch(forkEpoch);
                 case BELLATRIX ->
-                    builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(forkEpoch));
+                    builder.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(forkEpoch);
                 case CAPELLA ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(forkEpoch);
                 case DENEB ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.denebForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(forkEpoch);
                 case ELECTRA ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                        .electraBuilder(e -> e.electraForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(forkEpoch);
                 case FULU ->
                     builder
-                        .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO))
-                        .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
-                        .fuluBuilder(f -> f.fuluForkEpoch(forkEpoch));
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(forkEpoch);
+                case GLOAS ->
+                    builder
+                        .altairForkEpoch(UInt64.ZERO)
+                        .bellatrixForkEpoch(UInt64.ZERO)
+                        .capellaForkEpoch(UInt64.ZERO)
+                        .denebForkEpoch(UInt64.ZERO)
+                        .electraForkEpoch(UInt64.ZERO)
+                        .fuluForkEpoch(UInt64.ZERO)
+                        .gloasForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "

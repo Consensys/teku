@@ -62,7 +62,7 @@ public class BlobSidecarsByRangeRequestMessageTest {
         Arguments.of(10, 2, 11),
         Arguments.of(0, 5, 4),
         Arguments.of(10, 5, 14),
-        Arguments.of(1, 0, 1),
+        Arguments.of(1, 0, 0),
         Arguments.of(0, 0, 0));
   }
 }

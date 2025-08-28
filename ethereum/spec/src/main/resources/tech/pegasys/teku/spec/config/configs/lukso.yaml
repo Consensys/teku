@@ -60,9 +60,14 @@ CAPELLA_FORK_VERSION: 0x42000004
 CAPELLA_FORK_EPOCH: 8100
 
 # Deneb
-# Date and time (GMT): Wednesday, 20 November 2024 16:20:00
+# Date and time: Wednesday, 20 November 2024 16:20:00 GMT
 DENEB_FORK_VERSION: 0x42000005
 DENEB_FORK_EPOCH: 123075
+
+# Electra
+# Date and time: Wednesday, 17 September 2025 16:20:00 GMT
+ELECTRA_FORK_VERSION: 0x42000006
+ELECTRA_FORK_EPOCH: 190800
 
 # Fork choice
 # ---------------------------------------------------------------
@@ -77,18 +82,30 @@ REORG_MAX_EPOCHS_SINCE_FINALIZATION: 2
 
 # Time parameters
 # ---------------------------------------------------------------
-# 12 seconds
+# 12 seconds (*deprecated*)
 SECONDS_PER_SLOT: 12
-# 2**5 (= 32) slots 6.4 minutes
-SLOTS_PER_EPOCH: 32
+# 12000 milliseconds
+SLOT_DURATION_MS: 12000
 # 14 (estimate from Eth1 mainnet)
-SECONDS_PER_ETH1_BLOCK: 12
-# 2**8 (= 256) epochs ~27 hours
+SECONDS_PER_ETH1_BLOCK: 14
+# 2**8 (= 256) epochs
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
-# 2**8 (= 256) epochs ~27 hours
+# 2**8 (= 256) epochs
 SHARD_COMMITTEE_PERIOD: 256
-# 2**11 (= 2,048) Eth1 blocks ~8 hours
+# 2**11 (= 2,048) Eth1 blocks
 ETH1_FOLLOW_DISTANCE: 2048
+# 1667 basis points, ~17% of SLOT_DURATION_MS
+PROPOSER_REORG_CUTOFF_BPS: 1667
+# 3333 basis points, ~33% of SLOT_DURATION_MS
+ATTESTATION_DUE_BPS: 3333
+# 6667 basis points, ~67% of SLOT_DURATION_MS
+AGGREGATE_DUE_BPS: 6667
+
+# Altair
+# 3333 basis points, ~33% of SLOT_DURATION_MS
+SYNC_MESSAGE_DUE_BPS: 3333
+# 6667 basis points, ~67% of SLOT_DURATION_MS
+CONTRIBUTION_DUE_BPS: 6667
 
 # Sync committee
 # ---------------------------------------------------------------
@@ -127,10 +144,7 @@ MAX_REQUEST_BLOCKS: 1024
 EPOCHS_PER_SUBNET_SUBSCRIPTION: 256
 ## `MIN_VALIDATOR_WITHDRAWABILITY_DELAY + CHURN_LIMIT_QUOTIENT // 2` (= 33024, ~5 months)
 MIN_EPOCHS_FOR_BLOCK_REQUESTS: 33024
-# 5s
-TTFB_TIMEOUT: 5
-# 10s
-RESP_TIMEOUT: 10
+
 ATTESTATION_PROPAGATION_SLOT_RANGE: 32
 # 500ms
 MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500

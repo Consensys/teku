@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
@@ -34,16 +33,6 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   }
 
   @Override
-  public Bytes4 getFuluForkVersion() {
-    return delegate.getFuluForkVersion();
-  }
-
-  @Override
-  public UInt64 getFuluForkEpoch() {
-    return delegate.getFuluForkEpoch();
-  }
-
-  @Override
   public UInt64 getFieldElementsPerCell() {
     return delegate.getFieldElementsPerCell();
   }
@@ -54,6 +43,16 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   }
 
   @Override
+  public int getCellsPerExtBlob() {
+    return delegate.getCellsPerExtBlob();
+  }
+
+  @Override
+  public int getNumberOfColumns() {
+    return delegate.getNumberOfColumns();
+  }
+
+  @Override
   public List<BlobScheduleEntry> getBlobSchedule() {
     return delegate.getBlobSchedule();
   }
@@ -61,11 +60,6 @@ public class DelegatingSpecConfigFulu extends DelegatingSpecConfigElectra
   @Override
   public UInt64 getKzgCommitmentsInclusionProofDepth() {
     return delegate.getKzgCommitmentsInclusionProofDepth();
-  }
-
-  @Override
-  public int getNumberOfColumns() {
-    return delegate.getNumberOfColumns();
   }
 
   @Override

@@ -202,7 +202,7 @@ public class BlockManager extends Service
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
     // we don't care about origin here because flow calls this function for retries only
     doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.empty())
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
@@ -322,6 +322,9 @@ public class BlockManager extends Service
                       DESCENDANT_OF_INVALID_BLOCK -> {
                     logFailedBlockImport(block, result.getFailureReason());
                     dropInvalidBlock(block, result);
+                  }
+                  case BUILDER_WITHHOLD -> {
+                    // normal flow, nothing to do
                   }
                   case INTERNAL_ERROR -> {
                     logFailedBlockImport(block, result.getFailureReason());

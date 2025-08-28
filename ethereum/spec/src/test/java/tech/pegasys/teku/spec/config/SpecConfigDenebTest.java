@@ -86,8 +86,6 @@ public class SpecConfigDenebTest {
 
     return new SpecConfigDenebImpl(
         capellaConfig,
-        dataStructureUtil.randomBytes4(),
-        dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt(),

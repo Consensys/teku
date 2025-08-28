@@ -98,7 +98,7 @@ public class SimpleSidecarRetrieverTest {
   }
 
   List<UInt64> nodeCustodyColumns(final UInt256 nodeId) {
-    return miscHelpers.computeCustodyColumnIndexes(
+    return miscHelpers.computeCustodyColumnIndices(
         nodeId, custodyCountSupplier.getCustodyGroupCountForPeer(nodeId));
   }
 
@@ -262,8 +262,7 @@ public class SimpleSidecarRetrieverTest {
             .limit(20_000)
             .toList();
 
-    columnIds.forEach(
-        columnId -> simpleSidecarRetriever.retrieve(columnId).ifExceptionGetsHereRaiseABug());
+    columnIds.forEach(columnId -> simpleSidecarRetriever.retrieve(columnId).finishDebug(LOG));
 
     Assertions.assertTimeout(Duration.ofSeconds(10), () -> advanceTimeGradually(retrieverRound));
   }

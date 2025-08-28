@@ -15,6 +15,9 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,12 +27,13 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -64,6 +68,12 @@ public class SpecConfigBuilder {
   // Time parameters
   private UInt64 genesisDelay;
   private Integer secondsPerSlot;
+
+  private Integer slotDurationMs;
+  private Integer proposerReorgCutoffBps;
+  private Integer attestationDueBps;
+  private Integer aggregateDueBps;
+
   private Integer minAttestationInclusionDelay;
   private Integer slotsPerEpoch;
   private Integer minSeedLookahead;
@@ -110,8 +120,6 @@ public class SpecConfigBuilder {
   private Integer maxPayloadSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
-  private Integer ttfbTimeout;
-  private Integer respTimeout;
   private Integer attestationPropagationSlotRange;
   private Integer maximumGossipClockDisparity;
   private Bytes4 messageDomainInvalidSnappy;
@@ -128,20 +136,43 @@ public class SpecConfigBuilder {
   private Integer reorgHeadWeightThreshold = 20;
 
   private Integer reorgParentWeightThreshold = 160;
+  private final AltairBuilder altairBuilder = new AltairBuilder();
+  private final BellatrixBuilder bellatrixBuilder = new BellatrixBuilder();
+  private final CapellaBuilder capellaBuilder = new CapellaBuilder();
   private final DenebBuilder denebBuilder = new DenebBuilder();
   private final ElectraBuilder electraBuilder = new ElectraBuilder();
   private final FuluBuilder fuluBuilder = new FuluBuilder();
+  private final GloasBuilder gloasBuilder = new GloasBuilder();
+
+  // Forks
+  private Bytes4 altairForkVersion;
+  private Bytes4 bellatrixForkVersion;
+  private Bytes4 capellaForkVersion;
+  private Bytes4 denebForkVersion;
+  private Bytes4 electraForkVersion;
+  private Bytes4 fuluForkVersion;
+  private Bytes4 gloasForkVersion;
+  private UInt64 altairForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 bellatrixForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 capellaForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 denebForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 electraForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 fuluForkEpoch = FAR_FUTURE_EPOCH;
+  private UInt64 gloasForkEpoch = FAR_FUTURE_EPOCH;
+
+  private BLSSignatureVerifier blsSignatureVerifier = BLSSignatureVerifier.SIMPLE;
 
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
-  private final BuilderChain<SpecConfig, SpecConfigFulu> builderChain =
-      BuilderChain.create(new AltairBuilder())
-          .appendBuilder(new BellatrixBuilder())
-          .appendBuilder(new CapellaBuilder())
+  private final BuilderChain<SpecConfig, SpecConfigGloas> builderChain =
+      BuilderChain.create(altairBuilder)
+          .appendBuilder(bellatrixBuilder)
+          .appendBuilder(capellaBuilder)
           .appendBuilder(denebBuilder)
           .appendBuilder(electraBuilder)
-          .appendBuilder(fuluBuilder);
+          .appendBuilder(fuluBuilder)
+          .appendBuilder(gloasBuilder);
 
-  public SpecConfigAndParent<SpecConfigFulu> build() {
+  public SpecConfigAndParent<SpecConfigGloas> build() {
     builderChain.addOverridableItemsToRawConfig(
         (key, value) -> {
           if (value != null) {
@@ -160,6 +191,40 @@ public class SpecConfigBuilder {
         LOG.error("Failed to parse GOSSIP_MAX_SIZE", e);
       }
     }
+
+    // we need to make sure we have both fields set as we may only get one or the other from config
+    // currently.
+    if (slotDurationMs == null && secondsPerSlot != null) {
+      LOG.debug("Defaulting slotDurationMs from secondsPerSlot: {}", secondsPerSlot);
+      slotDurationMs = secondsToMillis(secondsPerSlot).intValue();
+    } else if (secondsPerSlot == null && slotDurationMs != null) {
+      LOG.debug("Defaulting secondsPerSlot from slotDurationMs: {}", slotDurationMs);
+      secondsPerSlot = millisToSeconds(slotDurationMs).intValue();
+    } else if (slotDurationMs != null
+        && secondsPerSlot != null
+        && slotDurationMs != secondsPerSlot * 1000) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The specified network configuration had both SLOT_DURATION_MS (%d) and SECONDS_PER_SLOT(%d) defined, and they were inconsistent.",
+              slotDurationMs, secondsPerSlot));
+    }
+    // defaulting for compatibility
+    if (attestationDueBps == null) {
+      attestationDueBps = 3333;
+      LOG.debug("Defaulting attestationDueBps to {}", attestationDueBps);
+    }
+
+    if (aggregateDueBps == null) {
+      aggregateDueBps = 6667;
+      LOG.debug("Defaulting aggregateDueBps to {}", aggregateDueBps);
+    }
+
+    if (proposerReorgCutoffBps == null) {
+      proposerReorgCutoffBps = 1667;
+      LOG.debug("Defaulting proposerReorgCutoffBps to {}", proposerReorgCutoffBps);
+    }
+
+    applyForkVersions();
     validate();
     final SpecConfigAndParent<SpecConfig> config =
         SpecConfigAndParent.of(
@@ -217,8 +282,6 @@ public class SpecConfigBuilder {
                 maxRequestBlocks,
                 epochsPerSubnetSubscription,
                 minEpochsForBlockRequests,
-                ttfbTimeout,
-                respTimeout,
                 attestationPropagationSlotRange,
                 maximumGossipClockDisparity,
                 messageDomainInvalidSnappy,
@@ -230,7 +293,26 @@ public class SpecConfigBuilder {
                 reorgMaxEpochsSinceFinalization,
                 reorgHeadWeightThreshold,
                 reorgParentWeightThreshold,
-                maxPerEpochActivationExitChurnLimit));
+                maxPerEpochActivationExitChurnLimit,
+                slotDurationMs,
+                attestationDueBps,
+                aggregateDueBps,
+                proposerReorgCutoffBps,
+                blsSignatureVerifier,
+                altairForkVersion,
+                altairForkEpoch,
+                bellatrixForkVersion,
+                bellatrixForkEpoch,
+                capellaForkVersion,
+                capellaForkEpoch,
+                denebForkVersion,
+                denebForkEpoch,
+                electraForkVersion,
+                electraForkEpoch,
+                fuluForkVersion,
+                fuluForkEpoch,
+                gloasForkVersion,
+                gloasForkEpoch));
 
     return builderChain.build(config);
   }
@@ -257,6 +339,10 @@ public class SpecConfigBuilder {
     constants.put("genesisForkVersion", genesisForkVersion);
     constants.put("genesisDelay", genesisDelay);
     constants.put("secondsPerSlot", secondsPerSlot);
+    constants.put("slotDurationMs", slotDurationMs);
+    constants.put("proposerReorgCutoffBps", proposerReorgCutoffBps);
+    constants.put("attestationDueBps", attestationDueBps);
+    constants.put("aggregateDueBps", aggregateDueBps);
     constants.put("minAttestationInclusionDelay", minAttestationInclusionDelay);
     constants.put("slotsPerEpoch", slotsPerEpoch);
     constants.put("minSeedLookahead", minSeedLookahead);
@@ -289,8 +375,6 @@ public class SpecConfigBuilder {
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
-    constants.put("ttfbTimeout", ttfbTimeout);
-    constants.put("respTimeout", respTimeout);
     constants.put("attestationPropagationSlotRange", attestationPropagationSlotRange);
     constants.put("maximumGossipClockDisparity", maximumGossipClockDisparity);
     constants.put("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
@@ -302,7 +386,73 @@ public class SpecConfigBuilder {
     constants.put("reorgMaxEpochsSinceFinalization", reorgMaxEpochsSinceFinalization);
     constants.put("reorgHeadWeightThreshold", reorgHeadWeightThreshold);
     constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
+    constants.put("altairForkEpoch", altairForkEpoch);
+    constants.put("altairForkVersion", altairForkVersion);
+    constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
+    constants.put("bellatrixForkVersion", bellatrixForkVersion);
+    constants.put("capellaForkVersion", capellaForkVersion);
+    constants.put("capellaForkEpoch", capellaForkEpoch);
+    constants.put("denebForkVersion", denebForkVersion);
+    constants.put("denebForkEpoch", denebForkEpoch);
+    constants.put("electraForkVersion", electraForkVersion);
+    constants.put("electraForkEpoch", electraForkEpoch);
+    constants.put("fuluForkVersion", fuluForkVersion);
+    constants.put("fuluForkEpoch", fuluForkEpoch);
+    constants.put("gloasForkVersion", gloasForkVersion);
+    constants.put("gloasForkEpoch", gloasForkEpoch);
     return constants;
+  }
+
+  private void applyForkVersions() {
+    // update raw config if epochs and fork versions are known
+    // if they're not known, they'll result in a validation error (expected)
+    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH) && altairForkVersion == null) {
+      altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH) && bellatrixForkVersion == null) {
+      bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (capellaForkEpoch.equals(FAR_FUTURE_EPOCH) && capellaForkVersion == null) {
+      capellaForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (denebForkEpoch.equals(FAR_FUTURE_EPOCH) && denebForkVersion == null) {
+      denebForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (electraForkEpoch.equals(FAR_FUTURE_EPOCH) && electraForkVersion == null) {
+      electraForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (fuluForkEpoch.equals(FAR_FUTURE_EPOCH) && fuluForkVersion == null) {
+      fuluForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+    if (gloasForkEpoch.equals(FAR_FUTURE_EPOCH) && gloasForkVersion == null) {
+      gloasForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
+    }
+
+    // ensure raw config is accurate
+    rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
+    rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
+    rawConfig.put("CAPELLA_FORK_EPOCH", capellaForkEpoch);
+    rawConfig.put("DENEB_FORK_EPOCH", denebForkEpoch);
+    rawConfig.put("ELECTRA_FORK_EPOCH", electraForkEpoch);
+    rawConfig.put("FULU_FORK_EPOCH", fuluForkEpoch);
+    rawConfig.put("GLOAS_FORK_EPOCH", gloasForkEpoch);
+
+    rawConfig.put("ALTAIR_FORK_VERSION", altairForkVersion);
+    rawConfig.put("BELLATRIX_FORK_VERSION", bellatrixForkVersion);
+    rawConfig.put("CAPELLA_FORK_VERSION", capellaForkVersion);
+    rawConfig.put("DENEB_FORK_VERSION", denebForkVersion);
+    rawConfig.put("ELECTRA_FORK_VERSION", electraForkVersion);
+    rawConfig.put("FULU_FORK_VERSION", fuluForkVersion);
+    rawConfig.put("GLOAS_FORK_VERSION", gloasForkVersion);
+
+    // tell the fork builders their fork epoch
+    altairBuilder.setForkEpoch(altairForkEpoch);
+    bellatrixBuilder.setForkEpoch(bellatrixForkEpoch);
+    capellaBuilder.setForkEpoch(capellaForkEpoch);
+    denebBuilder.setForkEpoch(denebForkEpoch);
+    electraBuilder.setForkEpoch(electraForkEpoch);
+    fuluBuilder.setForkEpoch(fuluForkEpoch);
+    gloasBuilder.setForkEpoch(gloasForkEpoch);
   }
 
   private void validate() {
@@ -440,6 +590,90 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  public SpecConfigBuilder altairForkVersion(final Bytes4 altairForkVersion) {
+    checkNotNull(altairForkVersion);
+    this.altairForkVersion = altairForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
+    checkNotNull(altairForkEpoch);
+    this.altairForkEpoch = altairForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkVersion(final Bytes4 bellatrixForkVersion) {
+    checkNotNull(bellatrixForkVersion);
+    this.bellatrixForkVersion = bellatrixForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+    checkNotNull(bellatrixForkEpoch);
+    this.bellatrixForkEpoch = bellatrixForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkVersion(final Bytes4 capellaForkVersion) {
+    checkNotNull(capellaForkVersion);
+    this.capellaForkVersion = capellaForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
+    checkNotNull(capellaForkEpoch);
+    this.capellaForkEpoch = capellaForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder denebForkVersion(final Bytes4 denebForkVersion) {
+    checkNotNull(denebForkVersion);
+    this.denebForkVersion = denebForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
+    checkNotNull(denebForkEpoch);
+    this.denebForkEpoch = denebForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder electraForkVersion(final Bytes4 electraForkVersion) {
+    checkNotNull(electraForkVersion);
+    this.electraForkVersion = electraForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
+    checkNotNull(electraForkEpoch);
+    this.electraForkEpoch = electraForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder fuluForkVersion(final Bytes4 fuluForkVersion) {
+    checkNotNull(fuluForkVersion);
+    this.fuluForkVersion = fuluForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder fuluForkEpoch(final UInt64 fuluForkEpoch) {
+    checkNotNull(fuluForkEpoch);
+    this.fuluForkEpoch = fuluForkEpoch;
+    return this;
+  }
+
+  public SpecConfigBuilder gloasForkVersion(final Bytes4 gloasForkVersion) {
+    checkNotNull(gloasForkVersion);
+    this.gloasForkVersion = gloasForkVersion;
+    return this;
+  }
+
+  public SpecConfigBuilder gloasForkEpoch(final UInt64 gloasForkEpoch) {
+    checkNotNull(gloasForkEpoch);
+    this.gloasForkEpoch = gloasForkEpoch;
+    return this;
+  }
+
   public SpecConfigBuilder genesisDelay(final UInt64 genesisDelay) {
     checkNotNull(genesisDelay);
     this.genesisDelay = genesisDelay;
@@ -449,6 +683,30 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder secondsPerSlot(final Integer secondsPerSlot) {
     checkNotNull(secondsPerSlot);
     this.secondsPerSlot = secondsPerSlot;
+    return this;
+  }
+
+  public SpecConfigBuilder slotDurationMs(final Integer slotDurationMs) {
+    checkNotNull(slotDurationMs);
+    this.slotDurationMs = slotDurationMs;
+    return this;
+  }
+
+  public SpecConfigBuilder proposerReorgCutoffBps(final Integer proposerReorgCutoffBps) {
+    checkNotNull(proposerReorgCutoffBps);
+    this.proposerReorgCutoffBps = proposerReorgCutoffBps;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationDueBps(final Integer attestationDueBps) {
+    checkNotNull(attestationDueBps);
+    this.attestationDueBps = attestationDueBps;
+    return this;
+  }
+
+  public SpecConfigBuilder aggregateDueBps(final Integer aggregateDueBps) {
+    checkNotNull(aggregateDueBps);
+    this.aggregateDueBps = aggregateDueBps;
     return this;
   }
 
@@ -649,16 +907,6 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
-    this.ttfbTimeout = ttfbTimeout;
-    return this;
-  }
-
-  public SpecConfigBuilder respTimeout(final Integer respTimeout) {
-    this.respTimeout = respTimeout;
-    return this;
-  }
-
   public SpecConfigBuilder attestationPropagationSlotRange(
       final Integer attestationPropagationSlotRange) {
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
@@ -716,6 +964,11 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  public SpecConfigBuilder blsSignatureVerifier(final BLSSignatureVerifier blsSignatureVerifier) {
+    this.blsSignatureVerifier = blsSignatureVerifier;
+    return this;
+  }
+
   public SpecConfigBuilder altairBuilder(final Consumer<AltairBuilder> consumer) {
     builderChain.withBuilder(AltairBuilder.class, consumer);
     return this;
@@ -743,6 +996,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder fuluBuilder(final Consumer<FuluBuilder> consumer) {
     builderChain.withBuilder(FuluBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder gloasBuilder(final Consumer<GloasBuilder> consumer) {
+    builderChain.withBuilder(GloasBuilder.class, consumer);
     return this;
   }
 }

@@ -13,24 +13,16 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigCapellaImpl;
 
-public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, SpecConfigCapella> {
-
-  private Bytes4 capellaForkVersion;
-  private UInt64 capellaForkEpoch;
+public class CapellaBuilder extends BaseForkBuilder
+    implements ForkConfigBuilder<SpecConfigBellatrix, SpecConfigCapella> {
 
   private Integer maxBlsToExecutionChanges;
   private Integer maxWithdrawalsPerPayload;
@@ -44,24 +36,10 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     return SpecConfigAndParent.of(
         new SpecConfigCapellaImpl(
             specConfig.specConfig(),
-            capellaForkVersion,
-            capellaForkEpoch,
             maxBlsToExecutionChanges,
             maxWithdrawalsPerPayload,
             maxValidatorsPerWithdrawalSweep),
         specConfig);
-  }
-
-  public CapellaBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
-    checkNotNull(capellaForkEpoch);
-    this.capellaForkEpoch = capellaForkEpoch;
-    return this;
-  }
-
-  public CapellaBuilder capellaForkVersion(final Bytes4 capellaForkVersion) {
-    checkNotNull(capellaForkVersion);
-    this.capellaForkVersion = capellaForkVersion;
-    return this;
   }
 
   public CapellaBuilder maxBlsToExecutionChanges(final Integer maxBlsToExecutionChanges) {
@@ -80,33 +58,15 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     return this;
   }
 
-  public UInt64 getCapellaForkEpoch() {
-    return capellaForkEpoch;
-  }
-
   @Override
   public void validate() {
-    if (capellaForkEpoch == null) {
-      // Config doesn't include Capella configuration but we need some values for the REST API
-      // type definitions.
-      // Provide MainNet-like defaults and ensure Capella isn't actually supported
-      capellaForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
-      capellaForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
-    }
-
-    // Fill default zeros if fork is unsupported
-    if (capellaForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      SpecBuilderUtil.fillMissingValuesWithZeros(this);
-    }
-
+    defaultValuesIfRequired(this);
     validateConstants();
   }
 
   @Override
   public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
-    constants.put("capellaForkVersion", capellaForkVersion);
-    constants.put("capellaForkEpoch", capellaForkEpoch);
     constants.put("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
     constants.put("maxWithdrawalsPerPayload", maxWithdrawalsPerPayload);
     constants.put("maxValidatorsPerWithdrawalSweep", maxValidatorsPerWithdrawalSweep);
@@ -115,7 +75,5 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   }
 
   @Override
-  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
-    rawConfig.accept("CAPELLA_FORK_EPOCH", capellaForkEpoch);
-  }
+  public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}
 }

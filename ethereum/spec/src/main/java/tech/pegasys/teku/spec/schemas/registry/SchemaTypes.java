@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -60,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSid
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationSchema;
@@ -114,6 +116,8 @@ public class SchemaTypes {
       BEACON_STATE_SCHEMA = create("BEACON_STATE_SCHEMA");
   public static final SchemaId<MetadataMessageSchema<?>> METADATA_MESSAGE_SCHEMA =
       create("METADATA_MESSAGE_SCHEMA");
+  public static final SchemaId<StatusMessageSchema<?>> STATUS_MESSAGE_SCHEMA =
+      create("STATUS_MESSAGE_SCHEMA");
 
   // Altair
 
@@ -196,6 +200,8 @@ public class SchemaTypes {
       DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA = create("DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA");
   public static final SchemaId<MatrixEntrySchema> MATRIX_ENTRY_SCHEMA =
       create("MATRIX_ENTRY_SCHEMA");
+  public static final SchemaId<SszUInt64VectorSchema<?>> PROPOSER_LOOKAHEAD_SCHEMA =
+      create("PROPOSER_LOOKAHEAD_SCHEMA");
   public static final SchemaId<DataColumnSidecarsByRootRequestMessageSchema>
       DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
           create("DATA_COLUMN_SIDECARS_BY_ROOT_REQUEST_MESSAGE_SCHEMA");

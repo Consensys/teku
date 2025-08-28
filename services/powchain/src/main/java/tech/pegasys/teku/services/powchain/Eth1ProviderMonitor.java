@@ -66,6 +66,6 @@ public class Eth1ProviderMonitor {
 
     asyncRunner
         .runAfterDelay(this::validate, Constants.ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL)
-        .ifExceptionGetsHereRaiseABug();
+        .finishError(LOG);
   }
 }

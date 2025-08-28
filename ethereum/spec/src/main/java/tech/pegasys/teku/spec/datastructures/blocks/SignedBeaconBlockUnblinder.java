@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -34,9 +35,18 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
  * construct the unblinded version of the {@link SignedBeaconBlock}
  */
 public interface SignedBeaconBlockUnblinder {
+
   void setExecutionPayloadSupplier(Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
+
+  default void setCompletionSupplier(final Supplier<SafeFuture<Void>> completionFutureSupplier) {
+    // do nothing
+  }
 
   SignedBeaconBlock getSignedBlindedBeaconBlock();
 
-  SafeFuture<SignedBeaconBlock> unblind();
+  /**
+   * For pre-Fulu blocks returns full block. After Fulu if block is built via Builder, sends signed
+   * blinded block to the Builder and if no errors occurs returns `Optional.empty()`
+   */
+  SafeFuture<Optional<SignedBeaconBlock>> unblind();
 }

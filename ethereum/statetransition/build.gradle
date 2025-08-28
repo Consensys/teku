@@ -38,6 +38,7 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:kzg'))
   testImplementation testFixtures(project(':storage'))
+  testImplementation testFixtures(project(':infrastructure:logging'))
 
   testFixturesApi testFixtures(project(':infrastructure:bls'))
   testFixturesApi testFixtures(project(':storage'))
@@ -46,13 +47,14 @@ dependencies {
   testFixturesImplementation project(':ethereum:spec')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
+  testFixturesImplementation testFixtures(project(':infrastructure:logging'))
   testFixturesImplementation project(':infrastructure:serviceutils')
   testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
   testFixturesImplementation project(':infrastructure:time')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
   testFixturesImplementation testFixtures(project(':infrastructure:time'))
-  testImplementation testFixtures(project(':infrastructure:logging'))
+  testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
   jmhImplementation testFixtures(project(':ethereum:spec'))

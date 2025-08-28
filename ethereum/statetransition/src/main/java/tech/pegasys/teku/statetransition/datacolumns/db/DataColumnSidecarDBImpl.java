@@ -86,11 +86,6 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
         .thenRun(() -> detailLogger.logOnNewSidecar(sidecar));
   }
 
-  @Override
-  public SafeFuture<Void> pruneAllSidecars(final UInt64 tillSlotExclusive) {
-    return sidecarUpdateChannel.onSidecarsAvailabilitySlot(tillSlotExclusive);
-  }
-
   private class DetailLogger {
     private final AtomicInteger addCounter = new AtomicInteger();
     private long maxAddedSlot = 0;
@@ -126,7 +121,7 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
                       currentAddCounter,
                       prevSlotCountFinalizedSlot.get(1));
                 })
-            .ifExceptionGetsHereRaiseABug();
+            .finishStackTrace();
       }
     }
 

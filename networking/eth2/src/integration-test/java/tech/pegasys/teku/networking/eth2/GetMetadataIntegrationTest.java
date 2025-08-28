@@ -153,8 +153,15 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(res).isCompleted();
     final MetadataMessage metadata = safeJoin(res);
     assertThat(metadata).isInstanceOf(expectedType);
-    // There will be update of custody_group_count in this case
-    if (!(nextMilestone == SpecMilestone.FULU && nextSpecEnabledRemotely)) {
+
+    // There will be update of custody_group_count in these cases
+    final boolean shouldUpdateSeqNumber =
+        nextMilestone.isGreaterThan(SpecMilestone.FULU)
+            || (nextMilestone == SpecMilestone.FULU && nextSpecEnabledRemotely);
+
+    if (shouldUpdateSeqNumber) {
+      assertThat(metadata.getSeqNumber()).isGreaterThan(UInt64.ZERO);
+    } else {
       assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
     }
   }
@@ -163,7 +170,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     return switch (milestone) {
       case PHASE0 -> MetadataMessagePhase0.class;
       case ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA -> MetadataMessageAltair.class;
-      case FULU -> MetadataMessageFulu.class;
+      case FULU, GLOAS -> MetadataMessageFulu.class;
     };
   }
 }

@@ -47,7 +47,7 @@ public final class KZGProof {
   }
 
   static List<KZGProof> splitBytes(final Bytes bytes) {
-    return CKZG4844Utils.bytesChunked(bytes, BYTES_PER_PROOF).stream()
+    return CKZG4844Utils.chunkBytes(bytes, BYTES_PER_PROOF).stream()
         .map(b -> new KZGProof(Bytes48.wrap(b)))
         .toList();
   }

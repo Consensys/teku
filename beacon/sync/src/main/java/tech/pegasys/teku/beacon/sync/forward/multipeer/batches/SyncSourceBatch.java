@@ -271,7 +271,7 @@ public class SyncSourceBatch implements Batch {
               return null;
             },
             eventThread)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private void handleRequestErrors(final Throwable error) {

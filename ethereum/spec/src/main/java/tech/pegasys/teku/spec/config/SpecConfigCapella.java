@@ -14,8 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigCapella extends SpecConfigBellatrix {
 
@@ -28,10 +26,6 @@ public interface SpecConfigCapella extends SpecConfigBellatrix {
                     "Expected Capella spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
-
-  Bytes4 getCapellaForkVersion();
-
-  UInt64 getCapellaForkEpoch();
 
   @Override
   Optional<SpecConfigCapella> toVersionCapella();

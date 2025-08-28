@@ -41,10 +41,10 @@ public class SyncAggregatorSelectionProofProvider {
       final ForkInfo forkInfo) {
     assignments.forEach(
         assignment -> {
-          final IntStream syncSubCommitteeIndexes =
+          final IntStream syncSubCommitteeIndices =
               syncCommitteeUtil.getSyncSubcommittees(assignment.getCommitteeIndices()).intStream();
 
-          syncSubCommitteeIndexes.forEach(
+          syncSubCommitteeIndices.forEach(
               subcommitteeIndex -> {
                 final SafeFuture<BLSSignature> signedProofFuture =
                     createAndSignSelectionData(

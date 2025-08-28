@@ -22,6 +22,7 @@ public enum BuilderApiMethod {
   REGISTER_VALIDATOR("eth/v1/builder/validators"),
   GET_HEADER("eth/v1/builder/header/:slot/:parent_hash/:pubkey"),
   GET_PAYLOAD("eth/v1/builder/blinded_blocks"),
+  GET_PAYLOAD_V2("eth/v2/builder/blinded_blocks"),
   GET_STATUS("eth/v1/builder/status");
 
   private final String path;

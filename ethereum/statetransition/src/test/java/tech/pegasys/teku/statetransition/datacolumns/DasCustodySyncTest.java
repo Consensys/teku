@@ -49,6 +49,7 @@ public class DasCustodySyncTest {
                   fuluBuilder ->
                       fuluBuilder
                           .dataColumnSidecarSubnetCount(4)
+                          .cellsPerExtBlob(8)
                           .numberOfColumns(8)
                           .numberOfCustodyGroups(8)
                           .custodyRequirement(2)
@@ -329,8 +330,8 @@ public class DasCustodySyncTest {
       maybeBlock.ifPresent(
           block -> {
             if (custodyStand.hasBlobs(block)) {
-              final Collection<UInt64> colIndexes = custodyStand.getCustodyColumnIndexes();
-              for (UInt64 colIndex : colIndexes) {
+              final Collection<UInt64> colIndices = custodyStand.getCustodyColumnIndices();
+              for (UInt64 colIndex : colIndices) {
                 final Optional<DataColumnSidecar> maybeSidecar =
                     await(
                         custodyStand.custody.getCustodyDataColumnSidecar(

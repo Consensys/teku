@@ -111,7 +111,7 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
     asyncRunner
         .runAfterDelay(
             () -> pendingRequests.setNoWaitSlot(slot.increment()), waitPeriodForCurrentSlot)
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private static <T> SafeFuture<Optional<T>> anyNonEmpty(

@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 
 public class SupportedDatabaseVersionArgumentsProvider implements ArgumentsProvider {
@@ -47,7 +48,8 @@ public class SupportedDatabaseVersionArgumentsProvider implements ArgumentsProvi
   }
 
   @Override
-  public Stream<? extends Arguments> provideArguments(final ExtensionContext context) {
+  public Stream<? extends Arguments> provideArguments(
+      final ParameterDeclarations parameters, final ExtensionContext context) {
     return supportedDatabaseVersions().stream().map(Arguments::of);
   }
 }

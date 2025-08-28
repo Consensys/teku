@@ -246,6 +246,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public long getSidecarColumnCount() {
+    return finalizedDao.getSidecarColumnCount();
+  }
+
+  @Override
   public long getNonCanonicalBlobSidecarColumnCount() {
     return finalizedDao.getNonCanonicalBlobSidecarColumnCount();
   }

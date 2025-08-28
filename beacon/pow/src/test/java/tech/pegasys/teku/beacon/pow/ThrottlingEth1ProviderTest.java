@@ -64,10 +64,10 @@ class ThrottlingEth1ProviderTest {
 
   @Test
   void shouldLimitNumberOfInFlightRequests() {
-    provider.getEth1Block(ONE).ifExceptionGetsHereRaiseABug();
-    provider.getEth1Block(TWO).ifExceptionGetsHereRaiseABug();
-    provider.getEth1Block(THREE).ifExceptionGetsHereRaiseABug();
-    provider.getEth1Block(FOUR).ifExceptionGetsHereRaiseABug();
+    provider.getEth1Block(ONE).finishStackTrace();
+    provider.getEth1Block(TWO).finishStackTrace();
+    provider.getEth1Block(THREE).finishStackTrace();
+    provider.getEth1Block(FOUR).finishStackTrace();
 
     verify(delegateProvider).getEth1Block(ONE);
     verify(delegateProvider).getEth1Block(TWO);
@@ -107,10 +107,10 @@ class ThrottlingEth1ProviderTest {
 
   @Test
   void shouldThrottleTotalRequestsRegardlessOfType() {
-    provider.getEth1Block(ONE).ifExceptionGetsHereRaiseABug();
-    provider.getEth1Block("TWO").ifExceptionGetsHereRaiseABug();
-    provider.getLatestEth1Block().ifExceptionGetsHereRaiseABug();
-    provider.getEth1Block(FOUR).ifExceptionGetsHereRaiseABug();
+    provider.getEth1Block(ONE).finishStackTrace();
+    provider.getEth1Block("TWO").finishStackTrace();
+    provider.getLatestEth1Block().finishStackTrace();
+    provider.getEth1Block(FOUR).finishStackTrace();
 
     verify(delegateProvider).getEth1Block(ONE);
     verify(delegateProvider).getEth1Block("TWO");

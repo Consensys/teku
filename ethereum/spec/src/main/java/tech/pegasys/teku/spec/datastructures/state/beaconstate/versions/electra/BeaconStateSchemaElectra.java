@@ -29,13 +29,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingConsolidation;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDeposit;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
@@ -122,14 +119,22 @@ public class BeaconStateSchemaElectra
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
+    return (SszListSchema<PendingDeposit, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_DEPOSITS));
   }
 
-  public ExecutionPayloadHeaderSchemaDeneb getLastExecutionPayloadHeaderSchema() {
-    return (ExecutionPayloadHeaderSchemaDeneb)
-        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
+    return (SszListSchema<PendingPartialWithdrawal, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
+    return (SszListSchema<PendingConsolidation, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
   }
 
   @Override
@@ -150,12 +155,6 @@ public class BeaconStateSchemaElectra
     return (BeaconStateSchemaElectra) schema;
   }
 
-  @SuppressWarnings("unchecked")
-  public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
-    return (SszListSchema<HistoricalSummary, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
-  }
-
   @Override
   public BeaconStateElectra createEmpty() {
     return createEmptyBeaconStateImpl();
@@ -168,23 +167,5 @@ public class BeaconStateSchemaElectra
   @Override
   public BeaconStateElectraImpl createFromBackingNode(final TreeNode node) {
     return new BeaconStateElectraImpl(this, node);
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
-    return (SszListSchema<PendingDeposit, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_DEPOSITS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<PendingPartialWithdrawal, ?> getPendingPartialWithdrawalsSchema() {
-    return (SszListSchema<PendingPartialWithdrawal, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_PARTIAL_WITHDRAWALS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<PendingConsolidation, ?> getPendingConsolidationsSchema() {
-    return (SszListSchema<PendingConsolidation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PENDING_CONSOLIDATIONS));
   }
 }

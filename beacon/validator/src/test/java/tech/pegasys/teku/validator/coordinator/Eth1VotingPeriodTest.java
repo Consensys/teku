@@ -35,7 +35,8 @@ class Eth1VotingPeriodTest {
                   .eth1FollowDistance(UInt64.valueOf(5))
                   .epochsPerEth1VotingPeriod(1)
                   .slotsPerEpoch(6)
-                  .secondsPerSlot(4));
+                  .secondsPerSlot(4)
+                  .slotDurationMs(4000));
   private final Spec spec = TestSpecFactory.createPhase0(specConfig);
   private static final UInt64 GENESIS_TIME = UInt64.valueOf(1000);
   private static final UInt64 START_SLOT = UInt64.valueOf(100);

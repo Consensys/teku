@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,12 +59,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final KZG kzg;
   private final Spec spec;
   private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher;
-  private final CustodyGroupCountManager custodyGroupCountManager;
+  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
 
   private final long columnCount;
   private final int recoverColumnCount;
   private final int groupCount;
-  private final AtomicBoolean isSuperNode;
+  private final AtomicBoolean isSuperNode = new AtomicBoolean();
 
   final Function<UInt64, Duration> slotToRecoveryDelay;
   private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
@@ -81,7 +82,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final MiscHelpersFulu miscHelpers,
       final KZG kzg,
       final Consumer<DataColumnSidecar> dataColumnSidecarPublisher,
-      final CustodyGroupCountManager custodyGroupCountManager,
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final int columnCount,
       final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay,
@@ -93,11 +94,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.kzg = kzg;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
-    this.custodyGroupCountManager = custodyGroupCountManager;
+    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
-    this.isSuperNode =
-        new AtomicBoolean(custodyGroupCountManager.getCustodyGroupCount() == groupCount);
     this.slotToRecoveryDelay = slotToRecoveryDelay;
     this.columnCount = columnCount;
     this.groupCount = groupCount;
@@ -122,14 +121,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (!isActiveSuperNode(slot)) {
-      if (custodyGroupCountManager.getCustodyGroupSyncedCount() == groupCount) {
-        LOG.debug(
-            "Number of required custody groups reached maximum custody groups. Activating super node reconstruction.");
-        isSuperNode.set(true);
-      } else {
-        return;
-      }
+    if (shouldSkipProcessing(slot)) {
+      return;
     }
     asyncRunner
         .runAfterDelay(
@@ -147,12 +140,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       });
             },
             slotToRecoveryDelay.apply(slot))
-        .ifExceptionGetsHereRaiseABug();
+        .finishWarn(LOG);
   }
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (!isActiveSuperNode(block.getSlot())) {
+    if (shouldSkipProcessing(block.getSlot())) {
       return;
     }
 
@@ -163,6 +156,21 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       return;
     }
     createOrUpdateRecoveryTaskForBlock(block.getMessage());
+  }
+
+  private boolean shouldSkipProcessing(final UInt64 slot) {
+    if (isActiveSuperNode(slot)) {
+      return false;
+    }
+    if (custodyGroupCountManagerSupplier.get().getCustodyGroupCount() == groupCount) {
+      if (!isSuperNode.get()) {
+        LOG.debug(
+            "Number of required custody groups reached maximum. Activating super node reconstruction.");
+        isSuperNode.set(true);
+      }
+      return false;
+    }
+    return true;
   }
 
   private synchronized void createOrUpdateRecoveryTaskForBlock(final BeaconBlock block) {
@@ -187,7 +195,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (readyToBeRecovered(task)) {
       task.recoveryStarted().set(true);
       if (task.existingColumnIds().size() != columnCount) {
-        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).ifExceptionGetsHereRaiseABug();
+        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).finishError(LOG);
       }
     }
   }
@@ -235,6 +243,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     final SafeFuture<List<DataColumnSidecar>> list =
         AsyncStream.createUnsafe(task.existingColumnIds().iterator())
             .mapAsync(delegate::getCustodyDataColumnSidecar)
+            .filter(Optional::isPresent)
             .map(Optional::get)
             .toList();
     initiateRecovery(task.block().get(), list);
@@ -249,7 +258,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     list.thenAccept(
             sidecars -> {
               LOG.debug(
-                  "Recovery for block: {}. DatacolumnSidecars found: {}",
+                  "Recovery for block: {}. DataColumnSidecars found: {}",
                   block.getSlotAndBlockRoot(),
                   sidecars.size());
               final List<DataColumnSidecar> recoveredSidecars =
@@ -270,7 +279,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                             l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
                         delegate
                             .onNewValidatedDataColumnSidecar(dataColumnSidecar)
-                            .ifExceptionGetsHereRaiseABug();
+                            .finishError(LOG);
                         dataColumnSidecarPublisher.accept(dataColumnSidecar);
                       });
               LOG.debug(
@@ -278,7 +287,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   block.getSlotAndBlockRoot());
             })
         .alwaysRun(timer.closeUnchecked())
-        .ifExceptionGetsHereRaiseABug();
+        .finishError(LOG);
   }
 
   @Override

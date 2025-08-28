@@ -45,10 +45,6 @@ public interface DataColumnSidecarRetriever {
    * canonical chain
    */
   class NotOnCanonicalChainException extends RuntimeException {
-    public NotOnCanonicalChainException(final String msg) {
-      super(msg);
-    }
-
     public NotOnCanonicalChainException(
         final DataColumnSlotAndIdentifier columnId,
         final Optional<BeaconBlock> maybeCanonicalBlock) {

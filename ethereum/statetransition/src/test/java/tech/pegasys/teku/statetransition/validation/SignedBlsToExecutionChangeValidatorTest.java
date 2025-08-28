@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 
 import java.util.Optional;
@@ -60,10 +61,10 @@ class SignedBlsToExecutionChangeValidatorTest {
   @BeforeEach
   public void beforeEach() {
     Mockito.reset(spec, recentChainData);
-    when(recentChainData.getGenesisTime()).thenReturn(UInt64.ZERO);
+    when(recentChainData.getGenesisTime()).thenReturn(ZERO);
     when(recentChainData.getHeadSlot()).thenReturn(UInt64.ONE);
     final BeaconState beaconState = mock(BeaconState.class);
-    when(beaconState.getSlot()).thenReturn(UInt64.ZERO);
+    when(beaconState.getSlot()).thenReturn(ZERO);
     when(recentChainData.getBestState())
         .thenReturn(Optional.of(SafeFuture.completedFuture(beaconState)));
     validator =
@@ -157,10 +158,11 @@ class SignedBlsToExecutionChangeValidatorTest {
     assertValidationResult(validator.validateForGossip(change), IGNORE);
 
     // Advance clock to Capella activation epoch
-    final long slotsPerEpoch = localSpec.getSlotsPerEpoch(UInt64.ZERO);
-    final long secondsPerSlot = localSpec.getSecondsPerSlot(UInt64.valueOf(slotsPerEpoch));
-    stubTimeProvider.advanceTimeBySeconds(
-        capellaActivationEpoch.times(slotsPerEpoch * secondsPerSlot).longValue());
+    final long slotsPerEpoch = localSpec.getSlotsPerEpoch(ZERO);
+    stubTimeProvider.advanceTimeByMillis(
+        capellaActivationEpoch
+            .times(slotsPerEpoch * localSpec.getSlotDurationMillis(ZERO))
+            .longValue());
 
     mockSpecValidationSucceeded(localSpec);
     mockSignatureVerificationSucceeded(localSpec);
@@ -210,10 +212,10 @@ class SignedBlsToExecutionChangeValidatorTest {
             any(SignedBlsToExecutionChange.class),
             eq(BLSSignatureVerifier.SIMPLE));
 
-    final SpecVersion specVersion = spy(spec.atSlot(UInt64.ZERO));
+    final SpecVersion specVersion = spy(spec.atSlot(ZERO));
     final OperationSignatureVerifier signatureVerifier = mock(OperationSignatureVerifier.class);
 
-    doReturn(specVersion).when(spec).atSlot(eq(UInt64.ZERO));
+    doReturn(specVersion).when(spec).atSlot(eq(ZERO));
     when(specVersion.operationSignatureVerifier()).thenReturn(signatureVerifier);
     when(signatureVerifier.verifyBlsToExecutionChangeSignatureAsync(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(true));

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,6 +28,7 @@ import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
+import tech.pegasys.teku.cli.converter.OptionalLongConverter;
 import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -107,6 +109,29 @@ public class Eth2NetworkOptions {
   private boolean rustKzgEnabled = Eth2NetworkConfiguration.DEFAULT_RUST_KZG_ENABLED;
 
   @Option(
+      names = {"--Xkzg-precompute"},
+      paramLabel = "<INT>",
+      description =
+          "Configure KZG precompute value for PeerDAS performance optimization. Valid values range from 0 to 15. "
+              + "Higher values improve performance but use more memory. See the following for more information: "
+              + "https://github.com/ethereum/c-kzg-4844/blob/main/README.md#precompute",
+      arity = "1",
+      converter = OptionalIntConverter.class,
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private OptionalInt kzgPrecompute = OptionalInt.empty();
+
+  @Option(
+      names = {"--Xdata-column-sidecar-recovery-max-delay"},
+      paramLabel = "<MILLISECONDS>",
+      description =
+          "Maximum delay in milliseconds for a supernode to begin data column sidecar recovery.",
+      arity = "1",
+      converter = OptionalLongConverter.class,
+      hidden = true)
+  private OptionalLong dataColumnSidecarRecoveryMaxDelayMillis = OptionalLong.empty();
+
+  @Option(
       names = {"--Xfork-choice-late-block-reorg-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Allow late blocks to be reorged out if they meet the requirements.",
@@ -116,6 +141,17 @@ public class Eth2NetworkOptions {
       hidden = true)
   private boolean forkChoiceLateBlockReorgEnabled =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+
+  @Option(
+      names = {"--Xprepare-block-production-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable block production to be prepared in advance.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean prepareBlockProductionEnabled =
+      Eth2NetworkConfiguration.DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
 
   @Option(
       names = {"--Xfork-choice-updated-always-send-payload-attributes"},
@@ -129,6 +165,17 @@ public class Eth2NetworkOptions {
       hidden = true)
   private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
+
+  @Option(
+      names = {"--Xfork-choice-attestation-wait-limit"},
+      paramLabel = "<MILLISECONDS>",
+      description = "If fork choice isn't complete when attestations are due (Defaults to 1500ms).",
+      arity = "1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private int attestationWaitlimitMillis =
+      Eth2NetworkConfiguration.DEFAULT_ATTESTATION_WAIT_TIMEOUT_MILLIS;
 
   @Option(
       names = {"--Xnetwork-altair-fork-epoch"},
@@ -177,6 +224,14 @@ public class Eth2NetworkOptions {
       description = "Override the Fulu fork activation epoch.",
       arity = "1")
   private UInt64 fuluForkEpoch;
+
+  @Option(
+      names = {"--Xnetwork-gloas-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Gloas fork activation epoch.",
+      arity = "1")
+  private UInt64 gloasForkEpoch;
 
   @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
@@ -423,6 +478,9 @@ public class Eth2NetworkOptions {
     if (fuluForkEpoch != null) {
       builder.fuluForkEpoch(fuluForkEpoch);
     }
+    if (gloasForkEpoch != null) {
+      builder.gloasForkEpoch(gloasForkEpoch);
+    }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
     }
@@ -444,6 +502,7 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .prepareBlockProductionEnabled(prepareBlockProductionEnabled)
         .aggregatingAttestationPoolV2Enabled(aggregatingAttestationPoolV2Enabled)
         .aggregatingAttestationPoolProfilingEnabled(aggregatingAttestationPoolProfilingEnabled)
         .aggregatingAttestationPoolV2BlockAggregationTimeLimit(
@@ -451,8 +510,12 @@ public class Eth2NetworkOptions {
         .aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit(
             aggregatingAttestationPoolV2TotalBlockAggregationTimeLimit)
         .epochsStoreBlobs(epochsStoreBlobs)
+        .attestationWaitLimitMillis(attestationWaitlimitMillis)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes)
         .rustKzgEnabled(rustKzgEnabled);
+    kzgPrecompute.ifPresent(builder::kzgPrecompute);
+    dataColumnSidecarRecoveryMaxDelayMillis.ifPresent(
+        builder::dataColumnSidecarRecoveryMaxDelayMillis);
     asyncP2pMaxQueue.ifPresent(builder::asyncP2pMaxQueue);
     pendingAttestationsMaxQueue.ifPresent(builder::pendingAttestationsMaxQueue);
     asyncBeaconChainMaxQueue.ifPresent(builder::asyncBeaconChainMaxQueue);
