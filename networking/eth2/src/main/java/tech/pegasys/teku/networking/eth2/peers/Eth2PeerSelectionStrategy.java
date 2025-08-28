@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.ActiveEth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -56,10 +57,13 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   private final Shuffler shuffler;
   private final PeerAdvertisementChecker peerAdvertisementChecker;
 
+  private static final long MINIMAL_DELAY_BETWEEN_FALSE_AD_CHECKS_MILLIS = 5_000;
+
   public Eth2PeerSelectionStrategy(
       final TargetPeerRange targetPeerCountRange,
       final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory,
       final ReputationManager reputationManager,
+      final TimeProvider timeProvider,
       final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
       final Shuffler shuffler) {
@@ -70,8 +74,10 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
         new PeerAdvertisementChecker(
             peerSubnetSubscriptionsFactory,
             reputationManager,
+            timeProvider,
             nodeIdToDataColumnSidecarSubnetsCalculator,
-            activeEth2P2PNetworkReference);
+            activeEth2P2PNetworkReference,
+            MINIMAL_DELAY_BETWEEN_FALSE_AD_CHECKS_MILLIS);
     this.shuffler = shuffler;
   }
 

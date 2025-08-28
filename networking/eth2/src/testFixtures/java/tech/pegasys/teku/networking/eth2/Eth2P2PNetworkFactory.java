@@ -353,6 +353,7 @@ public class Eth2P2PNetworkFactory {
                                 config.getTargetSubnetSubscriberCount(),
                                 subnetPeerCountGauge),
                         reputationManager,
+                        timeProvider,
                         new AtomicReference<>(),
                         NodeIdToDataColumnSidecarSubnetsCalculator.NOOP,
                         Collections::shuffle))

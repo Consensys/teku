@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -73,6 +74,7 @@ class Eth2PeerSelectionStrategyTest {
   private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory =
       network -> peerSubnetSubscriptions;
   private final ReputationManager reputationManager = mock(ReputationManager.class);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(60);
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
 
   private Shuffler shuffler = list -> {};
@@ -334,6 +336,7 @@ class Eth2PeerSelectionStrategyTest {
         new TargetPeerRange(peerCountLowerBound, peerCountUpperBound, minimumRandomPeers),
         peerSubnetSubscriptionsFactory,
         reputationManager,
+        timeProvider,
         new AtomicReference<>(),
         NodeIdToDataColumnSidecarSubnetsCalculator.NOOP,
         list -> shuffler.shuffle(list));

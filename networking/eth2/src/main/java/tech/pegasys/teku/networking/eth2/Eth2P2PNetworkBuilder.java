@@ -581,6 +581,7 @@ public class Eth2P2PNetworkBuilder {
                         config.getTargetSubnetSubscriberCount(),
                         subnetPeerCountGauge),
                 reputationManager,
+                timeProvider,
                 activeEth2P2PNetworkReference,
                 nodeIdToDataColumnSidecarSubnetsCalculator,
                 Collections::shuffle))
