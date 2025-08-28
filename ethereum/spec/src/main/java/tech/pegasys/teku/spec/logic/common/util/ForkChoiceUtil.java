@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -472,7 +474,7 @@ public class ForkChoiceUtil {
     return isBellatrixBlockOld(store, block.getSlot());
   }
 
-  /** non-functional in early forks */
+  /* non-functional in early forks */
   public Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
       final Spec spec, final ReadOnlyStore store, final UInt64 slot) {
     return Optional.empty();
@@ -486,6 +488,34 @@ public class ForkChoiceUtil {
     return blockSlot
         .plus(maybeConfig.get().getSafeSlotsToImportOptimistically())
         .isLessThanOrEqualTo(getCurrentSlot(store));
+  }
+
+  @VisibleForTesting
+  // get_slot_component_duration_ms
+  int getSlotComponentDurationMillis(final int basisPoints) {
+    return (basisPoints * specConfig.getSlotDurationMillis()) / 10_000;
+  }
+
+  public int getAttestationDueMillis() {
+    return getSlotComponentDurationMillis(specConfig.getAttestationDueBps());
+  }
+
+  public int getSyncMessageDueMillis() {
+    final SpecConfigAltair configAltair = SpecConfigAltair.required(specConfig);
+    return getSlotComponentDurationMillis(configAltair.getSyncMessageDueBps());
+  }
+
+  public int getAggregateDueMillis() {
+    return getSlotComponentDurationMillis(specConfig.getAggregateDueBps());
+  }
+
+  public int getContributionDueMillis() {
+    final SpecConfigAltair configAltair = SpecConfigAltair.required(specConfig);
+    return getSlotComponentDurationMillis(configAltair.getContributionDueBps());
+  }
+
+  public int getProposerReorgCutoffMillis() {
+    return getSlotComponentDurationMillis(specConfig.getProposerReorgCutoffBps());
   }
 
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
