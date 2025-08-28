@@ -140,6 +140,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequestSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadHeaderSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
@@ -537,6 +538,11 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 new ExecutionPayloadHeaderSchemaDeneb(SpecConfigDeneb.required(specConfig)))
         // ELECTRA is same as DENEB
+        // FULU is same as DENEB
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadHeaderSchemaGloas(SpecConfigGloas.required(specConfig)))
         .build();
   }
 

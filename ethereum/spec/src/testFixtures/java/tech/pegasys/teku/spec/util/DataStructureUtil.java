@@ -661,7 +661,13 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64));
+                    .excessBlobGas(this::randomUInt64)
+                    .parentBlockHash(this::randomBytes32)
+                    .parentBlockRoot(this::randomBytes32)
+                    .builderIndex(this::randomUInt64)
+                    .slot(this::randomSlot)
+                    .value(this::randomUInt64)
+                    .blobKzgCommitmentsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -1461,6 +1467,16 @@ public final class DataStructureUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomSszList(
+                        schema.getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation,
+                        getMaxPayloadAttestations()));
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1569,6 +1585,16 @@ public final class DataStructureUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomSszList(
+                        schema.getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation,
+                        getMaxPayloadAttestations()));
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1626,6 +1652,14 @@ public final class DataStructureUtil {
               }
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
+              }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomFullSszList(
+                        schema.getPayloadAttestationsSchema(), this::randomPayloadAttestation));
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -3100,6 +3134,11 @@ public final class DataStructureUtil {
 
   private UInt64 getMaxEffectiveBalance() {
     return getConstant(SpecConfig::getMaxEffectiveBalance);
+  }
+
+  private Integer getMaxPayloadAttestations() {
+    return getConstant(
+        specConfig -> SpecConfigGloas.required(specConfig).getMaxPayloadAttestations());
   }
 
   private Bytes32 computeDepositDomain() {
