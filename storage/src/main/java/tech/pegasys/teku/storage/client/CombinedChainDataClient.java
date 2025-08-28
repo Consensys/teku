@@ -261,7 +261,9 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
-      final UInt64 slot, final boolean isForkChoiceLateBlockReorgEnabled) {
+      final UInt64 slot,
+      final boolean isForkChoiceLateBlockReorgEnabled,
+      final Runnable onLateBlockPreparationCompleted) {
     if (!isForkChoiceLateBlockReorgEnabled) {
       return getStateAtSlotExact(slot);
     }
@@ -284,11 +286,13 @@ public class CombinedChainDataClient {
                         beaconState -> {
                           // let's run preparation and state generation in parallel
                           final SafeFuture<Void> preparationCompletion =
-                              lateBlockReorgPreparationHandler.onLateBlockReorgPreparation(
-                                  recentChainData
-                                      .getSlotForBlockRoot(proposerHeadRoot)
-                                      .orElseThrow(),
-                                  headRoot);
+                              lateBlockReorgPreparationHandler
+                                  .onLateBlockReorgPreparation(
+                                      recentChainData
+                                          .getSlotForBlockRoot(proposerHeadRoot)
+                                          .orElseThrow(),
+                                      headRoot)
+                                  .thenPeek(__ -> onLateBlockPreparationCompleted.run());
                           final Optional<BeaconState> state =
                               regenerateBeaconState(beaconState, slot);
 
