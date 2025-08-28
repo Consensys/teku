@@ -41,6 +41,7 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
 
   @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
+    validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
     final int lookaheadIndex = requestedSlot.mod(configFulu.getSlotsPerEpoch()).intValue();
     return BeaconStateFulu.required(state)
         .getProposerLookahead()
