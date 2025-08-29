@@ -33,7 +33,7 @@ public abstract class ResourceLoader {
   }
 
   public static ResourceLoader urlOrFile(final String acceptHeader) {
-    return urlOrFile(Optional.of(acceptHeader), __ -> true);
+    return urlOrFile(Optional.ofNullable(acceptHeader), __ -> true);
   }
 
   public static ResourceLoader urlOrFile(
