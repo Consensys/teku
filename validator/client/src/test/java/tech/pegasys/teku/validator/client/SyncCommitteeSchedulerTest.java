@@ -96,7 +96,7 @@ class SyncCommitteeSchedulerTest {
     UInt64.range(UInt64.ONE, UInt64.valueOf(10))
         .forEach(
             slot -> {
-              scheduler.onAttestationCreationDue(slot);
+              scheduler.onSyncCommitteeCreationDue(slot);
               verify(duties).performProductionDuty(slot);
             });
   }
@@ -107,8 +107,8 @@ class SyncCommitteeSchedulerTest {
 
     getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
 
-    scheduler.onAttestationCreationDue(UInt64.ONE);
-    scheduler.onAttestationCreationDue(UInt64.ONE);
+    scheduler.onSyncCommitteeCreationDue(UInt64.ONE);
+    scheduler.onSyncCommitteeCreationDue(UInt64.ONE);
 
     verify(duties, times(1)).performProductionDuty(UInt64.ONE);
   }
@@ -119,15 +119,15 @@ class SyncCommitteeSchedulerTest {
 
     getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
 
-    scheduler.onAttestationCreationDue(UInt64.valueOf(2));
-    scheduler.onAttestationCreationDue(UInt64.ONE);
+    scheduler.onSyncCommitteeCreationDue(UInt64.valueOf(2));
+    scheduler.onSyncCommitteeCreationDue(UInt64.ONE);
 
     verify(duties).performProductionDuty(UInt64.valueOf(2));
     verify(duties, never()).performProductionDuty(UInt64.ONE);
   }
 
   @Test
-  void shouldPerformAggregationForEachSlotWhenAttestationAggregationDue() {
+  void shouldPerformAggregationForEachSlotWhenContributionDue() {
     scheduler.onSlot(UInt64.ONE);
 
     getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
@@ -135,7 +135,7 @@ class SyncCommitteeSchedulerTest {
     UInt64.range(UInt64.ONE, UInt64.valueOf(10))
         .forEach(
             slot -> {
-              scheduler.onAttestationAggregationDue(slot);
+              scheduler.onContributionCreationDue(slot);
               verify(duties).performAggregationDuty(slot);
             });
   }
@@ -250,12 +250,12 @@ class SyncCommitteeSchedulerTest {
     getRequestedDutiesForSyncCommitteePeriod(1).complete(Optional.of(nextDuties));
 
     // Subscribed, but still performing duties for first sync committee period
-    scheduler.onAttestationCreationDue(subscribeSlot);
+    scheduler.onSyncCommitteeCreationDue(subscribeSlot);
     verify(duties).performProductionDuty(subscribeSlot);
 
     final UInt64 nextSyncCommitteeFirstDutySlot = nextSyncCommitteePeriodStartSlot.minus(1);
     scheduler.onSlot(nextSyncCommitteeFirstDutySlot);
-    scheduler.onAttestationCreationDue(nextSyncCommitteeFirstDutySlot);
+    scheduler.onSyncCommitteeCreationDue(nextSyncCommitteeFirstDutySlot);
     verify(nextDuties).performProductionDuty(nextSyncCommitteeFirstDutySlot);
     verify(duties, never()).performProductionDuty(nextSyncCommitteeFirstDutySlot);
   }
@@ -281,8 +281,8 @@ class SyncCommitteeSchedulerTest {
     getRequestedDutiesForSyncCommitteePeriod(1).complete(Optional.of(nextDuties));
 
     // Unexpectedly jump ahead to the next committee period without getting a slot event first
-    scheduler.onAttestationCreationDue(nextSyncCommitteePeriodStartSlot);
-    scheduler.onAttestationAggregationDue(nextSyncCommitteePeriodStartSlot);
+    scheduler.onSyncCommitteeCreationDue(nextSyncCommitteePeriodStartSlot);
+    scheduler.onContributionCreationDue(nextSyncCommitteePeriodStartSlot);
 
     // Should use duties from the next period
     verify(nextDuties).performProductionDuty(nextSyncCommitteePeriodStartSlot);
@@ -293,8 +293,8 @@ class SyncCommitteeSchedulerTest {
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(
             nextSyncCommitteePeriodStartEpoch);
     final UInt64 tooFarInFutureSlot = spec.computeStartSlotAtEpoch(tooFarInFutureEpoch);
-    scheduler.onAttestationCreationDue(tooFarInFutureSlot);
-    scheduler.onAttestationAggregationDue(tooFarInFutureSlot);
+    scheduler.onSyncCommitteeCreationDue(tooFarInFutureSlot);
+    scheduler.onContributionCreationDue(tooFarInFutureSlot);
 
     verify(duties, never()).performProductionDuty(tooFarInFutureSlot);
     verify(duties, never()).performAggregationDuty(tooFarInFutureSlot);
