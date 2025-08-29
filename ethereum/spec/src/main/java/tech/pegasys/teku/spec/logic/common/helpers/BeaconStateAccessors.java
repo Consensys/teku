@@ -218,10 +218,10 @@ public abstract class BeaconStateAccessors {
         .get(
             requestedSlot,
             slot -> {
-              UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
-              Bytes32 seed =
+              final UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+              final Bytes32 seed =
                   Hash.sha256(getSeed(state, epoch, Domain.BEACON_PROPOSER), uint64ToBytes(slot));
-              IntList indices = getActiveValidatorIndices(state, epoch);
+              final IntList indices = getActiveValidatorIndices(state, epoch);
               return miscHelpers.computeProposerIndex(state, indices, seed);
             });
   }
@@ -238,7 +238,7 @@ public abstract class BeaconStateAccessors {
     return isInactivityLeak(getFinalityDelay(state));
   }
 
-  private void validateStateCanCalculateProposerIndexAtSlot(
+  protected void validateStateCanCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
     final UInt64 stateEpoch = getCurrentEpoch(state);

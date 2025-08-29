@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.ArrayList;
@@ -118,8 +120,6 @@ public class SpecConfigBuilder {
   private Integer maxPayloadSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
-  private Integer ttfbTimeout;
-  private Integer respTimeout;
   private Integer attestationPropagationSlotRange;
   private Integer maximumGossipClockDisparity;
   private Bytes4 messageDomainInvalidSnappy;
@@ -192,9 +192,14 @@ public class SpecConfigBuilder {
       }
     }
 
+    // we need to make sure we have both fields set as we may only get one or the other from config
+    // currently.
     if (slotDurationMs == null && secondsPerSlot != null) {
-      LOG.debug("Defaulting slot duration ms from secondsPerSlot: " + secondsPerSlot);
-      slotDurationMs = secondsPerSlot * 1000;
+      LOG.debug("Defaulting slotDurationMs from secondsPerSlot: {}", secondsPerSlot);
+      slotDurationMs = secondsToMillis(secondsPerSlot).intValue();
+    } else if (secondsPerSlot == null && slotDurationMs != null) {
+      LOG.debug("Defaulting secondsPerSlot from slotDurationMs: {}", slotDurationMs);
+      secondsPerSlot = millisToSeconds(slotDurationMs).intValue();
     } else if (slotDurationMs != null
         && secondsPerSlot != null
         && slotDurationMs != secondsPerSlot * 1000) {
@@ -277,8 +282,6 @@ public class SpecConfigBuilder {
                 maxRequestBlocks,
                 epochsPerSubnetSubscription,
                 minEpochsForBlockRequests,
-                ttfbTimeout,
-                respTimeout,
                 attestationPropagationSlotRange,
                 maximumGossipClockDisparity,
                 messageDomainInvalidSnappy,
@@ -372,8 +375,6 @@ public class SpecConfigBuilder {
     constants.put("maxRequestBlocks", maxRequestBlocks);
     constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
-    constants.put("ttfbTimeout", ttfbTimeout);
-    constants.put("respTimeout", respTimeout);
     constants.put("attestationPropagationSlotRange", attestationPropagationSlotRange);
     constants.put("maximumGossipClockDisparity", maximumGossipClockDisparity);
     constants.put("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
@@ -903,16 +904,6 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder minEpochsForBlockRequests(final Integer minEpochsForBlockRequests) {
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
-    return this;
-  }
-
-  public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
-    this.ttfbTimeout = ttfbTimeout;
-    return this;
-  }
-
-  public SpecConfigBuilder respTimeout(final Integer respTimeout) {
-    this.respTimeout = respTimeout;
     return this;
   }
 

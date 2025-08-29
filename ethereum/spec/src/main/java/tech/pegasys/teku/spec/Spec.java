@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
@@ -303,14 +302,6 @@ public class Spec {
     return atSlot(slot).getConfig().getSlotsPerEpoch();
   }
 
-  public int getSecondsPerSlot(final UInt64 slot) {
-    return atSlot(slot).getConfig().getSecondsPerSlot();
-  }
-
-  public UInt64 getMillisPerSlot(final UInt64 slot) {
-    return secondsToMillis(getSecondsPerSlot(slot));
-  }
-
   public long getMaxDeposits(final BeaconState state) {
     return atState(state).getConfig().getMaxDeposits();
   }
@@ -546,6 +537,30 @@ public class Spec {
 
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getCommitteeCountPerSlot(state, epoch);
+  }
+
+  public int getAttestationDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAttestationDueMillis();
+  }
+
+  public int getAggregateDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAggregateDueMillis();
+  }
+
+  public int getProposerReorgCutoffMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getProposerReorgCutoffMillis();
+  }
+
+  public int getSlotDurationMillis(final UInt64 slot) {
+    return atSlot(slot).getConfig().getSlotDurationMillis();
+  }
+
+  public int getSyncMessageDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getSyncMessageDueMillis();
+  }
+
+  public int getContributionDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {

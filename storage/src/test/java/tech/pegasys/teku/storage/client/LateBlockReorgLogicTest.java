@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 class LateBlockReorgLogicTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final int millisPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot() * 1000;
+  private final int millisPerSlot = spec.getGenesisSpecConfig().getSlotDurationMillis();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UInt64 slot = UInt64.ONE;
 
@@ -147,14 +147,14 @@ class LateBlockReorgLogicTest {
 
   @Test
   void isProposingOnTime_shouldDetectOnTimeBeforeCutoff() {
-    /// 999 ms into slot, cutoff is 1000ms
-    timeProvider.advanceTimeByMillis(millisPerSlot + 999);
+    /// 1000 ms into slot, cutoff is 1001ms
+    timeProvider.advanceTimeByMillis(millisPerSlot + 1000);
     assertThat(reorgLogicInstrumented.isProposingOnTime(slot)).isTrue();
   }
 
   @Test
   void isProposingOnTime_shouldDetectLateIfHalfWayToAttestationDue() {
-    timeProvider.advanceTimeByMillis(millisPerSlot + 1000);
+    timeProvider.advanceTimeByMillis(millisPerSlot + 1001);
     assertThat(reorgLogicInstrumented.isProposingOnTime(slot)).isFalse();
   }
 

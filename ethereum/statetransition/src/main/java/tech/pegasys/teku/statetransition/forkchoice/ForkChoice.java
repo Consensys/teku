@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -657,9 +656,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return false;
     }
     // is_before_attesting_interval
-    final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
-    final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
-    if (!isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
+    final UInt64 timeIntoSlotMillis =
+        getMillisIntoSlot(transaction, spec.getSlotDurationMillis(block.getSlot()));
+    if (!timeIntoSlotMillis.isLessThan(spec.getAttestationDueMillis(block.getSlot()))) {
       return false;
     }
     // is_first_block
@@ -725,17 +724,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
   }
 
-  private UInt64 getMillisIntoSlot(final StoreTransaction transaction, final UInt64 millisPerSlot) {
+  private UInt64 getMillisIntoSlot(final StoreTransaction transaction, final int millisPerSlot) {
     return transaction
         .getTimeInMillis()
         .minus(secondsToMillis(transaction.getGenesisTime()))
         .mod(millisPerSlot);
-  }
-
-  private boolean isBeforeAttestingInterval(
-      final UInt64 millisPerSlot, final UInt64 timeIntoSlotMillis) {
-    UInt64 oneThirdSlot = millisPerSlot.dividedBy(INTERVALS_PER_SLOT);
-    return timeIntoSlotMillis.isLessThan(oneThirdSlot);
   }
 
   private void onExecutionPayloadResult(
