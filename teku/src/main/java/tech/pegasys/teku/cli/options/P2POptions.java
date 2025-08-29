@@ -500,7 +500,7 @@ public class P2POptions {
       hidden = true,
       paramLabel = "<NUMBER>",
       description =
-          "Limits the number of queries being queued when handling RPC requests. It has no effect if max-concurrent-queries is set to 0. Use",
+          "Limits the number of queries being queued when handling RPC requests. It has no effect if max-concurrent-queries is set to 0.",
       showDefaultValue = Visibility.ALWAYS,
       arity = "1")
   private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
