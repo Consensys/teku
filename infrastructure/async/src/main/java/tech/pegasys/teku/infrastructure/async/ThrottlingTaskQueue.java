@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
-public class ThrottlingTaskQueue {
+public class ThrottlingTaskQueue implements TaskQueue {
   private static final Logger LOG = LogManager.getLogger();
   protected final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
 
@@ -50,6 +50,7 @@ public class ThrottlingTaskQueue {
     LOG.debug("Task queue maximum concurrent tasks {}", maximumConcurrentTasks);
   }
 
+  @Override
   public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
     final SafeFuture<T> target = new SafeFuture<>();
     final Runnable taskToQueue = getTaskToQueue(request, target);
@@ -78,12 +79,14 @@ public class ThrottlingTaskQueue {
     }
   }
 
-  protected int getQueuedTasksCount() {
+  @Override
+  public int getQueuedTasksCount() {
     return queuedTasks.size();
   }
 
   @VisibleForTesting
-  int getInflightTaskCount() {
+  @Override
+  public int getInflightTaskCount() {
     return inflightTaskCount;
   }
 

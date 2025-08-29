@@ -20,7 +20,9 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
+import tech.pegasys.teku.infrastructure.async.LimitedThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.TaskQueue;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -38,19 +40,21 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
 
   private final StorageQueryChannel delegate;
-  private final ThrottlingTaskQueue taskQueue;
+  private final TaskQueue taskQueue;
 
   public ThrottlingStorageQueryChannel(
       final StorageQueryChannel delegate,
       final int maxConcurrentQueries,
+      final int maximumQueueSize,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
-    taskQueue =
+    taskQueue = new LimitedThrottlingTaskQueue(
         ThrottlingTaskQueue.create(
             maxConcurrentQueries,
             metricsSystem,
             TekuMetricCategory.STORAGE,
-            "throttling_storage_query_queue_size");
+            "throttling_storage_query_queue_size"),
+            maximumQueueSize);
   }
 
   @Override

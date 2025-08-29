@@ -1581,6 +1581,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ThrottlingStorageQueryChannel(
               storageQueryChannel,
               beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries(),
+                  beaconConfig.p2pConfig().getHistoricalDataMaxQueryQueueSize(),
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(
