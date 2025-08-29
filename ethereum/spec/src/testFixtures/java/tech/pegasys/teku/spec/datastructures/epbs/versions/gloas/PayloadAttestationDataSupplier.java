@@ -11,15 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethtests;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
-public class TestFork {
-  public static final String PHASE0 = "phase0";
-  public static final String ALTAIR = "altair";
-  public static final String BELLATRIX = "bellatrix";
-  public static final String CAPELLA = "capella";
-  public static final String DENEB = "deneb";
-  public static final String ELECTRA = "electra";
-  public static final String FULU = "fulu";
-  public static final String GLOAS = "gloas";
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+
+public class PayloadAttestationDataSupplier
+    extends DataStructureUtilSupplier<PayloadAttestationData> {
+
+  public PayloadAttestationDataSupplier() {
+    super(DataStructureUtil::randomPayloadAttestationData, SpecMilestone.GLOAS);
+  }
 }
