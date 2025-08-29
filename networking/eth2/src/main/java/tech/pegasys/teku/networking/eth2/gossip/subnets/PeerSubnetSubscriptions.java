@@ -208,9 +208,9 @@ public class PeerSubnetSubscriptions {
   }
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
-      final UInt256 peerId, final Optional<Integer> custodySubnetCount) {
+      final UInt256 peerId, final Optional<Integer> custodyGroupCount) {
     return nodeIdToDataColumnSidecarSubnetsCalculator
-        .calculateSubnets(peerId, custodySubnetCount)
+        .calculateSubnets(peerId, custodyGroupCount)
         .orElse(dataColumnSidecarSubnetSubscriptions.getSubscriptionSchema().getDefault());
   }
 

@@ -29,6 +29,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -352,6 +353,9 @@ public class Eth2P2PNetworkFactory {
                                 config.getTargetSubnetSubscriberCount(),
                                 subnetPeerCountGauge),
                         reputationManager,
+                        timeProvider,
+                        new AtomicReference<>(),
+                        NodeIdToDataColumnSidecarSubnetsCalculator.NOOP,
                         Collections::shuffle))
                 .discoveryConfig(config.getDiscoveryConfig())
                 .p2pConfig(config.getNetworkConfig())
