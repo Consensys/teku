@@ -134,10 +134,6 @@ public class PeerAdvertisementChecker {
     // Actual check
     final DiscoveryPeer discoveryPeer = discoveryPeerMap.get(discoveryNodeId.get());
 
-    // TODO: remove debug logging under this
-    LOG.info("Checking peer advertisement for {}", peer.getId());
-    // TODO: remove debug logging above this
-
     // Check for sync committee subnets
     final SszBitvector advertisedSyncCommitteeSubnets = discoveryPeer.getSyncCommitteeSubnets();
     final SszBitvector syncCommitteeSubnets =

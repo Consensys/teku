@@ -191,21 +191,12 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final int currentPeerCount = network.getPeerCount();
     final int peersToDropCount = targetPeerCountRange.getPeersToDrop(currentPeerCount);
 
-    // TODO: beginning of debug logging, for removal
-    final long startTime = System.currentTimeMillis();
-    // TODO: end of debug logging, for removal
-
     final List<Peer> falseAdvertisingPeers =
         findFalseAdvertisingPeers(peersBySource, network, discoveryService);
-
-    // TODO: beginning of debug logging, for removal
-    final long endTime = System.currentTimeMillis();
-    LOG.warn(
-        "Found {} false advertising peers in {} ms. Ordered to drop: {}",
+    LOG.debug(
+        "Found {} false advertising peers. Ordered to drop: {}",
         falseAdvertisingPeers.size(),
-        endTime - startTime,
         peersToDropCount);
-    // TODO: end of debug logging, for removal
 
     if (peersToDropCount == 0 || falseAdvertisingPeers.size() >= peersToDropCount) {
       return falseAdvertisingPeers.stream()

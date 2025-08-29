@@ -42,7 +42,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
-@SuppressWarnings({"MockNotUsedInProduction", "UnusedVariable"})
 public class PeerAdvertisementCheckerTest {
   private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory = mock();
   private final ReputationManager reputationManager = mock(ReputationManager.class);
@@ -378,8 +377,6 @@ public class PeerAdvertisementCheckerTest {
     final UInt256 goodDiscoveryNodeId1 = UInt256.valueOf(1);
     final DiscoveryPeer discoveryPeer1 = mock(DiscoveryPeer.class);
     when(discoveryPeer1.getNodeId()).thenReturn(goodDiscoveryNodeId1);
-    final Peer peer1 = mock(Peer.class);
-    when(peer1.getId()).thenReturn(goodNodeId1);
     final Eth2Peer eth2Peer1 = mock(Eth2Peer.class);
     when(eth2Peer1.getDiscoveryNodeId()).thenReturn(Optional.of(goodDiscoveryNodeId1));
     when(activeEth2P2PNetwork.getPeer(goodNodeId1)).thenReturn(Optional.of(eth2Peer1));
