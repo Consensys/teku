@@ -29,6 +29,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -254,6 +255,14 @@ public class DataColumnSidecarsByRootMessageHandler
     return dataColumnSidecarCustodySupplier
         .get()
         .getCustodyDataColumnSidecarByRoot(identifier)
+        .exceptionally(
+            error -> {
+              LOG.warn(
+                  "Failed to retrieve data column sidecar for identifier {}: {}",
+                  identifier,
+                  ExceptionUtil.getMessageOrSimpleName(error));
+              return Optional.empty();
+            })
         .thenCompose(
             maybeSidecar -> {
               if (maybeSidecar.isPresent()) {
