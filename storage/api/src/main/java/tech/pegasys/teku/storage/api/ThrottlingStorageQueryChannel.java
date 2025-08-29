@@ -48,12 +48,13 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
       final int maximumQueueSize,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
-    taskQueue = new LimitedThrottlingTaskQueue(
-        ThrottlingTaskQueue.create(
-            maxConcurrentQueries,
-            metricsSystem,
-            TekuMetricCategory.STORAGE,
-            "throttling_storage_query_queue_size"),
+    taskQueue =
+        new LimitedThrottlingTaskQueue(
+            ThrottlingTaskQueue.create(
+                maxConcurrentQueries,
+                metricsSystem,
+                TekuMetricCategory.STORAGE,
+                "throttling_storage_query_queue_size"),
             maximumQueueSize);
   }
 

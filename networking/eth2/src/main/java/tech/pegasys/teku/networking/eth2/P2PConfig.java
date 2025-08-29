@@ -57,7 +57,7 @@ public class P2PConfig {
   // To avoid resource saturation and ensure capacity for other tasks, we limit historical data
   // queries to 5
   public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 5;
-    public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 100_000;
+  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 100_000;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -70,7 +70,7 @@ public class P2PConfig {
   private final boolean subscribeAllSubnetsEnabled;
   private final int dasExtraCustodyGroupCount;
   private final int historicalDataMaxConcurrentQueries;
-    private final int historicalDataMaxQueryQueueSize;
+  private final int historicalDataMaxQueryQueueSize;
   private final int peerBlocksRateLimit;
   private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
@@ -168,9 +168,9 @@ public class P2PConfig {
     return historicalDataMaxConcurrentQueries;
   }
 
-    public int getHistoricalDataMaxQueryQueueSize() {
-        return historicalDataMaxQueryQueueSize;
-    }
+  public int getHistoricalDataMaxQueryQueueSize() {
+    return historicalDataMaxQueryQueueSize;
+  }
 
   public int getPeerBlocksRateLimit() {
     return peerBlocksRateLimit;
@@ -224,7 +224,7 @@ public class P2PConfig {
     private Boolean subscribeAllCustodySubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private int dasExtraCustodyGroupCount = DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
     private int historicalDataMaxConcurrentQueries = DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
-      private int historicalDataMaxQueryQueueSize = DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
+    private int historicalDataMaxQueryQueueSize = DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
     private Integer peerBlocksRateLimit = DEFAULT_PEER_BLOCKS_RATE_LIMIT;
     private Integer peerBlobSidecarsRateLimit = DEFAULT_PEER_BLOB_SIDECARS_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
@@ -283,7 +283,7 @@ public class P2PConfig {
           subscribeAllSubnetsEnabled,
           dasExtraCustodyGroupCount,
           historicalDataMaxConcurrentQueries,
-              historicalDataMaxQueryQueueSize,
+          historicalDataMaxQueryQueueSize,
           peerBlocksRateLimit,
           peerBlobSidecarsRateLimit,
           peerRequestLimit,

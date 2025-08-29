@@ -495,16 +495,15 @@ public class P2POptions {
   private int historicalDataMaxConcurrentQueries =
       P2PConfig.DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
 
-    @Option(
-            names = {"--Xp2p-historical-data-max-query-queue-size"},
-            hidden = true,
-            paramLabel = "<NUMBER>",
-            description =
-                    "Limits the number of queries being queued when handling RPC requests. It has no effect if max-concurrent-queries is set to 0. Use",
-            showDefaultValue = Visibility.ALWAYS,
-            arity = "1")
-    private int historicalDataMaxQueryQueueSize =
-            P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
+  @Option(
+      names = {"--Xp2p-historical-data-max-query-queue-size"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "Limits the number of queries being queued when handling RPC requests. It has no effect if max-concurrent-queries is set to 0. Use",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "1")
+  private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
 
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
@@ -593,7 +592,7 @@ public class P2POptions {
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
-                          .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize);
+                  .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(
