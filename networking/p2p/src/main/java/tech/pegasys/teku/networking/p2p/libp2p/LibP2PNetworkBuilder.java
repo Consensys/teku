@@ -265,7 +265,7 @@ public class LibP2PNetworkBuilder {
           b.getIdentity().setFactory(() -> privKey);
           b.getTransports().add(TcpTransport::new);
           if (config.isQuicEnabled()) {
-            b.getSecureTransports().add(QuicTransport::Ecdsa);
+            b.getSecureTransports().add(QuicTransport::ECDSA);
           }
           b.getSecureChannels().add(NoiseXXSecureChannel::new);
 
