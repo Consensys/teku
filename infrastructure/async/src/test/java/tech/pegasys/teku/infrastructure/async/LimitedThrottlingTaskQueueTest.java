@@ -17,9 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 public class LimitedThrottlingTaskQueueTest extends ThrottlingTaskQueueTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Override
   protected TaskQueue createThrottlingTaskQueue() {

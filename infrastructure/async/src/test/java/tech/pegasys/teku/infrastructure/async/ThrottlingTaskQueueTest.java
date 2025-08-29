@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueueTest {
 
-  protected static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
   protected static final int MAXIMUM_CONCURRENT_TASKS = 3;
 
   protected final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
