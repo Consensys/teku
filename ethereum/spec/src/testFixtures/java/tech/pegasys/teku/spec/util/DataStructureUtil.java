@@ -2619,13 +2619,9 @@ public final class DataStructureUtil {
 
   public SignedBlockContainer randomSignedBlockContents(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
-    final int numberOfBlobs =
-        signedBeaconBlock
-            .getMessage()
-            .getBody()
-            .getOptionalBlobKzgCommitments()
-            .orElseThrow()
-            .size();
+    final Optional<SszList<SszKZGCommitment>> maybeBlobKzgCommitments =
+        signedBeaconBlock.getMessage().getBody().getOptionalBlobKzgCommitments();
+    final int numberOfBlobs = maybeBlobKzgCommitments.map(SszList::size).orElse(0);
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs =
         randomKZGProofs(
