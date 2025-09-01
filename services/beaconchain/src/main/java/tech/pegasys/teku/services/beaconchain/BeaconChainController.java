@@ -844,7 +844,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig
                       .eth2NetworkConfig()
                       .getDataColumnSidecarRecoveryMaxDelayMillis()
-                      .orElse(spec.getMillisPerSlot(slot).dividedBy(3).longValue());
+                      .orElse(spec.getAttestationDueMillis(slot));
               return Duration.ofMillis(dataColumnSidecarRecoveryMaxDelayMillis);
             },
             metricsSystem,
