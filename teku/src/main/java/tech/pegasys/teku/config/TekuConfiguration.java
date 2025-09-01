@@ -171,7 +171,9 @@ public class TekuConfiguration {
     return validatorRestApiConfig;
   }
 
-  public ZkChainConfiguration zkChainConfiguration() { return zkChainConfiguration; }
+  public ZkChainConfiguration zkChainConfiguration() {
+    return zkChainConfiguration;
+  }
 
   public static class Builder {
     private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =

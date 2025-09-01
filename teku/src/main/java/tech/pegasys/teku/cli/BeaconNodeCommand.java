@@ -175,7 +175,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final MetricsOptions metricsOptions = new MetricsOptions();
 
   @Mixin(name = "ZK-Chain")
-    private final ZkChainOptions zkChainOptions = new ZkChainOptions();
+  private final ZkChainOptions zkChainOptions = new ZkChainOptions();
 
   @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
 
