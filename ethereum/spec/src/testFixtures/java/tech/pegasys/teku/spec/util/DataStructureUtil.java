@@ -2713,6 +2713,7 @@ public final class DataStructureUtil {
   }
 
   public class RandomBlobSidecarBuilder {
+
     private Optional<UInt64> index = Optional.empty();
     private Optional<Bytes> blob = Optional.empty();
     private Optional<Bytes48> kzgCommitment = Optional.empty();
@@ -2771,6 +2772,7 @@ public final class DataStructureUtil {
   }
 
   public class RandomSidecarBuilder {
+
     private Optional<UInt64> index = Optional.empty();
     private Optional<DataColumn> dataColumn = Optional.empty();
     private Optional<List<KZGCommitment>> kzgCommitments = Optional.empty();
@@ -3054,29 +3056,41 @@ public final class DataStructureUtil {
   }
 
   public SignedExecutionPayloadHeader randomSignedExecutionPayloadHeader() {
-    return getGloasSchemaDefinitions(randomSlot())
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(
+            spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
+    return schemaDefinitionsGloas
         .getSignedExecutionPayloadHeaderSchema()
-        .create(randomExecutionPayloadHeader(), randomSignature());
+        .create(
+            randomExecutionPayloadHeader(spec.forMilestone(SpecMilestone.GLOAS)),
+            randomSignature());
   }
 
   public PayloadAttestationData randomPayloadAttestationData() {
-    return getGloasSchemaDefinitions(randomSlot())
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(
+            spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
+    return schemaDefinitionsGloas
         .getPayloadAttestationDataSchema()
         .create(randomBytes32(), randomSlot(), true, true);
   }
 
   public PayloadAttestation randomPayloadAttestation() {
-    return getGloasSchemaDefinitions(randomSlot())
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(
+            spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
+    return schemaDefinitionsGloas
         .getPayloadAttestationSchema()
         .create(
             randomSszBitvector(getPtcSize()), randomPayloadAttestationData(), randomSignature());
   }
 
   public SszList<PayloadAttestation> randomPayloadAttestations() {
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(
+            spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
     final SszListSchema<PayloadAttestation, ?> schema =
-        getGloasSchemaDefinitions(randomSlot())
-            .getBeaconBlockBodySchema()
-            .getPayloadAttestationsSchema();
+        schemaDefinitionsGloas.getBeaconBlockBodySchema().getPayloadAttestationsSchema();
     return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
   }
 
@@ -3112,10 +3126,6 @@ public final class DataStructureUtil {
     return SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
-  private SchemaDefinitionsGloas getGloasSchemaDefinitions(final UInt64 slot) {
-    return SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
-  }
-
   int getEpochsPerEth1VotingPeriod() {
     return getConstant(SpecConfig::getEpochsPerEth1VotingPeriod);
   }
@@ -3125,7 +3135,10 @@ public final class DataStructureUtil {
   }
 
   int getPtcSize() {
-    return getConstant(specConfig -> SpecConfigGloas.required(specConfig).getPtcSize());
+    return getConstant(
+        specConfig ->
+            SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig())
+                .getPtcSize());
   }
 
   int getJustificationBitsLength() {
@@ -3150,7 +3163,9 @@ public final class DataStructureUtil {
 
   private Integer getMaxPayloadAttestations() {
     return getConstant(
-        specConfig -> SpecConfigGloas.required(specConfig).getMaxPayloadAttestations());
+        specConfig ->
+            SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig())
+                .getMaxPayloadAttestations());
   }
 
   private Bytes32 computeDepositDomain() {
