@@ -45,7 +45,7 @@ public class LimitedThrottlingTaskQueue implements TaskQueue {
     metricsSystem.createLongGauge(
         metricCategory,
         metricName,
-        "Maximum size of the task queue",
+        "Number of tasks rejected by the queue",
         () -> limitedQueue.rejectedTaskCount);
     return limitedQueue;
   }
