@@ -79,7 +79,6 @@ public interface BlockProductionPerformance {
 
         @Override
         public void lateBlockReorgPreparationCompleted() {}
-        ;
 
         @Override
         public void getState() {}
