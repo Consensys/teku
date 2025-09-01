@@ -229,11 +229,12 @@ public class DataColumnSidecarsByRootMessageHandler
       final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
-        .orElse(
-            combinedChainDataClient
-                .getBlockByBlockRoot(identifier.blockRoot())
-                .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
-                .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
+        .orElseGet(
+            () ->
+                combinedChainDataClient
+                    .getBlockByBlockRoot(identifier.blockRoot())
+                    .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
               if (maybeSlot.isEmpty()) {
