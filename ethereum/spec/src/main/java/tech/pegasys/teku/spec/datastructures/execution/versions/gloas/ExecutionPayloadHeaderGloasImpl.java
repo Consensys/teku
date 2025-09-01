@@ -17,7 +17,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container9;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema9;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -38,8 +37,7 @@ public class ExecutionPayloadHeaderGloasImpl
     implements ExecutionPayloadHeaderGloas {
 
   protected ExecutionPayloadHeaderGloasImpl(
-      final ExecutionPayloadHeaderSchemaGloas schema,
-      final TreeNode backingTree) {
+      final ExecutionPayloadHeaderSchemaGloas schema, final TreeNode backingTree) {
     super(schema, backingTree);
   }
 

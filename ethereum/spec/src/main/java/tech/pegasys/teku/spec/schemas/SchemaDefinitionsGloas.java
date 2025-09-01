@@ -52,8 +52,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
     return new BeaconBlockBodyBuilderGloas(
-        getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
-        getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
+        getBeaconBlockBodySchema().toVersionGloas().orElseThrow(),
+        getBlindedBeaconBlockBodySchema().toBlindedVersionGloas().orElseThrow());
   }
 
   public PayloadAttestationDataSchema getPayloadAttestationDataSchema() {
