@@ -41,6 +41,10 @@ public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
 
   void onAttestationAggregationDue(UInt64 slot);
 
+  void onSyncCommitteeCreationDue(UInt64 slot);
+
+  void onContributionCreationDue(UInt64 slot);
+
   void onAttesterSlashing(AttesterSlashing attesterSlashing);
 
   void onProposerSlashing(ProposerSlashing proposerSlashing);

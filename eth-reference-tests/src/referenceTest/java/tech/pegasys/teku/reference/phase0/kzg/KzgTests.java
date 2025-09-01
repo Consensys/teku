@@ -22,6 +22,8 @@ public class KzgTests {
       ImmutableMap.<String, TestExecutor>builder()
           .put("kzg/blob_to_kzg_commitment", new KzgBlobToCommitmentTestExecutor())
           .put("kzg/compute_blob_kzg_proof", new KzgComputeBlobProofTestExecutor())
+          .put("kzg/compute_challenge", TestExecutor.IGNORE_TESTS)
+          .put("kzg/compute_verify_cell_kzg_proof_batch_challenge", TestExecutor.IGNORE_TESTS)
           // no KZG interface on CL side, EL responsibility
           .put("kzg/compute_kzg_proof", TestExecutor.IGNORE_TESTS)
           // actually uses verify_blob_kzg_proof_batch KZG interface
