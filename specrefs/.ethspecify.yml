@@ -1,4 +1,4 @@
-version: v1.6.0-alpha.5
+version: v1.6.0-alpha.6
 style: full
 
 specrefs:
@@ -11,13 +11,6 @@ specrefs:
     - presets.yml
 
   exceptions:
-    configs:
-      # added at alpha.5 for basis points spec change
-      - AGGREGRATE_DUE_BPS#phase0
-      - ATTESTATION_DUE_BPS#phase0
-
-      # added at alpha.5 for Gloas fork (not yet implemented)
-      - AGGREGRATE_DUE_BPS_GLOAS#gloas
     constants:
       # added at alpha.5 for basis points spec change
       - BASIS_POINTS#phase0
@@ -106,6 +99,7 @@ specrefs:
       - bytes_to_kzg_commitment#deneb
       - bytes_to_kzg_proof#deneb
       - compute_blob_kzg_proof#deneb
+      - compute_fork_version#fulu
       - compute_challenge#deneb
       - compute_kzg_proof#deneb
       - compute_kzg_proof_impl#deneb
