@@ -100,10 +100,6 @@ public class OperationsReOrgManager implements ChainHeadChannel, LateBlockReorgP
         recentChainData.getAncestorsOnFork(commonAncestorSlot, lateBlockRoot);
 
     if (notCanonicalBlockRoots.isEmpty()) {
-      LOG.warn(
-          "No non-canonical blocks to re-process for late block reorg preparation of {} with common ancestor slot {}",
-          lateBlockRoot,
-          commonAncestorSlot);
       return SafeFuture.COMPLETE;
     }
 
