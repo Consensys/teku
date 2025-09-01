@@ -2657,13 +2657,17 @@ public final class DataStructureUtil {
 
   public BlockContainer randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
-    final int numberOfBlobs =
-        beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
-    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
-    return getDenebSchemaDefinitions(slot)
-        .getBlockContentsSchema()
-        .create(beaconBlock, kzgProofs, blobs);
+    if (beaconBlock.getBody().getOptionalBlobKzgCommitments().isPresent()) {
+      final int numberOfBlobs =
+          beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
+      final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+      final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+      return getDenebSchemaDefinitions(slot)
+          .getBlockContentsSchema()
+          .create(beaconBlock, kzgProofs, blobs);
+    } else {
+      return beaconBlock;
+    }
   }
 
   public SignedBlockContentsFulu randomSignedBlockContentsFulu(
@@ -3066,6 +3070,14 @@ public final class DataStructureUtil {
         .getPayloadAttestationSchema()
         .create(
             randomSszBitvector(getPtcSize()), randomPayloadAttestationData(), randomSignature());
+  }
+
+  public SszList<PayloadAttestation> randomPayloadAttestations() {
+    final SszListSchema<PayloadAttestation, ?> schema =
+        getGloasSchemaDefinitions(randomSlot())
+            .getBeaconBlockBodySchema()
+            .getPayloadAttestationsSchema();
+    return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
   }
 
   private int randomInt(final int origin, final int bound) {
