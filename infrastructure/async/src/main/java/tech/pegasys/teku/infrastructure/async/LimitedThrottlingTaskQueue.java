@@ -15,12 +15,42 @@ package tech.pegasys.teku.infrastructure.async;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class LimitedThrottlingTaskQueue implements TaskQueue {
   private final TaskQueue delegate;
   private final int maximumQueueSize;
+  private volatile long rejectedTaskCount = 0;
 
-  public LimitedThrottlingTaskQueue(final TaskQueue delegate, final int maximumQueueSize) {
+  public static class QueueIsFullException extends RejectedExecutionException {
+    public QueueIsFullException() {
+      super("Task queue is full");
+    }
+  }
+
+  public static boolean isQueueIsFullException(final Throwable error) {
+    return error instanceof QueueIsFullException
+        || (error.getCause() != null && isQueueIsFullException(error.getCause()));
+  }
+
+  public static LimitedThrottlingTaskQueue create(
+      final TaskQueue delegate,
+      final int maximumQueueSize,
+      final MetricsSystem metricsSystem,
+      final TekuMetricCategory metricCategory,
+      final String metricName) {
+    final LimitedThrottlingTaskQueue limitedQueue =
+        new LimitedThrottlingTaskQueue(delegate, maximumQueueSize);
+    metricsSystem.createLongGauge(
+        metricCategory,
+        metricName,
+        "Maximum size of the task queue",
+        () -> limitedQueue.rejectedTaskCount);
+    return limitedQueue;
+  }
+
+  private LimitedThrottlingTaskQueue(final TaskQueue delegate, final int maximumQueueSize) {
     this.delegate = delegate;
     this.maximumQueueSize = maximumQueueSize;
   }
@@ -28,7 +58,8 @@ public class LimitedThrottlingTaskQueue implements TaskQueue {
   @Override
   public synchronized <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
     if (delegate.getQueuedTasksCount() >= maximumQueueSize) {
-      return SafeFuture.failedFuture(new RejectedExecutionException("Task queue is full"));
+      rejectedTaskCount++;
+      return SafeFuture.failedFuture(new QueueIsFullException());
     }
     return delegate.queueTask(request);
   }

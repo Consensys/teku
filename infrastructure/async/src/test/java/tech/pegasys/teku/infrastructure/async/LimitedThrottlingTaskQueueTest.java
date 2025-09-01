@@ -20,13 +20,19 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class LimitedThrottlingTaskQueueTest extends ThrottlingTaskQueueTest {
   private static final Logger LOG = LogManager.getLogger();
 
   @Override
   protected TaskQueue createThrottlingTaskQueue() {
-    return new LimitedThrottlingTaskQueue(super.createThrottlingTaskQueue(), 15);
+    return LimitedThrottlingTaskQueue.create(
+        super.createThrottlingTaskQueue(),
+        15,
+        stubMetricsSystem,
+        TekuMetricCategory.BEACON,
+        "test_rejected_metric");
   }
 
   @Test
@@ -62,6 +68,11 @@ public class LimitedThrottlingTaskQueueTest extends ThrottlingTaskQueueTest {
     // stubRunner will run whatever is active
     stubAsyncRunner.executeQueuedActions();
     assertThat(rejectedCount[0]).isEqualTo(expectedRejected);
+    assertThat(
+            stubMetricsSystem
+                .getGauge(TekuMetricCategory.BEACON, "test_rejected_metric")
+                .getValue())
+        .isEqualTo(expectedRejected);
     checkQueueProgress(
         requests,
         maxQueueSize - MAXIMUM_CONCURRENT_TASKS,
