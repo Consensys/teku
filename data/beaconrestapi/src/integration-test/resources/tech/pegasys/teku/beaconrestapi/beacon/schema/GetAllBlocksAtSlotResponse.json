@@ -28,6 +28,8 @@
               "$ref" : "#/components/schemas/BeaconBlockDeneb"
             }, {
               "$ref" : "#/components/schemas/BeaconBlockElectra"
+            }, {
+              "$ref" : "#/components/schemas/BeaconBlockGloas"
             } ]
           },
           "signature" : {
