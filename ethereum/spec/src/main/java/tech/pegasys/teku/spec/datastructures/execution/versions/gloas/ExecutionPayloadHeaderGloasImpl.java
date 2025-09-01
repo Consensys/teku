@@ -38,18 +38,7 @@ public class ExecutionPayloadHeaderGloasImpl
     implements ExecutionPayloadHeaderGloas {
 
   protected ExecutionPayloadHeaderGloasImpl(
-      final ContainerSchema9<
-              ExecutionPayloadHeaderGloasImpl,
-              SszBytes32,
-              SszBytes32,
-              SszBytes32,
-              SszByteVector,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszUInt64,
-              SszBytes32>
-          schema,
+      final ExecutionPayloadHeaderSchemaGloas schema,
       final TreeNode backingTree) {
     super(schema, backingTree);
   }

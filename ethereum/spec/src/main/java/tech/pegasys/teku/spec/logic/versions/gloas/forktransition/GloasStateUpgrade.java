@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.gloas.forktransition;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadHeaderGloasImpl;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -61,7 +62,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       specConfig.getGloasForkVersion(),
                       epoch));
 
-              state.setLatestExecutionPayloadHeader(preStateFulu.getLatestExecutionPayloadHeader());
+              state.setLatestExecutionPayloadHeader(schemaDefinitions.getExecutionPayloadHeaderSchema().getDefault());
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());
