@@ -20,6 +20,7 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.LimitedThrottlingTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class LimitedThrottlingTaskQueueTest extends ThrottlingTaskQueueTest {
@@ -59,7 +60,7 @@ public class LimitedThrottlingTaskQueueTest extends ThrottlingTaskQueueTest {
                         .exceptionally(
                             err -> {
                               LOG.info("Task {} was rejected", element);
-                              assertThat(err).hasMessage("Task queue is full");
+                              assertThat(err).isInstanceOf(QueueIsFullException.class);
                               rejectedCount[0]++;
                               return null;
                             }))
