@@ -46,7 +46,6 @@ task generateReferenceTestClasses(type: JavaExec) {
 }
 
 compileReferenceTestJava {
-  dependsOn generateReferenceTestClasses
   // Fork worker to compile tests and avoid OoM errors during compilation
   options.fork = true
   options.forkOptions.memoryMaximumSize = "2048m"
