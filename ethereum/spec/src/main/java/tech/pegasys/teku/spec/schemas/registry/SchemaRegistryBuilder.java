@@ -848,13 +848,12 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-    private static SchemaProvider<?> createExecutionProofSchemaProvider(){
-      return providerBuilder(EXECUTION_PROOF_SCHEMA)
-          .withCreator(
-              PHASE0,
-              (registry, specConfig, schemaName) -> new ExecutionProof.ExecutionProofSchema())
-          .build();
-    }
+  private static SchemaProvider<?> createExecutionProofSchemaProvider() {
+    return providerBuilder(EXECUTION_PROOF_SCHEMA)
+        .withCreator(
+            PHASE0, (registry, specConfig, schemaName) -> new ExecutionProof.ExecutionProofSchema())
+        .build();
+  }
 
   private static long getMaxValidatorsPerAttestationPhase0(final SpecConfig specConfig) {
     return specConfig.getMaxValidatorsPerCommittee();
