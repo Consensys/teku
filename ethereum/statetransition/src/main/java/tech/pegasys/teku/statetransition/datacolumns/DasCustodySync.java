@@ -134,7 +134,7 @@ public class DasCustodySync implements SlotEventsChannel {
                 addPendingRequest(missingColumn);
               }
 
-              {
+              if (LOG.isTraceEnabled()) {
                 final Set<UInt64> missingSlots =
                     missingColumnsToRequest.stream()
                         .map(DataColumnSlotAndIdentifier::slot)
@@ -155,10 +155,10 @@ public class DasCustodySync implements SlotEventsChannel {
     if (pendingRequests.containsKey(missingColumn)) {
       return;
     }
-    final SafeFuture<DataColumnSidecar> promise = retriever.retrieve(missingColumn);
-    final PendingRequest request = new PendingRequest(missingColumn, promise);
+    final SafeFuture<DataColumnSidecar> future = retriever.retrieve(missingColumn);
+    final PendingRequest request = new PendingRequest(missingColumn, future);
     pendingRequests.put(missingColumn, request);
-    promise.finish(
+    future.finish(
         response -> onRequestComplete(request, response), err -> onRequestException(request, err));
   }
 
