@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.api;
 
-import static tech.pegasys.teku.infrastructure.async.LimitedThrottlingTaskQueue.isQueueIsFullException;
+import static tech.pegasys.teku.infrastructure.async.LimitedTaskQueue.isQueueIsFullException;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,7 @@ import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
-import tech.pegasys.teku.infrastructure.async.LimitedThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.async.LimitedTaskQueue;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.TaskQueue;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
@@ -52,7 +52,7 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     taskQueue =
-        LimitedThrottlingTaskQueue.create(
+        LimitedTaskQueue.create(
             ThrottlingTaskQueue.create(
                 maxConcurrentQueries,
                 metricsSystem,

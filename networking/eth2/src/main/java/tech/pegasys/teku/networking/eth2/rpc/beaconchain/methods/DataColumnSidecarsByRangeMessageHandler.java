@@ -82,7 +82,7 @@ public class DataColumnSidecarsByRangeMessageHandler
     totalDataColumnSidecarsRequestedCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.NETWORK,
-            "rpc_data_column_sidecars_by_range_requested_data_column_sidecars_total",
+            "rpc_data_column_sidecars_by_range_requested_sidecars_total",
             "Total number of data column sidecars requested in accepted blob sidecars by range requests from peers");
     this.dasLogger = dasLogger;
   }

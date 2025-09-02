@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.LimitedThrottlingTaskQueue.QueueIsFullException;
+import tech.pegasys.teku.infrastructure.async.LimitedTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class LimitedThrottlingTaskQueueTest extends ThrottlingTaskQueueTest {
@@ -28,7 +28,7 @@ public class LimitedThrottlingTaskQueueTest extends ThrottlingTaskQueueTest {
 
   @Override
   protected TaskQueue createThrottlingTaskQueue() {
-    return LimitedThrottlingTaskQueue.create(
+    return LimitedTaskQueue.create(
         super.createThrottlingTaskQueue(),
         15,
         stubMetricsSystem,

@@ -18,7 +18,13 @@ import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
-public class LimitedThrottlingTaskQueue implements TaskQueue {
+/**
+ * A TaskQueue that limits the number of queued tasks. If the limit is reached, new tasks will be
+ * rejected. This is useful to prevent unbounded memory usage when tasks are being added faster than
+ * they can be processed. Passing a {@link ThrottlingTaskQueue} as the delegate will also limit the
+ * number of concurrently executing tasks.
+ */
+public class LimitedTaskQueue implements TaskQueue {
   private final TaskQueue delegate;
   private final int maximumQueueSize;
   private volatile long rejectedTaskCount = 0;
@@ -34,14 +40,13 @@ public class LimitedThrottlingTaskQueue implements TaskQueue {
         || (error.getCause() != null && isQueueIsFullException(error.getCause()));
   }
 
-  public static LimitedThrottlingTaskQueue create(
+  public static LimitedTaskQueue create(
       final TaskQueue delegate,
       final int maximumQueueSize,
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
       final String metricName) {
-    final LimitedThrottlingTaskQueue limitedQueue =
-        new LimitedThrottlingTaskQueue(delegate, maximumQueueSize);
+    final LimitedTaskQueue limitedQueue = new LimitedTaskQueue(delegate, maximumQueueSize);
     metricsSystem.createLongGauge(
         metricCategory,
         metricName,
@@ -50,7 +55,7 @@ public class LimitedThrottlingTaskQueue implements TaskQueue {
     return limitedQueue;
   }
 
-  private LimitedThrottlingTaskQueue(final TaskQueue delegate, final int maximumQueueSize) {
+  private LimitedTaskQueue(final TaskQueue delegate, final int maximumQueueSize) {
     this.delegate = delegate;
     this.maximumQueueSize = maximumQueueSize;
   }
