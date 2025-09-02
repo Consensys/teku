@@ -205,7 +205,6 @@ public class SchemaRegistryBuilder {
         .addProvider(createMetadataMessageSchemaProvider())
         .addProvider(createStatusMessageSchemaProvider())
 
-
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
         .addProvider(createExecutionPayloadHeaderSchemaProvider())
@@ -882,7 +881,8 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createExecutionProofSchemaProvider() {
     return providerBuilder(EXECUTION_PROOF_SCHEMA)
         .withCreator(
-            ELECTRA, (registry, specConfig, schemaName) -> new ExecutionProof.ExecutionProofSchema())
+            ELECTRA,
+            (registry, specConfig, schemaName) -> new ExecutionProof.ExecutionProofSchema())
         .build();
   }
 
