@@ -245,6 +245,38 @@
         execution_requests: ExecutionRequests
     </spec>
 
+- name: BeaconBlockBodyGloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodyGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodyGloasImpl.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodyBuilderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodySchemaGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodySchemaGloasImpl.java
+  spec: |
+    <spec container="BeaconBlockBody" fork="gloas" hash="8fbb9583">
+    class BeaconBlockBody(Container):
+        randao_reveal: BLSSignature
+        eth1_data: Eth1Data
+        graffiti: Bytes32
+        proposer_slashings: List[ProposerSlashing, MAX_PROPOSER_SLASHINGS]
+        attester_slashings: List[AttesterSlashing, MAX_ATTESTER_SLASHINGS_ELECTRA]
+        attestations: List[Attestation, MAX_ATTESTATIONS_ELECTRA]
+        deposits: List[Deposit, MAX_DEPOSITS]
+        voluntary_exits: List[SignedVoluntaryExit, MAX_VOLUNTARY_EXITS]
+        sync_aggregate: SyncAggregate
+        # [Modified in Gloas:EIP7732]
+        # Removed `execution_payload`
+        bls_to_execution_changes: List[SignedBLSToExecutionChange, MAX_BLS_TO_EXECUTION_CHANGES]
+        # [Modified in Gloas:EIP7732]
+        # Removed `blob_kzg_commitments`
+        # [Modified in Gloas:EIP7732]
+        # Removed `execution_requests`
+        # [New in Gloas:EIP7732]
+        signed_execution_payload_header: SignedExecutionPayloadHeader
+        # [New in Gloas:EIP7732]
+        payload_attestations: List[PayloadAttestation, MAX_PAYLOAD_ATTESTATIONS]
+    </spec>
+
 - name: BeaconBlockHeader
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BeaconBlockHeader.java
@@ -868,6 +900,26 @@
         excess_blob_gas: uint64
     </spec>
 
+- name: ExecutionPayloadHeaderGloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderGloasImpl.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderBuilderGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderSchemaGloas.java
+  spec: |
+    <spec container="ExecutionPayloadHeader" fork="gloas" hash="5300a374">
+    class ExecutionPayloadHeader(Container):
+        parent_block_hash: Hash32
+        parent_block_root: Root
+        block_hash: Hash32
+        fee_recipient: ExecutionAddress
+        gas_limit: uint64
+        builder_index: ValidatorIndex
+        slot: Slot
+        value: Gwei
+        blob_kzg_commitments_root: Root
+    </spec>
+
 - name: ExecutionRequests
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequests.java
@@ -1009,6 +1061,31 @@
         row_index: RowIndex
     </spec>
 
+- name: PayloadAttestation
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestation.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationSchema.java
+  spec: |
+    <spec container="PayloadAttestation" fork="gloas" hash="c769473d">
+    class PayloadAttestation(Container):
+        aggregation_bits: Bitvector[PTC_SIZE]
+        data: PayloadAttestationData
+        signature: BLSSignature
+    </spec>
+
+- name: PayloadAttestationData
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationData.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationDataSchema.java
+  spec: |
+    <spec container="PayloadAttestationData" fork="gloas" hash="9f1b7f92">
+    class PayloadAttestationData(Container):
+        beacon_block_root: Root
+        slot: Slot
+        payload_present: boolean
+        blob_data_available: boolean
+    </spec>
+
 - name: PendingAttestation
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/PendingAttestation.java
@@ -1133,6 +1210,17 @@
     <spec container="SignedContributionAndProof" fork="altair" hash="56c7a91a">
     class SignedContributionAndProof(Container):
         message: ContributionAndProof
+        signature: BLSSignature
+    </spec>
+
+- name: SignedExecutionPayloadHeader
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadHeader.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadHeaderSchema.java
+  spec: |
+    <spec container="SignedExecutionPayloadHeader" fork="gloas" hash="20758a79">
+    class SignedExecutionPayloadHeader(Container):
+        message: ExecutionPayloadHeader
         signature: BLSSignature
     </spec>
 
