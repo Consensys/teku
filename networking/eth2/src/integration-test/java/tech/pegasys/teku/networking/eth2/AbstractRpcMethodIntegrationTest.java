@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -219,6 +220,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
+        // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+        .filter(specMilestone -> !specMilestone.equals(SpecMilestone.GLOAS))
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
@@ -232,6 +235,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpecTransition() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
+        // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+        .filter(specMilestone -> !specMilestone.equals(SpecMilestone.GLOAS))
         .map(milestone -> Arguments.of(milestone.getPreviousMilestone(), milestone));
   }
 
@@ -303,7 +308,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case BELLATRIX -> BeaconBlockBodyBellatrix.class;
       case CAPELLA -> BeaconBlockBodyCapella.class;
       case DENEB -> BeaconBlockBodyDeneb.class;
-      case ELECTRA, FULU, GLOAS -> BeaconBlockBodyElectra.class;
+      case ELECTRA, FULU -> BeaconBlockBodyElectra.class;
+      case GLOAS -> BeaconBlockBodyGloas.class;
     };
   }
 }

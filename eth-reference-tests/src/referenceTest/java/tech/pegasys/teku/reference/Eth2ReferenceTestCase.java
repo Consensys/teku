@@ -108,6 +108,15 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
           .build();
 
+  private static final ImmutableMap<String, TestExecutor> GLOAS_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
+          .putAll(NetworkingTests.NETWORKING_TEST_TYPES)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
@@ -123,6 +132,7 @@ public abstract class Eth2ReferenceTestCase {
           case TestFork.DENEB -> DENEB_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.ELECTRA -> ELECTRA_TEST_TYPES.get(testDefinition.getTestType());
           case TestFork.FULU -> FULU_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.GLOAS -> GLOAS_TEST_TYPES.get(testDefinition.getTestType());
           default -> null;
         };
 

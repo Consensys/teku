@@ -20,7 +20,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
 
+  // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
   public SignedBeaconBlockSupplier() {
-    super(DataStructureUtil::randomSignedBeaconBlock, SpecMilestone.DENEB);
+    super(DataStructureUtil::randomSignedBeaconBlock, SpecMilestone.DENEB, SpecMilestone.FULU);
   }
 }

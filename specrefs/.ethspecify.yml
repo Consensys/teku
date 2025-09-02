@@ -61,20 +61,15 @@ specrefs:
       - LightClientHeader
       - LightClientOptimisticUpdate
       # added at alpha.5 for Gloas fork (not yet implemented)
-      - BeaconBlockBody#gloas
       - BeaconState#gloas
       - BuilderPendingPayment#gloas
       - BuilderPendingWithdrawal#gloas
       - DataColumnSidecar#gloas
       - ExecutionPayloadEnvelope#gloas
-      - ExecutionPayloadHeader#gloas
       - ForkChoiceNode#gloas
       - IndexedPayloadAttestation#gloas
-      - PayloadAttestation#gloas
-      - PayloadAttestationData#gloas
       - PayloadAttestationMessage#gloas
       - SignedExecutionPayloadEnvelope#gloas
-      - SignedExecutionPayloadHeader#gloas
 
     dataclasses:
       # Not defined, implemented differently

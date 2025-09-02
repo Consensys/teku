@@ -151,7 +151,7 @@
       "$ref" : "#/components/schemas/SyncCommittee"
     },
     "latest_execution_payload_header" : {
-      "$ref" : "#/components/schemas/ExecutionPayloadHeaderDeneb"
+      "$ref" : "#/components/schemas/ExecutionPayloadHeaderGloas"
     },
     "next_withdrawal_index" : {
       "type" : "string",
