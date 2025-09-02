@@ -65,6 +65,7 @@ public class GossipForkManager {
   private final IntSet currentAttestationSubnets = new IntOpenHashSet();
   private final IntSet currentSyncCommitteeSubnets = new IntOpenHashSet();
   private final IntSet currentDataColumnSidecarSubnets = new IntOpenHashSet();
+  private final IntSet currentExecutionProofSubnets = new IntOpenHashSet();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
   private boolean isHeadOptimistic;
@@ -314,6 +315,20 @@ public class GossipForkManager {
     if (currentDataColumnSidecarSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
           subscription -> subscription.unsubscribeFromDataColumnSidecarSubnet(subnetId));
+    }
+  }
+
+  public void subscribeToExecutionProofSubnetId(final int subnetId) {
+    if (currentExecutionProofSubnets.add(subnetId)) {
+      activeSubscriptions.forEach(
+          subscription -> subscription.subscribeToExecutionProofSubnet(subnetId));
+    }
+  }
+
+  public void unsubscribeFromExecutionProofSubnetId(final int subnetId) {
+    if (currentExecutionProofSubnets.remove(subnetId)) {
+      activeSubscriptions.forEach(
+          subscription -> subscription.unsubscribeFromExecutionProofSubnet(subnetId));
     }
   }
 

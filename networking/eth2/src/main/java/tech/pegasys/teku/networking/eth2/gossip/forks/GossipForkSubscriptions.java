@@ -84,4 +84,12 @@ public interface GossipForkSubscriptions {
   default void unsubscribeFromDataColumnSidecarSubnet(final int subnetId) {
     // since Fulu
   }
+
+  default void subscribeToExecutionProofSubnet(final int subnetId) {
+    // since Electra
+  }
+
+  default void unsubscribeFromExecutionProofSubnet(final int subnetId) {
+    // since Electra
+  }
 }
