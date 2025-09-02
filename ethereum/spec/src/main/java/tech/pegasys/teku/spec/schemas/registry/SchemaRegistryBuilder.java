@@ -204,7 +204,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createBeaconStateSchemaProvider())
         .addProvider(createMetadataMessageSchemaProvider())
         .addProvider(createStatusMessageSchemaProvider())
-        .addProvider(createExecutionProofSchemaProvider())
+
 
         // BELLATRIX
         .addProvider(createExecutionPayloadSchemaProvider())
@@ -241,6 +241,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createConsolidationRequestSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider())
         .addProvider(createSingleAttestationSchemaProvider())
+        .addProvider(createExecutionProofSchemaProvider())
 
         // FULU
         .addProvider(createCellSchemaProvider())
@@ -881,7 +882,7 @@ public class SchemaRegistryBuilder {
   private static SchemaProvider<?> createExecutionProofSchemaProvider() {
     return providerBuilder(EXECUTION_PROOF_SCHEMA)
         .withCreator(
-            PHASE0, (registry, specConfig, schemaName) -> new ExecutionProof.ExecutionProofSchema())
+            ELECTRA, (registry, specConfig, schemaName) -> new ExecutionProof.ExecutionProofSchema())
         .build();
   }
 
