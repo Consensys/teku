@@ -19,21 +19,32 @@ import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 
 public class ZkChainOptions {
   @CommandLine.Option(
+      hidden = true,
       names = {"--Xstateless-validation-enabled"},
-      description = "Enable stateless validation of blocks and states.")
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      description = "Enable stateless validation of blocks and states.",
+      arity = "0..1",
+      fallbackValue = "false")
   private boolean statelessValidationEnabled =
       ZkChainConfiguration.DEFAULT_STATELESS_VALIDATION_ENABLED;
 
   @CommandLine.Option(
+      hidden = true,
       names = {"--Xgenerate-execution-proofs-enabled"},
-      description = "Enable generation of execution proofs for blocks.")
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      description = "Enable generation of execution proofs for blocks.",
+      arity = "0..1",
+      fallbackValue = "false")
   private boolean generateExecutionProofsEnabled =
       ZkChainConfiguration.DEFAULT_GENERATE_EXECUTION_PROOFS_ENABLED;
 
   @CommandLine.Option(
+      hidden = true,
       names = {"--Xstateless-min-proofs-required"},
+      paramLabel = "<NUMBER>",
       description =
-          "Minimum number of execution proofs required for stateless validation. Must be at least 1.")
+          "Minimum number of execution proofs required for stateless validation. Must be at least 1.",
+      arity = "1")
   private int statelessMinProofsRequired =
       ZkChainConfiguration.DEFAULT_STATELESS_MIN_PROOFS_REQUIRED;
 
