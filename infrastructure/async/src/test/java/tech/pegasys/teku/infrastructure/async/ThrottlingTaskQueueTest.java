@@ -27,18 +27,23 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 public class ThrottlingTaskQueueTest {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAXIMUM_CONCURRENT_TASKS = 3;
+  protected static final int MAXIMUM_CONCURRENT_TASKS = 3;
 
-  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+  protected final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
-  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
+  protected final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
-  private final ThrottlingTaskQueue taskQueue =
-      ThrottlingTaskQueue.create(
-          MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, "test_metric");
+  protected static final String METRIC_NAME = "test_metric";
+  protected TaskQueue taskQueue;
+
+  protected TaskQueue createThrottlingTaskQueue() {
+    return ThrottlingTaskQueue.create(
+        MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, METRIC_NAME);
+  }
 
   @Test
   public void throttlesRequests() {
+    taskQueue = createThrottlingTaskQueue();
     // queue tasks to run, they shouldn't start straight away.
     final List<SafeFuture<Void>> requests =
         IntStream.range(0, 10)
@@ -73,7 +78,7 @@ public class ThrottlingTaskQueueTest {
     checkQueueProgress(requests, 0, 0, 10);
   }
 
-  private void checkQueueProgress(
+  protected void checkQueueProgress(
       final List<SafeFuture<Void>> requests,
       final int queueSize,
       final int inFlight,

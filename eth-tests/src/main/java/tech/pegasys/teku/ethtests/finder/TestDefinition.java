@@ -79,6 +79,7 @@ public class TestDefinition {
           case TestFork.DENEB -> SpecMilestone.DENEB;
           case TestFork.ELECTRA -> SpecMilestone.ELECTRA;
           case TestFork.FULU -> SpecMilestone.FULU;
+          case TestFork.GLOAS -> SpecMilestone.GLOAS;
           default -> throw new IllegalArgumentException("Unknown fork: " + fork);
         };
     final BLSSignatureVerifier blsSignatureVerifier =

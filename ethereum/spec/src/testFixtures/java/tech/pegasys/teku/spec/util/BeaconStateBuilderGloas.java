@@ -195,7 +195,7 @@ public class BeaconStateBuilderGloas
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
     latestExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader(
-            dataStructureUtil.getSpec().forMilestone(SpecMilestone.ELECTRA));
+            dataStructureUtil.getSpec().forMilestone(SpecMilestone.GLOAS));
 
     this.nextWithdrawalIndex = UInt64.ZERO;
     this.nextWithdrawalValidatorIndex =

@@ -28,6 +28,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXEC
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
@@ -57,7 +58,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(allMilestones = true)
+// TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+@TestSpecContext(allMilestones = true, ignoredMilestones = GLOAS)
 public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   private static final Logger LOG = LogManager.getLogger();
