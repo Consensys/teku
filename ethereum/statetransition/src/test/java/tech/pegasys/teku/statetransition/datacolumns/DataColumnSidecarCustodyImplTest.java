@@ -17,11 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -138,6 +140,7 @@ public class DataColumnSidecarCustodyImplTest {
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount + 3);
     custody.onSlot(UInt64.valueOf(1));
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount);
+    verifyNoInteractions(custodyGroupCountManager);
   }
 
   @Test
@@ -145,6 +148,7 @@ public class DataColumnSidecarCustodyImplTest {
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount + 3);
     custody.onSlot(UInt64.valueOf(8));
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount + 3);
+    verify(custodyGroupCountManager).getCustodyGroupCount();
   }
 
   @Test
@@ -154,19 +158,6 @@ public class DataColumnSidecarCustodyImplTest {
     // if epoch 2 is final, then slots 0-23 are 'final' and slot 24 is the first non final
     assertThat(dbAccessor.getFirstCustodyIncompleteSlot())
         .isCompletedWithValue(Optional.of(UInt64.valueOf(24)));
-  }
-
-  @Test
-  public void onSlot_shouldUpdateCustodyGroupCount() {
-    assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount);
-    // Group count decreases
-    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount - 2);
-    custody.onSlot(ZERO);
-    assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount - 2);
-    // Group count increases
-    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount + 3);
-    custody.onSlot(UInt64.valueOf(16));
-    assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(groupCount + 3);
   }
 
   @ParameterizedTest
@@ -222,7 +213,7 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
-  public void retrievSlotCustody_insufficientCustody()
+  public void retrieveSlotCustody_insufficientCustody()
       throws ExecutionException, InterruptedException, TimeoutException {
     final CanonicalBlockResolver resolver = mock(CanonicalBlockResolver.class);
     final DataColumnSidecarDbAccessor sidecarDb = mock(DataColumnSidecarDbAccessor.class);
@@ -260,8 +251,21 @@ public class DataColumnSidecarCustodyImplTest {
   }
 
   @Test
+  public void retrieveSlotCustody_shouldReturnEmptyIfOutsidePeriod() {
+    custody.onSlot(UInt64.valueOf(100_000));
+
+    final SafeFuture<DataColumnSidecarCustodyImpl.SlotCustody> future =
+        custody.retrieveSlotCustody(ONE);
+
+    assertThat(future)
+        .isCompletedWithValue(
+            new DataColumnSidecarCustodyImpl.SlotCustody(
+                ONE, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
+  }
+
+  @Test
   public void cgcDecreaseDoesntReduce() {
-    initWithMockDb(128, groupCount);
+    initWithMockDb(128, 10);
     custody.onSlot(UInt64.valueOf(32));
     assertThat(custody.getTotalCustodyGroupCount()).isEqualTo(128);
   }

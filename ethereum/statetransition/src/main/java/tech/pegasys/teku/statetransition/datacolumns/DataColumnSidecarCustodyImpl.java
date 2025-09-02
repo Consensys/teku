@@ -153,12 +153,12 @@ public class DataColumnSidecarCustodyImpl
   public void onSlot(final UInt64 slot) {
     currentSlot.set(slot);
     if (!slot.mod(spec.atSlot(slot).getSlotsPerEpoch()).isZero()) {
-      LOG.debug("Noop slot {}", slot);
+      LOG.trace("Noop slot {}", slot);
       return;
     }
 
     final int newCustodyGroupCount = custodyGroupCountManagerSupplier.get().getCustodyGroupCount();
-    final int oldCustodyGroupCount = totalCustodyGroupCount.getAndSet(newCustodyGroupCount);
+    final int oldCustodyGroupCount = totalCustodyGroupCount.get();
     if (newCustodyGroupCount <= oldCustodyGroupCount) {
       LOG.debug(
           "oldCustodyGroupCount {} vs newCustodyGroupCount {}",
@@ -167,8 +167,13 @@ public class DataColumnSidecarCustodyImpl
       return;
     }
 
+    if (!totalCustodyGroupCount.compareAndSet(oldCustodyGroupCount, newCustodyGroupCount)) {
+      LOG.debug("Custody group count updated unexpectedly, skipping at slot {}", slot);
+      return;
+    }
+
     LOG.debug(
-        "Custody group count changed from {} to {}", oldCustodyGroupCount, newCustodyGroupCount);
+        "Custody group count increased from {} to {}", oldCustodyGroupCount, newCustodyGroupCount);
     final UInt64 minCustodyPeriodSlot =
         minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(slot);
     db.setFirstCustodyIncompleteSlot(minCustodyPeriodSlot)
@@ -253,6 +258,16 @@ public class DataColumnSidecarCustodyImpl
   @VisibleForTesting
   SafeFuture<SlotCustody> retrieveSlotCustody(final UInt64 slot) {
     if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return SafeFuture.completedFuture(
+          new SlotCustody(
+              slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
+    }
+    if (slot.isLessThan(
+        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot.get()))) {
+      LOG.debug(
+          "Skipping custody for slot {}, because currentSlot {} is beyond minCustodyPeriod",
+          slot,
+          currentSlot);
       return SafeFuture.completedFuture(
           new SlotCustody(
               slot, Optional.empty(), Collections.emptyList(), Collections.emptyList()));
