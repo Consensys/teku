@@ -54,6 +54,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
@@ -131,6 +132,8 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayl
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
@@ -238,6 +241,7 @@ public class SchemaRegistryBuilder {
         .addProvider(createConsolidationRequestSchemaProvider())
         .addProvider(createExecutionRequestsSchemaProvider())
         .addProvider(createSingleAttestationSchemaProvider())
+        .addProvider(createExecutionProofSchemaProvider())
 
         // FULU
         .addProvider(createCellSchemaProvider())
@@ -872,6 +876,14 @@ public class SchemaRegistryBuilder {
     return providerBuilder(STATUS_MESSAGE_SCHEMA)
         .withCreator(PHASE0, (registry, specConfig, schemaName) -> new StatusMessageSchemaPhase0())
         .withCreator(FULU, (registry, specConfig, schemaName) -> new StatusMessageSchemaFulu())
+        .build();
+  }
+
+  private static SchemaProvider<?> createExecutionProofSchemaProvider() {
+    return providerBuilder(EXECUTION_PROOF_SCHEMA)
+        .withCreator(
+            ELECTRA,
+            (registry, specConfig, schemaName) -> new ExecutionProofSchema())
         .build();
   }
 
