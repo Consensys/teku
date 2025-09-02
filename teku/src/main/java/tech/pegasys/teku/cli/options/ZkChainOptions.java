@@ -24,7 +24,7 @@ public class ZkChainOptions {
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       description = "Enable stateless validation of blocks and states.",
       arity = "0..1",
-      fallbackValue = "false")
+      fallbackValue = "true")
   private boolean statelessValidationEnabled =
       ZkChainConfiguration.DEFAULT_STATELESS_VALIDATION_ENABLED;
 
@@ -34,7 +34,7 @@ public class ZkChainOptions {
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       description = "Enable generation of execution proofs for blocks.",
       arity = "0..1",
-      fallbackValue = "false")
+      fallbackValue = "true")
   private boolean generateExecutionProofsEnabled =
       ZkChainConfiguration.DEFAULT_GENERATE_EXECUTION_PROOFS_ENABLED;
 
