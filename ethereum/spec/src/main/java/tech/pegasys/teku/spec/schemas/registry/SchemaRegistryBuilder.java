@@ -132,7 +132,6 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayl
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadSchemaBellatrix;
@@ -881,9 +880,7 @@ public class SchemaRegistryBuilder {
 
   private static SchemaProvider<?> createExecutionProofSchemaProvider() {
     return providerBuilder(EXECUTION_PROOF_SCHEMA)
-        .withCreator(
-            ELECTRA,
-            (registry, specConfig, schemaName) -> new ExecutionProofSchema())
+        .withCreator(ELECTRA, (registry, specConfig, schemaName) -> new ExecutionProofSchema())
         .build();
   }
 
