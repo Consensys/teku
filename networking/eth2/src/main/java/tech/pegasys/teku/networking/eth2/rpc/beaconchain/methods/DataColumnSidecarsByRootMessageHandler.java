@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -160,6 +161,8 @@ public class DataColumnSidecarsByRootMessageHandler
     requestCounter.labels("ok").inc();
     totalDataColumnSidecarsRequestedCounter.inc(requestedDataColumnSidecarsCount);
 
+    final AtomicBoolean storageQueueLimitHit = new AtomicBoolean(false);
+
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
     final Stream<SafeFuture<Boolean>> responseStream =
@@ -173,7 +176,7 @@ public class DataColumnSidecarsByRootMessageHandler
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .map(
                 dataColumnIdentifier ->
-                    retrieveDataColumnSidecar(dataColumnIdentifier)
+                    retrieveDataColumnSidecar(dataColumnIdentifier, storageQueueLimitHit)
                         .thenCompose(
                             maybeSidecar ->
                                 validateAndMaybeRespond(
@@ -187,7 +190,8 @@ public class DataColumnSidecarsByRootMessageHandler
         .thenApply(list -> list.stream().filter(isSent -> isSent).count())
         .thenAccept(
             sentDataColumnSidecarsCount -> {
-              if (sentDataColumnSidecarsCount != requestedDataColumnSidecarsCount) {
+              if (sentDataColumnSidecarsCount != requestedDataColumnSidecarsCount
+                  && !storageQueueLimitHit.get()) {
                 peer.adjustDataColumnSidecarsRequest(
                     maybeRequestKey.get(), sentDataColumnSidecarsCount);
               }
@@ -195,7 +199,7 @@ public class DataColumnSidecarsByRootMessageHandler
             })
         .finish(
             err -> {
-              peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
+              // peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
               handleError(responseCallbackWithLogging, err);
             });
   }
@@ -253,7 +257,7 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final DataColumnIdentifier identifier) {
+      final DataColumnIdentifier identifier, final AtomicBoolean storageQueueLimitHit) {
     return dataColumnSidecarCustodySupplier
         .get()
         .getCustodyDataColumnSidecarByRoot(identifier)
@@ -265,7 +269,11 @@ public class DataColumnSidecarsByRootMessageHandler
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
             })
-        .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException);
+        .exceptionally(
+            error -> {
+              storageQueueLimitHit.set(true);
+              return ThrottlingStorageQueryChannel.ignoreQueueIsFullException(error);
+            });
   }
 
   private void handleError(
