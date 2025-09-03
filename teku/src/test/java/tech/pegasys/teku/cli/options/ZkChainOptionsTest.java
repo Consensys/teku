@@ -41,4 +41,23 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xstateless-min-proofs-required=2");
     assertThat(config.zkChainConfiguration().getStatelessMinProofsRequired()).isEqualTo(2);
   }
+
+  @Test
+    public void statelessMinProofsRequired_receivesDefaultValue() {
+        final TekuConfiguration config = getTekuConfigurationFromArguments();
+        assertThat(config.zkChainConfiguration().getStatelessMinProofsRequired()).isEqualTo(1);
+    }
+
+    @Test
+    public void statelessValidationEnabled_receivesDefaultValue() {
+        final TekuConfiguration config = getTekuConfigurationFromArguments();
+        assertThat(config.zkChainConfiguration().isStatelessValidationEnabled()).isFalse();
+    }
+
+    @Test
+    public void generateExecutionProofsEnabled_receivesDefaultValue() {
+        final TekuConfiguration config = getTekuConfigurationFromArguments();
+        assertThat(config.zkChainConfiguration().isGenerateExecutionProofsEnabled()).isFalse();
+    }
+
 }
