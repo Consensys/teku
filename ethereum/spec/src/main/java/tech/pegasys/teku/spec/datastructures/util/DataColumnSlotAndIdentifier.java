@@ -41,11 +41,11 @@ public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64
   }
 
   public DataColumnIdentifier toDataColumnIdentifier() {
-    return new DataColumnIdentifier(blockRoot(), columnIndex());
+    return new DataColumnIdentifier(blockRoot, columnIndex);
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
-    return new SlotAndBlockRoot(slot, blockRoot());
+    return new SlotAndBlockRoot(slot, blockRoot);
   }
 
   @Override

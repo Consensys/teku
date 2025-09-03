@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -74,11 +73,6 @@ public class DataColumnSidecarCustodyImpl
 
     public AsyncStream<DataColumnSlotAndIdentifier> streamIncompleteColumns() {
       return AsyncStream.createUnsafe(getIncompleteColumns().iterator());
-    }
-
-    @SuppressWarnings("UnusedMethod")
-    public boolean isComplete() {
-      return canonicalBlockRoot().isPresent() && !isIncomplete();
     }
 
     public boolean isIncomplete() {
@@ -232,11 +226,12 @@ public class DataColumnSidecarCustodyImpl
               final UInt64 firstIncompleteSlot =
                   maybeFirstIncompleteSlot.orElseGet(
                       () -> minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot));
-              Stream<UInt64> slotStream =
-                  Stream.iterate(
-                      firstIncompleteSlot,
-                      slot -> slot.isLessThanOrEqualTo(toSlotIncluded),
-                      UInt64::increment);
+              LOG.debug(
+                  "Retrieving incomplete slot custodies from {} to {}",
+                  firstIncompleteSlot,
+                  toSlotIncluded);
+              final Stream<UInt64> slotStream =
+                  UInt64.rangeClosed(firstIncompleteSlot, toSlotIncluded);
               return AsyncStream.createUnsafe(slotStream.iterator())
                   .mapAsync(this::retrieveSlotCustody);
             });
@@ -278,9 +273,8 @@ public class DataColumnSidecarCustodyImpl
                     .filter(
                         block ->
                             block
-                                .getBeaconBlock()
-                                .flatMap(b -> b.getBody().toVersionDeneb())
-                                .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+                                .getBody()
+                                .getOptionalBlobKzgCommitments()
                                 .map(commitments -> !commitments.isEmpty())
                                 .orElse(false))
                     .map(BeaconBlock::getRoot));
