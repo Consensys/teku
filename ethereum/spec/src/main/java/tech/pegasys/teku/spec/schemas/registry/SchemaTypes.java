@@ -121,8 +121,6 @@ public class SchemaTypes {
       create("METADATA_MESSAGE_SCHEMA");
   public static final SchemaId<StatusMessageSchema<?>> STATUS_MESSAGE_SCHEMA =
       create("STATUS_MESSAGE_SCHEMA");
-  public static final SchemaId<ExecutionProofSchema> EXECUTION_PROOF_SCHEMA =
-      create("EXECUTION_PROOF_SCHEMA");
 
   // Altair
 
