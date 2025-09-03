@@ -63,7 +63,7 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
   }
 
   @Override
-  protected int getQueuedTasksCount() {
+  public int getQueuedTasksCount() {
     return queuedTasks.size() + queuedPrioritizedTasks.size();
   }
 }
