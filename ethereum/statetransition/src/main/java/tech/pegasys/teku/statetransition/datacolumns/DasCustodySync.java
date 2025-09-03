@@ -208,6 +208,7 @@ public class DasCustodySync implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
+    currentSlot.set(slot);
     coolDownTillNextSlot = false;
     fillUpIfNeeded();
   }
