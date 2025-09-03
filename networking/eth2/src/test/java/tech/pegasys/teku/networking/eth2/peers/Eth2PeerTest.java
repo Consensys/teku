@@ -332,6 +332,42 @@ class Eth2PeerTest {
     verify(delegate, never()).sendRequest(any(), any(RpcRequest.class), any());
   }
 
+  @Test
+  public void approveRequest_shouldRejectIfStorageLimitHit() {
+    when(storageLimitHitTracker.getAvailableObjectCount()).thenReturn(0L);
+    when(peer.disconnectCleanly(DisconnectReason.RATE_LIMITING)).thenReturn(SafeFuture.COMPLETE);
+    assertThat(peer.approveRequest()).isFalse();
+    verify(storageLimitHitTracker).getAvailableObjectCount();
+    verify(delegate).disconnectCleanly(DisconnectReason.RATE_LIMITING);
+  }
+
+  @Test
+  public void approveRequest_shouldRejectIfRequestRateLimitHit() {
+    when(storageLimitHitTracker.getAvailableObjectCount()).thenReturn(1L);
+    when(rateTracker.generateRequestKey(1L)).thenReturn(Optional.empty());
+    when(peer.disconnectCleanly(DisconnectReason.RATE_LIMITING)).thenReturn(SafeFuture.COMPLETE);
+    assertThat(peer.approveRequest()).isFalse();
+    verify(storageLimitHitTracker).getAvailableObjectCount();
+    verify(rateTracker).generateRequestKey(1L);
+    verify(delegate).disconnectCleanly(DisconnectReason.RATE_LIMITING);
+  }
+
+  @Test
+  public void approveRequest_shouldApproveIfNoLimitsAreHit() {
+    when(storageLimitHitTracker.getAvailableObjectCount()).thenReturn(1L);
+    when(rateTracker.generateRequestKey(1L)).thenReturn(Optional.of(mock(RequestKey.class)));
+    assertThat(peer.approveRequest()).isTrue();
+    verify(storageLimitHitTracker).getAvailableObjectCount();
+    verify(rateTracker).generateRequestKey(1L);
+    verify(delegate, never()).disconnectCleanly(any());
+  }
+
+  @Test
+  public void recordStorageLimitHit_shouldRecordHit() {
+    peer.recordStorageLimitHit();
+    verify(storageLimitHitTracker).generateRequestKey(1L);
+  }
+
   private <T extends RpcRequest> T resolveSingleRpcRequestBody(
       final ArgumentCaptor<RpcRequestBodySelector<T>> argumentCaptor) {
     final RpcRequestBodySelector<T> rpcRequestBodySelector = argumentCaptor.getValue();
