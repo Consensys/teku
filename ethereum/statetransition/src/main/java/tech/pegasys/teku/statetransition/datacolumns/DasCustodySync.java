@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,6 +27,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -45,6 +49,7 @@ public class DasCustodySync implements SlotEventsChannel {
   private final DataColumnSidecarRetriever retriever;
   private final int minPendingColumnRequests;
   private final int maxPendingColumnRequests;
+  private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
 
   private final Map<DataColumnSlotAndIdentifier, PendingRequest> pendingRequests =
       new ConcurrentHashMap<>();
@@ -52,21 +57,31 @@ public class DasCustodySync implements SlotEventsChannel {
   private boolean coolDownTillNextSlot = false;
   private volatile boolean fillingUp = false;
   private final AtomicLong syncedColumnCount = new AtomicLong();
+  private final AtomicReference<UInt64> currentSlot = new AtomicReference<>(ZERO);
 
-  public DasCustodySync(
+  DasCustodySync(
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
+      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
       final int minPendingColumnRequests,
       final int maxPendingColumnRequests) {
     this.custody = custody;
     this.retriever = retriever;
+    this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     this.minPendingColumnRequests = minPendingColumnRequests;
     this.maxPendingColumnRequests = maxPendingColumnRequests;
   }
 
   public DasCustodySync(
-      final DataColumnSidecarCustody custody, final DataColumnSidecarRetriever retriever) {
-    this(custody, retriever, MIN_PENDING_COLUMN_REQUESTS, MAX_PENDING_COLUMN_REQUESTS);
+      final DataColumnSidecarCustody custody,
+      final DataColumnSidecarRetriever retriever,
+      final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator) {
+    this(
+        custody,
+        retriever,
+        minCustodyPeriodSlotCalculator,
+        MIN_PENDING_COLUMN_REQUESTS,
+        MAX_PENDING_COLUMN_REQUESTS);
   }
 
   private void onRequestComplete(final PendingRequest request, final DataColumnSidecar response) {
@@ -107,7 +122,8 @@ public class DasCustodySync implements SlotEventsChannel {
     }
   }
 
-  private void fillUp() {
+  @VisibleForTesting
+  void fillUp() {
     fillingUp = true;
     final SafeFuture<Set<DataColumnSlotAndIdentifier>> missingColumnsFuture =
         custody.retrieveMissingColumns().limit(maxPendingColumnRequests).collect(new HashSet<>());
@@ -131,7 +147,17 @@ public class DasCustodySync implements SlotEventsChannel {
                   pendingRequest -> pendingRequest.columnPromise().cancel(true));
 
               for (final DataColumnSlotAndIdentifier missingColumn : missingColumnsToRequest) {
-                addPendingRequest(missingColumn);
+                if (missingColumn
+                    .slot()
+                    .isGreaterThan(
+                        minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
+                            currentSlot.get()))) {
+                  addPendingRequest(missingColumn);
+                } else {
+                  LOG.debug(
+                      "Skipping column from slot {} as it is outside of the retention period now.",
+                      missingColumn.getSlotAndBlockRoot().getSlot());
+                }
               }
 
               if (LOG.isTraceEnabled()) {

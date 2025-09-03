@@ -160,7 +160,7 @@ public class DataColumnSidecarCustodyImpl
     final int newCustodyGroupCount = custodyGroupCountManagerSupplier.get().getCustodyGroupCount();
     final int oldCustodyGroupCount = totalCustodyGroupCount.get();
     if (newCustodyGroupCount <= oldCustodyGroupCount) {
-      LOG.debug(
+      LOG.trace(
           "oldCustodyGroupCount {} vs newCustodyGroupCount {}",
           oldCustodyGroupCount,
           newCustodyGroupCount);
@@ -168,7 +168,7 @@ public class DataColumnSidecarCustodyImpl
     }
 
     if (!totalCustodyGroupCount.compareAndSet(oldCustodyGroupCount, newCustodyGroupCount)) {
-      LOG.debug("Custody group count updated unexpectedly, skipping at slot {}", slot);
+      LOG.trace("Custody group count updated unexpectedly, skipping at slot {}", slot);
       return;
     }
 
@@ -223,7 +223,7 @@ public class DataColumnSidecarCustodyImpl
                     .map(
                         firstIncompleteOrLastComplete -> {
                           if (firstIncompleteOrLastComplete.slot().equals(firstNonFinalizedSlot)) {
-                            LOG.debug(
+                            LOG.trace(
                                 "Custody group count synced to {}", totalCustodyGroupCount.get());
                             custodyGroupCountManagerSupplier
                                 .get()
@@ -264,7 +264,7 @@ public class DataColumnSidecarCustodyImpl
     }
     if (slot.isLessThan(
         minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(currentSlot.get()))) {
-      LOG.debug(
+      LOG.trace(
           "Skipping custody for slot {}, because currentSlot {} is beyond minCustodyPeriod",
           slot,
           currentSlot);
