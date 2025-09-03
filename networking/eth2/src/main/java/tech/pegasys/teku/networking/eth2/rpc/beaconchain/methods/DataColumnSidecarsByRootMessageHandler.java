@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -103,10 +102,11 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Boolean> validateAndMaybeRespond(
+      final Eth2Peer peer,
       final DataColumnIdentifier identifier,
       final Optional<DataColumnSidecar> maybeSidecar,
       final ResponseCallback<DataColumnSidecar> callback) {
-    return validateMinimumRequestEpoch(identifier, maybeSidecar)
+    return validateMinimumRequestEpoch(peer, identifier, maybeSidecar)
         .thenCompose(
             __ ->
                 maybeSidecar
@@ -161,8 +161,6 @@ public class DataColumnSidecarsByRootMessageHandler
     requestCounter.labels("ok").inc();
     totalDataColumnSidecarsRequestedCounter.inc(requestedDataColumnSidecarsCount);
 
-    final AtomicBoolean storageQueueLimitHit = new AtomicBoolean(false);
-
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
     final Stream<SafeFuture<Boolean>> responseStream =
@@ -176,10 +174,11 @@ public class DataColumnSidecarsByRootMessageHandler
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .map(
                 dataColumnIdentifier ->
-                    retrieveDataColumnSidecar(dataColumnIdentifier, storageQueueLimitHit)
+                    retrieveDataColumnSidecar(dataColumnIdentifier, peer)
                         .thenCompose(
                             maybeSidecar ->
                                 validateAndMaybeRespond(
+                                    peer,
                                     dataColumnIdentifier,
                                     maybeSidecar,
                                     responseCallbackWithLogging)));
@@ -190,18 +189,13 @@ public class DataColumnSidecarsByRootMessageHandler
         .thenApply(list -> list.stream().filter(isSent -> isSent).count())
         .thenAccept(
             sentDataColumnSidecarsCount -> {
-              if (sentDataColumnSidecarsCount != requestedDataColumnSidecarsCount
-                  && !storageQueueLimitHit.get()) {
+              if (sentDataColumnSidecarsCount != requestedDataColumnSidecarsCount) {
                 peer.adjustDataColumnSidecarsRequest(
                     maybeRequestKey.get(), sentDataColumnSidecarsCount);
               }
               responseCallbackWithLogging.completeSuccessfully();
             })
-        .finish(
-            err -> {
-              // peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
-              handleError(responseCallbackWithLogging, err);
-            });
+        .finish(err -> handleError(responseCallbackWithLogging, err));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
@@ -230,7 +224,9 @@ public class DataColumnSidecarsByRootMessageHandler
    */
   @SuppressWarnings("unused")
   private SafeFuture<Void> validateMinimumRequestEpoch(
-      final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
+      final Eth2Peer peer,
+      final DataColumnIdentifier identifier,
+      final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
         .orElseGet(
@@ -238,7 +234,9 @@ public class DataColumnSidecarsByRootMessageHandler
                 combinedChainDataClient
                     .getBlockByBlockRoot(identifier.blockRoot())
                     .exceptionally(
-                        ThrottlingStorageQueryChannel::mapQueueIsFullExceptionToEmptyOrRethrow)
+                        error ->
+                            ThrottlingStorageQueryChannel.mapQueueIsFullExceptionToEmptyOrRethrow(
+                                error, peer::recordStorageLimitHit))
                     .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
@@ -258,7 +256,7 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final DataColumnIdentifier identifier, final AtomicBoolean storageQueueLimitHit) {
+      final DataColumnIdentifier identifier, final Eth2Peer peer) {
     return dataColumnSidecarCustodySupplier
         .get()
         .getCustodyDataColumnSidecarByRoot(identifier)
@@ -271,11 +269,9 @@ public class DataColumnSidecarsByRootMessageHandler
               return getNonCanonicalDataColumnSidecar(identifier);
             })
         .exceptionally(
-            error -> {
-              ThrottlingStorageQueryChannel.mapQueueIsFullExceptionToEmptyOrRethrow(error);
-              storageQueueLimitHit.set(true);
-              return Optional.empty();
-            });
+            error ->
+                ThrottlingStorageQueryChannel.mapQueueIsFullExceptionToEmptyOrRethrow(
+                    error, peer::recordStorageLimitHit));
   }
 
   private void handleError(
