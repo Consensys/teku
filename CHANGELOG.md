@@ -12,4 +12,3 @@
 ### Additions and Improvements
 
 ### Bug Fixes
- - Downgraded snappy library because of musl issue on some nodes.
