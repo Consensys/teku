@@ -271,8 +271,10 @@ public class DataColumnSidecarsByRootMessageHandler
             })
         .exceptionally(
             error -> {
+              final Optional<DataColumnSidecar> ignore =
+                  ThrottlingStorageQueryChannel.ignoreQueueIsFullException(error);
               storageQueueLimitHit.set(true);
-              return ThrottlingStorageQueryChannel.ignoreQueueIsFullException(error);
+              return ignore;
             });
   }
 
