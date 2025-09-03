@@ -1189,9 +1189,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             storageQueryChannel,
             spec,
-            (a, b) ->
+            (slot, blockRoot) ->
                 beaconAsyncRunner.runAsync(
-                    () -> operationsReOrgManager.onLateBlockReorgPreparation(a, b)));
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)));
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
