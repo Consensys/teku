@@ -50,6 +50,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCust
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
+import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -228,10 +229,12 @@ public class DataColumnSidecarsByRootMessageHandler
       final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
-        .orElse(
-            combinedChainDataClient
-                .getBlockByBlockRoot(identifier.blockRoot())
-                .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
+        .orElseGet(
+            () ->
+                combinedChainDataClient
+                    .getBlockByBlockRoot(identifier.blockRoot())
+                    .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
               if (maybeSlot.isEmpty()) {
@@ -261,7 +264,8 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
-            });
+            })
+        .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException);
   }
 
   private void handleError(
