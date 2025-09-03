@@ -237,7 +237,8 @@ public class DataColumnSidecarsByRootMessageHandler
             () ->
                 combinedChainDataClient
                     .getBlockByBlockRoot(identifier.blockRoot())
-                    .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
+                    .exceptionally(
+                        ThrottlingStorageQueryChannel::mapQueueIsFullExceptionToEmptyOrRethrow)
                     .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
@@ -271,10 +272,9 @@ public class DataColumnSidecarsByRootMessageHandler
             })
         .exceptionally(
             error -> {
-              final Optional<DataColumnSidecar> ignore =
-                  ThrottlingStorageQueryChannel.ignoreQueueIsFullException(error);
+              ThrottlingStorageQueryChannel.mapQueueIsFullExceptionToEmptyOrRethrow(error);
               storageQueueLimitHit.set(true);
-              return ignore;
+              return Optional.empty();
             });
   }
 
