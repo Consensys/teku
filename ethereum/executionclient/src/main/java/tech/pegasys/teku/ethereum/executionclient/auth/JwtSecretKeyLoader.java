@@ -74,6 +74,13 @@ public class JwtSecretKeyLoader {
     final Path filePath = Paths.get(jwtSecretFile);
     try {
       final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(filePath).trim());
+      if (bytesFromHex.size() != 32) {
+        throw new InvalidConfigurationException(
+            "JWT secret must be 32 bytes (64 hex chars), got "
+                + bytesFromHex.size()
+                + " bytes: "
+                + filePath.toAbsolutePath());
+      }
       LOG.info("JWT secret loaded from {}", filePath.toAbsolutePath());
       return new SecretKeySpec(bytesFromHex.toArray(), HMAC_SHA256_ALGORITHM_NAME);
     } catch (final FileNotFoundException | NoSuchFileException e) {
