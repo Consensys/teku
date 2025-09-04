@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROOF_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQUESTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
@@ -57,6 +59,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   private final SingleAttestationSchema singleAttestationSchema;
 
+  private final ExecutionProofSchema executionProofSchema;
+
   public SchemaDefinitionsElectra(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
     this.executionRequestsSchema = schemaRegistry.get(EXECUTION_REQUESTS_SCHEMA);
@@ -77,6 +81,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     this.pendingConsolidationSchema =
         (PendingConsolidationSchema)
             schemaRegistry.get(PENDING_CONSOLIDATIONS_SCHEMA).getElementSchema();
+
+    this.executionProofSchema = schemaRegistry.get(EXECUTION_PROOF_SCHEMA);
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
@@ -148,5 +154,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   long getMaxValidatorsPerAttestation(final SpecConfig specConfig) {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+  }
+
+  public ExecutionProofSchema getExecutionProofSchema() {
+    return executionProofSchema;
   }
 }
