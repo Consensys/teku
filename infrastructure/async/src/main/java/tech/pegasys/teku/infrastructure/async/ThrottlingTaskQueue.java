@@ -62,7 +62,14 @@ public class ThrottlingTaskQueue implements TaskQueue {
   protected <T> Runnable getTaskToQueue(
       final Supplier<SafeFuture<T>> request, final SafeFuture<T> target) {
     return () -> {
-      final SafeFuture<T> requestFuture = request.get();
+      final SafeFuture<T> requestFuture;
+      try {
+        requestFuture = request.get();
+      } catch (final Exception e) {
+        target.completeExceptionally(e);
+        taskComplete();
+        return;
+      }
       requestFuture.propagateTo(target);
       requestFuture.always(this::taskComplete);
     };
@@ -86,7 +93,7 @@ public class ThrottlingTaskQueue implements TaskQueue {
 
   @VisibleForTesting
   @Override
-  public int getInflightTaskCount() {
+  public synchronized int getInflightTaskCount() {
     return inflightTaskCount;
   }
 
