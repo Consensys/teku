@@ -149,11 +149,11 @@ public class ThrottlingTaskQueue implements TaskQueue {
 
   @VisibleForTesting
   @Override
-  public synchronized int getInflightTaskCount() {
+  public int getInflightTaskCount() {
     return inflightTaskCount.get();
   }
 
-  private synchronized void taskComplete() {
+  private void taskComplete() {
     inflightTaskCount.decrementAndGet();
     processQueuedTasks();
   }
