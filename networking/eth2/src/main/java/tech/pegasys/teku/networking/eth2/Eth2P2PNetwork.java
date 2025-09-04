@@ -40,11 +40,11 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
 
   void unsubscribeFromSyncCommitteeSubnetId(int subnetId);
 
-  void subscribeToExecutionProofSubnetId(int subnetId);
-
   void subscribeToDataColumnSidecarSubnetId(int subnetId);
 
   void unsubscribeFromDataColumnSidecarSubnetId(int subnetId);
+
+  void subscribeToExecutionProofSubnetId(int subnetId);
 
   void unsubscribeFromExecutionProofSubnetId(int subnetId);
 

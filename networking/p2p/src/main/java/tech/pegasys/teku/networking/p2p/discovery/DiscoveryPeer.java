@@ -29,6 +29,7 @@ public class DiscoveryPeer {
   private final Optional<EnrForkId> enrForkId;
   private final SszBitvector persistentAttestationSubnets;
   private final SszBitvector syncCommitteeSubnets;
+  private final Optional<SszBitvector> executionProofSubnets;
   private final Optional<Integer> dasCustodySubnetCount;
   private final Optional<Bytes4> nextForkDigest;
 
@@ -40,7 +41,8 @@ public class DiscoveryPeer {
       final SszBitvector persistentAttestationSubnets,
       final SszBitvector syncCommitteeSubnets,
       final Optional<Integer> dasCustodySubnetCount,
-      final Optional<Bytes4> nextForkDigest) {
+      final Optional<Bytes4> nextForkDigest,
+      final Optional<SszBitvector> executionProofSubnets) {
     this.publicKey = publicKey;
     this.nodeId = nodeId;
     this.nodeAddress = nodeAddress;
@@ -49,6 +51,7 @@ public class DiscoveryPeer {
     this.syncCommitteeSubnets = syncCommitteeSubnets;
     this.dasCustodySubnetCount = dasCustodySubnetCount;
     this.nextForkDigest = nextForkDigest;
+    this.executionProofSubnets = executionProofSubnets;
   }
 
   public Bytes getPublicKey() {
@@ -73,6 +76,10 @@ public class DiscoveryPeer {
 
   public SszBitvector getSyncCommitteeSubnets() {
     return syncCommitteeSubnets;
+  }
+
+  public Optional<SszBitvector> getExecutionProofSubnets() {
+    return executionProofSubnets;
   }
 
   public Optional<Integer> getDasCustodySubnetCount() {
