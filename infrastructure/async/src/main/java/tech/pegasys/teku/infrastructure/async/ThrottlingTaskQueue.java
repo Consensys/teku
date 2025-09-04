@@ -15,7 +15,10 @@ package tech.pegasys.teku.infrastructure.async;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,38 +26,71 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue implements TaskQueue {
+  public static final int DEFAULT_MAXIMUM_QUEUE_SIZE = 500_000;
+
   private static final Logger LOG = LogManager.getLogger();
-  protected final Queue<Runnable> queuedTasks = new ConcurrentLinkedQueue<>();
-
+  protected final Queue<Runnable> queuedTasks;
   private final int maximumConcurrentTasks;
+  protected final AtomicLong rejectedTaskCount = new AtomicLong(0);
+  private final AtomicInteger inflightTaskCount = new AtomicInteger(0);
 
-  private int inflightTaskCount = 0;
+  public static class QueueIsFullException extends RejectedExecutionException {
+    public QueueIsFullException() {
+      super("Task queue is full");
+    }
+  }
 
-  public static ThrottlingTaskQueue create(final int maximumConcurrentTasks) {
-    return new ThrottlingTaskQueue(maximumConcurrentTasks);
+  public static boolean isQueueIsFullException(final Throwable error) {
+    return error instanceof QueueIsFullException
+        || (error.getCause() != null && isQueueIsFullException(error.getCause()));
+  }
+
+  public static ThrottlingTaskQueue create(
+      final int maximumConcurrentTasks, final int maximumQueueSize) {
+    return new ThrottlingTaskQueue(maximumConcurrentTasks, maximumQueueSize);
   }
 
   public static ThrottlingTaskQueue create(
       final int maximumConcurrentTasks,
+      final int maximumQueueSize,
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
-      final String metricName) {
-    final ThrottlingTaskQueue taskQueue = new ThrottlingTaskQueue(maximumConcurrentTasks);
+      final String metricName,
+      final String rejectedMetricName) {
+    final ThrottlingTaskQueue taskQueue =
+        new ThrottlingTaskQueue(maximumConcurrentTasks, maximumQueueSize);
     metricsSystem.createGauge(
         metricCategory, metricName, "Number of tasks queued", taskQueue.queuedTasks::size);
+    metricsSystem
+        .createLabelledSuppliedCounter(
+            metricCategory, rejectedMetricName, "Number of tasks rejected by the queue")
+        .labels(taskQueue.rejectedTaskCount::get);
     return taskQueue;
   }
 
-  protected ThrottlingTaskQueue(final int maximumConcurrentTasks) {
+  protected ThrottlingTaskQueue(final int maximumConcurrentTasks, final int maximumQueueSize) {
     this.maximumConcurrentTasks = maximumConcurrentTasks;
+    this.queuedTasks = new LinkedBlockingQueue<>(maximumQueueSize);
     LOG.debug("Task queue maximum concurrent tasks {}", maximumConcurrentTasks);
   }
 
   @Override
   public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
+    return queueTask(request, queuedTasks, rejectedTaskCount);
+  }
+
+  protected <T> SafeFuture<T> queueTask(
+      final Supplier<SafeFuture<T>> request,
+      final Queue<Runnable> queue,
+      final AtomicLong rejectedTaskCounter) {
     final SafeFuture<T> target = new SafeFuture<>();
     final Runnable taskToQueue = getTaskToQueue(request, target);
-    queuedTasks.add(taskToQueue);
+
+    if (!queue.offer(taskToQueue)) {
+      rejectedTaskCounter.incrementAndGet();
+      target.completeExceptionally(new QueueIsFullException());
+      return target;
+    }
     processQueuedTasks();
     return target;
   }
@@ -76,13 +112,33 @@ public class ThrottlingTaskQueue implements TaskQueue {
   }
 
   protected Runnable getTaskToRun() {
-    return queuedTasks.remove();
+    return queuedTasks.poll();
   }
 
-  protected synchronized void processQueuedTasks() {
-    while (inflightTaskCount < maximumConcurrentTasks && getQueuedTasksCount() > 0) {
-      inflightTaskCount++;
-      getTaskToRun().run();
+  protected void processQueuedTasks() {
+    // Loop to ensure we start as many tasks as possible up to the concurrent limit.
+    while (true) {
+      final int currentInflight = inflightTaskCount.get();
+      if (currentInflight >= maximumConcurrentTasks) {
+        // Already at capacity, no need to do anything.
+        return;
+      }
+
+      if (getQueuedTasksCount() == 0) {
+        return;
+      }
+
+      // Attempt to atomically increment the count, "reserving" a slot to run a task.
+      if (inflightTaskCount.compareAndSet(currentInflight, currentInflight + 1)) {
+        // We successfully reserved a slot. Now, pull a task and run it.
+        final Runnable task = getTaskToRun();
+        if (task != null) {
+          task.run();
+        } else {
+          // There was no task to run after all (race condition), so release our reservation.
+          inflightTaskCount.decrementAndGet();
+        }
+      }
     }
   }
 
@@ -93,12 +149,12 @@ public class ThrottlingTaskQueue implements TaskQueue {
 
   @VisibleForTesting
   @Override
-  public synchronized int getInflightTaskCount() {
-    return inflightTaskCount;
+  public int getInflightTaskCount() {
+    return inflightTaskCount.get();
   }
 
-  private synchronized void taskComplete() {
-    inflightTaskCount--;
+  private void taskComplete() {
+    inflightTaskCount.decrementAndGet();
     processQueuedTasks();
   }
 }
