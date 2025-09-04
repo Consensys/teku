@@ -64,7 +64,7 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
       return queueTask(request);
     }
 
-    return queueTask(request, queuedPrioritizedTasks, rejectedTaskCount);
+    return queueTask(request, queuedPrioritizedTasks, rejectedPrioritizedTaskCount);
   }
 
   @Override
