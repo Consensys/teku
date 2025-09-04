@@ -189,6 +189,14 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishDataColumnSidecar);
   }
 
+    public SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
+        return publishMessageWithFeedback(
+                executionProof.getSlot(),
+                executionProof,
+                "execution proof",
+                GossipForkSubscriptions::publishExecutionProof);
+    }
+
   public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     publishMessage(
         message.getSlot(),
