@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -61,21 +62,24 @@ public class LimitedTaskQueue implements TaskQueue {
   }
 
   @Override
-  public synchronized <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
-    if (delegate.getQueuedTasksCount() >= maximumQueueSize) {
-      rejectedTaskCount++;
-      return SafeFuture.failedFuture(new QueueIsFullException());
+  public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
+    synchronized (delegate) {
+      if (delegate.getQueuedTasksCount() >= maximumQueueSize) {
+        rejectedTaskCount++;
+        return SafeFuture.failedFuture(new QueueIsFullException());
+      }
+      return delegate.queueTask(request);
     }
-    return delegate.queueTask(request);
   }
 
   @Override
-  public synchronized int getQueuedTasksCount() {
+  public int getQueuedTasksCount() {
     return delegate.getQueuedTasksCount();
   }
 
+  @VisibleForTesting
   @Override
-  public synchronized int getInflightTaskCount() {
+  public int getInflightTaskCount() {
     return delegate.getInflightTaskCount();
   }
 }

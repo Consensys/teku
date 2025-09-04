@@ -78,6 +78,24 @@ public class ThrottlingTaskQueueTest {
     checkQueueProgress(requests, 0, 0, 10);
   }
 
+  @Test
+  public void shouldFailTaskIfSupplierThrows() {
+    taskQueue = createThrottlingTaskQueue();
+
+    taskQueue
+        .queueTask(
+            () -> {
+              throw new RuntimeException("Test exception");
+            })
+        .exceptionally(
+            err -> {
+              assertThat(err).hasMessageContaining("Test exception");
+              return null;
+            });
+
+    checkQueueProgress(List.of(), 0, 0, 0);
+  }
+
   protected void checkQueueProgress(
       final List<SafeFuture<Void>> requests,
       final int queueSize,
