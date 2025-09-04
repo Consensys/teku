@@ -31,7 +31,7 @@ public class ThrottlingTaskQueue implements TaskQueue {
   private static final Logger LOG = LogManager.getLogger();
   protected final Queue<Runnable> queuedTasks;
   private final int maximumConcurrentTasks;
-  private final AtomicLong rejectedTaskCount = new AtomicLong(0);
+  protected final AtomicLong rejectedTaskCount = new AtomicLong(0);
   private final AtomicInteger inflightTaskCount = new AtomicInteger(0);
 
   public static class QueueIsFullException extends RejectedExecutionException {
@@ -61,11 +61,10 @@ public class ThrottlingTaskQueue implements TaskQueue {
         new ThrottlingTaskQueue(maximumConcurrentTasks, maximumQueueSize);
     metricsSystem.createGauge(
         metricCategory, metricName, "Number of tasks queued", taskQueue.queuedTasks::size);
-    metricsSystem.createLongGauge(
-        metricCategory,
-        rejectedMetricName,
-        "Number of tasks rejected by the queue",
-        taskQueue.rejectedTaskCount::get);
+    metricsSystem
+        .createLabelledSuppliedCounter(
+            metricCategory, rejectedMetricName, "Number of tasks rejected by the queue")
+        .labels(taskQueue.rejectedTaskCount::get);
     return taskQueue;
   }
 
@@ -77,16 +76,18 @@ public class ThrottlingTaskQueue implements TaskQueue {
 
   @Override
   public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
-    return queueTask(request, queuedTasks);
+    return queueTask(request, queuedTasks, rejectedTaskCount);
   }
 
   protected <T> SafeFuture<T> queueTask(
-      final Supplier<SafeFuture<T>> request, final Queue<Runnable> queue) {
+      final Supplier<SafeFuture<T>> request,
+      final Queue<Runnable> queue,
+      final AtomicLong rejectedTaskCounter) {
     final SafeFuture<T> target = new SafeFuture<>();
     final Runnable taskToQueue = getTaskToQueue(request, target);
 
     if (!queue.offer(taskToQueue)) {
-      rejectedTaskCount.incrementAndGet();
+      rejectedTaskCounter.incrementAndGet();
       target.completeExceptionally(new QueueIsFullException());
       return target;
     }

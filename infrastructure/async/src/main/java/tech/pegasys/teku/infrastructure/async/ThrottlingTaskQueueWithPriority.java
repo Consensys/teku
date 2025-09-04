@@ -15,21 +15,24 @@ package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
-
   private final Queue<Runnable> queuedPrioritizedTasks;
+
+  private final AtomicLong rejectedPrioritizedTaskCount = new AtomicLong(0);
 
   public static ThrottlingTaskQueueWithPriority create(
       final int maximumConcurrentTasks,
       final int maximumQueueSize,
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
-      final String metricName) {
+      final String metricName,
+      final String rejectedMetricName) {
     final ThrottlingTaskQueueWithPriority taskQueue =
         new ThrottlingTaskQueueWithPriority(maximumConcurrentTasks, maximumQueueSize);
     final LabelledSuppliedMetric taskQueueGauge =
@@ -37,6 +40,15 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
             metricCategory, metricName, "Number of tasks queued", "priority");
     taskQueueGauge.labels(taskQueue.queuedTasks::size, "normal");
     taskQueueGauge.labels(taskQueue.queuedPrioritizedTasks::size, "high");
+    final LabelledSuppliedMetric labelledCounter =
+        metricsSystem.createLabelledSuppliedCounter(
+            metricCategory,
+            rejectedMetricName,
+            "Number of tasks rejected by the queue",
+            "priority");
+
+    labelledCounter.labels(taskQueue.rejectedTaskCount::get, "normal");
+    labelledCounter.labels(taskQueue.rejectedPrioritizedTaskCount::get, "high");
     return taskQueue;
   }
 
@@ -52,7 +64,7 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
       return queueTask(request);
     }
 
-    return queueTask(request, queuedPrioritizedTasks);
+    return queueTask(request, queuedPrioritizedTasks, rejectedTaskCount);
   }
 
   @Override

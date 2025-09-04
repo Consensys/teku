@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
@@ -41,7 +42,7 @@ public class ThrottlingTaskQueueTest {
   protected TaskQueue createThrottlingTaskQueue() {
     return ThrottlingTaskQueue.create(
         MAXIMUM_CONCURRENT_TASKS,
-        30_000,
+        15,
         stubMetricsSystem,
         TekuMetricCategory.BEACON,
         METRIC_NAME,
@@ -87,8 +88,6 @@ public class ThrottlingTaskQueueTest {
 
   @Test
   public void shouldFailTaskIfSupplierThrows() {
-    taskQueue = createThrottlingTaskQueue();
-
     final RuntimeException error = new RuntimeException("Test exception");
 
     final SafeFuture<Void> request =
@@ -101,6 +100,49 @@ public class ThrottlingTaskQueueTest {
     checkQueueProgress(List.of(request), 0, 0, 1);
   }
 
+    @Test
+    public void rejectsWhenFull() {
+
+      final int totalTasks = 20;
+        final int maxQueueSize = 15;
+        final int expectedRejected = totalTasks - maxQueueSize - MAXIMUM_CONCURRENT_TASKS;
+        final int[] rejectedCount = {0};
+        final List<SafeFuture<Void>> requests =
+                IntStream.range(0, totalTasks)
+                        .mapToObj(
+                                element ->
+                                        taskQueue
+                                                .queueTask(
+                                                        () ->
+                                                                stubAsyncRunner.runAsync(
+                                                                        () -> {
+                                                                            LOG.info("Running task {}", element);
+                                                                            assertThat(taskQueue.getInflightTaskCount())
+                                                                                    .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
+                                                                        }))
+                                                .exceptionally(
+                                                        err -> {
+                                                            LOG.info("Task {} was rejected", element);
+                                                            assertThat(err).isInstanceOf(QueueIsFullException.class);
+                                                            rejectedCount[0]++;
+                                                            return null;
+                                                        }))
+                        .toList();
+
+        // stubRunner will run whatever is active
+        stubAsyncRunner.executeQueuedActions();
+        assertThat(rejectedCount[0]).isEqualTo(expectedRejected);
+        assertThat(
+                stubMetricsSystem
+                        .getGauge(TekuMetricCategory.BEACON, "test_rejected_metric")
+                        .getValue())
+                .isEqualTo(expectedRejected);
+        checkQueueProgress(
+                requests,
+                maxQueueSize - MAXIMUM_CONCURRENT_TASKS,
+                MAXIMUM_CONCURRENT_TASKS,
+                MAXIMUM_CONCURRENT_TASKS + expectedRejected);
+    }
   protected void checkQueueProgress(
       final List<SafeFuture<Void>> requests,
       final int queueSize,
