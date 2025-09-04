@@ -29,29 +29,25 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 public class ThrottlingTaskQueueTest {
 
   private static final Logger LOG = LogManager.getLogger();
-  protected static final int MAXIMUM_CONCURRENT_TASKS = 3;
+  private static final int MAXIMUM_CONCURRENT_TASKS = 3;
 
-  protected final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
-  protected final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
+  private final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
-  protected static final String METRIC_NAME = "test_metric";
-  protected static final String REJECTED_METRIC_NAME = "test_rejected_metric";
-  protected TaskQueue taskQueue;
-
-  protected TaskQueue createThrottlingTaskQueue() {
-    return ThrottlingTaskQueue.create(
-        MAXIMUM_CONCURRENT_TASKS,
-        15,
-        stubMetricsSystem,
-        TekuMetricCategory.BEACON,
-        METRIC_NAME,
-        REJECTED_METRIC_NAME);
-  }
+  private static final String METRIC_NAME = "test_metric";
+  private static final String REJECTED_METRIC_NAME = "test_rejected_metric";
+  private final ThrottlingTaskQueue taskQueue =
+      ThrottlingTaskQueue.create(
+          MAXIMUM_CONCURRENT_TASKS,
+          15,
+          stubMetricsSystem,
+          TekuMetricCategory.BEACON,
+          METRIC_NAME,
+          REJECTED_METRIC_NAME);
 
   @Test
   public void throttlesRequests() {
-    taskQueue = createThrottlingTaskQueue();
     // queue tasks to run, they shouldn't start straight away.
     final List<SafeFuture<Void>> requests =
         IntStream.range(0, 10)
