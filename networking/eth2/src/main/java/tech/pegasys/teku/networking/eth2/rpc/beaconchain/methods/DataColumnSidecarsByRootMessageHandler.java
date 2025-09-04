@@ -116,15 +116,15 @@ public class DataColumnSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRootRequestMessage request) {
-    final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
-    if (request.getMaximumResponseChunks() > maxRequestDataColumnSidecars) {
+    final int maxRequestIdentifiers = specConfigFulu.getMaxRequestBlocksDeneb();
+    if (request.size() > maxRequestIdentifiers) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
-                  "Only a maximum of %s data column sidecars can be requested per request",
-                  maxRequestDataColumnSidecars)));
+                  "Only a maximum of %s by root identifiers can be requested per request",
+                  maxRequestIdentifiers)));
     }
     return Optional.empty();
   }
