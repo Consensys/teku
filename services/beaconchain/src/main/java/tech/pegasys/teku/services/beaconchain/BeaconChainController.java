@@ -911,7 +911,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     blockManager.subscribePreImportBlocks(
         (block, remoteOrigin) -> getDataColumnSidecarCustody().onNewBlock(block, remoteOrigin));
     final DasCustodySync svc =
-        new DasCustodySync(dataColumnSidecarRecoveringCustody, recoveringSidecarRetriever);
+        new DasCustodySync(
+            dataColumnSidecarRecoveringCustody,
+            recoveringSidecarRetriever,
+            minCustodyPeriodSlotCalculator);
     dasCustodySync = Optional.of(svc);
     eventChannels.subscribe(SlotEventsChannel.class, svc);
 
