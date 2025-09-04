@@ -57,7 +57,7 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
             metricsSystem,
             TekuMetricCategory.STORAGE,
             "throttling_storage_query_queue_size",
-            "throttling_storage_query_rejected_count");
+            "throttling_storage_query_rejected");
   }
 
   public static <T> Optional<T> ignoreQueueIsFullException(final Throwable error) {
