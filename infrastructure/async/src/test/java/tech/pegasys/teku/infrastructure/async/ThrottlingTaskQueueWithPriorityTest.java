@@ -32,7 +32,11 @@ public class ThrottlingTaskQueueWithPriorityTest {
 
   private final ThrottlingTaskQueueWithPriority taskQueue =
       ThrottlingTaskQueueWithPriority.create(
-          MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, "test_metric");
+          MAXIMUM_CONCURRENT_TASKS,
+          3000,
+          stubMetricsSystem,
+          TekuMetricCategory.BEACON,
+          "test_metric");
 
   @Test
   public void throttlesRequests() {

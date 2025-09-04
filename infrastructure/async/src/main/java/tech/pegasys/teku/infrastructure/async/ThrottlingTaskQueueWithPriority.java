@@ -14,7 +14,8 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledSuppliedMetric;
@@ -22,15 +23,16 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
 
-  private final Queue<Runnable> queuedPrioritizedTasks = new ConcurrentLinkedQueue<>();
+  private final Queue<Runnable> queuedPrioritizedTasks;
 
   public static ThrottlingTaskQueueWithPriority create(
       final int maximumConcurrentTasks,
+      final int maximumQueueSize,
       final MetricsSystem metricsSystem,
       final TekuMetricCategory metricCategory,
       final String metricName) {
     final ThrottlingTaskQueueWithPriority taskQueue =
-        new ThrottlingTaskQueueWithPriority(maximumConcurrentTasks);
+        new ThrottlingTaskQueueWithPriority(maximumConcurrentTasks, maximumQueueSize);
     final LabelledSuppliedMetric taskQueueGauge =
         metricsSystem.createLabelledSuppliedGauge(
             metricCategory, metricName, "Number of tasks queued", "priority");
@@ -39,8 +41,10 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
     return taskQueue;
   }
 
-  private ThrottlingTaskQueueWithPriority(final int maximumConcurrentTasks) {
-    super(maximumConcurrentTasks);
+  private ThrottlingTaskQueueWithPriority(
+      final int maximumConcurrentTasks, final int maximumQueueSize) {
+    super(maximumConcurrentTasks, maximumQueueSize);
+    this.queuedPrioritizedTasks = new LinkedBlockingQueue<>(maximumQueueSize);
   }
 
   public <T> SafeFuture<T> queueTask(
@@ -48,18 +52,17 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
     if (!prioritize) {
       return queueTask(request);
     }
-    final SafeFuture<T> target = new SafeFuture<>();
-    final Runnable taskToQueue = getTaskToQueue(request, target);
-    queuedPrioritizedTasks.add(taskToQueue);
-    processQueuedTasks();
-    return target;
+
+    return queueTask(request, queuedPrioritizedTasks);
   }
 
   @Override
   protected Runnable getTaskToRun() {
-    return !queuedPrioritizedTasks.isEmpty()
-        ? queuedPrioritizedTasks.remove()
-        : queuedTasks.remove();
+    final Runnable taskToQueue = queuedPrioritizedTasks.poll();
+    if (taskToQueue != null) {
+      return taskToQueue;
+    }
+    return super.getTaskToRun();
   }
 
   @Override

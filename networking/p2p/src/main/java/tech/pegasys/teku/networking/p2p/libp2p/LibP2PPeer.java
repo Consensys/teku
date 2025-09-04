@@ -47,6 +47,8 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.bodyselector.RpcRequestBodySelector;
 
+import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.DEFAULT_MAXIMUM_QUEUE_SIZE;
+
 public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -264,7 +266,7 @@ public class LibP2PPeer implements Peer {
     private final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate;
 
     private final ThrottlingTaskQueue requestsQueue =
-        ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS);
+        ThrottlingTaskQueue.create(NetworkConstants.MAX_CONCURRENT_REQUESTS, DEFAULT_MAXIMUM_QUEUE_SIZE);
 
     private ThrottlingRpcHandler(
         final RpcHandler<TOutgoingHandler, TRequest, TRespHandler> delegate) {
