@@ -109,6 +109,7 @@ public class ThrottlingTaskQueueWithPriorityTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void rejectsNormalAndHighPriorityTasks() {
     final SafeFuture<Void> initialRequest = new SafeFuture<>();
 
