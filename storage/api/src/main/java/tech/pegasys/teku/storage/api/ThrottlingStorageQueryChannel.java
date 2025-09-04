@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.api;
 
-
 import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.isQueueIsFullException;
 
 import java.util.List;
@@ -52,13 +51,13 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     taskQueue =
-            ThrottlingTaskQueue.create(
-                maxConcurrentQueries,
-                    maximumQueueSize,
-                metricsSystem,
-                TekuMetricCategory.STORAGE,
-                "throttling_storage_query_queue_size",
-                    "throttling_storage_query_rejected_count");
+        ThrottlingTaskQueue.create(
+            maxConcurrentQueries,
+            maximumQueueSize,
+            metricsSystem,
+            TekuMetricCategory.STORAGE,
+            "throttling_storage_query_queue_size",
+            "throttling_storage_query_rejected_count");
   }
 
   public static <T> Optional<T> ignoreQueueIsFullException(final Throwable error) {

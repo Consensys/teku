@@ -35,7 +35,7 @@ public class ThrottlingTaskQueueTest {
   protected final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
 
   protected static final String METRIC_NAME = "test_metric";
-    protected static final String REJECTED_METRIC_NAME = "test_rejected_metric";
+  protected static final String REJECTED_METRIC_NAME = "test_rejected_metric";
   protected TaskQueue taskQueue;
 
   protected TaskQueue createThrottlingTaskQueue() {
@@ -45,7 +45,7 @@ public class ThrottlingTaskQueueTest {
         stubMetricsSystem,
         TekuMetricCategory.BEACON,
         METRIC_NAME,
-            REJECTED_METRIC_NAME);
+        REJECTED_METRIC_NAME);
   }
 
   @Test

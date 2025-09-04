@@ -26,7 +26,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue implements TaskQueue {
-    public static int DEFAULT_MAXIMUM_QUEUE_SIZE = 500_000;
+  public static int DEFAULT_MAXIMUM_QUEUE_SIZE = 500_000;
 
   private static final Logger LOG = LogManager.getLogger();
   protected final Queue<Runnable> queuedTasks;
@@ -34,19 +34,18 @@ public class ThrottlingTaskQueue implements TaskQueue {
   private final AtomicLong rejectedTaskCount = new AtomicLong(0);
   private final AtomicInteger inflightTaskCount = new AtomicInteger(0);
 
-    public static class QueueIsFullException extends RejectedExecutionException {
-        public QueueIsFullException() {
-            super("Task queue is full");
-        }
+  public static class QueueIsFullException extends RejectedExecutionException {
+    public QueueIsFullException() {
+      super("Task queue is full");
     }
+  }
 
-    public static boolean isQueueIsFullException(final Throwable error) {
-        return error instanceof QueueIsFullException
-                || (error.getCause() != null && isQueueIsFullException(error.getCause()));
-    }
+  public static boolean isQueueIsFullException(final Throwable error) {
+    return error instanceof QueueIsFullException
+        || (error.getCause() != null && isQueueIsFullException(error.getCause()));
+  }
 
-
-    public static ThrottlingTaskQueue create(
+  public static ThrottlingTaskQueue create(
       final int maximumConcurrentTasks, final int maximumQueueSize) {
     return new ThrottlingTaskQueue(maximumConcurrentTasks, maximumQueueSize);
   }
@@ -62,11 +61,11 @@ public class ThrottlingTaskQueue implements TaskQueue {
         new ThrottlingTaskQueue(maximumConcurrentTasks, maximumQueueSize);
     metricsSystem.createGauge(
         metricCategory, metricName, "Number of tasks queued", taskQueue.queuedTasks::size);
-      metricsSystem.createLongGauge(
-              metricCategory,
-              rejectedMetricName,
-              "Number of tasks rejected by the queue",
-              taskQueue.rejectedTaskCount::get);
+    metricsSystem.createLongGauge(
+        metricCategory,
+        rejectedMetricName,
+        "Number of tasks rejected by the queue",
+        taskQueue.rejectedTaskCount::get);
     return taskQueue;
   }
 
@@ -81,19 +80,19 @@ public class ThrottlingTaskQueue implements TaskQueue {
     return queueTask(request, queuedTasks);
   }
 
-  protected <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request, final Queue<Runnable> queue) {
-      final SafeFuture<T> target = new SafeFuture<>();
-      final Runnable taskToQueue = getTaskToQueue(request, target);
+  protected <T> SafeFuture<T> queueTask(
+      final Supplier<SafeFuture<T>> request, final Queue<Runnable> queue) {
+    final SafeFuture<T> target = new SafeFuture<>();
+    final Runnable taskToQueue = getTaskToQueue(request, target);
 
-      if (!queue.offer(taskToQueue)) {
-          rejectedTaskCount.incrementAndGet();
-          target.completeExceptionally(new QueueIsFullException());
-          return target;
-      }
-      processQueuedTasks();
+    if (!queue.offer(taskToQueue)) {
+      rejectedTaskCount.incrementAndGet();
+      target.completeExceptionally(new QueueIsFullException());
       return target;
+    }
+    processQueuedTasks();
+    return target;
   }
-
 
   protected <T> Runnable getTaskToQueue(
       final Supplier<SafeFuture<T>> request, final SafeFuture<T> target) {
