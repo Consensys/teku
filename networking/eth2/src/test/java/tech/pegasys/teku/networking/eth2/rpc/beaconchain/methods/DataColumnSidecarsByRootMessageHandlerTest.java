@@ -167,7 +167,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
-  public void validateRequest_shouldNotAllowNumberOfIdentifiersLargerThanMaximumAllowed() {
+  public void validateRequest_shouldLimitMaximumRequestSize() {
     final int maxRequestIdentifiers =
         SpecConfigFulu.required(spec.forMilestone(specMilestone).getConfig())
             .getMaxRequestBlocksDeneb();
@@ -185,7 +185,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
               assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
               assertThat(rpcException.getErrorMessageString())
                   .isEqualTo(
-                      "Only a maximum of %d by root identifiers can be requested per request",
+                      "Only a maximum of %d by root identifiers are allowed per request",
                       maxRequestIdentifiers);
             });
 

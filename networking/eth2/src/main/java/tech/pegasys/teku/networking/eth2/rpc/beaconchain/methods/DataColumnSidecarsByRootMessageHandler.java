@@ -123,7 +123,7 @@ public class DataColumnSidecarsByRootMessageHandler
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
-                  "Only a maximum of %s by root identifiers can be requested per request",
+                  "Only a maximum of %d by root identifiers are allowed per request",
                   maxRequestIdentifiers)));
     }
     return Optional.empty();
