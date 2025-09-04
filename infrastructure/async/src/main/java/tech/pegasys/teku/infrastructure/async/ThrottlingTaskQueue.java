@@ -26,7 +26,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueue implements TaskQueue {
-  public static int DEFAULT_MAXIMUM_QUEUE_SIZE = 500_000;
+  public static final int DEFAULT_MAXIMUM_QUEUE_SIZE = 500_000;
 
   private static final Logger LOG = LogManager.getLogger();
   protected final Queue<Runnable> queuedTasks;
