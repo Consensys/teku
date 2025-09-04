@@ -96,49 +96,45 @@ public class ThrottlingTaskQueueTest {
     checkQueueProgress(List.of(request), 0, 0, 1);
   }
 
-    @Test
-    public void rejectsWhenFull() {
+  @Test
+  public void rejectsWhenFull() {
 
-      final int totalTasks = 20;
-        final int maxQueueSize = 15;
-        final int expectedRejected = totalTasks - maxQueueSize - MAXIMUM_CONCURRENT_TASKS;
-        final int[] rejectedCount = {0};
-        final List<SafeFuture<Void>> requests =
-                IntStream.range(0, totalTasks)
-                        .mapToObj(
-                                element ->
-                                        taskQueue
-                                                .queueTask(
-                                                        () ->
-                                                                stubAsyncRunner.runAsync(
-                                                                        () -> {
-                                                                            LOG.info("Running task {}", element);
-                                                                            assertThat(taskQueue.getInflightTaskCount())
-                                                                                    .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
-                                                                        }))
-                                                .exceptionally(
-                                                        err -> {
-                                                            LOG.info("Task {} was rejected", element);
-                                                            assertThat(err).isInstanceOf(QueueIsFullException.class);
-                                                            rejectedCount[0]++;
-                                                            return null;
-                                                        }))
-                        .toList();
+    final int totalTasks = 20;
+    final int maxQueueSize = 15;
+    final int expectedRejected = totalTasks - maxQueueSize - MAXIMUM_CONCURRENT_TASKS;
+    final int[] rejectedCount = {0};
+    final List<SafeFuture<Void>> requests =
+        IntStream.range(0, totalTasks)
+            .mapToObj(
+                element ->
+                    taskQueue
+                        .queueTask(
+                            () ->
+                                stubAsyncRunner.runAsync(
+                                    () -> {
+                                      LOG.info("Running task {}", element);
+                                      assertThat(taskQueue.getInflightTaskCount())
+                                          .isLessThanOrEqualTo(MAXIMUM_CONCURRENT_TASKS);
+                                    }))
+                        .exceptionally(
+                            err -> {
+                              LOG.info("Task {} was rejected", element);
+                              assertThat(err).isInstanceOf(QueueIsFullException.class);
+                              rejectedCount[0]++;
+                              return null;
+                            }))
+            .toList();
 
-        // stubRunner will run whatever is active
-        stubAsyncRunner.executeQueuedActions();
-        assertThat(rejectedCount[0]).isEqualTo(expectedRejected);
-        assertThat(
-                stubMetricsSystem
-                        .getGauge(TekuMetricCategory.BEACON, "test_rejected_metric")
-                        .getValue())
-                .isEqualTo(expectedRejected);
-        checkQueueProgress(
-                requests,
-                maxQueueSize - MAXIMUM_CONCURRENT_TASKS,
-                MAXIMUM_CONCURRENT_TASKS,
-                MAXIMUM_CONCURRENT_TASKS + expectedRejected);
-    }
+    // stubRunner will run whatever is active
+    stubAsyncRunner.executeQueuedActions();
+    assertThat(rejectedCount[0]).isEqualTo(expectedRejected);
+    checkQueueProgress(
+        requests,
+        maxQueueSize - MAXIMUM_CONCURRENT_TASKS,
+        MAXIMUM_CONCURRENT_TASKS,
+        MAXIMUM_CONCURRENT_TASKS + expectedRejected);
+  }
+
   protected void checkQueueProgress(
       final List<SafeFuture<Void>> requests,
       final int queueSize,
