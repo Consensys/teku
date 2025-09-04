@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -82,18 +83,16 @@ public class ThrottlingTaskQueueTest {
   public void shouldFailTaskIfSupplierThrows() {
     taskQueue = createThrottlingTaskQueue();
 
-    taskQueue
-        .queueTask(
+    final RuntimeException error = new RuntimeException("Test exception");
+
+    final SafeFuture<Void> request =
+        taskQueue.queueTask(
             () -> {
-              throw new RuntimeException("Test exception");
-            })
-        .exceptionally(
-            err -> {
-              assertThat(err).hasMessageContaining("Test exception");
-              return null;
+              throw error;
             });
 
-    checkQueueProgress(List.of(), 0, 0, 0);
+    assertThatSafeFuture(request).isCompletedExceptionallyWith(error);
+    checkQueueProgress(List.of(request), 0, 0, 1);
   }
 
   protected void checkQueueProgress(
