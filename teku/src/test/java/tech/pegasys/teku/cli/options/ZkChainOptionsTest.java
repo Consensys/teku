@@ -49,13 +49,13 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void statelessValidationEnabled_receivesDefaultValue() {
+  public void statelessValidationEnabled_isDisabledByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.zkChainConfiguration().isStatelessValidationEnabled()).isFalse();
   }
 
   @Test
-  public void generateExecutionProofsEnabled_receivesDefaultValue() {
+  public void generateExecutionProofsEnabled_isDisabledByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.zkChainConfiguration().isGenerateExecutionProofsEnabled()).isFalse();
   }
