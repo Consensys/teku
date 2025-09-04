@@ -245,7 +245,7 @@ public class ValidatorSourceFactory {
               metricsSystem,
               TekuMetricCategory.VALIDATOR,
               "external_signer_request_queue_size",
-              "external_signer_request_queue_rejected_total");
+              "external_signer_request_queue_rejected");
     }
 
     return externalSignerTaskQueue;

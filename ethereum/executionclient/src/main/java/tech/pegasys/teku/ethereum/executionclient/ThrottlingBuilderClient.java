@@ -46,7 +46,7 @@ public class ThrottlingBuilderClient implements BuilderClient {
             metricsSystem,
             TekuMetricCategory.BEACON,
             "builder_request_queue_size",
-            "builder_request_queue_rejected_total");
+            "builder_request_queue_rejected");
   }
 
   @Override

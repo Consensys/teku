@@ -46,7 +46,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
             metricsSystem,
             TekuMetricCategory.BEACON,
             "eth1_request_queue_size",
-            "eth1_request_queue_rejected_total");
+            "eth1_request_queue_rejected");
   }
 
   @Override

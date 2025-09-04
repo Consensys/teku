@@ -60,7 +60,7 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
             metricsSystem,
             TekuMetricCategory.BEACON,
             "ee_request_queue_size",
-            "ee_request_queue_rejected_total");
+            "ee_request_queue_rejected");
   }
 
   @Override
