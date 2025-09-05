@@ -254,16 +254,9 @@ class SyncControllerTest {
     syncResult.complete(SyncResult.COMPLETE);
     assertNotSyncing();
 
-    // shouldn't restart if there are no sync targets available
-    when(syncTargetSelector.selectSyncTarget(any())).thenReturn(Optional.empty());
     final SyncSubscriber subscriber = mock(SyncSubscriber.class);
     syncController.subscribeToSyncChanges(subscriber);
-    timeProvider.advanceTimeBySeconds(SYNC_AWAKE_INTERVAL.toSeconds());
-    asyncRunner.executeDueActions();
-    assertNotSyncing();
-    assertSyncSubscriberNotified(subscriber, false);
 
-    // and should restart when sync target is available
     final SafeFuture<SyncResult> syncResultNew = new SafeFuture<>();
     when(syncTargetSelector.selectSyncTarget(any()))
         .thenReturn(Optional.of(SyncTarget.finalizedTarget(targetChain)));
@@ -272,6 +265,22 @@ class SyncControllerTest {
     asyncRunner.executeDueActions();
     assertThat(syncController.isSyncActive()).isTrue();
     assertSyncSubscriberNotified(subscriber, true);
+  }
+
+  @Test
+  void shouldNotRestartSyncWithoutNewTargets() {
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+    assertThat(syncController.isSyncActive()).isTrue();
+    syncResult.complete(SyncResult.COMPLETE);
+    assertNotSyncing();
+
+    when(syncTargetSelector.selectSyncTarget(any())).thenReturn(Optional.empty());
+    final SyncSubscriber subscriber = mock(SyncSubscriber.class);
+    syncController.subscribeToSyncChanges(subscriber);
+    timeProvider.advanceTimeBySeconds(SYNC_AWAKE_INTERVAL.toSeconds());
+    asyncRunner.executeDueActions();
+    assertNotSyncing();
+    assertSyncSubscriberNotified(subscriber, false);
   }
 
   private void assertSyncSubscriberNotified(
