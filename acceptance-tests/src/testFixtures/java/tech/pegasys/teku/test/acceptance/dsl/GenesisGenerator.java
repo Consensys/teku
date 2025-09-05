@@ -88,7 +88,7 @@ public class GenesisGenerator {
     return this;
   }
 
-    public GenesisGenerator withFuluEpoch(final UInt64 fuluForkEpoch) {
+  public GenesisGenerator withFuluEpoch(final UInt64 fuluForkEpoch) {
     specConfigModifier =
         specConfigModifier.andThen(
             specConfigBuilder -> specConfigBuilder.fuluForkEpoch(fuluForkEpoch));
