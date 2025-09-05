@@ -127,7 +127,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     final Map<UInt64, PreparedProposerInfo> preparedValidators =
         proposersDataManager.getPreparedProposerInfo();
 
-    if (detectGenesisInitialization(currentEpoch, proposersDataManager.getPreparedProposerInfo())) {
+    if (detectGenesisInitialization(currentEpoch, preparedValidators)) {
       return;
     }
 
