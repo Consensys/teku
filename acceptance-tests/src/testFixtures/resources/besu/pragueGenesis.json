@@ -16,7 +16,10 @@
     "cancunTime": 0,
     "ethash": {
       "fixeddifficulty": 100
-    }
+    },
+    "depositContractAddress": "0x00000961ef480eb55e80d19ad83579a64c007002",
+    "withdrawalRequestContractAddress": "0x00000961Ef480Eb55e80D19ad83579A64c007002",
+    "consolidationRequestContractAddress": "0x0000BBdDc7CE488642fb579F8B00f3a590007251"
   },
   "nonce":"0x42",
   "timestamp":"0x0",
