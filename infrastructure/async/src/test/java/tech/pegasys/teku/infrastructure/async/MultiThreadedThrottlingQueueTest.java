@@ -39,7 +39,7 @@ public class MultiThreadedThrottlingQueueTest {
   @Test
   @DisabledOnOs(OS.WINDOWS)
   public void asyncTaskLimitDemo() throws InterruptedException {
-    final ThrottlingTaskQueue queue = new ThrottlingTaskQueue(MAXIMUM_CONCURRENT_TASKS);
+    final ThrottlingTaskQueue queue = new ThrottlingTaskQueue(MAXIMUM_CONCURRENT_TASKS, 10_000);
     final List<SafeFuture<Void>> futures = new ArrayList<>();
     for (int i = 0; i < 20; i++) {
       final int taskNumber = i;

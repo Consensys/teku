@@ -38,8 +38,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.infrastructure.async.LimitedTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -167,16 +167,15 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   }
 
   @TestTemplate
-  public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
-    final int maxRequestDataColumnSidecars =
+  public void validateRequest_shouldLimitMaximumRequestSize() {
+    final int maxRequestIdentifiers =
         SpecConfigFulu.required(spec.forMilestone(specMilestone).getConfig())
-            .getMaxRequestDataColumnSidecars();
+            .getMaxRequestBlocksDeneb();
     when(recentChainData.getCurrentEpoch())
         .thenReturn(Optional.of(dataStructureUtil.randomEpoch()));
 
     final DataColumnSidecarsByRootRequestMessage request =
-        messageSchema.of(
-            generateDataColumnsByRootIdentifiers(maxRequestDataColumnSidecars / 2 + 1, 2));
+        messageSchema.of(generateDataColumnsByRootIdentifiers(maxRequestIdentifiers + 1, 1));
 
     final Optional<RpcException> result = handler.validateRequest(protocolId, request);
 
@@ -186,8 +185,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
               assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
               assertThat(rpcException.getErrorMessageString())
                   .isEqualTo(
-                      "Only a maximum of %d data column sidecars can be requested per request",
-                      maxRequestDataColumnSidecars);
+                      "Only a maximum of %d by root identifiers are allowed per request",
+                      maxRequestIdentifiers);
             });
 
     final long countTooBigCount =
