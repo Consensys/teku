@@ -35,6 +35,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncPreImportBlockChannel;
+import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.BlocksImportedSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.StubBatchFactory;
@@ -660,6 +661,27 @@ class BatchSyncTest {
     batches.getImportResult(batch0).complete(IMPORTED_ALL_BLOCKS);
 
     assertBatchNotActive(batch0);
+  }
+
+  @Test
+  void shouldNotifyOnBlocksImported() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+    final BlocksImportedSubscriber subscriber = mock(BlocksImportedSubscriber.class);
+
+    sync.subscribeToBlocksImportedEvent(subscriber);
+
+    final Batch batch0 = batches.get(0);
+    final Batch batch1 = batches.get(1);
+    batches.receiveBlocks(batch0, chainBuilder.generateBlockAtSlot(1).getBlock());
+    batches.receiveBlocks(
+        batch1, chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+
+    assertBatchImported(batch0);
+    verifyNoInteractions(subscriber);
+    batches.getImportResult(batch0).complete(IMPORTED_ALL_BLOCKS);
+
+    verify(subscriber).onBlocksImported(batch0.getLastBlock().orElseThrow());
+    verifyNoMoreInteractions(subscriber);
   }
 
   @Test

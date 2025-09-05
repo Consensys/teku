@@ -320,6 +320,22 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
   }
 
+  public void reorgWhileSyncing(final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot) {
+    onForkChoiceThread(
+            () -> {
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              final Optional<SlotAndBlockRoot> commonAncestor =
+                  forkChoiceStrategy.findCommonAncestor(oldHeadRoot, newHeadRoot);
+              if (commonAncestor.isEmpty()) {
+                return;
+              }
+
+              forkChoiceStrategy.reorgWhileSyncing(
+                  oldHeadRoot, newHeadRoot, commonAncestor.get().getBlockRoot());
+            })
+        .finishStackTrace();
+  }
+
   private void initializeProtoArrayForkChoice() {
     processHead().join();
   }

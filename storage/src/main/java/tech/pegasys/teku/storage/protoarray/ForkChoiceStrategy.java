@@ -136,6 +136,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  public void reorgWhileSyncing(
+      final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot, final Bytes32 commonAncestorRoot) {
+    protoArrayLock.writeLock().lock();
+    try {
+      protoArray.reorgWhileSyncing(oldHeadRoot, newHeadRoot, commonAncestorRoot);
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
+  }
+
   public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {

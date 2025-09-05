@@ -190,6 +190,60 @@ public class ProtoArray {
   }
 
   /**
+   * This function is supposed to be called while syncing. It assumes the protoarray to be in a
+   * state where all nodes have been just initialized (see {@link #setInitialCanonicalBlockRoot})
+   * and have a weight of 1 on the canonical chain and 0 on all other chains.
+   *
+   * <p>It may also do the reorg if we enter syncing mode and, while syncing, we decide to sync to a
+   * new chain so that the common ancestor has not received any votes yet.
+   *
+   * <p>The function set all weights to 0 to the reorged chain and set all weights to 1 to the new
+   * chain.
+   */
+  public void reorgWhileSyncing(
+      final Bytes32 oldHeadRoot, final Bytes32 newHeadRoot, final Bytes32 commonAncestorRoot) {
+    final Optional<ProtoNode> oldHead = getProtoNode(oldHeadRoot);
+    final Optional<ProtoNode> newHead = getProtoNode(newHeadRoot);
+    final Optional<ProtoNode> commonAncestor = getProtoNode(commonAncestorRoot);
+
+    if (oldHead.isEmpty() || newHead.isEmpty() || commonAncestor.isEmpty()) {
+      return;
+    }
+
+    final ProtoNode oldHeadNode = oldHead.get();
+    final ProtoNode newHeadNode = newHead.get();
+    final ProtoNode commonAncestorNode = commonAncestor.get();
+
+    // check we are in syncing mode where all nodes have a max weight of 1
+    if (commonAncestorNode.getWeight().isGreaterThan(1)) {
+      return;
+    }
+
+    // let's set weight to 0 for all nodes from old head to common ancestor
+    ProtoNode node = oldHeadNode;
+    while (!node.getBlockRoot().equals(commonAncestorRoot)) {
+      node.adjustWeight(-node.getWeight().longValue());
+      if (node.getParentIndex().isEmpty()) {
+        break;
+      }
+      node = getNodeByIndex(node.getParentIndex().get());
+    }
+
+    // let's set weight to 1 from the best descendant of the new head up to the first non-zero
+    // weight node
+    node = newHeadNode.getBestDescendantIndex().map(this::getNodeByIndex).orElse(newHeadNode);
+    while (node.getWeight().isZero()) {
+      node.adjustWeight(1);
+      if (node.getParentIndex().isEmpty()) {
+        break;
+      }
+      node = getNodeByIndex(node.getParentIndex().get());
+    }
+
+    applyToNodes(this::updateBestDescendantOfParent);
+  }
+
+  /**
    * Follows the best-descendant links to find the best-block (i.e. head-block), including any
    * optimistic nodes which have not yet been fully validated.
    *
