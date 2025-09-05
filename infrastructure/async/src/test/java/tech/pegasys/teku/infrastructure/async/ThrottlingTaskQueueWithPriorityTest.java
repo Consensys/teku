@@ -19,12 +19,14 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ThrottlingTaskQueueWithPriorityTest {
 
   private static final int MAXIMUM_CONCURRENT_TASKS = 3;
+  private static final int MAXIMUM_QUEUE_SIZE = 110;
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
@@ -32,7 +34,12 @@ public class ThrottlingTaskQueueWithPriorityTest {
 
   private final ThrottlingTaskQueueWithPriority taskQueue =
       ThrottlingTaskQueueWithPriority.create(
-          MAXIMUM_CONCURRENT_TASKS, stubMetricsSystem, TekuMetricCategory.BEACON, "test_metric");
+          MAXIMUM_CONCURRENT_TASKS,
+          MAXIMUM_QUEUE_SIZE,
+          stubMetricsSystem,
+          TekuMetricCategory.BEACON,
+          "test_metric",
+          "test_rejected_metric");
 
   @Test
   public void throttlesRequests() {
@@ -99,6 +106,41 @@ public class ThrottlingTaskQueueWithPriorityTest {
     prioritizedRequest.complete(null);
 
     assertThat(assertion).isCompleted();
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void rejectsNormalAndHighPriorityTasks() {
+    final SafeFuture<Void> initialRequest = new SafeFuture<>();
+
+    // fill queues
+    IntStream.range(0, MAXIMUM_CONCURRENT_TASKS + MAXIMUM_QUEUE_SIZE)
+        .forEach(__ -> taskQueue.queueTask(() -> initialRequest));
+
+    assertThat(taskQueue.getInflightTaskCount()).isEqualTo(3);
+
+    assertThat(getQueuedTasksGaugeValue(false)).isEqualTo(110);
+    assertThat(getQueuedTasksGaugeValue(true)).isEqualTo(0);
+
+    IntStream.range(0, MAXIMUM_CONCURRENT_TASKS + MAXIMUM_QUEUE_SIZE)
+        .forEach(__ -> taskQueue.queueTask(() -> initialRequest, true));
+
+    assertThat(getQueuedTasksGaugeValue(true)).isEqualTo(110);
+
+    SafeFutureAssert.assertThatSafeFuture(taskQueue.queueTask(() -> initialRequest))
+        .isCompletedExceptionallyWith(QueueIsFullException.class);
+    SafeFutureAssert.assertThatSafeFuture(taskQueue.queueTask(() -> initialRequest, true))
+        .isCompletedExceptionallyWith(QueueIsFullException.class);
+
+    // complete them all
+    initialRequest.complete(null);
+
+    assertThat(taskQueue.getInflightTaskCount()).isEqualTo(0);
+
+    // can queue again
+    SafeFutureAssert.assertThatSafeFuture(taskQueue.queueTask(() -> initialRequest)).isCompleted();
+    SafeFutureAssert.assertThatSafeFuture(taskQueue.queueTask(() -> initialRequest, true))
+        .isCompleted();
   }
 
   private double getQueuedTasksGaugeValue(final boolean priority) {
