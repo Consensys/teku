@@ -94,7 +94,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
             TekuMetricCategory.BEACON,
             "custody_groups",
             "Total number of custody groups within a node");
-    this.custodyGroupCountGauge.set(initCustodyGroupCount);
     this.custodyGroupSyncedCountGauge =
         SettableGauge.create(
             metricsSystem,
@@ -255,8 +254,14 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       custodyGroupCountGauge.set(newCustodyGroupCount);
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
       isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
-    } else if (custodyGroupCount.get() != newCustodyGroupCount) {
+    } else if (custodyGroupCount.get() == INITIAL_VALUE) {
+      // really only for initialization, where custodyGroupCount
+      // is not yet the value of newCustodyGroup because we're in constructor,
+      // and  the database value is already correctly set
       custodyGroupCount.set(newCustodyGroupCount);
+      custodyGroupCountGauge.set(newCustodyGroupCount);
+      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
+      isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
     }
   }
 }
