@@ -149,6 +149,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -3088,6 +3090,19 @@ public final class DataStructureUtil {
     final SszListSchema<PayloadAttestation, ?> schema =
         schemaDefinitionsGloas.getBeaconBlockBodySchema().getPayloadAttestationsSchema();
     return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
+  }
+
+  public ExecutionProof randomExecutionProof() {
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    final ExecutionProofSchema executionProofSchema =
+        schemaDefinitionsElectra.getExecutionProofSchema();
+    return executionProofSchema.create(
+        SszBytes32.of(randomBytes32()),
+        SszUInt64.of(randomUInt64()),
+        SszUInt64.of(randomUInt64()),
+        randomSszVector(executionProofSchema.getProofDataSchema(), () -> SszByte.of(randomByte())));
   }
 
   private int randomInt(final int origin, final int bound) {

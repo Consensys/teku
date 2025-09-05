@@ -11,17 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.async;
+package tech.pegasys.teku.spec.propertytest.suppliers.execution;
 
-import com.google.common.annotations.VisibleForTesting;
-import java.util.function.Supplier;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public interface TaskQueue {
-  <T> SafeFuture<T> queueTask(Supplier<SafeFuture<T>> request);
-
-  int getQueuedTasksCount();
-
-  /** This must only be used for testing to verify that throttling is working as expected. */
-  @VisibleForTesting
-  int getInflightTaskCount();
+public class ExecutionProofSupplier extends DataStructureUtilSupplier<ExecutionProof> {
+  public ExecutionProofSupplier() {
+    super(DataStructureUtil::randomExecutionProof, SpecMilestone.ELECTRA);
+  }
 }
