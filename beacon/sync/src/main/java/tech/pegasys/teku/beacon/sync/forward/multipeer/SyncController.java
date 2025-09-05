@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncController {
+  // Rate limiting is usually in 1 minute intervals, so it should be reset after such delay
   protected static final Duration SYNC_AWAKE_INTERVAL = Duration.ofSeconds(60);
   private static final Logger LOG = LogManager.getLogger();
 
@@ -65,6 +66,7 @@ public class SyncController {
     this.recentChainData = recentChainData;
     this.syncTargetSelector = syncTargetSelector;
     this.sync = sync;
+    // Try to restart sync, could recover stalled sync
     asyncRunner.runWithFixedDelay(
         () -> eventThread.execute(this::onTargetChainsUpdated),
         SYNC_AWAKE_INTERVAL,
