@@ -75,7 +75,7 @@ public class DiscoveryPeer {
     return syncCommitteeSubnets;
   }
 
-  public Optional<Integer> getDasCustodySubnetCount() {
+  public Optional<Integer> getDasCustodyGroupCount() {
     return dasCustodySubnetCount;
   }
 
@@ -93,11 +93,12 @@ public class DiscoveryPeer {
     }
     DiscoveryPeer that = (DiscoveryPeer) o;
     return Objects.equal(getPublicKey(), that.getPublicKey())
+        && Objects.equal(getNodeId(), that.getNodeId())
         && Objects.equal(getNodeAddress(), that.getNodeAddress())
         && Objects.equal(getEnrForkId(), that.getEnrForkId())
         && Objects.equal(getPersistentAttestationSubnets(), that.getPersistentAttestationSubnets())
         && Objects.equal(getSyncCommitteeSubnets(), that.getSyncCommitteeSubnets())
-        && Objects.equal(getDasCustodySubnetCount(), that.getDasCustodySubnetCount())
+        && Objects.equal(getDasCustodyGroupCount(), that.getDasCustodyGroupCount())
         && Objects.equal(getNextForkDigest(), that.getNextForkDigest());
   }
 
@@ -105,11 +106,12 @@ public class DiscoveryPeer {
   public int hashCode() {
     return Objects.hashCode(
         getPublicKey(),
+        getNodeId(),
         getNodeAddress(),
         getEnrForkId(),
         getPersistentAttestationSubnets(),
         getSyncCommitteeSubnets(),
-        getDasCustodySubnetCount(),
+        getDasCustodyGroupCount(),
         getNextForkDigest());
   }
 
@@ -117,6 +119,7 @@ public class DiscoveryPeer {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("publicKey", publicKey)
+        .add("nodeId", nodeId)
         .add("nodeAddress", nodeAddress)
         .add("enrForkId", enrForkId)
         .add("persistentSubnets", persistentAttestationSubnets)
