@@ -3093,11 +3093,16 @@ public final class DataStructureUtil {
   }
 
   public ExecutionProof randomExecutionProof() {
-      final SchemaDefinitionsElectra schemaDefinitionsElectra =
-              SchemaDefinitionsElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
-      final ExecutionProofSchema executionProofSchema = schemaDefinitionsElectra.getExecutionProofSchema();
-      return executionProofSchema.create(SszBytes32.of(randomBytes32()), SszUInt64.of(randomUInt64()),
-              SszUInt64.of(randomUInt64()), randomSszVector(executionProofSchema.getProofDataSchema(),()-> SszByte.of(randomByte())));
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    final ExecutionProofSchema executionProofSchema =
+        schemaDefinitionsElectra.getExecutionProofSchema();
+    return executionProofSchema.create(
+        SszBytes32.of(randomBytes32()),
+        SszUInt64.of(randomUInt64()),
+        SszUInt64.of(randomUInt64()),
+        randomSszVector(executionProofSchema.getProofDataSchema(), () -> SszByte.of(randomByte())));
   }
 
   private int randomInt(final int origin, final int bound) {

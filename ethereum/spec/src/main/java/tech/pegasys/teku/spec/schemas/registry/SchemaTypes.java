@@ -53,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequestSchema;
@@ -123,7 +122,6 @@ public class SchemaTypes {
       create("METADATA_MESSAGE_SCHEMA");
   public static final SchemaId<StatusMessageSchema<?>> STATUS_MESSAGE_SCHEMA =
       create("STATUS_MESSAGE_SCHEMA");
-
 
   // Altair
 
@@ -196,9 +194,9 @@ public class SchemaTypes {
       create("CONSOLIDATION_REQUEST_SCHEMA");
   public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
       create("SINGLE_ATTESTATION_SCHEMA");
-    //Move
-    public static final SchemaId<ExecutionProofSchema> EXECUTION_PROOF_SCHEMA =
-            create("EXECUTION_PROOF_SCHEMA");
+  // Move
+  public static final SchemaId<ExecutionProofSchema> EXECUTION_PROOF_SCHEMA =
+      create("EXECUTION_PROOF_SCHEMA");
 
   // Fulu
   public static final SchemaId<CellSchema> CELL_SCHEMA = create("CELL_SCHEMA");
