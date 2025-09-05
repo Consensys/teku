@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
@@ -124,7 +125,8 @@ public class StorageSystem implements AutoCloseable {
             recentChainData,
             chainStorageServer,
             spec,
-            new EarliestAvailableBlockSlot(chainStorageServer, new SystemTimeProvider(), 0));
+            new EarliestAvailableBlockSlot(chainStorageServer, new SystemTimeProvider(), 0),
+            LateBlockReorgPreparationHandler.NOOP);
 
     final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
 

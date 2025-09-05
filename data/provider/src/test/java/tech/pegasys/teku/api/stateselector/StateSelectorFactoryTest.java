@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -146,7 +147,8 @@ public class StateSelectorFactoryTest {
             recentChainData,
             historicalChainData,
             spec,
-            new EarliestAvailableBlockSlot(historicalChainData, new SystemTimeProvider(), 0));
+            new EarliestAvailableBlockSlot(historicalChainData, new SystemTimeProvider(), 0),
+            LateBlockReorgPreparationHandler.NOOP);
     final StateSelectorFactory factory = new StateSelectorFactory(spec, client1);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.isPreForkChoice()).thenReturn(true);
