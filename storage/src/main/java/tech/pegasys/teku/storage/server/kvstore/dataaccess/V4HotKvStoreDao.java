@@ -71,6 +71,10 @@ public class V4HotKvStoreDao {
     return db.get(schema.getVariableLatestCanonicalBlockRoot());
   }
 
+  public Optional<UInt64> getCurrentCustodyGroupCount() {
+    return db.get(schema.getVariableCustodyGroupCount());
+  }
+
   public Optional<Checkpoint> getFinalizedCheckpoint() {
     return db.get(schema.getVariableFinalizedCheckpoint());
   }
@@ -229,6 +233,11 @@ public class V4HotKvStoreDao {
     @Override
     public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
       transaction.put(schema.getVariableLatestCanonicalBlockRoot(), canonicalBlockRoot);
+    }
+
+    @Override
+    public void setCurrentCustodyGroupCount(final UInt64 currentCustodyGroupCount) {
+      transaction.put(schema.getVariableCustodyGroupCount(), currentCustodyGroupCount);
     }
 
     @Override

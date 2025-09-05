@@ -85,6 +85,8 @@ public interface MutableStore extends ReadOnlyStore {
 
   void setLatestCanonicalBlockRoot(Bytes32 latestCanonicalBlockRoot);
 
+  void setCurrentCustodyGroupCount(UInt64 currentCustodyGroupCount);
+
   void removeProposerBoostRoot();
 
   void removeFinalizedOptimisticTransitionPayload();

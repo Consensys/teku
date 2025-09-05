@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -84,6 +85,11 @@ public class CustodyGroupCountManagerImplTest {
 
     custodyGroupCountManager.onSlot(UInt64.ONE);
 
+    // check that we updated to 10, then we can report that we're storing 10.
+    verify(combinedChainDataClient).updateCustodyGroupCount(10);
+    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+        .thenReturn(Optional.of(UInt64.valueOf(10)));
+
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
     assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(10);
 
@@ -91,7 +97,6 @@ public class CustodyGroupCountManagerImplTest {
 
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
-    assertEquals(10, samplingColumnIndices.size());
   }
 
   private void setUpManager(
@@ -133,6 +138,8 @@ public class CustodyGroupCountManagerImplTest {
             dataStructureUtil.randomUInt256(),
             metricsSystem);
 
+    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+        .thenReturn(Optional.of(UInt64.valueOf(defaultCustodyRequirement)));
     when(combinedChainDataClient.getBestFinalizedState())
         .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
   }

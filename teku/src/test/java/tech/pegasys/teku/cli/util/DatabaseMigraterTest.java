@@ -147,8 +147,8 @@ public class DatabaseMigraterTest {
     final UInt64 genesis = dataStructureUtil.randomUInt64();
     final Checkpoint finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
     migrater.openDatabases(DatabaseVersion.V5, DatabaseVersion.LEVELDB2);
-    TestKvStoreDatabase originalDb = new TestKvStoreDatabase(migrater.getOriginalDatabase());
-    try (HotUpdater updater = originalDb.hotUpdater()) {
+    final TestKvStoreDatabase originalDb = new TestKvStoreDatabase(migrater.getOriginalDatabase());
+    try (final HotUpdater updater = originalDb.hotUpdater()) {
       updater.setGenesisTime(genesis);
       updater.setFinalizedCheckpoint(finalizedCheckpoint);
       updater.commit();

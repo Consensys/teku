@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -90,6 +91,10 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getVariableLatestCanonicalBlockRoot();
   }
 
+  public KvStoreVariable<UInt64> getVariableCustodyGroupCount() {
+    return delegate.getVariableCustodyGroupCount();
+  }
+
   public KvStoreVariable<BeaconState> getVariableLatestFinalizedState() {
     return delegate.getVariableLatestFinalizedState();
   }
@@ -131,27 +136,19 @@ public class SchemaHotAdapter implements Schema {
   }
 
   public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of(
-        "GENESIS_TIME",
-        getVariableGenesisTime(),
-        "JUSTIFIED_CHECKPOINT",
-        getVariableJustifiedCheckpoint(),
-        "BEST_JUSTIFIED_CHECKPOINT",
-        getVariableBestJustifiedCheckpoint(),
-        "FINALIZED_CHECKPOINT",
-        getVariableFinalizedCheckpoint(),
-        "LATEST_FINALIZED_STATE",
-        getVariableLatestFinalizedState(),
-        "MIN_GENESIS_TIME_BLOCK",
-        getVariableMinGenesisTimeBlock(),
-        "WEAK_SUBJECTIVITY_CHECKPOINT",
-        getVariableWeakSubjectivityCheckpoint(),
-        "ANCHOR_CHECKPOINT",
-        getVariableAnchorCheckpoint(),
-        "FINALIZED_DEPOSIT_SNAPSHOT",
-        getVariableFinalizedDepositSnapshot(),
-        "LATEST_CANONICAL_BLOCK_ROOT",
-        getVariableLatestCanonicalBlockRoot());
+    return ImmutableMap.<String, KvStoreVariable<?>>builder()
+        .put("GENESIS_TIME", getVariableGenesisTime())
+        .put("JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint())
+        .put("BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint())
+        .put("FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint())
+        .put("LATEST_FINALIZED_STATE", getVariableLatestFinalizedState())
+        .put("MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock())
+        .put("WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint())
+        .put("ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint())
+        .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
+        .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
+        .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
+        .build();
   }
 
   @Override

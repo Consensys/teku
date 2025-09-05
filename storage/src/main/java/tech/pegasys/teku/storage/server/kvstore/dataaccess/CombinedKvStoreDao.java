@@ -22,8 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -199,13 +201,23 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     final V4MigratableSourceDao dao = (V4MigratableSourceDao) sourceDao;
 
     final Map<String, KvStoreVariable<?>> newVariables = getVariableMap();
-    if (newVariables.size() > 0) {
+    if (!newVariables.isEmpty()) {
       final Map<String, KvStoreVariable<?>> oldVariables = dao.getVariableMap();
+      final List<String> maybeMissingVariables = List.of("CUSTODY_GROUP_COUNT");
+      final List<String> missingVariables =
+          newVariables.keySet().stream()
+              .filter(k -> !oldVariables.containsKey(k))
+              .filter(k -> !maybeMissingVariables.contains(k))
+              .toList();
       checkArgument(
-          oldVariables.keySet().equals(newVariables.keySet()),
-          "Cannot migrate database as source and target formats do not use the same variables");
+          missingVariables.isEmpty(),
+          "Cannot migrate database as some variables have no default values: " + missingVariables);
       try (final KvStoreTransaction transaction = db.startTransaction()) {
         for (String key : newVariables.keySet()) {
+          if (!oldVariables.containsKey(key)) {
+            logger.accept(String.format("Found new variable %s, that will not be imported", key));
+            continue;
+          }
           logger.accept(String.format("Copy variable %s", key));
           dao.getRawVariable(oldVariables.get(key))
               .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
@@ -335,6 +347,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getCurrentCustodyGroupCount() {
+    return db.get(schema.getVariableCustodyGroupCount());
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
@@ -441,7 +458,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Map<String, Optional<String>> getVariables() {
-    Map<String, Optional<String>> variables = new LinkedHashMap<>();
+    final Map<String, Optional<String>> variables = new TreeMap<>();
+    final Map<String, KvStoreVariable<?>> variableMap = getVariableMap();
     variables.put("GENESIS_TIME", getGenesisTime().map(UInt64::toString));
     variables.put("JUSTIFIED_CHECKPOINT", getJustifiedCheckpoint().map(Checkpoint::toString));
     variables.put(
@@ -468,6 +486,26 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
                           + "}"));
     } catch (final Exception e) {
       variables.put("FINALIZED_STATE", Optional.of(e.toString()));
+    }
+    variables.put("CUSTODY_GROUP_COUNT", getCurrentCustodyGroupCount().map(Objects::toString));
+    variables.put(
+        "EARLIEST_BLOB_SIDECAR_SLOT", getEarliestBlobSidecarSlot().map(Objects::toString));
+    variables.put(
+        "EARLIEST_BLOCK_SLOT_AVAILABLE", getEarliestFinalizedBlockSlot().map(Objects::toString));
+    variables.put(
+        "FIRST_CUSTODY_INCOMPLETE_SLOT", getFirstCustodyIncompleteSlot().map(Objects::toString));
+    variables.put(
+        "FIRST_SAMPLER_INCOMPLETE_SLOT", getFirstSamplerIncompleteSlot().map(Objects::toString));
+    variables.put("MIN_GENESIS_TIME_BLOCK", getMinGenesisTimeBlock().map(Objects::toString));
+    variables.put(
+        "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
+        getOptimisticTransitionBlockSlot().map(Objects::toString));
+
+    // for sanity report any variables that exist in db that are missing
+    for (String key : variableMap.keySet()) {
+      if (!variables.containsKey(key)) {
+        variables.put(key, Optional.of("<NOT EXPORTED>"));
+      }
     }
     return variables;
   }
@@ -673,6 +711,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
       transaction.put(schema.getVariableLatestCanonicalBlockRoot(), canonicalBlockRoot);
+    }
+
+    @Override
+    public void setCurrentCustodyGroupCount(final UInt64 currentCustodyGroupCount) {
+      transaction.put(schema.getVariableCustodyGroupCount(), currentCustodyGroupCount);
     }
 
     @Override
