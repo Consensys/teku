@@ -101,6 +101,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getCurrentCustodyGroupCount() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return Optional.empty();
   }

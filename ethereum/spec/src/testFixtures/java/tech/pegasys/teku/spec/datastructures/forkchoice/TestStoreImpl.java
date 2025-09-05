@@ -55,6 +55,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   protected Optional<UInt64> earliestBlobSidecarSlot;
   protected Optional<Bytes32> latestCanonicalBlockRoot;
+  protected Optional<UInt64> currentCustodyGroupCount;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
@@ -74,7 +75,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<UInt64, VoteTracker> votes,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
-      final Optional<Bytes32> maybeLatestCanonicalBlockRoot) {
+      final Optional<Bytes32> maybeLatestCanonicalBlockRoot,
+      final Optional<UInt64> maybeCurrentCustodyGroupCount) {
     this.spec = spec;
     this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
@@ -90,6 +92,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.blobSidecars = blobSidecars;
     this.earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.latestCanonicalBlockRoot = maybeLatestCanonicalBlockRoot;
+    this.currentCustodyGroupCount = maybeCurrentCustodyGroupCount;
   }
 
   // Readonly methods
@@ -116,6 +119,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public Checkpoint getFinalizedCheckpoint() {
     return finalizedCheckpoint;
+  }
+
+  @Override
+  public Optional<UInt64> getCurrentCustodyGroupCount() {
+    return currentCustodyGroupCount;
   }
 
   @Override
@@ -344,6 +352,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public void setLatestCanonicalBlockRoot(final Bytes32 latestCanonicalBlockRoot) {
     this.latestCanonicalBlockRoot = Optional.of(latestCanonicalBlockRoot);
+  }
+
+  @Override
+  public void setCurrentCustodyGroupCount(final UInt64 currentCustodyGroupCount) {
+    this.currentCustodyGroupCount = Optional.of(currentCustodyGroupCount);
   }
 
   @Override

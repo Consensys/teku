@@ -47,6 +47,7 @@ public class StorageUpdate {
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
+  private final Optional<UInt64> currentCustodyGroupCount;
   private final boolean blobSidecarsEnabled;
   private final boolean sidecarsEnabled;
   private final boolean isEmpty;
@@ -65,6 +66,7 @@ public class StorageUpdate {
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
+      final Optional<UInt64> currentCustodyGroupCount,
       @NonUpdating final boolean blobSidecarsEnabled,
       @NonUpdating final boolean sidecarsEnabled) {
     this.genesisTime = genesisTime;
@@ -80,6 +82,7 @@ public class StorageUpdate {
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
+    this.currentCustodyGroupCount = currentCustodyGroupCount;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.sidecarsEnabled = sidecarsEnabled;
     checkArgument(
@@ -98,6 +101,7 @@ public class StorageUpdate {
             && blobSidecars.isEmpty()
             && maybeEarliestBlobSidecarSlot.isEmpty()
             && latestCanonicalBlockRoot.isEmpty()
+            && currentCustodyGroupCount.isEmpty()
             && !optimisticTransitionBlockRootSet;
   }
 
@@ -169,6 +173,10 @@ public class StorageUpdate {
 
   public Optional<Bytes32> getLatestCanonicalBlockRoot() {
     return latestCanonicalBlockRoot;
+  }
+
+  public Optional<UInt64> getCurrentCustodyGroupCount() {
+    return currentCustodyGroupCount;
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {
