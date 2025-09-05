@@ -16,7 +16,9 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -256,6 +258,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     handler.onIncomingMessage(
         protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
 
+    verify(peer, never()).recordStorageLimitHit();
+
     // Requesting 4 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Sending 3 data column sidecars
@@ -305,11 +309,12 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     handler.onIncomingMessage(
         protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
 
+    verify(peer, never()).recordStorageLimitHit();
+
     // Requesting 4 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Request cancelled due to error
-    verify(peer, times(1))
-        .adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(0)));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -360,6 +365,8 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     handler.onIncomingMessage(
         protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verify(peer, atLeastOnce()).recordStorageLimitHit();
 
     // Requesting 4 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
@@ -490,6 +497,49 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
+  }
+
+  @TestTemplate
+  public void shouldNotAdjustIfAnErrorOccurs() {
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(4, 1);
+
+    final RuntimeException error = new RuntimeException("Fatal error");
+
+    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+        .thenReturn(SafeFuture.failedFuture(error));
+
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verify(callback)
+        .completeWithUnexpectedError(argThat(exception -> exception.getCause().equals(error)));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
+  }
+
+  @TestTemplate
+  public void shouldRateLimitOnRequest() {
+    // test sanity check
+    assertThat(allowedRequest).isPresent();
+
+    when(peer.approveRequest()).thenReturn(false);
+
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(4, 1);
+
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verifyNoInteractions(callback);
+
+    verify(peer).approveDataColumnSidecarsRequest(any(), eq(4L));
+
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.NETWORK,
+                "rpc_data_column_sidecars_by_root_requests_total",
+                "rate_limited"))
+        .isOne();
   }
 
   private DataColumnsByRootIdentifier[] generateDataColumnsByRootIdentifiers(

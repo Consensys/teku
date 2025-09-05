@@ -103,6 +103,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker dataColumnSidecarsRequestTracker;
   private final RateTracker requestTracker;
+  private final RateTracker storageLimitHitTracker;
   private final KZG kzg;
   private final MetricsSystem metricsSystem;
   private final TimeProvider timeProvider;
@@ -128,6 +129,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
+      final RateTracker storageLimitHitTracker,
       final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
@@ -142,6 +144,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.dataColumnSidecarsRequestTracker = dataColumnSidecarsRequestTracker;
     this.requestTracker = requestTracker;
+    this.storageLimitHitTracker = storageLimitHitTracker;
     this.kzg = kzg;
     this.metricsSystem = metricsSystem;
     this.timeProvider = timeProvider;
@@ -543,12 +546,25 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public boolean approveRequest() {
+    if (storageLimitHitTracker.getAvailableObjectCount() <= 0) {
+      LOG.debug(
+          "Peer {} disconnected due to request rate limits for {}",
+          getId(),
+          storageLimitHitTracker);
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).finishStackTrace();
+      return false;
+    }
     if (requestTracker.generateRequestKey(1L).isEmpty()) {
       LOG.debug("Peer {} disconnected due to request rate limits for {}", getId(), requestTracker);
       disconnectCleanly(DisconnectReason.RATE_LIMITING).finishStackTrace();
       return false;
     }
     return true;
+  }
+
+  @Override
+  public void recordStorageLimitHit() {
+    storageLimitHitTracker.generateRequestKey(1);
   }
 
   @Override
