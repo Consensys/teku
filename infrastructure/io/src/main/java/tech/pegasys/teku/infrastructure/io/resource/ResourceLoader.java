@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.io.resource;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -33,7 +34,8 @@ public abstract class ResourceLoader {
   }
 
   public static ResourceLoader urlOrFile(final String acceptHeader) {
-    return urlOrFile(Optional.ofNullable(acceptHeader), __ -> true);
+    checkNotNull(acceptHeader, "acceptHeader cannot be null");
+    return urlOrFile(Optional.of(acceptHeader), __ -> true);
   }
 
   public static ResourceLoader urlOrFile(
