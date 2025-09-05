@@ -88,21 +88,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     this.spec = spec;
     this.specConfigFulu = specConfigFulu;
     this.miscHelpersFulu = miscHelpersFulu;
-    this.proposersDataManager = proposersDataManager;
-    this.combinedChainDataClient = combinedChainDataClient;
-    this.custodyGroupCountChannel = custodyGroupCountChannel;
-    final Optional<UInt64> maybeCustodyCount =
-        combinedChainDataClient.getCurrentCustodyGroupCount();
-    if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get().isLessThan(initCustodyGroupCount)) {
-      LOG.info("Persisting initial custody group count to {}", initCustodyGroupCount);
-      combinedChainDataClient.updateCustodyGroupCount(initCustodyGroupCount);
-    } else {
-      LOG.info("Using custody group count {} from store", maybeCustodyCount.get());
-      custodyGroupCount.set(maybeCustodyCount.get().intValue());
-    }
-
-    this.custodyGroupSyncedCount = new AtomicInteger(0);
-    this.nodeId = nodeId;
     this.custodyGroupCountGauge =
         SettableGauge.create(
             metricsSystem,
@@ -116,6 +101,21 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
             TekuMetricCategory.BEACON,
             "custody_groups_backfilled",
             "Total number of custody groups backfilled by a node");
+    this.proposersDataManager = proposersDataManager;
+    this.combinedChainDataClient = combinedChainDataClient;
+    this.custodyGroupCountChannel = custodyGroupCountChannel;
+    final Optional<Integer> maybeCustodyCount =
+        combinedChainDataClient.getCurrentCustodyGroupCount().map(UInt64::intValue);
+    if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
+      LOG.info("Persisting initial custody group count to {}", initCustodyGroupCount);
+      updateCustodyGroupCount(initCustodyGroupCount, maybeCustodyCount);
+    } else {
+      LOG.info("Using custody group count {} from store", maybeCustodyCount.get());
+      updateCustodyGroupCount(maybeCustodyCount.get(), maybeCustodyCount);
+    }
+
+    this.custodyGroupSyncedCount = new AtomicInteger(0);
+    this.nodeId = nodeId;
   }
 
   @Override
@@ -208,15 +208,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getCustodyGroupCount() {
-    if (custodyGroupCount.get() == INITIAL_VALUE) {
-      final Optional<UInt64> maybeCustodyGroupCount =
-          combinedChainDataClient.getCurrentCustodyGroupCount();
-      if (maybeCustodyGroupCount.isEmpty()) {
-        LOG.error("Failed to retrieve custody group count");
-        return specConfigFulu.getNumberOfCustodyGroups();
-      }
-      custodyGroupCount.compareAndSet(INITIAL_VALUE, maybeCustodyGroupCount.get().intValue());
-    }
     return custodyGroupCount.get();
   }
 
@@ -227,7 +218,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getSamplingGroupCount() {
-    return miscHelpersFulu.getSamplingGroupCount(getCustodyGroupCount());
+    return miscHelpersFulu.getSamplingGroupCount(custodyGroupCount.get());
   }
 
   @Override
@@ -259,11 +250,13 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           "Custody group count updated from {} to {}.",
           maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"),
           newCustodyGroupCount);
-      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
       custodyGroupCount.set(newCustodyGroupCount);
+      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
       custodyGroupCountGauge.set(newCustodyGroupCount);
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
       isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
+    } else if (custodyGroupCount.get() != newCustodyGroupCount) {
+      custodyGroupCount.set(newCustodyGroupCount);
     }
   }
 }

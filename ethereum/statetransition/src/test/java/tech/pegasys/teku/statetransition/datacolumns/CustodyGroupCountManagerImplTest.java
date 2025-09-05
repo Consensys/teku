@@ -19,16 +19,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -48,7 +50,7 @@ public class CustodyGroupCountManagerImplTest {
       mock(CustodyGroupCountChannel.class);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private MiscHelpersFulu miscHelpersFulu;
   private Spec spec;
   private SpecConfigFulu specConfigFulu;
@@ -64,6 +66,60 @@ public class CustodyGroupCountManagerImplTest {
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
     assertEquals(8, samplingColumnIndices.size());
+  }
+
+  @Test
+  public void shouldDefaultCustodyGroupCountIfNotStored() {
+    final int custodyCount = 96;
+    spec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    when(combinedChainDataClient.getCurrentCustodyGroupCount()).thenReturn(Optional.empty());
+    custodyGroupCountManager =
+        new CustodyGroupCountManagerImpl(
+            spec,
+            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
+            proposersDataManager,
+            custodyGroupCountChannel,
+            combinedChainDataClient,
+            custodyCount,
+            dataStructureUtil.randomUInt256(),
+            metricsSystem);
+
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(custodyCount);
+    verify(combinedChainDataClient, times(1)).getCurrentCustodyGroupCount();
+    verify(combinedChainDataClient, times(1)).updateCustodyGroupCount(custodyCount);
+    verifyNoMoreInteractions(combinedChainDataClient);
+
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
+        .isEqualTo(custodyCount);
+  }
+
+  @Test
+  public void shouldUpdateCustodyCountVariableWhenStorageExists() {
+    final int custodyCount = 96;
+    spec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+        .thenReturn(Optional.of(UInt64.valueOf(96)));
+    custodyGroupCountManager =
+        new CustodyGroupCountManagerImpl(
+            spec,
+            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
+            proposersDataManager,
+            custodyGroupCountChannel,
+            combinedChainDataClient,
+            custodyCount,
+            dataStructureUtil.randomUInt256(),
+            metricsSystem);
+
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(custodyCount);
+    verify(combinedChainDataClient, times(1)).getCurrentCustodyGroupCount();
+    verifyNoMoreInteractions(combinedChainDataClient);
+
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
+        .isEqualTo(custodyCount);
   }
 
   @Test
@@ -97,6 +153,8 @@ public class CustodyGroupCountManagerImplTest {
 
     assertThat(samplingColumnIndices)
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
+        .isEqualTo(10);
   }
 
   private void setUpManager(
