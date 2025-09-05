@@ -97,7 +97,7 @@ public class CustodyGroupCountManagerImplTest {
   }
 
   @Test
-  public void shouldNotUpdateCustodyCountVariableWhenStorageExists() {
+  public void shouldOnlyUpdateCustodyCountVariableWhenStorageExists() {
     final int custodyCount = 96;
     spec = TestSpecFactory.createMinimalFulu();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
