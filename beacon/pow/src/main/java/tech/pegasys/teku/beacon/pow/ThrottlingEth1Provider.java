@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.pow;
 
+import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.DEFAULT_MAXIMUM_QUEUE_SIZE;
+
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.List;
@@ -40,9 +42,11 @@ public class ThrottlingEth1Provider implements Eth1Provider {
     taskQueue =
         ThrottlingTaskQueue.create(
             maximumConcurrentRequests,
+            DEFAULT_MAXIMUM_QUEUE_SIZE,
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "eth1_request_queue_size");
+            "eth1_request_queue_size",
+            "eth1_request_queue_rejected");
   }
 
   @Override
