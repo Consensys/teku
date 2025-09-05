@@ -342,7 +342,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               forkChoiceStrategy.reorgWhileSyncing(
                   oldHeadRoot, newHeadRoot, commonAncestor.get().getBlockRoot());
             })
-        .ifExceptionGetsHereRaiseABug();
+        .finishStackTrace();
   }
 
   private void initializeProtoArrayForkChoice() {
