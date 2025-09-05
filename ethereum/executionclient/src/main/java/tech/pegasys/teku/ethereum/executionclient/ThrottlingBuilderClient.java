@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
+import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.DEFAULT_MAXIMUM_QUEUE_SIZE;
+
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -40,9 +42,11 @@ public class ThrottlingBuilderClient implements BuilderClient {
     taskQueue =
         ThrottlingTaskQueue.create(
             maximumConcurrentRequests,
+            DEFAULT_MAXIMUM_QUEUE_SIZE,
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "builder_request_queue_size");
+            "builder_request_queue_size",
+            "builder_request_queue_rejected");
   }
 
   @Override
