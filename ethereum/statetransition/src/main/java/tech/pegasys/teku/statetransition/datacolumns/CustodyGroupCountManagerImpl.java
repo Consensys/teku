@@ -178,7 +178,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     return true;
   }
 
-  private SafeFuture<Optional<Integer>> computeAndUpdateCustodyGroupCount(
+  SafeFuture<Optional<Integer>> computeAndUpdateCustodyGroupCount(
       final Map<UInt64, PreparedProposerInfo> preparedProposerInfo) {
     final Optional<Integer> maybeCustodyGroupCount =
         combinedChainDataClient.getCurrentCustodyGroupCount().map(UInt64::intValue);
@@ -249,19 +249,14 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           "Custody group count updated from {} to {}.",
           maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"),
           newCustodyGroupCount);
-      custodyGroupCount.set(newCustodyGroupCount);
-      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
-      custodyGroupCountGauge.set(newCustodyGroupCount);
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
-      isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
-    } else if (custodyGroupCount.get() == INITIAL_VALUE) {
-      // really only for initialization, where custodyGroupCount
-      // is not yet the value of newCustodyGroup because we're in constructor,
-      // and  the database value is already correctly set
-      custodyGroupCount.set(newCustodyGroupCount);
-      custodyGroupCountGauge.set(newCustodyGroupCount);
-      custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
-      isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
     }
+    if (custodyGroupCount.get() >= newCustodyGroupCount) {
+      return;
+    }
+    custodyGroupCount.set(newCustodyGroupCount);
+    custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
+    custodyGroupCountGauge.set(newCustodyGroupCount);
+    isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
   }
 }

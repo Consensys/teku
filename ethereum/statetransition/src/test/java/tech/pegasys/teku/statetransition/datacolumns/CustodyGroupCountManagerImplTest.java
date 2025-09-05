@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -96,12 +97,12 @@ public class CustodyGroupCountManagerImplTest {
   }
 
   @Test
-  public void shouldUpdateCustodyCountVariableWhenStorageExists() {
+  public void shouldNotUpdateCustodyCountVariableWhenStorageExists() {
     final int custodyCount = 96;
     spec = TestSpecFactory.createMinimalFulu();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     when(combinedChainDataClient.getCurrentCustodyGroupCount())
-        .thenReturn(Optional.of(UInt64.valueOf(96)));
+        .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
@@ -120,6 +121,44 @@ public class CustodyGroupCountManagerImplTest {
 
     assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
         .isEqualTo(custodyCount);
+  }
+
+  @Test
+  public void shouldNotUpdateCustodyCountVariableWhenUpdateIsLower() {
+    final int custodyCount = 96;
+    spec = TestSpecFactory.createMinimalFulu();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+        .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
+    custodyGroupCountManager =
+        new CustodyGroupCountManagerImpl(
+            spec,
+            spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
+            proposersDataManager,
+            custodyGroupCountChannel,
+            combinedChainDataClient,
+            custodyCount,
+            dataStructureUtil.randomUInt256(),
+            metricsSystem);
+
+    reset(combinedChainDataClient);
+    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+        .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
+    when(combinedChainDataClient.getBestFinalizedState())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
+
+    // update custody to no prepared validators
+    assertThat(custodyGroupCountManager.computeAndUpdateCustodyGroupCount(Map.of())).isCompleted();
+
+    // these are needed to compute the group count, and the result will be we don't need to update
+    verify(combinedChainDataClient, times(1)).getCurrentCustodyGroupCount();
+    verify(combinedChainDataClient, times(1)).getBestFinalizedState();
+    // so we should expect no update call
+    verifyNoMoreInteractions(combinedChainDataClient);
+    assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
+        .isEqualTo(custodyCount);
+    assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(custodyCount);
   }
 
   @Test

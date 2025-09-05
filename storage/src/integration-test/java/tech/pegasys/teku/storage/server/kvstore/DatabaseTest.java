@@ -549,6 +549,7 @@ public class DatabaseTest {
     transaction.setCurrentCustodyGroupCount(UInt64.ONE);
     assertThat(transaction.commit()).isCompleted();
     assertThat(recentChainData.getCurrentCustodyGroupCount()).contains(UInt64.ONE);
+    assertThat(database.getCurrentCustodyGroupCount()).contains(UInt64.ONE);
   }
 
   @TestTemplate

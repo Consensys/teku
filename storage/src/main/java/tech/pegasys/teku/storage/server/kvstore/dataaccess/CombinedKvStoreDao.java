@@ -201,23 +201,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     final V4MigratableSourceDao dao = (V4MigratableSourceDao) sourceDao;
 
     final Map<String, KvStoreVariable<?>> newVariables = getVariableMap();
-    if (!newVariables.isEmpty()) {
+    if (newVariables.size() > 0) {
       final Map<String, KvStoreVariable<?>> oldVariables = dao.getVariableMap();
-      final List<String> maybeMissingVariables = List.of("CUSTODY_GROUP_COUNT");
-      final List<String> missingVariables =
-          newVariables.keySet().stream()
-              .filter(k -> !oldVariables.containsKey(k))
-              .filter(k -> !maybeMissingVariables.contains(k))
-              .toList();
       checkArgument(
-          missingVariables.isEmpty(),
-          "Cannot migrate database as some variables have no default values: " + missingVariables);
+          oldVariables.keySet().equals(newVariables.keySet()),
+          "Cannot migrate database as source and target formats do not use the same variables");
       try (final KvStoreTransaction transaction = db.startTransaction()) {
         for (String key : newVariables.keySet()) {
-          if (!oldVariables.containsKey(key)) {
-            logger.accept(String.format("Found new variable %s, that will not be imported", key));
-            continue;
-          }
           logger.accept(String.format("Copy variable %s", key));
           dao.getRawVariable(oldVariables.get(key))
               .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
