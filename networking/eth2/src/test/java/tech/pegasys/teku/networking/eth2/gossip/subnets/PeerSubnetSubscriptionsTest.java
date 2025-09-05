@@ -24,12 +24,14 @@ import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -78,7 +80,7 @@ class PeerSubnetSubscriptionsTest {
       nodeIdToDataColumnSidecarSubnetsCalculator =
           mock(NodeIdToDataColumnSidecarSubnetsCalculator.class);
   private final SszBitvectorSchema<?> sszBitvectorSchema = SszBitvectorSchema.create(128);
-  final Map<NodeId, SszBitvector> peer2subnets =
+  private final Map<NodeId, SszBitvector> peer2subnets =
       ImmutableMap.<NodeId, SszBitvector>builder()
           .put(PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
           .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
@@ -354,6 +356,85 @@ class PeerSubnetSubscriptionsTest {
                         .reversed())
                 .limit(1))
         .containsExactlyInAnyOrder(PEER3);
+  }
+
+  @Test
+  // We have 100 PEERS numbered 0-99
+  // 0-4: supernodes
+  // 5-49: validator nodes serving 8 subnets, random but not subnets 126 and 127
+  // 50-51: full nodes serving 4 subnets including 126, 127 and 2 random ones.
+  // 52-99: full nodes serving 4 random subnets but all excluding 126, 127.
+  // We want to be a supernode ourselves and serve all 128 from MAX 50 peers.
+  // -> Should select peer 0,1,2,3,4,50,51 + 43 others.
+  public void create_shouldSelectCorrectCandidatePeersWith100peersScenario() {
+    final List<Integer> allSubnets = IntStream.rangeClosed(0, 127).boxed().toList();
+    dataColumnSubscriptions.setSubscriptions(allSubnets);
+    final NodeId[] peers = new NodeId[100];
+    final ImmutableMap.Builder<NodeId, SszBitvector> builder =
+        ImmutableMap.<NodeId, SszBitvector>builder();
+    final Random random = new Random();
+    for (int i = 0; i < 100; i++) {
+      peers[i] = new MockNodeId(i);
+      if (i < 5) {
+        builder.put(peers[i], sszBitvectorSchema.ofBits(allSubnets));
+      } else if (i < 50) {
+        builder.put(peers[i], sszBitvectorSchema.ofBits(random.ints(8, 0, 126).boxed().toList()));
+      } else if (i < 52) {
+        builder.put(
+            peers[i],
+            sszBitvectorSchema.ofBits(
+                Stream.concat(random.ints(2, 0, 126).boxed(), Stream.of(126, 127)).toList()));
+      } else {
+        builder.put(peers[i], sszBitvectorSchema.ofBits(random.ints(4, 0, 126).boxed().toList()));
+      }
+    }
+    final Map<NodeId, SszBitvector> peer2subnets = builder.build();
+    assertThat(peer2subnets.size()).isEqualTo(100);
+    final Map<String, Collection<NodeId>> subscribersByTopic =
+        ImmutableMap.<String, Collection<NodeId>>builder()
+            .put("data_column_sidecar_0", Set.of())
+            .put("data_column_sidecar_1", Set.of())
+            .put("data_column_sidecar_2", Set.of())
+            .put("data_column_sidecar_3", Set.of())
+            .put("data_column_sidecar_4", Set.of())
+            .put("data_column_sidecar_5", Set.of())
+            .put("data_column_sidecar_6", Set.of())
+            .put("data_column_sidecar_7", Set.of())
+            .build();
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+    when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
+        .thenAnswer(
+            invocation -> {
+              final NodeId nodeId = new MockNodeId(invocation.getArgument(0));
+              return Optional.ofNullable(peer2subnets.get(nodeId));
+            });
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(0)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(1)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(2)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(3)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(4)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(5)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(6)).isEqualTo(0);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(7)).isEqualTo(0);
+
+    for (int i = 0; i < 128; ++i) {
+      assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(i)).isTrue();
+    }
+
+    final PeerScorer scorer = subscriptions.createScorer();
+    assertThat(
+            Stream.of(peers)
+                .sorted(
+                    Comparator.<NodeId, Integer>comparing(
+                            peerId ->
+                                scorer.scoreCandidatePeer(
+                                    makeCandidatePeer(peerId, peer2subnets.get(peerId).size())))
+                        .reversed())
+                .limit(50))
+        .containsAll(
+            Stream.concat(Arrays.stream(peers).limit(5), Stream.of(peers[50], peers[51])).toList());
   }
 
   private DiscoveryPeer makeCandidatePeer(final NodeId peerId, final int dasCustodyCount) {
