@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.io.resource;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
