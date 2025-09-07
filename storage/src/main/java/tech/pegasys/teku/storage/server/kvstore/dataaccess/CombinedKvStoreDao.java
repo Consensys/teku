@@ -443,10 +443,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Map<String, Optional<String>> getVariables() {
-    final ImmutableMap.Builder<String, Optional<String>> builder =
+    final ImmutableMap.Builder<String, Optional<String>> knownVariablesBuilder =
         ImmutableMap.<String, Optional<String>>builder();
 
-    builder
+    knownVariablesBuilder
         .put("GENESIS_TIME", getGenesisTime().map(UInt64::toString))
         .put("JUSTIFIED_CHECKPOINT", getJustifiedCheckpoint().map(Checkpoint::toString))
         .put("BEST_JUSTIFIED_CHECKPOINT", getBestJustifiedCheckpoint().map(Checkpoint::toString))
@@ -472,10 +472,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
             getOptimisticTransitionBlockSlot().map(Objects::toString));
 
-    // compare the keyset against available variables to add missing fields
-    final Set<String> includedKeys = builder.build().keySet();
+    // get a list of the known keys, so that we can add missing variables
+    final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
+    final Set<String> knownKeys = knownVariables.keySet();
+
+    // the result builder will be known variables first, then any that were missing
+    final ImmutableMap.Builder<String, Optional<String>> builder =
+        ImmutableMap.<String, Optional<String>>builder();
+    knownVariables.forEach(builder::put);
+
+    // add missing variables
     getVariableMap().keySet().stream()
-        .filter(key -> !includedKeys.contains(key))
+        .filter(key -> !knownKeys.contains(key))
         .forEach(key -> builder.put(key, Optional.of("<NOT EXPORTED>")));
 
     return builder.build();
