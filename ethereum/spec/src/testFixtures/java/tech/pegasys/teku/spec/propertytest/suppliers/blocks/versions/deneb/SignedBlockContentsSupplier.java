@@ -20,8 +20,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedBlockContentsSupplier extends DataStructureUtilSupplier<SignedBlockContainer> {
 
-  // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
   public SignedBlockContentsSupplier() {
-    super(DataStructureUtil::randomSignedBlockContents, SpecMilestone.DENEB, SpecMilestone.FULU);
+    super(DataStructureUtil::randomSignedBlockContents, SpecMilestone.DENEB);
   }
 }
