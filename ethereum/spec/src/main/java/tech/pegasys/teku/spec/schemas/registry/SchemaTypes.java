@@ -194,7 +194,7 @@ public class SchemaTypes {
       create("CONSOLIDATION_REQUEST_SCHEMA");
   public static final SchemaId<SingleAttestationSchema> SINGLE_ATTESTATION_SCHEMA =
       create("SINGLE_ATTESTATION_SCHEMA");
-  // Move
+  // Move this when we decide which fork this schema should be under
   public static final SchemaId<ExecutionProofSchema> EXECUTION_PROOF_SCHEMA =
       create("EXECUTION_PROOF_SCHEMA");
 

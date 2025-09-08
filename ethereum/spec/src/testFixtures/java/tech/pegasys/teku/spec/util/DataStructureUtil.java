@@ -3102,7 +3102,7 @@ public final class DataStructureUtil {
         SszBytes32.of(randomBytes32()),
         SszUInt64.of(randomUInt64()),
         SszUInt64.of(randomUInt64()),
-        randomSszVector(executionProofSchema.getProofDataSchema(), () -> SszByte.of(randomByte())));
+        executionProofSchema.getProofDataSchema().fromBytes(randomBytes(5)));
   }
 
   private int randomInt(final int origin, final int bound) {
