@@ -618,8 +618,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<UInt64> getCurrentCustodyGroupCount() {
-    // TODO: 9845
-    return Optional.empty();
+    return recentChainData.getCustodyGroupCount();
   }
 
   public SafeFuture<Optional<BeaconBlockSummary>> getEarliestAvailableBlockSummary() {
