@@ -17,6 +17,7 @@ import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PubKey;
+import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.IdentifyController;
 import java.util.List;
@@ -149,6 +150,7 @@ public class LibP2PPeer implements Peer {
 
   private void internalDisconnectImmediately(
       final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+    final Multiaddr peerAddress = connection.remoteAddress();
     disconnectReason = reason;
     disconnectLocallyInitiated = locallyInitiated;
     SafeFuture.of(connection.close())
@@ -158,7 +160,7 @@ public class LibP2PPeer implements Peer {
                     "Disconnected forcibly {} because {} from {}",
                     locallyInitiated ? "locally" : "remotely",
                     reason,
-                    connection.remoteAddress()),
+                    peerAddress),
             error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
   }
 
