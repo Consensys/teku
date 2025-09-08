@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class ExecutionProofSchema
     extends ContainerSchema4<ExecutionProof, SszBytes32, SszUInt64, SszUInt64, SszByteList> {
 
-    // as per suggestion in https://github.com/Consensys/teku/pull/9853#discussion_r2329217191
-    // this may change in when we get smaller proofs
+  // as per suggestion in https://github.com/Consensys/teku/pull/9853#discussion_r2329217191
+  // this may change in when we get smaller proofs
   static final long MAX_PROOF_DATA_SIZE = 1024 * 1024;
 
   public ExecutionProofSchema() {
