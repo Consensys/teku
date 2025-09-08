@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -140,6 +141,7 @@ public class DasSamplerBasicTest {
     when(combinedChainDataClient.getBestFinalizedState())
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
     when(proposersDataManager.getPreparedProposerInfo()).thenReturn(preparedProposerInfoMap);
+    when(combinedChainDataClient.updateCustodyGroupCount(anyInt())).thenReturn(SafeFuture.COMPLETE);
     custodyGroupCountManager.onSlot(UInt64.ZERO); // initialize custody manager
 
     final List<UInt64> custodyColumnIndices = custodyGroupCountManager.getCustodyColumnIndices();

@@ -67,5 +67,10 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   }
 
   @Override
+  public SafeFuture<Void> onCustodyGroupCountUpdated(final UInt64 custodyGroupCount) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {}
 }

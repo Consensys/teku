@@ -195,6 +195,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return finalizedDao.getCustodyGroupCount();
+  }
+
+  @Override
   public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
     return finalizedDao.getNonCanonicalBlockRootsAtSlot(slot);
   }
@@ -628,6 +633,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void deleteFinalizedState(final UInt64 slot) {
       finalizedUpdater.deleteFinalizedState(slot);
+    }
+
+    @Override
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      finalizedUpdater.setCustodyGroupCount(custodyGroupCount);
     }
 
     @Override

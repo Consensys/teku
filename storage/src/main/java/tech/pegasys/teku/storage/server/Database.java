@@ -252,6 +252,8 @@ public interface Database extends AutoCloseable {
   Optional<UInt64> pruneFinalizedStates(
       Optional<UInt64> lastPrunedSlot, UInt64 lastSlotToPruneStateFor, long pruneLimit);
 
+  Optional<UInt64> getCustodyGroupCount();
+
   // Sidecars
   Optional<UInt64> getFirstCustodyIncompleteSlot();
 
@@ -283,6 +285,8 @@ public interface Database extends AutoCloseable {
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
 
   void setFirstCustodyIncompleteSlot(UInt64 slot);
+
+  void setCustodyGroupCount(UInt64 custodyGroupCount);
 
   void setFirstSamplerIncompleteSlot(UInt64 slot);
 

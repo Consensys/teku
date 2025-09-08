@@ -116,6 +116,11 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> onCustodyGroupCountUpdated(final UInt64 custodyGroupCount) {
+    return retry(() -> delegate.onCustodyGroupCountUpdated(custodyGroupCount));
+  }
+
+  @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {
     this.retry(
             () -> {

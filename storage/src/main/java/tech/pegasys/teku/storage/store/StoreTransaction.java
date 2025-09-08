@@ -271,6 +271,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return store.getCustodyGroupCount();
+  }
+
+  @Override
   public AnchorPoint getLatestFinalized() {
     if (finalizedCheckpoint.isPresent()) {
       // Ideally we wouldn't join here - but seems not worth making this API async since we're

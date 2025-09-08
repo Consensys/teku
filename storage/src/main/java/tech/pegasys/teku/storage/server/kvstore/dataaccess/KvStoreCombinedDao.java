@@ -84,6 +84,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<Bytes32> getLatestCanonicalBlockRoot();
 
+  Optional<UInt64> getCustodyGroupCount();
+
   Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(Bytes32 root);
 
   void ingest(KvStoreCombinedDao dao, int batchSize, Consumer<String> logger);
@@ -244,38 +246,40 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     @Override
     void close();
 
-    void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
+    void addMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
 
-    void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
+    void addDepositsFromBlockEvent(DepositsFromBlockEvent event);
 
     void removeDepositsFromBlockEvent(UInt64 blockNumber);
   }
 
   interface FinalizedUpdater extends AutoCloseable {
 
-    void addFinalizedBlock(final SignedBeaconBlock block);
+    void addFinalizedBlock(SignedBeaconBlock block);
 
     void addFinalizedBlockRaw(UInt64 slot, Bytes32 blockRoot, Bytes blockBytes);
 
-    void addNonCanonicalBlock(final SignedBeaconBlock block);
+    void addNonCanonicalBlock(SignedBeaconBlock block);
 
-    void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
+    void deleteFinalizedBlock(UInt64 slot, final Bytes32 blockRoot);
 
-    void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
+    void deleteNonCanonicalBlockOnly(Bytes32 blockRoot);
 
-    void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
+    void addFinalizedState(Bytes32 blockRoot, final BeaconState state);
 
-    void deleteFinalizedState(final UInt64 slot);
+    void deleteFinalizedState(UInt64 slot);
 
-    void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state);
+    void setCustodyGroupCount(UInt64 custodyGroupCount);
 
-    void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
+    void addReconstructedFinalizedState(Bytes32 blockRoot, BeaconState state);
 
-    void deleteFinalizedStateRoot(final Bytes32 stateRoot);
+    void addFinalizedStateRoot(Bytes32 stateRoot, UInt64 slot);
 
-    void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot);
+    void deleteFinalizedStateRoot(Bytes32 stateRoot);
 
-    void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
+    void setOptimisticTransitionBlockSlot(Optional<UInt64> transitionBlockSlot);
+
+    void addNonCanonicalRootAtSlot(UInt64 slot, Set<Bytes32> blockRoots);
 
     void addBlobSidecar(BlobSidecar blobSidecar);
 

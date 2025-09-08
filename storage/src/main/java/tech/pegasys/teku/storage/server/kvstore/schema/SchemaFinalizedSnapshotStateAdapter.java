@@ -109,6 +109,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getVariableLatestCanonicalBlockRoot();
   }
 
+  public KvStoreVariable<UInt64> getCustodyGroupCount() {
+    return delegate.getVariableCustodyGroupCount();
+  }
+
   public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot() {
     return delegate.getColumnNonCanonicalBlocksByRoot();
   }
@@ -138,16 +142,13 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
   }
 
   public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of(
-        "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
-        getOptimisticTransitionBlockSlot(),
-        "EARLIEST_BLOB_SIDECAR_SLOT",
-        getVariableEarliestBlobSidecarSlot(),
-        "EARLIEST_BLOCK_SLOT_AVAILABLE",
-        getVariableEarliestBlockSlot(),
-        "FIRST_CUSTODY_INCOMPLETE_SLOT",
-        getVariableFirstCustodyIncompleteSlot(),
-        "FIRST_SAMPLER_INCOMPLETE_SLOT",
-        getVariableFirstSamplerIncompleteSlot());
+    return ImmutableMap.<String, KvStoreVariable<?>>builder()
+        .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
+        .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
+        .put("EARLIEST_BLOCK_SLOT_AVAILABLE", getVariableEarliestBlockSlot())
+        .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
+        .put("FIRST_SAMPLER_INCOMPLETE_SLOT", getVariableFirstSamplerIncompleteSlot())
+        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount())
+        .build();
   }
 }

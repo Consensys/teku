@@ -337,6 +337,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return db.get(schema.getVariableCustodyGroupCount());
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
@@ -470,7 +475,9 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .put("MIN_GENESIS_TIME_BLOCK", getMinGenesisTimeBlock().map(Objects::toString))
         .put(
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
-            getOptimisticTransitionBlockSlot().map(Objects::toString));
+            getOptimisticTransitionBlockSlot().map(Objects::toString))
+        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString));
+    ;
 
     // get a list of the known keys, so that we can add missing variables
     final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
@@ -878,6 +885,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void deleteFinalizedState(final UInt64 slot) {
       stateStorageUpdater.deleteFinalizedState(transaction, schema, slot);
+    }
+
+    @Override
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      transaction.put(schema.getVariableCustodyGroupCount(), custodyGroupCount);
     }
 
     @Override

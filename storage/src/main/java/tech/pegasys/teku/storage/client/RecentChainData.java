@@ -769,4 +769,12 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
   public void setBlockTimelinessIfEmpty(final SignedBeaconBlock block) {
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
   }
+
+  public Optional<UInt64> getCustodyGroupCount() {
+    return store.getCustodyGroupCount();
+  }
+
+  public SafeFuture<Void> setCustodyGroupCount(final UInt64 custodyGroupCount) {
+    return storageUpdateChannel.onCustodyGroupCountUpdated(custodyGroupCount);
+  }
 }

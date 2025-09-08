@@ -98,6 +98,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Void> onCustodyGroupCountUpdated(final UInt64 custodyGroupCount) {
+    return updateDelegate.onCustodyGroupCountUpdated(custodyGroupCount);
+  }
+
+  @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {
     updateDelegate.onChainInitialized(initialAnchor);
   }

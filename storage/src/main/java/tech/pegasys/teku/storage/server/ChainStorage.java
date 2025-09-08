@@ -169,6 +169,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Void> onCustodyGroupCountUpdated(final UInt64 custodyGroupCount) {
+    return SafeFuture.fromRunnable(() -> database.setCustodyGroupCount(custodyGroupCount));
+  }
+
+  @Override
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return SafeFuture.of(database::getEarliestAvailableBlockSlot);
   }

@@ -247,6 +247,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return Optional.empty();
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
   @Override
@@ -397,6 +402,9 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {}
+
+  @Override
+  public void setCustodyGroupCount(final UInt64 custodyGroupCount) {}
 
   @Override
   public void setFirstSamplerIncompleteSlot(final UInt64 slot) {}

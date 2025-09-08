@@ -190,15 +190,13 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
                 return Optional.empty();
               }
 
-              final int computedCustody =
+              final int computedCgc =
                   miscHelpersFulu
                       .getValidatorsCustodyRequirement(
                           maybeState.get(), preparedProposerInfo.keySet())
                       .intValue();
               final int custodyGroupCount =
-                  maybeCustodyGroupCount
-                      .map(integer -> Math.max(computedCustody, integer))
-                      .orElse(computedCustody);
+                  maybeCustodyGroupCount.map(cgc -> Math.max(computedCgc, cgc)).orElse(computedCgc);
               updateCustodyGroupCount(custodyGroupCount, maybeCustodyGroupCount);
 
               return Optional.of(custodyGroupCount);
@@ -249,7 +247,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           "Custody group count updated from {} to {}.",
           maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"),
           newCustodyGroupCount);
-      combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
+      combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount).finishError(LOG);
     }
     if (custodyGroupCount.get() >= newCustodyGroupCount) {
       return;

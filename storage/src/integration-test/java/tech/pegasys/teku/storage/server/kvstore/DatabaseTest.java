@@ -537,6 +537,13 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void canGetAndUpdateCustodyGroupCount(final DatabaseContext context) throws IOException {
+    initialize(context);
+    database.setCustodyGroupCount(UInt64.valueOf(128));
+    assertThat(database.getCustodyGroupCount()).contains(UInt64.valueOf(128));
+  }
+
+  @TestTemplate
   public void updateWeakSubjectivityState_clearValue(final DatabaseContext context)
       throws IOException {
     initialize(context);

@@ -117,6 +117,10 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getVariableLatestCanonicalBlockRoot());
   }
 
+  public Optional<UInt64> getCustodyGroupCount() {
+    return db.get(schema.getCustodyGroupCount());
+  }
+
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
@@ -411,6 +415,11 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void deleteFinalizedState(final UInt64 slot) {
       transaction.delete(schema.getColumnFinalizedStatesBySlot(), slot);
+    }
+
+    @Override
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      transaction.put(schema.getCustodyGroupCount(), custodyGroupCount);
     }
 
     @Override

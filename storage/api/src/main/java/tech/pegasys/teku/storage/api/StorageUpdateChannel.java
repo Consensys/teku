@@ -43,5 +43,7 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot);
 
+  SafeFuture<Void> onCustodyGroupCountUpdated(UInt64 custodyGroupCount);
+
   void onChainInitialized(AnchorPoint initialAnchor);
 }

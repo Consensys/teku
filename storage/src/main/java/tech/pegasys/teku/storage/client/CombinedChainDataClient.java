@@ -901,8 +901,8 @@ public class CombinedChainDataClient {
     return Optional.ofNullable(getStore()).map(ReadOnlyStore::getFinalizedCheckpoint);
   }
 
-  public void updateCustodyGroupCount(final int newCustodyGroupCount) {
-    // TODO: 9845
+  public SafeFuture<Void> updateCustodyGroupCount(final int newCustodyGroupCount) {
     LOG.debug("Updating custody count to {}", newCustodyGroupCount);
+    return recentChainData.setCustodyGroupCount(UInt64.valueOf(newCustodyGroupCount));
   }
 }

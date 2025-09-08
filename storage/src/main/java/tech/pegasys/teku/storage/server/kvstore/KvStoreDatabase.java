@@ -521,6 +521,11 @@ public class KvStoreDatabase implements Database {
         .or(() -> Optional.of(lastSlotToPrune));
   }
 
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return dao.getCustodyGroupCount();
+  }
+
   private UInt64 pruneFinalizedStateForSlots(
       final UInt64 earliestFinalizedStateSlot,
       final UInt64 lastSlotToPrune,
@@ -774,6 +779,7 @@ public class KvStoreDatabase implements Database {
             && finalizedCheckpoint
                 .getEpochStartSlot(spec)
                 .equals(maybeAnchor.get().getEpochStartSlot(spec));
+    final Optional<UInt64> custodyGroupCount = dao.getCustodyGroupCount();
     if (shouldIncludeAnchorBlock && !blockInformation.containsKey(maybeAnchor.get().getRoot())) {
       final Checkpoint anchor = maybeAnchor.orElseThrow();
       final StateAndBlockSummary latestFinalized = StateAndBlockSummary.create(finalizedState);
@@ -810,7 +816,8 @@ public class KvStoreDatabase implements Database {
             bestJustifiedCheckpoint,
             blockInformation,
             votes,
-            latestCanonicalBlockRoot));
+            latestCanonicalBlockRoot,
+            custodyGroupCount));
   }
 
   @Override
@@ -1159,6 +1166,14 @@ public class KvStoreDatabase implements Database {
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.setFirstCustodyIncompleteSlot(slot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.setCustodyGroupCount(custodyGroupCount);
       updater.commit();
     }
   }

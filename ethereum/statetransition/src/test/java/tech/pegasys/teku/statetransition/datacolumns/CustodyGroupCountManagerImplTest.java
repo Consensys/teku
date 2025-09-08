@@ -75,6 +75,9 @@ public class CustodyGroupCountManagerImplTest {
     spec = TestSpecFactory.createMinimalFulu();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     when(combinedChainDataClient.getCurrentCustodyGroupCount()).thenReturn(Optional.empty());
+    when(combinedChainDataClient.updateCustodyGroupCount(custodyCount))
+        .thenReturn(SafeFuture.COMPLETE);
+
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
@@ -103,6 +106,8 @@ public class CustodyGroupCountManagerImplTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     when(combinedChainDataClient.getCurrentCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
+    when(combinedChainDataClient.updateCustodyGroupCount(custodyCount))
+        .thenReturn(SafeFuture.COMPLETE);
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
@@ -130,6 +135,8 @@ public class CustodyGroupCountManagerImplTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     when(combinedChainDataClient.getCurrentCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
+    when(combinedChainDataClient.updateCustodyGroupCount(custodyCount))
+        .thenReturn(SafeFuture.COMPLETE);
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
@@ -177,6 +184,7 @@ public class CustodyGroupCountManagerImplTest {
     // make requirements go up
     when(miscHelpersFulu.getValidatorsCustodyRequirement(any(), anySet()))
         .thenReturn(UInt64.valueOf(10));
+    when(combinedChainDataClient.updateCustodyGroupCount(10)).thenReturn(SafeFuture.COMPLETE);
 
     custodyGroupCountManager.onSlot(UInt64.ONE);
 
@@ -222,7 +230,8 @@ public class CustodyGroupCountManagerImplTest {
         spy(MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()));
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
-
+    when(combinedChainDataClient.updateCustodyGroupCount(defaultCustodyRequirement))
+        .thenReturn(SafeFuture.COMPLETE);
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
