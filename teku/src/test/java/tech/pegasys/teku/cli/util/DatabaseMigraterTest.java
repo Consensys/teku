@@ -124,7 +124,7 @@ public class DatabaseMigraterTest {
   @Test
   void shouldCopyColumnData(@TempDir final Path tmpDir) throws IOException, DatabaseMigraterError {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "5");
-    DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
+    final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
     final BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(1_000_000);
     migrater.openDatabases(DatabaseVersion.V5, DatabaseVersion.LEVELDB2);
     TestKvStoreDatabase originalDb = new TestKvStoreDatabase(migrater.getOriginalDatabase());
@@ -143,19 +143,19 @@ public class DatabaseMigraterTest {
   @Test
   void shouldCopyVariablesFromHotDb(@TempDir final Path tmpDir) throws Exception {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "5");
-    DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
+    final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
     final UInt64 genesis = dataStructureUtil.randomUInt64();
     final Checkpoint finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
     migrater.openDatabases(DatabaseVersion.V5, DatabaseVersion.LEVELDB2);
-    TestKvStoreDatabase originalDb = new TestKvStoreDatabase(migrater.getOriginalDatabase());
-    try (HotUpdater updater = originalDb.hotUpdater()) {
+    final TestKvStoreDatabase originalDb = new TestKvStoreDatabase(migrater.getOriginalDatabase());
+    try (final HotUpdater updater = originalDb.hotUpdater()) {
       updater.setGenesisTime(genesis);
       updater.setFinalizedCheckpoint(finalizedCheckpoint);
       updater.commit();
     }
 
     migrater.migrateData();
-    TestKvStoreDatabase newDb = new TestKvStoreDatabase(migrater.getNewDatabase());
+    final TestKvStoreDatabase newDb = new TestKvStoreDatabase(migrater.getNewDatabase());
     assertThat(newDb.getHotDao().getGenesisTime())
         .isEqualTo(originalDb.getHotDao().getGenesisTime());
     assertThat(newDb.getHotDao().getGenesisTime()).contains(genesis);
