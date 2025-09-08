@@ -69,7 +69,8 @@ public class MultiThreadedThrottlingQueueTest {
   @ValueSource(booleans = {true, false})
   @Timeout(value = EXPECTED_MAX_TEST_DURATION_MILLIS, unit = TimeUnit.MILLISECONDS)
   @DisabledOnOs(OS.WINDOWS)
-  public void heavyMultiThreadedTest(boolean isPriority) throws InterruptedException {
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void heavyMultiThreadedTest(final boolean isPriority) throws InterruptedException {
     final ThrottlingTaskQueue limitedQueue =
         isPriority
             ? new ThrottlingTaskQueueWithPriority(MAXIMUM_CONCURRENT_TASKS, MAXIMUM_QUEUE_SIZE)
@@ -129,14 +130,14 @@ public class MultiThreadedThrottlingQueueTest {
     private final Random random = new Random();
 
     // A thread-safe counter to generate unique request IDs
-    private static final AtomicInteger requestCounter = new AtomicInteger(0);
+    private static final AtomicInteger REQUEST_COUNTER = new AtomicInteger(0);
 
     public Producer(final TaskQueue sharedQueue, final String name) {
       this.name = name;
       this.sharedQueue =
           new TaskQueue() {
             @Override
-            public <T> SafeFuture<T> queueTask(Supplier<SafeFuture<T>> request) {
+            public <T> SafeFuture<T> queueTask(final Supplier<SafeFuture<T>> request) {
               if (sharedQueue instanceof ThrottlingTaskQueueWithPriority) {
                 return ((ThrottlingTaskQueueWithPriority) sharedQueue)
                     .queueTask(request, random.nextBoolean());
@@ -157,6 +158,7 @@ public class MultiThreadedThrottlingQueueTest {
           };
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Override
     public void run() {
       LOG.info("{} has started.", name);
@@ -167,7 +169,7 @@ public class MultiThreadedThrottlingQueueTest {
           LOG.info("{} starting a burst of {} requests...", name, burstSize);
 
           for (int i = 0; i < burstSize; i++) {
-            final long id = requestCounter.incrementAndGet();
+            final long id = REQUEST_COUNTER.incrementAndGet();
             LOG.info("{} producing {}", name, id);
 
             SafeFuture<Void> queuedTask;
