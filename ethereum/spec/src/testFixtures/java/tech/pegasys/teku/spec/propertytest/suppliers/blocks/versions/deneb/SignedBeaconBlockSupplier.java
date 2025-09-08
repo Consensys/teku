@@ -20,8 +20,14 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
 
-  // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+  /**
+   * Few fields (e.g. blob_kzg_commitments ) are removed in Gloas so for property testing, we only
+   * consider blocks until Fulu. For generic testing not related to >= Deneb specific features, use
+   * {@link tech.pegasys.teku.spec.propertytest.suppliers.blocks.SignedBeaconBlockSupplier}
+   */
+  private static final SpecMilestone MAXIMUM_SPEC_MILESTONE = SpecMilestone.FULU;
+
   public SignedBeaconBlockSupplier() {
-    super(DataStructureUtil::randomSignedBeaconBlock, SpecMilestone.DENEB, SpecMilestone.FULU);
+    super(DataStructureUtil::randomSignedBeaconBlock, SpecMilestone.DENEB, MAXIMUM_SPEC_MILESTONE);
   }
 }
