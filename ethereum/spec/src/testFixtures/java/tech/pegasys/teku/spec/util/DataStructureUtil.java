@@ -62,6 +62,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
@@ -3102,7 +3103,7 @@ public final class DataStructureUtil {
         SszBytes32.of(randomBytes32()),
         SszUInt64.of(randomUInt64()),
         SszUInt64.of(randomUInt64()),
-        randomSszVector(executionProofSchema.getProofDataSchema(), () -> SszByte.of(randomByte())));
+        executionProofSchema.getProofDataSchema().fromBytes(randomBytes(5)));
   }
 
   private int randomInt(final int origin, final int bound) {

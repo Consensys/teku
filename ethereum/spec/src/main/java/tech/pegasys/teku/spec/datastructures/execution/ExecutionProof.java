@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -21,7 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class ExecutionProof
-    extends Container4<ExecutionProof, SszBytes32, SszUInt64, SszUInt64, SszVector<SszByte>> {
+    extends Container4<ExecutionProof, SszBytes32, SszUInt64, SszUInt64, SszByteList> {
 
   public ExecutionProof(final ExecutionProofSchema schema, final TreeNode node) {
     super(schema, node);
@@ -32,7 +33,7 @@ public class ExecutionProof
       final SszBytes32 blockHash,
       final SszUInt64 subnetId,
       final SszUInt64 version,
-      final SszVector<SszByte> proofData) {
+      final SszByteList proofData) {
     super(schema, blockHash, subnetId, version, proofData);
   }
 
@@ -48,7 +49,7 @@ public class ExecutionProof
     return getField2();
   }
 
-  public SszVector<SszByte> getProofData() {
+  public SszByteList getProofData() {
     return getField3();
   }
 }
