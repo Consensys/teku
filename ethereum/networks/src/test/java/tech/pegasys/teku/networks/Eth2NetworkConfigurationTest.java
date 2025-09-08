@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networks;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.GENESIS_STATE_URL_PATH;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfigurationTest {
@@ -190,7 +192,7 @@ public class Eth2NetworkConfigurationTest {
   @Test
   public void shouldGetBootnodesFromUrl(@TempDir final Path tempDir) throws IOException {
     final Path bootnodes = tempDir.resolve("bootnodes.txt");
-    Files.write(bootnodes, ImmutableList.of("- enr:-first\nenr:-second"));
+    Files.write(bootnodes, ImmutableList.of("- enr:-first\nenr:-second\n- enr:-second\n"));
     final Eth2NetworkConfiguration eth2NetworkConfig =
         new Eth2NetworkConfiguration.Builder()
             .applyNetworkDefaults(Eth2Network.MAINNET)
@@ -198,6 +200,20 @@ public class Eth2NetworkConfigurationTest {
             .build();
     assertThat(eth2NetworkConfig.getDiscoveryBootnodes())
         .containsAll(List.of("enr:-first", "enr:-second"));
+  }
+
+  @Test
+  public void shouldFailIfBootnodesInvalid(@TempDir final Path tempDir) throws IOException {
+    final Path bootnodes = tempDir.resolve("bootnodes.txt");
+    Files.write(bootnodes, ImmutableList.of("- enr:-first\nnotBootnode"));
+    assertThatThrownBy(
+            () ->
+                new Eth2NetworkConfiguration.Builder()
+                    .applyNetworkDefaults(Eth2Network.MAINNET)
+                    .discoveryBootnodesFromUrl(bootnodes.toAbsolutePath().toString())
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("notBootnode");
   }
 
   @Test

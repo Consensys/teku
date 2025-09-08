@@ -15,12 +15,10 @@ package tech.pegasys.teku.networks;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.config.SpecConfigLoader.EPHEMERY_CONFIG_URL;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
-import static tech.pegasys.teku.spec.networks.Eth2Network.EPHEMERY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.HOLESKY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.HOODI;
@@ -777,7 +775,9 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder discoveryBootnodes(final String... discoveryBootnodes) {
-      this.discoveryBootnodes.addAll(asList(discoveryBootnodes));
+      for (final String bootnode : discoveryBootnodes) {
+        addBootnodeIfMissing(bootnode);
+      }
       return this;
     }
 
@@ -787,11 +787,13 @@ public class Eth2NetworkConfiguration {
         for (final String bootnode : bootnodesFromUrl) {
           if (bootnode.startsWith("- enr:-")) {
             // clean up yaml entries
-            discoveryBootnodes.add(bootnode.substring(2));
+            final String cleanBootnode = bootnode.substring(2);
+            addBootnodeIfMissing(cleanBootnode);
           } else if (bootnode.startsWith("enr")) {
-            // require they start with ENR
-            discoveryBootnodes.add(bootnode);
+            addBootnodeIfMissing(bootnode);
           } else {
+
+            LOG.debug("Failed to add invalid bootnode {}", bootnode);
             throw new InvalidConfigurationException(
                 String.format("Invalid bootnode found in URL (%s): %s", bootnodeUrl, bootnode));
           }
@@ -802,6 +804,15 @@ public class Eth2NetworkConfiguration {
         throw new InvalidConfigurationException("Error reading bootnodes from " + bootnodeUrl, e);
       }
       return this;
+    }
+
+    private void addBootnodeIfMissing(final String bootnode) {
+      if (!this.discoveryBootnodes.contains(bootnode)) {
+        LOG.debug("Adding bootnode {}", bootnode);
+        this.discoveryBootnodes.add(bootnode);
+      } else {
+        LOG.debug("Skipping known bootnode {}", bootnode);
+      }
     }
 
     public Builder eth1DepositContractAddress(final String eth1Address) {
