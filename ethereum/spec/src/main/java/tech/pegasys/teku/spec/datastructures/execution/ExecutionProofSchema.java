@@ -24,10 +24,9 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 public class ExecutionProofSchema
     extends ContainerSchema4<ExecutionProof, SszBytes32, SszUInt64, SszUInt64, SszByteList> {
 
-  // Assuming max size of proof_data is 65536 bytes, in reality this should be much less
-  // since it's just a concat of a couple of hashes plus some extra bytes.
-  // need to confirm with Kev
-  static final long MAX_PROOF_DATA_SIZE = 65536;
+    // as per suggestion in https://github.com/Consensys/teku/pull/9853#discussion_r2329217191
+    // this may change in when we get smaller proofs
+  static final long MAX_PROOF_DATA_SIZE = 1024 * 1024;
 
   public ExecutionProofSchema() {
     super(
