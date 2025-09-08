@@ -15,9 +15,12 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigLoader.EPHEMERY_CONFIG_URL;
+import static tech.pegasys.teku.spec.networks.Eth2Network.EPHEMERY;
 
 import com.google.common.io.Resources;
 import java.io.BufferedReader;
@@ -44,8 +47,15 @@ public class SpecConfigLoaderTest {
   @ParameterizedTest(name = "{0}")
   @EnumSource(Eth2Network.class)
   public void shouldLoadAllKnownNetworks(final Eth2Network network) throws Exception {
+    assumeThat(network).isNotEqualTo(EPHEMERY);
     final SpecConfig config = SpecConfigLoader.loadConfigStrict(network.configName()).specConfig();
     // testing latest SpecConfig ensures all fields will be asserted on
+    assertAllFieldsSet(config, SpecConfigElectra.class);
+  }
+
+  @Test
+  void shouldLoadEphemeryNetwork() throws Exception {
+    final SpecConfig config = SpecConfigLoader.loadConfig(EPHEMERY_CONFIG_URL).specConfig();
     assertAllFieldsSet(config, SpecConfigElectra.class);
   }
 
