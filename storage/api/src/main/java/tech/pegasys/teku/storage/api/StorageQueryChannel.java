@@ -86,7 +86,7 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot();
 
-  SafeFuture<Optional<UInt64>> getCurrentCustodyGroupCount();
+  SafeFuture<Optional<UInt64>> getCustodyGroupCount();
 
   SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(UInt64 slot);
 

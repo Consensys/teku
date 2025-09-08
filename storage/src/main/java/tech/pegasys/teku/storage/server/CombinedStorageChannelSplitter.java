@@ -195,8 +195,8 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getCurrentCustodyGroupCount() {
-    return asyncRunner.runAsync(queryDelegate::getCurrentCustodyGroupCount);
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return asyncRunner.runAsync(queryDelegate::getCustodyGroupCount);
   }
 
   @Override

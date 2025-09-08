@@ -207,8 +207,8 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
-    return dao.getCurrentCustodyGroupCount();
+  public Optional<UInt64> getCustodyGroupCount() {
+    return dao.getCustodyGroupCount();
   }
 
   @Override
@@ -768,7 +768,7 @@ public class KvStoreDatabase implements Database {
     final Checkpoint bestJustifiedCheckpoint = dao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = dao.getLatestFinalizedState().orElseThrow();
     final Optional<Bytes32> latestCanonicalBlockRoot = dao.getLatestCanonicalBlockRoot();
-    final Optional<UInt64> custodyGroupCount = dao.getCurrentCustodyGroupCount();
+    final Optional<UInt64> custodyGroupCount = dao.getCustodyGroupCount();
 
     final Map<UInt64, VoteTracker> votes = dao.getVotes();
 
@@ -1304,7 +1304,7 @@ public class KvStoreDatabase implements Database {
               });
 
       update.getLatestCanonicalBlockRoot().ifPresent(updater::setLatestCanonicalBlockRoot);
-      update.getCurrentCustodyGroupCount().ifPresent(updater::setCurrentCustodyGroupCount);
+      update.getCustodyGroupCount().ifPresent(updater::setCustodyGroupCount);
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       latestFinalizedStateUpdateStartTime = System.currentTimeMillis();

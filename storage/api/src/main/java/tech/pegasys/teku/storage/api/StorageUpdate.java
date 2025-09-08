@@ -47,7 +47,7 @@ public class StorageUpdate {
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
-  private final Optional<UInt64> currentCustodyGroupCount;
+  private final Optional<UInt64> custodyGroupCount;
   private final boolean blobSidecarsEnabled;
   private final boolean sidecarsEnabled;
   private final boolean isEmpty;
@@ -66,7 +66,7 @@ public class StorageUpdate {
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
-      final Optional<UInt64> currentCustodyGroupCount,
+      final Optional<UInt64> custodyGroupCount,
       @NonUpdating final boolean blobSidecarsEnabled,
       @NonUpdating final boolean sidecarsEnabled) {
     this.genesisTime = genesisTime;
@@ -82,7 +82,7 @@ public class StorageUpdate {
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
-    this.currentCustodyGroupCount = currentCustodyGroupCount;
+    this.custodyGroupCount = custodyGroupCount;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.sidecarsEnabled = sidecarsEnabled;
     checkArgument(
@@ -101,7 +101,7 @@ public class StorageUpdate {
             && blobSidecars.isEmpty()
             && maybeEarliestBlobSidecarSlot.isEmpty()
             && latestCanonicalBlockRoot.isEmpty()
-            && currentCustodyGroupCount.isEmpty()
+            && custodyGroupCount.isEmpty()
             && !optimisticTransitionBlockRootSet;
   }
 
@@ -175,8 +175,8 @@ public class StorageUpdate {
     return latestCanonicalBlockRoot;
   }
 
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
-    return currentCustodyGroupCount;
+  public Optional<UInt64> getCustodyGroupCount() {
+    return custodyGroupCount;
   }
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {

@@ -337,7 +337,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
+  public Optional<UInt64> getCustodyGroupCount() {
     return db.get(schema.getVariableCustodyGroupCount());
   }
 
@@ -713,8 +713,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void setCurrentCustodyGroupCount(final UInt64 currentCustodyGroupCount) {
-      transaction.put(schema.getVariableCustodyGroupCount(), currentCustodyGroupCount);
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      transaction.put(schema.getVariableCustodyGroupCount(), custodyGroupCount);
     }
 
     @Override

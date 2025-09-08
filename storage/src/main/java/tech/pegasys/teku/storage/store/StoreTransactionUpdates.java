@@ -46,7 +46,7 @@ class StoreTransactionUpdates {
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final Optional<Bytes32> latestCanonicalBlockRoot;
-  private final Optional<UInt64> currentCustodyGroupCount;
+  private final Optional<UInt64> custodyGroupCount;
   private final boolean blobSidecarsEnabled;
   private final boolean dataColumnSidecarsEnabled;
 
@@ -63,7 +63,7 @@ class StoreTransactionUpdates {
       final boolean optimisticTransitionBlockRootSet,
       final Optional<Bytes32> optimisticTransitionBlockRoot,
       final Optional<Bytes32> latestCanonicalBlockRoot,
-      final Optional<UInt64> currentCustodyGroupCount,
+      final Optional<UInt64> custodyGroupCount,
       final boolean blobSidecarsEnabled,
       final boolean dataColumnSidecarsEnabled) {
     checkNotNull(tx, "Transaction is required");
@@ -77,7 +77,7 @@ class StoreTransactionUpdates {
     checkNotNull(stateRoots, "State roots are required");
     checkNotNull(optimisticTransitionBlockRoot, "Optimistic transition block root is required");
     checkNotNull(latestCanonicalBlockRoot, "Latest canonical block root is required");
-    checkNotNull(currentCustodyGroupCount, "Current custody group count is required");
+    checkNotNull(custodyGroupCount, "Current custody group count is required");
 
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
@@ -91,7 +91,7 @@ class StoreTransactionUpdates {
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
     this.latestCanonicalBlockRoot = latestCanonicalBlockRoot;
-    this.currentCustodyGroupCount = currentCustodyGroupCount;
+    this.custodyGroupCount = custodyGroupCount;
     this.blobSidecarsEnabled = blobSidecarsEnabled;
     this.dataColumnSidecarsEnabled = dataColumnSidecarsEnabled;
   }
@@ -111,7 +111,7 @@ class StoreTransactionUpdates {
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
         latestCanonicalBlockRoot,
-        currentCustodyGroupCount,
+        custodyGroupCount,
         blobSidecarsEnabled,
         dataColumnSidecarsEnabled);
   }
@@ -122,7 +122,7 @@ class StoreTransactionUpdates {
     tx.genesisTime.ifPresent(store::cacheGenesisTime);
     tx.justifiedCheckpoint.ifPresent(store::updateJustifiedCheckpoint);
     tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
-    tx.getCurrentCustodyGroupCount().ifPresent(store::updateCustodyGroupCount);
+    tx.getCustodyGroupCount().ifPresent(store::updateCustodyGroupCount);
     store.cacheBlocks(hotBlocks.values());
     store.cacheStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     store.cacheBlobSidecars(blobSidecars);

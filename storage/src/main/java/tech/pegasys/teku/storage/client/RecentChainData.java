@@ -770,7 +770,7 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
   }
 
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
-    return store.getCurrentCustodyGroupCount();
+  public Optional<UInt64> getCustodyGroupCount() {
+    return store.getCustodyGroupCount();
   }
 }

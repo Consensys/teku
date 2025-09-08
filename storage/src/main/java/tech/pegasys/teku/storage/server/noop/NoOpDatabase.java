@@ -101,7 +101,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
+  public Optional<UInt64> getCustodyGroupCount() {
     return Optional.empty();
   }
 

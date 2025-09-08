@@ -617,8 +617,8 @@ public class CombinedChainDataClient {
     return recentChainData.getGenesisData();
   }
 
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
-    return recentChainData.getCurrentCustodyGroupCount();
+  public Optional<UInt64> getCustodyGroupCount() {
+    return recentChainData.getCustodyGroupCount();
   }
 
   public SafeFuture<Optional<BeaconBlockSummary>> getEarliestAvailableBlockSummary() {
@@ -903,7 +903,7 @@ public class CombinedChainDataClient {
   public void updateCustodyGroupCount(final int newCustodyGroupCount) {
     LOG.debug("Updating custody count to {}", newCustodyGroupCount);
     final UpdatableStore.StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setCurrentCustodyGroupCount(UInt64.valueOf(newCustodyGroupCount));
+    transaction.setCustodyGroupCount(UInt64.valueOf(newCustodyGroupCount));
     transaction.commit().finish(error -> LOG.error("Failed to store custody group count", error));
   }
 }

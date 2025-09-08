@@ -543,12 +543,12 @@ public class DatabaseTest {
   @TestTemplate
   public void canGetAndUpdateCustodyGroupCount(final DatabaseContext context) throws IOException {
     initialize(context);
-    assertThat(recentChainData.getCurrentCustodyGroupCount()).isEmpty();
+    assertThat(recentChainData.getCustodyGroupCount()).isEmpty();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setCurrentCustodyGroupCount(UInt64.ONE);
+    transaction.setCustodyGroupCount(UInt64.ONE);
     assertThat(transaction.commit()).isCompleted();
-    assertThat(recentChainData.getCurrentCustodyGroupCount()).contains(UInt64.ONE);
-    assertThat(database.getCurrentCustodyGroupCount()).contains(UInt64.ONE);
+    assertThat(recentChainData.getCustodyGroupCount()).contains(UInt64.ONE);
+    assertThat(database.getCustodyGroupCount()).contains(UInt64.ONE);
   }
 
   @TestTemplate

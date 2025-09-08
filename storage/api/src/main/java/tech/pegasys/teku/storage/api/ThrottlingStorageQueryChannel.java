@@ -166,8 +166,8 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getCurrentCustodyGroupCount() {
-    return taskQueue.queueTask(delegate::getCurrentCustodyGroupCount);
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return taskQueue.queueTask(delegate::getCustodyGroupCount);
   }
 
   @Override

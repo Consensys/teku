@@ -292,8 +292,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getCurrentCustodyGroupCount() {
-    return SafeFuture.of(database::getCurrentCustodyGroupCount);
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return SafeFuture.of(database::getCustodyGroupCount);
   }
 
   @Override

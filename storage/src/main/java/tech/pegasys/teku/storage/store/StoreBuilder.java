@@ -101,7 +101,7 @@ public class StoreBuilder {
     return time(data.time())
         .anchor(data.anchor())
         .genesisTime(data.genesisTime())
-        .custodyGroupCount(data.currentCustodyGroupCount())
+        .custodyGroupCount(data.custodyGroupCount())
         .latestFinalized(data.latestFinalized())
         .finalizedOptimisticTransitionPayload(data.finalizedOptimisticTransitionPayload())
         .justifiedCheckpoint(data.justifiedCheckpoint())

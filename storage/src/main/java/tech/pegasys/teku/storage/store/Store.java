@@ -495,7 +495,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
+  public Optional<UInt64> getCustodyGroupCount() {
     readLock.lock();
     try {
       return custodyGroupCount;

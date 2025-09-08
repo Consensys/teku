@@ -62,7 +62,7 @@ public interface ReadOnlyStore extends TimeProvider {
 
   Checkpoint getFinalizedCheckpoint();
 
-  Optional<UInt64> getCurrentCustodyGroupCount();
+  Optional<UInt64> getCustodyGroupCount();
 
   /**
    * Return the slot of the latest finalized block. This slot may be at or prior to the epoch

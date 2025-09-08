@@ -126,7 +126,7 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getCurrentCustodyGroupCount() {
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
