@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -448,56 +448,65 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Map<String, Optional<String>> getVariables() {
-    final Map<String, Optional<String>> variables = new TreeMap<>();
-    final Map<String, KvStoreVariable<?>> variableMap = getVariableMap();
-    variables.put("GENESIS_TIME", getGenesisTime().map(UInt64::toString));
-    variables.put("JUSTIFIED_CHECKPOINT", getJustifiedCheckpoint().map(Checkpoint::toString));
-    variables.put(
-        "BEST_JUSTIFIED_CHECKPOINT", getBestJustifiedCheckpoint().map(Checkpoint::toString));
-    variables.put("FINALIZED_CHECKPOINT", getFinalizedCheckpoint().map(Checkpoint::toString));
-    variables.put(
-        "WEAK_SUBJECTIVITY_CHECKPOINT", getWeakSubjectivityCheckpoint().map(Checkpoint::toString));
-    variables.put("ANCHOR_CHECKPOINT", getAnchor().map(Checkpoint::toString));
-    variables.put(
-        "FINALIZED_DEPOSIT_SNAPSHOT",
-        getFinalizedDepositSnapshot().map(DepositTreeSnapshot::toString));
-    variables.put(
-        "LATEST_CANONICAL_BLOCK_ROOT", getLatestCanonicalBlockRoot().map(Bytes32::toString));
-    try {
-      variables.put(
-          "LATEST_FINALIZED_STATE",
-          getLatestFinalizedState()
-              .map(
-                  state ->
-                      "BeaconState{slot="
-                          + state.getSlot()
-                          + ", root="
-                          + state.hashTreeRoot().toHexString()
-                          + "}"));
-    } catch (final Exception e) {
-      variables.put("FINALIZED_STATE", Optional.of(e.toString()));
-    }
-    variables.put("CUSTODY_GROUP_COUNT", getCurrentCustodyGroupCount().map(Objects::toString));
-    variables.put(
-        "EARLIEST_BLOB_SIDECAR_SLOT", getEarliestBlobSidecarSlot().map(Objects::toString));
-    variables.put(
-        "EARLIEST_BLOCK_SLOT_AVAILABLE", getEarliestFinalizedBlockSlot().map(Objects::toString));
-    variables.put(
-        "FIRST_CUSTODY_INCOMPLETE_SLOT", getFirstCustodyIncompleteSlot().map(Objects::toString));
-    variables.put(
-        "FIRST_SAMPLER_INCOMPLETE_SLOT", getFirstSamplerIncompleteSlot().map(Objects::toString));
-    variables.put("MIN_GENESIS_TIME_BLOCK", getMinGenesisTimeBlock().map(Objects::toString));
-    variables.put(
-        "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
-        getOptimisticTransitionBlockSlot().map(Objects::toString));
+    final ImmutableMap.Builder<String, Optional<String>> knownVariablesBuilder =
+        ImmutableMap.<String, Optional<String>>builder();
 
-    // for sanity report any variables that exist in db that are missing
-    for (String key : variableMap.keySet()) {
-      if (!variables.containsKey(key)) {
-        variables.put(key, Optional.of("<NOT EXPORTED>"));
-      }
+    knownVariablesBuilder
+        .put("GENESIS_TIME", getGenesisTime().map(UInt64::toString))
+        .put("JUSTIFIED_CHECKPOINT", getJustifiedCheckpoint().map(Checkpoint::toString))
+        .put("BEST_JUSTIFIED_CHECKPOINT", getBestJustifiedCheckpoint().map(Checkpoint::toString))
+        .put("FINALIZED_CHECKPOINT", getFinalizedCheckpoint().map(Checkpoint::toString))
+        .put("ANCHOR_CHECKPOINT", getAnchor().map(Checkpoint::toString))
+        .put(
+            "WEAK_SUBJECTIVITY_CHECKPOINT",
+            getWeakSubjectivityCheckpoint().map(Checkpoint::toString))
+        .put("LATEST_FINALIZED_STATE", getFinalizedStateString())
+        .put(
+            "FINALIZED_DEPOSIT_SNAPSHOT",
+            getFinalizedDepositSnapshot().map(DepositTreeSnapshot::toString))
+        .put("LATEST_CANONICAL_BLOCK_ROOT", getLatestCanonicalBlockRoot().map(Bytes32::toString))
+        .put("EARLIEST_BLOB_SIDECAR_SLOT", getEarliestBlobSidecarSlot().map(Objects::toString))
+        .put(
+            "EARLIEST_BLOCK_SLOT_AVAILABLE", getEarliestFinalizedBlockSlot().map(Objects::toString))
+        .put(
+            "FIRST_CUSTODY_INCOMPLETE_SLOT", getFirstCustodyIncompleteSlot().map(Objects::toString))
+        .put(
+            "FIRST_SAMPLER_INCOMPLETE_SLOT", getFirstSamplerIncompleteSlot().map(Objects::toString))
+        .put("MIN_GENESIS_TIME_BLOCK", getMinGenesisTimeBlock().map(Objects::toString))
+        .put(
+            "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
+            getOptimisticTransitionBlockSlot().map(Objects::toString));
+
+    // get a list of the known keys, so that we can add missing variables
+    final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
+    final Set<String> knownKeys = knownVariables.keySet();
+
+    // the result builder will be known variables first, then any that were missing
+    final ImmutableMap.Builder<String, Optional<String>> builder =
+        ImmutableMap.<String, Optional<String>>builder();
+    knownVariables.forEach(builder::put);
+
+    // add missing variables
+    getVariableMap().keySet().stream()
+        .filter(key -> !knownKeys.contains(key))
+        .forEach(key -> builder.put(key, Optional.of("<NOT EXPORTED>")));
+
+    return builder.build();
+  }
+
+  private Optional<String> getFinalizedStateString() {
+    try {
+      return getLatestFinalizedState()
+          .map(
+              state ->
+                  "BeaconState{slot="
+                      + state.getSlot()
+                      + ", root="
+                      + state.hashTreeRoot().toHexString()
+                      + "}");
+    } catch (final Exception e) {
+      return Optional.of(e.toString());
     }
-    return variables;
   }
 
   @Override

@@ -116,23 +116,18 @@ public class SchemaHotAdapter implements Schema {
   }
 
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
-    return Map.of(
-        "HOT_BLOCKS_BY_ROOT",
-        getColumnHotBlocksByRoot(),
-        "CHECKPOINT_STATES",
-        getColumnCheckpointStates(),
-        "VOTES",
-        getColumnVotes(),
-        "DEPOSITS_FROM_BLOCK_EVENTS",
-        getColumnDepositsFromBlockEvents(),
-        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT",
-        getColumnStateRootToSlotAndBlockRoot(),
-        "HOT_STATES_BY_ROOT",
-        getColumnHotStatesByRoot(),
-        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT",
-        getColumnHotBlockCheckpointEpochsByRoot(),
-        "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
-        getColumnBlobSidecarBySlotRootBlobIndex());
+    return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
+        .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
+        .put("CHECKPOINT_STATES", getColumnCheckpointStates())
+        .put("VOTES", getColumnVotes())
+        .put("DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents())
+        .put("STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot())
+        .put("HOT_STATES_BY_ROOT", getColumnHotStatesByRoot())
+        .put("HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot())
+        .put(
+            "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnBlobSidecarBySlotRootBlobIndex())
+        .build();
   }
 
   public Map<String, KvStoreVariable<?>> getVariableMap() {
