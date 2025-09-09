@@ -46,6 +46,8 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
@@ -85,6 +87,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDepos
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaTypes {
+
   // PHASE0
   public static final SchemaId<SszBitvectorSchema<SszBitvector>> ATTNETS_ENR_FIELD_SCHEMA =
       create("ATTNETS_ENR_FIELD_SCHEMA");
@@ -218,6 +221,10 @@ public class SchemaTypes {
           create("DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA");
 
   // Gloas
+  public static final SchemaId<BuilderPendingPaymentSchema> BUILDER_PENDING_PAYMENT_SCHEMA =
+      create("BUILDER_PENDING_PAYMENT_SCHEMA_SCHEMA");
+  public static final SchemaId<BuilderPendingWithdrawalSchema> BUILDER_PENDING_WITHDRAWAL_SCHEMA =
+      create("BUILDER_PENDING_WITHDRAWAL_SCHEMA_SCHEMA");
   public static final SchemaId<PayloadAttestationDataSchema> PAYLOAD_ATTESTATION_DATA_SCHEMA =
       create("PAYLOAD_ATTESTATION_DATA_SCHEMA");
   public static final SchemaId<PayloadAttestationSchema> PAYLOAD_ATTESTATION_SCHEMA =
@@ -235,6 +242,7 @@ public class SchemaTypes {
   }
 
   public static class SchemaId<T> {
+
     private static final Converter<String, String> UPPER_UNDERSCORE_TO_UPPER_CAMEL =
         CaseFormat.UPPER_UNDERSCORE.converterTo(CaseFormat.UPPER_CAMEL);
 

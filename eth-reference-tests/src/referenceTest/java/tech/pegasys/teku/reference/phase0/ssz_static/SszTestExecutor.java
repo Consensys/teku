@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
+
   private final SchemaProvider<T> sszType;
 
   public static final ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
@@ -245,8 +246,16 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas -> SchemaDefinitionsFulu.required(schemas).getMatrixEntrySchema()))
 
           // Gloas types
-          .put("ssz_static/BuilderPendingPayment", IGNORE_TESTS)
-          .put("ssz_static/BuilderPendingWithdrawal", IGNORE_TESTS)
+          .put(
+              "ssz_static/BuilderPendingPayment",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getBuilderPendingPaymentSchema()))
+          .put(
+              "ssz_static/BuilderPendingWithdrawal",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getBuilderPendingWithdrawalSchema()))
           .put("ssz_static/PayloadAttestationMessage", IGNORE_TESTS)
           .put("ssz_static/IndexedPayloadAttestation", IGNORE_TESTS)
           .put("ssz_static/ExecutionPayloadEnvelope", IGNORE_TESTS)
@@ -331,6 +340,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
   }
 
   private interface SchemaProvider<T extends SszData> {
+
     SszSchema<T> get(SchemaDefinitions schemas);
   }
 }
