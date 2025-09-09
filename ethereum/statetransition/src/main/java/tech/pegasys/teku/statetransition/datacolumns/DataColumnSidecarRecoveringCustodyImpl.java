@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.time.Duration;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,7 +53,6 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecarRecoveringCustody {
   private static final Logger LOG = LogManager.getLogger();
-  public static final Duration RECOVERY_DELAY = Duration.ofMillis(500);
 
   private final DataColumnSidecarByRootCustody delegate;
   private final AsyncRunner asyncRunner;
@@ -182,7 +181,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               block.getSlotAndBlockRoot(),
               new RecoveryTask(
                   new AtomicReference<>(block),
-                  ConcurrentHashMap.newKeySet(),
+                  new ConcurrentHashMap<>(),
                   new AtomicBoolean(false),
                   new AtomicBoolean(false)));
       if (oldValue == null) {
@@ -198,11 +197,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private void maybeStartRecovery(final RecoveryTask task) {
     if (readyToBeRecovered(task)) {
-      if (task.recoveryStarted.compareAndSet(false, true)
-          && task.existingColumnIds().size() != columnCount) {
-        asyncRunner
-            .runAfterDelay(() -> prepareAndInitiateRecovery(task), RECOVERY_DELAY)
-            .finishError(LOG);
+      if (task.recoveryStarted.compareAndSet(false, true)) {
+        if (task.existingSidecars.size() == columnCount) {
+          task.existingSidecars.clear();
+          return;
+        }
+        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).finishError(LOG);
       }
     }
   }
@@ -217,7 +217,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       return false;
     }
 
-    if (task.existingColumnIds().size() < recoverColumnCount) {
+    if (task.existingSidecars().size() < recoverColumnCount) {
       // not enough columns collected
       return false;
     }
@@ -242,63 +242,53 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   private record RecoveryTask(
       AtomicReference<BeaconBlock> block,
-      Set<DataColumnSlotAndIdentifier> existingColumnIds,
+      Map<DataColumnSlotAndIdentifier, DataColumnSidecar> existingSidecars,
       AtomicBoolean recoveryStarted,
       AtomicBoolean timedOut) {}
 
   private void prepareAndInitiateRecovery(final RecoveryTask task) {
-    final Set<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifiersCopy =
-        new HashSet<>(task.existingColumnIds());
-    final SafeFuture<List<DataColumnSidecar>> list =
-        AsyncStream.createUnsafe(dataColumnSlotAndIdentifiersCopy.iterator())
-            .mapAsync(delegate::getCustodyDataColumnSidecar)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .toList();
-    initiateRecovery(task, list);
+    final MetricsHistogram.Timer timer = dataAvailabilityReconstructionTimeSeconds.startTimer();
+    try {
+      initiateRecovery(task, task.existingSidecars.values(), timer);
+    } catch (final Exception e) {
+      task.recoveryStarted.compareAndSet(true, false);
+      LOG.debug(
+          "Error during recovery of {} task with {} sidecars",
+          task.block.get() == null ? "<unknown>" : task.block.get().getSlotAndBlockRoot(),
+          task.existingSidecars.size(),
+          e);
+    }
+    timer.closeUnchecked().run();
   }
 
   private void initiateRecovery(
-      final RecoveryTask recoveryTask, final SafeFuture<List<DataColumnSidecar>> list) {
+      final RecoveryTask recoveryTask,
+      final Collection<DataColumnSidecar> sidecars,
+      final MetricsHistogram.Timer timer) {
     final BeaconBlock block = recoveryTask.block.get();
-    LOG.debug("Starting data columns sidecars recovery for block: {}", block.getSlotAndBlockRoot());
 
-    final MetricsHistogram.Timer timer = dataAvailabilityReconstructionTimeSeconds.startTimer();
+    LOG.debug(
+        "Recovery for block: {}. DataColumnSidecars found: {}",
+        block.getSlotAndBlockRoot(),
+        sidecars.size());
+    final List<DataColumnSidecar> recoveredSidecars =
+        miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
+    timer.closeUnchecked().run();
 
-    list.thenAccept(
-            sidecars -> {
-              LOG.debug(
-                  "Recovery for block: {}. DataColumnSidecars found: {}",
-                  block.getSlotAndBlockRoot(),
-                  sidecars.size());
-              final List<DataColumnSidecar> recoveredSidecars =
-                  miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
-              timer.closeUnchecked();
-
-              final Set<UInt64> existingSidecarsIndices =
-                  sidecars.stream()
-                      .map(DataColumnSidecar::getIndex)
-                      .collect(Collectors.toUnmodifiableSet());
-              totalDataAvailabilityReconstructedColumns.inc(
-                  recoveredSidecars.size() - sidecars.size());
-              recoveredSidecars.stream()
-                  .filter(sidecar -> !existingSidecarsIndices.contains(sidecar.getIndex()))
-                  .forEach(
-                      dataColumnSidecar -> {
-                        validDataColumnSidecarsSubscribers.forEach(
-                            l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
-                        delegate
-                            .onNewValidatedDataColumnSidecar(dataColumnSidecar)
-                            .finishError(LOG);
-                        dataColumnSidecarPublisher.accept(dataColumnSidecar);
-                      });
-              LOG.debug(
-                  "Data column sidecars recovery finished for block: {}",
-                  block.getSlotAndBlockRoot());
-            })
-        .whenException(__ -> recoveryTask.recoveryStarted.compareAndSet(true, false))
-        .alwaysRun(timer.closeUnchecked())
-        .finishError(LOG);
+    final Set<UInt64> existingSidecarsIndices =
+        sidecars.stream().map(DataColumnSidecar::getIndex).collect(Collectors.toUnmodifiableSet());
+    totalDataAvailabilityReconstructedColumns.inc(recoveredSidecars.size() - sidecars.size());
+    recoveredSidecars.stream()
+        .filter(sidecar -> !existingSidecarsIndices.contains(sidecar.getIndex()))
+        .forEach(
+            dataColumnSidecar -> {
+              validDataColumnSidecarsSubscribers.forEach(
+                  l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
+              delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar).finishError(LOG);
+              dataColumnSidecarPublisher.accept(dataColumnSidecar);
+            });
+    recoveryTask.existingSidecars.clear();
+    LOG.debug("Data column sidecars recovery finished for block: {}", block.getSlotAndBlockRoot());
   }
 
   @Override
@@ -310,30 +300,29 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   @Override
   public SafeFuture<Void> onNewValidatedDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar) {
-    createOrUpdateRecoveryTaskForDataColumnSidecar(
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar));
+    createOrUpdateRecoveryTaskForDataColumnSidecar(dataColumnSidecar);
     return delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar);
   }
 
-  private void createOrUpdateRecoveryTaskForDataColumnSidecar(
-      final DataColumnSlotAndIdentifier identifier) {
-    if (!recoveryTasks.containsKey(identifier.getSlotAndBlockRoot())) {
-      final Set<DataColumnSlotAndIdentifier> identifiers = ConcurrentHashMap.newKeySet();
-      identifiers.add(identifier);
+  private void createOrUpdateRecoveryTaskForDataColumnSidecar(final DataColumnSidecar sidecar) {
+    if (!recoveryTasks.containsKey(sidecar.getSlotAndBlockRoot())) {
+      final Map<DataColumnSlotAndIdentifier, DataColumnSidecar> sidecars =
+          new ConcurrentHashMap<>();
+      sidecars.put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
       final RecoveryTask recoveryTask =
           new RecoveryTask(
               new AtomicReference<>(null),
-              identifiers,
+              sidecars,
               new AtomicBoolean(false),
               new AtomicBoolean(false));
       final RecoveryTask oldValue =
-          recoveryTasks.putIfAbsent(identifier.getSlotAndBlockRoot(), recoveryTask);
+          recoveryTasks.putIfAbsent(sidecar.getSlotAndBlockRoot(), recoveryTask);
       if (oldValue == null) {
         return;
       }
     }
-    final RecoveryTask existing = recoveryTasks.get(identifier.getSlotAndBlockRoot());
-    existing.existingColumnIds().add(identifier);
+    final RecoveryTask existing = recoveryTasks.get(sidecar.getSlotAndBlockRoot());
+    existing.existingSidecars().put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
     maybeStartRecovery(existing);
   }
 
