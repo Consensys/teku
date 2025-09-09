@@ -42,6 +42,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWAL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA;
@@ -129,6 +131,8 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPay
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
@@ -254,6 +258,8 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider())
 
         // GLOAS
+        .addProvider(createBuilderPendingWithdrawalSchemaProvider())
+        .addProvider(createBuilderPendingPaymentSchemaProvider())
         .addProvider(createPayloadAttestationDataSchemaProvider())
         .addProvider(createPayloadAttestationSchemaProvider())
         .addProvider(createSignedExecutionPayloadHeaderSchemaProvider());
@@ -890,6 +896,20 @@ public class SchemaRegistryBuilder {
 
   private static long getMaxValidatorsPerAttestationElectra(final SpecConfig specConfig) {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
+  }
+
+  private static SchemaProvider<?> createBuilderPendingPaymentSchemaProvider() {
+    return providerBuilder(BUILDER_PENDING_PAYMENT_SCHEMA)
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new BuilderPendingPaymentSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBuilderPendingWithdrawalSchemaProvider() {
+    return providerBuilder(BUILDER_PENDING_WITHDRAWAL_SCHEMA)
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new BuilderPendingWithdrawalSchema())
+        .build();
   }
 
   private static SchemaProvider<?> createPayloadAttestationDataSchemaProvider() {
