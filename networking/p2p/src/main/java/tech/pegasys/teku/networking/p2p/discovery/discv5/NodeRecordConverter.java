@@ -101,8 +101,7 @@ public class NodeRecordConverter {
         persistentAttestationSubnets,
         syncCommitteeSubnets,
         dasTotalCustodySubnetCount,
-        nextForkDigest,
-        executionProofSubnets);
+        nextForkDigest);
   }
 
   private static <T> Optional<T> parseField(
