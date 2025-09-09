@@ -12,4 +12,4 @@
 ### Additions and Improvements
 
 ### Bug Fixes
- - Downgraded snappy library because of musl issue on some nodes.
+ - Updated ephemery network configuration to load the configuration and bootnodes from remote. If the name "ephemery" is used for network now, it will by default load from ephemery.dev.

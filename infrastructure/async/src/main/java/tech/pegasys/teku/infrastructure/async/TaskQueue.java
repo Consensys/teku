@@ -21,6 +21,7 @@ public interface TaskQueue {
 
   int getQueuedTasksCount();
 
+  /** This must only be used for testing to verify that throttling is working as expected. */
   @VisibleForTesting
   int getInflightTaskCount();
 }

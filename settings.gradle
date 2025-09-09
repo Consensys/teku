@@ -1,4 +1,4 @@
-rootProject.name='teku'
+rootProject.name = 'teku'
 include 'acceptance-tests'
 include 'beacon:pow'
 include 'beacon:sync'
@@ -69,4 +69,4 @@ include 'eth-reference-tests'
 include 'eth-benchmark-tests'
 include 'fork-choice-tests'
 include 'ethereum:performance-trackers'
-
+include 'services:zkchain'

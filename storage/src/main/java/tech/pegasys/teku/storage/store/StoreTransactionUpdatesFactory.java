@@ -50,6 +50,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Optional<Bytes32> maybeLatestCanonicalBlockRoot;
+  private final Optional<UInt64> maybeCustodyGroupCount;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
@@ -74,6 +75,7 @@ class StoreTransactionUpdatesFactory {
     blobSidecars = new ConcurrentHashMap<>(tx.blobSidecars);
     maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
     maybeLatestCanonicalBlockRoot = tx.maybeLatestCanonicalBlockRoot;
+    maybeCustodyGroupCount = tx.maybeCustodyGroupCount;
   }
 
   public static StoreTransactionUpdates create(
@@ -260,6 +262,7 @@ class StoreTransactionUpdatesFactory {
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
         maybeLatestCanonicalBlockRoot,
+        maybeCustodyGroupCount,
         spec.isMilestoneSupported(SpecMilestone.DENEB),
         spec.isMilestoneSupported(SpecMilestone.FULU));
   }
