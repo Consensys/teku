@@ -36,6 +36,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -146,17 +147,17 @@ class PeerSubnetSubscriptionsTest {
   // but PEER3 has a subnet not covered by PEER1
   public void shouldScoreExistingPeersAccordingToUniqueness() {
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2, 3, 4, 5, 6, 7));
-    final Map<String, Collection<NodeId>> subscribersByTopic =
-        ImmutableMap.<String, Collection<NodeId>>builder()
-            .put("data_column_sidecar_0", Set.of(PEER1, PEER2))
-            .put("data_column_sidecar_1", Set.of(PEER1, PEER2))
-            .put("data_column_sidecar_2", Set.of(PEER1, PEER2))
-            .put("data_column_sidecar_3", Set.of(PEER1, PEER2))
-            .put("data_column_sidecar_4", Set.of(PEER1, PEER2, PEER3))
-            .put("data_column_sidecar_5", Set.of(PEER1, PEER2, PEER3))
-            .put("data_column_sidecar_6", Set.of(PEER1))
-            .put("data_column_sidecar_7", Set.of(PEER3))
-            .build();
+    final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(
+            Map.of(
+                    0, Set.of(PEER1, PEER2),
+                    1, Set.of(PEER1, PEER2),
+                    2, Set.of(PEER1, PEER2),
+                    3, Set.of(PEER1, PEER2),
+                    4, Set.of(PEER1, PEER2,PEER3),
+                    5, Set.of(PEER1, PEER2,PEER3),
+                    6, Set.of(PEER1),
+                    7, Set.of(PEER3)
+            ));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
@@ -230,17 +231,7 @@ class PeerSubnetSubscriptionsTest {
             .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
             .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
             .build();
-    final Map<String, Collection<NodeId>> subscribersByTopic =
-        ImmutableMap.<String, Collection<NodeId>>builder()
-            .put("data_column_sidecar_0", Set.of())
-            .put("data_column_sidecar_1", Set.of())
-            .put("data_column_sidecar_2", Set.of())
-            .put("data_column_sidecar_3", Set.of())
-            .put("data_column_sidecar_4", Set.of())
-            .put("data_column_sidecar_5", Set.of())
-            .put("data_column_sidecar_6", Set.of())
-            .put("data_column_sidecar_7", Set.of())
-            .build();
+    final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(Map.of());
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
@@ -278,17 +269,16 @@ class PeerSubnetSubscriptionsTest {
             .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
             .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
             .build();
-    final Map<String, Collection<NodeId>> subscribersByTopic =
-        ImmutableMap.<String, Collection<NodeId>>builder()
-            .put("data_column_sidecar_0", Set.of(PEER1))
-            .put("data_column_sidecar_1", Set.of(PEER1))
-            .put("data_column_sidecar_2", Set.of(PEER1))
-            .put("data_column_sidecar_3", Set.of(PEER1))
-            .put("data_column_sidecar_4", Set.of(PEER1))
-            .put("data_column_sidecar_5", Set.of(PEER1))
-            .put("data_column_sidecar_6", Set.of(PEER1))
-            .put("data_column_sidecar_7", Set.of())
-            .build();
+    final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(
+            Map.of(
+              0, Set.of(PEER1),
+              1, Set.of(PEER1),
+              2, Set.of(PEER1),
+              3, Set.of(PEER1),
+              4, Set.of(PEER1),
+              5, Set.of(PEER1),
+              6, Set.of(PEER1)
+            ));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
@@ -345,17 +335,7 @@ class PeerSubnetSubscriptionsTest {
     }
     final Map<NodeId, SszBitvector> peer2subnets = builder.build();
     assertThat(peer2subnets.size()).isEqualTo(100);
-    final Map<String, Collection<NodeId>> subscribersByTopic =
-        ImmutableMap.<String, Collection<NodeId>>builder()
-            .put("data_column_sidecar_0", Set.of())
-            .put("data_column_sidecar_1", Set.of())
-            .put("data_column_sidecar_2", Set.of())
-            .put("data_column_sidecar_3", Set.of())
-            .put("data_column_sidecar_4", Set.of())
-            .put("data_column_sidecar_5", Set.of())
-            .put("data_column_sidecar_6", Set.of())
-            .put("data_column_sidecar_7", Set.of())
-            .build();
+    final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(Map.of()); // no existing subsribers
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
@@ -379,6 +359,23 @@ class PeerSubnetSubscriptionsTest {
                 .limit(50))
         .containsAll(
             Stream.concat(Arrays.stream(peers).limit(5), Stream.of(peers[50], peers[51])).toList());
+  }
+
+  @NotNull
+  private static Map<String, Collection<NodeId>> makeSubscribersByTopic(
+      final Map<Integer, Set<NodeId>> existingSubscribers) {
+    final ImmutableMap.Builder<String, Collection<NodeId>> builder =
+        ImmutableMap.<String, Collection<NodeId>>builder();
+    IntStream.range(0, SUBNET_COUNT)
+        .forEach(
+            i ->
+                builder.put(
+                    "data_column_sidecar_" + i,
+                    existingSubscribers.containsKey(i)
+                        ? existingSubscribers.get(i)
+                        : Set.<NodeId>of()));
+
+    return builder.build();
   }
 
   private DiscoveryPeer makeCandidatePeer(final NodeId peerId, final int dasCustodyCount) {
