@@ -844,7 +844,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconConfig
                       .eth2NetworkConfig()
                       .getDataColumnSidecarRecoveryMaxDelayMillis()
-                      .orElse(spec.getMillisPerSlot(slot).dividedBy(3).longValue());
+                      .orElse(spec.getAttestationDueMillis(slot));
               return Duration.ofMillis(dataColumnSidecarRecoveryMaxDelayMillis);
             },
             metricsSystem,
@@ -911,7 +911,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     blockManager.subscribePreImportBlocks(
         (block, remoteOrigin) -> getDataColumnSidecarCustody().onNewBlock(block, remoteOrigin));
     final DasCustodySync svc =
-        new DasCustodySync(dataColumnSidecarRecoveringCustody, recoveringSidecarRetriever);
+        new DasCustodySync(
+            dataColumnSidecarRecoveringCustody,
+            recoveringSidecarRetriever,
+            minCustodyPeriodSlotCalculator);
     dasCustodySync = Optional.of(svc);
     eventChannels.subscribe(SlotEventsChannel.class, svc);
 
@@ -1581,6 +1584,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ThrottlingStorageQueryChannel(
               storageQueryChannel,
               beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries(),
+              beaconConfig.p2pConfig().getHistoricalDataMaxQueryQueueSize(),
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(

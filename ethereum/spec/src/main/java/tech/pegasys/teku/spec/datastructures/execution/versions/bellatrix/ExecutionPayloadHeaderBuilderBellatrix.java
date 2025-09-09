@@ -152,6 +152,39 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
     return this;
   }
 
+  @Override
+  public ExecutionPayloadHeaderBuilder parentBlockHash(
+      final Supplier<Bytes32> parentBlockHashSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder parentBlockRoot(
+      final Supplier<Bytes32> parentBlockRootSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder builderIndex(final Supplier<UInt64> builderIndexSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder slot(final Supplier<UInt64> slotSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder value(final Supplier<UInt64> valueSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder blobKzgCommitmentsRoot(
+      final Supplier<Bytes32> blobKzgCommitmentsRootSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }

@@ -225,15 +225,6 @@
     GENESIS_SLOT: Slot = 0
     </spec>
 
-- name: INTERVALS_PER_SLOT
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
-      search: INTERVALS_PER_SLOT =
-  spec: |
-    <spec constant_var="INTERVALS_PER_SLOT" fork="phase0" hash="3352e419">
-    INTERVALS_PER_SLOT: uint64 = 3
-    </spec>
-
 - name: JUSTIFICATION_BITS_LENGTH
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigPhase0.java

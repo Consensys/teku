@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -50,7 +52,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DasSamplerBasicTest {
-
+  private static final Logger LOG = LogManager.getLogger();
   static final Spec SPEC = TestSpecFactory.createMinimalFulu();
 
   private DataColumnSidecarCustody custody;
@@ -110,6 +112,8 @@ public class DasSamplerBasicTest {
       final int configuredCustodyCount,
       final int validatorCount,
       final int expectedSamplingRequests) {
+    when(combinedChainDataClient.getCustodyGroupCount())
+        .thenReturn(Optional.of(UInt64.valueOf(configuredCustodyCount)));
     final CustodyGroupCountManagerImpl custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             SPEC,
@@ -154,7 +158,8 @@ public class DasSamplerBasicTest {
       }
     }
 
-    for (UInt64 missingColumn : samplingNonCustodyColumns) {
+    for (final UInt64 missingColumn : samplingNonCustodyColumns) {
+      LOG.info("Retrieve missing column {}", missingColumn);
       when(retriever.retrieve(
               new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, missingColumn)))
           .thenReturn(

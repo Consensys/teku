@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.util;
+package tech.pegasys.teku.infrastructure.io;
 
 import java.io.BufferedReader;
 import java.io.IOException;

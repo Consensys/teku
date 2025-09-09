@@ -63,6 +63,7 @@ class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
     final ConfigProvider configProvider = new ConfigProvider(SpecFactory.create("mainnet"));
     setHandler(new GetSpec(configProvider));
     handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
 
     final String json = request.getResponseBodyAsJson(handler);
 

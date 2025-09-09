@@ -89,7 +89,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     WITHDRAWAL,
     DEPOSIT_REQUEST,
     WITHDRAWAL_REQUEST,
-    CONSOLIDATION_REQUEST
+    CONSOLIDATION_REQUEST,
+    EXECUTION_PAYLOAD_HEADER,
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -141,6 +142,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/consolidation_request",
               new OperationsTestExecutor<>(
                   "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
+          // TODO-GLOAS Add test for execution_payload_header
+          // (https://github.com/Consensys/teku/issues/9821)
+          .put("operations/execution_payload_header", IGNORE_TESTS)
           .build();
 
   private final String dataFileName;
@@ -494,7 +498,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           WITHDRAWAL,
           DEPOSIT_REQUEST,
           WITHDRAWAL_REQUEST,
-          CONSOLIDATION_REQUEST -> {}
+          CONSOLIDATION_REQUEST,
+          EXECUTION_PAYLOAD_HEADER -> {}
     }
   }
 

@@ -50,6 +50,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCust
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
+import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -115,15 +116,15 @@ public class DataColumnSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRootRequestMessage request) {
-    final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
-    if (request.getMaximumResponseChunks() > maxRequestDataColumnSidecars) {
+    final int maxRequestIdentifiers = specConfigFulu.getMaxRequestBlocksDeneb();
+    if (request.size() > maxRequestIdentifiers) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
-                  "Only a maximum of %s data column sidecars can be requested per request",
-                  maxRequestDataColumnSidecars)));
+                  "Only a maximum of %d by root identifiers are allowed per request",
+                  maxRequestIdentifiers)));
     }
     return Optional.empty();
   }
@@ -228,10 +229,12 @@ public class DataColumnSidecarsByRootMessageHandler
       final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
-        .orElse(
-            combinedChainDataClient
-                .getBlockByBlockRoot(identifier.blockRoot())
-                .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
+        .orElseGet(
+            () ->
+                combinedChainDataClient
+                    .getBlockByBlockRoot(identifier.blockRoot())
+                    .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
               if (maybeSlot.isEmpty()) {
@@ -261,7 +264,8 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
-            });
+            })
+        .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException);
   }
 
   private void handleError(

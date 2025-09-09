@@ -11,16 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
+package tech.pegasys.teku.infrastructure.async;
 
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import com.google.common.annotations.VisibleForTesting;
+import java.util.function.Supplier;
 
-public class SignedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
+public interface TaskQueue {
+  <T> SafeFuture<T> queueTask(Supplier<SafeFuture<T>> request);
 
-  public SignedBeaconBlockSupplier() {
-    super(DataStructureUtil::randomSignedBeaconBlock, SpecMilestone.DENEB);
-  }
+  int getQueuedTasksCount();
+
+  /** This must only be used for testing to verify that throttling is working as expected. */
+  @VisibleForTesting
+  int getInflightTaskCount();
 }

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
@@ -84,13 +82,10 @@ public class LateBlockReorgLogic {
                   spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
               final int millisIntoSlot =
                   arrivalTimeMillis.minusMinZero(slotStartTimeMillis).intValue();
-
-              final UInt64 timelinessLimit =
-                  spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT);
+              final int timelinessLimit = spec.getAttestationDueMillis(slot);
 
               final boolean isTimely =
-                  block.getMessage().getSlot().equals(slot)
-                      && timelinessLimit.isGreaterThan(millisIntoSlot);
+                  block.getMessage().getSlot().equals(slot) && timelinessLimit > millisIntoSlot;
               LOG.debug(
                   "Block {}:{} arrived at {} ms into slot {}, timeliness limit is {} ms. result: {}",
                   root,
@@ -114,10 +109,10 @@ public class LateBlockReorgLogic {
   public boolean isProposingOnTime(final UInt64 slot) {
     final UInt64 slotStartTimeMillis =
         spec.computeTimeMillisAtSlot(slot, recentChainData.getGenesisTimeMillis());
-    final UInt64 timelinessLimit = spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT * 2);
+    final int timelinessLimit = spec.getProposerReorgCutoffMillis(slot);
     final UInt64 currentTimeMillis = timeProviderSupplier.get().getTimeInMillis();
     final boolean isTimely =
-        currentTimeMillis.minusMinZero(slotStartTimeMillis).isLessThan(timelinessLimit);
+        currentTimeMillis.minusMinZero(slotStartTimeMillis).isLessThanOrEqualTo(timelinessLimit);
     LOG.debug(
         "Check ProposingOnTime for slot {}, slot start time is {} ms and current time is {} ms, limit is {} ms result: {}",
         slot,

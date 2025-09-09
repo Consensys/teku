@@ -49,8 +49,10 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
+
   private final SchemaProvider<T> sszType;
 
   public static final ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
@@ -243,6 +245,58 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               new SszTestExecutor<>(
                   schemas -> SchemaDefinitionsFulu.required(schemas).getMatrixEntrySchema()))
 
+          // Gloas types
+          .put(
+              "ssz_static/BuilderPendingPayment",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getBuilderPendingPaymentSchema()))
+          .put(
+              "ssz_static/BuilderPendingWithdrawal",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getBuilderPendingWithdrawalSchema()))
+          .put(
+              "ssz_static/PayloadAttestationData",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getPayloadAttestationDataSchema()))
+          .put(
+              "ssz_static/PayloadAttestation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getPayloadAttestationSchema()))
+          .put(
+              "ssz_static/PayloadAttestationMessage",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getPayloadAttestationMessageSchema()))
+          .put(
+              "ssz_static/IndexedPayloadAttestation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getIndexedPayloadAttestationSchema()))
+          .put(
+              "ssz_static/SignedExecutionPayloadHeader",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getSignedExecutionPayloadHeaderSchema()))
+          .put(
+              "ssz_static/ExecutionPayloadEnvelope",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getExecutionPayloadEnvelopeSchema()))
+          .put(
+              "ssz_static/SignedExecutionPayloadEnvelope",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getSignedExecutionPayloadEnvelopeSchema()))
+          .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
+
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
               "ssz_static/AttestationData", new SszTestExecutor<>(__ -> AttestationData.SSZ_SCHEMA))
@@ -277,6 +331,13 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
+    if (testDefinition.getFork().equals("gloas")
+        && testDefinition.getTestType().contains("ssz_static/BeaconState")) {
+      // TODO-GLOAS this ignore will be removed as part of
+      // https://github.com/Consensys/teku/issues/9807
+      return;
+    }
+
     final Bytes inputData = TestDataUtils.readSszData(testDefinition, "serialized.ssz_snappy");
     final Bytes32 expectedRoot =
         TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
@@ -298,6 +359,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
   }
 
   private interface SchemaProvider<T extends SszData> {
+
     SszSchema<T> get(SchemaDefinitions schemas);
   }
 }

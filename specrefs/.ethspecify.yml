@@ -1,4 +1,4 @@
-version: v1.6.0-alpha.5
+version: v1.6.0-alpha.6
 style: full
 
 specrefs:
@@ -11,13 +11,6 @@ specrefs:
     - presets.yml
 
   exceptions:
-    configs:
-      # added at alpha.5 for basis points spec change
-      - AGGREGRATE_DUE_BPS#phase0
-      - ATTESTATION_DUE_BPS#phase0
-
-      # added at alpha.5 for Gloas fork (not yet implemented)
-      - AGGREGRATE_DUE_BPS_GLOAS#gloas
     constants:
       # added at alpha.5 for basis points spec change
       - BASIS_POINTS#phase0
@@ -25,6 +18,7 @@ specrefs:
       # Not defined as a constant, unnecessary
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
+      - INTERVALS_PER_SLOT#phase0
 
       # Constants for max values, defined elsewhere
       - UINT256_MAX
@@ -67,20 +61,15 @@ specrefs:
       - LightClientHeader
       - LightClientOptimisticUpdate
       # added at alpha.5 for Gloas fork (not yet implemented)
-      - BeaconBlockBody#gloas
       - BeaconState#gloas
       - BuilderPendingPayment#gloas
       - BuilderPendingWithdrawal#gloas
       - DataColumnSidecar#gloas
       - ExecutionPayloadEnvelope#gloas
-      - ExecutionPayloadHeader#gloas
       - ForkChoiceNode#gloas
       - IndexedPayloadAttestation#gloas
-      - PayloadAttestation#gloas
-      - PayloadAttestationData#gloas
       - PayloadAttestationMessage#gloas
       - SignedExecutionPayloadEnvelope#gloas
-      - SignedExecutionPayloadHeader#gloas
 
     dataclasses:
       # Not defined, implemented differently
@@ -105,6 +94,7 @@ specrefs:
       - bytes_to_kzg_commitment#deneb
       - bytes_to_kzg_proof#deneb
       - compute_blob_kzg_proof#deneb
+      - compute_fork_version#fulu
       - compute_challenge#deneb
       - compute_kzg_proof#deneb
       - compute_kzg_proof_impl#deneb
@@ -329,7 +319,6 @@ specrefs:
       - get_payload_status_tiebreaker#gloas
       - get_ptc#gloas
       - get_ptc_assignment#gloas
-      - get_slot_component_duration_ms#phase0
       - get_weight#gloas
       - has_builder_withdrawal_credential#gloas
       - has_compounding_withdrawal_credential#gloas

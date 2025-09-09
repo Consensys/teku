@@ -33,19 +33,25 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarIndexSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+/**
+ * blob_kzg_commitments are removed in Gloas so for testing this class, we only consider Spec and
+ * SignedBeaconBlock until Fulu.
+ */
 public class MiscHelpersDenebPropertyTest {
 
   private final Spec spec =
-      Objects.requireNonNull(new SpecSupplier(SpecMilestone.DENEB).get()).sample();
+      Objects.requireNonNull(new SpecSupplier(SpecMilestone.DENEB, SpecMilestone.FULU).get())
+          .sample();
   private final SpecConfigDeneb specConfig =
       spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow();
   private final Predicates predicates = spec.getGenesisSpec().predicates();
@@ -117,6 +123,13 @@ public class MiscHelpersDenebPropertyTest {
       miscHelpers.verifyBlobKzgCommitmentInclusionProof(blobSidecar);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
+    }
+  }
+
+  private static class SignedBeaconBlockSupplier
+      extends DataStructureUtilSupplier<SignedBeaconBlock> {
+    public SignedBeaconBlockSupplier() {
+      super(DataStructureUtil::randomSignedBeaconBlock, SpecMilestone.DENEB, SpecMilestone.FULU);
     }
   }
 }

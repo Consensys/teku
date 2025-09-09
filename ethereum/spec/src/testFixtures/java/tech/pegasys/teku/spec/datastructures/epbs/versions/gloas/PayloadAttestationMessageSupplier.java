@@ -11,15 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BeaconBlockSupplier extends DataStructureUtilSupplier<BeaconBlock> {
-  public BeaconBlockSupplier() {
-    super(DataStructureUtil::randomBeaconBlock, SpecMilestone.DENEB);
+public class PayloadAttestationMessageSupplier
+    extends DataStructureUtilSupplier<PayloadAttestationMessage> {
+
+  public PayloadAttestationMessageSupplier() {
+    super(DataStructureUtil::randomPayloadAttestationMessage, SpecMilestone.GLOAS);
   }
 }

@@ -25,6 +25,7 @@ import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTR
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
 import com.google.common.base.Preconditions;
+import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
@@ -138,6 +140,15 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFu
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
@@ -145,6 +156,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -225,6 +238,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public final class DataStructureUtil {
 
@@ -374,6 +388,11 @@ public final class DataStructureUtil {
     return Stream.generate(valueGenerator)
         .limit(Math.min(numItems, schema.getMaxLength()))
         .collect(schema.collectorUnboxed());
+  }
+
+  public SszUInt64List randomSszUInt64List(final SszUInt64ListSchema<?> schema) {
+    return randomSszUInt64List(
+        schema, randomInt(Ints.saturatedCast(schema.getMaxLength() + 1)), this::randomUInt64);
   }
 
   public SszUInt64List randomSszUInt64List(
@@ -531,6 +550,11 @@ public final class DataStructureUtil {
     return UInt64.valueOf(randomInt(3_000_000));
   }
 
+  /** builders need to be staked in ePBS, so can use {@link #randomValidatorIndex()} */
+  public UInt64 randomBuilderIndex() {
+    return randomValidatorIndex();
+  }
+
   public SlotAndBlockRoot randomSlotAndBlockRoot() {
     return randomSlotAndBlockRoot(randomUInt64());
   }
@@ -656,7 +680,13 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64));
+                    .excessBlobGas(this::randomUInt64)
+                    .parentBlockHash(this::randomBytes32)
+                    .parentBlockRoot(this::randomBytes32)
+                    .builderIndex(this::randomUInt64)
+                    .slot(this::randomSlot)
+                    .value(this::randomUInt64)
+                    .blobKzgCommitmentsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -1456,6 +1486,16 @@ public final class DataStructureUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomSszList(
+                        schema.getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation,
+                        getMaxPayloadAttestations()));
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1564,6 +1604,16 @@ public final class DataStructureUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomSszList(
+                        schema.getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation,
+                        getMaxPayloadAttestations()));
+              }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
             })
@@ -1621,6 +1671,14 @@ public final class DataStructureUtil {
               }
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
+              }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(
+                    randomFullSszList(
+                        schema.getPayloadAttestationsSchema(), this::randomPayloadAttestation));
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -2580,13 +2638,9 @@ public final class DataStructureUtil {
 
   public SignedBlockContainer randomSignedBlockContents(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
-    final int numberOfBlobs =
-        signedBeaconBlock
-            .getMessage()
-            .getBody()
-            .getOptionalBlobKzgCommitments()
-            .orElseThrow()
-            .size();
+    final Optional<SszList<SszKZGCommitment>> maybeBlobKzgCommitments =
+        signedBeaconBlock.getMessage().getBody().getOptionalBlobKzgCommitments();
+    final int numberOfBlobs = maybeBlobKzgCommitments.map(SszList::size).orElse(0);
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs =
         randomKZGProofs(
@@ -2618,13 +2672,17 @@ public final class DataStructureUtil {
 
   public BlockContainer randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
-    final int numberOfBlobs =
-        beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
-    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
-    return getDenebSchemaDefinitions(slot)
-        .getBlockContentsSchema()
-        .create(beaconBlock, kzgProofs, blobs);
+    if (beaconBlock.getBody().getOptionalBlobKzgCommitments().isPresent()) {
+      final int numberOfBlobs =
+          beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
+      final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+      final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+      return getDenebSchemaDefinitions(slot)
+          .getBlockContentsSchema()
+          .create(beaconBlock, kzgProofs, blobs);
+    } else {
+      return beaconBlock;
+    }
   }
 
   public SignedBlockContentsFulu randomSignedBlockContentsFulu(
@@ -2670,6 +2728,7 @@ public final class DataStructureUtil {
   }
 
   public class RandomBlobSidecarBuilder {
+
     private Optional<UInt64> index = Optional.empty();
     private Optional<Bytes> blob = Optional.empty();
     private Optional<Bytes48> kzgCommitment = Optional.empty();
@@ -2728,6 +2787,7 @@ public final class DataStructureUtil {
   }
 
   public class RandomSidecarBuilder {
+
     private Optional<UInt64> index = Optional.empty();
     private Optional<DataColumn> dataColumn = Optional.empty();
     private Optional<List<KZGCommitment>> kzgCommitments = Optional.empty();
@@ -3010,6 +3070,86 @@ public final class DataStructureUtil {
             .getNumberOfColumns());
   }
 
+  public PayloadAttestationData randomPayloadAttestationData() {
+    return getGloasSchemaDefinitions()
+        .getPayloadAttestationDataSchema()
+        .create(randomBytes32(), randomSlot(), true, true);
+  }
+
+  public PayloadAttestation randomPayloadAttestation() {
+    return getGloasSchemaDefinitions()
+        .getPayloadAttestationSchema()
+        .create(
+            randomSszBitvector(getPtcSize()), randomPayloadAttestationData(), randomSignature());
+  }
+
+  public SszList<PayloadAttestation> randomPayloadAttestations() {
+    final SszListSchema<PayloadAttestation, ?> schema =
+        getGloasSchemaDefinitions().getBeaconBlockBodySchema().getPayloadAttestationsSchema();
+    return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
+  }
+
+  public BuilderPendingWithdrawal randomBuilderPendingWithdrawal() {
+    return getGloasSchemaDefinitions()
+        .getBuilderPendingWithdrawalSchema()
+        .create(randomEth1Address(), randomUInt64(), randomUInt64(), randomEpoch());
+  }
+
+  public BuilderPendingPayment randomBuilderPendingPayment() {
+    return getGloasSchemaDefinitions()
+        .getBuilderPendingPaymentSchema()
+        .create(randomUInt64(), randomBuilderPendingWithdrawal());
+  }
+
+  public PayloadAttestationMessage randomPayloadAttestationMessage() {
+    return getGloasSchemaDefinitions()
+        .getPayloadAttestationMessageSchema()
+        .create(randomValidatorIndex(), randomPayloadAttestationData(), randomSignature());
+  }
+
+  public IndexedPayloadAttestation randomIndexedPayloadAttestation() {
+    final IndexedPayloadAttestationSchema indexedPayloadAttestationSchema =
+        getGloasSchemaDefinitions().getIndexedPayloadAttestationSchema();
+    return indexedPayloadAttestationSchema.create(
+        randomSszUInt64List(indexedPayloadAttestationSchema.getAttestingIndicesSchema()),
+        randomPayloadAttestationData(),
+        randomSignature());
+  }
+
+  public SignedExecutionPayloadHeader randomSignedExecutionPayloadHeader() {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadHeaderSchema()
+        .create(
+            randomExecutionPayloadHeader(spec.forMilestone(SpecMilestone.GLOAS)),
+            randomSignature());
+  }
+
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope() {
+    return getGloasSchemaDefinitions()
+        .getExecutionPayloadEnvelopeSchema()
+        .create(
+            randomExecutionPayload(),
+            randomExecutionRequests(),
+            randomBuilderIndex(),
+            randomBytes32(),
+            randomSlot(),
+            randomBlobKzgCommitments(),
+            randomBytes32());
+  }
+
+  public ExecutionProof randomExecutionProof() {
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    final ExecutionProofSchema executionProofSchema =
+        schemaDefinitionsElectra.getExecutionProofSchema();
+    return executionProofSchema.create(
+        SszBytes32.of(randomBytes32()),
+        SszUInt64.of(randomUInt64()),
+        SszUInt64.of(randomUInt64()),
+        executionProofSchema.getProofDataSchema().fromBytes(randomBytes(5)));
+  }
+
   private int randomInt(final int origin, final int bound) {
     return new Random(nextSeed()).ints(origin, bound).findFirst().orElse(0);
   }
@@ -3042,12 +3182,24 @@ public final class DataStructureUtil {
     return SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
+  private SchemaDefinitionsGloas getGloasSchemaDefinitions() {
+    return SchemaDefinitionsGloas.required(
+        spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
+  }
+
   int getEpochsPerEth1VotingPeriod() {
     return getConstant(SpecConfig::getEpochsPerEth1VotingPeriod);
   }
 
   int getSlotsPerEpoch() {
     return getConstant(SpecConfig::getSlotsPerEpoch);
+  }
+
+  int getPtcSize() {
+    return getConstant(
+        specConfig ->
+            SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig())
+                .getPtcSize());
   }
 
   int getJustificationBitsLength() {
@@ -3068,6 +3220,13 @@ public final class DataStructureUtil {
 
   private UInt64 getMaxEffectiveBalance() {
     return getConstant(SpecConfig::getMaxEffectiveBalance);
+  }
+
+  private Integer getMaxPayloadAttestations() {
+    return getConstant(
+        specConfig ->
+            SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig())
+                .getMaxPayloadAttestations());
   }
 
   private Bytes32 computeDepositDomain() {

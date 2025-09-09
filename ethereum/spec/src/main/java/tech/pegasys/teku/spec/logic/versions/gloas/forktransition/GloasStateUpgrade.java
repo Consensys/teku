@@ -61,7 +61,8 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       specConfig.getGloasForkVersion(),
                       epoch));
 
-              state.setLatestExecutionPayloadHeader(preStateFulu.getLatestExecutionPayloadHeader());
+              state.setLatestExecutionPayloadHeader(
+                  schemaDefinitions.getExecutionPayloadHeaderSchema().getDefault());
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());

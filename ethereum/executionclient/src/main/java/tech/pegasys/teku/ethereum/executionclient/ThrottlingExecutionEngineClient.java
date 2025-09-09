@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
+import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.DEFAULT_MAXIMUM_QUEUE_SIZE;
+
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -54,9 +56,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
     taskQueue =
         ThrottlingTaskQueue.create(
             maximumConcurrentRequests,
+            DEFAULT_MAXIMUM_QUEUE_SIZE,
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "ee_request_queue_size");
+            "ee_request_queue_size",
+            "ee_request_queue_rejected");
   }
 
   @Override

@@ -71,23 +71,30 @@ public class AttestationUtilPhase0 extends AttestationUtil {
 
   protected boolean isFromFarFuture(
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+    final UInt64 earliestSlotForForkChoice =
+        attestation.getData().getEarliestSlotForForkChoice(miscHelpers);
     final UInt64 attestationForkChoiceEligibleTimeMillis =
-        secondsToMillis(
-            genesisTime.plus(
-                attestation
-                    .getData()
-                    .getEarliestSlotForForkChoice(miscHelpers)
-                    .times(specConfig.getSecondsPerSlot())));
+        secondsToMillis(genesisTime)
+            .plus(earliestSlotForForkChoice.times(specConfig.getSlotDurationMillis()));
     final UInt64 discardAttestationsAfterMillis =
-        currentTimeMillis.plus(
-            secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(specConfig.getSecondsPerSlot())));
+        currentTimeMillis.plus(MAX_FUTURE_SLOT_ALLOWANCE.times(specConfig.getSlotDurationMillis()));
     return attestationForkChoiceEligibleTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
   }
 
   @VisibleForTesting
   boolean isCurrentTimeAfterAttestationPropagationSlotRange(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    return maximumBroadcastTimeMillis(attestationSlot, genesisTime).isLessThan(currentTimeMillis);
+    final UInt64 lastAllowedSlot =
+        attestationSlot.plus(specConfig.getAttestationPropagationSlotRange());
+    // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
+    final UInt64 lastAllowedTimeMillis =
+        secondsToMillis(genesisTime)
+            .plus(lastAllowedSlot.plus(ONE).times(specConfig.getSlotDurationMillis()));
+    // Add allowed clock disparity
+    final UInt64 maximumBroadcastTimeMillis =
+        lastAllowedTimeMillis.plus(specConfig.getMaximumGossipClockDisparity());
+
+    return maximumBroadcastTimeMillis.isLessThan(currentTimeMillis);
   }
 
   @VisibleForTesting
@@ -96,17 +103,6 @@ public class AttestationUtilPhase0 extends AttestationUtil {
     final UInt64 minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestationSlot, genesisTime);
     return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
-  }
-
-  private UInt64 maximumBroadcastTimeMillis(
-      final UInt64 attestationSlot, final UInt64 genesisTime) {
-    final UInt64 lastAllowedSlot =
-        attestationSlot.plus(specConfig.getAttestationPropagationSlotRange());
-    // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
-    final UInt64 lastAllowedTime =
-        genesisTime.plus(lastAllowedSlot.plus(ONE).times(specConfig.getSecondsPerSlot()));
-    // Add allowed clock disparity
-    return secondsToMillis(lastAllowedTime).plus(specConfig.getMaximumGossipClockDisparity());
   }
 
   private UInt64 minimumBroadcastTimeMillis(
