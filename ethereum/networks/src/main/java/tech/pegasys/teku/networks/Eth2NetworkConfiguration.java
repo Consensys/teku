@@ -781,9 +781,9 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder discoveryBootnodesFromUrl(final String bootnodeUrl) {
+    public Builder discoveryBootnodesFromUrl(final String fileOrUrl) {
       try {
-        final List<String> bootnodesFromUrl = MultilineEntriesReader.readEntries(bootnodeUrl);
+        final List<String> bootnodesFromUrl = MultilineEntriesReader.readEntries(fileOrUrl);
         for (final String bootnode : bootnodesFromUrl) {
           if (bootnode.startsWith("- enr:-")) {
             // clean up yaml entries
@@ -795,13 +795,13 @@ public class Eth2NetworkConfiguration {
 
             LOG.debug("Failed to add invalid bootnode {}", bootnode);
             throw new InvalidConfigurationException(
-                String.format("Invalid bootnode found in URL (%s): %s", bootnodeUrl, bootnode));
+                String.format("Invalid bootnode found in URL (%s): %s", fileOrUrl, bootnode));
           }
         }
       } catch (final InvalidConfigurationException e) {
         throw e;
       } catch (final Exception e) {
-        throw new InvalidConfigurationException("Error reading bootnodes from " + bootnodeUrl, e);
+        throw new InvalidConfigurationException("Error reading bootnodes from " + fileOrUrl, e);
       }
       return this;
     }
