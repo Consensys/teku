@@ -154,7 +154,7 @@ public class PeerSubnetSubscriptions {
                               // data column sidecars
                               subscribersByTopic
                                   .getOrDefault(
-                                          executionProofSubnetTopicProvider.getTopicForSubnet(
+                                      executionProofSubnetTopicProvider.getTopicForSubnet(
                                           execSubnet),
                                       Collections.emptySet())
                                   .forEach(subscriber -> b.addSubscriber(execSubnet, subscriber));

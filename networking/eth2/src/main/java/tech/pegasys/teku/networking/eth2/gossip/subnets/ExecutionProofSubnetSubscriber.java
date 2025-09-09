@@ -20,11 +20,9 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.stream.IntStream;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 
 public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
@@ -34,9 +32,7 @@ public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
   private IntSet currentSubscribedSubnets = IntSet.of();
   private UInt64 lastEpoch = UInt64.MAX_VALUE;
 
-  public ExecutionProofSubnetSubscriber(
-      final Spec spec,
-      final Eth2P2PNetwork eth2P2PNetwork) {
+  public ExecutionProofSubnetSubscriber(final Spec spec, final Eth2P2PNetwork eth2P2PNetwork) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
   }
@@ -65,8 +61,8 @@ public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
     UInt64 epoch = spec.computeEpochAtSlot(slot);
     if (!epoch.equals(lastEpoch)) {
       lastEpoch = epoch;
-        subscribeToSubnets(
-                IntStream.range(0, MAX_EXECUTION_PROOF_SUBNETS.intValue()).boxed().collect(toList()));
+      subscribeToSubnets(
+          IntStream.range(0, MAX_EXECUTION_PROOF_SUBNETS.intValue()).boxed().collect(toList()));
     }
   }
 }

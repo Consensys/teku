@@ -222,8 +222,8 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final SubnetSubscriptionService dataColumnSidecarSubnetService =
             new SubnetSubscriptionService();
-          final SubnetSubscriptionService executionProofSubnetService =
-                  new SubnetSubscriptionService();
+        final SubnetSubscriptionService executionProofSubnetService =
+            new SubnetSubscriptionService();
         final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
             new EarliestAvailableBlockSlot(
                 historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
@@ -355,8 +355,8 @@ public class Eth2P2PNetworkFactory {
                                 syncCommitteeSubnetService,
                                 dataColumnSidecarSubnetTopicProvider,
                                 dataColumnSidecarSubnetService,
-                                    executionProofSubnetTopicProvider,
-                                    executionProofSubnetService,
+                                executionProofSubnetTopicProvider,
+                                executionProofSubnetService,
                                 config.getTargetSubnetSubscriberCount(),
                                 subnetPeerCountGauge),
                         reputationManager,
@@ -390,7 +390,7 @@ public class Eth2P2PNetworkFactory {
             attestationSubnetService,
             syncCommitteeSubnetService,
             dataColumnSidecarSubnetService,
-                executionProofSubnetService,
+            executionProofSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,

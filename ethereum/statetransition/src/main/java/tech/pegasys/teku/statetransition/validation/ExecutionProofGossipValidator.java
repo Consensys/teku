@@ -22,18 +22,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 
 public class ExecutionProofGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
-
   private final Set<ExecutionProof> receivedValidExecutionProofSet;
+
   @SuppressWarnings("unused")
   private final ZkChainConfiguration zkChainConfiguration;
 
-  public static ExecutionProofGossipValidator create( final ZkChainConfiguration zkChainConfiguration) {
+  public static ExecutionProofGossipValidator create(
+      final ZkChainConfiguration zkChainConfiguration) {
 
     return new ExecutionProofGossipValidator(
         zkChainConfiguration,
