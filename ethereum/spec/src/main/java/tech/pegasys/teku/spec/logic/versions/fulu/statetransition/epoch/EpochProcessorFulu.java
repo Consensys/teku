@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch;
 
-import java.util.ArrayList;
+import com.google.common.collect.Iterables;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64Vector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -29,11 +31,9 @@ import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.Epoch
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class EpochProcessorFulu extends EpochProcessorElectra {
   private final BeaconStateAccessorsFulu stateAccessorsFulu;
-  private final SchemaDefinitionsFulu schemaDefinitionsFulu;
 
   public EpochProcessorFulu(
       final SpecConfigFulu specConfig,
@@ -56,7 +56,6 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
         schemaDefinitions,
         timeProvider);
     this.stateAccessorsFulu = BeaconStateAccessorsFulu.required(beaconStateAccessors);
-    this.schemaDefinitionsFulu = SchemaDefinitionsFulu.required(schemaDefinitions);
   }
 
   /** process_proposer_lookahead */
@@ -65,14 +64,13 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     final MutableBeaconStateFulu stateFulu = MutableBeaconStateFulu.required(state);
 
     // Shift out proposers in the first epoch
-    final List<UInt64> proposerIndicesToShiftOut =
-        stateFulu
-            .getProposerLookahead()
-            .asListUnboxed()
-            .subList(specConfig.getSlotsPerEpoch(), stateFulu.getProposerLookahead().size());
+    final SszMutableUInt64Vector proposerLookahead = stateFulu.getProposerLookahead();
+
+    final List<SszUInt64> proposerIndicesToShiftOut =
+        proposerLookahead.asList().subList(specConfig.getSlotsPerEpoch(), proposerLookahead.size());
 
     // Fill in the last epoch with new proposer indices
-    final List<UInt64> lastEpochProposerIndices =
+    final List<SszUInt64> lastEpochProposerIndices =
         stateAccessorsFulu
             .getBeaconProposerIndices(
                 stateFulu,
@@ -81,13 +79,9 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
                     .plus(specConfig.getMinSeedLookahead())
                     .plus(1))
             .stream()
-            .map(UInt64::valueOf)
+            .map(proposerIndex -> SszUInt64.of(UInt64.valueOf(proposerIndex)))
             .toList();
 
-    final List<UInt64> proposerLookahead = new ArrayList<>(proposerIndicesToShiftOut);
-    proposerLookahead.addAll(lastEpochProposerIndices);
-
-    stateFulu.setProposerLookahead(
-        schemaDefinitionsFulu.getProposerLookaheadSchema().of(proposerLookahead));
+    proposerLookahead.setAll(Iterables.concat(proposerIndicesToShiftOut, lastEpochProposerIndices));
   }
 }
