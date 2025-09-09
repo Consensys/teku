@@ -21,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 
 public class ExecutionProofGossipValidator {
@@ -29,22 +28,13 @@ public class ExecutionProofGossipValidator {
 
   private final Set<ExecutionProof> receivedValidExecutionProofSet;
 
-  @SuppressWarnings("unused")
-  private final ZkChainConfiguration zkChainConfiguration;
-
-  public static ExecutionProofGossipValidator create(
-      final ZkChainConfiguration zkChainConfiguration) {
-
+  public static ExecutionProofGossipValidator create() {
     return new ExecutionProofGossipValidator(
-        zkChainConfiguration,
         LimitedSet.createSynchronized(MAX_EXECUTION_PROOF_SUBNETS.intValue()));
   }
 
-  public ExecutionProofGossipValidator(
-      final ZkChainConfiguration zkChainConfiguration,
-      final Set<ExecutionProof> receivedValidExecutionProofSet) {
+  public ExecutionProofGossipValidator(final Set<ExecutionProof> receivedValidExecutionProofSet) {
 
-    this.zkChainConfiguration = zkChainConfiguration;
     this.receivedValidExecutionProofSet = receivedValidExecutionProofSet;
   }
 

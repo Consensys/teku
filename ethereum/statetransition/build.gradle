@@ -22,7 +22,6 @@ dependencies {
   implementation project(':infrastructure:subscribers')
   implementation project(':infrastructure:time')
   implementation project(':infrastructure:serviceutils')
-  implementation project(':services:zkchain')
   implementation project(':storage')
   implementation project(':storage:api')
 
