@@ -222,9 +222,9 @@ public class SchemaTypes {
 
   // Gloas
   public static final SchemaId<BuilderPendingPaymentSchema> BUILDER_PENDING_PAYMENT_SCHEMA =
-      create("BUILDER_PENDING_PAYMENT_SCHEMA_SCHEMA");
+      create("BUILDER_PENDING_PAYMENT_SCHEMA");
   public static final SchemaId<BuilderPendingWithdrawalSchema> BUILDER_PENDING_WITHDRAWAL_SCHEMA =
-      create("BUILDER_PENDING_WITHDRAWAL_SCHEMA_SCHEMA");
+      create("BUILDER_PENDING_WITHDRAWAL_SCHEMA");
   public static final SchemaId<PayloadAttestationDataSchema> PAYLOAD_ATTESTATION_DATA_SCHEMA =
       create("PAYLOAD_ATTESTATION_DATA_SCHEMA");
   public static final SchemaId<PayloadAttestationSchema> PAYLOAD_ATTESTATION_SCHEMA =
