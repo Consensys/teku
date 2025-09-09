@@ -224,7 +224,6 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
-import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -671,12 +670,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
 
     if (zkConfig.isStatelessValidationEnabled()) {
-//      final ExecutionProofGossipValidator executionProofGossipValidator =
-//          ExecutionProofGossipValidator.create(zkConfig);
+      //      final ExecutionProofGossipValidator executionProofGossipValidator =
+      //          ExecutionProofGossipValidator.create(zkConfig);
 
       ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
           new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
-          new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
+      new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
 
       eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
     }
