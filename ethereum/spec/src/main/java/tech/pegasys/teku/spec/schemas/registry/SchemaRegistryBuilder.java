@@ -258,8 +258,8 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider())
 
         // GLOAS
-        .addProvider(createBuilderPendingPaymentSchemaProvider())
         .addProvider(createBuilderPendingWithdrawalSchemaProvider())
+        .addProvider(createBuilderPendingPaymentSchemaProvider())
         .addProvider(createPayloadAttestationDataSchemaProvider())
         .addProvider(createPayloadAttestationSchemaProvider())
         .addProvider(createSignedExecutionPayloadHeaderSchemaProvider());
