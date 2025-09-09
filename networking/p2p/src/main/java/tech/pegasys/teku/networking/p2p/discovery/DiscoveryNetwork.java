@@ -148,7 +148,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       throw new IllegalArgumentException(
           String.format("Custody subnet count should be a positive number, but was %s", count));
     }
-    LOG.info("Setting cgc in ENR to: {}", count);
+    LOG.debug("Setting cgc in ENR to: {}", count);
     discoveryService.updateCustomENRField(
         DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.ofUnsignedInt(count).trimLeadingZeros());
   }

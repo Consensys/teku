@@ -454,6 +454,7 @@ public class ActiveEth2P2PNetworkTest {
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider,
+        0,
         true);
   }
 }
