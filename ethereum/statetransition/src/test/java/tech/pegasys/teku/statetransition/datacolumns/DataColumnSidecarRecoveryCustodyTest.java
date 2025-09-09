@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
+import static tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl.RECOVERY_DELAY;
 
 import java.time.Duration;
 import java.util.Map;
@@ -266,6 +267,8 @@ public class DataColumnSidecarRecoveryCustodyTest {
 
     stubTimeProvider.advanceTimeBySeconds(1);
     stubAsyncRunner.executeDueActionsRepeatedly();
+    stubTimeProvider.advanceTimeBy(RECOVERY_DELAY);
+    stubAsyncRunner.executeDueActionsRepeatedly();
 
     // prepare
     verify(delegate, times(70)).getCustodyDataColumnSidecar(any());
@@ -312,6 +315,9 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onNewValidatedDataColumnSidecar(sidecars.get(UInt64.ZERO));
 
     stubAsyncRunner.executeDueActionsRepeatedly();
+    stubTimeProvider.advanceTimeBy(RECOVERY_DELAY);
+    stubAsyncRunner.executeDueActionsRepeatedly();
+
     // prepare
     verify(delegate, times(64)).getCustodyDataColumnSidecar(any());
 

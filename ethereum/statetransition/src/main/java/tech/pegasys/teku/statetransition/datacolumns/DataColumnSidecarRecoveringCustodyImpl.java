@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import io.vertx.core.impl.ConcurrentHashSet;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecarRecoveringCustody {
   private static final Logger LOG = LogManager.getLogger();
+  public static final Duration RECOVERY_DELAY = Duration.ofMillis(500);
 
   private final DataColumnSidecarByRootCustody delegate;
   private final AsyncRunner asyncRunner;
@@ -173,29 +175,34 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     return true;
   }
 
-  private synchronized void createOrUpdateRecoveryTaskForBlock(final BeaconBlock block) {
-    if (recoveryTasks.containsKey(block.getSlotAndBlockRoot())) {
-      final RecoveryTask existing = recoveryTasks.get(block.getSlotAndBlockRoot());
-      if (existing.block().get() == null) {
-        existing.block().set(block);
-        maybeStartRecovery(existing);
+  private void createOrUpdateRecoveryTaskForBlock(final BeaconBlock block) {
+    if (!recoveryTasks.containsKey(block.getSlotAndBlockRoot())) {
+      final RecoveryTask oldValue =
+          recoveryTasks.putIfAbsent(
+              block.getSlotAndBlockRoot(),
+              new RecoveryTask(
+                  new AtomicReference<>(block),
+                  ConcurrentHashMap.newKeySet(),
+                  new AtomicBoolean(false),
+                  new AtomicBoolean(false)));
+      if (oldValue == null) {
+        return;
       }
-    } else {
-      recoveryTasks.put(
-          block.getSlotAndBlockRoot(),
-          new RecoveryTask(
-              new AtomicReference<>(block),
-              new ConcurrentHashSet<>(),
-              new AtomicBoolean(false),
-              new AtomicBoolean(false)));
+    }
+    final RecoveryTask existing = recoveryTasks.get(block.getSlotAndBlockRoot());
+    if (existing.block().get() == null) {
+      existing.block().set(block);
+      maybeStartRecovery(existing);
     }
   }
 
-  private synchronized void maybeStartRecovery(final RecoveryTask task) {
+  private void maybeStartRecovery(final RecoveryTask task) {
     if (readyToBeRecovered(task)) {
-      task.recoveryStarted().set(true);
-      if (task.existingColumnIds().size() != columnCount) {
-        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).finishError(LOG);
+      if (task.recoveryStarted.compareAndSet(false, true)
+          && task.existingColumnIds().size() != columnCount) {
+        asyncRunner
+            .runAfterDelay(() -> prepareAndInitiateRecovery(task), RECOVERY_DELAY)
+            .finishError(LOG);
       }
     }
   }
@@ -240,17 +247,20 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       AtomicBoolean timedOut) {}
 
   private void prepareAndInitiateRecovery(final RecoveryTask task) {
+    final Set<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifiersCopy =
+        new HashSet<>(task.existingColumnIds());
     final SafeFuture<List<DataColumnSidecar>> list =
-        AsyncStream.createUnsafe(task.existingColumnIds().iterator())
+        AsyncStream.createUnsafe(dataColumnSlotAndIdentifiersCopy.iterator())
             .mapAsync(delegate::getCustodyDataColumnSidecar)
             .filter(Optional::isPresent)
             .map(Optional::get)
             .toList();
-    initiateRecovery(task.block().get(), list);
+    initiateRecovery(task, list);
   }
 
   private void initiateRecovery(
-      final BeaconBlock block, final SafeFuture<List<DataColumnSidecar>> list) {
+      final RecoveryTask recoveryTask, final SafeFuture<List<DataColumnSidecar>> list) {
+    final BeaconBlock block = recoveryTask.block.get();
     LOG.debug("Starting data columns sidecars recovery for block: {}", block.getSlotAndBlockRoot());
 
     final MetricsHistogram.Timer timer = dataAvailabilityReconstructionTimeSeconds.startTimer();
@@ -286,6 +296,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                   "Data column sidecars recovery finished for block: {}",
                   block.getSlotAndBlockRoot());
             })
+        .whenException(__ -> recoveryTask.recoveryStarted.compareAndSet(true, false))
         .alwaysRun(timer.closeUnchecked())
         .finishError(LOG);
   }
@@ -304,14 +315,10 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     return delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar);
   }
 
-  private synchronized void createOrUpdateRecoveryTaskForDataColumnSidecar(
+  private void createOrUpdateRecoveryTaskForDataColumnSidecar(
       final DataColumnSlotAndIdentifier identifier) {
-    if (recoveryTasks.containsKey(identifier.getSlotAndBlockRoot())) {
-      final RecoveryTask existing = recoveryTasks.get(identifier.getSlotAndBlockRoot());
-      existing.existingColumnIds().add(identifier);
-      maybeStartRecovery(existing);
-    } else {
-      final ConcurrentHashSet<DataColumnSlotAndIdentifier> identifiers = new ConcurrentHashSet<>();
+    if (!recoveryTasks.containsKey(identifier.getSlotAndBlockRoot())) {
+      final Set<DataColumnSlotAndIdentifier> identifiers = ConcurrentHashMap.newKeySet();
       identifiers.add(identifier);
       final RecoveryTask recoveryTask =
           new RecoveryTask(
@@ -319,8 +326,15 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               identifiers,
               new AtomicBoolean(false),
               new AtomicBoolean(false));
-      recoveryTasks.put(identifier.getSlotAndBlockRoot(), recoveryTask);
+      final RecoveryTask oldValue =
+          recoveryTasks.putIfAbsent(identifier.getSlotAndBlockRoot(), recoveryTask);
+      if (oldValue == null) {
+        return;
+      }
     }
+    final RecoveryTask existing = recoveryTasks.get(identifier.getSlotAndBlockRoot());
+    existing.existingColumnIds().add(identifier);
+    maybeStartRecovery(existing);
   }
 
   @Override
