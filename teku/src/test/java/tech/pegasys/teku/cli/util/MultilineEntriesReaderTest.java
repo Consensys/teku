@@ -28,6 +28,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.MultilineEntriesReader;
 
 @DisabledOnOs(OS.WINDOWS)
 class MultilineEntriesReaderTest {
