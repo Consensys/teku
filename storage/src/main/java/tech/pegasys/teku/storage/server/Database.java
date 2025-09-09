@@ -122,6 +122,8 @@ public interface Database extends AutoCloseable {
 
   Optional<Bytes32> getLatestCanonicalBlockRoot();
 
+  Optional<UInt64> getCustodyGroupCount();
+
   /**
    * Return the finalized block at this slot if such a block exists.
    *

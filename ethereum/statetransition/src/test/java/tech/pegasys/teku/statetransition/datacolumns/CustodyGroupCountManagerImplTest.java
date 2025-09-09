@@ -74,7 +74,7 @@ public class CustodyGroupCountManagerImplTest {
     final int custodyCount = 96;
     spec = TestSpecFactory.createMinimalFulu();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    when(combinedChainDataClient.getCurrentCustodyGroupCount()).thenReturn(Optional.empty());
+    when(combinedChainDataClient.getCustodyGroupCount()).thenReturn(Optional.empty());
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
             spec,
@@ -88,7 +88,7 @@ public class CustodyGroupCountManagerImplTest {
             metricsSystem);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(custodyCount);
-    verify(combinedChainDataClient, times(1)).getCurrentCustodyGroupCount();
+    verify(combinedChainDataClient, times(1)).getCustodyGroupCount();
     verify(combinedChainDataClient, times(1)).updateCustodyGroupCount(custodyCount);
     verifyNoMoreInteractions(combinedChainDataClient);
 
@@ -101,7 +101,7 @@ public class CustodyGroupCountManagerImplTest {
     final int custodyCount = 96;
     spec = TestSpecFactory.createMinimalFulu();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+    when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
@@ -116,7 +116,7 @@ public class CustodyGroupCountManagerImplTest {
             metricsSystem);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(custodyCount);
-    verify(combinedChainDataClient, times(1)).getCurrentCustodyGroupCount();
+    verify(combinedChainDataClient, times(1)).getCustodyGroupCount();
     verifyNoMoreInteractions(combinedChainDataClient);
 
     assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
@@ -128,7 +128,7 @@ public class CustodyGroupCountManagerImplTest {
     final int custodyCount = 96;
     spec = TestSpecFactory.createMinimalFulu();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+    when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
     custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
@@ -143,7 +143,7 @@ public class CustodyGroupCountManagerImplTest {
             metricsSystem);
 
     reset(combinedChainDataClient);
-    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+    when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(custodyCount)));
     when(combinedChainDataClient.getBestFinalizedState())
         .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
@@ -152,7 +152,7 @@ public class CustodyGroupCountManagerImplTest {
     assertThat(custodyGroupCountManager.computeAndUpdateCustodyGroupCount(Map.of())).isCompleted();
 
     // these are needed to compute the group count, and the result will be we don't need to update
-    verify(combinedChainDataClient, times(1)).getCurrentCustodyGroupCount();
+    verify(combinedChainDataClient, times(1)).getCustodyGroupCount();
     verify(combinedChainDataClient, times(1)).getBestFinalizedState();
     // so we should expect no update call
     verifyNoMoreInteractions(combinedChainDataClient);
@@ -182,7 +182,7 @@ public class CustodyGroupCountManagerImplTest {
 
     // check that we updated to 10, then we can report that we're storing 10.
     verify(combinedChainDataClient).updateCustodyGroupCount(10);
-    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+    when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(10)));
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(10);
@@ -235,7 +235,7 @@ public class CustodyGroupCountManagerImplTest {
             dataStructureUtil.randomUInt256(),
             metricsSystem);
 
-    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+    when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(defaultCustodyRequirement)));
     when(combinedChainDataClient.getBestFinalizedState())
         .thenReturn(SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));

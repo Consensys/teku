@@ -31,7 +31,8 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void generateExecutionProofsEnabled_true() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xgenerate-execution-proofs-enabled=true");
+        getTekuConfigurationFromArguments(
+            "--Xstateless-validation-enabled=true", "--Xgenerate-execution-proofs-enabled=true");
     assertThat(config.zkChainConfiguration().isGenerateExecutionProofsEnabled()).isTrue();
   }
 
