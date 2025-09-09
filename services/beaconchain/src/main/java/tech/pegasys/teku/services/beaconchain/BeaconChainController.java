@@ -87,10 +87,12 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetBackboneSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
@@ -106,6 +108,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.services.timer.TimerService;
+import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -222,6 +225,7 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -652,6 +656,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
     initStoredLatestCanonicalBlockUpdater();
+    initKzChain();
   }
 
   private void initKeyValueStore() {
@@ -661,6 +666,26 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initExecutionLayer() {
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
+  }
+
+  protected void initKzChain(){
+      ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
+
+      if(zkConfig.isStatelessValidationEnabled()){
+          final ExecutionProofGossipValidator executionProofGossipValidator =
+                  ExecutionProofGossipValidator.create(spec, zkConfig);
+
+          ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
+                  new ExecutionProofSubnetSubscriber(
+                          spec,
+                          p2pNetwork,
+                          nodeId,
+                          zkConfig);
+
+
+
+          eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
+      }
   }
 
   protected void initKzg() {

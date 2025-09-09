@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
 
 public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
     private final Eth2P2PNetwork eth2P2PNetwork;
@@ -24,7 +25,7 @@ public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
 
     private IntSet currentSubscribedSubnets = IntSet.of();
     private UInt64 lastEpoch = UInt64.MAX_VALUE;
-    public static final UInt64 MAX_EXECUTION_PROOF_SUBNETS = UInt64.valueOf(8);
+
 
     public ExecutionProofSubnetSubscriber(
             final Spec spec,

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.config;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 import java.time.Duration;
 
 public class Constants {
@@ -67,4 +69,7 @@ public class Constants {
   public static final Duration BUILDER_PROPOSAL_DELAY_TOLERANCE = Duration.ofSeconds(1);
   public static final Duration BUILDER_GET_PAYLOAD_TIMEOUT = Duration.ofSeconds(3);
   public static final int EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION = 1;
+
+  //ZkChain prototype
+  public static final UInt64 MAX_EXECUTION_PROOF_SUBNETS = UInt64.valueOf(8);
 }

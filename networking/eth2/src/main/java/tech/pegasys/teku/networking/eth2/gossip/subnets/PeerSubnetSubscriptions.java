@@ -40,6 +40,8 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
+
 public class PeerSubnetSubscriptions {
 
   private final SubnetSubscriptions attestationSubnetSubscriptions;
@@ -90,7 +92,7 @@ public class PeerSubnetSubscriptions {
             .orElse(1);
 
     final PeerSubnetSubscriptions subscriptions =
-        builder(currentSchemaDefinitions, SszBitvectorSchema.create(dataColumnSidecarSubnetCount), SszBitvectorSchema.create(ExecutionProofSubnetSubscriber.MAX_EXECUTION_PROOF_SUBNETS.intValue()))
+        builder(currentSchemaDefinitions, SszBitvectorSchema.create(dataColumnSidecarSubnetCount), SszBitvectorSchema.create(MAX_EXECUTION_PROOF_SUBNETS.intValue()))
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
             .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(

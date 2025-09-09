@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -190,11 +191,13 @@ public class GossipForkManager {
   }
 
     public SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
-        return publishMessageWithFeedback(
-                executionProof.getSlot(),
-                executionProof,
-                "execution proof",
-                GossipForkSubscriptions::publishExecutionProof);
+        //for now we don't have a slot in the message data (execution proof) to use
+        // I believe it's safe to just check the current epoch
+      return publishMessageWithFeedback(
+        spec.computeStartSlotAtEpoch(currentEpoch.orElseThrow()),
+        executionProof,
+        "execution proof",
+        GossipForkSubscriptions::publishExecutionProof);
     }
 
   public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
@@ -352,6 +355,7 @@ public class GossipForkManager {
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
       currentDataColumnSidecarSubnets.forEach(subscription::subscribeToDataColumnSidecarSubnet);
+      currentExecutionProofSubnets.forEach(subscription::subscribeToExecutionProofSubnet);
     }
   }
 
