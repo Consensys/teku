@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch;
 
-import com.google.common.collect.Iterables;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64Vector;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -63,14 +61,15 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
   public void processProposerLookahead(final MutableBeaconState state) {
     final MutableBeaconStateFulu stateFulu = MutableBeaconStateFulu.required(state);
 
-    // Shift out proposers in the first epoch
     final SszMutableUInt64Vector proposerLookahead = stateFulu.getProposerLookahead();
 
-    final List<SszUInt64> proposerIndicesToShiftOut =
-        proposerLookahead.asList().subList(specConfig.getSlotsPerEpoch(), proposerLookahead.size());
+    // Shift out proposers in the first epoch
+    int newIndex = 0;
+    for (int i = specConfig.getSlotsPerEpoch(); i < proposerLookahead.size(); i++) {
+      proposerLookahead.set(newIndex++, proposerLookahead.get(i));
+    }
 
-    // Fill in the last epoch with new proposer indices
-    final List<SszUInt64> lastEpochProposerIndices =
+    final List<UInt64> lastEpochProposerIndices =
         stateAccessorsFulu
             .getBeaconProposerIndices(
                 stateFulu,
@@ -79,9 +78,13 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
                     .plus(specConfig.getMinSeedLookahead())
                     .plus(1))
             .stream()
-            .map(proposerIndex -> SszUInt64.of(UInt64.valueOf(proposerIndex)))
+            .map(UInt64::valueOf)
             .toList();
 
-    proposerLookahead.setAll(Iterables.concat(proposerIndicesToShiftOut, lastEpochProposerIndices));
+    // Fill in the last epoch with new proposer indices
+    int index = specConfig.getSlotsPerEpoch();
+    for (final UInt64 proposerIndex : lastEpochProposerIndices) {
+      proposerLookahead.setElement(index++, proposerIndex);
+    }
   }
 }
