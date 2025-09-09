@@ -444,14 +444,6 @@ public final class DataStructureUtil {
   public <SszElementT extends SszData, VectorT extends SszVector<SszElementT>>
       VectorT randomSszVector(
           final SszVectorSchema<SszElementT, VectorT> schema,
-          final long numItems,
-          final Supplier<SszElementT> valueGenerator) {
-    return Stream.generate(valueGenerator).limit(numItems).collect(schema.collector());
-  }
-
-  public <SszElementT extends SszData, VectorT extends SszVector<SszElementT>>
-      VectorT randomSszVector(
-          final SszVectorSchema<SszElementT, VectorT> schema,
           final Supplier<SszElementT> valueGenerator) {
     final int numItems = schema.getLength() / 10;
     final SszElementT defaultElement = schema.getElementSchema().getDefault();

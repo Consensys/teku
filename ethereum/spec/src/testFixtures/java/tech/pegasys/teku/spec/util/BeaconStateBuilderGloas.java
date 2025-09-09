@@ -273,10 +273,7 @@ public class BeaconStateBuilderGloas
         dataStructureUtil.randomSszBitvector(
             (int) schema.getExecutionPayloadAvailabilitySchema().getMaxLength());
     this.builderPendingPayments =
-        dataStructureUtil.randomSszVector(
-            schema.getBuilderPendingPaymentsSchema(),
-            defaultItemsInSSZLists,
-            dataStructureUtil::randomBuilderPendingPayment);
+        schema.getBuilderPendingPaymentsSchema().createFromElements(List.of());
     this.builderPendingWithdrawals =
         schema.getBuilderPendingWithdrawalsSchema().createFromElements(List.of());
     this.latestBlockHash = Bytes32.ZERO;

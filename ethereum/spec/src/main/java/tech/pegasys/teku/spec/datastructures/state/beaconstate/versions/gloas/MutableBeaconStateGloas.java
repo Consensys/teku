@@ -22,6 +22,8 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -53,12 +55,6 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
     set(fieldIndex, executionPayloadAvailability);
   }
 
-  @Override
-  default SszBitvector getExecutionPayloadAvailability() {
-    final int index = getSchema().getFieldIndex(EXECUTION_PAYLOAD_AVAILABILITY);
-    return getAnyByRef(index);
-  }
-
   default void setBuilderPendingPayments(
       final SszVector<BuilderPendingPayment> builderPendingPayments) {
     final int fieldIndex = getSchema().getFieldIndex(BUILDER_PENDING_PAYMENTS);
@@ -66,7 +62,7 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
   }
 
   @Override
-  default SszVector<BuilderPendingPayment> getBuilderPendingPayments() {
+  default SszMutableVector<BuilderPendingPayment> getBuilderPendingPayments() {
     final int index = getSchema().getFieldIndex(BUILDER_PENDING_PAYMENTS);
     return getAnyByRef(index);
   }
@@ -78,7 +74,7 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
   }
 
   @Override
-  default SszList<BuilderPendingWithdrawal> getBuilderPendingWithdrawals() {
+  default SszMutableList<BuilderPendingWithdrawal> getBuilderPendingWithdrawals() {
     final int index = getSchema().getFieldIndex(BUILDER_PENDING_WITHDRAWALS);
     return getAnyByRef(index);
   }
