@@ -75,6 +75,9 @@ public class ZkChainConfiguration {
     }
 
     public ZkChainConfiguration build() {
+        if(generateExecutionProofsEnabled && !statelessValidationEnabled) {
+            throw new IllegalStateException("Can't generate execution proofs when statelessValidationEnabled is false");
+        }
       return new ZkChainConfiguration(
           statelessValidationEnabled, generateExecutionProofsEnabled, statelessMinProofsRequired);
     }
