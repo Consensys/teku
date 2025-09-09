@@ -654,7 +654,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
     initStoredLatestCanonicalBlockUpdater();
-    initKzChain();
+    initZkChain();
   }
 
   private void initKeyValueStore() {
@@ -666,7 +666,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
   }
 
-  protected void initKzChain() {
+  protected void initZkChain() {
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
 
     if (zkConfig.isStatelessValidationEnabled()) {
