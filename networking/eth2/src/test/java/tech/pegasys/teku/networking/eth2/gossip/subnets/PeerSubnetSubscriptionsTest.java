@@ -62,8 +62,12 @@ class PeerSubnetSubscriptionsTest {
       mock(SyncCommitteeSubnetTopicProvider.class);
   private final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
       mock(DataColumnSidecarSubnetTopicProvider.class);
+  private final ExecutionProofSubnetTopicProvider executionProofSubnetTopicProvider =
+      mock(ExecutionProofSubnetTopicProvider.class);
   private final SubnetSubscriptionService syncnetSubscriptions = new SubnetSubscriptionService();
   private final SubnetSubscriptionService dataColumnSubscriptions = new SubnetSubscriptionService();
+  private final SubnetSubscriptionService executionProofSubscriptions =
+      new SubnetSubscriptionService();
 
   @BeforeEach
   public void setUp() {
@@ -214,6 +218,8 @@ class PeerSubnetSubscriptionsTest {
         syncnetSubscriptions,
         dataColumnSidecarSubnetTopicProvider,
         dataColumnSubscriptions,
+        executionProofSubnetTopicProvider,
+        executionProofSubscriptions,
         TARGET_SUBSCRIBER_COUNT,
         subnetPeerCountGauge);
   }

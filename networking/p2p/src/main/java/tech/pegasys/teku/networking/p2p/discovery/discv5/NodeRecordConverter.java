@@ -90,8 +90,6 @@ public class NodeRecordConverter {
                 NEXT_FORK_DIGEST_ENR_FIELD,
                 SszPrimitiveSchemas.BYTES4_SCHEMA::sszDeserialize)
             .map(SszBytes4::get);
-    // TODO - see how we gonna define this, if we want to use it
-    final Optional<SszBitvector> executionProofSubnets = Optional.empty();
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
