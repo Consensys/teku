@@ -64,9 +64,10 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
     final SszMutableUInt64Vector proposerLookahead = stateFulu.getProposerLookahead();
 
     // Shift out proposers in the first epoch
-    int newIndex = 0;
-    for (int i = specConfig.getSlotsPerEpoch(); i < proposerLookahead.size(); i++) {
-      proposerLookahead.set(newIndex++, proposerLookahead.get(i));
+    final int lastEpochStart = proposerLookahead.size() - specConfig.getSlotsPerEpoch();
+    int oldIndex = lastEpochStart;
+    for (int newIndex = 0; newIndex < lastEpochStart; newIndex++) {
+      proposerLookahead.set(newIndex, proposerLookahead.get(oldIndex++));
     }
 
     final List<UInt64> lastEpochProposerIndices =
@@ -82,7 +83,7 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
             .toList();
 
     // Fill in the last epoch with new proposer indices
-    int index = specConfig.getSlotsPerEpoch();
+    int index = lastEpochStart;
     for (final UInt64 proposerIndex : lastEpochProposerIndices) {
       proposerLookahead.setElement(index++, proposerIndex);
     }
