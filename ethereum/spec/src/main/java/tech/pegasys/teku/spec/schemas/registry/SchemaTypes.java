@@ -87,7 +87,6 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDepos
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 
 public class SchemaTypes {
-
   // PHASE0
   public static final SchemaId<SszBitvectorSchema<SszBitvector>> ATTNETS_ENR_FIELD_SCHEMA =
       create("ATTNETS_ENR_FIELD_SCHEMA");
@@ -242,7 +241,6 @@ public class SchemaTypes {
   }
 
   public static class SchemaId<T> {
-
     private static final Converter<String, String> UPPER_UNDERSCORE_TO_UPPER_CAMEL =
         CaseFormat.UPPER_UNDERSCORE.converterTo(CaseFormat.UPPER_CAMEL);
 
