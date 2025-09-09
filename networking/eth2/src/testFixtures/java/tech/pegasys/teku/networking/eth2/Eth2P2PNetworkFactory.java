@@ -63,6 +63,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopicProvider;
@@ -221,6 +222,8 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final SubnetSubscriptionService dataColumnSidecarSubnetService =
             new SubnetSubscriptionService();
+          final SubnetSubscriptionService executionProofSubnetService =
+                  new SubnetSubscriptionService();
         final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
             new EarliestAvailableBlockSlot(
                 historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
@@ -229,6 +232,9 @@ public class Eth2P2PNetworkFactory {
                 recentChainData, historicalChainData, spec, earliestAvailableBlockSlot);
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
+                combinedChainDataClient.getRecentChainData(), gossipEncoding);
+        final ExecutionProofSubnetTopicProvider executionProofSubnetTopicProvider =
+            new ExecutionProofSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
         if (rpcEncoding == null) {
@@ -349,6 +355,8 @@ public class Eth2P2PNetworkFactory {
                                 syncCommitteeSubnetService,
                                 dataColumnSidecarSubnetTopicProvider,
                                 dataColumnSidecarSubnetService,
+                                    executionProofSubnetTopicProvider,
+                                    executionProofSubnetService,
                                 config.getTargetSubnetSubscriberCount(),
                                 subnetPeerCountGauge),
                         reputationManager,
@@ -382,6 +390,7 @@ public class Eth2P2PNetworkFactory {
             attestationSubnetService,
             syncCommitteeSubnetService,
             dataColumnSidecarSubnetService,
+                executionProofSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,

@@ -29,8 +29,6 @@ import tech.pegasys.teku.spec.Spec;
 
 public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
-  private final ZkChainConfiguration zkChainConfiguration;
-  private final UInt256 nodeId;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
@@ -38,13 +36,9 @@ public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
 
   public ExecutionProofSubnetSubscriber(
       final Spec spec,
-      final Eth2P2PNetwork eth2P2PNetwork,
-      final UInt256 nodeId,
-      final ZkChainConfiguration zkChainConfiguration) {
+      final Eth2P2PNetwork eth2P2PNetwork) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
-    this.nodeId = nodeId;
-    this.zkChainConfiguration = zkChainConfiguration;
   }
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
@@ -66,17 +60,13 @@ public class ExecutionProofSubnetSubscriber implements SlotEventsChannel {
     currentSubscribedSubnets = newSubscriptionsSet;
   }
 
-  private void onEpoch(final UInt64 epoch) {
-    subscribeToSubnets(
-        IntStream.range(0, MAX_EXECUTION_PROOF_SUBNETS.intValue()).boxed().collect(toList()));
-  }
-
   @Override
   public synchronized void onSlot(final UInt64 slot) {
     UInt64 epoch = spec.computeEpochAtSlot(slot);
     if (!epoch.equals(lastEpoch)) {
       lastEpoch = epoch;
-      onEpoch(epoch);
+        subscribeToSubnets(
+                IntStream.range(0, MAX_EXECUTION_PROOF_SUBNETS.intValue()).boxed().collect(toList()));
     }
   }
 }

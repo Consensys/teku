@@ -28,24 +28,22 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 public class ExecutionProofGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
-  private final Set<ExecutionProof> receivedValidExecutionProofSet;
-  private ZkChainConfiguration zkChainConfiguration;
 
-  public static ExecutionProofGossipValidator create(
-      final Spec spec, final ZkChainConfiguration zkChainConfiguration) {
+  private final Set<ExecutionProof> receivedValidExecutionProofSet;
+  @SuppressWarnings("unused")
+  private final ZkChainConfiguration zkChainConfiguration;
+
+  public static ExecutionProofGossipValidator create( final ZkChainConfiguration zkChainConfiguration) {
 
     return new ExecutionProofGossipValidator(
-        spec,
         zkChainConfiguration,
         LimitedSet.createSynchronized(MAX_EXECUTION_PROOF_SUBNETS.intValue()));
   }
 
   public ExecutionProofGossipValidator(
-      final Spec spec,
       final ZkChainConfiguration zkChainConfiguration,
       final Set<ExecutionProof> receivedValidExecutionProofSet) {
-    this.spec = spec;
+
     this.zkChainConfiguration = zkChainConfiguration;
     this.receivedValidExecutionProofSet = receivedValidExecutionProofSet;
   }

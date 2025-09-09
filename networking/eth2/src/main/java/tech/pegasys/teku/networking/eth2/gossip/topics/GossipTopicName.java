@@ -44,4 +44,7 @@ public enum GossipTopicName {
   public static String getDataColumnSidecarSubnetTopicName(final int subnetId) {
     return "data_column_sidecar_" + subnetId;
   }
+  public static String getExecutionProofSubnetTopicName(final int subnetId) {
+    return "execution_proof_" + subnetId;
+  }
 }

@@ -671,11 +671,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
 
     if (zkConfig.isStatelessValidationEnabled()) {
-      final ExecutionProofGossipValidator executionProofGossipValidator =
-          ExecutionProofGossipValidator.create(spec, zkConfig);
+//      final ExecutionProofGossipValidator executionProofGossipValidator =
+//          ExecutionProofGossipValidator.create(zkConfig);
 
       ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
-          new ExecutionProofSubnetSubscriber(spec, p2pNetwork, nodeId, zkConfig);
+          new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
+          new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
 
       eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
     }
