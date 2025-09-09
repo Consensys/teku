@@ -675,7 +675,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
       ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
           new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
-      new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
 
       eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
     }
