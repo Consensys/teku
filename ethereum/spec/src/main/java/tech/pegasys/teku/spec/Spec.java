@@ -629,16 +629,18 @@ public class Spec {
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
-    final UInt64 epoch = getCurrentEpoch(state);
-    final UInt64 earliestValidEpoch =
-        epoch.minusMinZero(atEpoch(epoch).getConfig().getMaxSeedLookahead());
-    if (epoch.isLessThan(earliestValidEpoch)) {
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    final UInt64 attestationEpoch =
+        atEpoch(stateEpoch).miscHelpers().computeEpochAtSlot(attestation.getData().getSlot());
+    final UInt64 earliestEpochInRange =
+        attestationEpoch.minusMinZero(atEpoch(attestationEpoch).getConfig().getMaxSeedLookahead());
+    if (stateEpoch.isLessThan(earliestEpochInRange)) {
       final UInt64 earliestSlot =
-          atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(earliestValidEpoch);
+          atEpoch(stateEpoch).miscHelpers().computeStartSlotAtEpoch(earliestEpochInRange);
       LOG.debug(
-          "processing empty slots for state at slot {}, target epoch {}",
+          "Processing empty slots for state at slot {}, target slot {}",
           state.getSlot(),
-          earliestValidEpoch);
+          earliestSlot);
       try {
         final BeaconState advancedState = processSlots(state, earliestSlot);
         return atState(advancedState)
@@ -646,7 +648,6 @@ public class Spec {
             .computeSubnetForAttestation(advancedState, attestation);
       } catch (SlotProcessingException | EpochProcessingException e) {
         LOG.debug("Couldn't wind state at slot {} forward", state.getSlot(), e);
-        throw new RuntimeException(e);
       }
     }
 
