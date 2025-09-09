@@ -37,6 +37,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -112,6 +114,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
@@ -626,6 +629,28 @@ public class Spec {
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    final UInt64 attestationEpoch =
+        atEpoch(stateEpoch).miscHelpers().computeEpochAtSlot(attestation.getData().getSlot());
+    final UInt64 earliestEpochInRange =
+        attestationEpoch.minusMinZero(atEpoch(attestationEpoch).getConfig().getMaxSeedLookahead());
+    if (stateEpoch.isLessThan(earliestEpochInRange)) {
+      final UInt64 earliestSlot =
+          atEpoch(stateEpoch).miscHelpers().computeStartSlotAtEpoch(earliestEpochInRange);
+      LOG.debug(
+          "Processing empty slots for state at slot {}, target slot {}",
+          state.getSlot(),
+          earliestSlot);
+      try {
+        final BeaconState advancedState = processSlots(state, earliestSlot);
+        return atState(advancedState)
+            .getBeaconStateUtil()
+            .computeSubnetForAttestation(advancedState, attestation);
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        LOG.debug("Couldn't wind state at slot {} forward", state.getSlot(), e);
+      }
+    }
+
     return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
   }
 

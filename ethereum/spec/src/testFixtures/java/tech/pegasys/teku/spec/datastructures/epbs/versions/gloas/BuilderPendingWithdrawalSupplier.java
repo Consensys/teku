@@ -11,17 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SignedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
+public class BuilderPendingWithdrawalSupplier
+    extends DataStructureUtilSupplier<BuilderPendingWithdrawal> {
 
-  // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
-  public SignedBeaconBlockSupplier() {
-    super(DataStructureUtil::randomSignedBeaconBlock, SpecMilestone.DENEB, SpecMilestone.FULU);
+  public BuilderPendingWithdrawalSupplier() {
+    super(DataStructureUtil::randomBuilderPendingWithdrawal, SpecMilestone.GLOAS);
   }
 }
