@@ -256,11 +256,6 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas).getBuilderPendingWithdrawalSchema()))
-          .put("ssz_static/PayloadAttestationMessage", IGNORE_TESTS)
-          .put("ssz_static/IndexedPayloadAttestation", IGNORE_TESTS)
-          .put("ssz_static/ExecutionPayloadEnvelope", IGNORE_TESTS)
-          .put("ssz_static/SignedExecutionPayloadEnvelope", IGNORE_TESTS)
-          .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
           .put(
               "ssz_static/PayloadAttestationData",
               new SszTestExecutor<>(
@@ -272,11 +267,35 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas).getPayloadAttestationSchema()))
           .put(
+              "ssz_static/PayloadAttestationMessage",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getPayloadAttestationMessageSchema()))
+          .put(
+              "ssz_static/IndexedPayloadAttestation",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getIndexedPayloadAttestationSchema()))
+          .put(
               "ssz_static/SignedExecutionPayloadHeader",
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas)
                           .getSignedExecutionPayloadHeaderSchema()))
+          .put(
+              "ssz_static/ExecutionPayloadEnvelope",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getExecutionPayloadEnvelopeSchema()))
+          .put(
+              "ssz_static/SignedExecutionPayloadEnvelope",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas)
+                          .getSignedExecutionPayloadEnvelopeSchema()))
+          .put("ssz_static/ForkChoiceNode", IGNORE_TESTS)
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(

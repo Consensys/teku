@@ -48,8 +48,12 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPay
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -228,8 +232,16 @@ public class SchemaTypes {
       create("PAYLOAD_ATTESTATION_DATA_SCHEMA");
   public static final SchemaId<PayloadAttestationSchema> PAYLOAD_ATTESTATION_SCHEMA =
       create("PAYLOAD_ATTESTATION_SCHEMA");
+  public static final SchemaId<PayloadAttestationMessageSchema> PAYLOAD_ATTESTATION_MESSAGE_SCHEMA =
+      create("PAYLOAD_ATTESTATION_MESSAGE_SCHEMA");
+  public static final SchemaId<IndexedPayloadAttestationSchema> INDEXED_PAYLOAD_ATTESTATION_SCHEMA =
+      create("INDEXED_PAYLOAD_ATTESTATION_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadHeaderSchema>
       SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA");
+  public static final SchemaId<ExecutionPayloadEnvelopeSchema> EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
+      create("EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
+  public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
+      SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

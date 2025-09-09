@@ -17,10 +17,10 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SignedExecutionPayloadHeaderSupplier
-    extends DataStructureUtilSupplier<SignedExecutionPayloadHeader> {
+public class PayloadAttestationMessageSupplier
+    extends DataStructureUtilSupplier<PayloadAttestationMessage> {
 
-  public SignedExecutionPayloadHeaderSupplier() {
-    super(DataStructureUtil::randomSignedExecutionPayloadHeader, SpecMilestone.GLOAS);
+  public PayloadAttestationMessageSupplier() {
+    super(DataStructureUtil::randomPayloadAttestationMessage, SpecMilestone.GLOAS);
   }
 }
