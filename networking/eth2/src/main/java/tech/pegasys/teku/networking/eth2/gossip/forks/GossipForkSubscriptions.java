@@ -46,9 +46,9 @@ public interface GossipForkSubscriptions {
     return SafeFuture.COMPLETE;
   }
 
-    default SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
-        return SafeFuture.COMPLETE;
-    }
+  default SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
+    return SafeFuture.COMPLETE;
+  }
 
   void subscribeToAttestationSubnetId(int subnetId);
 

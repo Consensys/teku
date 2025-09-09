@@ -72,7 +72,8 @@ public class GossipTopics {
     return getTopic(
         forkDigest, GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId), gossipEncoding);
   }
- public static String getExecutionProofSubnetTopic(
+
+  public static String getExecutionProofSubnetTopic(
       final Bytes4 forkDigest, final int subnetId, final GossipEncoding gossipEncoding) {
     return getTopic(
         forkDigest, GossipTopicName.getExecutionProofSubnetTopicName(subnetId), gossipEncoding);

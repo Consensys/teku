@@ -119,5 +119,7 @@ public class BeaconChainConfiguration {
     return beaconChainControllerFactory;
   }
 
-  public ZkChainConfiguration zkChainConfiguration() { return zkChainConfiguration; }
+  public ZkChainConfiguration zkChainConfiguration() {
+    return zkChainConfiguration;
+  }
 }

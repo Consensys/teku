@@ -190,15 +190,15 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishDataColumnSidecar);
   }
 
-    public SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
-        //for now we don't have a slot in the message data (execution proof) to use
-        // I believe it's safe to just check the current epoch
-      return publishMessageWithFeedback(
+  public SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
+    // for now we don't have a slot in the message data (execution proof) to use
+    // I believe it's safe to just check the current epoch
+    return publishMessageWithFeedback(
         spec.computeStartSlotAtEpoch(currentEpoch.orElseThrow()),
         executionProof,
         "execution proof",
         GossipForkSubscriptions::publishExecutionProof);
-    }
+  }
 
   public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     publishMessage(

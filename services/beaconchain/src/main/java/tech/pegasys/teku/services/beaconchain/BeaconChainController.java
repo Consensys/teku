@@ -87,7 +87,6 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -668,24 +667,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
   }
 
-  protected void initKzChain(){
-      ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
+  protected void initKzChain() {
+    ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
 
-      if(zkConfig.isStatelessValidationEnabled()){
-          final ExecutionProofGossipValidator executionProofGossipValidator =
-                  ExecutionProofGossipValidator.create(spec, zkConfig);
+    if (zkConfig.isStatelessValidationEnabled()) {
+      final ExecutionProofGossipValidator executionProofGossipValidator =
+          ExecutionProofGossipValidator.create(spec, zkConfig);
 
-          ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
-                  new ExecutionProofSubnetSubscriber(
-                          spec,
-                          p2pNetwork,
-                          nodeId,
-                          zkConfig);
+      ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
+          new ExecutionProofSubnetSubscriber(spec, p2pNetwork, nodeId, zkConfig);
 
-
-
-          eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
-      }
+      eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
+    }
   }
 
   protected void initKzg() {

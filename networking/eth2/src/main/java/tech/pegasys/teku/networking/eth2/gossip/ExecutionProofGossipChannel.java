@@ -13,23 +13,18 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
-import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
-
-import java.util.List;
 
 public interface ExecutionProofGossipChannel extends ChannelInterface {
 
   ExecutionProofGossipChannel NOOP = executionProof -> SafeFuture.COMPLETE;
 
-  default SafeFuture<Void> publishExecutionProof(
-          final List<ExecutionProof> executionProofs) {
-      return SafeFuture.allOf(executionProofs.stream().map(this::publishExecutionProof));
+  default SafeFuture<Void> publishExecutionProof(final List<ExecutionProof> executionProofs) {
+    return SafeFuture.allOf(executionProofs.stream().map(this::publishExecutionProof));
   }
 
-    SafeFuture<Void> publishExecutionProof(ExecutionProof executionProof);
+  SafeFuture<Void> publishExecutionProof(ExecutionProof executionProof);
 }

@@ -59,7 +59,7 @@ public class SubnetScorer implements PeerScorer {
         candidate.getSyncCommitteeSubnets(),
         peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
             UInt256.fromBytes(candidate.getNodeId()), candidate.getDasCustodySubnetCount()),
-            candidate.getExecutionProofSubnets());
+        candidate.getExecutionProofSubnets());
   }
 
   //  @Override
@@ -119,20 +119,27 @@ public class SubnetScorer implements PeerScorer {
                 })
             .sum();
 
-      final int executionProofSubnetScore =
-          executionProofSubnetSubscriptions.map(executionProof ->
-                  executionProof
-                    .streamAllSetBits()
-                    .filter(peerSubnetSubscriptions::isExecutionProofSubnetRelevant)
-                    .map(
+    final int executionProofSubnetScore =
+        executionProofSubnetSubscriptions
+            .map(
+                executionProof ->
+                    executionProof
+                        .streamAllSetBits()
+                        .filter(peerSubnetSubscriptions::isExecutionProofSubnetRelevant)
+                        .map(
                             subnetId -> {
                               int subscriberCount =
-                                      peerSubnetSubscriptions.getSubscriberCountForExecutionProofSubnet(subnetId);
+                                  peerSubnetSubscriptions.getSubscriberCountForExecutionProofSubnet(
+                                      subnetId);
                               return subscriberCountToScore.applyAsInt(subscriberCount);
                             })
-                    .sum()).orElse(0);
+                        .sum())
+            .orElse(0);
 
-    return attestationSubnetScore + syncCommitteeSubnetScore + dataColumnSidecarSubnetScore + executionProofSubnetScore;
+    return attestationSubnetScore
+        + syncCommitteeSubnetScore
+        + dataColumnSidecarSubnetScore
+        + executionProofSubnetScore;
   }
 
   private int scoreSubnetForExistingPeer(final int subscriberCount) {

@@ -148,7 +148,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     eventChannels.subscribe(
         DataColumnSidecarGossipChannel.class,
         (sidecar, __) -> gossipForkManager.publishDataColumnSidecar(sidecar));
-    eventChannels.subscribe(ExecutionProofGossipChannel.class, gossipForkManager::publishExecutionProof);
+    eventChannels.subscribe(
+        ExecutionProofGossipChannel.class, gossipForkManager::publishExecutionProof);
 
     if (recentChainData.isCloseToInSync()) {
       startGossip();
@@ -361,11 +362,11 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     dataColumnSidecarSubnetService.addSubscription(subnetId);
   }
 
-    @Override
-    public void unsubscribeFromDataColumnSidecarSubnetId(final int subnetId) {
-        gossipForkManager.unsubscribeFromDataColumnSidecarSubnetId(subnetId);
-        dataColumnSidecarSubnetService.removeSubscription(subnetId);
-    }
+  @Override
+  public void unsubscribeFromDataColumnSidecarSubnetId(final int subnetId) {
+    gossipForkManager.unsubscribeFromDataColumnSidecarSubnetId(subnetId);
+    dataColumnSidecarSubnetService.removeSubscription(subnetId);
+  }
 
   @Override
   public void subscribeToExecutionProofSubnetId(final int subnetId) {
