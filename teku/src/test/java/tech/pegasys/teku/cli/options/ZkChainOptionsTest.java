@@ -14,8 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -33,7 +31,8 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void generateExecutionProofsEnabled_true() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xstateless-validation-enabled=true","--Xgenerate-execution-proofs-enabled=true");
+        getTekuConfigurationFromArguments(
+            "--Xstateless-validation-enabled=true", "--Xgenerate-execution-proofs-enabled=true");
     assertThat(config.zkChainConfiguration().isGenerateExecutionProofsEnabled()).isTrue();
   }
 
