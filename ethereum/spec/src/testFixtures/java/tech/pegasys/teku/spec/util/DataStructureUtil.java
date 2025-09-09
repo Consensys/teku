@@ -139,6 +139,8 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFu
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
@@ -3090,6 +3092,24 @@ public final class DataStructureUtil {
     final SszListSchema<PayloadAttestation, ?> schema =
         schemaDefinitionsGloas.getBeaconBlockBodySchema().getPayloadAttestationsSchema();
     return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
+  }
+
+  public BuilderPendingWithdrawal randomBuilderPendingWithdrawal() {
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(
+            spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
+    return schemaDefinitionsGloas
+        .getBuilderPendingWithdrawalSchema()
+        .create(randomEth1Address(), randomUInt64(), randomUInt64(), randomEpoch());
+  }
+
+  public BuilderPendingPayment randomBuilderPendingPayment() {
+    final SchemaDefinitionsGloas schemaDefinitionsGloas =
+        SchemaDefinitionsGloas.required(
+            spec.forMilestone(SpecMilestone.GLOAS).getSchemaDefinitions());
+    return schemaDefinitionsGloas
+        .getBuilderPendingPaymentSchema()
+        .create(randomUInt64(), randomBuilderPendingWithdrawal());
   }
 
   public ExecutionProof randomExecutionProof() {

@@ -43,10 +43,15 @@ import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+/**
+ * blob_kzg_commitments are removed in Gloas so for testing this class, we only consider Spec and
+ * SignedBeaconBlock until Fulu.
+ */
 public class MiscHelpersDenebPropertyTest {
 
   private final Spec spec =
-      Objects.requireNonNull(new SpecSupplier(SpecMilestone.DENEB).get()).sample();
+      Objects.requireNonNull(new SpecSupplier(SpecMilestone.DENEB, SpecMilestone.FULU).get())
+          .sample();
   private final SpecConfigDeneb specConfig =
       spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow();
   private final Predicates predicates = spec.getGenesisSpec().predicates();
@@ -121,10 +126,6 @@ public class MiscHelpersDenebPropertyTest {
     }
   }
 
-  /**
-   * blob_kzg_commitments are removed in Gloas so for testing this class, we only consider blocks
-   * until Fulu.
-   */
   private static class SignedBeaconBlockSupplier
       extends DataStructureUtilSupplier<SignedBeaconBlock> {
     public SignedBeaconBlockSupplier() {
