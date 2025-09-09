@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64Vector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -70,22 +71,18 @@ public class EpochProcessorFulu extends EpochProcessorElectra {
       proposerLookahead.set(newIndex, proposerLookahead.get(oldIndex++));
     }
 
-    final List<UInt64> lastEpochProposerIndices =
-        stateAccessorsFulu
-            .getBeaconProposerIndices(
-                stateFulu,
-                beaconStateAccessors
-                    .getCurrentEpoch(stateFulu)
-                    .plus(specConfig.getMinSeedLookahead())
-                    .plus(1))
-            .stream()
-            .map(UInt64::valueOf)
-            .toList();
+    final List<Integer> lastEpochProposerIndices =
+        stateAccessorsFulu.getBeaconProposerIndices(
+            stateFulu,
+            beaconStateAccessors
+                .getCurrentEpoch(stateFulu)
+                .plus(specConfig.getMinSeedLookahead())
+                .plus(1));
 
     // Fill in the last epoch with new proposer indices
     int index = lastEpochStart;
-    for (final UInt64 proposerIndex : lastEpochProposerIndices) {
-      proposerLookahead.setElement(index++, proposerIndex);
+    for (final int proposerIndex : lastEpochProposerIndices) {
+      proposerLookahead.set(index++, SszUInt64.of(UInt64.valueOf(proposerIndex)));
     }
   }
 }
