@@ -91,6 +91,10 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getVariableLatestCanonicalBlockRoot();
   }
 
+  public KvStoreVariable<UInt64> getVariableCustodyGroupCount() {
+    return delegate.getVariableCustodyGroupCount();
+  }
+
   public KvStoreVariable<BeaconState> getVariableLatestFinalizedState() {
     return delegate.getVariableLatestFinalizedState();
   }
@@ -138,6 +142,7 @@ public class SchemaHotAdapter implements Schema {
         .put("ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint())
         .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
         .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
+        .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
         .build();
   }
 

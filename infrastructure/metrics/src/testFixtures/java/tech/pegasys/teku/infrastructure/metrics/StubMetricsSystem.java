@@ -18,7 +18,6 @@ import static java.util.Arrays.asList;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -292,7 +291,7 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   public static class StubLabelledCounter implements LabelledMetric<Counter> {
-    private final Map<List<String>, StubCounter> metrics = new HashMap<>();
+    private final Map<List<String>, StubCounter> metrics = new ConcurrentHashMap<>();
 
     @Override
     public Counter labels(final String... labels) {

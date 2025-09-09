@@ -12,3 +12,4 @@
 ### Additions and Improvements
 
 ### Bug Fixes
+ - Updated ephemery network configuration to load the configuration and bootnodes from remote. If the name "ephemery" is used for network now, it will by default load from ephemery.dev.

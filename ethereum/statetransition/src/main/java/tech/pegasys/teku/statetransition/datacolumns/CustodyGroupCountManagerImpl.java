@@ -104,7 +104,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountChannel = custodyGroupCountChannel;
     final Optional<Integer> maybeCustodyCount =
-        combinedChainDataClient.getCurrentCustodyGroupCount().map(UInt64::intValue);
+        combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
       LOG.info("Persisting initial custody group count to {}", initCustodyGroupCount);
       updateCustodyGroupCount(initCustodyGroupCount, maybeCustodyCount);
@@ -181,7 +181,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   SafeFuture<Optional<Integer>> computeAndUpdateCustodyGroupCount(
       final Map<UInt64, PreparedProposerInfo> preparedProposerInfo) {
     final Optional<Integer> maybeCustodyGroupCount =
-        combinedChainDataClient.getCurrentCustodyGroupCount().map(UInt64::intValue);
+        combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     return combinedChainDataClient
         .getBestFinalizedState()
         .thenApply(

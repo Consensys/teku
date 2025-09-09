@@ -166,6 +166,11 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return taskQueue.queueTask(delegate::getCustodyGroupCount);
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return taskQueue.queueTask(() -> delegate.getNonCanonicalBlocksBySlot(slot));
   }

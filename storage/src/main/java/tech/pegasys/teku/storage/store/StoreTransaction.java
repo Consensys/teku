@@ -74,6 +74,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   Optional<Bytes32> maybeLatestCanonicalBlockRoot = Optional.empty();
+  Optional<UInt64> maybeCustodyGroupCount = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -179,6 +180,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+    maybeCustodyGroupCount = Optional.of(custodyGroupCount);
+  }
+
+  @Override
   public void removeProposerBoostRoot() {
     proposerBoostRoot = Optional.empty();
     proposerBoostRootSet = true;
@@ -268,6 +274,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Checkpoint getFinalizedCheckpoint() {
     return finalizedCheckpoint.orElseGet(store::getFinalizedCheckpoint);
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return maybeCustodyGroupCount;
   }
 
   @Override

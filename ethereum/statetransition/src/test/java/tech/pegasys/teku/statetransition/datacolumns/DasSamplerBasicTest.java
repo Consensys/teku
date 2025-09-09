@@ -112,7 +112,7 @@ public class DasSamplerBasicTest {
       final int configuredCustodyCount,
       final int validatorCount,
       final int expectedSamplingRequests) {
-    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+    when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(configuredCustodyCount)));
     final CustodyGroupCountManagerImpl custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
