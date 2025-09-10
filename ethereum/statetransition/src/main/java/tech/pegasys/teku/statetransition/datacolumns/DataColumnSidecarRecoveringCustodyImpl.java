@@ -163,7 +163,19 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
           task.existingSidecars.clear();
           return;
         }
-        asyncRunner.runAsync(() -> prepareAndInitiateRecovery(task)).finishError(LOG);
+        asyncRunner
+            .runAsync(() -> prepareAndInitiateRecovery(task))
+            .whenException(
+                ex -> {
+                  LOG.debug(
+                      "Error during recovery of {} task with {} sidecars",
+                      task.slotAndBlockRoot == null ? "<unknown>" : task.slotAndBlockRoot,
+                      task.existingSidecars.size(),
+                      ex);
+                  // release task for future retries only if error happened during recovery
+                  task.recoveryStarted.compareAndSet(true, false);
+                })
+            .finishError(LOG);
       }
     }
   }
@@ -216,14 +228,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     try {
       initiateRecovery(task, task.existingSidecars.values(), timer);
     } catch (final Exception e) {
-      task.recoveryStarted.compareAndSet(true, false);
-      LOG.debug(
-          "Error during recovery of {} task with {} sidecars",
-          task.slotAndBlockRoot == null ? "<unknown>" : task.slotAndBlockRoot,
-          task.existingSidecars.size(),
-          e);
+      timer.closeUnchecked().run();
+      throw e;
     }
-    timer.closeUnchecked().run();
   }
 
   private void initiateRecovery(
