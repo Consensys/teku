@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -156,28 +158,33 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     return true;
   }
 
-  private void maybeStartRecovery(final RecoveryTask task) {
+  protected void maybeStartRecovery(final RecoveryTask task) {
     if (readyToBeRecovered(task)) {
       if (task.recoveryStarted.compareAndSet(false, true)) {
         if (task.existingSidecars.size() == columnCount) {
           task.existingSidecars.clear();
           return;
         }
-        asyncRunner
-            .runAsync(() -> prepareAndInitiateRecovery(task))
-            .whenException(
-                ex -> {
-                  LOG.debug(
-                      "Error during recovery of {} task with {} sidecars",
-                      task.slotAndBlockRoot == null ? "<unknown>" : task.slotAndBlockRoot,
-                      task.existingSidecars.size(),
-                      ex);
-                  // release task for future retries only if error happened during recovery
-                  task.recoveryStarted.set(false);
-                })
-            .finishError(LOG);
+        scheduleRecoveryTask(task);
       }
     }
+  }
+
+  @VisibleForTesting
+  protected void scheduleRecoveryTask(final RecoveryTask task) {
+    asyncRunner
+        .runAsync(() -> prepareAndInitiateRecovery(task))
+        .whenException(
+            ex -> {
+              LOG.debug(
+                  "Error during recovery of {} task with {} sidecars",
+                  task.slotAndBlockRoot,
+                  task.existingSidecars.size(),
+                  ex);
+              // release task for future retries only if error happened during recovery
+              task.recoveryStarted.set(false);
+            })
+        .finishError(LOG);
   }
 
   private boolean readyToBeRecovered(final RecoveryTask task) {
@@ -213,7 +220,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU);
   }
 
-  private record RecoveryTask(
+  protected record RecoveryTask(
       SlotAndBlockRoot slotAndBlockRoot,
       Map<DataColumnSlotAndIdentifier, DataColumnSidecar> existingSidecars,
       AtomicBoolean recoveryStarted,
@@ -224,12 +231,12 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         "Recovery for block: {}. DataColumnSidecars found: {}",
         task.slotAndBlockRoot,
         task.existingSidecars.size());
-    final MetricsHistogram.Timer timer = dataAvailabilityReconstructionTimeSeconds.startTimer();
-    try {
+
+    try (final MetricsHistogram.Timer timer =
+        dataAvailabilityReconstructionTimeSeconds.startTimer()) {
       initiateRecovery(task, task.existingSidecars.values(), timer);
-    } catch (final Exception e) {
-      timer.closeUnchecked().run();
-      throw e;
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -27,11 +26,14 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,6 +49,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -86,7 +89,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
   private final BeaconBlock block = dataStructureUtil.randomBeaconBlock(slot, beaconBlockBody);
   private final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.signedBlock(block);
 
-  private final DataColumnSidecarRecoveringCustody custody =
+  private final DataColumnSidecarRecoveringCustodyImpl custody =
       new DataColumnSidecarRecoveringCustodyImpl(
           delegate,
           stubAsyncRunner,
@@ -305,41 +308,39 @@ public class DataColumnSidecarRecoveringCustodyTest {
   }
 
   @Test
-  public void shouldRestartOnException() {
-    custody.onSlot(slot);
+  public void shouldPreserveTaskIsStartedWhenSuccess() {
+    final DataColumnSidecarRecoveringCustodyImpl.RecoveryTask task =
+        new DataColumnSidecarRecoveringCustodyImpl.RecoveryTask(
+            new SlotAndBlockRoot(UInt64.ZERO, Bytes32.ZERO),
+            Collections.emptyMap(),
+            new AtomicBoolean(true),
+            new AtomicBoolean(true));
+
+    assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
+    custody.scheduleRecoveryTask(task);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
+        .thenReturn(Collections.emptyList());
+    stubAsyncRunner.executeDueActionsRepeatedly();
+    assertThat(task.recoveryStarted()).isTrue();
+  }
 
-    final Map<UInt64, DataColumnSidecar> sidecars =
-        columnIndices
-            .get()
-            .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
-            .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().stream()
-        .skip(30)
-        .limit(70)
-        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
+  @Test
+  public void shouldResetTaskIsStartedOnException() {
+    final DataColumnSidecarRecoveringCustodyImpl.RecoveryTask task =
+        new DataColumnSidecarRecoveringCustodyImpl.RecoveryTask(
+            new SlotAndBlockRoot(UInt64.ZERO, Bytes32.ZERO),
+            Collections.emptyMap(),
+            new AtomicBoolean(true),
+            new AtomicBoolean(true));
 
+    assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
+    custody.scheduleRecoveryTask(task);
+    assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenThrow(new RuntimeException("Simulated exception"));
-    stubTimeProvider.advanceTimeBySeconds(2);
     stubAsyncRunner.executeDueActionsRepeatedly();
-
-    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection(), any());
-    // but failed to reconstruct anything due to exception
-    verify(listener, never()).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(dataColumnSidecarPublisher, never()).accept(any());
-
-    // add 1 sidecar to restart
-    reset(miscHelpersFulu);
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
-        .thenReturn(sidecars.values().stream().toList());
-    custody.onNewValidatedDataColumnSidecar(sidecars.get(UInt64.ZERO), RemoteOrigin.RPC);
-    stubAsyncRunner.executeDueActionsRepeatedly();
-
-    // post reconstructed
-    verify(delegate, times(57)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(listener, times(57)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(dataColumnSidecarPublisher, times(57)).accept(any());
+    assertThat(task.recoveryStarted()).isFalse();
   }
 
   @Test
