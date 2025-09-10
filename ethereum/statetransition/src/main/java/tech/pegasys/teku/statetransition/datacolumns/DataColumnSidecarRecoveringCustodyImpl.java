@@ -173,7 +173,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                       task.existingSidecars.size(),
                       ex);
                   // release task for future retries only if error happened during recovery
-                  task.recoveryStarted.compareAndSet(true, false);
+                  task.recoveryStarted.set(false);
                 })
             .finishError(LOG);
       }
