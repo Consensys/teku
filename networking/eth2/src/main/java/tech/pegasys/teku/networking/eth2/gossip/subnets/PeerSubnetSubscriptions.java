@@ -150,8 +150,6 @@ public class PeerSubnetSubscriptions {
                         .forEach(
                             execSubnet -> {
                               b.addRelevantSubnet(execSubnet);
-                              // Execution payloads are gossiped on the same topic as
-                              // data column sidecars
                               subscribersByTopic
                                   .getOrDefault(
                                       executionProofSubnetTopicProvider.getTopicForSubnet(
