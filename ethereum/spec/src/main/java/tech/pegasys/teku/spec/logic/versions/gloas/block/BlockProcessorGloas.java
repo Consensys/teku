@@ -69,9 +69,10 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
   @Override
   public void processExecutionRequests(
-      MutableBeaconState state,
-      BeaconBlockBody body,
-      Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier) {
-    // Execution requests are processed as part of process_execution_payload
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier) {
+    // Execution requests are removed from the BeaconBlocKBody in Gloas and are instead processed as
+    // part of process_execution_payload
   }
 }

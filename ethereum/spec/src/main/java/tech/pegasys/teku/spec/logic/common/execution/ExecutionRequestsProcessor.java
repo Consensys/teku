@@ -19,7 +19,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Consolid
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 
@@ -35,7 +34,4 @@ public interface ExecutionRequestsProcessor {
 
   void processConsolidationRequests(
       MutableBeaconState state, List<ConsolidationRequest> consolidationRequests);
-
-  boolean isValidSwitchToCompoundingRequest(
-      BeaconState state, ConsolidationRequest consolidationRequest);
 }
