@@ -20,21 +20,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 
-public class SignedExecutionPayloadHeaderPropertyTest {
+public class IndexedPayloadAttestationPropertyTest {
 
   @Property
   void roundTrip(
-      @ForAll(supplier = SignedExecutionPayloadHeaderSupplier.class)
-          final SignedExecutionPayloadHeader signedExecutionPayloadHeader)
+      @ForAll(supplier = IndexedPayloadAttestationSupplier.class)
+          final IndexedPayloadAttestation indexedPayloadAttestation)
       throws JsonProcessingException {
-    assertRoundTrip(signedExecutionPayloadHeader);
+    assertRoundTrip(indexedPayloadAttestation);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SignedExecutionPayloadHeaderSupplier.class)
-          final SignedExecutionPayloadHeader signedExecutionPayloadHeader,
+      @ForAll(supplier = IndexedPayloadAttestationSupplier.class)
+          final IndexedPayloadAttestation indexedPayloadAttestation,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(signedExecutionPayloadHeader, seed);
+    assertDeserializeMutatedThrowsExpected(indexedPayloadAttestation, seed);
   }
 }

@@ -20,8 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.BeaconBlockBodyBuilderFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
@@ -33,8 +31,8 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
   private SszList<PayloadAttestation> payloadAttestations;
 
   public BeaconBlockBodyBuilderGloas(
-      final BeaconBlockBodySchema<? extends BeaconBlockBodyElectra> schema,
-      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyElectra> blindedSchema) {
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyGloas> schema,
+      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyGloas> blindedSchema) {
     super(schema, blindedSchema);
   }
 
