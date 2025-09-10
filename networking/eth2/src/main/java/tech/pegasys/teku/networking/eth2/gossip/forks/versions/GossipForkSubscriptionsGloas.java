@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -59,7 +60,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
       final DebugDataDumper debugDataDumper,
-      final DasGossipLogger dasGossipLogger) {
+      final DasGossipLogger dasGossipLogger,
+      final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor) {
     super(
         fork,
         spec,
@@ -80,6 +82,7 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         signedBlsToExecutionChangeOperationProcessor,
         dataColumnSidecarOperationProcessor,
         debugDataDumper,
-        dasGossipLogger);
+        dasGossipLogger,
+        executionProcessorOperationProcessor);
   }
 }

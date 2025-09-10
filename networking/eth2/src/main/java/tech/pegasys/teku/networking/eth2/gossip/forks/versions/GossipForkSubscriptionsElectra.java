@@ -15,13 +15,20 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetSubscriptions;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -29,33 +36,39 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb {
 
+    final OperationProcessor<ExecutionProof> executionProofOperationProcessor;
+
+    private ExecutionProofGossipManager executionProofGossipManager;
+
   public GossipForkSubscriptionsElectra(
-      final Fork fork,
-      final Spec spec,
-      final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem,
-      final DiscoveryNetwork<?> discoveryNetwork,
-      final RecentChainData recentChainData,
-      final GossipEncoding gossipEncoding,
-      final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<BlobSidecar> blobSidecarProcessor,
-      final OperationProcessor<ValidatableAttestation> attestationProcessor,
-      final OperationProcessor<ValidatableAttestation> aggregateProcessor,
-      final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
-      final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      final OperationProcessor<SignedContributionAndProof>
+          final Fork fork,
+          final Spec spec,
+          final AsyncRunner asyncRunner,
+          final MetricsSystem metricsSystem,
+          final DiscoveryNetwork<?> discoveryNetwork,
+          final RecentChainData recentChainData,
+          final GossipEncoding gossipEncoding,
+          final OperationProcessor<SignedBeaconBlock> blockProcessor,
+          final OperationProcessor<BlobSidecar> blobSidecarProcessor,
+          final OperationProcessor<ValidatableAttestation> attestationProcessor,
+          final OperationProcessor<ValidatableAttestation> aggregateProcessor,
+          final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
+          final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
+          final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
+          final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
-      final OperationProcessor<ValidatableSyncCommitteeMessage>
+          final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
-      final OperationProcessor<SignedBlsToExecutionChange>
+          final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
-      final DebugDataDumper debugDataDumper) {
+          final DebugDataDumper debugDataDumper,
+          final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
     super(
         fork,
         spec,
@@ -75,5 +88,32 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor,
         debugDataDumper);
+      this.executionProofOperationProcessor = executionProofOperationProcessor;
   }
+
+    @Override
+    protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+        super.addGossipManagers(forkInfo, forkDigest);
+        addExecutionProofGossipManager(forkInfo, forkDigest);
+    }
+
+    private void addExecutionProofGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+        executionProofGossipManager =
+                ExecutionProofGossipManager.create(
+                        recentChainData,
+                        spec,
+                        asyncRunner,
+                        discoveryNetwork,
+                        gossipEncoding,
+                        forkInfo,
+                        forkDigest,
+                        executionProofOperationProcessor,
+                        debugDataDumper);
+        addGossipManager(executionProofGossipManager);
+    }
+
+    @Override
+    public SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
+        return executionProofGossipManager.publishExecutionProof(executionProof);
+    }
 }
