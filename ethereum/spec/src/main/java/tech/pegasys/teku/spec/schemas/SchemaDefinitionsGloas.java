@@ -14,8 +14,11 @@
 package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWAL_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
@@ -25,9 +28,14 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
@@ -49,6 +57,9 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   private final SignedExecutionPayloadHeaderSchema signedExecutionPayloadHeaderSchema;
   private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
   private final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema;
+  private final SszBitvectorSchema<?> executionPayloadAvailabilitySchema;
+  private final SszVectorSchema<BuilderPendingPayment, ?> builderPendingPaymentsSchema;
+  private final SszListSchema<BuilderPendingWithdrawal, ?> builderPendingWithdrawalsSchema;
 
   public SchemaDefinitionsGloas(final SchemaRegistry schemaRegistry) {
     super(schemaRegistry);
@@ -63,6 +74,10 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     this.executionPayloadEnvelopeSchema = schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
     this.signedExecutionPayloadEnvelopeSchema =
         schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
+    this.executionPayloadAvailabilitySchema =
+        schemaRegistry.get(EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA);
+    this.builderPendingPaymentsSchema = schemaRegistry.get(BUILDER_PENDING_PAYMENTS_SCHEMA);
+    this.builderPendingWithdrawalsSchema = schemaRegistry.get(BUILDER_PENDING_WITHDRAWALS_SCHEMA);
   }
 
   public static SchemaDefinitionsGloas required(final SchemaDefinitions schemaDefinitions) {
@@ -115,6 +130,18 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
 
   public SignedExecutionPayloadEnvelopeSchema getSignedExecutionPayloadEnvelopeSchema() {
     return signedExecutionPayloadEnvelopeSchema;
+  }
+
+  public SszBitvectorSchema<?> getExecutionPayloadAvailabilitySchema() {
+    return executionPayloadAvailabilitySchema;
+  }
+
+  public SszVectorSchema<BuilderPendingPayment, ?> getBuilderPendingPaymentsSchema() {
+    return builderPendingPaymentsSchema;
+  }
+
+  public SszListSchema<BuilderPendingWithdrawal, ?> getBuilderPendingWithdrawalsSchema() {
+    return builderPendingWithdrawalsSchema;
   }
 
   @Override

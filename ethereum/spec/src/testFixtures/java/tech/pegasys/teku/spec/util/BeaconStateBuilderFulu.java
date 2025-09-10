@@ -214,6 +214,7 @@ public class BeaconStateBuilderFulu
         schema.getPendingPartialWithdrawalsSchema().createFromElements(List.of());
     this.pendingConsolidations =
         schema.getPendingConsolidationsSchema().createFromElements(List.of());
+
     this.proposerLookahead =
         dataStructureUtil.randomSszUInt64Vector(
             schema.getProposerLookaheadSchema(),

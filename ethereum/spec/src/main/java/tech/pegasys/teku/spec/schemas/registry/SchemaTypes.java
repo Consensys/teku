@@ -21,6 +21,7 @@ import java.util.Locale;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -46,7 +47,9 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
@@ -242,6 +245,12 @@ public class SchemaTypes {
       create("EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
       SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
+  public static final SchemaId<SszBitvectorSchema<?>> EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA =
+      create("EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA");
+  public static final SchemaId<SszVectorSchema<BuilderPendingPayment, ?>>
+      BUILDER_PENDING_PAYMENTS_SCHEMA = create("BUILDER_PENDING_PAYMENTS_SCHEMA");
+  public static final SchemaId<SszListSchema<BuilderPendingWithdrawal, ?>>
+      BUILDER_PENDING_WITHDRAWALS_SCHEMA = create("BUILDER_PENDING_WITHDRAWALS_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation
