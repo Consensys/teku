@@ -336,7 +336,7 @@ class PeerSubnetSubscriptionsTest {
     final Map<NodeId, SszBitvector> peer2subnets = builder.build();
     assertThat(peer2subnets.size()).isEqualTo(100);
     final Map<String, Collection<NodeId>> subscribersByTopic =
-        makeSubscribersByTopic(Map.of()); // no existing subsribers
+        makeSubscribersByTopic(Map.of()); // no existing subscribers
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
