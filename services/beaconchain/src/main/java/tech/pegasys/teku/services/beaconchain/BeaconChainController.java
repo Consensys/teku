@@ -91,7 +91,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetBackboneSubscriber;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
@@ -195,6 +194,8 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -224,6 +225,7 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -358,6 +360,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
+  protected volatile ExecutionProofManager executionProofManager;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<RecoveringSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -615,6 +618,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlobSidecarManager();
     initDasSamplerManager();
     initDataColumnSidecarManager();
+    initZkChain();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
@@ -654,7 +658,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
     initStoredLatestCanonicalBlockUpdater();
-    initZkChain();
   }
 
   private void initKeyValueStore() {
@@ -670,13 +673,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
 
     if (zkConfig.isStatelessValidationEnabled()) {
-      //      final ExecutionProofGossipValidator executionProofGossipValidator =
-      //          ExecutionProofGossipValidator.create(zkConfig);
+            final ExecutionProofGossipValidator executionProofGossipValidator =
+                ExecutionProofGossipValidator.create();
 
-      ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
-          new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
+        executionProofManager = new ExecutionProofManagerImpl(executionProofGossipValidator);
 
-      eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
+    }
+    else{
+        executionProofManager = ExecutionProofManager.NOOP;
     }
   }
 
@@ -1628,6 +1632,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedDataColumnSidecarOperationProcessor(
                 dataColumnSidecarManager::onDataColumnSidecarGossip)
+            .gossipedExecutionProofOperationProcessor(
+                executionProofManager::onExecutionProofGossip)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
