@@ -52,7 +52,6 @@ public class SimpleSidecarRetriever
 
   private final Spec spec;
   private final MiscHelpersFulu miscHelpersFulu;
-  private final DataColumnPeerSearcher peerSearcher;
   private final DasPeerCustodyCountSupplier custodyCountSupplier;
   private final DataColumnReqResp reqResp;
   private final AsyncRunner asyncRunner;
@@ -69,7 +68,6 @@ public class SimpleSidecarRetriever
   public SimpleSidecarRetriever(
       final Spec spec,
       final DataColumnPeerManager peerManager,
-      final DataColumnPeerSearcher peerSearcher,
       final DasPeerCustodyCountSupplier custodyCountSupplier,
       final DataColumnReqResp reqResp,
       final AsyncRunner asyncRunner,
@@ -77,7 +75,6 @@ public class SimpleSidecarRetriever
     this.spec = spec;
     this.miscHelpersFulu =
         MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
-    this.peerSearcher = peerSearcher;
     this.custodyCountSupplier = custodyCountSupplier;
     this.asyncRunner = asyncRunner;
     this.roundPeriod = roundPeriod;
@@ -98,11 +95,7 @@ public class SimpleSidecarRetriever
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final RetrieveRequest request =
-        pendingRequests.computeIfAbsent(
-            columnId,
-            __ ->
-                new RetrieveRequest(
-                    columnId, peerSearcher.requestPeers(columnId.slot(), columnId.columnIndex())));
+        pendingRequests.computeIfAbsent(columnId, __ -> new RetrieveRequest(columnId));
     startIfNecessary();
     return request.result;
   }
@@ -172,7 +165,6 @@ public class SimpleSidecarRetriever
       final RetrieveRequest pendingRequest = pendingEntry.getValue();
       if (pendingRequest.result.isDone()) {
         pendingIterator.remove();
-        pendingRequest.peerSearchRequest.dispose();
         if (pendingRequest.activeRpcRequest != null) {
           pendingRequest.activeRpcRequest.promise().cancel(true);
         }
@@ -214,7 +206,6 @@ public class SimpleSidecarRetriever
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
     if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
       request.result.completeAsync(maybeResult, asyncRunner);
-      request.peerSearchRequest.dispose();
       retrieveCounter.incrementAndGet();
     } else if (request.activeRpcRequestSet.compareAndSet(true, false)) {
       request.activeRpcRequest = null;
@@ -266,17 +257,13 @@ public class SimpleSidecarRetriever
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;
-    final DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest;
     final SafeFuture<DataColumnSidecar> result = new SafeFuture<>();
     final Map<UInt256, Integer> peerRequestCount = new HashMap<>();
     final AtomicBoolean activeRpcRequestSet = new AtomicBoolean(false);
     volatile ActiveRequest activeRpcRequest = null;
 
-    private RetrieveRequest(
-        final DataColumnSlotAndIdentifier columnId,
-        final DataColumnPeerSearcher.PeerSearchRequest peerSearchRequest) {
+    private RetrieveRequest(final DataColumnSlotAndIdentifier columnId) {
       this.columnId = columnId;
-      this.peerSearchRequest = peerSearchRequest;
     }
 
     public void onPeerRequest(final UInt256 peerId) {
