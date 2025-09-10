@@ -97,13 +97,11 @@ public class MultiThreadedThrottlingQueueTest {
 
     try {
       // Wait for the threads to terminate
-      if (producerPool.awaitTermination(1, TimeUnit.SECONDS)) {
-        LOG.info("All producer threads have been shut down.");
-      } else {
-        LOG.info("Timeout elapsed before termination. Some threads may still be running.");
-      }
-
-    } catch (InterruptedException e) {
+      assertThat(producerPool.awaitTermination(1, TimeUnit.SECONDS))
+          .describedAs("produced pool threads should quickly terminate")
+          .isTrue();
+      LOG.info("All producer threads have been shut down.");
+    } catch (final InterruptedException e) {
       LOG.error("Error waiting for thread pools to terminate.");
       Thread.currentThread().interrupt();
     }
@@ -165,7 +163,8 @@ public class MultiThreadedThrottlingQueueTest {
       try {
         while (!Thread.currentThread().isInterrupted()) {
           // Decide how many requests to produce in this burst
-          int burstSize = random.nextInt(MAX_BURST_SIZE - MIN_BURST_SIZE + 1) + MIN_BURST_SIZE;
+          final int burstSize =
+              random.nextInt(MAX_BURST_SIZE - MIN_BURST_SIZE + 1) + MIN_BURST_SIZE;
           LOG.info("{} starting a burst of {} requests...", name, burstSize);
 
           for (int i = 0; i < burstSize; i++) {
