@@ -97,6 +97,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -964,6 +965,17 @@ public class Spec {
   public Optional<BLSPublicKey> getValidatorPubKey(
       final BeaconState state, final UInt64 validatorIndex) {
     return atState(state).beaconStateAccessors().getValidatorPubKey(state, validatorIndex);
+  }
+
+  // Execution Requests Processor Utils
+
+  public ExecutionRequestsProcessor getExecutionRequestsProcessor(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionRequestsProcessor()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution requests processor when spec does not have execution requests processor"));
   }
 
   // Validator Utils

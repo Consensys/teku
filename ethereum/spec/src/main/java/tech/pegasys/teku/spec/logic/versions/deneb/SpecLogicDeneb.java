@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
@@ -210,6 +211,11 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
 
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return Optional.empty();
   }
 }
