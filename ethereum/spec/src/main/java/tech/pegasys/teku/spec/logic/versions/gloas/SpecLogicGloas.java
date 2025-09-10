@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.Valida
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.AttestationDataValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
@@ -48,6 +50,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 public class SpecLogicGloas extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
+  private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
 
   private SpecLogicGloas(
       final PredicatesGloas predicates,
@@ -61,6 +64,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorGloas epochProcessor,
+      final ExecutionRequestsProcessorElectra executionRequestsProcessor,
       final BlockProcessorGloas blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -87,6 +91,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
+    this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
   }
 
   public static SpecLogicGloas create(
@@ -152,6 +157,15 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+    final ExecutionRequestsProcessorElectra executionRequestsProcessor =
+        new ExecutionRequestsProcessorElectra(
+            schemaDefinitions,
+            miscHelpers,
+            config,
+            predicates,
+            validatorsUtil,
+            beaconStateMutators,
+            beaconStateAccessors);
     final BlockProcessorGloas blockProcessor =
         new BlockProcessorGloas(
             config,
@@ -166,7 +180,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             validatorsUtil,
             operationValidator,
             schemaDefinitions,
-            executionRequestsDataCodec);
+            executionRequestsDataCodec,
+            executionRequestsProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
@@ -191,6 +206,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         operationValidator,
         validatorStatusFactory,
         epochProcessor,
+        executionRequestsProcessor,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -213,5 +229,10 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
+    return executionRequestsProcessor;
   }
 }

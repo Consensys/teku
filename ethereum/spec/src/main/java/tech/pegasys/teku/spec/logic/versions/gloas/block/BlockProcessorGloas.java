@@ -13,14 +13,19 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.block;
 
+import java.util.function.Supplier;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
@@ -43,7 +48,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
       final SchemaDefinitionsGloas schemaDefinitions,
-      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
+      final ExecutionRequestsDataCodec executionRequestsDataCodec,
+      final ExecutionRequestsProcessorElectra executionRequestsProcessor) {
     super(
         specConfig,
         predicates,
@@ -57,6 +63,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         validatorsUtil,
         operationValidator,
         schemaDefinitions,
-        executionRequestsDataCodec);
+        executionRequestsDataCodec,
+        executionRequestsProcessor);
+  }
+
+  @Override
+  public void processExecutionRequests(
+      MutableBeaconState state,
+      BeaconBlockBody body,
+      Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier) {
+    // Execution requests are processed as part of process_execution_payload
   }
 }

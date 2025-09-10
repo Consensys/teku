@@ -142,28 +142,26 @@ public class DefaultOperationProcessor implements OperationProcessor {
 
   @Override
   public void processDepositRequest(
-      final MutableBeaconState state, final List<DepositRequest> depositRequests)
-      throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processDepositRequests(state, depositRequests);
+      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
+    spec.getExecutionRequestsProcessor(state.getSlot())
+        .processDepositRequests(state, depositRequests);
   }
 
   @Override
   public void processWithdrawalRequest(
-      final MutableBeaconState state, final List<WithdrawalRequest> withdrawalRequests)
-      throws BlockProcessingException {
+      final MutableBeaconState state, final List<WithdrawalRequest> withdrawalRequests) {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         spec.atSlot(state.getSlot())
             .beaconStateMutators()
             .createValidatorExitContextSupplier(state);
-    spec.getBlockProcessor(state.getSlot())
+    spec.getExecutionRequestsProcessor(state.getSlot())
         .processWithdrawalRequests(state, withdrawalRequests, validatorExitContextSupplier);
   }
 
   @Override
   public void processConsolidationRequests(
-      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
-      throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot())
+      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests) {
+    spec.getExecutionRequestsProcessor(state.getSlot())
         .processConsolidationRequests(state, consolidationRequests);
   }
 }
