@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -43,8 +42,6 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -144,21 +141,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         .finishWarn(LOG);
   }
 
-  @Override
-  public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    if (shouldSkipProcessing(block.getSlot())) {
-      return;
-    }
-
-    if (remoteOrigin.isPresent()
-        && (remoteOrigin.get().equals(RemoteOrigin.LOCAL_EL)
-            || remoteOrigin.get().equals(RemoteOrigin.LOCAL_PROPOSAL))) {
-      // skip locally produced blocks, we will get everything for it in custody w/o reconstruction
-      return;
-    }
-    createOrUpdateRecoveryTaskForBlock(block.getMessage());
-  }
-
   private boolean shouldSkipProcessing(final UInt64 slot) {
     if (isActiveSuperNode(slot)) {
       return false;
@@ -172,27 +154,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       return false;
     }
     return true;
-  }
-
-  private void createOrUpdateRecoveryTaskForBlock(final BeaconBlock block) {
-    if (!recoveryTasks.containsKey(block.getSlotAndBlockRoot())) {
-      final RecoveryTask oldValue =
-          recoveryTasks.putIfAbsent(
-              block.getSlotAndBlockRoot(),
-              new RecoveryTask(
-                  new AtomicReference<>(block),
-                  new ConcurrentHashMap<>(),
-                  new AtomicBoolean(false),
-                  new AtomicBoolean(false)));
-      if (oldValue == null) {
-        return;
-      }
-    }
-    final RecoveryTask existing = recoveryTasks.get(block.getSlotAndBlockRoot());
-    if (existing.block().get() == null) {
-      existing.block().set(block);
-      maybeStartRecovery(existing);
-    }
   }
 
   private void maybeStartRecovery(final RecoveryTask task) {
@@ -222,7 +183,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       return false;
     }
 
-    if (task.block().get() == null) {
+    if (task.slotAndBlockRoot == null) {
       return false;
     }
 
@@ -241,12 +202,16 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   }
 
   private record RecoveryTask(
-      AtomicReference<BeaconBlock> block,
+      SlotAndBlockRoot slotAndBlockRoot,
       Map<DataColumnSlotAndIdentifier, DataColumnSidecar> existingSidecars,
       AtomicBoolean recoveryStarted,
       AtomicBoolean timedOut) {}
 
   private void prepareAndInitiateRecovery(final RecoveryTask task) {
+    LOG.debug(
+        "Recovery for block: {}. DataColumnSidecars found: {}",
+        task.slotAndBlockRoot,
+        task.existingSidecars.size());
     final MetricsHistogram.Timer timer = dataAvailabilityReconstructionTimeSeconds.startTimer();
     try {
       initiateRecovery(task, task.existingSidecars.values(), timer);
@@ -254,7 +219,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       task.recoveryStarted.compareAndSet(true, false);
       LOG.debug(
           "Error during recovery of {} task with {} sidecars",
-          task.block.get() == null ? "<unknown>" : task.block.get().getSlotAndBlockRoot(),
+          task.slotAndBlockRoot == null ? "<unknown>" : task.slotAndBlockRoot,
           task.existingSidecars.size(),
           e);
     }
@@ -265,12 +230,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final RecoveryTask recoveryTask,
       final Collection<DataColumnSidecar> sidecars,
       final MetricsHistogram.Timer timer) {
-    final BeaconBlock block = recoveryTask.block.get();
-
-    LOG.debug(
-        "Recovery for block: {}. DataColumnSidecars found: {}",
-        block.getSlotAndBlockRoot(),
-        sidecars.size());
     final List<DataColumnSidecar> recoveredSidecars =
         miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
     timer.closeUnchecked().run();
@@ -284,11 +243,14 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
             dataColumnSidecar -> {
               validDataColumnSidecarsSubscribers.forEach(
                   l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
-              delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar).finishError(LOG);
+              delegate
+                  .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
+                  .finishError(LOG);
               dataColumnSidecarPublisher.accept(dataColumnSidecar);
             });
     recoveryTask.existingSidecars.clear();
-    LOG.debug("Data column sidecars recovery finished for block: {}", block.getSlotAndBlockRoot());
+    LOG.debug(
+        "Data column sidecars recovery finished for block: {}", recoveryTask.slotAndBlockRoot);
   }
 
   @Override
@@ -299,9 +261,13 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public SafeFuture<Void> onNewValidatedDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar) {
-    createOrUpdateRecoveryTaskForDataColumnSidecar(dataColumnSidecar);
-    return delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar);
+      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
+    // Recovery is not needed for locally produced or recovered data,
+    // we will get everything for it in custody w/o reconstruction
+    if (remoteOrigin.equals(RemoteOrigin.RPC) || remoteOrigin.equals(RemoteOrigin.GOSSIP)) {
+      createOrUpdateRecoveryTaskForDataColumnSidecar(dataColumnSidecar);
+    }
+    return delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin);
   }
 
   private void createOrUpdateRecoveryTaskForDataColumnSidecar(final DataColumnSidecar sidecar) {
@@ -311,19 +277,21 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       sidecars.put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
       final RecoveryTask recoveryTask =
           new RecoveryTask(
-              new AtomicReference<>(null),
+              sidecar.getSlotAndBlockRoot(),
               sidecars,
               new AtomicBoolean(false),
               new AtomicBoolean(false));
-      final RecoveryTask oldValue =
+      final RecoveryTask oldTask =
           recoveryTasks.putIfAbsent(sidecar.getSlotAndBlockRoot(), recoveryTask);
-      if (oldValue == null) {
+      if (oldTask == null) {
         return;
       }
     }
-    final RecoveryTask existing = recoveryTasks.get(sidecar.getSlotAndBlockRoot());
-    existing.existingSidecars().put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
-    maybeStartRecovery(existing);
+    final RecoveryTask existingTask = recoveryTasks.get(sidecar.getSlotAndBlockRoot());
+    existingTask
+        .existingSidecars()
+        .put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
+    maybeStartRecovery(existingTask);
   }
 
   @Override

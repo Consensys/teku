@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarByRootCustodyImpl
@@ -70,10 +71,10 @@ public class DataColumnSidecarByRootCustodyImpl
 
   @Override
   public SafeFuture<Void> onNewValidatedDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar) {
+      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
     cache.pruneCaches(dataColumnSidecar.getSlot().minusMinZero(maxCacheSizeInSlots));
     cache.addColumnSlotIdFromSidecar(dataColumnSidecar);
-    return custody.onNewValidatedDataColumnSidecar(dataColumnSidecar);
+    return custody.onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin);
   }
 
   @Override

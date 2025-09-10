@@ -28,7 +28,6 @@ import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.crea
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -54,7 +53,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 @SuppressWarnings("FutureReturnValueIgnored")
-public class DataColumnSidecarRecoveryCustodyTest {
+public class DataColumnSidecarRecoveringCustodyTest {
 
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
@@ -107,7 +106,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
   @BeforeEach
   public void setup() {
     custody.subscribeToValidDataColumnSidecars(listener);
-    when(delegate.onNewValidatedDataColumnSidecar(any())).thenReturn(SafeFuture.COMPLETE);
+    when(delegate.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -158,13 +157,15 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().stream().skip(30).limit(70).forEach(custody::onNewValidatedDataColumnSidecar);
+    sidecars.values().stream()
+        .skip(30)
+        .limit(70)
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
@@ -178,7 +179,8 @@ public class DataColumnSidecarRecoveryCustodyTest {
         .limit(30)
         .forEach(
             i -> {
-              verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
+              verify(delegate)
+                  .onNewValidatedDataColumnSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
@@ -187,7 +189,8 @@ public class DataColumnSidecarRecoveryCustodyTest {
         .skip(100)
         .forEach(
             i -> {
-              verify(delegate).onNewValidatedDataColumnSidecar(eq(sidecars.get(i)));
+              verify(delegate)
+                  .onNewValidatedDataColumnSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
               verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
             });
@@ -198,13 +201,17 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_PROPOSAL));
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().stream().skip(30).limit(70).forEach(custody::onNewValidatedDataColumnSidecar);
+    sidecars.values().stream()
+        .skip(30)
+        .limit(70)
+        .forEach(
+            sidecar ->
+                custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.LOCAL_PROPOSAL));
     stubAsyncRunner.executeQueuedActions();
     stubAsyncRunner.executeQueuedActions();
 
@@ -216,13 +223,16 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.of(RemoteOrigin.LOCAL_EL));
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().stream().skip(30).limit(70).forEach(custody::onNewValidatedDataColumnSidecar);
+    sidecars.values().stream()
+        .skip(30)
+        .limit(70)
+        .forEach(
+            sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.LOCAL_EL));
     stubAsyncRunner.executeQueuedActions();
     stubAsyncRunner.executeQueuedActions();
 
@@ -234,13 +244,15 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().stream().skip(30).limit(70).forEach(custody::onNewValidatedDataColumnSidecar);
+    sidecars.values().stream()
+        .skip(30)
+        .limit(70)
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
@@ -251,7 +263,7 @@ public class DataColumnSidecarRecoveryCustodyTest {
     verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection(), any());
 
     // post reconstructed
-    verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
+    verify(delegate, times(58)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(listener, times(58)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(58)).accept(any());
   }
@@ -261,13 +273,15 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().stream().skip(30).limit(63).forEach(custody::onNewValidatedDataColumnSidecar);
+    sidecars.values().stream()
+        .skip(30)
+        .limit(63)
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
@@ -278,14 +292,14 @@ public class DataColumnSidecarRecoveryCustodyTest {
     stubTimeProvider.advanceTimeBySeconds(1);
     stubAsyncRunner.executeDueActionsRepeatedly();
 
-    custody.onNewValidatedDataColumnSidecar(sidecars.get(UInt64.ZERO));
+    custody.onNewValidatedDataColumnSidecar(sidecars.get(UInt64.ZERO), RemoteOrigin.RPC);
 
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection(), any());
 
     // post reconstructed
-    verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
+    verify(delegate, times(64)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(listener, times(64)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(64)).accept(any());
   }
@@ -295,13 +309,15 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().stream().skip(30).limit(70).forEach(custody::onNewValidatedDataColumnSidecar);
+    sidecars.values().stream()
+        .skip(30)
+        .limit(70)
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenThrow(new RuntimeException("Simulated exception"));
@@ -318,11 +334,11 @@ public class DataColumnSidecarRecoveryCustodyTest {
     reset(miscHelpersFulu);
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenReturn(sidecars.values().stream().toList());
-    custody.onNewValidatedDataColumnSidecar(sidecars.get(UInt64.ZERO));
+    custody.onNewValidatedDataColumnSidecar(sidecars.get(UInt64.ZERO), RemoteOrigin.RPC);
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     // post reconstructed
-    verify(delegate, times(config.getNumberOfColumns())).onNewValidatedDataColumnSidecar(any());
+    verify(delegate, times(57)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(listener, times(57)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, times(57)).accept(any());
   }
@@ -332,13 +348,14 @@ public class DataColumnSidecarRecoveryCustodyTest {
     custody.onSlot(slot);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
-    custody.onNewBlock(signedBeaconBlock, Optional.empty());
     final Map<UInt64, DataColumnSidecar> sidecars =
         columnIndices
             .get()
             .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
             .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
-    sidecars.values().forEach(custody::onNewValidatedDataColumnSidecar);
+    sidecars
+        .values()
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(1);
