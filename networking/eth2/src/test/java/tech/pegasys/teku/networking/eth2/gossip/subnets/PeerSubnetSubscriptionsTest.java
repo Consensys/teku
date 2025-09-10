@@ -147,17 +147,17 @@ class PeerSubnetSubscriptionsTest {
   // but PEER3 has a subnet not covered by PEER1
   public void shouldScoreExistingPeersAccordingToUniqueness() {
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2, 3, 4, 5, 6, 7));
-    final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(
+    final Map<String, Collection<NodeId>> subscribersByTopic =
+        makeSubscribersByTopic(
             Map.of(
-                    0, Set.of(PEER1, PEER2),
-                    1, Set.of(PEER1, PEER2),
-                    2, Set.of(PEER1, PEER2),
-                    3, Set.of(PEER1, PEER2),
-                    4, Set.of(PEER1, PEER2,PEER3),
-                    5, Set.of(PEER1, PEER2,PEER3),
-                    6, Set.of(PEER1),
-                    7, Set.of(PEER3)
-            ));
+                0, Set.of(PEER1, PEER2),
+                1, Set.of(PEER1, PEER2),
+                2, Set.of(PEER1, PEER2),
+                3, Set.of(PEER1, PEER2),
+                4, Set.of(PEER1, PEER2, PEER3),
+                5, Set.of(PEER1, PEER2, PEER3),
+                6, Set.of(PEER1),
+                7, Set.of(PEER3)));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
@@ -269,16 +269,16 @@ class PeerSubnetSubscriptionsTest {
             .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
             .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
             .build();
-    final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(
+    final Map<String, Collection<NodeId>> subscribersByTopic =
+        makeSubscribersByTopic(
             Map.of(
-              0, Set.of(PEER1),
-              1, Set.of(PEER1),
-              2, Set.of(PEER1),
-              3, Set.of(PEER1),
-              4, Set.of(PEER1),
-              5, Set.of(PEER1),
-              6, Set.of(PEER1)
-            ));
+                0, Set.of(PEER1),
+                1, Set.of(PEER1),
+                2, Set.of(PEER1),
+                3, Set.of(PEER1),
+                4, Set.of(PEER1),
+                5, Set.of(PEER1),
+                6, Set.of(PEER1)));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
@@ -335,7 +335,8 @@ class PeerSubnetSubscriptionsTest {
     }
     final Map<NodeId, SszBitvector> peer2subnets = builder.build();
     assertThat(peer2subnets.size()).isEqualTo(100);
-    final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(Map.of()); // no existing subsribers
+    final Map<String, Collection<NodeId>> subscribersByTopic =
+        makeSubscribersByTopic(Map.of()); // no existing subsribers
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
