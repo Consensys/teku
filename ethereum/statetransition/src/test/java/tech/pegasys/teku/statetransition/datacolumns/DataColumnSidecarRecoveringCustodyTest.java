@@ -321,12 +321,11 @@ public class DataColumnSidecarRecoveringCustodyTest {
 
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
         .thenThrow(new RuntimeException("Simulated exception"));
-    stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(2);
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection(), any());
-
+    // but failed to reconstruct anything due to exception
     verify(listener, never()).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
     verify(dataColumnSidecarPublisher, never()).accept(any());
 
