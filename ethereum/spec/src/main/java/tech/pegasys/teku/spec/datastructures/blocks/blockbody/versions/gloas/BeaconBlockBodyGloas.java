@@ -31,7 +31,7 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected Eip7732 block body but got " + body.getClass().getSimpleName()));
+                    "Expected Gloas block body but got " + body.getClass().getSimpleName()));
   }
 
   @Override
@@ -68,17 +68,17 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
 
   @Override
   default ExecutionPayloadDeneb getExecutionPayload() {
-    throw new UnsupportedOperationException("ExecutionPayload removed in Eip7732");
+    throw new UnsupportedOperationException("ExecutionPayload removed in Gloas");
   }
 
   @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
-    throw new UnsupportedOperationException("BlobKzgCommitments removed in Eip7732");
+    throw new UnsupportedOperationException("BlobKzgCommitments removed in Gloas");
   }
 
   @Override
   default ExecutionRequests getExecutionRequests() {
-    throw new UnsupportedOperationException("ExecutionRequests removed in Eip7732");
+    throw new UnsupportedOperationException("ExecutionRequests removed in Gloas");
   }
 
   @Override
