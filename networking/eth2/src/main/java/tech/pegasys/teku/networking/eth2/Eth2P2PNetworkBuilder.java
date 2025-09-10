@@ -86,6 +86,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -147,6 +148,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<ValidatableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
+  protected OperationProcessor<ExecutionProof> executionProofOperationProcessor;
   protected StatusMessageFactory statusMessageFactory;
   protected KZG kzg;
   protected boolean recordMessageArrival;
@@ -386,7 +388,8 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedContributionAndProofProcessor,
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
-              debugDataDumper);
+              debugDataDumper,
+              executionProofOperationProcessor);
       case FULU ->
           new GossipForkSubscriptionsFulu(
               forkAndSpecMilestone.getFork(),
@@ -408,7 +411,8 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
-              dasGossipLogger);
+              dasGossipLogger,
+              executionProofOperationProcessor);
       case GLOAS ->
           new GossipForkSubscriptionsGloas(
               forkAndSpecMilestone.getFork(),
@@ -430,7 +434,8 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
-              dasGossipLogger);
+              dasGossipLogger,
+              executionProofOperationProcessor);
     };
   }
 
@@ -757,6 +762,13 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
     checkNotNull(dataColumnSidecarOperationProcessor);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedExecutionProofOperationProcessor(
+      final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
+    checkNotNull(executionProofOperationProcessor);
+    this.executionProofOperationProcessor = executionProofOperationProcessor;
     return this;
   }
 
