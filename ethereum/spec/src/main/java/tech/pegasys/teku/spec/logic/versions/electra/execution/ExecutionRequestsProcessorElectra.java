@@ -287,8 +287,7 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
    * @see <a
    *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
    */
-  @Override
-  public boolean isValidSwitchToCompoundingRequest(
+  private boolean isValidSwitchToCompoundingRequest(
       final BeaconState state, final ConsolidationRequest consolidationRequest) {
 
     // Switch to compounding requires source and target be equal
