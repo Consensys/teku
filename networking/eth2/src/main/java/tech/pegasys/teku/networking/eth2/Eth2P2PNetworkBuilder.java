@@ -465,6 +465,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
               bpo);
@@ -488,6 +489,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
               bpo);

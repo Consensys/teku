@@ -13,21 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetSubscriptions;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 
 public class ExecutionProofGossipManager implements GossipManager {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   private final ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions;
-
-  private final Int2ObjectMap<TopicChannel> subnetIdToChannel = new Int2ObjectOpenHashMap<>();
 
   public ExecutionProofGossipManager(
       final ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions) {
