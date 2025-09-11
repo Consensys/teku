@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.executionproofs;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
@@ -20,28 +21,26 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-import java.util.Optional;
-
 public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
-    final ExecutionProofGossipValidator executionProofGossipValidator;
+  final ExecutionProofGossipValidator executionProofGossipValidator;
 
-    public ExecutionProofManagerImpl(final ExecutionProofGossipValidator executionProofGossipValidator) {
-        this.executionProofGossipValidator = executionProofGossipValidator;
-    }
+  public ExecutionProofManagerImpl(
+      final ExecutionProofGossipValidator executionProofGossipValidator) {
+    this.executionProofGossipValidator = executionProofGossipValidator;
+  }
 
-    @Override
-    public void onExecutionProofPublish(final ExecutionProof executionProof, final RemoteOrigin remoteOrigin) {
+  @Override
+  public void onExecutionProofPublish(
+      final ExecutionProof executionProof, final RemoteOrigin remoteOrigin) {}
 
-    }
+  @Override
+  public SafeFuture<InternalValidationResult> onExecutionProofGossip(
+      final ExecutionProof executionProof, final Optional<UInt64> arrivalTimestamp) {
+    return null;
+  }
 
-    @Override
-    public SafeFuture<InternalValidationResult> onExecutionProofGossip(final ExecutionProof executionProof, final Optional<UInt64> arrivalTimestamp) {
-        return null;
-    }
-
-    @Override
-    public void subscribeToValidExecutionProofs(final ValidExecutionProofListener executionProofListener) {
-
-    }
+  @Override
+  public void subscribeToValidExecutionProofs(
+      final ValidExecutionProofListener executionProofListener) {}
 }

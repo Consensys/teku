@@ -13,42 +13,40 @@
 
 package tech.pegasys.teku.statetransition.executionproofs;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-import java.util.Optional;
-
 public interface ExecutionProofManager {
-    interface ValidExecutionProofListener {
-        void onNewValidExecutionProof(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
-    }
+  interface ValidExecutionProofListener {
+    void onNewValidExecutionProof(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
+  }
 
-    ExecutionProofManager NOOP =
-            new ExecutionProofManager() {
-                @Override
-                public SafeFuture<InternalValidationResult> onExecutionProofGossip(
-                        ExecutionProof executionProof, Optional<UInt64> arrivalTimestamp) {
-                    return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-                }
+  ExecutionProofManager NOOP =
+      new ExecutionProofManager() {
+        @Override
+        public SafeFuture<InternalValidationResult> onExecutionProofGossip(
+            ExecutionProof executionProof, Optional<UInt64> arrivalTimestamp) {
+          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+        }
 
-                @Override
-                public void onExecutionProofPublish(
-                        final ExecutionProof executionProof, final RemoteOrigin remoteOrigin) {}
+        @Override
+        public void onExecutionProofPublish(
+            final ExecutionProof executionProof, final RemoteOrigin remoteOrigin) {}
 
-                @Override
-                public void subscribeToValidExecutionProofs(
-                        final ValidExecutionProofListener sidecarsListener) {}
-            };
+        @Override
+        public void subscribeToValidExecutionProofs(
+            final ValidExecutionProofListener sidecarsListener) {}
+      };
 
-    void onExecutionProofPublish(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
+  void onExecutionProofPublish(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
 
-    SafeFuture<InternalValidationResult> onExecutionProofGossip(
-            ExecutionProof executionProof, Optional<UInt64> arrivalTimestamp);
+  SafeFuture<InternalValidationResult> onExecutionProofGossip(
+      ExecutionProof executionProof, Optional<UInt64> arrivalTimestamp);
 
-    void subscribeToValidExecutionProofs(ExecutionProofManager.ValidExecutionProofListener executionProofListener);
-
+  void subscribeToValidExecutionProofs(
+      ExecutionProofManager.ValidExecutionProofListener executionProofListener);
 }

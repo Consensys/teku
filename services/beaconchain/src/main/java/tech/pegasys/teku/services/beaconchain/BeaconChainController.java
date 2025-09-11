@@ -673,14 +673,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
 
     if (zkConfig.isStatelessValidationEnabled()) {
-            final ExecutionProofGossipValidator executionProofGossipValidator =
-                ExecutionProofGossipValidator.create();
+      final ExecutionProofGossipValidator executionProofGossipValidator =
+          ExecutionProofGossipValidator.create();
 
-        executionProofManager = new ExecutionProofManagerImpl(executionProofGossipValidator);
+      executionProofManager = new ExecutionProofManagerImpl(executionProofGossipValidator);
 
-    }
-    else{
-        executionProofManager = ExecutionProofManager.NOOP;
+    } else {
+      executionProofManager = ExecutionProofManager.NOOP;
     }
   }
 
@@ -1632,8 +1631,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedDataColumnSidecarOperationProcessor(
                 dataColumnSidecarManager::onDataColumnSidecarGossip)
-            .gossipedExecutionProofOperationProcessor(
-                executionProofManager::onExecutionProofGossip)
+            .gossipedExecutionProofOperationProcessor(executionProofManager::onExecutionProofGossip)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)

@@ -792,6 +792,7 @@ public class Eth2P2PNetworkFactory {
       this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
       return this;
     }
+
     public Eth2P2PNetworkBuilder gossipedExecutionProofOperationProcessor(
         final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
       checkNotNull(executionProofOperationProcessor);
