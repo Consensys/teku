@@ -101,7 +101,7 @@ public class PeerManager implements ConnectionHandler {
   public void handleConnection(@NotNull final Connection connection) {
     Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager, peerScoreFunction);
     if (!reputationManager.isConnectionInitiationAllowed(peer.getAddress())) {
-      LOG.debug("Disconnecting from {} as we have a bad reputation", peer.getId());
+      LOG.debug("Disconnecting from {} due to bad reputation", peer.getId());
       peer.disconnectImmediately(Optional.of(BAD_SCORE), true);
       return;
     }
