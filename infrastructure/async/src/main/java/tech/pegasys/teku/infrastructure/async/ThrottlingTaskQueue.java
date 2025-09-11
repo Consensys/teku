@@ -14,9 +14,13 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.Collection;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -33,6 +37,8 @@ public class ThrottlingTaskQueue implements TaskQueue {
   private final int maximumConcurrentTasks;
   protected final AtomicLong rejectedTaskCount = new AtomicLong(0);
   private final AtomicInteger inflightTaskCount = new AtomicInteger(0);
+
+  private final Collection<QueuedTask<?>> inflightTasks = ConcurrentHashMap.newKeySet();
 
   public static class QueueIsFullException extends RejectedExecutionException {
     public QueueIsFullException() {
@@ -95,8 +101,12 @@ public class ThrottlingTaskQueue implements TaskQueue {
     return target;
   }
 
+  private record QueuedTask<T>(
+      Supplier<SafeFuture<T>> request, Exception callerStackHolder) {}
+
   protected <T> Runnable getTaskToQueue(
       final Supplier<SafeFuture<T>> request, final SafeFuture<T> target) {
+      var task = new QueuedTask<>(request, new Exception("Task queued at:"));
     return () -> {
       final SafeFuture<T> requestFuture;
       try {
@@ -106,8 +116,14 @@ public class ThrottlingTaskQueue implements TaskQueue {
         taskComplete();
         return;
       }
+      inflightTasks.add(task);
+
       requestFuture.propagateTo(target);
-      requestFuture.always(this::taskComplete);
+      requestFuture.always(
+          () -> {
+            inflightTasks.remove(task);
+            taskComplete();
+          });
     };
   }
 
