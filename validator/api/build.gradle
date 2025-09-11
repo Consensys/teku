@@ -11,6 +11,9 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':ethereum:networks')
   implementation project(':data:serializer')
+  
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:logging'))
