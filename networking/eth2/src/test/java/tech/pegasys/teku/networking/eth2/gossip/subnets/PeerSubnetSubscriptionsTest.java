@@ -245,14 +245,12 @@ class PeerSubnetSubscriptionsTest {
 
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
-            Stream.<NodeId>of(PEER1, PEER2, PEER3)
-                .sorted(
-                    Comparator.<NodeId, Integer>comparing(
-                            peerId ->
-                                scorer.scoreCandidatePeer(
-                                    makeCandidatePeer(peerId, peer2subnets.get(peerId).size())))
-                        .reversed())
-                .limit(2))
+            scorer
+                .scoreCandidatePeers(
+                    makeCandidatePeers(List.of(PEER1, PEER2, PEER3), peer2subnets), 2)
+                .stream()
+                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .toList())
         .containsExactlyInAnyOrder(PEER1, PEER3);
   }
 
@@ -292,14 +290,11 @@ class PeerSubnetSubscriptionsTest {
 
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
-            Stream.<NodeId>of(PEER2, PEER3)
-                .sorted(
-                    Comparator.<NodeId, Integer>comparing(
-                            peerId ->
-                                scorer.scoreCandidatePeer(
-                                    makeCandidatePeer(peerId, peer2subnets.get(peerId).size())))
-                        .reversed())
-                .limit(1))
+            scorer
+                .scoreCandidatePeers(makeCandidatePeers(List.of(PEER2, PEER3), peer2subnets), 1)
+                .stream()
+                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .toList())
         .containsExactlyInAnyOrder(PEER3);
   }
 
@@ -350,14 +345,12 @@ class PeerSubnetSubscriptionsTest {
 
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
-            Stream.of(peers)
-                .sorted(
-                    Comparator.<NodeId, Integer>comparing(
-                            peerId ->
-                                scorer.scoreCandidatePeer(
-                                    makeCandidatePeer(peerId, peer2subnets.get(peerId).size())))
-                        .reversed())
-                .limit(50))
+            scorer
+                .scoreCandidatePeers(
+                    makeCandidatePeers(Arrays.stream(peers).toList(), peer2subnets), 50)
+                .stream()
+                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .toList())
         .containsAll(
             Stream.concat(Arrays.stream(peers).limit(5), Stream.of(peers[50], peers[51])).toList());
   }
@@ -379,16 +372,21 @@ class PeerSubnetSubscriptionsTest {
     return builder.build();
   }
 
-  private DiscoveryPeer makeCandidatePeer(final NodeId peerId, final int dasCustodyCount) {
-    return new DiscoveryPeer(
-        dataStructureUtil.randomPublicKeyBytes(),
-        peerId.toBytes(),
-        new InetSocketAddress(8888),
-        Optional.empty(),
-        SszBitvectorImpl.ofBits(SszBitvectorSchema.create(128)),
-        SszBitvectorImpl.ofBits(SszBitvectorSchema.create(128)),
-        Optional.of(dasCustodyCount),
-        Optional.empty());
+  private List<DiscoveryPeer> makeCandidatePeers(
+      final List<NodeId> peerIds, final Map<NodeId, SszBitvector> peer2subnets) {
+    return peerIds.stream()
+        .map(
+            peerId ->
+                new DiscoveryPeer(
+                    dataStructureUtil.randomPublicKeyBytes(),
+                    peerId.toBytes(),
+                    new InetSocketAddress(8888),
+                    Optional.empty(),
+                    SszBitvectorImpl.ofBits(SszBitvectorSchema.create(128)),
+                    SszBitvectorImpl.ofBits(SszBitvectorSchema.create(128)),
+                    Optional.of(peer2subnets.get(peerId).size()),
+                    Optional.empty()))
+        .toList();
   }
 
   @Test

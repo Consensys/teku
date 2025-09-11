@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -124,12 +123,15 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
       final int scoreBasedPeersToAdd,
       final List<DiscoveryPeer> allCandidatePeers) {
     final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
-    return allCandidatePeers.stream()
-        .sorted(
-            Comparator.comparing((Function<DiscoveryPeer, Integer>) peerScorer::scoreCandidatePeer)
-                .reversed())
-        .flatMap(candidate -> checkCandidate(candidate, network).stream())
-        .limit(scoreBasedPeersToAdd)
+
+    return peerScorer
+        .scoreCandidatePeers(
+            allCandidatePeers.stream()
+                .filter(candidate -> checkCandidate(candidate, network).isPresent())
+                .toList(),
+            scoreBasedPeersToAdd)
+        .stream()
+        .map(network::createPeerAddress)
         .toList();
   }
 

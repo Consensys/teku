@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -46,6 +49,17 @@ public class SubnetScorer implements PeerScorer {
         syncCommitteeSubscriptions,
         dataColumnSidecarSubscriptions,
         this::scoreSubnetForExistingPeer);
+  }
+
+  @Override
+  public List<DiscoveryPeer> scoreCandidatePeers(
+      final List<DiscoveryPeer> candidates, final int maxToSelect) {
+    return candidates.stream()
+        .sorted(
+            Comparator.comparing((Function<DiscoveryPeer, Integer>) this::scoreCandidatePeer)
+                .reversed())
+        .limit(maxToSelect)
+        .toList();
   }
 
   @Override
