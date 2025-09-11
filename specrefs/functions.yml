@@ -3675,7 +3675,7 @@
 
 - name: process_consolidation_request
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/execution/ExecutionRequestsProcessorElectra.java
       search: public void processConsolidationRequests(
   spec: |
     <spec fn="process_consolidation_request" fork="electra" hash="4da4b0fb">
@@ -3815,7 +3815,7 @@
 
 - name: process_deposit_request
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/execution/ExecutionRequestsProcessorElectra.java
       search: public void processDepositRequests(
   spec: |
     <spec fn="process_deposit_request" fork="electra" hash="547c4a35">
@@ -4721,7 +4721,7 @@
 
 - name: process_withdrawal_request
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/execution/ExecutionRequestsProcessorElectra.java
       search: public void processWithdrawalRequests(
   spec: |
     <spec fn="process_withdrawal_request" fork="electra" hash="c21a0a53">

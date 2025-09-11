@@ -387,8 +387,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processDepositRequest(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<DepositRequest, ?> depositRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -403,8 +402,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processWithdrawalRequest(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<WithdrawalRequest, ?> withdrawalRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -419,8 +417,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processConsolidations(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<ConsolidationRequest, ?> consolidationRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
