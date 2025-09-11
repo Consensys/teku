@@ -159,6 +159,14 @@
       "created_at": "2025-09-10T11:32:19Z",
       "repoId": 147802356,
       "pullRequestNo": 9881
+    },
+    {
+      "name": "Nashatyrev",
+      "id": 8173857,
+      "comment_id": 3281798796,
+      "created_at": "2025-09-11T16:40:40Z",
+      "repoId": 147802356,
+      "pullRequestNo": 9484
     }
   ]
 }
