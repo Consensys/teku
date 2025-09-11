@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetSubscriptions;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 
 public class ExecutionProofGossipManager implements GossipManager {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions;
 
@@ -49,6 +53,10 @@ public class ExecutionProofGossipManager implements GossipManager {
   }
 
   public void publish(final ExecutionProof executionProof) {
-    executionProofSubnetSubscriptions.gossip(executionProof);
+    executionProofSubnetSubscriptions
+        .gossip(executionProof)
+        .finish(
+            __ -> LOG.info(executionProof + " published successfully"),
+            error -> LOG.info(executionProof + error.getMessage()));
   }
 }
