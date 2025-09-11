@@ -46,8 +46,8 @@ public interface GossipForkSubscriptions {
     return SafeFuture.COMPLETE;
   }
 
-  default SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
-    return SafeFuture.COMPLETE;
+  default void publishExecutionProof(final ExecutionProof executionProof) {
+    // since Electra for now
   }
 
   void subscribeToAttestationSubnetId(int subnetId);

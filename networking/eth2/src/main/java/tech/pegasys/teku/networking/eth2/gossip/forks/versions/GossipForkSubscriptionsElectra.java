@@ -98,22 +98,26 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
     }
 
     private void addExecutionProofGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
-        executionProofGossipManager =
-                ExecutionProofGossipManager.create(
-                        recentChainData,
+
+        ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions =
+                new ExecutionProofSubnetSubscriptions(
                         spec,
                         asyncRunner,
                         discoveryNetwork,
                         gossipEncoding,
-                        forkInfo,
-                        forkDigest,
+                        recentChainData,
                         executionProofOperationProcessor,
-                        debugDataDumper);
+                        debugDataDumper,
+                        forkInfo,
+                        forkDigest
+                );
+
+        executionProofGossipManager = new ExecutionProofGossipManager(executionProofSubnetSubscriptions);
         addGossipManager(executionProofGossipManager);
     }
 
     @Override
-    public SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
-        return executionProofGossipManager.publishExecutionProof(executionProof);
+    public void publishExecutionProof(final ExecutionProof executionProof) {
+        executionProofGossipManager.publish(executionProof);
     }
 }

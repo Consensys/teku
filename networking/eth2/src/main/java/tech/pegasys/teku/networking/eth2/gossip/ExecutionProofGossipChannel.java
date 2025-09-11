@@ -16,15 +16,16 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 
-public interface ExecutionProofGossipChannel extends ChannelInterface {
+public interface ExecutionProofGossipChannel extends VoidReturningChannelInterface {
 
-  ExecutionProofGossipChannel NOOP = executionProof -> SafeFuture.COMPLETE;
+  ExecutionProofGossipChannel NOOP = executionProof -> {};
 
-  default SafeFuture<Void> publishExecutionProof(final List<ExecutionProof> executionProofs) {
-    return SafeFuture.allOf(executionProofs.stream().map(this::publishExecutionProof));
+  default void publishExecutionProof(final List<ExecutionProof> executionProofs) {
+    executionProofs.forEach(this::publishExecutionProof);
   }
 
-  SafeFuture<Void> publishExecutionProof(ExecutionProof executionProof);
+  void publishExecutionProof(ExecutionProof executionProof);
 }

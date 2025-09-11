@@ -190,11 +190,11 @@ public class GossipForkManager {
         GossipForkSubscriptions::publishDataColumnSidecar);
   }
 
-  public SafeFuture<Void> publishExecutionProof(final ExecutionProof executionProof) {
+  public void publishExecutionProof(final ExecutionProof executionProof) {
     // for now we don't have a slot in the message data (execution proof) to use
     // I believe it's safe to just check the current epoch
       UInt64 slot = spec.computeStartSlotAtEpoch(spec.getCurrentEpoch(recentChainData.getStore()));
-    return publishMessageWithFeedback(
+     publishMessage(
         slot,
         executionProof,
         "execution proof",
