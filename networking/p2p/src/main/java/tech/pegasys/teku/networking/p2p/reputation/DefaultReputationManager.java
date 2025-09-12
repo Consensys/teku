@@ -106,10 +106,11 @@ public class DefaultReputationManager implements ReputationManager {
   private Reputation getOrCreateReputation(final PeerAddress peerAddress) {
     return peerReputations.get(
         peerAddress.getId(),
-        key ->
-            peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC)
-                ? new StaticPeerReputation()
-                : new Reputation());
+        key -> isStaticPeer(peerAddress) ? new StaticPeerReputation() : new Reputation());
+  }
+
+  private boolean isStaticPeer(final PeerAddress peerAddress) {
+    return peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC);
   }
 
   private static class Reputation {
