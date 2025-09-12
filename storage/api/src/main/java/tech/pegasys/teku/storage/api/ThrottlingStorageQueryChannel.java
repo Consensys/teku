@@ -60,8 +60,14 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
             "throttling_storage_query_rejected");
   }
 
-  public static <T> Optional<T> ignoreQueueIsFullException(final Throwable error) {
+  public static <T> Optional<T> mapQueueIsFullExceptionToEmptyOrRethrow(final Throwable error) {
+    return mapQueueIsFullExceptionToEmptyOrRethrow(error, () -> {});
+  }
+
+  public static <T> Optional<T> mapQueueIsFullExceptionToEmptyOrRethrow(
+      final Throwable error, final Runnable onQueueIsFull) {
     if (isQueueIsFullException(error)) {
+      onQueueIsFull.run();
       return Optional.empty();
     }
     if (error instanceof RuntimeException exception) {

@@ -102,10 +102,11 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Boolean> validateAndMaybeRespond(
+      final Eth2Peer peer,
       final DataColumnIdentifier identifier,
       final Optional<DataColumnSidecar> maybeSidecar,
       final ResponseCallback<DataColumnSidecar> callback) {
-    return validateMinimumRequestEpoch(identifier, maybeSidecar)
+    return validateMinimumRequestEpoch(peer, identifier, maybeSidecar)
         .thenCompose(
             __ ->
                 maybeSidecar
@@ -173,10 +174,11 @@ public class DataColumnSidecarsByRootMessageHandler
                                 new DataColumnIdentifier(byRootIdentifier.getBlockRoot(), column)))
             .map(
                 dataColumnIdentifier ->
-                    retrieveDataColumnSidecar(dataColumnIdentifier)
+                    retrieveDataColumnSidecar(dataColumnIdentifier, peer)
                         .thenCompose(
                             maybeSidecar ->
                                 validateAndMaybeRespond(
+                                    peer,
                                     dataColumnIdentifier,
                                     maybeSidecar,
                                     responseCallbackWithLogging)));
@@ -193,11 +195,7 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               responseCallbackWithLogging.completeSuccessfully();
             })
-        .finish(
-            err -> {
-              peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
-              handleError(responseCallbackWithLogging, err);
-            });
+        .finish(err -> handleError(responseCallbackWithLogging, err));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
@@ -226,14 +224,19 @@ public class DataColumnSidecarsByRootMessageHandler
    */
   @SuppressWarnings("unused")
   private SafeFuture<Void> validateMinimumRequestEpoch(
-      final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
+      final Eth2Peer peer,
+      final DataColumnIdentifier identifier,
+      final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
         .orElseGet(
             () ->
                 combinedChainDataClient
                     .getBlockByBlockRoot(identifier.blockRoot())
-                    .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
+                    .exceptionally(
+                        error ->
+                            ThrottlingStorageQueryChannel.mapQueueIsFullExceptionToEmptyOrRethrow(
+                                error, peer::recordStorageLimitHit))
                     .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
@@ -253,7 +256,7 @@ public class DataColumnSidecarsByRootMessageHandler
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> retrieveDataColumnSidecar(
-      final DataColumnIdentifier identifier) {
+      final DataColumnIdentifier identifier, final Eth2Peer peer) {
     return dataColumnSidecarCustodySupplier
         .get()
         .getCustodyDataColumnSidecarByRoot(identifier)
@@ -265,7 +268,10 @@ public class DataColumnSidecarsByRootMessageHandler
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
             })
-        .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException);
+        .exceptionally(
+            error ->
+                ThrottlingStorageQueryChannel.mapQueueIsFullExceptionToEmptyOrRethrow(
+                    error, peer::recordStorageLimitHit));
   }
 
   private void handleError(
