@@ -202,10 +202,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       return false;
     }
 
-    if (task.slotAndBlockRoot == null) {
-      return false;
-    }
-
     return true;
   }
 
