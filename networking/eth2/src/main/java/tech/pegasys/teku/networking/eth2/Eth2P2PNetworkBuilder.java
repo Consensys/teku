@@ -49,6 +49,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopicProvider;
@@ -167,6 +168,7 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService dataColumnSidecarSubnetService =
         new SubnetSubscriptionService();
+    final SubnetSubscriptionService executionProofSubnetService = new SubnetSubscriptionService();
     final DiscoveryNodeIdExtractor discoveryNodeIdExtractor = new LibP2PDiscoveryNodeIdExtractor();
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
@@ -215,7 +217,11 @@ public class Eth2P2PNetworkBuilder {
     final GossipEncoding gossipEncoding = config.getGossipEncoding();
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network =
-        buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
+        buildNetwork(
+            gossipEncoding,
+            syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
+            executionProofSubnetService);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
@@ -230,6 +236,7 @@ public class Eth2P2PNetworkBuilder {
         attestationSubnetService,
         syncCommitteeSubnetService,
         dataColumnSidecarSubnetService,
+        executionProofSubnetService,
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
@@ -488,7 +495,8 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService,
-      final SubnetSubscriptionService dataColumnSidecarSubnetService) {
+      final SubnetSubscriptionService dataColumnSidecarSubnetService,
+      final SubnetSubscriptionService executionProofSubnetService) {
     final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
         new DefaultReputationManager(
@@ -527,6 +535,9 @@ public class Eth2P2PNetworkBuilder {
             combinedChainDataClient.getRecentChainData(), gossipEncoding);
     final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
         new DataColumnSidecarSubnetTopicProvider(
+            combinedChainDataClient.getRecentChainData(), gossipEncoding);
+    final ExecutionProofSubnetTopicProvider executionProofSubnetTopicProvider =
+        new ExecutionProofSubnetTopicProvider(
             combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
     final TargetPeerRange targetPeerRange =
@@ -567,6 +578,8 @@ public class Eth2P2PNetworkBuilder {
                         syncCommitteeSubnetService,
                         dataColumnSidecarSubnetTopicProvider,
                         dataColumnSidecarSubnetService,
+                        executionProofSubnetTopicProvider,
+                        executionProofSubnetService,
                         config.getTargetSubnetSubscriberCount(),
                         subnetPeerCountGauge),
                 reputationManager,

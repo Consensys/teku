@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
+
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -45,6 +47,7 @@ public class PeerSubnetSubscriptions {
   private final SubnetSubscriptions attestationSubnetSubscriptions;
   private final SubnetSubscriptions syncCommitteeSubnetSubscriptions;
   private final SubnetSubscriptions dataColumnSidecarSubnetSubscriptions;
+  private final SubnetSubscriptions executionProofSubnetSubscriptions;
   private final NodeIdToDataColumnSidecarSubnetsCalculator
       nodeIdToDataColumnSidecarSubnetsCalculator;
   private final int targetSubnetSubscriberCount;
@@ -53,11 +56,13 @@ public class PeerSubnetSubscriptions {
       final SubnetSubscriptions attestationSubnetSubscriptions,
       final SubnetSubscriptions syncCommitteeSubnetSubscriptions,
       final SubnetSubscriptions dataColumnSidecarSubnetSubscriptions,
+      final SubnetSubscriptions executionProofSubnetSubscriptions,
       final NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator,
       final int targetSubnetSubscriberCount) {
     this.attestationSubnetSubscriptions = attestationSubnetSubscriptions;
     this.syncCommitteeSubnetSubscriptions = syncCommitteeSubnetSubscriptions;
     this.dataColumnSidecarSubnetSubscriptions = dataColumnSidecarSubnetSubscriptions;
+    this.executionProofSubnetSubscriptions = executionProofSubnetSubscriptions;
     this.nodeIdToDataColumnSidecarSubnetsCalculator = nodeIdToDataColumnSidecarSubnetsCalculator;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
   }
@@ -71,6 +76,8 @@ public class PeerSubnetSubscriptions {
       final SubnetSubscriptionService syncCommitteeSubnetService,
       final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider,
       final SubnetSubscriptionService dataColumnSidecarSubnetService,
+      final ExecutionProofSubnetTopicProvider executionProofSubnetTopicProvider,
+      final SubnetSubscriptionService executionProofSubnetService,
       final int targetSubnetSubscriberCount,
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
@@ -85,7 +92,10 @@ public class PeerSubnetSubscriptions {
             .orElse(1);
 
     final PeerSubnetSubscriptions subscriptions =
-        builder(currentSchemaDefinitions, SszBitvectorSchema.create(dataColumnSidecarSubnetCount))
+        builder(
+                currentSchemaDefinitions,
+                SszBitvectorSchema.create(dataColumnSidecarSubnetCount),
+                SszBitvectorSchema.create(MAX_EXECUTION_PROOF_SUBNETS.intValue()))
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
             .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(
@@ -133,6 +143,22 @@ public class PeerSubnetSubscriptions {
                                       Collections.emptySet())
                                   .forEach(subscriber -> b.addSubscriber(columnSubnet, subscriber));
                             }))
+            .executionProofSubnetSubscriptions(
+                b ->
+                    executionProofSubnetService
+                        .getSubnets()
+                        .forEach(
+                            execSubnet -> {
+                              b.addRelevantSubnet(execSubnet);
+                              // Execution payloads are gossiped on the same topic as
+                              // data column sidecars
+                              subscribersByTopic
+                                  .getOrDefault(
+                                      executionProofSubnetTopicProvider.getTopicForSubnet(
+                                          execSubnet),
+                                      Collections.emptySet())
+                                  .forEach(subscriber -> b.addSubscriber(execSubnet, subscriber));
+                            }))
             .build();
     updateMetrics(currentSchemaDefinitions, subnetPeerCountGauge, subscriptions);
     return subscriptions;
@@ -170,15 +196,23 @@ public class PeerSubnetSubscriptions {
 
   static Builder builder(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
-      final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
-    return new Builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema);
+      final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema,
+      final SszBitvectorSchema<?> executionProofSubnetSubscription) {
+    return new Builder(
+        currentSchemaDefinitions,
+        dataColumnSidecarSubnetBitmaskSchema,
+        executionProofSubnetSubscription);
   }
 
   @VisibleForTesting
   static PeerSubnetSubscriptions createEmpty(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
-      final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
-    return builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema)
+      final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema,
+      final SszBitvectorSchema<?> executionProofSubnetSubscription) {
+    return builder(
+            currentSchemaDefinitions,
+            dataColumnSidecarSubnetBitmaskSchema,
+            executionProofSubnetSubscription)
         .nodeIdToDataColumnSidecarSubnetsCalculator(NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
         .build();
   }
@@ -195,6 +229,10 @@ public class PeerSubnetSubscriptions {
     return dataColumnSidecarSubnetSubscriptions.getSubscriberCountForSubnet(subnetId);
   }
 
+  public int getSubscriberCountForExecutionProofSubnet(final int subnetId) {
+    return executionProofSubnetSubscriptions.getSubscriberCountForSubnet(subnetId);
+  }
+
   public SszBitvector getAttestationSubnetSubscriptions(final NodeId peerId) {
     return attestationSubnetSubscriptions.getSubnetSubscriptions(peerId);
   }
@@ -205,6 +243,10 @@ public class PeerSubnetSubscriptions {
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptions(final NodeId peerId) {
     return dataColumnSidecarSubnetSubscriptions.getSubnetSubscriptions(peerId);
+  }
+
+  public Optional<SszBitvector> getExecutionProofSubnetSubscriptions(final NodeId peerId) {
+    return Optional.of(executionProofSubnetSubscriptions.getSubnetSubscriptions(peerId));
   }
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
@@ -226,6 +268,10 @@ public class PeerSubnetSubscriptions {
     return dataColumnSidecarSubnetSubscriptions.isSubnetRelevant(subnetId);
   }
 
+  public boolean isExecutionProofSubnetRelevant(final int subnetId) {
+    return executionProofSubnetSubscriptions.isSubnetRelevant(subnetId);
+  }
+
   public PeerScorer createScorer() {
     return SubnetScorer.create(this);
   }
@@ -244,7 +290,8 @@ public class PeerSubnetSubscriptions {
         List.of(
             attestationSubnetSubscriptions.getMinSubscriberCount(),
             syncCommitteeSubnetSubscriptions.getMinSubscriberCount(),
-            dataColumnSidecarSubnetSubscriptions.getMinSubscriberCount()));
+            dataColumnSidecarSubnetSubscriptions.getMinSubscriberCount(),
+            executionProofSubnetSubscriptions.getMinSubscriberCount()));
   }
 
   private static OptionalInt optionalMin(final List<OptionalInt> optionalInts) {
@@ -351,18 +398,22 @@ public class PeerSubnetSubscriptions {
     private final SubnetSubscriptions.Builder attestationSubnetSubscriptions;
     private final SubnetSubscriptions.Builder syncCommitteeSubnetSubscriptions;
     private final SubnetSubscriptions.Builder dataColumnSidecarSubnetSubscriptions;
+    private final SubnetSubscriptions.Builder executionProofSubnetSubscriptions;
     private NodeIdToDataColumnSidecarSubnetsCalculator nodeIdToDataColumnSidecarSubnetsCalculator;
     private int targetSubnetSubscriberCount = 2;
 
     private Builder(
         final SchemaDefinitionsSupplier currentSchemaDefinitions,
-        final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
+        final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema,
+        final SszBitvectorSchema<?> executionProofSubnetSubscription) {
       attestationSubnetSubscriptions =
           SubnetSubscriptions.builder(currentSchemaDefinitions.getAttnetsENRFieldSchema());
       syncCommitteeSubnetSubscriptions =
           SubnetSubscriptions.builder(currentSchemaDefinitions.getSyncnetsENRFieldSchema());
       dataColumnSidecarSubnetSubscriptions =
           SubnetSubscriptions.builder(dataColumnSidecarSubnetBitmaskSchema);
+      executionProofSubnetSubscriptions =
+          SubnetSubscriptions.builder(executionProofSubnetSubscription);
     }
 
     public PeerSubnetSubscriptions build() {
@@ -370,6 +421,7 @@ public class PeerSubnetSubscriptions {
           attestationSubnetSubscriptions.build(),
           syncCommitteeSubnetSubscriptions.build(),
           dataColumnSidecarSubnetSubscriptions.build(),
+          executionProofSubnetSubscriptions.build(),
           nodeIdToDataColumnSidecarSubnetsCalculator,
           targetSubnetSubscriberCount);
     }
@@ -398,6 +450,12 @@ public class PeerSubnetSubscriptions {
     public Builder dataColumnSidecarSubnetSubscriptions(
         final Consumer<SubnetSubscriptions.Builder> consumer) {
       consumer.accept(dataColumnSidecarSubnetSubscriptions);
+      return this;
+    }
+
+    public Builder executionProofSubnetSubscriptions(
+        final Consumer<SubnetSubscriptions.Builder> consumer) {
+      consumer.accept(executionProofSubnetSubscriptions);
       return this;
     }
 

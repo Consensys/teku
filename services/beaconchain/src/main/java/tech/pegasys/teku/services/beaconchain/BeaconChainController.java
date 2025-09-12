@@ -91,6 +91,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetBackboneSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
@@ -106,6 +107,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.services.timer.TimerService;
+import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -651,6 +653,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initOperationsReOrgManager();
     initValidatorIndexCacheTracker();
     initStoredLatestCanonicalBlockUpdater();
+    initZkChain();
   }
 
   private void initKeyValueStore() {
@@ -660,6 +663,20 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initExecutionLayer() {
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
+  }
+
+  protected void initZkChain() {
+    ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
+
+    if (zkConfig.isStatelessValidationEnabled()) {
+      //      final ExecutionProofGossipValidator executionProofGossipValidator =
+      //          ExecutionProofGossipValidator.create(zkConfig);
+
+      ExecutionProofSubnetSubscriber executionProofSubnetSubscriber =
+          new ExecutionProofSubnetSubscriber(spec, p2pNetwork);
+
+      eventChannels.subscribe(SlotEventsChannel.class, executionProofSubnetSubscriber);
+    }
   }
 
   protected void initKzg() {

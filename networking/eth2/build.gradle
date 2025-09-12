@@ -15,6 +15,7 @@ dependencies {
   implementation project(':infrastructure:ssz')
   implementation project(':storage')
   implementation project(':storage:api')
+  implementation project(':services:zkchain')
   implementation project(':infrastructure:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p'
