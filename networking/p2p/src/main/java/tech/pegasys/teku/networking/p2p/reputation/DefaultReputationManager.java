@@ -104,9 +104,20 @@ public class DefaultReputationManager implements ReputationManager {
   }
 
   private Reputation getOrCreateReputation(final PeerAddress peerAddress) {
-    return peerReputations.get(
-        peerAddress.getId(),
-        key -> isStaticPeer(peerAddress) ? new StaticPeerReputation() : new Reputation());
+    final boolean isStatic = isStaticPeer(peerAddress);
+    final Reputation reputation =
+        peerReputations.get(
+            peerAddress.getId(), key -> isStatic ? new StaticPeerReputation() : new Reputation());
+
+    if (isStatic != (reputation instanceof StaticPeerReputation)) {
+      // In case peer changed type after the cache was already populated
+      // we replace reputation with correct type
+      final Reputation newReputation = isStatic ? new StaticPeerReputation() : new Reputation();
+      peerReputations.invalidateWithNewValue(peerAddress.getId(), newReputation);
+      return newReputation;
+    }
+
+    return reputation;
   }
 
   private boolean isStaticPeer(final PeerAddress peerAddress) {
