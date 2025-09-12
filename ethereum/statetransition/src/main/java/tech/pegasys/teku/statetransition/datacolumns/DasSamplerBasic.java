@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
@@ -147,7 +148,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                               blockRoot);
 
                           retrievedColumns.stream()
-                              .map(custody::onNewValidatedDataColumnSidecar)
+                              .map(
+                                  sidecar ->
+                                      custody.onNewValidatedDataColumnSidecar(
+                                          sidecar, RemoteOrigin.RPC))
                               .forEach(updateFuture -> updateFuture.finishStackTrace());
                         } else {
                           throw new IllegalStateException(

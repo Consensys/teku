@@ -853,7 +853,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             dataColumnSidecarRecoveringCustody
-                .onNewValidatedDataColumnSidecar(dataColumnSidecar)
+                .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
                 .finishError(LOG));
 
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
@@ -903,8 +903,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
-    blockManager.subscribePreImportBlocks(
-        (block, remoteOrigin) -> getDataColumnSidecarCustody().onNewBlock(block, remoteOrigin));
     final DasCustodySync svc =
         new DasCustodySync(
             dataColumnSidecarRecoveringCustody,
