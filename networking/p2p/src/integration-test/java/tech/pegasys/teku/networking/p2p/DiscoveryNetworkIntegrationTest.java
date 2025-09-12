@@ -46,6 +46,7 @@ public class DiscoveryNetworkIntegrationTest {
   public void shouldReconnectToStaticPeersAfterDisconnection() throws Exception {
     final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
     final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
+    network2.getNodeAddresses().forEach(network1::addStaticPeer);
     assertConnected(network1, network2);
 
     // Peers disconnect
@@ -53,6 +54,9 @@ public class DiscoveryNetworkIntegrationTest {
         .getPeer(network2.getNodeId())
         .orElseThrow()
         .disconnectImmediately(Optional.empty(), true);
+
+    // give some time to disconnection to reflect in both peers
+    Thread.sleep(200);
 
     // But are automatically reconnected
     assertConnected(network1, network2);
