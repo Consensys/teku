@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -28,8 +27,6 @@ public interface DataColumnSidecarRecoveringCustody
     extends DataColumnSidecarByRootCustody, DataColumnSidecarCustody, SlotEventsChannel {
   DataColumnSidecarRecoveringCustody NOOP =
       new DataColumnSidecarRecoveringCustody() {
-        @Override
-        public void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin) {}
 
         @Override
         public void subscribeToValidDataColumnSidecars(
@@ -46,7 +43,7 @@ public interface DataColumnSidecarRecoveringCustody
 
         @Override
         public SafeFuture<Void> onNewValidatedDataColumnSidecar(
-            DataColumnSidecar dataColumnSidecar) {
+            final DataColumnSidecar dataColumnSidecar, final RemoteOrigin origin) {
           return SafeFuture.COMPLETE;
         }
 
@@ -67,8 +64,6 @@ public interface DataColumnSidecarRecoveringCustody
           return SafeFuture.completedFuture(false);
         }
       };
-
-  void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
 
   void subscribeToValidDataColumnSidecars(
       DataColumnSidecarManager.ValidDataColumnSidecarsListener sidecarsListener);

@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
 public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsChannel {
 
@@ -56,9 +57,9 @@ public class DasLongPollCustody implements DataColumnSidecarCustody, SlotEventsC
 
   @Override
   public SafeFuture<Void> onNewValidatedDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar) {
+      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
     return delegate
-        .onNewValidatedDataColumnSidecar(dataColumnSidecar)
+        .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
         .thenRun(
             () -> {
               final List<SafeFuture<Optional<DataColumnSidecar>>> pendingRequests =

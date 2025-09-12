@@ -167,7 +167,7 @@ public class DasSamplerBasicTest {
                   dataStructureUtil.randomDataColumnSidecar(
                       dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.ZERO),
                       missingColumn)));
-      when(custody.onNewValidatedDataColumnSidecar(any())).thenReturn(SafeFuture.COMPLETE);
+      when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
     }
 
     final SafeFuture<List<UInt64>> result = sampler.checkDataAvailability(UInt64.ZERO, blockRoot);

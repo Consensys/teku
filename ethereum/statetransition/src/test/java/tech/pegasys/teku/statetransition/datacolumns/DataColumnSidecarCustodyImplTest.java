@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
@@ -123,8 +124,8 @@ public class DataColumnSidecarCustodyImplTest {
         custody.getCustodyDataColumnSidecar(columnId0);
     assertThat(futureZero.get(1, TimeUnit.SECONDS)).isEmpty();
 
-    custody.onNewValidatedDataColumnSidecar(sidecar1);
-    custody.onNewValidatedDataColumnSidecar(sidecar0);
+    custody.onNewValidatedDataColumnSidecar(sidecar1, RemoteOrigin.GOSSIP);
+    custody.onNewValidatedDataColumnSidecar(sidecar0, RemoteOrigin.GOSSIP);
 
     SafeFuture<Optional<DataColumnSidecar>> futureTwo =
         custody.getCustodyDataColumnSidecar(columnId0);

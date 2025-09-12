@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
 public class DasCustodySync implements SlotEventsChannel {
@@ -86,7 +87,7 @@ public class DasCustodySync implements SlotEventsChannel {
 
   private void onRequestComplete(final PendingRequest request, final DataColumnSidecar response) {
     custody
-        .onNewValidatedDataColumnSidecar(response)
+        .onNewValidatedDataColumnSidecar(response, RemoteOrigin.RPC)
         .thenRun(
             () -> {
               synchronized (this) {
