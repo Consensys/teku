@@ -26,21 +26,21 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 class PeerSubnetSubscriptionsTest {
@@ -49,10 +49,9 @@ class PeerSubnetSubscriptionsTest {
   private static final NodeId PEER3 = new MockNodeId(3);
   private static final int TARGET_SUBSCRIBER_COUNT = 2;
 
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final SettableLabelledGauge subnetPeerCountGauge = mock(SettableLabelledGauge.class);
   final Supplier<SpecVersion> currentSpecVersionSupplier = spec::getGenesisSpec;
-  final Supplier<Optional<UInt64>> currentSlotSupplier = Optional::empty;
   private final SchemaDefinitionsSupplier currentSchemaDefinitions =
       spec::getGenesisSchemaDefinitions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -71,6 +70,8 @@ class PeerSubnetSubscriptionsTest {
         .thenAnswer(invocation -> "attnet_" + invocation.getArgument(0));
     when(syncCommitteeTopicProvider.getTopicForSubnet(anyInt()))
         .thenAnswer(invocation -> "syncnet_" + invocation.getArgument(0));
+    when(dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(anyInt()))
+        .thenAnswer(invocation -> "data_column_sidecar_" + invocation.getArgument(0));
   }
 
   @Test
@@ -128,17 +129,61 @@ class PeerSubnetSubscriptionsTest {
   public void getSubscribersRequired_withNoSubscriptions() {
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
-    assertThat(subscriptions.getSubscribersRequired()).isEqualTo(TARGET_SUBSCRIBER_COUNT);
+    assertThat(subscriptions.getSubscribersRequired()).isEqualTo(128);
   }
 
   @Test
   public void getSubscribersRequired_allSubnetsAreJustBelowTarget() {
     // Set up some sync committee subnets we should be participating in
     syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
-
     withSubscriberCountForAllSubnets(1);
+
+    // so we have 64 attestation + 2 committee = 66 subnets with 1 peer already found for each
     final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
-    assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT - 1);
+    assertThat(requiredPeers).isEqualTo(66);
+  }
+
+  @Test
+  public void getSubscribersRequired_someSubnetsAreJustBelowTarget() {
+    // Set up some sync committee subnets we should be participating in
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
+    dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1));
+
+    // Set up subscribers
+    final List<NodeId> subscribers1 = new ArrayList<>();
+    IntStream.range(0, 1).mapToObj(MockNodeId::new).forEach(subscribers1::add);
+    final List<NodeId> subscribers2 = new ArrayList<>();
+    IntStream.range(0, 2).mapToObj(MockNodeId::new).forEach(subscribers2::add);
+    // Set up attestation topic subscriptions
+    final Map<String, Collection<NodeId>> subscribersByTopic = new HashMap<>();
+    // 10 attestation subnets x2 peers
+    IntStream.range(0, 10)
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    attestationTopicProvider.getTopicForSubnet(subnetId), subscribers2));
+    // 54 attestation subnets x1 peer
+    IntStream.range(10, spec.getNetworkingConfig().getAttestationSubnetCount())
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    attestationTopicProvider.getTopicForSubnet(subnetId), subscribers1));
+    // 2 sync committee subnets x2 peers
+    syncnetSubscriptions
+        .getSubnets()
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    syncCommitteeTopicProvider.getTopicForSubnet(subnetId), subscribers2));
+    // all peers for data column sidecars 0 topic, no for 1
+    subscribersByTopic.put(dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(0), subscribers2);
+
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+
+    final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
+    // Missing: 0 for sync committees, 54 subnets x 1 peers for attestations, 1 subnet x 2 peers for
+    // sidecars
+    assertThat(requiredPeers).isEqualTo(56);
   }
 
   @Test
@@ -169,7 +214,7 @@ class PeerSubnetSubscriptionsTest {
     syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
 
     final int requiredPeers = createPeerSubnetSubscriptions().getSubscribersRequired();
-    assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT);
+    assertThat(requiredPeers).isEqualTo(4);
   }
 
   @Test
@@ -236,6 +281,15 @@ class PeerSubnetSubscriptionsTest {
             subnetId ->
                 subscribersByTopic.put(
                     syncCommitteeTopicProvider.getTopicForSubnet(subnetId), subscribers));
+    // Set up data column sidecars subnets
+    IntStream.range(
+            0,
+            SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                .getDataColumnSidecarSubnetCount())
+        .forEach(
+            subnetId ->
+                subscribersByTopic.put(
+                    dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(subnetId), subscribers));
 
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
   }

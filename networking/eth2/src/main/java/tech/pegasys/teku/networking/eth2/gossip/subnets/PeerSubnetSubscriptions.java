@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Streams;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -231,24 +231,14 @@ public class PeerSubnetSubscriptions {
   }
 
   public int getSubscribersRequired() {
-    OptionalInt count = getMinSubscriberCount();
-    if (count.isPresent()) {
-      return Math.max(targetSubnetSubscriberCount - count.getAsInt(), 0);
-    } else {
-      return 0;
-    }
-  }
-
-  private OptionalInt getMinSubscriberCount() {
-    return optionalMin(
-        List.of(
-            attestationSubnetSubscriptions.getMinSubscriberCount(),
-            syncCommitteeSubnetSubscriptions.getMinSubscriberCount(),
-            dataColumnSidecarSubnetSubscriptions.getMinSubscriberCount()));
-  }
-
-  private static OptionalInt optionalMin(final List<OptionalInt> optionalInts) {
-    return optionalInts.stream().flatMapToInt(OptionalInt::stream).min();
+    return Streams.concat(
+            attestationSubnetSubscriptions.getSubscribersCount().stream(),
+            syncCommitteeSubnetSubscriptions.getSubscribersCount().stream(),
+            dataColumnSidecarSubnetSubscriptions.getSubscribersCount().stream())
+        .mapToInt(
+            subnetSubscribersCount ->
+                Math.max(0, targetSubnetSubscriberCount - subnetSubscribersCount))
+        .sum();
   }
 
   public interface Factory {
@@ -292,12 +282,8 @@ public class PeerSubnetSubscriptions {
       return relevantSubnets.intStream();
     }
 
-    /**
-     * @return The minimum subscriber count across relevant subnets. Returns an empty value if is
-     *     there are no relevant subnets.
-     */
-    public OptionalInt getMinSubscriberCount() {
-      return streamRelevantSubnets().map(this::getSubscriberCountForSubnet).min();
+    public List<Integer> getSubscribersCount() {
+      return streamRelevantSubnets().mapToObj(this::getSubscriberCountForSubnet).toList();
     }
 
     public int getSubscriberCountForSubnet(final int subnetId) {
