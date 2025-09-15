@@ -117,10 +117,10 @@ public class GossipTopics {
 
     topics.addAll(getAllDataColumnSidecarSubnetTopics(gossipEncoding, forkDigest, spec));
 
-    if(p2pConfig.isExecutionProofTopicEnabled()) {
-        for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
-            topics.add(getExecutionProofSubnetTopic(forkDigest, i, gossipEncoding));
-        }
+    if (p2pConfig.isExecutionProofTopicEnabled()) {
+      for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+        topics.add(getExecutionProofSubnetTopic(forkDigest, i, gossipEncoding));
+      }
     }
 
     for (GossipTopicName topicName : GossipTopicName.values()) {

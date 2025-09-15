@@ -210,8 +210,7 @@ public class Eth2P2PNetworkBuilder {
             kzg,
             discoveryNodeIdExtractor,
             dasTotalCustodyGroupCount,
-            dasReqRespLogger
-        );
+            dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);

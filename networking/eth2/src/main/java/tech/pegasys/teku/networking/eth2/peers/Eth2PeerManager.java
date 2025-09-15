@@ -145,7 +145,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     syncCommitteeSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateSyncCommitteeSubnetIds);
 
-
     return new Eth2PeerManager(
         spec,
         asyncRunner,

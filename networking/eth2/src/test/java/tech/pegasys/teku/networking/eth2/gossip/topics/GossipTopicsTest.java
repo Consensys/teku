@@ -78,7 +78,8 @@ public class GossipTopicsTest {
                       spec.forMilestone(milestone)
                           .miscHelpers()
                           .computeForkDigest(fork.getCurrentVersion(), genesisValidatorsRoot);
-                  return GossipTopics.getAllTopics(gossipEncoding, forkDigest, spec, milestone, p2pConfig)
+                  return GossipTopics.getAllTopics(
+                          gossipEncoding, forkDigest, spec, milestone, p2pConfig)
                       .size();
                 })
             .sum();

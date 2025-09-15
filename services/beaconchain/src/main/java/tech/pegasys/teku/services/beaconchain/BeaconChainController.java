@@ -467,8 +467,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
     executionProofManager.subscribeToValidExecutionProofs(
-            (executionProof, remoteOrigin) -> LOG.info("Received valid execution proof: {}", executionProof)
-    );
+        (executionProof, remoteOrigin) ->
+            LOG.info("Received valid execution proof: {}", executionProof));
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
     if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {
@@ -673,7 +673,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initZkChain() {
-      LOG.debug("BeaconChainController.initZkChain()");
+    LOG.debug("BeaconChainController.initZkChain()");
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
 
     if (zkConfig.isStatelessValidationEnabled()) {

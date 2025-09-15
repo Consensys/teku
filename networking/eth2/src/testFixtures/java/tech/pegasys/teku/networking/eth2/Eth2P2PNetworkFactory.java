@@ -274,8 +274,7 @@ public class Eth2P2PNetworkFactory {
                 NoOpKZG.INSTANCE,
                 __ -> Optional.of(discoveryNodeId),
                 dasTotalCustodySubnetCount,
-                DasReqRespLogger.NOOP
-            );
+                DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
