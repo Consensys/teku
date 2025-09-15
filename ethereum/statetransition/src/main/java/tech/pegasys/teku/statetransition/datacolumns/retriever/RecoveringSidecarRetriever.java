@@ -23,11 +23,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -52,7 +54,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
   private final DataColumnSidecarRetriever delegate;
   private final KZG kzg;
-  private final MiscHelpersFulu specHelpers;
+  private final MiscHelpersFulu miscHelpersFulu;
   private final CanonicalBlockResolver blockResolver;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
@@ -61,6 +63,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final Duration recoveryInitiationCheckInterval;
   private final int numberOfColumns;
   private final int numberOfColumnsRequiredToReconstruct;
+  private Cancellable recoveryBySlotCleaner;
+  private Cancellable pendingRequestsChecker;
 
   private final Set<DataColumnSidecarRequestWithTimestamp> pendingRequests =
       new ConcurrentSkipListSet<>(
@@ -68,8 +72,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
           Comparator.comparing(DataColumnSidecarRequestWithTimestamp::timestamp)
               .thenComparing(DataColumnSidecarRequestWithTimestamp::dataColumnSlotAndIdentifier));
   private final Map<UInt64, RecoveryEntry> recoveryBySlot = new ConcurrentHashMap<>();
-
-  private Cancellable cancellable;
 
   private record DataColumnSidecarRequestWithTimestamp(
       DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier,
@@ -79,7 +81,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   public RecoveringSidecarRetriever(
       final DataColumnSidecarRetriever delegate,
       final KZG kzg,
-      final MiscHelpersFulu specHelpers,
+      final MiscHelpersFulu miscHelpersFulu,
       final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
@@ -89,7 +91,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       final int numberOfColumns) {
     this.delegate = delegate;
     this.kzg = kzg;
-    this.specHelpers = specHelpers;
+    this.miscHelpersFulu = miscHelpersFulu;
     this.blockResolver = blockResolver;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
@@ -101,11 +103,35 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     this.numberOfColumnsRequiredToReconstruct = Math.ceilDiv(numberOfColumns, 2);
   }
 
+  private void pruneRecoveryBySlot() {
+    final List<UInt64> cleanEntries =
+        recoveryBySlot.entrySet().stream()
+            .filter(entry -> entry.getValue().isCancelled() || entry.getValue().isDone())
+            .map(Map.Entry::getKey)
+            .toList();
+    LOG.debug(
+        "Pruning recovery by slot, found {} of a total {} entries...",
+        cleanEntries.size(),
+        recoveryBySlot.size());
+
+    final int limit = Math.min(cleanEntries.size(), 500);
+    int count = 0;
+    for (; count < limit; count++) {
+      final RecoveryEntry entry = recoveryBySlot.remove(cleanEntries.get(count));
+      if (entry != null) {
+        entry.cancel();
+      }
+    }
+    if (!cleanEntries.isEmpty()) {
+      LOG.debug("Cleaned {} of {} items from recovery by slot map", count, cleanEntries.size());
+    }
+  }
+
   public synchronized void start() {
-    if (cancellable != null) {
+    if (pendingRequestsChecker != null) {
       return;
     }
-    cancellable =
+    pendingRequestsChecker =
         asyncRunner.runWithFixedDelay(
             this::checkPendingRequests,
             recoveryInitiationCheckInterval,
@@ -115,14 +141,23 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                     "Failed to check if {} pending data column sidecars requests require recovery to be ran",
                     pendingRequests.size(),
                     error));
+
+    recoveryBySlotCleaner =
+        asyncRunner.runWithFixedDelay(
+            this::pruneRecoveryBySlot,
+            Duration.ofSeconds(90),
+            error -> LOG.warn("Failed to cleanup recoveryBySlot structure.", error));
   }
 
   public synchronized void stop() {
-    if (cancellable == null) {
+    if (pendingRequestsChecker == null) {
       return;
     }
-    cancellable.cancel();
-    cancellable = null;
+    recoveryBySlotCleaner.cancel();
+    recoveryBySlotCleaner = null;
+
+    pendingRequestsChecker.cancel();
+    pendingRequestsChecker = null;
   }
 
   @Override
@@ -202,28 +237,43 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
   private RecoveryEntry addRecovery(
       final DataColumnSlotAndIdentifier columnId, final BeaconBlock block) {
-    return recoveryBySlot.compute(
-        columnId.slot(),
-        (slot, existingRecovery) -> {
-          if (existingRecovery != null
-              && !existingRecovery.block.getRoot().equals(block.getRoot())) {
-            // we are recovering obsolete column which is no more on our canonical chain
-            existingRecovery.cancel();
-          }
-          if (existingRecovery == null || existingRecovery.cancelled) {
-            return createNewRecovery(block);
-          } else {
-            return existingRecovery;
-          }
-        });
+    final RecoveryEntry recoveryEntry =
+        recoveryBySlot.computeIfAbsent(columnId.slot(), (slot) -> createNewRecovery(block));
+
+    if (!recoveryEntry.blockRoot.equals(block.getRoot())) {
+      LOG.debug(
+          "Found a new block {} at slot {}, pivoting recovery.",
+          block.getRoot(),
+          recoveryEntry.blockRoot);
+      recoveryEntry.cancel();
+      final RecoveryEntry newRecoveryEntry = createNewRecovery(block);
+      recoveryBySlot.replace(columnId.slot(), recoveryEntry, newRecoveryEntry);
+      return newRecoveryEntry;
+    }
+    return recoveryEntry;
   }
 
   private RecoveryEntry createNewRecovery(final BeaconBlock block) {
-    final RecoveryEntry recoveryEntry = new RecoveryEntry(block, kzg, specHelpers);
+    final Consumer<UInt64> cleanup =
+        (slot) -> {
+          LOG.trace("Cleanup recovery for slot {}", slot);
+          final RecoveryEntry entry = recoveryBySlot.remove(slot);
+          if (entry != null
+              && !entry.isCancelled()
+              && !entry.isDone()
+              && !entry.responsesByColIdx.isEmpty()) {
+            LOG.trace(
+                "Cleaning up after completed task but recovery entry was not completed cleanly {}:{} ",
+                entry.slot,
+                entry.blockRoot);
+            entry.cancel();
+          }
+        };
+    final RecoveryEntry recoveryEntry = new RecoveryEntry(block, cleanup, kzg, miscHelpersFulu);
     LOG.trace(
         "Recovery: new RecoveryEntry for slot {} and block {} ",
-        recoveryEntry.block.getSlot(),
-        recoveryEntry.block.getRoot());
+        recoveryEntry.slot,
+        recoveryEntry.blockRoot);
     // check existing sidecars in DB as a start
     sidecarDB
         .getColumnIdentifiers(block.getSlotAndBlockRoot())
@@ -263,9 +313,11 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   private class RecoveryEntry {
-    private final BeaconBlock block;
+    private final Bytes32 blockRoot;
+    private final UInt64 slot;
     private final KZG kzg;
-    private final MiscHelpersFulu specHelpers;
+    private final MiscHelpersFulu miscHelpers;
+    private final Consumer<UInt64> taskCleaner;
 
     private final Map<UInt64, DataColumnSidecar> existingSidecarsByColIdx =
         new ConcurrentHashMap<>();
@@ -277,10 +329,16 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     private boolean cancelled = false;
 
-    RecoveryEntry(final BeaconBlock block, final KZG kzg, final MiscHelpersFulu specHelpers) {
-      this.block = block;
+    RecoveryEntry(
+        final BeaconBlock block,
+        final Consumer<UInt64> taskCleaner,
+        final KZG kzg,
+        final MiscHelpersFulu miscHelpersFulu) {
+      this.blockRoot = block.getRoot();
+      this.slot = block.getSlot();
       this.kzg = kzg;
-      this.specHelpers = specHelpers;
+      this.miscHelpers = miscHelpersFulu;
+      this.taskCleaner = taskCleaner;
     }
 
     void addRequest(final UInt64 columnIndex, final SafeFuture<DataColumnSidecar> response) {
@@ -292,7 +350,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     void addSidecar(final DataColumnSidecar sidecar) {
-      if (!cancelled && sidecar.getBlockRoot().equals(block.getRoot())) {
+      if (!cancelled && sidecar.getBlockRoot().equals(blockRoot)) {
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         // attempt to complete any pending requests immediately
         final List<SafeFuture<DataColumnSidecar>> responses =
@@ -327,7 +385,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     synchronized void attemptRecoveryViaPeers() {
       if (!cancelled && recoveryPeerRequests == null) {
-        LOG.trace("Initialising peer recovery requests for slot {}", block.getSlot());
+        LOG.trace("Initialising peer recovery requests for slot {}", slot);
         recoveryPeerRequests =
             IntStream.range(0, numberOfColumns)
                 .mapToObj(UInt64::valueOf)
@@ -335,8 +393,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
                 .map(
                     columnIdx -> {
                       final DataColumnSlotAndIdentifier columnId =
-                          new DataColumnSlotAndIdentifier(
-                              block.getSlot(), block.getRoot(), columnIdx);
+                          new DataColumnSlotAndIdentifier(slot, blockRoot, columnIdx);
                       final SafeFuture<DataColumnSidecar> sidecarFuture =
                           delegate.retrieve(columnId);
                       sidecarFuture
@@ -365,7 +422,12 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
           .flatMap(Collection::stream)
           .forEach(response -> response.cancel(true));
       if (recoveryPeerRequests != null) {
-        recoveryPeerRequests.forEach(request -> request.cancel(true));
+        recoveryPeerRequests.forEach(
+            request -> {
+              if (!request.isDone()) {
+                request.cancel(true);
+              }
+            });
       }
       if (reconstructionInProgress != null) {
         reconstructionInProgress.cancel(true);
@@ -407,12 +469,12 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     private void reconstruct() {
-      LOG.trace(
+      LOG.debug(
           "Reconstruction started for slot {} ({} existing data column sidecars)",
-          block.getSlot(),
+          slot,
           existingSidecarsByColIdx.size());
       final Map<UInt64, DataColumnSidecar> reconstructedSidecars =
-          specHelpers
+          miscHelpers
               .reconstructAllDataColumnSidecars(existingSidecarsByColIdx.values(), kzg)
               .stream()
               .collect(
@@ -421,7 +483,8 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     private void reconstructionComplete() {
-      LOG.trace("Reconstruction completed for slot {}", block.getSlot());
+      LOG.debug("Reconstruction completed for slot {}", slot);
+
       // complete all retrieval requests
       responsesByColIdx.forEach(
           (colIdx, responses) -> {
@@ -429,10 +492,22 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             responses.forEach(response -> response.completeAsync(columnSidecar, asyncRunner));
           });
       responsesByColIdx.clear();
+
+      // cleanup parent map now that tasks are marked complete
+      taskCleaner.accept(slot);
+
       // cancel all pending recovery peer requests
       if (recoveryPeerRequests != null) {
         recoveryPeerRequests.forEach(request -> request.cancel(true));
       }
+    }
+
+    boolean isCancelled() {
+      return cancelled;
+    }
+
+    boolean isDone() {
+      return reconstructionInProgress != null && reconstructionInProgress.isDone();
     }
   }
 }

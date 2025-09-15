@@ -127,8 +127,8 @@ public class RecoveringSidecarRetrieverTest {
     assertThat(delegateRetriever.requests).hasSize(3);
     assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(3);
 
-    // id2 promise completes immediately
-    delegateRetriever.requests.get(2).promise().complete(sidecars.get(2));
+    // id2 future completes immediately
+    delegateRetriever.requests.get(2).future().complete(sidecars.get(2));
     assertThat(res2).isCompletedWithValue(sidecars.get(2));
     assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(2);
 
@@ -161,13 +161,14 @@ public class RecoveringSidecarRetrieverTest {
         .skip(50)
         .limit(columnCount / 2 - columnsInDbCount)
         .forEach(
-            req -> req.promise().complete(sidecars.get(req.columnId().columnIndex().intValue())));
+            req -> req.future().complete(sidecars.get(req.columnId().columnIndex().intValue())));
 
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     assertThat(res0).isCompletedWithValue(sidecars.get(0));
     assertThat(res1).isCompletedWithValue(sidecars.get(1));
-    assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
+
+    assertThat(delegateRetriever.requests).allMatch(r -> r.future().isDone());
   }
 
   @Test
@@ -239,12 +240,12 @@ public class RecoveringSidecarRetrieverTest {
         .limit(columnCount / 2 - columnsInDbCount)
         .forEach(
             req ->
-                req.promise().complete(sidecars_10_1.get(req.columnId().columnIndex().intValue())));
+                req.future().complete(sidecars_10_1.get(req.columnId().columnIndex().intValue())));
 
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     assertThat(res0).isCompletedWithValue(sidecars_10_1.get(100));
-    assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
+    assertThat(delegateRetriever.requests).allMatch(r -> r.future().isDone());
   }
 
   @Test
@@ -277,6 +278,6 @@ public class RecoveringSidecarRetrieverTest {
 
     stubAsyncRunner.executeQueuedActions();
 
-    assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isCancelled());
+    assertThat(delegateRetriever.requests).allMatch(r -> r.future().isCancelled());
   }
 }
