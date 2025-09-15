@@ -150,14 +150,14 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   }
 
   public synchronized void stop() {
-    if (pendingRequestsChecker == null) {
-      return;
+    if (recoveryBySlotCleaner != null) {
+      recoveryBySlotCleaner.cancel();
+      pendingRequestsChecker = null;
     }
-    recoveryBySlotCleaner.cancel();
-    recoveryBySlotCleaner = null;
-
-    pendingRequestsChecker.cancel();
-    pendingRequestsChecker = null;
+    if (pendingRequestsChecker != null) {
+      pendingRequestsChecker.cancel();
+      pendingRequestsChecker = null;
+    }
   }
 
   @Override
@@ -245,10 +245,15 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
           "Found a new block {} at slot {}, pivoting recovery.",
           block.getRoot(),
           recoveryEntry.blockRoot);
-      recoveryEntry.cancel();
-      final RecoveryEntry newRecoveryEntry = createNewRecovery(block);
-      recoveryBySlot.replace(columnId.slot(), recoveryEntry, newRecoveryEntry);
-      return newRecoveryEntry;
+      return recoveryBySlot.computeIfPresent(
+          columnId.slot(),
+          (slot, entry) -> {
+            if (entry.blockRoot.equals(recoveryEntry.blockRoot)) {
+              entry.cancel();
+              return createNewRecovery(block);
+            }
+            return entry;
+          });
     }
     return recoveryEntry;
   }
