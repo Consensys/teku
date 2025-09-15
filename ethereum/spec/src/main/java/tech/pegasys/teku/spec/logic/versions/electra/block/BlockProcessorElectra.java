@@ -152,11 +152,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
   public void processExecutionRequests(
       final MutableBeaconState state,
       final BeaconBlockBody body,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
     final ExecutionRequests executionRequests =
         body.getOptionalExecutionRequests()
             .orElseThrow(
-                () -> new NoSuchElementException("Execution requests expected as part of body"));
+                () -> new BlockProcessingException("Execution requests expected as part of body"));
 
     executionRequestsProcessorElectra.processDepositRequests(
         state, executionRequests.getDeposits());
