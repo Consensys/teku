@@ -152,7 +152,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   public synchronized void stop() {
     if (recoveryBySlotCleaner != null) {
       recoveryBySlotCleaner.cancel();
-      pendingRequestsChecker = null;
+      recoveryBySlotCleaner = null;
     }
     if (pendingRequestsChecker != null) {
       pendingRequestsChecker.cancel();
