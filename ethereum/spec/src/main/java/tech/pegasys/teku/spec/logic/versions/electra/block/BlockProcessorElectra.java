@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;

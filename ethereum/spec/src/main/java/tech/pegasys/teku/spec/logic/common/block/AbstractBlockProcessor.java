@@ -789,7 +789,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         getValidatorExitContextSupplier(state);
     processVoluntaryExitsNoValidation(state, exits, validatorExitContextSupplier);
-    BlockValidationResult signaturesValid = verifyVoluntaryExits(state, exits, signatureVerifier);
+    final BlockValidationResult signaturesValid =
+        verifyVoluntaryExits(state, exits, signatureVerifier);
     if (!signaturesValid.isValid()) {
       throw new BlockProcessingException(signaturesValid.getFailureReason());
     }
