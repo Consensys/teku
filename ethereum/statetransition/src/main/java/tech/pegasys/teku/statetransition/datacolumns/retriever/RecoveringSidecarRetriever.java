@@ -237,25 +237,16 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
   private RecoveryEntry addRecovery(
       final DataColumnSlotAndIdentifier columnId, final BeaconBlock block) {
-    final RecoveryEntry recoveryEntry =
-        recoveryBySlot.computeIfAbsent(columnId.slot(), (slot) -> createNewRecovery(block));
-
-    if (!recoveryEntry.blockRoot.equals(block.getRoot())) {
-      LOG.debug(
-          "Found a new block {} at slot {}, pivoting recovery.",
-          block.getRoot(),
-          recoveryEntry.blockRoot);
-      return recoveryBySlot.computeIfPresent(
-          columnId.slot(),
-          (slot, entry) -> {
-            if (entry.blockRoot.equals(recoveryEntry.blockRoot)) {
-              entry.cancel();
-              return createNewRecovery(block);
-            }
-            return entry;
-          });
-    }
-    return recoveryEntry;
+    return recoveryBySlot.compute(
+        columnId.slot(),
+        (slot, existingEntry) -> {
+          if (existingEntry != null && existingEntry.blockRoot.equals(block.getRoot())) {
+            return existingEntry;
+          } else if (existingEntry != null) {
+            existingEntry.cancel();
+          }
+          return createNewRecovery(block);
+        });
   }
 
   private RecoveryEntry createNewRecovery(final BeaconBlock block) {
