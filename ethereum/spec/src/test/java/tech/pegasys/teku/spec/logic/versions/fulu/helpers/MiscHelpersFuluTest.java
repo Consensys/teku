@@ -296,11 +296,12 @@ public class MiscHelpersFuluTest {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
 
     assertThat(
-            miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg,
-                    schemaDefinitionsFulu
-                            .getDataColumnSidecarSchema()
-                            .sszDeserialize(Bytes.fromHexString(SIDECAR))))
-            .isTrue();
+            miscHelpersFulu.verifyDataColumnSidecarKzgProofs(
+                kzg,
+                schemaDefinitionsFulu
+                    .getDataColumnSidecarSchema()
+                    .sszDeserialize(Bytes.fromHexString(SIDECAR))))
+        .isTrue();
   }
 
   static Stream<Arguments> getValidatorCustodyRequirementFixtures() {
