@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -58,6 +59,7 @@ class Eth2GossipTopicFilterTest {
   private Bytes4 currentForkDigest;
   private Eth2GossipTopicFilter filter;
   private Bytes4 nextForkDigest;
+  private P2PConfig p2pConfig;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
@@ -66,6 +68,7 @@ class Eth2GossipTopicFilterTest {
     // current milestone is actually the previous milestone
     currentSpecMilestone = specContext.getSpecMilestone().getPreviousMilestone();
     nextSpecMilestone = specContext.getSpecMilestone();
+    p2pConfig = P2PConfig.builder().build();
     spec =
         switch (nextSpecMilestone) {
           case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
@@ -98,7 +101,7 @@ class Eth2GossipTopicFilterTest {
     storageSystem.chainUpdater().initializeGenesis();
 
     recentChainData = spy(storageSystem.recentChainData());
-    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfig);
 
     currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     nextForkDigest =
@@ -222,7 +225,7 @@ class Eth2GossipTopicFilterTest {
     storageSystem.chainUpdater().initializeGenesis();
 
     recentChainData = spy(storageSystem.recentChainData());
-    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfig);
 
     currentForkDigest = recentChainData.getCurrentForkDigest().orElseThrow();
     nextForkDigest =

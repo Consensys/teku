@@ -274,7 +274,8 @@ public class Eth2P2PNetworkFactory {
                 NoOpKZG.INSTANCE,
                 __ -> Optional.of(discoveryNodeId),
                 dasTotalCustodySubnetCount,
-                DasReqRespLogger.NOOP);
+                DasReqRespLogger.NOOP
+            );
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
@@ -296,7 +297,7 @@ public class Eth2P2PNetworkFactory {
         final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
             new SyncCommitteeSubnetTopicProvider(recentChainData, gossipEncoding);
         final GossipTopicFilter gossipTopicsFilter =
-            new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
+            new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec, config);
         final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
         final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
         final TargetPeerRange targetPeerRange =

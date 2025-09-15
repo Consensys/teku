@@ -210,7 +210,8 @@ public class Eth2P2PNetworkBuilder {
             kzg,
             discoveryNodeIdExtractor,
             dasTotalCustodyGroupCount,
-            dasReqRespLogger);
+            dasReqRespLogger
+        );
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
@@ -513,7 +514,7 @@ public class Eth2P2PNetworkBuilder {
             combinedChainDataClient.getRecentChainData()::getMilestoneByForkDigest);
     final GossipTopicFilter gossipTopicsFilter =
         new Eth2GossipTopicFilter(
-            combinedChainDataClient.getRecentChainData(), gossipEncoding, spec);
+            combinedChainDataClient.getRecentChainData(), gossipEncoding, spec, config);
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
 
