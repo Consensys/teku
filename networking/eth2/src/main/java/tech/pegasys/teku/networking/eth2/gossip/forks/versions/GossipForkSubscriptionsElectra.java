@@ -117,4 +117,14 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
   public void publishExecutionProof(final ExecutionProof executionProof) {
     executionProofGossipManager.publish(executionProof);
   }
+
+  @Override
+  public void subscribeToExecutionProofSubnet(final int subnetId) {
+    executionProofGossipManager.subscribeToSubnetId(subnetId);
+  }
+
+  @Override
+  public void unsubscribeFromExecutionProofSubnet(final int subnetId) {
+    executionProofGossipManager.unsubscribeFromSubnetId(subnetId);
+  }
 }
