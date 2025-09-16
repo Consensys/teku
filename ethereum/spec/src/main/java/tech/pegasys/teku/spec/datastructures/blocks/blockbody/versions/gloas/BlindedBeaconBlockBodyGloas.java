@@ -56,12 +56,12 @@ public interface BlindedBeaconBlockBodyGloas extends BlindedBeaconBlockBodyElect
 
   @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
-    throw new UnsupportedOperationException("BlobKzgCommitments were removed in Gloas");
+    throw new UnsupportedOperationException("BlobKzgCommitments was removed in Gloas");
   }
 
   @Override
   default ExecutionRequests getExecutionRequests() {
-    throw new UnsupportedOperationException("ExecutionRequests were removed in Gloas");
+    throw new UnsupportedOperationException("ExecutionRequests was removed in Gloas");
   }
 
   @Override
