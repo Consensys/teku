@@ -415,11 +415,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   public void completeAsync(final T value, final AsyncRunner asyncRunner) {
-    asyncRunner.runAsync(() -> complete(value)).finishStackTrace();
+    asyncRunner.runAsync(() -> complete(value)).finish(this::completeExceptionally);
   }
 
   public void completeExceptionallyAsync(final Throwable exception, final AsyncRunner asyncRunner) {
-    asyncRunner.runAsync(() -> completeExceptionally(exception)).finishStackTrace();
+    asyncRunner
+        .runAsync(() -> completeExceptionally(exception))
+        .finish(this::completeExceptionally);
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {

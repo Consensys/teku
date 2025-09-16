@@ -654,6 +654,56 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void completeAsync_shouldComplete() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final SafeFuture<String> future = new SafeFuture<>();
+    future.completeAsync("Yay", asyncRunner);
+    assertThat(future).isNotDone();
+
+    asyncRunner.executeQueuedActions();
+    assertThat(future).isCompletedWithValue("Yay");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void completeAsync_shouldCompleteExceptionallyWhenAsyncRunnerFailsOnException() {
+    final AsyncRunner asyncRunner = mock(AsyncRunner.class);
+    final SafeFuture<String> future = new SafeFuture<>();
+    final RuntimeException asyncRunnerError = new RuntimeException("queue full");
+    when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class)))
+        .thenReturn(SafeFuture.failedFuture(asyncRunnerError));
+    future.completeAsync("Yay", asyncRunner);
+
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(asyncRunnerError);
+  }
+
+  @Test
+  public void completeExceptionallyAsync_shouldCompleteExceptionally() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final SafeFuture<String> future = new SafeFuture<>();
+    final RuntimeException exception = new RuntimeException("Oh no!");
+    future.completeExceptionallyAsync(exception, asyncRunner);
+    assertThat(future).isNotDone();
+
+    asyncRunner.executeQueuedActions();
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(exception);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void
+      completeExceptionallyAsync_shouldCompleteExceptionallyWhenAsyncRunnerFailsOnException() {
+    final AsyncRunner asyncRunner = mock(AsyncRunner.class);
+    final SafeFuture<String> future = new SafeFuture<>();
+    final RuntimeException asyncRunnerError = new RuntimeException("queue full");
+    when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class)))
+        .thenReturn(SafeFuture.failedFuture(asyncRunnerError));
+    future.completeExceptionallyAsync(new RuntimeException("Oh no!"), asyncRunner);
+
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(asyncRunnerError);
+  }
+
+  @Test
   public void fromRunnable_propagatesSuccessfulResult() {
     final AtomicBoolean runnableWasProcessed = new AtomicBoolean(false);
     final SafeFuture<Void> future = SafeFuture.fromRunnable(() -> runnableWasProcessed.set(true));
