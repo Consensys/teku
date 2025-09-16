@@ -35,7 +35,7 @@ public class DepCheckPlugin implements Plugin<Project> {
                 .getTasks()
                 .register(
                     "checkModuleDependencies",
-                    task -> task.doLast(_ -> checkDependencies(subproject))));
+                    task -> task.doLast(t -> checkDependencies(subproject))));
   }
 
   private synchronized void checkDependencies(final Project project) {
