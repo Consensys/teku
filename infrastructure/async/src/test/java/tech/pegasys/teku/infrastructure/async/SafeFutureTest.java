@@ -16,10 +16,12 @@ package tech.pegasys.teku.infrastructure.async;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.io.IOException;
@@ -618,6 +620,36 @@ public class SafeFutureTest {
     asyncRunner.executeQueuedActions();
     assertThatSafeFuture(target).isCompletedExceptionallyWith(exception);
   }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void propagateToAsync_shouldPropagateExceptionWhenAsyncRunnerFailsOnResult() {
+        final AsyncRunner asyncRunner = mock(AsyncRunner.class);
+        final SafeFuture<String> target = new SafeFuture<>();
+        final SafeFuture<String> source = new SafeFuture<>();
+        final RuntimeException asyncRunnerError = new RuntimeException("queue full");
+        when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class))).thenReturn(SafeFuture.failedFuture(asyncRunnerError));
+        source.propagateToAsync(target, asyncRunner);
+
+        source.complete("Yay");
+
+        assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void propagateToAsync_shouldPropagateExceptionWhenAsyncRunnerFailsOnException() {
+        final AsyncRunner asyncRunner = mock(AsyncRunner.class);
+        final SafeFuture<String> target = new SafeFuture<>();
+        final SafeFuture<String> source = new SafeFuture<>();
+        final RuntimeException asyncRunnerError = new RuntimeException("queue full");
+        when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class))).thenReturn(SafeFuture.failedFuture(asyncRunnerError));
+        source.propagateToAsync(target, asyncRunner);
+
+        source.completeExceptionally(new RuntimeException("Oh no!"));
+
+        assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
+    }
 
   @Test
   public void fromRunnable_propagatesSuccessfulResult() {
