@@ -106,7 +106,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private void pruneRecoveryBySlot() {
     final List<UInt64> cleanEntries =
         recoveryBySlot.entrySet().stream()
-            .filter(entry -> entry.getValue().isCancelled() || entry.getValue().isDone())
+            .filter(entry -> entry.getValue().isCleanupCandidate())
             .map(Map.Entry::getKey)
             .toList();
     LOG.debug(
@@ -254,10 +254,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
         (slot) -> {
           LOG.trace("Cleanup recovery for slot {}", slot);
           final RecoveryEntry entry = recoveryBySlot.remove(slot);
-          if (entry != null
-              && !entry.isCancelled()
-              && !entry.isDone()
-              && !entry.responsesByColIdx.isEmpty()) {
+          if (entry != null) {
             LOG.trace(
                 "Cleaning up after completed task but recovery entry was not completed cleanly {}:{} ",
                 entry.slot,
@@ -418,12 +415,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
           .flatMap(Collection::stream)
           .forEach(response -> response.cancel(true));
       if (recoveryPeerRequests != null) {
-        recoveryPeerRequests.forEach(
-            request -> {
-              if (!request.isDone()) {
-                request.cancel(true);
-              }
-            });
+        recoveryPeerRequests.forEach(request -> request.cancel(true));
       }
       if (reconstructionInProgress != null) {
         reconstructionInProgress.cancel(true);
@@ -504,6 +496,10 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
     boolean isDone() {
       return reconstructionInProgress != null && reconstructionInProgress.isDone();
+    }
+
+    boolean isCleanupCandidate() {
+      return isCancelled() || isDone();
     }
   }
 }
