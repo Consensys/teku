@@ -621,35 +621,37 @@ public class SafeFutureTest {
     assertThatSafeFuture(target).isCompletedExceptionallyWith(exception);
   }
 
-    @Test
-    @SuppressWarnings("unchecked")
-    public void propagateToAsync_shouldPropagateExceptionWhenAsyncRunnerFailsOnResult() {
-        final AsyncRunner asyncRunner = mock(AsyncRunner.class);
-        final SafeFuture<String> target = new SafeFuture<>();
-        final SafeFuture<String> source = new SafeFuture<>();
-        final RuntimeException asyncRunnerError = new RuntimeException("queue full");
-        when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class))).thenReturn(SafeFuture.failedFuture(asyncRunnerError));
-        source.propagateToAsync(target, asyncRunner);
+  @Test
+  @SuppressWarnings("unchecked")
+  public void propagateToAsync_shouldPropagateExceptionWhenAsyncRunnerFailsOnResult() {
+    final AsyncRunner asyncRunner = mock(AsyncRunner.class);
+    final SafeFuture<String> target = new SafeFuture<>();
+    final SafeFuture<String> source = new SafeFuture<>();
+    final RuntimeException asyncRunnerError = new RuntimeException("queue full");
+    when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class)))
+        .thenReturn(SafeFuture.failedFuture(asyncRunnerError));
+    source.propagateToAsync(target, asyncRunner);
 
-        source.complete("Yay");
+    source.complete("Yay");
 
-        assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
-    }
+    assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
+  }
 
-    @Test
-    @SuppressWarnings("unchecked")
-    public void propagateToAsync_shouldPropagateExceptionWhenAsyncRunnerFailsOnException() {
-        final AsyncRunner asyncRunner = mock(AsyncRunner.class);
-        final SafeFuture<String> target = new SafeFuture<>();
-        final SafeFuture<String> source = new SafeFuture<>();
-        final RuntimeException asyncRunnerError = new RuntimeException("queue full");
-        when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class))).thenReturn(SafeFuture.failedFuture(asyncRunnerError));
-        source.propagateToAsync(target, asyncRunner);
+  @Test
+  @SuppressWarnings("unchecked")
+  public void propagateToAsync_shouldPropagateExceptionWhenAsyncRunnerFailsOnException() {
+    final AsyncRunner asyncRunner = mock(AsyncRunner.class);
+    final SafeFuture<String> target = new SafeFuture<>();
+    final SafeFuture<String> source = new SafeFuture<>();
+    final RuntimeException asyncRunnerError = new RuntimeException("queue full");
+    when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class)))
+        .thenReturn(SafeFuture.failedFuture(asyncRunnerError));
+    source.propagateToAsync(target, asyncRunner);
 
-        source.completeExceptionally(new RuntimeException("Oh no!"));
+    source.completeExceptionally(new RuntimeException("Oh no!"));
 
-        assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
-    }
+    assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
+  }
 
   @Test
   public void fromRunnable_propagatesSuccessfulResult() {

@@ -432,9 +432,14 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void propagateToAsync(final SafeFuture<T> target, final AsyncRunner asyncRunner) {
     finish(
-        result -> asyncRunner.runAsync(() -> target.complete(result)).finish(target::completeExceptionally),
+        result ->
+            asyncRunner
+                .runAsync(() -> target.complete(result))
+                .finish(target::completeExceptionally),
         error ->
-            asyncRunner.runAsync(() -> target.completeExceptionally(error)).finish(target::completeExceptionally));
+            asyncRunner
+                .runAsync(() -> target.completeExceptionally(error))
+                .finish(target::completeExceptionally));
   }
 
   /**
