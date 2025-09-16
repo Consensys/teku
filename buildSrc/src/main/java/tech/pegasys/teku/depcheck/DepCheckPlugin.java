@@ -32,8 +32,10 @@ public class DepCheckPlugin implements Plugin<Project> {
     project.allprojects(
         subproject ->
             subproject
-                .task("checkModuleDependencies")
-                .doLast(task -> checkDependencies(subproject)));
+                .getTasks()
+                .register(
+                    "checkModuleDependencies",
+                    task -> task.doLast(_ -> checkDependencies(subproject))));
   }
 
   private synchronized void checkDependencies(final Project project) {
@@ -46,7 +48,7 @@ public class DepCheckPlugin implements Plugin<Project> {
             .stream()
             .filter(rule -> isApplicable(rule, project))
             .flatMap(rule -> illegalDependencies(rule, project))
-            .map(dependency -> dependency.getDependencyProject().getPath())
+            .map(ProjectDependency::getPath)
             .collect(toSet());
     if (!illegalDependencies.isEmpty()) {
       throw new IllegalStateException(
@@ -62,13 +64,13 @@ public class DepCheckPlugin implements Plugin<Project> {
         .filter(dep -> dep instanceof ProjectDependency)
         .map(dep -> (ProjectDependency) dep)
         // Modules are allowed to depend on themselves (e.g. for test configurations)
-        .filter(dep -> !dep.getDependencyProject().getPath().equals(project.getPath()))
+        .filter(dep -> !dep.getPath().equals(project.getPath()))
         .filter(dep -> isIllegal(rule, dep));
   }
 
   private boolean isIllegal(final Rule rule, final ProjectDependency dependency) {
     return rule.getAllowed().get().stream()
-        .noneMatch(allowed -> dependency.getDependencyProject().getPath().startsWith(allowed));
+        .noneMatch(allowed -> dependency.getPath().startsWith(allowed));
   }
 
   private boolean isApplicable(final Rule rule, final Project project) {
