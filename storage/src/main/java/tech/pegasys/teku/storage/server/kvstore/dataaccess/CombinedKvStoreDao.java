@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -55,6 +57,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 
 public class CombinedKvStoreDao<S extends SchemaCombined>
     implements KvStoreCombinedDao, V4MigratableSourceDao {
+  private static final Logger LOG = LogManager.getLogger();
   // Persistent data
   private final KvStoreAccessor db;
   private final S schema;
@@ -271,10 +274,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<UInt64> getEarliestFinalizedBlockSlot() {
-    return db.get(schema.getVariableEarliestBlockSlot())
-        .or(
-            () ->
-                db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot()).map(ColumnEntry::getKey));
+    LOG.info("getEarliestFinalizedBlockSlot");
+    var result =
+        db.get(schema.getVariableEarliestBlockSlot())
+            .or(
+                () ->
+                    db.getFirstEntry(schema.getColumnFinalizedBlocksBySlot())
+                        .map(ColumnEntry::getKey));
+
+    LOG.info("getEarliestFinalizedBlockSlot: {}", result);
+    return result;
   }
 
   @Override

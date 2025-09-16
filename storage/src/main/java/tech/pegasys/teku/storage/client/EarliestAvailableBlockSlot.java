@@ -68,8 +68,11 @@ public class EarliestAvailableBlockSlot {
       // if the current query is not done, we should just return the same future
       return earliestAvailableBlockSlotFuture;
     }
-    LOG.trace("Fetching earliestBlockSlot...");
-    earliestAvailableBlockSlotFuture = historicalChainData.getEarliestAvailableBlockSlot();
+    LOG.info("Fetching earliestBlockSlot...");
+    earliestAvailableBlockSlotFuture =
+        historicalChainData
+            .getEarliestAvailableBlockSlot()
+            .alwaysRun(() -> LOG.info("Fetched earliestBlockSlot"));
     return earliestAvailableBlockSlotFuture;
   }
 }
