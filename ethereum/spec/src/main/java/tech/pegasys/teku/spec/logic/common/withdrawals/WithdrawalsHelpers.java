@@ -32,7 +32,7 @@ public interface WithdrawalsHelpers {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payload)
       throws BlockProcessingException;
 
-  // skipping payload withdrawals root comparison
+  // same as above but skipping payload withdrawals root comparison
   void processWithdrawals(MutableBeaconState state);
 
   record ExpectedWithdrawals(List<Withdrawal> withdrawals, int processedPartialWithdrawalsCount) {}
