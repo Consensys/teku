@@ -35,12 +35,6 @@ public class KzgRecoverCellsAndKzgProofsTestExecutor extends KzgTestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
-    if (testDefinition
-        .getTestName()
-        .startsWith("kzg-mainnet/recover_cells_and_kzg_proofs_case_invalid_shuffled")) {
-      LOG.error("SKIPPING TEST {}", testDefinition.getTestName());
-      return;
-    }
     final Data data = loadDataFile(testDefinition, Data.class);
     final List<KZGCellAndProof> expectedKzgCells = data.getOutput();
     List<KZGCellAndProof> actualKzgCells;
