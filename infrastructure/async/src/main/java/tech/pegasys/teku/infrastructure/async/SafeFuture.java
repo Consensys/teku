@@ -421,7 +421,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   public void completeExceptionallyAsync(final Throwable exception, final AsyncRunner asyncRunner) {
     asyncRunner
         .runAsync(() -> completeExceptionally(exception))
-        .finish(this::completeExceptionally);
+        .finish(
+            throwable -> {
+              throwable.addSuppressed(exception);
+              completeExceptionally(throwable);
+            });
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {
