@@ -75,8 +75,8 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.SidecarDBSourceFactory;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.CombinedUpdater;
@@ -126,7 +126,7 @@ public class KvStoreDatabase implements Database {
       final KvStoreAccessor finalizedDb,
       final SchemaHotAdapter schemaHot,
       final SchemaFinalizedSnapshotStateAdapter schemaFinalized,
-      final SidecarDBSourceFactory sidecarDBSourceFactory,
+      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -141,7 +141,7 @@ public class KvStoreDatabase implements Database {
             new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
     return new KvStoreDatabase(
         dao,
-        sidecarDBSourceFactory.createSidecarDBSource(dao),
+        versionedHashDBSourceFactory.createVersionedHashDBSource(dao),
         stateStorageMode,
         storeNonCanonicalBlocks,
         spec);
@@ -150,7 +150,7 @@ public class KvStoreDatabase implements Database {
   public static Database createWithStateSnapshots(
       final KvStoreAccessor db,
       final SchemaCombinedSnapshotState schema,
-      final SidecarDBSourceFactory sidecarDBSourceFactory,
+      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -161,7 +161,7 @@ public class KvStoreDatabase implements Database {
     return create(
         db,
         schema,
-        sidecarDBSourceFactory,
+        versionedHashDBSourceFactory,
         stateStorageMode,
         storeNonCanonicalBlocks,
         spec,
@@ -172,7 +172,7 @@ public class KvStoreDatabase implements Database {
       final MetricsSystem metricsSystem,
       final KvStoreAccessor db,
       final SchemaCombinedTreeState schema,
-      final SidecarDBSourceFactory sidecarDBSourceFactory,
+      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
@@ -182,7 +182,7 @@ public class KvStoreDatabase implements Database {
     return create(
         db,
         schema,
-        sidecarDBSourceFactory,
+        versionedHashDBSourceFactory,
         stateStorageMode,
         storeNonCanonicalBlocks,
         spec,
@@ -192,7 +192,7 @@ public class KvStoreDatabase implements Database {
   private static <S extends SchemaCombined> KvStoreDatabase create(
       final KvStoreAccessor db,
       final S schema,
-      final SidecarDBSourceFactory sidecarDBSourceFactory,
+      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec,
@@ -201,7 +201,7 @@ public class KvStoreDatabase implements Database {
         new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic);
     return new KvStoreDatabase(
         dao,
-        sidecarDBSourceFactory.createSidecarDBSource(dao),
+        versionedHashDBSourceFactory.createVersionedHashDBSource(dao),
         stateStorageMode,
         storeNonCanonicalBlocks,
         spec);

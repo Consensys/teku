@@ -28,14 +28,14 @@ import tech.pegasys.teku.statetransition.api.CustodyGroupCountChannel;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.VersionedHashDBSource;
 
-public class SidecarDBSourceFactory {
+public class VersionedHashDBSourceFactory {
 
   final Function<BlobSidecar, VersionedHash> blobSidecarToVersionedHash;
   final Function<Pair<DataColumnSidecar, UInt64>, VersionedHash> dataColumnSidecarToVersionedHash;
   final EventChannels eventChannels;
   final Spec spec;
 
-  public SidecarDBSourceFactory(final Spec spec, final EventChannels eventChannels) {
+  public VersionedHashDBSourceFactory(final Spec spec, final EventChannels eventChannels) {
     this.spec = spec;
     this.eventChannels = eventChannels;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
@@ -60,7 +60,7 @@ public class SidecarDBSourceFactory {
     }
   }
 
-  public VersionedHashDBSource createSidecarDBSource(final KvStoreCombinedDao dao) {
+  public VersionedHashDBSource createVersionedHashDBSource(final KvStoreCombinedDao dao) {
     final VersionedHashDBSource versionedHashDBSource =
         new VersionedHashDBSource(
             dao, blobSidecarToVersionedHash, dataColumnSidecarToVersionedHash, spec);
