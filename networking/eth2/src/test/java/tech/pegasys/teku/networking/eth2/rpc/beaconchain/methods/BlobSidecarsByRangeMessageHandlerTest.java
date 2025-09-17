@@ -283,9 +283,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
     verify(peer).approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
-    // Request cancelled
-    verify(peer)
-        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     // blob sidecars should be available from epoch 5000, but they are
     // available from epoch 5010
