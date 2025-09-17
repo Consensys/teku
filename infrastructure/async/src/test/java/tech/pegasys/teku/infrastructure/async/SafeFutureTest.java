@@ -648,9 +648,11 @@ public class SafeFutureTest {
         .thenReturn(SafeFuture.failedFuture(asyncRunnerError));
     source.propagateToAsync(target, asyncRunner);
 
-    source.completeExceptionally(new RuntimeException("Oh no!"));
+    final RuntimeException sourceException = new RuntimeException("Oh no!");
+    source.completeExceptionally(sourceException);
 
-    assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
+    assertThatSafeFuture(target)
+        .isCompletedExceptionallyWithCauseAndSuppressed(asyncRunnerError, sourceException);
   }
 
   @Test
@@ -698,9 +700,11 @@ public class SafeFutureTest {
     final RuntimeException asyncRunnerError = new RuntimeException("queue full");
     when(asyncRunner.runAsync(any(ExceptionThrowingSupplier.class)))
         .thenReturn(SafeFuture.failedFuture(asyncRunnerError));
-    future.completeExceptionallyAsync(new RuntimeException("Oh no!"), asyncRunner);
+    final RuntimeException sourceException = new RuntimeException("Oh no!");
+    future.completeExceptionallyAsync(sourceException, asyncRunner);
 
-    assertThatSafeFuture(future).isCompletedExceptionallyWith(asyncRunnerError);
+    assertThatSafeFuture(future)
+        .isCompletedExceptionallyWithCauseAndSuppressed(asyncRunnerError, sourceException);
   }
 
   @Test
