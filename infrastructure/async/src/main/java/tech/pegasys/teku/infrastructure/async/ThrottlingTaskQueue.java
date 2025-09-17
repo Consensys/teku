@@ -19,9 +19,10 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -101,11 +102,11 @@ public class ThrottlingTaskQueue implements TaskQueue {
   }
 
   private record QueuedTask<T>(
-          AtomicReference<SafeFuture<T>> requestRef, Exception callerStackHolder) {}
+      Supplier<SafeFuture<T>> request, Exception callerStackHolder) {}
 
   protected <T> Runnable getTaskToQueue(
       final Supplier<SafeFuture<T>> request, final SafeFuture<T> target) {
-      var task = new QueuedTask<>(new AtomicReference<SafeFuture<T>>(), new Exception("Task queued at:"));
+      var task = new QueuedTask<>(request, new Exception("Task queued at:"));
     return () -> {
       final SafeFuture<T> requestFuture;
       try {
@@ -115,7 +116,6 @@ public class ThrottlingTaskQueue implements TaskQueue {
         taskComplete();
         return;
       }
-      task.requestRef.set(requestFuture);
       inflightTasks.add(task);
 
       requestFuture.propagateTo(target);
