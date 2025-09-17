@@ -1436,7 +1436,7 @@
 - name: get_expected_withdrawals#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/withdrawals/WithdrawalsHelpersCapella.java
-      search: public ExpectedWithdrawals getExpectedWithdrawals((
+      search: public ExpectedWithdrawals getExpectedWithdrawals(
   spec: |
     <spec fn="get_expected_withdrawals" fork="capella" hash="09191977">
     def get_expected_withdrawals(state: BeaconState) -> Sequence[Withdrawal]:
@@ -1477,7 +1477,7 @@
 - name: get_expected_withdrawals#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/withdrawals/WithdrawalsHelpersElectra.java
-      search: private static List<Withdrawal> getExpectedWithdrawals(
+      search: public ExpectedWithdrawals getExpectedWithdrawals(
   spec: |
     <spec fn="get_expected_withdrawals" fork="electra" hash="060932cd">
     def get_expected_withdrawals(state: BeaconState) -> Tuple[Sequence[Withdrawal], uint64]:
