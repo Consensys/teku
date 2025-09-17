@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao.V4FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao.V4HotUpdater;
@@ -371,8 +372,19 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public List<DataColumnSlotAndIdentifier> getNonCanonicalDataColumnIdentifiers(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return finalizedDao.getNonCanonicalDataColumnIdentifiers(slotAndBlockRoot);
+  }
+
+  @Override
   public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
     return finalizedDao.getEarliestAvailableDataColumnSlot();
+  }
+
+  @Override
+  public Optional<Bytes> getSidecarIdentifierData(final VersionedHash versionedHash) {
+    return finalizedDao.getSidecarIdentifierData(versionedHash);
   }
 
   @Override
@@ -703,6 +715,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       finalizedUpdater.removeNonCanonicalSidecar(identifier);
+    }
+
+    @Override
+    public void addVersionedHash(Bytes32 versionedHash, Bytes metadata) {
+      finalizedUpdater.addVersionedHash(versionedHash, metadata);
+    }
+
+    @Override
+    public void removeVersionedHash(Bytes32 versionedHash) {
+      finalizedUpdater.removeVersionedHash(versionedHash);
     }
 
     @Override

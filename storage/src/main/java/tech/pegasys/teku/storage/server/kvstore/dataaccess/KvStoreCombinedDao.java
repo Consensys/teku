@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface KvStoreCombinedDao extends AutoCloseable {
 
@@ -190,7 +191,12 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
+  List<DataColumnSlotAndIdentifier> getNonCanonicalDataColumnIdentifiers(
+      SlotAndBlockRoot slotAndBlockRoot);
+
   Optional<UInt64> getEarliestDataSidecarColumnSlot();
+
+  Optional<Bytes> getSidecarIdentifierData(final VersionedHash versionedHash);
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -308,6 +314,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeSidecar(DataColumnSlotAndIdentifier identifier);
 
     void removeNonCanonicalSidecar(DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier);
+
+    void addVersionedHash(final Bytes32 versionedHash, final Bytes metadata);
+
+    void removeVersionedHash(final Bytes32 versionedHash);
 
     void commit();
 

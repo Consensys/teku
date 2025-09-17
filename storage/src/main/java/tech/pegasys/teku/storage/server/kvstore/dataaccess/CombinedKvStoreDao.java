@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
@@ -660,10 +661,29 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public List<DataColumnSlotAndIdentifier> getNonCanonicalDataColumnIdentifiers(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final Stream<DataColumnSlotAndIdentifier> columnSlotAndIdentifierStream =
+        db.streamKeys(
+            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
+            new DataColumnSlotAndIdentifier(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new DataColumnSlotAndIdentifier(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE)); ) {
+      return columnSlotAndIdentifierStream.toList();
+    }
+  }
+
+  @Override
   public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
     return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
         .map(ColumnEntry::getKey)
         .map(DataColumnSlotAndIdentifier::slot);
+  }
+
+  @Override
+  public Optional<Bytes> getSidecarIdentifierData(final VersionedHash versionedHash) {
+    return db.get(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash.get());
   }
 
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {
@@ -994,6 +1014,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
+    }
+
+    @Override
+    public void addVersionedHash(final Bytes32 versionedHash, final Bytes metadata) {
+      transaction.put(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash, metadata);
+    }
+
+    @Override
+    public void removeVersionedHash(final Bytes32 versionedHash) {
+      transaction.delete(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash);
     }
   }
 }

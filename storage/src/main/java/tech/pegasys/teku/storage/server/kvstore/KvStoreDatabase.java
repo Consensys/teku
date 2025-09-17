@@ -75,6 +75,7 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.SidecarDBSourceFactory;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.CombinedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
@@ -87,6 +88,7 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnaps
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTreeStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.VersionedHashDBSource;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombined;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedSnapshotState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaCombinedTreeState;
@@ -103,14 +105,17 @@ public class KvStoreDatabase implements Database {
   protected final boolean storeNonCanonicalBlocks;
   @VisibleForTesting final KvStoreCombinedDao dao;
   private final StateStorageMode stateStorageMode;
+  private final VersionedHashDBSource versionedHashDBSource;
 
   KvStoreDatabase(
       final KvStoreCombinedDao dao,
+      final VersionedHashDBSource versionedHashDBSource,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     this.dao = dao;
     checkNotNull(spec);
+    this.versionedHashDBSource = versionedHashDBSource;
     this.stateStorageMode = stateStorageMode;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.spec = spec;
@@ -121,6 +126,7 @@ public class KvStoreDatabase implements Database {
       final KvStoreAccessor finalizedDb,
       final SchemaHotAdapter schemaHot,
       final SchemaFinalizedSnapshotStateAdapter schemaFinalized,
+      final SidecarDBSourceFactory sidecarDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -133,12 +139,18 @@ public class KvStoreDatabase implements Database {
         new KvStoreCombinedDaoAdapter(
             hotDao,
             new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, finalizedStateStorageLogic));
-    return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+    return new KvStoreDatabase(
+        dao,
+        sidecarDBSourceFactory.createSidecarDBSource(dao),
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   public static Database createWithStateSnapshots(
       final KvStoreAccessor db,
       final SchemaCombinedSnapshotState schema,
+      final SidecarDBSourceFactory sidecarDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -147,13 +159,20 @@ public class KvStoreDatabase implements Database {
         finalizedStateStorageLogic =
             new V4FinalizedStateSnapshotStorageLogic<>(stateStorageFrequency);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        sidecarDBSourceFactory,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic);
   }
 
   public static Database createWithStateTree(
       final MetricsSystem metricsSystem,
       final KvStoreAccessor db,
       final SchemaCombinedTreeState schema,
+      final SidecarDBSourceFactory sidecarDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
@@ -161,19 +180,31 @@ public class KvStoreDatabase implements Database {
     final V4FinalizedStateStorageLogic<SchemaCombinedTreeState> finalizedStateStorageLogic =
         new V4FinalizedStateTreeStorageLogic(metricsSystem, spec, maxKnownNodeCacheSize);
     return create(
-        db, schema, stateStorageMode, storeNonCanonicalBlocks, spec, finalizedStateStorageLogic);
+        db,
+        schema,
+        sidecarDBSourceFactory,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic);
   }
 
   private static <S extends SchemaCombined> KvStoreDatabase create(
       final KvStoreAccessor db,
       final S schema,
+      final SidecarDBSourceFactory sidecarDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec,
       final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final CombinedKvStoreDao<S> dao =
         new CombinedKvStoreDao<>(db, schema, finalizedStateStorageLogic);
-    return new KvStoreDatabase(dao, stateStorageMode, storeNonCanonicalBlocks, spec);
+    return new KvStoreDatabase(
+        dao,
+        sidecarDBSourceFactory.createSidecarDBSource(dao),
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   @MustBeClosed
@@ -330,6 +361,7 @@ public class KvStoreDatabase implements Database {
             if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlotAndBlockRoot())) {
               return;
             }
+            // TODO
             finalizedBlobSidecarsBySlot
                 .get(block.getSlotAndBlockRoot())
                 .forEach(updater::addBlobSidecar);
@@ -929,6 +961,7 @@ public class KvStoreDatabase implements Database {
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addBlobSidecar(blobSidecar);
+      versionedHashDBSource.addBlobSidecarVersionedHash(blobSidecar, updater);
       updater.commit();
     }
   }
@@ -937,6 +970,7 @@ public class KvStoreDatabase implements Database {
   public void storeNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addNonCanonicalBlobSidecar(blobSidecar);
+      versionedHashDBSource.addNonCanonicalBlobSidecarVersionedHash(blobSidecar, updater);
       updater.commit();
     }
   }
@@ -1031,9 +1065,9 @@ public class KvStoreDatabase implements Database {
         // Remove the BlobSidecars from the database.
         for (final SlotAndBlockRootAndBlobIndex key : keys) {
           if (nonCanonicalBlobSidecars) {
-            updater.removeNonCanonicalBlobSidecar(key);
+            removeNonCanonicalBlobSidecar(key, updater);
           } else {
-            updater.removeBlobSidecar(key);
+            removeBlobSidecar(key, updater);
             earliestBlobSidecarSlot = Optional.of(slot.plus(1));
           }
         }
@@ -1049,6 +1083,18 @@ public class KvStoreDatabase implements Database {
     LOG.debug("Pruned {} BlobSidecars", pruned);
     // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
     return pruned >= pruneLimit;
+  }
+
+  private void removeBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key, final FinalizedUpdater updater) {
+    versionedHashDBSource.removeBlobSidecarVersionedHash(key, updater);
+    updater.removeBlobSidecar(key);
+  }
+
+  private void removeNonCanonicalBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key, final FinalizedUpdater updater) {
+    versionedHashDBSource.removeNonCanonicalBlobSidecarVersionedHash(key, updater);
+    updater.removeNonCanonicalBlobSidecar(key);
   }
 
   @MustBeClosed
@@ -1181,6 +1227,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public void addSidecar(final DataColumnSidecar sidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
+      versionedHashDBSource.addSidecarVersionedHashes(sidecar, updater);
       updater.addSidecar(sidecar);
       updater.commit();
     }
@@ -1189,6 +1236,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public void addNonCanonicalSidecar(final DataColumnSidecar sidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
+      versionedHashDBSource.addNonCanonicalSidecarVersionedHashes(sidecar, updater);
       updater.addNonCanonicalSidecar(sidecar);
       updater.commit();
     }
@@ -1233,6 +1281,14 @@ public class KvStoreDatabase implements Database {
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         for (final UInt64 slot : slots) {
           final List<DataColumnSlotAndIdentifier> keys = prunableMap.get(slot);
+          if (!keys.isEmpty()) {
+            if (nonCanonicalBlobSidecars) {
+              versionedHashDBSource.removeNonCanonicalSidecarVersionedHashes(
+                  keys.getFirst(), updater);
+            } else {
+              versionedHashDBSource.removeSidecarVersionedHashes(keys.getFirst(), updater);
+            }
+          }
 
           for (final DataColumnSlotAndIdentifier key : keys) {
             if (nonCanonicalBlobSidecars) {
@@ -1345,7 +1401,11 @@ public class KvStoreDatabase implements Database {
 
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       // add blob sidecars
-      blobSidecars.forEach(updater::addBlobSidecar);
+      blobSidecars.forEach(
+          blobSidecar -> {
+            updater.addBlobSidecar(blobSidecar);
+            versionedHashDBSource.addBlobSidecarVersionedHash(blobSidecar, updater);
+          });
 
       // update the earliest blob sidecar slot if needed
       getEarliestBlobSidecarSlot.ifPresent(
@@ -1425,8 +1485,10 @@ public class KvStoreDatabase implements Database {
                       dao.getBlobSidecar(key)
                           .ifPresent(
                               blobSidecarBytes -> {
+                                versionedHashDBSource.addNonCanonicalBlobSidecarVersionedHash(
+                                    blobSidecarBytes, updater);
                                 updater.addNonCanonicalBlobSidecarRaw(blobSidecarBytes, key);
-                                updater.removeBlobSidecar(key);
+                                removeBlobSidecar(key, updater);
                               });
                     });
             index++;
@@ -1442,7 +1504,7 @@ public class KvStoreDatabase implements Database {
               .forEach(
                   key -> {
                     LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
-                    updater.removeBlobSidecar(key);
+                    removeBlobSidecar(key, updater);
                   });
         }
         updater.commit();
@@ -1467,21 +1529,31 @@ public class KvStoreDatabase implements Database {
         final int start = index;
         try (final FinalizedUpdater updater = finalizedUpdater()) {
           while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
-            dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next())
-                .forEach(
-                    key -> {
-                      dao.getSidecar(key)
-                          .ifPresent(
-                              sidecarBytes -> {
-                                DataColumnSidecar sideCar =
-                                    spec.deserializeSidecar(sidecarBytes, key.slot());
-                                updater.addNonCanonicalSidecar(sideCar);
-                                LOG.trace(
-                                    "Moving non-canonical sidecar with identifier {} to non-canonical sidecars table",
-                                    key);
-                                updater.removeSidecar(key);
-                              });
-                    });
+            final List<DataColumnSlotAndIdentifier> dataColumnIdentifiers =
+                dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next());
+            if (!dataColumnIdentifiers.isEmpty()) {
+              final DataColumnSlotAndIdentifier first = dataColumnIdentifiers.getFirst();
+              versionedHashDBSource.removeSidecarVersionedHashes(first, updater);
+              dao.getSidecar(first)
+                  .ifPresent(
+                      sidecar ->
+                          versionedHashDBSource.addNonCanonicalSidecarVersionedHashes(
+                              sidecar, updater));
+            }
+            dataColumnIdentifiers.forEach(
+                key -> {
+                  dao.getSidecar(key)
+                      .ifPresent(
+                          sidecarBytes -> {
+                            DataColumnSidecar sideCar =
+                                spec.deserializeSidecar(sidecarBytes, key.slot());
+                            updater.addNonCanonicalSidecar(sideCar);
+                            LOG.trace(
+                                "Moving non-canonical sidecar with identifier {} to non-canonical sidecars table",
+                                key);
+                            updater.removeSidecar(key);
+                          });
+                });
             index++;
           }
           updater.commit();
@@ -1491,12 +1563,17 @@ public class KvStoreDatabase implements Database {
       LOG.trace("Removing sidecars for non-canonical blocks");
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
-          dao.getDataColumnIdentifiers(slotAndBlockRoot)
-              .forEach(
-                  key -> {
-                    LOG.trace("Removing sidecar with identifier {} for non-canonical block", key);
-                    updater.removeSidecar(key);
-                  });
+          final List<DataColumnSlotAndIdentifier> dataColumnIdentifiers =
+              dao.getDataColumnIdentifiers(slotAndBlockRoot);
+          if (!dataColumnIdentifiers.isEmpty()) {
+            final DataColumnSlotAndIdentifier first = dataColumnIdentifiers.getFirst();
+            versionedHashDBSource.removeSidecarVersionedHashes(first, updater);
+          }
+          dataColumnIdentifiers.forEach(
+              key -> {
+                LOG.trace("Removing sidecar with identifier {} for non-canonical block", key);
+                updater.removeSidecar(key);
+              });
         }
         updater.commit();
       }
