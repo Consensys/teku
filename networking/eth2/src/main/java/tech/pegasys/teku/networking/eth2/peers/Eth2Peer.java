@@ -57,7 +57,6 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
-      final RateTracker storageLimitHitTracker,
       final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
@@ -73,7 +72,6 @@ public interface Eth2Peer extends Peer, SyncSource {
         blobSidecarsRequestTracker,
         dataColumnSidecarsRequestTracker,
         requestTracker,
-        storageLimitHitTracker,
         kzg,
         metricsSystem,
         timeProvider);
@@ -150,8 +148,6 @@ public interface Eth2Peer extends Peer, SyncSource {
   void adjustDataColumnSidecarsRequest(RequestKey requestKey, long objectCount);
 
   boolean approveRequest();
-
-  void recordStorageLimitHit();
 
   SafeFuture<UInt64> sendPing();
 

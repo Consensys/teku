@@ -69,7 +69,6 @@ class Eth2PeerTest {
   private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker dataColumnSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
-  private final RateTracker storageLimitHitTracker = mock(RateTracker.class);
   private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
   private final TimeProvider timeProvider = mock(TimeProvider.class);
@@ -89,7 +88,6 @@ class Eth2PeerTest {
           blobSidecarsRateTracker,
           dataColumnSidecarsRateTracker,
           rateTracker,
-          storageLimitHitTracker,
           kzg,
           metricsSystem,
           timeProvider);
@@ -330,42 +328,6 @@ class Eth2PeerTest {
     peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(7), __ -> SafeFuture.COMPLETE);
 
     verify(delegate, never()).sendRequest(any(), any(RpcRequest.class), any());
-  }
-
-  @Test
-  public void approveRequest_shouldRejectIfStorageLimitHit() {
-    when(storageLimitHitTracker.getAvailableObjectCount()).thenReturn(0L);
-    when(peer.disconnectCleanly(DisconnectReason.RATE_LIMITING)).thenReturn(SafeFuture.COMPLETE);
-    assertThat(peer.approveRequest()).isFalse();
-    verify(storageLimitHitTracker).getAvailableObjectCount();
-    verify(delegate).disconnectCleanly(DisconnectReason.RATE_LIMITING);
-  }
-
-  @Test
-  public void approveRequest_shouldRejectIfRequestRateLimitHit() {
-    when(storageLimitHitTracker.getAvailableObjectCount()).thenReturn(1L);
-    when(rateTracker.generateRequestKey(1L)).thenReturn(Optional.empty());
-    when(peer.disconnectCleanly(DisconnectReason.RATE_LIMITING)).thenReturn(SafeFuture.COMPLETE);
-    assertThat(peer.approveRequest()).isFalse();
-    verify(storageLimitHitTracker).getAvailableObjectCount();
-    verify(rateTracker).generateRequestKey(1L);
-    verify(delegate).disconnectCleanly(DisconnectReason.RATE_LIMITING);
-  }
-
-  @Test
-  public void approveRequest_shouldApproveIfNoLimitsAreHit() {
-    when(storageLimitHitTracker.getAvailableObjectCount()).thenReturn(1L);
-    when(rateTracker.generateRequestKey(1L)).thenReturn(Optional.of(mock(RequestKey.class)));
-    assertThat(peer.approveRequest()).isTrue();
-    verify(storageLimitHitTracker).getAvailableObjectCount();
-    verify(rateTracker).generateRequestKey(1L);
-    verify(delegate, never()).disconnectCleanly(any());
-  }
-
-  @Test
-  public void recordStorageLimitHit_shouldRecordHit() {
-    peer.recordStorageLimitHit();
-    verify(storageLimitHitTracker).generateRequestKey(1L);
   }
 
   private <T extends RpcRequest> T resolveSingleRpcRequestBody(

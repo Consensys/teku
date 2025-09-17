@@ -411,9 +411,6 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public void recordStorageLimitHit() {}
-
-  @Override
   public SafeFuture<UInt64> sendPing() {
     return SafeFuture.completedFuture(ONE);
   }
