@@ -1476,7 +1476,7 @@
 
 - name: get_expected_withdrawals#electra
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/withdrawals/WithdrawalsHelpersElectra.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/withdrawals/WithdrawalsHelpersCapella.java
       search: public ExpectedWithdrawals getExpectedWithdrawals(
   spec: |
     <spec fn="get_expected_withdrawals" fork="electra" hash="060932cd">
