@@ -19,8 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Streams;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -31,8 +29,6 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.kzg.KZGProof;
 
 public class KzgRecoverCellsAndKzgProofsTestExecutor extends KzgTestExecutor {
-  private static final Logger LOG = LogManager.getLogger();
-
   @Override
   public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
