@@ -281,53 +281,6 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
         consolidationRequest -> processConsolidationRequest(electraState, consolidationRequest));
   }
 
-  /**
-   * Implements function is_valid_switch_to_compounding_request
-   *
-   * @see <a
-   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
-   */
-  private boolean isValidSwitchToCompoundingRequest(
-      final BeaconState state, final ConsolidationRequest consolidationRequest) {
-
-    // Switch to compounding requires source and target be equal
-    if (!consolidationRequest.getSourcePubkey().equals(consolidationRequest.getTargetPubkey())) {
-      return false;
-    }
-
-    // Verify source_pubkey exists
-    final Optional<Integer> maybeSourceValidatorIndex =
-        validatorsUtil.getValidatorIndex(state, consolidationRequest.getSourcePubkey());
-    if (maybeSourceValidatorIndex.isEmpty()) {
-      return false;
-    }
-
-    final int sourceValidatorIndex = maybeSourceValidatorIndex.get();
-    final Validator sourceValidator = state.getValidators().get(sourceValidatorIndex);
-
-    // Verify request has been authorized
-    final Eth1Address sourceValidatorExecutionAddress =
-        Predicates.getExecutionAddressUnchecked(sourceValidator.getWithdrawalCredentials());
-    if (!sourceValidatorExecutionAddress.equals(
-        Eth1Address.fromBytes(consolidationRequest.getSourceAddress().getWrappedBytes()))) {
-      return false;
-    }
-
-    // Verify source withdrawal credentials
-    if (!predicates.hasEth1WithdrawalCredential(sourceValidator)) {
-      return false;
-    }
-
-    // Verify the source is active
-    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
-    if (!predicates.isActiveValidator(sourceValidator, currentEpoch)) {
-      return false;
-    }
-
-    // Verify exit for source has not been initiated
-    return sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
-  }
-
   private void processConsolidationRequest(
       final MutableBeaconStateElectra state, final ConsolidationRequest consolidationRequest) {
     final UInt64 slot = state.getSlot();
@@ -477,5 +430,52 @@ public class ExecutionRequestsProcessorElectra implements ExecutionRequestsProce
     state.getPendingConsolidations().append(pendingConsolidation);
 
     LOG.debug("process_consolidation_request: created {}", pendingConsolidation);
+  }
+
+  /**
+   * Implements function is_valid_switch_to_compounding_request
+   *
+   * @see <a
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/electra/beacon-chain.md#new-is_valid_switch_to_compounding_request"/>
+   */
+  private boolean isValidSwitchToCompoundingRequest(
+      final BeaconState state, final ConsolidationRequest consolidationRequest) {
+
+    // Switch to compounding requires source and target be equal
+    if (!consolidationRequest.getSourcePubkey().equals(consolidationRequest.getTargetPubkey())) {
+      return false;
+    }
+
+    // Verify source_pubkey exists
+    final Optional<Integer> maybeSourceValidatorIndex =
+        validatorsUtil.getValidatorIndex(state, consolidationRequest.getSourcePubkey());
+    if (maybeSourceValidatorIndex.isEmpty()) {
+      return false;
+    }
+
+    final int sourceValidatorIndex = maybeSourceValidatorIndex.get();
+    final Validator sourceValidator = state.getValidators().get(sourceValidatorIndex);
+
+    // Verify request has been authorized
+    final Eth1Address sourceValidatorExecutionAddress =
+        Predicates.getExecutionAddressUnchecked(sourceValidator.getWithdrawalCredentials());
+    if (!sourceValidatorExecutionAddress.equals(
+        Eth1Address.fromBytes(consolidationRequest.getSourceAddress().getWrappedBytes()))) {
+      return false;
+    }
+
+    // Verify source withdrawal credentials
+    if (!predicates.hasEth1WithdrawalCredential(sourceValidator)) {
+      return false;
+    }
+
+    // Verify the source is active
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(state.getSlot());
+    if (!predicates.isActiveValidator(sourceValidator, currentEpoch)) {
+      return false;
+    }
+
+    // Verify exit for source has not been initiated
+    return sourceValidator.getExitEpoch().equals(FAR_FUTURE_EPOCH);
   }
 }

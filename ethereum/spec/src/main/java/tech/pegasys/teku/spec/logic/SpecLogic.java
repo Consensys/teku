@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
 public interface SpecLogic {
@@ -73,6 +74,8 @@ public interface SpecLogic {
   OperationSignatureVerifier operationSignatureVerifier();
 
   Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers();
+
+  Optional<WithdrawalsHelpers> getWithdrawalsHelpers();
 
   Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor();
 }
