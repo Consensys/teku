@@ -218,7 +218,6 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<UInt64> getEarliestAvailableBlockSlot() {
-    LOG.info("getEarliestAvailableBlockSlot");
     return dao.getEarliestFinalizedBlockSlot();
   }
 
@@ -246,25 +245,9 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
-    LOG.info("Getting signed block for root {} getHotBlock", root);
-    var ret =
-        dao.getHotBlock(root)
-            .or(
-                () -> {
-                  LOG.info("Getting signed block for root {} getFinalizedBlock", root);
-                  return dao.getFinalizedBlock(root);
-                })
-            .or(
-                () -> {
-                  LOG.info("Getting signed block for root {} getNonCanonicalBlock", root);
-                  return dao.getNonCanonicalBlock(root);
-                });
-
-    LOG.info(
-        "Getting signed block for root {} returning {}",
-        root,
-        ret.isPresent() ? "PRESENT" : "EMPTY");
-    return ret;
+    return dao.getHotBlock(root)
+        .or(() -> dao.getFinalizedBlock(root))
+        .or(() -> dao.getNonCanonicalBlock(root));
   }
 
   @Override

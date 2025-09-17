@@ -101,12 +101,11 @@ public class ThrottlingTaskQueue implements TaskQueue {
   }
 
   private record QueuedTask<T>(
-      AtomicReference<SafeFuture<T>> requestRef, Exception callerStackHolder) {}
+          AtomicReference<SafeFuture<T>> requestRef, Exception callerStackHolder) {}
 
   protected <T> Runnable getTaskToQueue(
       final Supplier<SafeFuture<T>> request, final SafeFuture<T> target) {
-    var task =
-        new QueuedTask<>(new AtomicReference<SafeFuture<T>>(), new Exception("Task queued at:"));
+      var task = new QueuedTask<>(new AtomicReference<SafeFuture<T>>(), new Exception("Task queued at:"));
     return () -> {
       final SafeFuture<T> requestFuture;
       try {

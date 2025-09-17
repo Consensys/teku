@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -54,8 +52,6 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
  * them but without allowing queries to delay updates.
  */
 public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final AsyncRunner asyncRunner;
   private final StorageQueryChannel queryDelegate;
   private final StorageUpdateChannel updateDelegate;
@@ -118,16 +114,7 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
 
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
-    LOG.info("getEarliestAvailableBlockSlot");
-    return asyncRunner
-        .runAsync(
-            () -> {
-              LOG.info("getEarliestAvailableBlockSlot runAsync");
-              return queryDelegate
-                  .getEarliestAvailableBlockSlot()
-                  .alwaysRun(() -> LOG.info("getEarliestAvailableBlockSlot alwaysRun"));
-            })
-        .alwaysRun(() -> LOG.info("getEarliestAvailableBlockSlot alwaysRun runAsync"));
+    return asyncRunner.runAsync(queryDelegate::getEarliestAvailableBlockSlot);
   }
 
   @Override
@@ -147,16 +134,7 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
-    LOG.info("getBlockByBlockRoot {}", blockRoot);
-    return asyncRunner
-        .runAsync(
-            () -> {
-              LOG.info("getBlockByBlockRoot runAsync {}", blockRoot);
-              return queryDelegate
-                  .getBlockByBlockRoot(blockRoot)
-                  .alwaysRun(() -> LOG.info("getBlockByBlockRoot alwaysRun {}", blockRoot));
-            })
-        .alwaysRun(() -> LOG.info("getBlockByBlockRoot alwaysRun {} runAsync", blockRoot));
+    return asyncRunner.runAsync(() -> queryDelegate.getBlockByBlockRoot(blockRoot));
   }
 
   @Override
