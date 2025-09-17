@@ -124,7 +124,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     return withdrawals.getLast().getIndex().increment();
   }
 
-  // NO-OP in Capella
+  // NO-OP
   protected int consumePendingPartialWithdrawals(
       final List<Withdrawal> withdrawals, final BeaconState state) {
     return 0;
@@ -136,15 +136,6 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
       throws BlockProcessingException {
     final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(state);
     assertWithdrawalsInExecutionPayloadMatchExpected(payload, expectedWithdrawals.withdrawals());
-    processWithdrawalsUnchecked(
-        state,
-        expectedWithdrawals.withdrawals(),
-        expectedWithdrawals.processedPartialWithdrawalsCount());
-  }
-
-  @Override
-  public void processWithdrawalsUnchecked(final MutableBeaconState state) {
-    final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(state);
     processWithdrawalsUnchecked(
         state,
         expectedWithdrawals.withdrawals(),
@@ -174,6 +165,15 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
                   .orElse("MISSING"));
       throw new BlockProcessingException(msg);
     }
+  }
+
+  @Override
+  public void processWithdrawals(final MutableBeaconState state) {
+    final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(state);
+    processWithdrawalsUnchecked(
+        state,
+        expectedWithdrawals.withdrawals(),
+        expectedWithdrawals.processedPartialWithdrawalsCount());
   }
 
   private void processWithdrawalsUnchecked(
@@ -216,7 +216,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
     }
   }
 
-  // NO-OP in Capella
+  // NO-OP
   protected void updatePendingPartialWithdrawals(
       final MutableBeaconState state, final int processedPartialWithdrawalsCount) {}
 }

@@ -23,16 +23,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 
-/** Helpers for post-Capella withdrawals */
 public interface WithdrawalsHelpers {
 
+  // get_expected_withdrawals
   ExpectedWithdrawals getExpectedWithdrawals(BeaconState state);
 
+  // process_withdrawals
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payload)
       throws BlockProcessingException;
 
   // skipping payload withdrawals root comparison
-  void processWithdrawalsUnchecked(MutableBeaconState state);
+  void processWithdrawals(MutableBeaconState state);
 
   record ExpectedWithdrawals(List<Withdrawal> withdrawals, int processedPartialWithdrawalsCount) {}
 

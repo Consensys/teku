@@ -62,7 +62,7 @@ class WithdrawalsHelpersElectraTest {
     final MutableBeaconStateElectra mutableBeaconStateElectra =
         MutableBeaconStateElectra.required(preState.createWritableCopy());
 
-    withdrawalsHelpers.processWithdrawalsUnchecked(mutableBeaconStateElectra);
+    withdrawalsHelpers.processWithdrawals(mutableBeaconStateElectra);
     assertThat(mutableBeaconStateElectra.getPendingPartialWithdrawals().size()).isEqualTo(0);
 
     assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.valueOf(2));
@@ -169,7 +169,7 @@ class WithdrawalsHelpersElectraTest {
         MutableBeaconStateElectra.required(preState.createWritableCopy());
     assertThat(expectedWithdrawals.processedPartialWithdrawalsCount()).isEqualTo(2);
 
-    withdrawalsHelpers.processWithdrawalsUnchecked(mutableBeaconStateElectra);
+    withdrawalsHelpers.processWithdrawals(mutableBeaconStateElectra);
     assertThat(mutableBeaconStateElectra.getPendingPartialWithdrawals().size()).isEqualTo(1);
     assertThat(mutableBeaconStateElectra.getNextWithdrawalIndex()).isEqualTo(UInt64.valueOf(2));
     assertThat(mutableBeaconStateElectra.getValidators().size()).isEqualTo(3);
