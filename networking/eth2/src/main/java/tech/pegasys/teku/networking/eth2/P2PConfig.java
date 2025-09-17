@@ -57,7 +57,7 @@ public class P2PConfig {
   // To avoid resource saturation and ensure capacity for other tasks, we limit historical data
   // queries to 3
   public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 3;
-  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 5_000;
+  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 500;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;

@@ -50,7 +50,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCust
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
-import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -229,8 +228,6 @@ public class DataColumnSidecarsByRootMessageHandler
             () ->
                 combinedChainDataClient
                     .getBlockByBlockRoot(identifier.blockRoot())
-                    .exceptionally(
-                        ThrottlingStorageQueryChannel::mapQueueIsFullExceptionToEmptyOrRethrow)
                     .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
@@ -261,8 +258,7 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
-            })
-        .exceptionally(ThrottlingStorageQueryChannel::mapQueueIsFullExceptionToEmptyOrRethrow);
+            });
   }
 
   private void handleError(
