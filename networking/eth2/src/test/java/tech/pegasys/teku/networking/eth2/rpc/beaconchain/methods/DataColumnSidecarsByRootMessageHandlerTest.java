@@ -435,6 +435,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
   @TestTemplate
   public void shouldNotAdjustIfAnErrorOccurs() {
+    // Be protective: do not adjust due to error
     final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
         generateDataColumnsByRootIdentifiers(4, 1);
 
