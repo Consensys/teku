@@ -1435,8 +1435,8 @@
 
 - name: get_expected_withdrawals#capella
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/ExpectedWithdrawals.java
-      search: private static List<Withdrawal> getExpectedWithdrawals(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/withdrawals/WithdrawalsHelpersCapella.java
+      search: public ExpectedWithdrawals getExpectedWithdrawals((
   spec: |
     <spec fn="get_expected_withdrawals" fork="capella" hash="09191977">
     def get_expected_withdrawals(state: BeaconState) -> Sequence[Withdrawal]:
@@ -1476,7 +1476,7 @@
 
 - name: get_expected_withdrawals#electra
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/ExpectedWithdrawals.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/withdrawals/WithdrawalsHelpersElectra.java
       search: private static List<Withdrawal> getExpectedWithdrawals(
   spec: |
     <spec fn="get_expected_withdrawals" fork="electra" hash="060932cd">
@@ -4828,7 +4828,7 @@
 
 - name: process_withdrawals#electra
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/block/BlockProcessorCapella.java
       search: public void processWithdrawals(
   spec: |
     <spec fn="process_withdrawals" fork="electra" hash="bb094f95">
