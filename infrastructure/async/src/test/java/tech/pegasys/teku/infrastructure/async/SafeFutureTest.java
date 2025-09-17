@@ -648,9 +648,11 @@ public class SafeFutureTest {
         .thenReturn(SafeFuture.failedFuture(asyncRunnerError));
     source.propagateToAsync(target, asyncRunner);
 
-    source.completeExceptionally(new RuntimeException("Oh no!"));
+    final RuntimeException sourceException = new RuntimeException("Oh no!");
+    source.completeExceptionally(sourceException);
 
-    assertThatSafeFuture(target).isCompletedExceptionallyWith(asyncRunnerError);
+    assertThatSafeFuture(target)
+        .isCompletedExceptionallyWithCauseAndSuppressed(asyncRunnerError, sourceException);
   }
 
   @Test
