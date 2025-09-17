@@ -33,6 +33,7 @@ dependencies {
   implementation project(':services:chainstorage')
   implementation project(':services:executionlayer')
   implementation project(':services:powchain')
+  implementation project(':services:zkchain')
   implementation project(':infrastructure:serviceutils')
   implementation project(':services:timer')
   implementation project(':storage')

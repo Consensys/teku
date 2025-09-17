@@ -132,6 +132,13 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
+              if (builder.supportsSignedExecutionPayloadHeader()) {
+                builder.signedExecutionPayloadHeader(
+                    dataStructureUtil.randomSignedExecutionPayloadHeader());
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(dataStructureUtil.randomPayloadAttestations());
+              }
               return SafeFuture.COMPLETE;
             },
             BlockProductionPerformance.NOOP)

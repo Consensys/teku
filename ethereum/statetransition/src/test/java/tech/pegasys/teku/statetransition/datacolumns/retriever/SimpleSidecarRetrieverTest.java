@@ -51,7 +51,6 @@ public class SimpleSidecarRetrieverTest {
   private static final Logger LOG = LogManager.getLogger();
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
-  final DataColumnPeerSearcherStub dataColumnPeerSearcherStub = new DataColumnPeerSearcherStub();
 
   final Spec spec = TestSpecFactory.createMinimalFulu();
   final TestPeerManager testPeerManager = new TestPeerManager();
@@ -70,7 +69,6 @@ public class SimpleSidecarRetrieverTest {
       new SimpleSidecarRetriever(
           spec,
           testPeerManager,
-          dataColumnPeerSearcherStub,
           custodyCountSupplier,
           testPeerManager,
           stubAsyncRunner,

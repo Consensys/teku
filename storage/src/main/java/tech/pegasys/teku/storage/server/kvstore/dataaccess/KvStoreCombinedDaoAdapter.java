@@ -143,6 +143,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return hotDao.getCustodyGroupCount();
+  }
+
+  @Override
   @MustBeClosed
   public HotUpdater hotUpdater() {
     return hotDao.hotUpdater();
@@ -495,6 +500,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
       hotUpdater.setLatestCanonicalBlockRoot(canonicalBlockRoot);
+    }
+
+    @Override
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      hotUpdater.setCustodyGroupCount(custodyGroupCount);
     }
 
     @Override

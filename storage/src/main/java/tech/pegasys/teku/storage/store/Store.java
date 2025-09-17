@@ -115,6 +115,7 @@ class Store extends CacheableStore {
   private Optional<Bytes32> proposerBoostRoot = Optional.empty();
   private VoteTracker[] votes;
   private UInt64 highestVotedValidatorIndex;
+  private Optional<UInt64> custodyGroupCount = Optional.empty();
 
   private UInt64 reorgThreshold = UInt64.ZERO;
   private UInt64 parentThreshold = UInt64.ZERO;
@@ -139,7 +140,8 @@ class Store extends CacheableStore {
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
+      final Optional<UInt64> custodyGroupCount) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -189,6 +191,7 @@ class Store extends CacheableStore {
             blockProvider);
 
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
+    this.custodyGroupCount = custodyGroupCount;
   }
 
   private BlockProvider createBlockProviderFromMapWhileLocked(
@@ -223,7 +226,8 @@ class Store extends CacheableStore {
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config,
-      final ForkChoiceStrategy forkChoiceStrategy) {
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final Optional<UInt64> custodyGroupCount) {
     final Map<Bytes32, SignedBeaconBlock> blocks =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
@@ -262,10 +266,11 @@ class Store extends CacheableStore {
         blocks,
         checkpointStateTaskQueue,
         maybeEpochStates,
-        blobSidecars);
+        blobSidecars,
+        custodyGroupCount);
   }
 
-  public static UpdatableStore create(
+  static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
@@ -282,7 +287,8 @@ class Store extends CacheableStore {
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Optional<Bytes32> initialCanonicalBlockRoot,
       final Map<UInt64, VoteTracker> votes,
-      final StoreConfig config) {
+      final StoreConfig config,
+      final Optional<UInt64> custodyGroupCount) {
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
 
     final ForkChoiceStrategy forkChoiceStrategy =
@@ -313,7 +319,8 @@ class Store extends CacheableStore {
         blockInfoByRoot,
         votes,
         config,
-        forkChoiceStrategy);
+        forkChoiceStrategy,
+        custodyGroupCount);
   }
 
   private static Optional<Bytes32> getInitialCanonicalBlockRoot(
@@ -482,6 +489,16 @@ class Store extends CacheableStore {
     readLock.lock();
     try {
       return finalizedAnchor.getCheckpoint();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    readLock.lock();
+    try {
+      return custodyGroupCount;
     } finally {
       readLock.unlock();
     }
@@ -1120,5 +1137,9 @@ class Store extends CacheableStore {
 
   void updateBestJustifiedCheckpoint(final Checkpoint checkpoint) {
     this.bestJustifiedCheckpoint = checkpoint;
+  }
+
+  void updateCustodyGroupCount(final UInt64 custodyGroupCount) {
+    this.custodyGroupCount = Optional.of(custodyGroupCount);
   }
 }

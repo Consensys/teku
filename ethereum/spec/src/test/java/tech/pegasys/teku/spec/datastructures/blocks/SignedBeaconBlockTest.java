@@ -27,7 +27,8 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(allMilestones = true)
+// TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+@TestSpecContext(allMilestones = true, ignoredMilestones = SpecMilestone.GLOAS)
 class SignedBeaconBlockTest {
 
   private Spec spec;

@@ -115,6 +115,7 @@ public class AggregatingAttestationPoolBenchmark {
     final Map<AttestationDataRootAndCommitteeIndex, Integer> singleAttCounterByDataAndCommittee =
         new HashMap<>();
 
+    this.recentChainData = mock(RecentChainData.class);
     this.pool =
         new AggregatingAttestationPoolV2(
             SPEC,
@@ -124,7 +125,6 @@ public class AggregatingAttestationPoolBenchmark {
             AggregatingAttestationPoolProfiler.NOOP,
             10_000,
             10_000);
-    this.recentChainData = mock(RecentChainData.class);
 
     try (final FileInputStream fileInputStream = new FileInputStream(STATE_PATH)) {
       this.state =

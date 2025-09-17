@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
 import com.google.common.base.MoreObjects;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.Sync.SyncProgress;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
@@ -31,6 +33,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncController {
+  // Rate limiting is usually in 1 minute intervals, so it should be reset after such delay
+  protected static final Duration SYNC_AWAKE_INTERVAL = Duration.ofSeconds(60);
   private static final Logger LOG = LogManager.getLogger();
 
   private final Subscribers<SyncSubscriber> subscribers = Subscribers.create(true);
@@ -52,6 +56,7 @@ public class SyncController {
 
   public SyncController(
       final EventThread eventThread,
+      final AsyncRunner asyncRunner,
       final Executor subscriberExecutor,
       final RecentChainData recentChainData,
       final SyncTargetSelector syncTargetSelector,
@@ -61,6 +66,11 @@ public class SyncController {
     this.recentChainData = recentChainData;
     this.syncTargetSelector = syncTargetSelector;
     this.sync = sync;
+    // Try to restart sync, could recover stalled sync
+    asyncRunner.runWithFixedDelay(
+        () -> eventThread.execute(this::onTargetChainsUpdated),
+        SYNC_AWAKE_INTERVAL,
+        ex -> LOG.error("Unexpected error when trying to awake peer sync", ex));
   }
 
   /**

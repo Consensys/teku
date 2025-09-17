@@ -16,6 +16,24 @@
     ALTAIR_FORK_VERSION: Version = '0x01000000'
     </spec>
 
+- name: AGGREGATE_DUE_BPS#phase0
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: AGGREGATE_DUE_BPS:
+  spec: |
+    <spec config_var="AGGREGATE_DUE_BPS" fork="phase0" hash="7eaa811a">
+    AGGREGATE_DUE_BPS: uint64 = 6667
+    </spec>
+
+- name: ATTESTATION_DUE_BPS#phase0
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: \nATTESTATION_DUE_BPS:
+  spec: |
+    <spec config_var="ATTESTATION_DUE_BPS" fork="phase0" hash="929dd1c9">
+    ATTESTATION_DUE_BPS: uint64 = 3333
+    </spec>
+
 - name: ATTESTATION_PROPAGATION_SLOT_RANGE
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
@@ -635,6 +653,15 @@
   spec: |
     <spec config_var="VALIDATOR_CUSTODY_REQUIREMENT" fork="fulu" hash="4dfc4457">
     VALIDATOR_CUSTODY_REQUIREMENT = 8
+    </spec>
+
+- name: AGGREGATE_DUE_BPS_GLOAS#gloas
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
+      search: AGGREGATE_DUE_BPS_GLOAS:
+  spec: |
+    <spec config_var="AGGREGATE_DUE_BPS_GLOAS" fork="gloas" hash="34aa3164">
+    AGGREGATE_DUE_BPS_GLOAS: uint64 = 5000
     </spec>
 
 - name: ATTESTATION_DUE_BPS_GLOAS

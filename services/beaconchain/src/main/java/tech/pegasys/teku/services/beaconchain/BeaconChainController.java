@@ -187,7 +187,6 @@ import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataCol
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqRespBatchingImpl;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
@@ -854,7 +853,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             dataColumnSidecarRecoveringCustody
-                .onNewValidatedDataColumnSidecar(dataColumnSidecar)
+                .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
                 .finishError(LOG));
 
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
@@ -880,14 +879,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DasPeerCustodyCountSupplier.capped(
             peerCustodyTracker, minCustodyGroupRequirement, maxGroups);
 
-    // TODO-fulu NOOP peer searcher should work for interop but needs to be implemented
-    // (https://github.com/Consensys/teku/issues/9464)
-    final DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
     final DataColumnSidecarRetriever sidecarRetriever =
         new SimpleSidecarRetriever(
             spec,
             dasPeerManager,
-            dataColumnPeerSearcher,
             custodyCountSupplier,
             dasRpc,
             dasAsyncRunner,
@@ -908,10 +903,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
-    blockManager.subscribePreImportBlocks(
-        (block, remoteOrigin) -> getDataColumnSidecarCustody().onNewBlock(block, remoteOrigin));
     final DasCustodySync svc =
-        new DasCustodySync(dataColumnSidecarRecoveringCustody, recoveringSidecarRetriever);
+        new DasCustodySync(
+            dataColumnSidecarRecoveringCustody,
+            recoveringSidecarRetriever,
+            minCustodyPeriodSlotCalculator);
     dasCustodySync = Optional.of(svc);
     eventChannels.subscribe(SlotEventsChannel.class, svc);
 
@@ -1581,6 +1577,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ThrottlingStorageQueryChannel(
               storageQueryChannel,
               beaconConfig.p2pConfig().getHistoricalDataMaxConcurrentQueries(),
+              beaconConfig.p2pConfig().getHistoricalDataMaxQueryQueueSize(),
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(

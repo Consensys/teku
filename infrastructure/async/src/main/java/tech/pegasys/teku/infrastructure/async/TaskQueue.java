@@ -11,27 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns.retriever;
+package tech.pegasys.teku.infrastructure.async;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import com.google.common.annotations.VisibleForTesting;
+import java.util.function.Supplier;
 
-public interface DataColumnPeerSearcher {
+public interface TaskQueue {
+  <T> SafeFuture<T> queueTask(Supplier<SafeFuture<T>> request);
 
-  DataColumnPeerSearcher NOOP =
-      new DataColumnPeerSearcher() {
-        private static final PeerSearchRequest NOOP_REQUEST = () -> {};
+  int getQueuedTasksCount();
 
-        @Override
-        public PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex) {
-          return NOOP_REQUEST;
-        }
-      };
-
-  PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex);
-
-  interface PeerSearchRequest {
-
-    // stop search
-    void dispose();
-  }
+  /** This must only be used for testing to verify that throttling is working as expected. */
+  @VisibleForTesting
+  int getInflightTaskCount();
 }

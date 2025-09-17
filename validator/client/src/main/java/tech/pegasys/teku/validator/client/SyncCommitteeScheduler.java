@@ -127,7 +127,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onAttestationCreationDue(final UInt64 slot) {
+  public void onSyncCommitteeCreationDue(final UInt64 slot) {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)
     if (lastProductionSlot != null && slot.compareTo(lastProductionSlot) <= 0) {
       LOG.debug(
@@ -142,7 +142,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onAttestationAggregationDue(final UInt64 slot) {
+  public void onContributionCreationDue(final UInt64 slot) {
     getDutiesForSlot(slot).ifPresent(duties -> duties.onAggregationDue(slot));
   }
 
@@ -188,6 +188,12 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onBlockProductionDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttestationCreationDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}

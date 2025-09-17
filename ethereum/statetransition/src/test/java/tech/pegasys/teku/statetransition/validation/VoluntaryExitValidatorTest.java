@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidatorTest {
+
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -99,8 +101,9 @@ public class VoluntaryExitValidatorTest {
     assertValidationResult(exit, ACCEPT);
   }
 
+  // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
   @ParameterizedTest
-  @EnumSource(SpecMilestone.class)
+  @EnumSource(value = SpecMilestone.class, names = "GLOAS", mode = Mode.EXCLUDE)
   public void shouldAcceptOwnSignedVoluntaryExitNoMocks(final SpecMilestone specMilestone)
       throws Exception {
     final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);

@@ -28,7 +28,9 @@
         "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
       }, {
         "$ref" : "#/components/schemas/SignedBeaconBlockElectra"
-      }  ]
+      }, {
+        "$ref" : "#/components/schemas/SignedBeaconBlockGloas"
+      } ]
     }
   }
 }

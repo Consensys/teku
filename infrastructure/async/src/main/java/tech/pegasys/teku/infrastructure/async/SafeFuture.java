@@ -415,11 +415,17 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   public void completeAsync(final T value, final AsyncRunner asyncRunner) {
-    asyncRunner.runAsync(() -> complete(value)).finishStackTrace();
+    asyncRunner.runAsync(() -> complete(value)).finish(this::completeExceptionally);
   }
 
   public void completeExceptionallyAsync(final Throwable exception, final AsyncRunner asyncRunner) {
-    asyncRunner.runAsync(() -> completeExceptionally(exception)).finishStackTrace();
+    asyncRunner
+        .runAsync(() -> completeExceptionally(exception))
+        .finish(
+            throwable -> {
+              throwable.addSuppressed(exception);
+              completeExceptionally(throwable);
+            });
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {
@@ -432,9 +438,18 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void propagateToAsync(final SafeFuture<T> target, final AsyncRunner asyncRunner) {
     finish(
-        result -> asyncRunner.runAsync(() -> target.complete(result)).finishStackTrace(),
+        result ->
+            asyncRunner
+                .runAsync(() -> target.complete(result))
+                .finish(target::completeExceptionally),
         error ->
-            asyncRunner.runAsync(() -> target.completeExceptionally(error)).finishStackTrace());
+            asyncRunner
+                .runAsync(() -> target.completeExceptionally(error))
+                .finish(
+                    throwable -> {
+                      throwable.addSuppressed(error);
+                      target.completeExceptionally(throwable);
+                    }));
   }
 
   /**

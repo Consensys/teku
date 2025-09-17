@@ -89,7 +89,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     WITHDRAWAL,
     DEPOSIT_REQUEST,
     WITHDRAWAL_REQUEST,
-    CONSOLIDATION_REQUEST
+    CONSOLIDATION_REQUEST,
+    EXECUTION_PAYLOAD_HEADER,
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -141,6 +142,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/consolidation_request",
               new OperationsTestExecutor<>(
                   "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
+          // TODO-GLOAS Add test for execution_payload_header
+          // (https://github.com/Consensys/teku/issues/9821)
+          .put("operations/execution_payload_header", IGNORE_TESTS)
           .build();
 
   private final String dataFileName;
@@ -383,8 +387,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processDepositRequest(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<DepositRequest, ?> depositRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -399,8 +402,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processWithdrawalRequest(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<WithdrawalRequest, ?> withdrawalRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -415,8 +417,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processConsolidations(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<ConsolidationRequest, ?> consolidationRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -494,7 +495,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           WITHDRAWAL,
           DEPOSIT_REQUEST,
           WITHDRAWAL_REQUEST,
-          CONSOLIDATION_REQUEST -> {}
+          CONSOLIDATION_REQUEST,
+          EXECUTION_PAYLOAD_HEADER -> {}
     }
   }
 

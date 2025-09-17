@@ -129,6 +129,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
+  public void onSyncCommitteeCreationDue(final UInt64 slot) {}
+
+  @Override
+  public void onContributionCreationDue(final UInt64 slot) {}
+
+  @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
@@ -139,6 +145,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {
+    if (!registrationInProgress.compareAndSet(false, true)) {
+      LOG.warn(
+          "Validator registration(s) is still in progress. Will skip sending registration(s).");
+      return;
+    }
+
     proposerConfigPropertiesProvider
         .refresh()
         .thenCompose(
@@ -168,11 +180,15 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
               }
             })
         .finish(
+            __ -> registrationInProgress.set(false),
             error -> {
               VALIDATOR_LOGGER.registeringValidatorsFailed(error);
               LOG.info("Will retry to register validators in {} seconds", RETRY_DELAY.toSeconds());
               asyncRunner.runAfterDelay(
-                  () -> onUpdatedValidatorStatuses(newValidatorStatuses, possibleMissingEvents),
+                  () -> {
+                    registrationInProgress.set(false);
+                    onUpdatedValidatorStatuses(newValidatorStatuses, possibleMissingEvents);
+                  },
                   RETRY_DELAY);
             });
   }
@@ -228,11 +244,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private SafeFuture<Void> registerValidators(
       final List<Validator> validators, final boolean updateLastSuccessfulRunEpoch) {
-    if (!registrationInProgress.compareAndSet(false, true)) {
-      LOG.warn(
-          "Validator registration(s) is still in progress. Will skip sending registration(s).");
-      return SafeFuture.COMPLETE;
-    }
 
     return processInBatches(validators)
         .whenSuccess(
@@ -241,11 +252,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                 lastSuccessfulRunEpoch.set(currentEpoch.get());
               }
             })
-        .alwaysRun(
-            () -> {
-              registrationInProgress.set(false);
-              cleanupCache(ownedValidators.getValidators());
-            });
+        .alwaysRun(() -> cleanupCache(ownedValidators.getValidators()));
   }
 
   private SafeFuture<Void> processInBatches(final List<Validator> validators) {

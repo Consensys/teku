@@ -46,9 +46,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -792,7 +789,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         getValidatorExitContextSupplier(state);
     processVoluntaryExitsNoValidation(state, exits, validatorExitContextSupplier);
-    BlockValidationResult signaturesValid = verifyVoluntaryExits(state, exits, signatureVerifier);
+    final BlockValidationResult signaturesValid =
+        verifyVoluntaryExits(state, exits, signatureVerifier);
     if (!signaturesValid.isValid()) {
       throw new BlockProcessingException(signaturesValid.getFailureReason());
     }
@@ -838,36 +836,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       }
     }
     return BlockValidationResult.SUCCESSFUL;
-  }
-
-  @Override
-  public void processDepositRequests(
-      final MutableBeaconState state, final List<DepositRequest> depositRequests) {
-    // No DepositRequests until Electra
-  }
-
-  @Override
-  public void processWithdrawalRequests(
-      final MutableBeaconState state,
-      final List<WithdrawalRequest> withdrawalRequests,
-      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException {
-    // No WithdrawalRequests until Electra
-  }
-
-  @Override
-  public void processConsolidationRequests(
-      final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests)
-      throws BlockProcessingException {
-    // No Consolidations until Electra
-  }
-
-  @Override
-  public boolean isValidSwitchToCompoundingRequest(
-      final BeaconState beaconState, final ConsolidationRequest consolidationRequest)
-      throws BlockProcessingException {
-    // No Consolidations until Electra
-    return false;
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException

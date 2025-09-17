@@ -292,6 +292,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return SafeFuture.of(database::getCustodyGroupCount);
+  }
+
+  @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
   }

@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.Opera
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 public class SpecLogicElectra extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
+  private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
 
   private SpecLogicElectra(
       final Predicates predicates,
@@ -65,6 +68,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorElectra epochProcessor,
+      final ExecutionRequestsProcessorElectra executionRequestsProcessor,
       final BlockProcessorElectra blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -91,6 +95,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
+    this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
   }
 
   public static SpecLogicElectra create(
@@ -156,6 +161,15 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+    final ExecutionRequestsProcessorElectra executionRequestsProcessor =
+        new ExecutionRequestsProcessorElectra(
+            schemaDefinitions,
+            miscHelpers,
+            config,
+            predicates,
+            validatorsUtil,
+            beaconStateMutators,
+            beaconStateAccessors);
     final BlockProcessorElectra blockProcessor =
         new BlockProcessorElectra(
             config,
@@ -170,7 +184,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
             validatorsUtil,
             operationValidator,
             schemaDefinitions,
-            executionRequestsDataCodec);
+            executionRequestsDataCodec,
+            executionRequestsProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
@@ -196,6 +211,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
         operationValidator,
         validatorStatusFactory,
         epochProcessor,
+        executionRequestsProcessor,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -218,5 +234,10 @@ public class SpecLogicElectra extends AbstractSpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
+    return executionRequestsProcessor;
   }
 }
