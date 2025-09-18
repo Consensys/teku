@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -69,15 +70,19 @@ public class CombinedChainDataClient {
 
   private final EarliestAvailableBlockSlot earliestAvailableBlockSlot;
 
+  private final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler;
+
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final Spec spec,
-      final EarliestAvailableBlockSlot earliestAvailableBlockSlot) {
+      final EarliestAvailableBlockSlot earliestAvailableBlockSlot,
+      final LateBlockReorgPreparationHandler lateBlockReorgPreparationHandler) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
     this.earliestAvailableBlockSlot = earliestAvailableBlockSlot;
+    this.lateBlockReorgPreparationHandler = lateBlockReorgPreparationHandler;
   }
 
   /**
@@ -256,26 +261,43 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
-      final UInt64 slot, final boolean isForkChoiceLateBlockReorgEnabled) {
+      final UInt64 slot,
+      final boolean isForkChoiceLateBlockReorgEnabled,
+      final Runnable onLateBlockPreparationCompleted) {
     if (!isForkChoiceLateBlockReorgEnabled) {
       return getStateAtSlotExact(slot);
     }
-    final Optional<Bytes32> headRoot = getBestBlockRoot();
-    if (headRoot.isEmpty()) {
+    final Optional<ChainHead> chainHead = getChainHead();
+    if (chainHead.isEmpty()) {
       return getStateAtSlotExact(slot);
     }
-    final Bytes32 root = recentChainData.getProposerHead(headRoot.get(), slot);
-    if (root.equals(headRoot.get())) {
+    final Bytes32 headRoot = chainHead.get().getRoot();
+
+    final Bytes32 proposerHeadRoot = recentChainData.getProposerHead(headRoot, slot);
+    if (proposerHeadRoot.equals(headRoot)) {
       return getStateAtSlotExact(slot);
     }
     // otherwise we're looking for the parent slot
-    return getStateByBlockRoot(root)
+    return getStateByBlockRoot(proposerHeadRoot)
         .thenCompose(
             maybeState ->
                 maybeState
                     .map(
-                        beaconState ->
-                            SafeFuture.completedFuture(regenerateBeaconState(beaconState, slot)))
+                        beaconState -> {
+                          // let's run preparation and state generation in parallel
+                          final SafeFuture<Void> preparationCompletion =
+                              lateBlockReorgPreparationHandler
+                                  .onLateBlockReorgPreparation(
+                                      recentChainData
+                                          .getSlotForBlockRoot(proposerHeadRoot)
+                                          .orElseThrow(),
+                                      headRoot)
+                                  .thenPeek(__ -> onLateBlockPreparationCompleted.run());
+                          final Optional<BeaconState> state =
+                              regenerateBeaconState(beaconState, slot);
+
+                          return preparationCompletion.thenApply(__ -> state);
+                        })
                     .orElseGet(() -> getStateAtSlotExact(slot)));
   }
 
