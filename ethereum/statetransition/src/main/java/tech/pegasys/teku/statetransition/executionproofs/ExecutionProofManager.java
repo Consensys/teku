@@ -21,9 +21,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface ExecutionProofManager {
-  interface ValidExecutionProofListener {
-    void onNewValidExecutionProof(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
-  }
+
 
   ExecutionProofManager NOOP =
       new ExecutionProofManager() {
@@ -49,4 +47,8 @@ public interface ExecutionProofManager {
 
   void subscribeToValidExecutionProofs(
       ExecutionProofManager.ValidExecutionProofListener executionProofListener);
+
+    interface ValidExecutionProofListener {
+        void onNewValidExecutionProof(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
+    }
 }
