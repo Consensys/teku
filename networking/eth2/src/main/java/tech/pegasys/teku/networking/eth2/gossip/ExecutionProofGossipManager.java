@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetSubscriptions;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 
 public class ExecutionProofGossipManager implements GossipManager {
@@ -27,6 +28,10 @@ public class ExecutionProofGossipManager implements GossipManager {
   public ExecutionProofGossipManager(
       final ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions) {
     this.executionProofSubnetSubscriptions = executionProofSubnetSubscriptions;
+
+    for(int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+      executionProofSubnetSubscriptions.subscribeToSubnetId(i);
+    }
   }
 
   @Override
@@ -53,6 +58,7 @@ public class ExecutionProofGossipManager implements GossipManager {
   }
 
   public void publish(final ExecutionProof executionProof) {
+      LOG.debug("Publishing from ExecutionProofGossipManager");
     executionProofSubnetSubscriptions
         .gossip(executionProof)
         .finish(
