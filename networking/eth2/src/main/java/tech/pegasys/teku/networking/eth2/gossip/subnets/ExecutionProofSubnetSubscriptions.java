@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.ExecutionPr
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -41,6 +44,8 @@ public class ExecutionProofSubnetSubscriptions extends CommitteeSubnetSubscripti
   private final Bytes4 forkDigest;
   private final ExecutionProofSchema executionProofSchema;
   private final DebugDataDumper debugDataDumper;
+
+    private static final Logger LOG = LogManager.getLogger();
 
   public ExecutionProofSubnetSubscriptions(
       final Spec spec,
@@ -75,6 +80,7 @@ public class ExecutionProofSubnetSubscriptions extends CommitteeSubnetSubscripti
 
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
+      LOG.debug("Creating ExecutionProof topic handler for subnet {}", subnetId);
     final String topicName = GossipTopicName.getExecutionProofSubnetTopicName(subnetId);
     return ExecutionProofTopicHandler.createHandler(
         recentChainData,
