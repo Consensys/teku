@@ -265,7 +265,8 @@ public class VersionedHashDBSource {
       Optional<Pair<DataColumnSlotAndIdentifier, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
       boolean canonical) {
     public Sidecar {
-      if (blobSidecarIdentifier.isPresent() ^ dataColumnSidecarIdentifierAndBlobIndex.isPresent()) {
+      if (blobSidecarIdentifier.isPresent()
+          == dataColumnSidecarIdentifierAndBlobIndex.isPresent()) {
         throw new RuntimeException(
             "Either blob sidecar or data column sidecars identifier have to be set");
       }
