@@ -58,7 +58,6 @@ public class ExecutionProofGossipManager implements GossipManager {
   }
 
   public void publish(final ExecutionProof executionProof) {
-    LOG.debug("Publishing from ExecutionProofGossipManager");
     executionProofSubnetSubscriptions
         .gossip(executionProof)
         .finish(
