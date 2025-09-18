@@ -42,6 +42,10 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOB_SIDECAR_S
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENT_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWAL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CELL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.CONSOLIDATION_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA;
@@ -52,6 +56,8 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PROOF_SCHEMA;
@@ -59,9 +65,11 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_REQU
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_BATCH_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.HISTORICAL_SUMMARIES_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.MATRIX_ENTRY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.METADATA_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_CONSOLIDATIONS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PENDING_DEPOSITS_SCHEMA;
@@ -73,6 +81,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLINDED
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLOCK_CONTENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BUILDER_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SINGLE_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.STATUS_MESSAGE_SCHEMA;
@@ -84,6 +93,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -129,8 +139,14 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPay
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
@@ -254,9 +270,18 @@ public class SchemaRegistryBuilder {
         .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider())
 
         // GLOAS
+        .addProvider(createBuilderPendingWithdrawalSchemaProvider())
+        .addProvider(createBuilderPendingPaymentSchemaProvider())
         .addProvider(createPayloadAttestationDataSchemaProvider())
         .addProvider(createPayloadAttestationSchemaProvider())
-        .addProvider(createSignedExecutionPayloadHeaderSchemaProvider());
+        .addProvider(createPayloadAttestationMessageSchemaProvider())
+        .addProvider(createIndexedPayloadAttestationSchemaProvider())
+        .addProvider(createSignedExecutionPayloadHeaderSchemaProvider())
+        .addProvider(createExecutionPayloadEnvelopeSchemaProvider())
+        .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
+        .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
+        .addProvider(createBuilderPendingPaymentsSchemaProvider())
+        .addProvider(createBuilderPendingWithdrawalsSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -892,6 +917,20 @@ public class SchemaRegistryBuilder {
     return (long) specConfig.getMaxValidatorsPerCommittee() * specConfig.getMaxCommitteesPerSlot();
   }
 
+  private static SchemaProvider<?> createBuilderPendingPaymentSchemaProvider() {
+    return providerBuilder(BUILDER_PENDING_PAYMENT_SCHEMA)
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new BuilderPendingPaymentSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBuilderPendingWithdrawalSchemaProvider() {
+    return providerBuilder(BUILDER_PENDING_WITHDRAWAL_SCHEMA)
+        .withCreator(
+            GLOAS, (registry, specConfig, schemaName) -> new BuilderPendingWithdrawalSchema())
+        .build();
+  }
+
   private static SchemaProvider<?> createPayloadAttestationDataSchemaProvider() {
     return providerBuilder(PAYLOAD_ATTESTATION_DATA_SCHEMA)
         .withCreator(
@@ -908,11 +947,77 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
+  private static SchemaProvider<?> createPayloadAttestationMessageSchemaProvider() {
+    return providerBuilder(PAYLOAD_ATTESTATION_MESSAGE_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) -> new PayloadAttestationMessageSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createIndexedPayloadAttestationSchemaProvider() {
+    return providerBuilder(INDEXED_PAYLOAD_ATTESTATION_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new IndexedPayloadAttestationSchema(
+                    SpecConfigGloas.required(specConfig).getPtcSize(), registry))
+        .build();
+  }
+
   private static SchemaProvider<?> createSignedExecutionPayloadHeaderSchemaProvider() {
     return providerBuilder(SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA)
         .withCreator(
             GLOAS,
             (registry, specConfig, schemaName) -> new SignedExecutionPayloadHeaderSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createExecutionPayloadEnvelopeSchemaProvider() {
+    return providerBuilder(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) -> new ExecutionPayloadEnvelopeSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createSignedExecutionPayloadEnvelopeSchemaProvider() {
+    return providerBuilder(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new SignedExecutionPayloadEnvelopeSchema(registry))
+        .build();
+  }
+
+  private static SchemaProvider<?> createExecutionPayloadAvailabilitySchemaProvider() {
+    return providerBuilder(EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                SszBitvectorSchema.create(specConfig.getSlotsPerHistoricalRoot()))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBuilderPendingPaymentsSchemaProvider() {
+    return providerBuilder(BUILDER_PENDING_PAYMENTS_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                SszVectorSchema.create(
+                    registry.get(BUILDER_PENDING_PAYMENT_SCHEMA),
+                    specConfig.getSlotsPerEpoch() * 2L))
+        .build();
+  }
+
+  private static SchemaProvider<?> createBuilderPendingWithdrawalsSchemaProvider() {
+    return providerBuilder(BUILDER_PENDING_WITHDRAWALS_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                SszListSchema.create(
+                    registry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA),
+                    BeaconStateSchemaGloas.BUILDER_PENDING_WITHDRAWALS_LIMIT))
         .build();
   }
 

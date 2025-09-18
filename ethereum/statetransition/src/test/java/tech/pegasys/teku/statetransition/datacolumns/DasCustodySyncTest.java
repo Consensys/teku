@@ -359,7 +359,7 @@ public class DasCustodySyncTest {
     assertThat(retrieveRequests)
         .allSatisfy(
             request2 -> {
-              assertThat(request2.promise()).isCancelled();
+              assertThat(request2.future()).isCancelled();
             });
     assertThat(retrieverStub.requests).hasSize(retrieveRequests.size() * 2);
   }

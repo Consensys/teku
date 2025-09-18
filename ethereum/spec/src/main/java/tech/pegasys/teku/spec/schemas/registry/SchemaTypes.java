@@ -21,6 +21,7 @@ import java.util.Locale;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -46,8 +47,16 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -218,12 +227,30 @@ public class SchemaTypes {
           create("DATA_COLUMN_SIDECARS_BY_RANGE_REQUEST_MESSAGE_SCHEMA");
 
   // Gloas
+  public static final SchemaId<BuilderPendingPaymentSchema> BUILDER_PENDING_PAYMENT_SCHEMA =
+      create("BUILDER_PENDING_PAYMENT_SCHEMA");
+  public static final SchemaId<BuilderPendingWithdrawalSchema> BUILDER_PENDING_WITHDRAWAL_SCHEMA =
+      create("BUILDER_PENDING_WITHDRAWAL_SCHEMA");
   public static final SchemaId<PayloadAttestationDataSchema> PAYLOAD_ATTESTATION_DATA_SCHEMA =
       create("PAYLOAD_ATTESTATION_DATA_SCHEMA");
   public static final SchemaId<PayloadAttestationSchema> PAYLOAD_ATTESTATION_SCHEMA =
       create("PAYLOAD_ATTESTATION_SCHEMA");
+  public static final SchemaId<PayloadAttestationMessageSchema> PAYLOAD_ATTESTATION_MESSAGE_SCHEMA =
+      create("PAYLOAD_ATTESTATION_MESSAGE_SCHEMA");
+  public static final SchemaId<IndexedPayloadAttestationSchema> INDEXED_PAYLOAD_ATTESTATION_SCHEMA =
+      create("INDEXED_PAYLOAD_ATTESTATION_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadHeaderSchema>
       SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA");
+  public static final SchemaId<ExecutionPayloadEnvelopeSchema> EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
+      create("EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
+  public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>
+      SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
+  public static final SchemaId<SszBitvectorSchema<?>> EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA =
+      create("EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA");
+  public static final SchemaId<SszVectorSchema<BuilderPendingPayment, ?>>
+      BUILDER_PENDING_PAYMENTS_SCHEMA = create("BUILDER_PENDING_PAYMENTS_SCHEMA");
+  public static final SchemaId<SszListSchema<BuilderPendingWithdrawal, ?>>
+      BUILDER_PENDING_WITHDRAWALS_SCHEMA = create("BUILDER_PENDING_WITHDRAWALS_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

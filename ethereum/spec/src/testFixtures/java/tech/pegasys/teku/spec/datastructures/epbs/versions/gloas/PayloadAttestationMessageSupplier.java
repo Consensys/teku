@@ -11,27 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.datacolumns.retriever;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public interface DataColumnPeerSearcher {
+public class PayloadAttestationMessageSupplier
+    extends DataStructureUtilSupplier<PayloadAttestationMessage> {
 
-  DataColumnPeerSearcher NOOP =
-      new DataColumnPeerSearcher() {
-        private static final PeerSearchRequest NOOP_REQUEST = () -> {};
-
-        @Override
-        public PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex) {
-          return NOOP_REQUEST;
-        }
-      };
-
-  PeerSearchRequest requestPeers(UInt64 slot, UInt64 columnIndex);
-
-  interface PeerSearchRequest {
-
-    // stop search
-    void dispose();
+  public PayloadAttestationMessageSupplier() {
+    super(DataStructureUtil::randomPayloadAttestationMessage, SpecMilestone.GLOAS);
   }
 }
