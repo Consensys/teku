@@ -17,17 +17,22 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.Longs;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -36,6 +41,9 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.storage.server.kvstore.serialization.UInt64Serializer;
 
 public class VersionedHashDBSource {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Bytes CANONICAL_BLOB_SIDECAR_TYPE = Bytes.of(0x00);
   private final Bytes NON_CANONICAL_BLOB_SIDECAR_TYPE = Bytes.of(0x10);
   private final Bytes CANONICAL_DATA_COLUMN_SIDECAR_TYPE = Bytes.of(0x20);
@@ -58,6 +66,7 @@ public class VersionedHashDBSource {
   private final Supplier<SchemaDefinitionsDeneb> schemaDefinitionsDeneb;
   private final Supplier<SchemaDefinitionsFulu> schemaDefinitionsFulu;
   private final KvStoreCombinedDao dao;
+  private final Set<SlotAndBlockRoot> filledSidecarSlots;
 
   public VersionedHashDBSource(
       final KvStoreCombinedDao dao,
@@ -76,14 +85,17 @@ public class VersionedHashDBSource {
         () ->
             SchemaDefinitionsFulu.required(
                 spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
+    this.filledSidecarSlots = LimitedSet.createSynchronized(1000);
   }
 
   public void storeSidecarHashes() {
     this.storeSidecarHashes.set(true);
+    LOG.debug("Starting storing DataColumnSidecars VersionedHashes");
   }
 
   public void addBlobSidecarVersionedHash(
       final BlobSidecar blobSidecar, final KvStoreCombinedDao.FinalizedUpdater updater) {
+    LOG.trace("Adding BlobSidecar versioned hash {}", blobSidecar::toLogString);
     updater.addVersionedHash(
         blobSidecarToVersionedHash.apply(blobSidecar).get(),
         computeCanonicalBlobSidecarMetadata(blobSidecar));
@@ -91,6 +103,7 @@ public class VersionedHashDBSource {
 
   public void addNonCanonicalBlobSidecarVersionedHash(
       final BlobSidecar blobSidecar, final KvStoreCombinedDao.FinalizedUpdater updater) {
+    LOG.trace("Adding non-canonical BlobSidecar versioned hash {}", blobSidecar::toLogString);
     updater.addVersionedHash(
         blobSidecarToVersionedHash.apply(blobSidecar).get(),
         computeNonCanonicalBlobSidecarMetadata(blobSidecar));
@@ -113,6 +126,7 @@ public class VersionedHashDBSource {
               .get()
               .getBlobSidecarSchema()
               .sszDeserialize(maybeBlobSidecarRaw.get());
+      LOG.trace("Removing BlobSidecar versioned hash {}", blobSidecar::toLogString);
       updater.removeVersionedHash(blobSidecarToVersionedHash.apply(blobSidecar).get());
     }
   }
@@ -127,6 +141,7 @@ public class VersionedHashDBSource {
               .get()
               .getBlobSidecarSchema()
               .sszDeserialize(maybeNonCanonicalBlobSidecarRaw.get());
+      LOG.trace("Removing non-canonical BlobSidecar versioned hash {}", blobSidecar::toLogString);
       updater.removeVersionedHash(blobSidecarToVersionedHash.apply(blobSidecar).get());
     }
   }
@@ -137,10 +152,16 @@ public class VersionedHashDBSource {
     if (!storeSidecarHashes.get()) {
       return;
     }
-    // TODO: we need cache for this
+    if (filledSidecarSlots.contains(sidecar.getSlotAndBlockRoot())) {
+      return;
+    }
+
     final boolean addVersionedHashes =
         dao.getDataColumnIdentifiers(sidecar.getSlotAndBlockRoot()).isEmpty();
     if (addVersionedHashes) {
+      // we don't care race much. we'll just write the same data twice
+      filledSidecarSlots.add(sidecar.getSlotAndBlockRoot());
+      LOG.trace("Adding DataColumnSidecar versioned hashes {}", sidecar::toLogString);
       for (int i = 0; i < sidecar.getSszKZGCommitments().size(); ++i) {
         updater.addVersionedHash(
             dataColumnSidecarToVersionedHash.apply(Pair.of(sidecar, UInt64.valueOf(i))).get(),
@@ -162,10 +183,16 @@ public class VersionedHashDBSource {
     if (!storeSidecarHashes.get()) {
       return;
     }
-    // TODO: we need cache for this
+    if (filledSidecarSlots.contains(sidecar.getSlotAndBlockRoot())) {
+      return;
+    }
+
     final boolean addVersionedHashes =
         dao.getNonCanonicalDataColumnIdentifiers(sidecar.getSlotAndBlockRoot()).isEmpty();
     if (addVersionedHashes) {
+      // we don't care race much. we'll just write the same data twice
+      filledSidecarSlots.add(sidecar.getSlotAndBlockRoot());
+      LOG.trace("Adding non-canonical DataColumnSidecar versioned hashes {}", sidecar::toLogString);
       for (int i = 0; i < sidecar.getSszKZGCommitments().size(); ++i) {
         updater.addVersionedHash(
             dataColumnSidecarToVersionedHash.apply(Pair.of(sidecar, UInt64.valueOf(i))).get(),
@@ -187,6 +214,7 @@ public class VersionedHashDBSource {
               .get()
               .getDataColumnSidecarSchema()
               .sszDeserialize(maybeSidecarRaw.get());
+      LOG.trace("Removing DataColumnSidecar versioned hashes {}", sidecar::toLogString);
       for (int i = 0; i < sidecar.getSszKZGCommitments().size(); ++i) {
         updater.removeVersionedHash(
             dataColumnSidecarToVersionedHash.apply(Pair.of(sidecar, UInt64.valueOf(i))).get());
@@ -207,6 +235,8 @@ public class VersionedHashDBSource {
               .get()
               .getDataColumnSidecarSchema()
               .sszDeserialize(maybeSidecarRaw.get());
+      LOG.trace(
+          "Removing non-canonical DataColumnSidecar versioned hashes {}", sidecar::toLogString);
       for (int i = 0; i < sidecar.getSszKZGCommitments().size(); ++i) {
         updater.removeVersionedHash(
             dataColumnSidecarToVersionedHash.apply(Pair.of(sidecar, UInt64.valueOf(i))).get());
@@ -216,7 +246,7 @@ public class VersionedHashDBSource {
 
   public Optional<Sidecar> getSidecarIdentifier(final VersionedHash hash) {
     final Optional<Bytes> maybeSidecarIdentifierData = dao.getSidecarIdentifierData(hash);
-    if (!maybeSidecarIdentifierData.isPresent()) {
+    if (maybeSidecarIdentifierData.isEmpty()) {
       return Optional.empty();
     }
 
