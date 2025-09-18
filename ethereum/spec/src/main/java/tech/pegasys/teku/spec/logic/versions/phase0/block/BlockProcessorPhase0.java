@@ -161,7 +161,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processWithdrawals(MutableBeaconState state) {
+  public void processWithdrawals(final MutableBeaconState state) {
     throw new UnsupportedOperationException(
         "No process_withdrawals with only state as a parameter until Gloas");
   }
