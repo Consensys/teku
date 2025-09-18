@@ -38,26 +38,18 @@ public class VersionedHashDBSourceFactory {
   public VersionedHashDBSourceFactory(final Spec spec, final EventChannels eventChannels) {
     this.spec = spec;
     this.eventChannels = eventChannels;
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      this.blobSidecarToVersionedHash =
-          blobSidecar ->
-              MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
-                  .kzgCommitmentToVersionedHash(blobSidecar.getKZGCommitment());
-    } else {
-      this.blobSidecarToVersionedHash = blobSidecar -> VersionedHash.EMPTY;
-    }
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      this.dataColumnSidecarToVersionedHash =
-          pair ->
-              MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
-                  .kzgCommitmentToVersionedHash(
-                      pair.getKey()
-                          .getSszKZGCommitments()
-                          .get(pair.getValue().intValue())
-                          .getKZGCommitment());
-    } else {
-      this.dataColumnSidecarToVersionedHash = pair -> VersionedHash.EMPTY;
-    }
+    this.blobSidecarToVersionedHash =
+        blobSidecar ->
+            MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
+                .kzgCommitmentToVersionedHash(blobSidecar.getKZGCommitment());
+    this.dataColumnSidecarToVersionedHash =
+        pair ->
+            MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
+                .kzgCommitmentToVersionedHash(
+                    pair.getKey()
+                        .getSszKZGCommitments()
+                        .get(pair.getValue().intValue())
+                        .getKZGCommitment());
   }
 
   public VersionedHashDBSource createVersionedHashDBSource(final KvStoreCombinedDao dao) {
