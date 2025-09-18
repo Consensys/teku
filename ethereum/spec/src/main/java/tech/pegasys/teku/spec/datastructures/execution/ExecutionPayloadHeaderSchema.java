@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.gloas.ExecutionPayloadHeaderSchemaGloas;
 
 public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
     extends SszContainerSchema<T> {
@@ -52,9 +51,5 @@ public interface ExecutionPayloadHeaderSchema<T extends ExecutionPayloadHeader>
 
   default ExecutionPayloadHeaderSchemaDeneb toVersionDenebRequired() {
     throw new UnsupportedOperationException("Not a Deneb schema");
-  }
-
-  default ExecutionPayloadHeaderSchemaGloas toVersionGloasRequired() {
-    throw new UnsupportedOperationException("Not a Gloas schema");
   }
 }

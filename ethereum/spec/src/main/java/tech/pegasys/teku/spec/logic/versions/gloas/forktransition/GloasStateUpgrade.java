@@ -83,6 +83,8 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
               // New in Gloas
+              state.setLatestExecutionPayloadBid(
+                  schemaDefinitions.getExecutionPayloadBidSchema().getDefault());
               final SszBitvector executionPayloadAvailability =
                   schemaDefinitions
                       .getExecutionPayloadAvailabilitySchema()

@@ -1,10 +1,10 @@
 {
-  "title" : "SignedExecutionPayloadHeader",
+  "title" : "SignedExecutionPayloadBid",
   "type" : "object",
   "required" : [ "message", "signature" ],
   "properties" : {
     "message" : {
-      "$ref" : "#/components/schemas/ExecutionPayloadHeaderGloas"
+      "$ref" : "#/components/schemas/ExecutionPayloadBid"
     },
     "signature" : {
       "type" : "string",
