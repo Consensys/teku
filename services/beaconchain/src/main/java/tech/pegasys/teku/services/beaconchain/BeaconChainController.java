@@ -676,9 +676,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initZkChain() {
     LOG.debug("BeaconChainController.initZkChain()");
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
-// comment for now this will be used in the future
-//      final ExecutionProofGossipChannel executionProofGossipChannel =
-              eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
+    // comment for now this will be used in the future
+    //      final ExecutionProofGossipChannel executionProofGossipChannel =
+    eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
     if (zkConfig.isStatelessValidationEnabled()) {
       final ExecutionProofGossipValidator executionProofGossipValidator =
           ExecutionProofGossipValidator.create();

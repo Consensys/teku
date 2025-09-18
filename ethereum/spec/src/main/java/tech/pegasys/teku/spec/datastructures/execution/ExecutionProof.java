@@ -13,22 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
-import java.util.List;
-
-import static java.lang.Long.toHexString;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema.SSZ_SCHEMA;
 
 public class ExecutionProof
     extends Container5<ExecutionProof, SszBytes32, SszBytes32, SszUInt64, SszUInt64, SszByteList> {
@@ -36,7 +25,6 @@ public class ExecutionProof
   public ExecutionProof(final ExecutionProofSchema schema, final TreeNode node) {
     super(schema, node);
   }
-
 
   public ExecutionProof(
       final ExecutionProofSchema schema,
@@ -52,9 +40,9 @@ public class ExecutionProof
     return getField0();
   }
 
-    public SszBytes32 getBlockHash() {
-        return getField1();
-    }
+  public SszBytes32 getBlockHash() {
+    return getField1();
+  }
 
   public SszUInt64 getSubnetId() {
     return getField2();

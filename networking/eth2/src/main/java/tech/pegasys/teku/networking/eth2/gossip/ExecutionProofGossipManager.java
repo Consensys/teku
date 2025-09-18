@@ -29,7 +29,7 @@ public class ExecutionProofGossipManager implements GossipManager {
       final ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions) {
     this.executionProofSubnetSubscriptions = executionProofSubnetSubscriptions;
 
-    for(int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
       executionProofSubnetSubscriptions.subscribeToSubnetId(i);
     }
   }
@@ -58,7 +58,7 @@ public class ExecutionProofGossipManager implements GossipManager {
   }
 
   public void publish(final ExecutionProof executionProof) {
-      LOG.debug("Publishing from ExecutionProofGossipManager");
+    LOG.debug("Publishing from ExecutionProofGossipManager");
     executionProofSubnetSubscriptions
         .gossip(executionProof)
         .finish(
