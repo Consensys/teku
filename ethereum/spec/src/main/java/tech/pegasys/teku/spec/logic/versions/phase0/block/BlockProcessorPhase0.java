@@ -159,4 +159,10 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in phase0");
   }
+
+  @Override
+  public void processWithdrawals(final MutableBeaconState state) {
+    throw new UnsupportedOperationException(
+        "No process_withdrawals with only state as a parameter until Gloas");
+  }
 }

@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutators
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.AttestationDataValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.forktransition.GloasStateUpgrade;
@@ -47,6 +46,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsG
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SpecLogicGloas extends AbstractSpecLogic {
@@ -67,7 +67,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorGloas epochProcessor,
-      final WithdrawalsHelpersElectra withdrawalsHelpers,
+      final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
       final BlockProcessorGloas blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
@@ -162,8 +162,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
-    final WithdrawalsHelpersElectra withdrawalsHelpers =
-        new WithdrawalsHelpersElectra(
+    final WithdrawalsHelpersGloas withdrawalsHelpers =
+        new WithdrawalsHelpersGloas(
             schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);
     final ExecutionRequestsProcessorElectra executionRequestsProcessor =
         new ExecutionRequestsProcessorElectra(

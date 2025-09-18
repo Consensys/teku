@@ -39,7 +39,7 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecConfigElectra specConfigElectra;
+  protected final SpecConfigElectra specConfigElectra;
 
   public WithdrawalsHelpersElectra(
       final SchemaDefinitionsElectra schemaDefinitions,
@@ -52,18 +52,17 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
   }
 
   @Override
-  protected int consumePendingPartialWithdrawals(
+  protected int sweepForPendingPartialWithdrawals(
       final List<Withdrawal> withdrawals, final BeaconState state) {
     final BeaconStateElectra stateElectra = BeaconStateElectra.required(state);
     final UInt64 epoch = miscHelpers.computeEpochAtSlot(state.getSlot());
-    final int maxPendingPartialWithdrawals =
-        specConfigElectra.getMaxPendingPartialsPerWithdrawalsSweep();
-    UInt64 withdrawalIndex = stateElectra.getNextWithdrawalIndex();
+    UInt64 withdrawalIndex = getNextWithdrawalIndex(state, withdrawals);
     int processedPartialWithdrawalsCount = 0;
 
+    final int bound = getBoundForPendingPartialWithdrawals(withdrawals);
+
     for (PendingPartialWithdrawal withdrawal : stateElectra.getPendingPartialWithdrawals()) {
-      if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch)
-          || withdrawals.size() == maxPendingPartialWithdrawals) {
+      if (withdrawal.getWithdrawableEpoch().isGreaterThan(epoch) || withdrawals.size() == bound) {
         break;
       }
       final int validatorIndex = withdrawal.getValidatorIndex();
@@ -112,6 +111,10 @@ public class WithdrawalsHelpersElectra extends WithdrawalsHelpersCapella {
       processedPartialWithdrawalsCount++;
     }
     return processedPartialWithdrawalsCount;
+  }
+
+  protected int getBoundForPendingPartialWithdrawals(final List<Withdrawal> withdrawals) {
+    return specConfigElectra.getMaxPendingPartialsPerWithdrawalsSweep();
   }
 
   @Override

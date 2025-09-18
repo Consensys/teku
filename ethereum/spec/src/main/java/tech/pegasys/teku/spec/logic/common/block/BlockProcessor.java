@@ -164,6 +164,9 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
+  // process_withdrawals with only state as a parameter
+  void processWithdrawals(MutableBeaconState state);
+
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();
   }
