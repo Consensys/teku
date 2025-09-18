@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -37,12 +39,15 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+import java.util.Optional;
+
 public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb {
 
   final OperationProcessor<ExecutionProof> executionProofOperationProcessor;
 
-  private ExecutionProofGossipManager executionProofGossipManager;
-
+  private Optional<ExecutionProofGossipManager> executionProofGossipManager;
+  private final boolean isExecutionProofTopicEnabled;
+    private static final Logger LOG = LogManager.getLogger();
   public GossipForkSubscriptionsElectra(
       final Fork fork,
       final Spec spec,
@@ -65,7 +70,8 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
       final DebugDataDumper debugDataDumper,
-      final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
+      final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
+      final boolean isExecutionProofTopicEnabled) {
     super(
         fork,
         spec,
@@ -86,6 +92,7 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
         signedBlsToExecutionChangeOperationProcessor,
         debugDataDumper);
     this.executionProofOperationProcessor = executionProofOperationProcessor;
+    this.isExecutionProofTopicEnabled = isExecutionProofTopicEnabled;
   }
 
   @Override
@@ -95,36 +102,43 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsDeneb
   }
 
   private void addExecutionProofGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+      if (isExecutionProofTopicEnabled) {
+          LOG.debug("Creating ExecutionProofSubnetSubscriptions");
+          ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions =
+                  new ExecutionProofSubnetSubscriptions(
+                          spec,
+                          asyncRunner,
+                          discoveryNetwork,
+                          gossipEncoding,
+                          recentChainData,
+                          executionProofOperationProcessor,
+                          debugDataDumper,
+                          forkInfo,
+                          forkDigest);
 
-    ExecutionProofSubnetSubscriptions executionProofSubnetSubscriptions =
-        new ExecutionProofSubnetSubscriptions(
-            spec,
-            asyncRunner,
-            discoveryNetwork,
-            gossipEncoding,
-            recentChainData,
-            executionProofOperationProcessor,
-            debugDataDumper,
-            forkInfo,
-            forkDigest);
+          executionProofGossipManager = Optional.of(
+                  new ExecutionProofGossipManager(executionProofSubnetSubscriptions));
+          addGossipManager(executionProofGossipManager.get());
+      }
+      else{
+          LOG.debug("Using ExecutionProofGossipManager.NOOP");
+          executionProofGossipManager = Optional.empty();
+      }
 
-    executionProofGossipManager =
-        new ExecutionProofGossipManager(executionProofSubnetSubscriptions);
-    addGossipManager(executionProofGossipManager);
   }
 
   @Override
   public void publishExecutionProof(final ExecutionProof executionProof) {
-    executionProofGossipManager.publish(executionProof);
+    executionProofGossipManager.ifPresent(epGossipManager -> epGossipManager.publish(executionProof));
   }
 
   @Override
   public void subscribeToExecutionProofSubnet(final int subnetId) {
-    executionProofGossipManager.subscribeToSubnetId(subnetId);
+    executionProofGossipManager.ifPresent(epGossipManager -> epGossipManager.subscribeToSubnetId(subnetId));
   }
 
   @Override
   public void unsubscribeFromExecutionProofSubnet(final int subnetId) {
-    executionProofGossipManager.unsubscribeFromSubnetId(subnetId);
+    executionProofGossipManager.ifPresent(epGossipManager -> epGossipManager.unsubscribeFromSubnetId(subnetId));
   }
 }
