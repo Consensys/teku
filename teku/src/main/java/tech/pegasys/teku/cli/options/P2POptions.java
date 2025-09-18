@@ -327,6 +327,16 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
+      names = {"--Xp2p-reworked-sidecar-recovery-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean reworkedSidecarRecoveryEnabled = false;
+
+  @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -592,6 +602,7 @@ public class P2POptions {
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
+                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })

@@ -192,6 +192,7 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -356,8 +357,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
-  protected volatile Optional<RecoveringSidecarRetriever> recoveringSidecarRetriever =
+  protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
+  protected volatile Optional<SidecarRetriever> sidecarRetriever = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
@@ -475,7 +477,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
                   dasCustodySync.ifPresent(DasCustodySync::start);
-                  recoveringSidecarRetriever.ifPresent(RecoveringSidecarRetriever::start);
+                  recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::start);
                 }))
         .finish(
             error -> {
@@ -512,7 +514,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
                   dasCustodySync.ifPresent(DasCustodySync::stop);
-                  recoveringSidecarRetriever.ifPresent(RecoveringSidecarRetriever::stop);
+                  recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::stop);
                 }))
         .thenRun(forkChoiceExecutor::stop);
   }
@@ -888,18 +890,34 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasAsyncRunner,
             Duration.ofSeconds(1));
 
-    final RecoveringSidecarRetriever recoveringSidecarRetriever =
-        new RecoveringSidecarRetriever(
-            sidecarRetriever,
-            kzg,
-            miscHelpersFulu,
-            canonicalBlockResolver,
-            dbAccessor,
-            dasAsyncRunner,
-            Duration.ofMinutes(5),
-            Duration.ofSeconds(30),
-            timeProvider,
-            specConfigFulu.getNumberOfColumns());
+    final DataColumnSidecarRetriever recoveringSidecarRetriever;
+    if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
+      recoveringSidecarRetriever =
+          new SidecarRetriever(
+              sidecarRetriever,
+              kzg,
+              miscHelpersFulu,
+              canonicalBlockResolver,
+              dbAccessor,
+              dasAsyncRunner,
+              Duration.ofMinutes(2),
+              Duration.ofMillis(9_333),
+              timeProvider,
+              specConfigFulu.getNumberOfColumns());
+    } else {
+      recoveringSidecarRetriever =
+          new RecoveringSidecarRetriever(
+              sidecarRetriever,
+              kzg,
+              miscHelpersFulu,
+              canonicalBlockResolver,
+              dbAccessor,
+              dasAsyncRunner,
+              Duration.ofMinutes(5),
+              Duration.ofSeconds(30),
+              timeProvider,
+              specConfigFulu.getNumberOfColumns());
+    }
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
