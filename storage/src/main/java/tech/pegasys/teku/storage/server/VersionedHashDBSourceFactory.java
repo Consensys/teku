@@ -68,7 +68,8 @@ public class VersionedHashDBSourceFactory {
         CustodyGroupCountChannel.class,
         new CustodyGroupCountChannel() {
           @Override
-          public void onGroupCountUpdate(int custodyGroupCount, int samplingGroupCount) {
+          public void onGroupCountUpdate(
+              final int custodyGroupCount, final int samplingGroupCount) {
             if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
               return;
             }
@@ -81,7 +82,7 @@ public class VersionedHashDBSourceFactory {
           }
 
           @Override
-          public void onCustodyGroupCountSynced(int groupCount) {}
+          public void onCustodyGroupCountSynced(final int groupCount) {}
         });
 
     return versionedHashDBSource;

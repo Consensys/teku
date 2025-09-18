@@ -718,12 +718,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addVersionedHash(Bytes32 versionedHash, Bytes metadata) {
+    public void addVersionedHash(final Bytes32 versionedHash, final Bytes metadata) {
       finalizedUpdater.addVersionedHash(versionedHash, metadata);
     }
 
     @Override
-    public void removeVersionedHash(Bytes32 versionedHash) {
+    public void removeVersionedHash(final Bytes32 versionedHash) {
       finalizedUpdater.removeVersionedHash(versionedHash);
     }
 

@@ -44,20 +44,20 @@ public class VersionedHashDBSource {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Bytes CANONICAL_BLOB_SIDECAR_TYPE = Bytes.of(0x00);
-  private final Bytes NON_CANONICAL_BLOB_SIDECAR_TYPE = Bytes.of(0x10);
-  private final Bytes CANONICAL_DATA_COLUMN_SIDECAR_TYPE = Bytes.of(0x20);
-  private final Bytes NON_CANONICAL_DATA_COLUMN_SIDECAR_TYPE = Bytes.of(0x30);
+  private static final Bytes CANONICAL_BLOB_SIDECAR_TYPE = Bytes.of(0x00);
+  private static final Bytes NON_CANONICAL_BLOB_SIDECAR_TYPE = Bytes.of(0x10);
+  private static final Bytes CANONICAL_DATA_COLUMN_SIDECAR_TYPE = Bytes.of(0x20);
+  private static final Bytes NON_CANONICAL_DATA_COLUMN_SIDECAR_TYPE = Bytes.of(0x30);
 
-  static final int TYPE_SIZE = 1;
-  static final int SLOT_SIZE = Long.BYTES;
-  static final int BLOCK_ROOT_SIZE = Bytes32.SIZE;
-  static final int BLOB_INDEX_SIZE = Long.BYTES;
+  private static final int TYPE_SIZE = 1;
+  private static final int SLOT_SIZE = Long.BYTES;
+  private static final int BLOCK_ROOT_SIZE = Bytes32.SIZE;
+  private static final int BLOB_INDEX_SIZE = Long.BYTES;
 
-  static final int SLOT_OFFSET = TYPE_SIZE;
-  static final int BLOCK_ROOT_OFFSET = SLOT_OFFSET + SLOT_SIZE;
-  static final int BLOB_INDEX_OFFSET = BLOCK_ROOT_OFFSET + BLOCK_ROOT_SIZE;
-  static final int DATA_SIZE = BLOB_INDEX_OFFSET + BLOB_INDEX_SIZE;
+  private static final int SLOT_OFFSET = TYPE_SIZE;
+  private static final int BLOCK_ROOT_OFFSET = SLOT_OFFSET + SLOT_SIZE;
+  private static final int BLOB_INDEX_OFFSET = BLOCK_ROOT_OFFSET + BLOCK_ROOT_SIZE;
+  private static final int DATA_SIZE = BLOB_INDEX_OFFSET + BLOB_INDEX_SIZE;
 
   private final Function<BlobSidecar, VersionedHash> blobSidecarToVersionedHash;
   private final Function<Pair<DataColumnSidecar, UInt64>, VersionedHash>
@@ -294,12 +294,19 @@ public class VersionedHashDBSource {
       Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
       Optional<Pair<DataColumnSlotAndIdentifier, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
       boolean canonical) {
-    public Sidecar {
+    public Sidecar(
+        final Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
+        final Optional<Pair<DataColumnSlotAndIdentifier, UInt64>>
+            dataColumnSidecarIdentifierAndBlobIndex,
+        final boolean canonical) {
       if (blobSidecarIdentifier.isPresent()
           == dataColumnSidecarIdentifierAndBlobIndex.isPresent()) {
         throw new RuntimeException(
             "Either blob sidecar or data column sidecars identifier have to be set");
       }
+      this.blobSidecarIdentifier = blobSidecarIdentifier;
+      this.dataColumnSidecarIdentifierAndBlobIndex = dataColumnSidecarIdentifierAndBlobIndex;
+      this.canonical = canonical;
     }
 
     boolean isBlobSidecar() {
@@ -312,35 +319,37 @@ public class VersionedHashDBSource {
   }
 
   private Bytes computeCanonicalBlobSidecarMetadata(final BlobSidecar blobSidecar) {
-    return Bytes.concatenate(CANONICAL_BLOB_SIDECAR_TYPE, computeBlobSidecarMetadata(blobSidecar));
+    return Bytes.concatenate(
+        CANONICAL_BLOB_SIDECAR_TYPE, computeBlobSidecarIdentifierPartial(blobSidecar));
   }
 
   private Bytes computeNonCanonicalBlobSidecarMetadata(final BlobSidecar blobSidecar) {
     return Bytes.concatenate(
-        NON_CANONICAL_BLOB_SIDECAR_TYPE, computeBlobSidecarMetadata(blobSidecar));
+        NON_CANONICAL_BLOB_SIDECAR_TYPE, computeBlobSidecarIdentifierPartial(blobSidecar));
   }
 
   private Bytes computeCanonicalDataColumnSidecarMetadata(
       final DataColumnSidecar sidecar, final UInt64 blobIndex) {
     return Bytes.concatenate(
-        CANONICAL_DATA_COLUMN_SIDECAR_TYPE, computeDataColumnSidecarMetadata(sidecar, blobIndex));
+        CANONICAL_DATA_COLUMN_SIDECAR_TYPE,
+        computeDataColumnSidecarIdentifierPartial(sidecar, blobIndex));
   }
 
   private Bytes computeNonCanonicalDataColumnSidecarMetadata(
       final DataColumnSidecar sidecar, final UInt64 blobIndex) {
     return Bytes.concatenate(
         NON_CANONICAL_DATA_COLUMN_SIDECAR_TYPE,
-        computeDataColumnSidecarMetadata(sidecar, blobIndex));
+        computeDataColumnSidecarIdentifierPartial(sidecar, blobIndex));
   }
 
-  private Bytes computeBlobSidecarMetadata(final BlobSidecar blobSidecar) {
+  private Bytes computeBlobSidecarIdentifierPartial(final BlobSidecar blobSidecar) {
     return Bytes.concatenate(
         Bytes.wrap(Longs.toByteArray(blobSidecar.getSlot().longValue())),
         blobSidecar.getBlockRoot(),
         Bytes.wrap(Longs.toByteArray(blobSidecar.getIndex().longValue())));
   }
 
-  private Bytes computeDataColumnSidecarMetadata(
+  private Bytes computeDataColumnSidecarIdentifierPartial(
       final DataColumnSidecar sidecar, final UInt64 blobIndex) {
     return Bytes.concatenate(
         Bytes.wrap(Longs.toByteArray(sidecar.getSlot().longValue())),

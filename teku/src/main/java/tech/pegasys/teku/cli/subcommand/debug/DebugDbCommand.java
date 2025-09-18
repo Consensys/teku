@@ -42,6 +42,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -62,6 +63,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -981,7 +983,11 @@ public class DebugDbCommand implements Runnable {
                 .eth1DepositContract(networkConfiguration.getEth1DepositContractAddress())
                 .specProvider(spec)
                 .build(),
-            Optional.empty());
+            Optional.empty(),
+            new VersionedHashDBSourceFactory(
+                spec,
+                EventChannels.createSyncChannels(
+                    (error, subscriber, invokedMethod, args) -> {}, new NoOpMetricsSystem())));
     return databaseFactory.createDatabase();
   }
 
