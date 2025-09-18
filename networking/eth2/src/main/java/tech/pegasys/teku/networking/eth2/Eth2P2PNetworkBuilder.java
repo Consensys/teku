@@ -497,7 +497,7 @@ public class Eth2P2PNetworkBuilder {
               debugDataDumper,
               dasGossipLogger,
               bpo,
-                  config.isExecutionProofTopicEnabled());
+              config.isExecutionProofTopicEnabled());
       default ->
           throw new IllegalStateException(
               "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
