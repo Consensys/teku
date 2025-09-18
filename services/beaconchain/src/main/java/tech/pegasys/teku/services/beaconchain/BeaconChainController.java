@@ -87,6 +87,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -675,7 +676,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initZkChain() {
     LOG.debug("BeaconChainController.initZkChain()");
     ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
-
+// comment for now this will be used in the future
+//      final ExecutionProofGossipChannel executionProofGossipChannel =
+              eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
     if (zkConfig.isStatelessValidationEnabled()) {
       final ExecutionProofGossipValidator executionProofGossipValidator =
           ExecutionProofGossipValidator.create();
