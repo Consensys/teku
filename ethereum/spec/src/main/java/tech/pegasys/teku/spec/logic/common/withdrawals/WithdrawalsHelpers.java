@@ -35,7 +35,10 @@ public interface WithdrawalsHelpers {
   // same as above but skipping payload withdrawals root comparison
   void processWithdrawals(MutableBeaconState state);
 
-  record ExpectedWithdrawals(List<Withdrawal> withdrawals, int processedPartialWithdrawalsCount) {}
+  record ExpectedWithdrawals(
+      List<Withdrawal> withdrawals,
+      int processedBuilderWithdrawalsCount,
+      int processedPartialWithdrawalsCount) {}
 
   static UInt64 getPartiallyWithdrawnBalance(
       final List<Withdrawal> withdrawals, final UInt64 validatorIndex) {
