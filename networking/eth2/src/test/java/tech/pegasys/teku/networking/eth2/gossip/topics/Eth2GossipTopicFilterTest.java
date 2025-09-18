@@ -68,7 +68,7 @@ class Eth2GossipTopicFilterTest {
     // current milestone is actually the previous milestone
     currentSpecMilestone = specContext.getSpecMilestone().getPreviousMilestone();
     nextSpecMilestone = specContext.getSpecMilestone();
-    p2pConfig = P2PConfig.builder().build();
+
     spec =
         switch (nextSpecMilestone) {
           case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
@@ -96,7 +96,7 @@ class Eth2GossipTopicFilterTest {
                                           new BlobScheduleEntry(
                                               bpoFork.epoch(), bpoFork.maxBlobsPerBlock())))));
         };
-
+    p2pConfig = P2PConfig.builder().specProvider(spec).build();
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
 

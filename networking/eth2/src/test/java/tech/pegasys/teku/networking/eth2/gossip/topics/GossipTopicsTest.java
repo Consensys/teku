@@ -59,7 +59,7 @@ public class GossipTopicsTest {
   public void maxSubscribedTopicsConstantIsLargeEnough() {
     final SpecMilestone latestMilestone = SpecMilestone.getHighestMilestone();
     final Spec spec = TestSpecFactory.createMainnet(latestMilestone);
-    final P2PConfig p2pConfig = P2PConfig.builder().build();
+    final P2PConfig p2pConfig = P2PConfig.builder().specProvider(spec).build();
 
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
