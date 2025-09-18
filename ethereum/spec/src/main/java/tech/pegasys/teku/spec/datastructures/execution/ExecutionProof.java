@@ -37,21 +37,6 @@ public class ExecutionProof
     super(schema, node);
   }
 
-  public static ExecutionProof create(final UInt64 slot) {
-      return SSZ_SCHEMA.create(
-              SszBytes32.of(Bytes32.fromHexString(toHexString(slot.longValue()))),
-              SszBytes32.of(Bytes32.fromHexString(toHexString(slot.longValue()))),
-              SszUInt64.of(UInt64.ONE),
-              SszUInt64.ZERO,
-              SSZ_SCHEMA.getProofDataSchema().fromBytes(Bytes32.ZERO));
-  }
-
-  public static final ExecutionProof DUMMY_PROOF = SSZ_SCHEMA.create(
-      SszBytes32.of(Bytes32.ZERO),
-      SszBytes32.of(Bytes32.ZERO),
-      SszUInt64.of(UInt64.ONE),
-      SszUInt64.ZERO,
-          SSZ_SCHEMA.getProofDataSchema().fromBytes(Bytes32.ZERO));
 
   public ExecutionProof(
       final ExecutionProofSchema schema,
