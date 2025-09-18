@@ -3100,6 +3100,7 @@ public final class DataStructureUtil {
         schemaDefinitionsElectra.getExecutionProofSchema();
     return executionProofSchema.create(
         SszBytes32.of(randomBytes32()),
+        SszBytes32.of(randomBytes32()),
         SszUInt64.of(randomUInt64()),
         SszUInt64.of(randomUInt64()),
         executionProofSchema.getProofDataSchema().fromBytes(randomBytes(5)));
