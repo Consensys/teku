@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -23,7 +22,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class ExecutionProofSchema
-    extends ContainerSchema5<ExecutionProof, SszBytes32,SszBytes32, SszUInt64, SszUInt64, SszByteList> {
+    extends ContainerSchema5<
+        ExecutionProof, SszBytes32, SszBytes32, SszUInt64, SszUInt64, SszByteList> {
 
   // as per suggestion in https://github.com/Consensys/teku/pull/9853#discussion_r2329217191
   // this may change in when we get smaller proofs
@@ -39,7 +39,7 @@ public class ExecutionProofSchema
         namedSchema("proof_data", SszByteListSchema.create(MAX_PROOF_DATA_SIZE)));
   }
 
-  final static ExecutionProofSchema SSZ_SCHEMA = new ExecutionProofSchema();
+  static final ExecutionProofSchema SSZ_SCHEMA = new ExecutionProofSchema();
 
   public ExecutionProof create(
       final SszBytes32 blockRoot,
