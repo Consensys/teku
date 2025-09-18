@@ -61,7 +61,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
-      final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor) {
+      final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor,
+      final boolean isExecutionProofTopicEnabled) {
     super(
         fork,
         spec,
@@ -83,6 +84,7 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         dataColumnSidecarOperationProcessor,
         debugDataDumper,
         dasGossipLogger,
-        executionProcessorOperationProcessor);
+        executionProcessorOperationProcessor,
+        isExecutionProofTopicEnabled);
   }
 }

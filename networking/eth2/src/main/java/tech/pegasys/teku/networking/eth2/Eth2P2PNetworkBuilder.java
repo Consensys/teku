@@ -389,7 +389,8 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               debugDataDumper,
-              executionProofOperationProcessor);
+              executionProofOperationProcessor,
+              config.isExecutionProofTopicEnabled());
       case FULU ->
           new GossipForkSubscriptionsFulu(
               forkAndSpecMilestone.getFork(),
@@ -412,7 +413,8 @@ public class Eth2P2PNetworkBuilder {
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
-              executionProofOperationProcessor);
+              executionProofOperationProcessor,
+              config.isExecutionProofTopicEnabled());
       case GLOAS ->
           new GossipForkSubscriptionsGloas(
               forkAndSpecMilestone.getFork(),
@@ -435,7 +437,8 @@ public class Eth2P2PNetworkBuilder {
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
-              executionProofOperationProcessor);
+              executionProofOperationProcessor,
+              config.isExecutionProofTopicEnabled());
     };
   }
 
@@ -468,7 +471,8 @@ public class Eth2P2PNetworkBuilder {
               executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
-              bpo);
+              bpo,
+              config.isExecutionProofTopicEnabled());
       case GLOAS ->
           new GossipForkSubscriptionsGloasBpo(
               forkAndSpecMilestone.getFork(),
@@ -492,7 +496,8 @@ public class Eth2P2PNetworkBuilder {
               executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
-              bpo);
+              bpo,
+                  config.isExecutionProofTopicEnabled());
       default ->
           throw new IllegalStateException(
               "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());

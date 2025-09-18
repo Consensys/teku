@@ -518,7 +518,8 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper,
-                executionProofOperationProcessor);
+                executionProofOperationProcessor,
+                generateConfig().isExecutionProofTopicEnabled());
         case FULU ->
             new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
@@ -541,7 +542,8 @@ public class Eth2P2PNetworkFactory {
                 dataColumnSidecarOperationProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP,
-                executionProofOperationProcessor);
+                executionProofOperationProcessor,
+                generateConfig().isExecutionProofTopicEnabled());
         case GLOAS ->
             new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
@@ -564,7 +566,8 @@ public class Eth2P2PNetworkFactory {
                 dataColumnSidecarOperationProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP,
-                executionProofOperationProcessor);
+                executionProofOperationProcessor,
+                generateConfig().isExecutionProofTopicEnabled());
       };
     }
 

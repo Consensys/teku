@@ -70,7 +70,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
-      final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
+      final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
+      final boolean isExecutionProofTopicEnabled) {
     super(
         fork,
         spec,
@@ -90,7 +91,8 @@ public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra 
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor,
         debugDataDumper,
-        executionProofOperationProcessor);
+        executionProofOperationProcessor,
+        isExecutionProofTopicEnabled);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
     this.dasGossipLogger = dasGossipLogger;
   }

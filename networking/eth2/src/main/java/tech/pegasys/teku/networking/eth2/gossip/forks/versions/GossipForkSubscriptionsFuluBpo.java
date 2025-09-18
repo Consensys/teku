@@ -66,7 +66,8 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
       final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
-      final BlobParameters bpo) {
+      final BlobParameters bpo,
+      final boolean isExecutionProofTopicEnabled) {
     super(
         fork,
         spec,
@@ -88,7 +89,8 @@ public class GossipForkSubscriptionsFuluBpo extends GossipForkSubscriptionsFulu 
         dataColumnSidecarOperationProcessor,
         debugDataDumper,
         dasGossipLogger,
-        executionProofOperationProcessor);
+        executionProofOperationProcessor,
+        isExecutionProofTopicEnabled);
     this.bpo = bpo;
   }
 
