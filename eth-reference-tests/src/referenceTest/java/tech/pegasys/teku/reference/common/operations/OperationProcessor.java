@@ -67,13 +67,11 @@ public interface OperationProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest)
-      throws BlockProcessingException;
+  void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest);
 
-  void processWithdrawalRequest(MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest)
-      throws BlockProcessingException;
+  void processWithdrawalRequest(
+      MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest);
 
   void processConsolidationRequests(
-      MutableBeaconState state, List<ConsolidationRequest> consolidationRequest)
-      throws BlockProcessingException;
+      MutableBeaconState state, List<ConsolidationRequest> consolidationRequest);
 }
