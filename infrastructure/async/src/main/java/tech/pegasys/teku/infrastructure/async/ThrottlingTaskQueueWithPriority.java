@@ -52,7 +52,7 @@ public class ThrottlingTaskQueueWithPriority extends ThrottlingTaskQueue {
     return taskQueue;
   }
 
-  private ThrottlingTaskQueueWithPriority(
+  protected ThrottlingTaskQueueWithPriority(
       final int maximumConcurrentTasks, final int maximumQueueSize) {
     super(maximumConcurrentTasks, maximumQueueSize);
     this.queuedPrioritizedTasks = new LinkedBlockingQueue<>(maximumQueueSize);
