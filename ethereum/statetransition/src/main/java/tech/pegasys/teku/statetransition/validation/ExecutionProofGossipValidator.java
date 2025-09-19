@@ -43,7 +43,9 @@ public class ExecutionProofGossipValidator {
 
     // TODO need to check for other validations done in the prototype and spec
     if (executionProof.getSubnetId().longValue() != subnetId.longValue()) {
-      LOG.trace("ExecutionProof for block root {} does not match the gossip subnetId", executionProof.getBlockRoot());
+      LOG.trace(
+          "ExecutionProof for block root {} does not match the gossip subnetId",
+          executionProof.getBlockRoot());
       return SafeFuture.completedFuture(InternalValidationResult.reject("SubnetId mismatch"));
     }
 
@@ -53,7 +55,8 @@ public class ExecutionProofGossipValidator {
     }
 
     // Validated the execution proof
-    LOG.trace("Received and validated execution proof for block root {}", executionProof.getBlockRoot());
+    LOG.trace(
+        "Received and validated execution proof for block root {}", executionProof.getBlockRoot());
     receivedValidExecutionProofSet.add(executionProof);
     return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
   }
