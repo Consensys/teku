@@ -399,7 +399,7 @@ public class P2POptions {
       names = {"--Xexecution-proof-topics-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Add all topic filtering to p2p configuration.",
+      description = "Enable all execution proof topic filtering to p2p configuration.",
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
