@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
@@ -31,6 +33,13 @@ public class PredicatesGloas extends PredicatesElectra {
 
   public PredicatesGloas(final SpecConfig specConfig) {
     super(specConfig);
+  }
+
+  public boolean isParentBlockFull(final BeaconState state) {
+    return BeaconStateGloas.required(state)
+        .getLatestExecutionPayloadHeader()
+        .getBlockHash()
+        .equals(BeaconStateGloas.required(state).getLatestBlockHash());
   }
 
   @Override

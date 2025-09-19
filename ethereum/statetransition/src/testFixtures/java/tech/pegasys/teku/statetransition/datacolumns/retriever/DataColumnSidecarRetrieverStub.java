@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetriever {
 
   public record RetrieveRequest(
-      DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> promise) {}
+      DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> future) {}
 
   public List<RetrieveRequest> requests = new ArrayList<>();
   private final Map<DataColumnSlotAndIdentifier, DataColumnSidecar> readySidecars = new HashMap<>();
@@ -34,7 +34,7 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
     readySidecars.put(colId, sidecar);
     requests.stream()
         .filter(req -> req.columnId.equals(colId))
-        .forEach(req -> req.promise.complete(sidecar));
+        .forEach(req -> req.future.complete(sidecar));
   }
 
   @Override
@@ -43,9 +43,9 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
     requests.add(request);
     final DataColumnSidecar maybeSidecar = readySidecars.get(columnId);
     if (maybeSidecar != null) {
-      request.promise.complete(maybeSidecar);
+      request.future.complete(maybeSidecar);
     }
-    return request.promise;
+    return request.future;
   }
 
   @Override

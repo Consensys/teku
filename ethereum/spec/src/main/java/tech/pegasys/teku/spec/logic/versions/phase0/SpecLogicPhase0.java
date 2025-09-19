@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
@@ -174,6 +176,16 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
 
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<WithdrawalsHelpers> getWithdrawalsHelpers() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return Optional.empty();
   }
 }

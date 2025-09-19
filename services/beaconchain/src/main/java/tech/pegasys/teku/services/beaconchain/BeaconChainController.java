@@ -327,6 +327,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile AttestationManager attestationManager;
   protected volatile SignatureVerificationService signatureVerificationService;
   protected volatile CombinedChainDataClient combinedChainDataClient;
+  protected volatile EarliestAvailableBlockSlot earliestAvailableBlockSlot;
   protected volatile Eth1DataCache eth1DataCache;
   protected volatile SlotProcessor slotProcessor;
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -1182,7 +1183,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
-    final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
+    earliestAvailableBlockSlot =
         new EarliestAvailableBlockSlot(
             storageQueryChannel,
             timeProvider,
@@ -1585,10 +1586,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   throttlingStorageQueryChannel,
                   spec,
-                  new EarliestAvailableBlockSlot(
-                      throttlingStorageQueryChannel,
-                      timeProvider,
-                      beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())));
+                  earliestAvailableBlockSlot));
     }
 
     this.p2pNetwork =

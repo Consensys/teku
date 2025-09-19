@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -502,6 +503,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     }
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
+            .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
             .map(
                 sidecar ->
                     IntStream.range(0, sidecar.getDataColumn().size())
@@ -536,7 +538,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>The data structure for storing cells is implementation-dependent.
    */
-  public List<List<MatrixEntry>> recoverMatrix(
+  private List<List<MatrixEntry>> recoverMatrix(
       final List<List<MatrixEntry>> partialMatrix, final KZG kzg) {
     return IntStream.range(0, partialMatrix.size())
         .parallel()

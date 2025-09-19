@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -30,11 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
-import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -169,24 +164,8 @@ public interface BlockProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositRequests(MutableBeaconState state, List<DepositRequest> depositRequests)
-      throws BlockProcessingException;
-
-  void processWithdrawalRequests(
-      MutableBeaconState state,
-      List<WithdrawalRequest> exits,
-      Supplier<ValidatorExitContext> validatorExitContextSupplier)
-      throws BlockProcessingException;
-
-  void processConsolidationRequests(
-      MutableBeaconState state, List<ConsolidationRequest> consolidationRequests)
-      throws BlockProcessingException;
-
-  boolean isValidSwitchToCompoundingRequest(
-      BeaconState beaconState, ConsolidationRequest consolidationRequest)
-      throws BlockProcessingException;
-
-  ExpectedWithdrawals getExpectedWithdrawals(BeaconState preState);
+  // process_withdrawals with only state as a parameter
+  void processWithdrawals(MutableBeaconState state);
 
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();

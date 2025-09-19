@@ -24,8 +24,10 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
@@ -45,7 +47,9 @@ public class BlockProcessorFulu extends BlockProcessorElectra {
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
       final SchemaDefinitionsElectra schemaDefinitions,
-      final ExecutionRequestsDataCodec executionRequestsDataCodec) {
+      final WithdrawalsHelpersElectra withdrawalsHelpers,
+      final ExecutionRequestsDataCodec executionRequestsDataCodec,
+      final ExecutionRequestsProcessorElectra executionRequestsProcessor) {
     super(
         specConfig,
         predicates,
@@ -59,7 +63,9 @@ public class BlockProcessorFulu extends BlockProcessorElectra {
         validatorsUtil,
         operationValidator,
         schemaDefinitions,
-        executionRequestsDataCodec);
+        withdrawalsHelpers,
+        executionRequestsDataCodec,
+        executionRequestsProcessor);
     miscHelpersFulu = miscHelpers;
   }
 

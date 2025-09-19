@@ -28,9 +28,8 @@ public class EarliestAvailableBlockSlot {
 
   private final int earliestAvailableBlockSlotFrequency;
 
-  private UInt64 queryTime = UInt64.ZERO;
-
-  private SafeFuture<Optional<UInt64>> earliestAvailableBlockSlotFuture =
+  private volatile UInt64 queryTime = UInt64.ZERO;
+  private volatile SafeFuture<Optional<UInt64>> earliestAvailableBlockSlotFuture =
       SafeFuture.completedFuture(Optional.empty());
 
   public EarliestAvailableBlockSlot(
@@ -64,10 +63,7 @@ public class EarliestAvailableBlockSlot {
     } else {
       return earliestAvailableBlockSlotFuture;
     }
-    if (!earliestAvailableBlockSlotFuture.isDone()) {
-      // if the current query is not done, we should just return the same future
-      return earliestAvailableBlockSlotFuture;
-    }
+
     LOG.trace("Fetching earliestBlockSlot...");
     earliestAvailableBlockSlotFuture = historicalChainData.getEarliestAvailableBlockSlot();
     return earliestAvailableBlockSlotFuture;
