@@ -220,8 +220,7 @@ public class Eth2P2PNetworkFactory {
         final SubnetSubscriptionService dataColumnSidecarSubnetService =
             new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
-            new CombinedChainDataClient(
-                recentChainData, historicalChainData, spec);
+            new CombinedChainDataClient(recentChainData, historicalChainData, spec);
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);

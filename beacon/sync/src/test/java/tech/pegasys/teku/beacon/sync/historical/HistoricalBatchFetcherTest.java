@@ -35,7 +35,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
@@ -124,11 +123,7 @@ public class HistoricalBatchFetcherTest {
 
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
     final RecentChainData recentChainData = storageSystem.recentChainData();
-    chainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
-            historicalChainData,
-            spec);
+    chainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData, spec);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =

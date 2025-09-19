@@ -1183,8 +1183,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData, storageQueryChannel, spec);
+        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1575,10 +1574,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(
-              new CombinedChainDataClient(
-                  recentChainData,
-                  throttlingStorageQueryChannel,
-                  spec));
+              new CombinedChainDataClient(recentChainData, throttlingStorageQueryChannel, spec));
     }
 
     this.p2pNetwork =
