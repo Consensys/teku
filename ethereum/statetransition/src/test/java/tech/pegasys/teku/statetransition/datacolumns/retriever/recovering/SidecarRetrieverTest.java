@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -89,11 +90,41 @@ public class SidecarRetrieverTest {
   }
 
   @Test
+  void callingStartAgainIsOk() {
+    final Cancellable checker = retriever.getPendingRequestsChecker();
+    retriever.start();
+    assertThat(retriever.getPendingRequestsChecker()).isEqualTo(checker);
+  }
+
+  @Test
   void canStopRetriever() {
     assertThat(retriever.getPendingRequestsChecker()).isNotNull();
     assertThat(retriever.getPendingRequestsChecker().isCancelled()).isFalse();
     retriever.stop();
     assertThat(retriever.getPendingRequestsChecker()).isNull();
+  }
+
+  @Test
+  void canStopMoreThanOnce() {
+    retriever.stop();
+    assertThat(retriever.getPendingRequestsChecker()).isNull();
+
+    retriever.stop();
+    assertThat(retriever.getPendingRequestsChecker()).isNull();
+  }
+
+  @Test
+  void onNewValidatedSidecar_callsDelegateRetriever() {
+    final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar();
+    retriever.onNewValidatedSidecar(sidecar);
+    assertThat(delegateRetriever.validatedSidecars).containsExactly(sidecar);
+  }
+
+  @Test
+  void flush_callsDelegateRetriever() {
+    assertThat(delegateRetriever.flushed).isFalse();
+    retriever.flush();
+    assertThat(delegateRetriever.flushed).isTrue();
   }
 
   @Test

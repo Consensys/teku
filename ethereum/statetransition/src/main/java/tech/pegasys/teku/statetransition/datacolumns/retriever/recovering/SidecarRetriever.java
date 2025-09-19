@@ -121,16 +121,17 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
     final PendingRecoveryRequest pendingRecoveryRequest =
         requests.computeIfAbsent(
             columnId,
-            __ ->
-                new PendingRecoveryRequest(
-                    columnId,
-                    downloader.retrieve(columnId),
-                    timeProvider.getTimeInMillis(),
-                    recoveryTimeout.dividedBy(2),
-                    recoveryTimeout));
-
-    pendingRecoveryRequest.getFuture().always(() -> requests.remove(columnId));
-
+            __ -> {
+              final PendingRecoveryRequest request =
+                  new PendingRecoveryRequest(
+                      columnId,
+                      downloader.retrieve(columnId),
+                      timeProvider.getTimeInMillis(),
+                      recoveryTimeout.dividedBy(2),
+                      recoveryTimeout);
+              request.getFuture().always(() -> requests.remove(columnId));
+              return request;
+            });
     return pendingRecoveryRequest.getFuture();
   }
 
