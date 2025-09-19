@@ -14,12 +14,16 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 
 public class Validator {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final BLSPublicKey publicKey;
   private final Signer signer;
   private final GraffitiProvider graffitiProvider;
@@ -50,7 +54,16 @@ public class Validator {
   }
 
   public Optional<Bytes32> getGraffiti() {
-    return graffitiProvider.get();
+    try {
+      return graffitiProvider.get();
+    } catch (final Exception e) {
+      // Log the error but don't let it impact block production
+      // Note: This is a safety net. Individual GraffitiProvider implementations
+      // should handle their own errors, but this ensures block production continues
+      // even if they don't.
+      LOG.warn("Error getting graffiti from graffiti provider: {}", e.getMessage(), e);
+      return Optional.empty();
+    }
   }
 
   public boolean isReadOnly() {
