@@ -75,7 +75,7 @@ class ConnectionManagerTest {
 
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
   private final PeerSelectionStrategy peerSelectionStrategy = mock(PeerSelectionStrategy.class);
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
 
   @BeforeEach
@@ -154,11 +154,17 @@ class ConnectionManagerTest {
     timeProvider.advanceTimeBySeconds(9);
     asyncRunner.executeDueActions();
     verify(network, times(3)).connect(PEER1);
+
+    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isEqualTo(9);
   }
 
   @Test
   public void shouldReconnectWhenPersistentPeerDisconnects_fastDisconnection() {
     final ConnectionManager manager = createManager(PEER1);
+
+    // simulate we already failed to connect one time
+    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isNull();
+    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(3));
 
     final MockNodeId peerId = new MockNodeId();
     final StubPeer peer = new StubPeer(peerId);
@@ -176,18 +182,22 @@ class ConnectionManagerTest {
     verify(network, times(1)).connect(PEER1);
 
     // advance time enough to trigger a retry
-    timeProvider.advanceTimeBySeconds(3);
+    timeProvider.advanceTimeBySeconds(9);
     asyncRunner.executeDueActions();
 
     verify(network, times(2)).connect(PEER1);
 
-    // fast disconnection, so delay should increase
-    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(9));
+    // fast disconnection, last disconnection delay should not reset
+    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isEqualTo(9);
   }
 
   @Test
   public void shouldResetPersistentPeerDisconnects_stableConnection() {
     final ConnectionManager manager = createManager(PEER1);
+
+    // simulate we already failed to connect one time
+    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isNull();
+    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(3));
 
     final MockNodeId peerId = new MockNodeId();
     final StubPeer peer = new StubPeer(peerId);
@@ -207,7 +217,7 @@ class ConnectionManagerTest {
     verify(network, times(2)).connect(PEER1);
 
     // stable connection, so delay should reset
-    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(3));
+    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isEqualTo(3);
   }
 
   @Test

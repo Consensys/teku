@@ -293,6 +293,11 @@ public class ConnectionManager extends Service {
             }));
   }
 
+  @VisibleForTesting
+  Integer getLastStaticPeerReconnectionDelay(final PeerAddress peerAddress) {
+    return lastStaticPeerReconnectionDelay.get(peerAddress);
+  }
+
   // separate method to make errorprone happy
   private static int computeIncrease(final int lastAttempt) {
     return Math.min(lastAttempt * 3, COOLDOWN_PERIOD.intValue());
