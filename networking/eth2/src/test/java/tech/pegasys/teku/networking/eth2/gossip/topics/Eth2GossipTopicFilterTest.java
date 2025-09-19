@@ -242,31 +242,26 @@ class Eth2GossipTopicFilterTest {
     assertThat(filter.isRelevantTopic(bpoTopic)).isTrue();
   }
 
-    @TestTemplate
-    void shouldNotConsiderExecutionProofSubnetsRelevantByDefault() {
-        assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
-        for(int i = 0; i< Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
-            assertThat(
-                    filter.isRelevantTopic(
-                            getTopicName(getExecutionProofSubnetTopicName( i))))
-                    .isFalse();
-        }
+  @TestTemplate
+  void shouldNotConsiderExecutionProofSubnetsRelevantByDefault() {
+    assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
+    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+      assertThat(filter.isRelevantTopic(getTopicName(getExecutionProofSubnetTopicName(i))))
+          .isFalse();
     }
+  }
 
-    @TestTemplate
-    void shouldConsiderExecutionProofSubnetsRelevantWhenEnabled() {
-        P2PConfig p2pConfigOverwritten = P2PConfig.builder().specProvider(spec).executionProofTopicEnabled(true).build();
-        filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfigOverwritten);
-        assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
-        for(int i = 0; i< Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
-            assertThat(
-                    filter.isRelevantTopic(
-                            getTopicName(getExecutionProofSubnetTopicName( i))))
-                    .isTrue();
-        }
+  @TestTemplate
+  void shouldConsiderExecutionProofSubnetsRelevantWhenEnabled() {
+    P2PConfig p2pConfigOverwritten =
+        P2PConfig.builder().specProvider(spec).executionProofTopicEnabled(true).build();
+    filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfigOverwritten);
+    assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
+    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+      assertThat(filter.isRelevantTopic(getTopicName(getExecutionProofSubnetTopicName(i))))
+          .isTrue();
     }
-
-
+  }
 
   private String getTopicName(final GossipTopicName name) {
     return GossipTopics.getTopic(currentForkDigest, name, SSZ_SNAPPY);
