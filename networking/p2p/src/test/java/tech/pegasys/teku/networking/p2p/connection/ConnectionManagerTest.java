@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -143,7 +144,7 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldReconnectWhenPersistentPeerDisconnects() {
+  public void shouldReconnectWhenPersistentPeerDisconnects_fastDisconnection() {
     final ConnectionManager manager = createManager(PEER1);
 
     final MockNodeId peerId = new MockNodeId();
@@ -156,8 +157,44 @@ class ConnectionManagerTest {
     peer.disconnectImmediately(Optional.empty(), true);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    asyncRunner.executeQueuedActions();
+
+    // time hasn't advanced enough to trigger a retry
+    asyncRunner.executeDueActions();
+    verify(network, times(1)).connect(PEER1);
+
+    // advance time enough to trigger a retry
+    timeProvider.advanceTimeBySeconds(3);
+    asyncRunner.executeDueActions();
+
     verify(network, times(2)).connect(PEER1);
+
+    // fast disconnection, so delay should increase
+    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(9));
+  }
+
+  @Test
+  public void shouldResetPersistentPeerDisconnects_stableConnection() {
+    final ConnectionManager manager = createManager(PEER1);
+
+    final MockNodeId peerId = new MockNodeId();
+    final StubPeer peer = new StubPeer(peerId);
+    when(network.connect(PEER1))
+        .thenReturn(SafeFuture.completedFuture(peer))
+        .thenReturn(new SafeFuture<>());
+    manager.start().join();
+    verify(network).connect(PEER1);
+
+    // wait more than IMMEDIATE_DISCONNECTION_THRESHOLD_MILLIS
+    timeProvider.advanceTimeBySeconds(3);
+    peer.disconnectImmediately(Optional.empty(), true);
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    timeProvider.advanceTimeBySeconds(3);
+    asyncRunner.executeDueActions();
+    verify(network, times(2)).connect(PEER1);
+
+    // stable connection, so delay should reset
+    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(3));
   }
 
   @Test
@@ -440,6 +477,43 @@ class ConnectionManagerTest {
     verify(discoveryService, times(5)).searchForPeers();
   }
 
+  @Test
+  public void computeStaticPeerRetryDelay_shouldBeCalculatedPerPeer() {
+    final ConnectionManager manager = createManager();
+
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+
+    assertThat(manager.computeStaticPeerRetryDelay(peer1.getAddress()))
+        .isEqualTo(Duration.ofSeconds(3));
+
+    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
+
+    assertThat(manager.computeStaticPeerRetryDelay(peer2.getAddress()))
+        .isEqualTo(Duration.ofSeconds(3));
+  }
+
+  @Test
+  public void computeStaticPeerRetryDelay_shouldIncreaseDelayUpToLimit() {
+    final ConnectionManager manager = createManager();
+
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+
+    final List<Duration> expectedDelays =
+        List.of(
+            Duration.ofSeconds(3),
+            Duration.ofSeconds(9),
+            Duration.ofSeconds(27),
+            Duration.ofSeconds(81),
+            Duration.ofSeconds(120), // capped at max delay
+            Duration.ofSeconds(120),
+            Duration.ofSeconds(120));
+
+    expectedDelays.forEach(
+        expectedDelay ->
+            assertThat(manager.computeStaticPeerRetryDelay(peer1.getAddress()))
+                .isEqualTo(expectedDelay));
+  }
+
   private void advanceTimeByWarmupSearchInterval() {
     timeProvider.advanceTimeBySeconds(ConnectionManager.WARMUP_DISCOVERY_INTERVAL.toSeconds());
     asyncRunner.executeDueActionsRepeatedly();
@@ -458,6 +532,7 @@ class ConnectionManagerTest {
         new NoOpMetricsSystem(),
         discoveryService,
         asyncRunner,
+        timeProvider,
         network,
         peerSelectionStrategy,
         Arrays.asList(peers),
