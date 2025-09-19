@@ -574,6 +574,7 @@ public class Eth2P2PNetworkBuilder {
         .discoveryConfig(discoConfig)
         .p2pConfig(networkConfig)
         .spec(config.getSpec())
+        .timeProvider(timeProvider)
         .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
         .build();
   }
