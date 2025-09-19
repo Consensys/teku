@@ -871,16 +871,16 @@ subprojects {
   apply plugin: 'idea'
   idea {
     module {
-      testSourceDirs += project.sourceSets.testFixtures.java.srcDirs
-      testSourceDirs += project.sourceSets.testFixtures.resources.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
-      testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.java.srcDirs
-      testSourceDirs += project.sourceSets.propertyTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
-      testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
+      testSources.from(project.sourceSets.testFixtures.java.srcDirs)
+      testSources.from(project.sourceSets.testFixtures.resources.srcDirs)
+      testSources.from(project.sourceSets.integrationTest.java.srcDirs)
+      testSources.from(project.sourceSets.integrationTest.resources.srcDirs)
+      testSources.from(project.sourceSets.acceptanceTest.java.srcDirs)
+      testSources.from(project.sourceSets.acceptanceTest.resources.srcDirs)
+      testSources.from(project.sourceSets.propertyTest.java.srcDirs)
+      testSources.from(project.sourceSets.propertyTest.resources.srcDirs)
+      testSources.from(project.sourceSets.referenceTest.java.srcDirs)
+      testSources.from(project.sourceSets.referenceTest.resources.srcDirs)
     }
   }
 
