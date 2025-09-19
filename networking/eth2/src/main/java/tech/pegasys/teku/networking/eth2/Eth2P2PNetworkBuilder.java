@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -214,27 +215,36 @@ public class Eth2P2PNetworkBuilder {
 
     final GossipEncoding gossipEncoding = config.getGossipEncoding();
     // Build core network and inject eth2 handlers
+    final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference =
+        new AtomicReference<>();
     final DiscoveryNetwork<?> network =
-        buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
+        buildNetwork(
+            gossipEncoding,
+            syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
+            activeEth2P2PNetworkReference);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
-    return new ActiveEth2P2PNetwork(
-        config.getSpec(),
-        asyncRunner,
-        network,
-        eth2PeerManager,
-        gossipForkManager,
-        eventChannels,
-        combinedChainDataClient.getRecentChainData(),
-        attestationSubnetService,
-        syncCommitteeSubnetService,
-        dataColumnSidecarSubnetService,
-        gossipEncoding,
-        config.getGossipConfigurator(),
-        processedAttestationSubscriptionProvider,
-        dasTotalCustodyGroupCount.orElse(UInt64.ZERO).intValue(),
-        config.isAllTopicsFilterEnabled());
+    final ActiveEth2P2PNetwork activeEth2P2PNetwork =
+        new ActiveEth2P2PNetwork(
+            config.getSpec(),
+            asyncRunner,
+            network,
+            eth2PeerManager,
+            gossipForkManager,
+            eventChannels,
+            combinedChainDataClient.getRecentChainData(),
+            attestationSubnetService,
+            syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
+            gossipEncoding,
+            config.getGossipConfigurator(),
+            processedAttestationSubscriptionProvider,
+            dasTotalCustodyGroupCount.orElse(UInt64.ZERO).intValue(),
+            config.isAllTopicsFilterEnabled());
+    activeEth2P2PNetworkReference.set(activeEth2P2PNetwork);
+    return activeEth2P2PNetwork;
   }
 
   private GossipForkManager buildGossipForkManager(
@@ -488,7 +498,8 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService,
-      final SubnetSubscriptionService dataColumnSidecarSubnetService) {
+      final SubnetSubscriptionService dataColumnSidecarSubnetService,
+      final AtomicReference<ActiveEth2P2PNetwork> activeEth2P2PNetworkReference) {
     final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
         new DefaultReputationManager(
@@ -570,6 +581,9 @@ public class Eth2P2PNetworkBuilder {
                         config.getTargetSubnetSubscriberCount(),
                         subnetPeerCountGauge),
                 reputationManager,
+                timeProvider,
+                activeEth2P2PNetworkReference,
+                nodeIdToDataColumnSidecarSubnetsCalculator,
                 Collections::shuffle))
         .discoveryConfig(discoConfig)
         .p2pConfig(networkConfig)
