@@ -156,9 +156,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
     // Requesting 5 blocks
     verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
-    // Request cancelled
-    verify(peer, times(1))
-        .adjustBlocksRequest(eq(maybeRequestKey.orElseThrow()), eq(Long.valueOf(0)));
+    // Be protective: do not adjust due to error
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     // Check that we only asked for the first block
     verify(recentChainData, times(1)).retrieveSignedBlockByRoot(any());

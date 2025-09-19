@@ -156,7 +156,6 @@ public class BeaconBlocksByRangeMessageHandler
               callback.completeSuccessfully();
             },
             error -> {
-              peer.adjustBlocksRequest(maybeRequestKey.get(), 0);
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
