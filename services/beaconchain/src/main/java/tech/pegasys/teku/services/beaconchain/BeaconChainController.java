@@ -241,7 +241,6 @@ import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
@@ -1183,15 +1182,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
-    earliestAvailableBlockSlot =
-        new EarliestAvailableBlockSlot(
-            storageQueryChannel,
-            timeProvider,
-            beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency());
-
     combinedChainDataClient =
         new CombinedChainDataClient(
-            recentChainData, storageQueryChannel, spec, earliestAvailableBlockSlot);
+            recentChainData, storageQueryChannel, spec);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1585,8 +1578,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               new CombinedChainDataClient(
                   recentChainData,
                   throttlingStorageQueryChannel,
-                  spec,
-                  earliestAvailableBlockSlot));
+                  spec));
     }
 
     this.p2pNetwork =

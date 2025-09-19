@@ -60,8 +60,7 @@ class CombinedChainDataClientTest {
       new CombinedChainDataClient(
           recentChainData,
           historicalChainData,
-          spec,
-          new EarliestAvailableBlockSlot(historicalChainData, new SystemTimeProvider(), 0));
+          spec);
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();

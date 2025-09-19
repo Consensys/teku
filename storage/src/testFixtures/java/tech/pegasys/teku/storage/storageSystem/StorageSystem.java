@@ -31,7 +31,6 @@ import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
@@ -123,8 +122,7 @@ public class StorageSystem implements AutoCloseable {
         new CombinedChainDataClient(
             recentChainData,
             chainStorageServer,
-            spec,
-            new EarliestAvailableBlockSlot(chainStorageServer, new SystemTimeProvider(), 0));
+            spec);
 
     final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
 

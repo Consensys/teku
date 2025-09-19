@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class StateSelectorFactoryTest {
@@ -145,8 +144,7 @@ public class StateSelectorFactoryTest {
         new CombinedChainDataClient(
             recentChainData,
             historicalChainData,
-            spec,
-            new EarliestAvailableBlockSlot(historicalChainData, new SystemTimeProvider(), 0));
+            spec);
     final StateSelectorFactory factory = new StateSelectorFactory(spec, client1);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.isPreForkChoice()).thenReturn(true);
