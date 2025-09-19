@@ -166,7 +166,8 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final boolean optimisticallyAccept =
           payloadExecutor
               .get()
-              .optimisticallyExecute(state.getLatestExecutionPayloadHeader(), payloadToExecute);
+              .optimisticallyExecute(
+                  state.getLatestExecutionPayloadHeaderRequired(), payloadToExecute);
       if (!optimisticallyAccept) {
         throw new BlockProcessingException("Execution payload was not optimistically accepted");
       }
@@ -181,7 +182,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     if (miscHelpersBellatrix.isMergeTransitionComplete(state)) {
       if (!executionPayloadHeader
           .getParentHash()
-          .equals(state.getLatestExecutionPayloadHeader().getBlockHash())) {
+          .equals(state.getLatestExecutionPayloadHeaderRequired().getBlockHash())) {
         throw new BlockProcessingException(
             "Execution payload parent hash does not match previous execution payload header");
       }
