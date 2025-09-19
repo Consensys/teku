@@ -326,7 +326,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile AttestationManager attestationManager;
   protected volatile SignatureVerificationService signatureVerificationService;
   protected volatile CombinedChainDataClient combinedChainDataClient;
-  protected volatile EarliestAvailableBlockSlot earliestAvailableBlockSlot;
   protected volatile Eth1DataCache eth1DataCache;
   protected volatile SlotProcessor slotProcessor;
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
