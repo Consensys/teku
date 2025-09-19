@@ -134,12 +134,25 @@ class ConnectionManagerTest {
     connectionFuture1.completeExceptionally(new RuntimeException("Nope"));
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    asyncRunner.executeQueuedActions();
+
+    // time hasn't advanced enough to trigger a retry
+    asyncRunner.executeDueActions();
+    verify(network, times(1)).connect(PEER1);
+
+    // advance time enough to trigger a retry
+    timeProvider.advanceTimeBySeconds(3);
+    asyncRunner.executeDueActions();
     verify(network, times(2)).connect(PEER1);
 
     peer.disconnectImmediately(Optional.empty(), true);
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    asyncRunner.executeQueuedActions();
+    // time hasn't advanced enough to trigger a retry
+    asyncRunner.executeDueActions();
+    verify(network, times(2)).connect(PEER1);
+
+    // advance time enough to trigger a retry
+    timeProvider.advanceTimeBySeconds(9);
+    asyncRunner.executeDueActions();
     verify(network, times(3)).connect(PEER1);
   }
 
