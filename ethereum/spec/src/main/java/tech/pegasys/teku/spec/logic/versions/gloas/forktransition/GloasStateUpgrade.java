@@ -66,8 +66,11 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
                       specConfig.getGloasForkVersion(),
                       epoch));
 
-              state.setLatestExecutionPayloadHeader(
-                  schemaDefinitions.getExecutionPayloadHeaderSchema().getDefault());
+              // Removed `latest_execution_payload_header` in favour of
+              // `latest_execution_payload_bid
+              state.setLatestExecutionPayloadBid(
+                  schemaDefinitions.getExecutionPayloadBidSchema().getDefault());
+
               state.setNextWithdrawalValidatorIndex(preStateFulu.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateFulu.getNextWithdrawalIndex());
               state.setHistoricalSummaries(preStateFulu.getHistoricalSummaries());
@@ -83,8 +86,6 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setPendingConsolidations(preStateFulu.getPendingConsolidations());
               state.setProposerLookahead(preStateFulu.getProposerLookahead());
               // New in Gloas
-              state.setLatestExecutionPayloadBid(
-                  schemaDefinitions.getExecutionPayloadBidSchema().getDefault());
               final SszBitvector executionPayloadAvailability =
                   schemaDefinitions
                       .getExecutionPayloadAvailabilitySchema()
@@ -102,7 +103,7 @@ public class GloasStateUpgrade implements StateUpgrade<BeaconStateFulu> {
               state.setBuilderPendingWithdrawals(
                   schemaDefinitions.getBuilderPendingWithdrawalsSchema().getDefault());
               state.setLatestBlockHash(
-                  preStateFulu.getLatestExecutionPayloadHeader().getBlockHash());
+                  preStateFulu.getLatestExecutionPayloadHeaderRequired().getBlockHash());
               state.setLatestWithdrawalsRoot(Bytes32.ZERO);
             });
   }
