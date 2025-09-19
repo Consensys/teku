@@ -80,6 +80,8 @@ public class ActiveEth2P2PNetworkTest {
       new SubnetSubscriptionService();
   private final SubnetSubscriptionService dataColumnSidecarCommitteeSubnetService =
       new SubnetSubscriptionService();
+  private final SubnetSubscriptionService executionProofCommitteeSubnetService =
+      new SubnetSubscriptionService();
   private RecentChainData recentChainData;
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final GossipConfigurator gossipConfigurator = GossipConfigurator.NOOP;
@@ -451,6 +453,7 @@ public class ActiveEth2P2PNetworkTest {
         attestationSubnetService,
         syncCommitteeSubnetService,
         dataColumnSidecarCommitteeSubnetService,
+        executionProofCommitteeSubnetService,
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider,

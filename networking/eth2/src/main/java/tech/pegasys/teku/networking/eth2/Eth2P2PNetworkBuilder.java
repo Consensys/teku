@@ -49,6 +49,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.DataColumnSidecarSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.ExecutionProofSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeIdToDataColumnSidecarSubnetsCalculator;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopicProvider;
@@ -85,6 +86,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -146,6 +148,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<ValidatableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
+  protected OperationProcessor<ExecutionProof> executionProofOperationProcessor;
   protected StatusMessageFactory statusMessageFactory;
   protected KZG kzg;
   protected boolean recordMessageArrival;
@@ -167,6 +170,7 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService dataColumnSidecarSubnetService =
         new SubnetSubscriptionService();
+    final SubnetSubscriptionService executionProofSubnetService = new SubnetSubscriptionService();
     final DiscoveryNodeIdExtractor discoveryNodeIdExtractor = new LibP2PDiscoveryNodeIdExtractor();
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
@@ -215,7 +219,11 @@ public class Eth2P2PNetworkBuilder {
     final GossipEncoding gossipEncoding = config.getGossipEncoding();
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network =
-        buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
+        buildNetwork(
+            gossipEncoding,
+            syncCommitteeSubnetService,
+            dataColumnSidecarSubnetService,
+            executionProofSubnetService);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
@@ -230,6 +238,7 @@ public class Eth2P2PNetworkBuilder {
         attestationSubnetService,
         syncCommitteeSubnetService,
         dataColumnSidecarSubnetService,
+        executionProofSubnetService,
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
@@ -379,7 +388,9 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedContributionAndProofProcessor,
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
-              debugDataDumper);
+              debugDataDumper,
+              executionProofOperationProcessor,
+              config.isExecutionProofTopicEnabled());
       case FULU ->
           new GossipForkSubscriptionsFulu(
               forkAndSpecMilestone.getFork(),
@@ -401,7 +412,9 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
-              dasGossipLogger);
+              dasGossipLogger,
+              executionProofOperationProcessor,
+              config.isExecutionProofTopicEnabled());
       case GLOAS ->
           new GossipForkSubscriptionsGloas(
               forkAndSpecMilestone.getFork(),
@@ -423,7 +436,9 @@ public class Eth2P2PNetworkBuilder {
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
               debugDataDumper,
-              dasGossipLogger);
+              dasGossipLogger,
+              executionProofOperationProcessor,
+              config.isExecutionProofTopicEnabled());
     };
   }
 
@@ -453,9 +468,11 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
-              bpo);
+              bpo,
+              config.isExecutionProofTopicEnabled());
       case GLOAS ->
           new GossipForkSubscriptionsGloasBpo(
               forkAndSpecMilestone.getFork(),
@@ -476,9 +493,11 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
-              bpo);
+              bpo,
+              config.isExecutionProofTopicEnabled());
       default ->
           throw new IllegalStateException(
               "BPO is not supported for: " + forkAndSpecMilestone.getSpecMilestone());
@@ -488,7 +507,8 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService,
-      final SubnetSubscriptionService dataColumnSidecarSubnetService) {
+      final SubnetSubscriptionService dataColumnSidecarSubnetService,
+      final SubnetSubscriptionService executionProofSubnetService) {
     final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
         new DefaultReputationManager(
@@ -498,7 +518,7 @@ public class Eth2P2PNetworkBuilder {
             combinedChainDataClient.getRecentChainData()::getMilestoneByForkDigest);
     final GossipTopicFilter gossipTopicsFilter =
         new Eth2GossipTopicFilter(
-            combinedChainDataClient.getRecentChainData(), gossipEncoding, spec);
+            combinedChainDataClient.getRecentChainData(), gossipEncoding, spec, config);
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
 
@@ -527,6 +547,9 @@ public class Eth2P2PNetworkBuilder {
             combinedChainDataClient.getRecentChainData(), gossipEncoding);
     final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
         new DataColumnSidecarSubnetTopicProvider(
+            combinedChainDataClient.getRecentChainData(), gossipEncoding);
+    final ExecutionProofSubnetTopicProvider executionProofSubnetTopicProvider =
+        new ExecutionProofSubnetTopicProvider(
             combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
     final TargetPeerRange targetPeerRange =
@@ -567,6 +590,8 @@ public class Eth2P2PNetworkBuilder {
                         syncCommitteeSubnetService,
                         dataColumnSidecarSubnetTopicProvider,
                         dataColumnSidecarSubnetService,
+                        executionProofSubnetTopicProvider,
+                        executionProofSubnetService,
                         config.getTargetSubnetSubscriberCount(),
                         subnetPeerCountGauge),
                 reputationManager,
@@ -744,6 +769,13 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
     checkNotNull(dataColumnSidecarOperationProcessor);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedExecutionProofOperationProcessor(
+      final OperationProcessor<ExecutionProof> executionProofOperationProcessor) {
+    checkNotNull(executionProofOperationProcessor);
+    this.executionProofOperationProcessor = executionProofOperationProcessor;
     return this;
   }
 

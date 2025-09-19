@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -43,6 +44,10 @@ public interface GossipForkSubscriptions {
 
   default SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
     return SafeFuture.COMPLETE;
+  }
+
+  default void publishExecutionProof(final ExecutionProof executionProof) {
+    // since Electra for now
   }
 
   void subscribeToAttestationSubnetId(int subnetId);
@@ -83,5 +88,13 @@ public interface GossipForkSubscriptions {
 
   default void unsubscribeFromDataColumnSidecarSubnet(final int subnetId) {
     // since Fulu
+  }
+
+  default void subscribeToExecutionProofSubnet(final int subnetId) {
+    // since Electra
+  }
+
+  default void unsubscribeFromExecutionProofSubnet(final int subnetId) {
+    // since Electra
   }
 }

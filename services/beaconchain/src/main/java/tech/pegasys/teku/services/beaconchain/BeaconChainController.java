@@ -106,6 +106,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.services.timer.TimerService;
+import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -192,6 +193,8 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -221,6 +224,7 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -356,6 +360,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
+  protected volatile ExecutionProofManager executionProofManager;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<RecoveringSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -461,6 +466,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blobSidecar ->
             recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
+    executionProofManager.subscribeToValidExecutionProofs(
+        (executionProof, remoteOrigin) ->
+            LOG.debug("Received valid execution proof: {}", executionProof));
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();
     if (network.isPresent() && network.get() == Eth2Network.EPHEMERY) {
@@ -613,6 +621,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlobSidecarManager();
     initDasSamplerManager();
     initDataColumnSidecarManager();
+    initZkChain();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
@@ -661,6 +670,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initExecutionLayer() {
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
+  }
+
+  protected void initZkChain() {
+    LOG.debug("BeaconChainController.initZkChain()");
+    final ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
+    // comment for now this will be used in the future
+    //      final ExecutionProofGossipChannel executionProofGossipChannel =
+    //      eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
+    if (zkConfig.isStatelessValidationEnabled()) {
+      final ExecutionProofGossipValidator executionProofGossipValidator =
+          ExecutionProofGossipValidator.create();
+
+      executionProofManager = new ExecutionProofManagerImpl(executionProofGossipValidator);
+
+    } else {
+      executionProofManager = ExecutionProofManager.NOOP;
+    }
   }
 
   protected void initKzg() {
@@ -1602,6 +1628,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedDataColumnSidecarOperationProcessor(
                 dataColumnSidecarManager::onDataColumnSidecarGossip)
+            .gossipedExecutionProofOperationProcessor(executionProofManager::onExecutionProofGossip)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
