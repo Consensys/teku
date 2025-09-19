@@ -160,7 +160,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
       return;
     }
     final UInt64 currentTime = timeProvider.getTimeInMillis();
-    LOG.trace(
+    LOG.debug(
         "Checking pending requests: {} requests, {} rebuild tasks",
         requests.size(),
         rebuildTasks.size());
@@ -186,12 +186,14 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
                               sidecarDB,
                               miscHelpersFulu,
                               kzg));
+              LOG.debug(
+                  "Rebuilding columns for slot {} root {}",
+                  request.getSlot(),
+                  request.getBlockRoot());
               rebuildColumnsTask.addTask(request);
             });
     rebuildTasks.entrySet().removeIf(entry -> entry.getValue().isDone(currentTime));
 
     rebuildTasks.forEach((key, value) -> value.checkQueryResult());
-
-    LOG.trace("after cleanup: {} requests, {} rebuild tasks", requests.size(), rebuildTasks.size());
   }
 }

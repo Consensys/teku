@@ -70,7 +70,7 @@ class RebuildColumnsTask {
       final DataColumnSidecar sidecar = sidecarMap.get(pendingRequest.getIndex().intValue());
       if (sidecar != null
           && sidecar.getSlotAndBlockRoot().equals(pendingRequest.getSlotAndBlockRoot())) {
-        LOG.trace(
+        LOG.debug(
             "Pending request (slotAndBlock: {}) for column {} matched completed rebuild",
             pendingRequest.getSlotAndBlockRoot(),
             pendingRequest.getIndex());
@@ -81,7 +81,7 @@ class RebuildColumnsTask {
         // TODO all that i could do at this point would be fail the task, or upstream it could be
         // added to a new request
         pendingRequest.getFuture().cancel(true);
-        LOG.trace(
+        LOG.debug(
             "Pending request (slotAndBlock: {}) for column {} was not satisfied by finished rebuild for {}",
             pendingRequest.getSlotAndBlockRoot(),
             pendingRequest.getIndex(),
@@ -97,7 +97,7 @@ class RebuildColumnsTask {
         tasks.add(pendingRequest);
       } else {
         // we've already got the required data for this specific request, so can complete it
-        LOG.trace(
+        LOG.debug(
             "Pending request (slotAndBlock: {}) for column {} was found while preparing to rebuild",
             pendingRequest.getSlotAndBlockRoot(),
             pendingRequest.getIndex());
@@ -123,7 +123,7 @@ class RebuildColumnsTask {
     }
 
     if (sidecarMap.size() >= minimumColumnsForRebuild) {
-      LOG.trace("Determined we have sufficient columns to rebuild columns {}", slotAndBlockRoot);
+      LOG.debug("Determined we have sufficient columns to rebuild columns {}", slotAndBlockRoot);
       isReadyToRebuild = true;
       rebuild();
     } else {
@@ -132,7 +132,7 @@ class RebuildColumnsTask {
       query =
           sidecarDB
               .getColumnIdentifiers(slotAndBlockRoot)
-              .thenAccept(this::fetchMissing)
+              .thenAccept(this::fetchColumnsFromStorage)
               .exceptionally(
                   error -> {
                     LOG.error(
@@ -162,8 +162,6 @@ class RebuildColumnsTask {
               sidecar ->
                   tasks.stream()
                       .filter(task -> !task.getFuture().isDone())
-                      .filter(
-                          task -> sidecar.getSlotAndBlockRoot().equals(task.getSlotAndBlockRoot()))
                       .filter(task -> sidecar.getIndex().equals(task.getIndex()))
                       .forEach(task -> task.getFuture().complete(sidecar)));
       reconstructedSidecars.forEach((k, v) -> sidecarMap.putIfAbsent(k.intValue(), v));
@@ -175,7 +173,12 @@ class RebuildColumnsTask {
   }
 
   // chained from checkQueryResult
-  private void fetchMissing(final List<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifiers) {
+  private void fetchColumnsFromStorage(
+      final List<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifiers) {
+    if (dataColumnSlotAndIdentifiers.isEmpty()) {
+      LOG.trace("Found no data columns for {}", slotAndBlockRoot);
+      return;
+    }
     LOG.trace(
         "Fetching available data columns for slot {}, {} candidates",
         slotAndBlockRoot,
@@ -185,18 +188,18 @@ class RebuildColumnsTask {
         LOG.trace("attempting to fetch column {}", dataColumnSlotAndIdentifier);
         sidecarDB
             .getSidecar(dataColumnSlotAndIdentifier)
-            .thenPeek(
-                result ->
-                    LOG.trace(
-                        "{}: {}",
-                        dataColumnSlotAndIdentifier,
-                        result.isPresent() ? "found" : "not found"))
             .thenAccept(
                 maybeSidecar ->
-                    maybeSidecar.ifPresent(
-                        sidecar ->
-                            sidecarMap.putIfAbsent(
-                                dataColumnSlotAndIdentifier.columnIndex().intValue(), sidecar)))
+                    maybeSidecar.ifPresentOrElse(
+                        sidecar -> {
+                          LOG.trace(
+                              "root {} rebuild - found sidecar {}",
+                              slotAndBlockRoot.getBlockRoot(),
+                              dataColumnSlotAndIdentifier.columnIndex().intValue());
+                          sidecarMap.putIfAbsent(
+                              dataColumnSlotAndIdentifier.columnIndex().intValue(), sidecar);
+                        },
+                        () -> LOG.trace("sidecar not found {}", dataColumnSlotAndIdentifier)))
             .finishError(LOG);
       } else {
         LOG.trace(
