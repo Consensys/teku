@@ -35,8 +35,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
@@ -50,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingDepos
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -67,15 +66,15 @@ import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequests
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class BlockProcessorElectra extends BlockProcessorDeneb {
 
-  private final SpecConfigElectra specConfigElectra;
   private final BeaconStateAccessorsElectra beaconStateAccessorsElectra;
   private final SchemaDefinitionsElectra schemaDefinitionsElectra;
   private final ExecutionRequestsDataCodec executionRequestsDataCodec;
-  private final ExecutionRequestsProcessorElectra executionRequestsProcessorElectra;
+  private final ExecutionRequestsProcessor executionRequestsProcessor;
 
   public BlockProcessorElectra(
       final SpecConfigElectra specConfig,
@@ -90,8 +89,9 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
       final SchemaDefinitionsElectra schemaDefinitions,
+      final WithdrawalsHelpersElectra withdrawalsHelpers,
       final ExecutionRequestsDataCodec executionRequestsDataCodec,
-      final ExecutionRequestsProcessorElectra executionRequestsProcessorElectra) {
+      final ExecutionRequestsProcessorElectra executionRequestsProcessor) {
     super(
         specConfig,
         predicates,
@@ -104,12 +104,12 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         attestationUtil,
         validatorsUtil,
         operationValidator,
-        schemaDefinitions);
-    this.specConfigElectra = specConfig;
+        schemaDefinitions,
+        withdrawalsHelpers);
     this.beaconStateAccessorsElectra = beaconStateAccessors;
     this.schemaDefinitionsElectra = schemaDefinitions;
     this.executionRequestsDataCodec = executionRequestsDataCodec;
-    this.executionRequestsProcessorElectra = executionRequestsProcessorElectra;
+    this.executionRequestsProcessor = executionRequestsProcessor;
   }
 
   @Override
@@ -158,11 +158,10 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
             .orElseThrow(
                 () -> new BlockProcessingException("Execution requests expected as part of body"));
 
-    executionRequestsProcessorElectra.processDepositRequests(
-        state, executionRequests.getDeposits());
-    executionRequestsProcessorElectra.processWithdrawalRequests(
+    executionRequestsProcessor.processDepositRequests(state, executionRequests.getDeposits());
+    executionRequestsProcessor.processWithdrawalRequests(
         state, executionRequests.getWithdrawals(), validatorExitContextSupplier);
-    executionRequestsProcessorElectra.processConsolidationRequests(
+    executionRequestsProcessor.processConsolidationRequests(
         state, executionRequests.getConsolidations());
   }
 
@@ -189,20 +188,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
           body.getDeposits().isEmpty(),
           "process_operations: Verify that former deposit mechanism has been disabled");
     }
-  }
-
-  // process_withdrawals
-  @Override
-  public void processWithdrawals(
-      final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
-      throws BlockProcessingException {
-    final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(genericState);
-    expectedWithdrawals.processWithdrawals(
-        genericState,
-        payloadSummary,
-        schemaDefinitionsElectra,
-        beaconStateMutators,
-        specConfigElectra);
   }
 
   @Override

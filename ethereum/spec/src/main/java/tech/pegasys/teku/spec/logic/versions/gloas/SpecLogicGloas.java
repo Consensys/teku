@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
@@ -45,11 +46,13 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsG
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class SpecLogicGloas extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
+  private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
 
   private SpecLogicGloas(
@@ -64,6 +67,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorGloas epochProcessor,
+      final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
       final BlockProcessorGloas blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
@@ -92,6 +96,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
+    this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
   }
 
   public static SpecLogicGloas create(
@@ -157,6 +162,9 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+    final WithdrawalsHelpersGloas withdrawalsHelpers =
+        new WithdrawalsHelpersGloas(
+            schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);
     final ExecutionRequestsProcessorElectra executionRequestsProcessor =
         new ExecutionRequestsProcessorElectra(
             schemaDefinitions,
@@ -180,6 +188,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             validatorsUtil,
             operationValidator,
             schemaDefinitions,
+            withdrawalsHelpers,
             executionRequestsDataCodec,
             executionRequestsProcessor);
     final ForkChoiceUtil forkChoiceUtil =
@@ -206,6 +215,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         operationValidator,
         validatorStatusFactory,
         epochProcessor,
+        withdrawalsHelpers,
         executionRequestsProcessor,
         blockProcessor,
         forkChoiceUtil,
@@ -229,6 +239,11 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
+  }
+
+  @Override
+  public Optional<WithdrawalsHelpers> getWithdrawalsHelpers() {
+    return withdrawalsHelpers;
   }
 
   @Override

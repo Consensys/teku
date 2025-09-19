@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.block;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -21,16 +22,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BlockProcessorGloas extends BlockProcessorFulu {
@@ -48,6 +52,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
       final SchemaDefinitionsGloas schemaDefinitions,
+      final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsDataCodec executionRequestsDataCodec,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor) {
     super(
@@ -63,8 +68,32 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         validatorsUtil,
         operationValidator,
         schemaDefinitions,
+        withdrawalsHelpers,
         executionRequestsDataCodec,
         executionRequestsProcessor);
+  }
+
+  @Override
+  public void executionProcessing(
+      final MutableBeaconState genericState,
+      final BeaconBlockBody beaconBlockBody,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException {
+    // only withdrawals
+    safelyProcess(() -> processWithdrawals(genericState));
+  }
+
+  @Override
+  public void processWithdrawals(final MutableBeaconState state) {
+    withdrawalsHelpers.processWithdrawals(state);
+  }
+
+  @Override
+  public void processExecutionPayload(
+      final MutableBeaconState genericState,
+      final BeaconBlockBody beaconBlockBody,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor) {
+    throw new UnsupportedOperationException("process_execution_payload has been removed in Gloas");
   }
 
   @Override

@@ -862,11 +862,9 @@ public class Spec {
   }
 
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState state) {
-    if (!atState(state).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      return Optional.empty();
-    }
-    return Optional.of(
-        atState(state).getBlockProcessor().getExpectedWithdrawals(state).getWithdrawalList());
+    return atState(state)
+        .getWithdrawalsHelpers()
+        .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
   }
 
   // Block Processor Utils

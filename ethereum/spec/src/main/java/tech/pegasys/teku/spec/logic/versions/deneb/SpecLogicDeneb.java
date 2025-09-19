@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellat
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.withdrawals.WithdrawalsHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.forktransition.DenebStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
@@ -51,6 +53,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 public class SpecLogicDeneb extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
+  private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
 
   private SpecLogicDeneb(
       final Predicates predicates,
@@ -64,6 +67,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorCapella epochProcessor,
+      final WithdrawalsHelpersCapella withdrawalsHelpers,
       final BlockProcessorCapella blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -90,6 +94,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
+    this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
   }
 
   public static SpecLogicDeneb create(
@@ -152,6 +157,9 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+    final WithdrawalsHelpersCapella withdrawalsHelpers =
+        new WithdrawalsHelpersCapella(
+            schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);
     final BlockProcessorDeneb blockProcessor =
         new BlockProcessorDeneb(
             config,
@@ -165,7 +173,8 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             operationValidator,
-            schemaDefinitions);
+            schemaDefinitions,
+            withdrawalsHelpers);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
@@ -190,6 +199,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
         operationValidator,
         validatorStatusFactory,
         epochProcessor,
+        withdrawalsHelpers,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -212,6 +222,11 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
+  }
+
+  @Override
+  public Optional<WithdrawalsHelpers> getWithdrawalsHelpers() {
+    return withdrawalsHelpers;
   }
 
   @Override
