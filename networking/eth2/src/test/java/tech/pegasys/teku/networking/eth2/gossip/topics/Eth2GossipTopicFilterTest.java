@@ -21,6 +21,7 @@ import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getExecutionProofSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
@@ -239,6 +241,32 @@ class Eth2GossipTopicFilterTest {
         GossipTopics.getTopic(bpoForkDigest, GossipTopicName.BEACON_BLOCK, SSZ_SNAPPY);
     assertThat(filter.isRelevantTopic(bpoTopic)).isTrue();
   }
+
+    @TestTemplate
+    void shouldNotConsiderExecutionProofSubnetsRelevantByDefault() {
+        assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
+        for(int i = 0; i< Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+            assertThat(
+                    filter.isRelevantTopic(
+                            getTopicName(getExecutionProofSubnetTopicName( i))))
+                    .isFalse();
+        }
+    }
+
+    @TestTemplate
+    void shouldConsiderExecutionProofSubnetsRelevantWhenEnabled() {
+        P2PConfig p2pConfigOverwritten = P2PConfig.builder().specProvider(spec).executionProofTopicEnabled(true).build();
+        filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfigOverwritten);
+        assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
+        for(int i = 0; i< Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+            assertThat(
+                    filter.isRelevantTopic(
+                            getTopicName(getExecutionProofSubnetTopicName( i))))
+                    .isTrue();
+        }
+    }
+
+
 
   private String getTopicName(final GossipTopicName name) {
     return GossipTopics.getTopic(currentForkDigest, name, SSZ_SNAPPY);
