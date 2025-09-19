@@ -193,6 +193,6 @@ class GenesisGeneratorTest {
     final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isInstanceOf(BeaconStateBellatrix.class);
     assertThat(BeaconStateBellatrix.required(actualState).getLatestExecutionPayloadHeader())
-        .isEqualTo(payloadHeader);
+        .hasValue(payloadHeader);
   }
 }

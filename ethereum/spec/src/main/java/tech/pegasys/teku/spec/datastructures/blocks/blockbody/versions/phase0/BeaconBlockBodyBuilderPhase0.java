@@ -148,14 +148,14 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   public BeaconBlockBodyBuilder signedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
     // No SignedExecutionPayloadBid in phase 0
-    return null;
+    return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder payloadAttestations(
       final SszList<PayloadAttestation> payloadAttestations) {
     // No PayloadAttestation in phase 0
-    return null;
+    return this;
   }
 
   protected void validate() {

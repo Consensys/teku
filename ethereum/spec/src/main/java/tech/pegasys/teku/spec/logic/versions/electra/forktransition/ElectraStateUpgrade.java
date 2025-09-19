@@ -77,7 +77,7 @@ public class ElectraStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                       epoch));
 
               state.setLatestExecutionPayloadHeader(
-                  preStateDeneb.getLatestExecutionPayloadHeader());
+                  preStateDeneb.getLatestExecutionPayloadHeaderRequired());
               state.setNextWithdrawalValidatorIndex(
                   preStateDeneb.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateDeneb.getNextWithdrawalIndex());

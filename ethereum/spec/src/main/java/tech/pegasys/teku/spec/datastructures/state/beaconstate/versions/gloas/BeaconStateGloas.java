@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 
@@ -43,6 +44,12 @@ public interface BeaconStateGloas extends BeaconStateFulu {
             () ->
                 new IllegalArgumentException(
                     "Expected a Gloas state but got: " + state.getClass().getSimpleName()));
+  }
+
+  // `latest_execution_payload_header` has been removed in Gloas
+  @Override
+  default Optional<ExecutionPayloadHeader> getLatestExecutionPayloadHeader() {
+    return Optional.empty();
   }
 
   @SuppressWarnings("unused")
