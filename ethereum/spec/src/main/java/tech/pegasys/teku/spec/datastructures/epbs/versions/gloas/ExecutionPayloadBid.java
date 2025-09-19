@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.gloas;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container9;
@@ -22,9 +23,9 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ExecutionPayloadHeaderGloasImpl
+public class ExecutionPayloadBid
     extends Container9<
-        ExecutionPayloadHeaderGloasImpl,
+        ExecutionPayloadBid,
         SszBytes32,
         SszBytes32,
         SszBytes32,
@@ -33,95 +34,75 @@ public class ExecutionPayloadHeaderGloasImpl
         SszUInt64,
         SszUInt64,
         SszUInt64,
-        SszBytes32>
-    implements ExecutionPayloadHeaderGloas {
+        SszBytes32> {
 
-  protected ExecutionPayloadHeaderGloasImpl(
-      final ExecutionPayloadHeaderSchemaGloas schema, final TreeNode backingTree) {
+  protected ExecutionPayloadBid(
+      final ExecutionPayloadBidSchema schema,
+      final Bytes32 parentBlockHash,
+      final Bytes32 parentBlockRoot,
+      final Bytes32 blockHash,
+      final Bytes20 feeRecipient,
+      final UInt64 gasLimit,
+      final UInt64 builderIndex,
+      final UInt64 slot,
+      final UInt64 value,
+      final Bytes32 blobKzgCommitmentsRoot) {
+    super(
+        schema,
+        SszBytes32.of(parentBlockHash),
+        SszBytes32.of(parentBlockRoot),
+        SszBytes32.of(blockHash),
+        SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
+        SszUInt64.of(gasLimit),
+        SszUInt64.of(builderIndex),
+        SszUInt64.of(slot),
+        SszUInt64.of(value),
+        SszBytes32.of(blobKzgCommitmentsRoot));
+  }
+
+  protected ExecutionPayloadBid(
+      final ExecutionPayloadBidSchema schema, final TreeNode backingTree) {
     super(schema, backingTree);
   }
 
-  public ExecutionPayloadHeaderGloasImpl(
-      final ExecutionPayloadHeaderSchemaGloas schema,
-      final SszBytes32 parentBlockHash,
-      final SszBytes32 parentBlockRoot,
-      final SszBytes32 blockHash,
-      final SszByteVector feeRecipient,
-      final SszUInt64 gasLimit,
-      final SszUInt64 builderIndex,
-      final SszUInt64 slot,
-      final SszUInt64 value,
-      final SszBytes32 blobKzgCommitmentsRoot) {
-    super(
-        schema,
-        parentBlockHash,
-        parentBlockRoot,
-        blockHash,
-        feeRecipient,
-        gasLimit,
-        builderIndex,
-        slot,
-        value,
-        blobKzgCommitmentsRoot);
-  }
-
-  @Override
   public Bytes32 getParentBlockHash() {
     return getField0().get();
   }
 
-  @Override
   public Bytes32 getParentBlockRoot() {
     return getField1().get();
   }
 
-  @Override
   public Bytes32 getBlockHash() {
     return getField2().get();
   }
 
-  @Override
-  public Bytes20 getFeeRecipient() {
-    return new Bytes20(getField3().getBytes());
+  public Eth1Address getFeeRecipient() {
+    return Eth1Address.fromBytes(getField3().getBytes());
   }
 
-  @Override
   public UInt64 getGasLimit() {
     return getField4().get();
   }
 
-  @Override
   public UInt64 getBuilderIndex() {
     return getField5().get();
   }
 
-  @Override
   public UInt64 getSlot() {
     return getField6().get();
   }
 
-  @Override
   public UInt64 getValue() {
     return getField7().get();
   }
 
-  @Override
   public Bytes32 getBlobKzgCommitmentsRoot() {
     return getField8().get();
   }
 
   @Override
-  public boolean isDefaultPayload() {
-    return isHeaderOfDefaultPayload();
-  }
-
-  @Override
-  public ExecutionPayloadHeaderSchemaGloas getSchema() {
-    return (ExecutionPayloadHeaderSchemaGloas) super.getSchema();
-  }
-
-  @Override
-  public boolean isHeaderOfDefaultPayload() {
-    return equals(getSchema().getHeaderOfDefaultPayload());
+  public ExecutionPayloadBidSchema getSchema() {
+    return (ExecutionPayloadBidSchema) super.getSchema();
   }
 }

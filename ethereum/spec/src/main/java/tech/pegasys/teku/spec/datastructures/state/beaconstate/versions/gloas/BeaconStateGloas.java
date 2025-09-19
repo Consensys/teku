@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.BUILDER_PENDING_WITHDRAWALS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_BLOCK_HASH;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_WITHDRAWALS_ROOT;
 
 import com.google.common.base.MoreObjects;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateFulu;
 
@@ -56,6 +58,7 @@ public interface BeaconStateGloas extends BeaconStateFulu {
   static void describeCustomGloasFields(
       final MoreObjects.ToStringHelper stringBuilder, final BeaconStateGloas state) {
     BeaconStateFulu.describeCustomFuluFields(stringBuilder, state);
+    stringBuilder.add("latest_execution_payload_bid", state.getLatestExecutionPayloadBid());
     addItems(
         stringBuilder, "execution_payload_availability", state.getExecutionPayloadAvailability());
     addItems(stringBuilder, "builder_pending_payments", state.getBuilderPendingPayments());
@@ -78,6 +81,11 @@ public interface BeaconStateGloas extends BeaconStateFulu {
   @Override
   default Optional<BeaconStateGloas> toVersionGloas() {
     return Optional.of(this);
+  }
+
+  default ExecutionPayloadBid getLatestExecutionPayloadBid() {
+    final int index = getSchema().getFieldIndex(LATEST_EXECUTION_PAYLOAD_BID);
+    return getAny(index);
   }
 
   default SszBitvector getExecutionPayloadAvailability() {

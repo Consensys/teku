@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
@@ -37,7 +37,7 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
   @Override
   BeaconBlockBodySchemaGloas<?> getSchema();
 
-  SignedExecutionPayloadHeader getSignedExecutionPayloadHeader();
+  SignedExecutionPayloadBid getSignedExecutionPayloadBid();
 
   SszList<PayloadAttestation> getPayloadAttestations();
 
@@ -57,8 +57,8 @@ public interface BeaconBlockBodyGloas extends BeaconBlockBodyElectra {
   }
 
   @Override
-  default Optional<SignedExecutionPayloadHeader> getOptionalSignedExecutionPayloadHeader() {
-    return Optional.of(getSignedExecutionPayloadHeader());
+  default Optional<SignedExecutionPayloadBid> getOptionalSignedExecutionPayloadBid() {
+    return Optional.of(getSignedExecutionPayloadBid());
   }
 
   @Override

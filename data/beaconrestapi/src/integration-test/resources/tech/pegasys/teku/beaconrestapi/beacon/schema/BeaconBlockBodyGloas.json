@@ -1,7 +1,7 @@
 {
   "title" : "BeaconBlockBodyGloas",
   "type" : "object",
-  "required" : [ "randao_reveal", "eth1_data", "graffiti", "proposer_slashings", "attester_slashings", "attestations", "deposits", "voluntary_exits", "sync_aggregate", "bls_to_execution_changes", "signed_execution_payload_header", "payload_attestations" ],
+  "required" : [ "randao_reveal", "eth1_data", "graffiti", "proposer_slashings", "attester_slashings", "attestations", "deposits", "voluntary_exits", "sync_aggregate", "bls_to_execution_changes", "signed_execution_payload_bid", "payload_attestations" ],
   "properties" : {
     "randao_reveal" : {
       "type" : "string",
@@ -57,8 +57,8 @@
         "$ref" : "#/components/schemas/SignedBLSToExecutionChange"
       }
     },
-    "signed_execution_payload_header" : {
-      "$ref" : "#/components/schemas/SignedExecutionPayloadHeader"
+    "signed_execution_payload_bid" : {
+      "$ref" : "#/components/schemas/SignedExecutionPayloadBid"
     },
     "payload_attestations" : {
       "type" : "array",
