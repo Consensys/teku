@@ -288,9 +288,14 @@ public class ConnectionManager extends Service {
               if (lastAttempt == null) {
                 return 3;
               } else {
-                return Math.min(lastAttempt * 3, COOLDOWN_PERIOD.intValue());
+                return computeIncrease(lastAttempt);
               }
             }));
+  }
+
+  // separate method to make errorprone happy
+  private static int computeIncrease(final int lastAttempt) {
+    return Math.min(lastAttempt * 3, COOLDOWN_PERIOD.intValue());
   }
 
   public void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
