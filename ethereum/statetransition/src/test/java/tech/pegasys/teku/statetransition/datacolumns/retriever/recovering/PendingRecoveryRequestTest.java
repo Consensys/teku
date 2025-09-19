@@ -14,34 +14,117 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetrieverTest.CHECK_INTERVAL;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetrieverTest.RECOVERY_TIMEOUT;
 
+import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class PendingRecoveryRequestTest {
+  static final Duration DOWNLOAD_TIMEOUT = Duration.ofSeconds(5);
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1_000_000);
+  private final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar();
 
   @Test
-  void shouldCreatePendingRecoveryRequestAndCancelAfterTimeout() {
-    final PendingRecoveryRequest request = createPendingRecoveryRequest(Optional.empty());
-    request.checkTimeout(timeProvider.getTimeInMillis().plus(RECOVERY_TIMEOUT.toMillis()));
+  void checkTimeout_willNotTimeoutDownloadBeforeTime() {
+    final SafeFuture<DataColumnSidecar> downloadFuture = new SafeFuture<>();
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), downloadFuture);
+    final UInt64 lastMilliBeforeDownloadTimeout =
+        timeProvider.getTimeInMillis().plus(DOWNLOAD_TIMEOUT.toMillis()).minus(1);
+    request.checkTimeout(lastMilliBeforeDownloadTimeout);
+    assertThat(request.getFuture().isDone()).isFalse();
+    assertThat(downloadFuture.isDone()).isFalse();
+  }
 
+  @Test
+  void checkTimeout_willTimeoutIfNotDownloadedAtDownloadLimit() {
+    final SafeFuture<DataColumnSidecar> downloadFuture = new SafeFuture<>();
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), downloadFuture);
+    final UInt64 downloadTimeoutMillis =
+        timeProvider.getTimeInMillis().plus(DOWNLOAD_TIMEOUT.toMillis());
+    request.checkTimeout(downloadTimeoutMillis);
+    assertThat(request.getFuture().isDone()).isFalse();
+    assertThat(downloadFuture.isDone()).isTrue();
+  }
+
+  @Test
+  void checkTimeout_willNotTimeoutIfMarkedDone() {
+    final UInt64 timeoutMillis = timeProvider.getTimeInMillis().plus(RECOVERY_TIMEOUT.toMillis());
+    final SafeFuture<DataColumnSidecar> downloadFuture = new SafeFuture<>();
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), downloadFuture);
+
+    downloadFuture.complete(sidecar);
+    request.checkTimeout(timeoutMillis);
+    assertThat(downloadFuture).isCompletedWithValue(sidecar);
+    assertThat(request.getFuture()).isCompletedWithValue(sidecar);
+  }
+
+  @Test
+  void checkTimeout_willNotTimeoutBeforeTime() {
+    final SafeFuture<DataColumnSidecar> downloadFuture = new SafeFuture<>();
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), downloadFuture);
+    final UInt64 lastMilliBeforeRecoveryTimeout =
+        timeProvider.getTimeInMillis().plus(RECOVERY_TIMEOUT.toMillis()).minus(1);
+    request.checkTimeout(lastMilliBeforeRecoveryTimeout);
+    assertThat(request.getFuture().isDone()).isFalse();
+    assertThat(downloadFuture.isDone()).isTrue();
+  }
+
+  @Test
+  void checkTimeout_willTimeoutDownloadAndRecoveryAtLimit() {
+    final SafeFuture<DataColumnSidecar> downloadFuture = new SafeFuture<>();
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), downloadFuture);
+    final UInt64 timeout = timeProvider.getTimeInMillis().plus(RECOVERY_TIMEOUT.toMillis());
+    request.checkTimeout(timeout);
     assertThat(request.getFuture().isDone()).isTrue();
+    assertThat(downloadFuture.isDone()).isTrue();
+  }
+
+  @Test
+  void checkTimeout_willNotTimeoutDownloadIfDownloadIsDone() {
+    final UInt64 downloadTimeoutMillis =
+        timeProvider.getTimeInMillis().plus(DOWNLOAD_TIMEOUT.toMillis());
+    final SafeFuture<DataColumnSidecar> downloadFuture = new SafeFuture<>();
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), downloadFuture);
+    assertThat(request.getFuture().isDone()).isFalse();
+
+    downloadFuture.complete(sidecar);
+    request.checkTimeout(downloadTimeoutMillis);
+    assertThat(downloadFuture).isCompletedWithValue(sidecar);
+    assertThat(request.getFuture()).isCompletedWithValue(sidecar);
+  }
+
+  @Test
+  void shouldCompleteTaskIfDownloadCompletes() {
+    final SafeFuture<DataColumnSidecar> downloadFuture = new SafeFuture<>();
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), downloadFuture);
+    assertThat(request.getFuture().isDone()).isFalse();
+
+    downloadFuture.complete(sidecar);
+    assertThat(request.getFuture()).isCompletedWithValue(sidecar);
   }
 
   @Test
   void futureIsNotCompleteWhenDownloadFails() {
-    final PendingRecoveryRequest request = createPendingRecoveryRequest(Optional.empty());
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), new SafeFuture<>());
 
     request.getDownloadFuture().cancel(true);
 
@@ -52,7 +135,8 @@ public class PendingRecoveryRequestTest {
 
   @Test
   void allFuturesStoppedAfterRequestCancelled() {
-    final PendingRecoveryRequest request = createPendingRecoveryRequest(Optional.empty());
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.empty(), new SafeFuture<>());
 
     request.cancel();
 
@@ -66,7 +150,8 @@ public class PendingRecoveryRequestTest {
     final int column = 13;
     final DataColumnSlotAndIdentifier id =
         SidecarRetrieverTest.createId(dataStructureUtil.randomBeaconBlock(100), column);
-    final PendingRecoveryRequest request = createPendingRecoveryRequest(Optional.of(id));
+    final PendingRecoveryRequest request =
+        createPendingRecoveryRequest(Optional.of(id), new SafeFuture<>());
     assertThat(request.getSlot()).isEqualTo(id.getSlotAndBlockRoot().getSlot());
     assertThat(request.getBlockRoot()).isEqualTo(id.getSlotAndBlockRoot().getBlockRoot());
     assertThat(request.getSlotAndBlockRoot()).isEqualTo(id.getSlotAndBlockRoot());
@@ -74,10 +159,11 @@ public class PendingRecoveryRequestTest {
   }
 
   final PendingRecoveryRequest createPendingRecoveryRequest(
-      final Optional<DataColumnSlotAndIdentifier> maybeId) {
+      final Optional<DataColumnSlotAndIdentifier> maybeId,
+      final SafeFuture<DataColumnSidecar> downloadFuture) {
     final DataColumnSlotAndIdentifier id =
         maybeId.orElse(SidecarRetrieverTest.createId(dataStructureUtil.randomBeaconBlock(), 1));
     return new PendingRecoveryRequest(
-        id, new SafeFuture<>(), timeProvider.getTimeInMillis(), RECOVERY_TIMEOUT, CHECK_INTERVAL);
+        id, downloadFuture, timeProvider.getTimeInMillis(), RECOVERY_TIMEOUT, DOWNLOAD_TIMEOUT);
   }
 }
