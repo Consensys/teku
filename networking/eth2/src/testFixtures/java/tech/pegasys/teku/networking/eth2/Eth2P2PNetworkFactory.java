@@ -273,10 +273,7 @@ public class Eth2P2PNetworkFactory {
         final PeerPools peerPools = new PeerPools();
         final ReputationManager reputationManager =
             new DefaultReputationManager(
-                metricsSystem,
-                StubTimeProvider.withTimeInSeconds(1000),
-                Constants.REPUTATION_MANAGER_CAPACITY,
-                peerPools);
+                metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
         final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
@@ -350,6 +347,7 @@ public class Eth2P2PNetworkFactory {
                 .discoveryConfig(config.getDiscoveryConfig())
                 .p2pConfig(config.getNetworkConfig())
                 .spec(config.getSpec())
+                .timeProvider(timeProvider)
                 .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
                 .build();
 
