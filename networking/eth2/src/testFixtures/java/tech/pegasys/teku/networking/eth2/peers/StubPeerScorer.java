@@ -15,6 +15,8 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import java.util.Comparator;
+import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -53,18 +55,20 @@ public class StubPeerScorer implements PeerScorer {
   }
 
   @Override
-  public int scoreCandidatePeer(final DiscoveryPeer candidate) {
-    return scoreCandidatePeer(
-        candidate.getPersistentAttestationSubnets(), candidate.getSyncCommitteeSubnets());
+  public List<DiscoveryPeer> scoreCandidatePeers(
+      final List<DiscoveryPeer> candidates, final int maxToSelect) {
+    return candidates.stream()
+        .sorted(Comparator.comparing(this::scoreCandidatePeer).reversed())
+        .limit(maxToSelect)
+        .toList();
   }
 
-  public int scoreCandidatePeer(
-      final SszBitvector attestationSubscriptions,
-      final SszBitvector syncCommitteeSubnetSubscriptions) {
+  @Override
+  public int scoreCandidatePeer(final DiscoveryPeer candidate) {
     return candidateScores.getOrDefault(
-        new SubnetSubscriptionsKey(
-            attestationSubscriptions,
-            syncCommitteeSubnetSubscriptions,
+        new StubPeerScorer.SubnetSubscriptionsKey(
+            candidate.getPersistentAttestationSubnets(),
+            candidate.getSyncCommitteeSubnets(),
             SszBitvectorSchema.create(128).getDefault()),
         0);
   }
