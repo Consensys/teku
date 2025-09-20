@@ -67,17 +67,13 @@ public class CombinedChainDataClient {
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
 
-  private final EarliestAvailableBlockSlot earliestAvailableBlockSlot;
-
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
-      final Spec spec,
-      final EarliestAvailableBlockSlot earliestAvailableBlockSlot) {
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
-    this.earliestAvailableBlockSlot = earliestAvailableBlockSlot;
   }
 
   /**
@@ -507,7 +503,7 @@ public class CombinedChainDataClient {
    * @return The earliest available block's slot
    */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
-    return earliestAvailableBlockSlot.get();
+    return historicalChainData.getEarliestAvailableBlockSlot();
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {

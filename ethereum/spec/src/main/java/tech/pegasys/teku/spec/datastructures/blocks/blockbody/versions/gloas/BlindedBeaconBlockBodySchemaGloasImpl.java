@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.Optional;
@@ -36,8 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -65,7 +64,7 @@ public class BlindedBeaconBlockBodySchemaGloasImpl
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
         SszList<SignedBlsToExecutionChange>,
-        SignedExecutionPayloadHeader,
+        SignedExecutionPayloadBid,
         SszList<PayloadAttestation>>
     implements BlindedBeaconBlockBodySchemaGloas<BlindedBeaconBlockBodyGloasImpl> {
 
@@ -81,7 +80,7 @@ public class BlindedBeaconBlockBodySchemaGloasImpl
       final NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
       final NamedSchema<SyncAggregate> syncAggregateSchema,
       final NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final NamedSchema<SignedExecutionPayloadHeader> signedExecutionPayloadHeader,
+      final NamedSchema<SignedExecutionPayloadBid> signedExecutionPayloadBid,
       final NamedSchema<SszList<PayloadAttestation>> payloadAttestations) {
     super(
         containerName,
@@ -95,7 +94,7 @@ public class BlindedBeaconBlockBodySchemaGloasImpl
         voluntaryExitsSchema,
         syncAggregateSchema,
         blsToExecutionChange,
-        signedExecutionPayloadHeader,
+        signedExecutionPayloadBid,
         payloadAttestations);
   }
 
@@ -137,8 +136,8 @@ public class BlindedBeaconBlockBodySchemaGloasImpl
                 schemaRegistry.get(SIGNED_BLS_TO_EXECUTION_CHANGE_SCHEMA),
                 specConfig.getMaxBlsToExecutionChanges())),
         namedSchema(
-            BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER,
-            schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA)),
+            BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_BID,
+            schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA)),
         namedSchema(
             BlockBodyFields.PAYLOAD_ATTESTATIONS,
             SszListSchema.create(
@@ -233,9 +232,7 @@ public class BlindedBeaconBlockBodySchemaGloasImpl
 
   @Override
   public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
-    return ((SignedExecutionPayloadHeaderSchema)
-            getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_HEADER)))
-        .getMessageSchema();
+    throw new UnsupportedOperationException("ExecutionPayloadHeader has been removed in Gloas");
   }
 
   @Override
