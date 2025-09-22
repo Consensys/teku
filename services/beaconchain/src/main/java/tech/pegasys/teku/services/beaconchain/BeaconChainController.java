@@ -187,7 +187,6 @@ import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingBatchDataCol
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRangeReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.BatchDataColumnsByRootReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DasPeerCustodyCountSupplier;
-import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnPeerSearcher;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqRespBatchingImpl;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
@@ -242,7 +241,6 @@ import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
@@ -854,7 +852,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             dataColumnSidecarRecoveringCustody
-                .onNewValidatedDataColumnSidecar(dataColumnSidecar)
+                .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
                 .finishError(LOG));
 
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
@@ -880,14 +878,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DasPeerCustodyCountSupplier.capped(
             peerCustodyTracker, minCustodyGroupRequirement, maxGroups);
 
-    // TODO-fulu NOOP peer searcher should work for interop but needs to be implemented
-    // (https://github.com/Consensys/teku/issues/9464)
-    final DataColumnPeerSearcher dataColumnPeerSearcher = DataColumnPeerSearcher.NOOP;
     final DataColumnSidecarRetriever sidecarRetriever =
         new SimpleSidecarRetriever(
             spec,
             dasPeerManager,
-            dataColumnPeerSearcher,
             custodyCountSupplier,
             dasRpc,
             dasAsyncRunner,
@@ -908,8 +902,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
-    blockManager.subscribePreImportBlocks(
-        (block, remoteOrigin) -> getDataColumnSidecarCustody().onNewBlock(block, remoteOrigin));
     final DasCustodySync svc =
         new DasCustodySync(
             dataColumnSidecarRecoveringCustody,
@@ -1189,15 +1181,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
-    final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
-        new EarliestAvailableBlockSlot(
-            storageQueryChannel,
-            timeProvider,
-            beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency());
-
     combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData, storageQueryChannel, spec, earliestAvailableBlockSlot);
+        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1588,14 +1573,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(
-              new CombinedChainDataClient(
-                  recentChainData,
-                  throttlingStorageQueryChannel,
-                  spec,
-                  new EarliestAvailableBlockSlot(
-                      throttlingStorageQueryChannel,
-                      timeProvider,
-                      beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())));
+              new CombinedChainDataClient(recentChainData, throttlingStorageQueryChannel, spec));
     }
 
     this.p2pNetwork =

@@ -14,18 +14,27 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
@@ -37,6 +46,14 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaGloas
     extends AbstractBeaconStateSchema<BeaconStateGloas, MutableBeaconStateGloas> {
+  public static final long BUILDER_PENDING_WITHDRAWALS_LIMIT = 1_048_576; // 2**20
+
+  public static final int LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX = 38;
+  public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 39;
+  public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 40;
+  public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 41;
+  public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 42;
+  public static final int LATEST_WITHDRAWALS_ROOT_FIELD_INDEX = 43;
 
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
@@ -45,7 +62,32 @@ public class BeaconStateSchemaGloas
 
   private static List<SszField> getUniqueFields(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    final List<SszField> newFields = List.of();
+    final List<SszField> newFields =
+        List.of(
+            new SszField(
+                LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
+            new SszField(
+                EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX,
+                BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY,
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA)),
+            new SszField(
+                BUILDER_PENDING_PAYMENTS_FIELD_INDEX,
+                BeaconStateFields.BUILDER_PENDING_PAYMENTS,
+                () -> schemaRegistry.get(BUILDER_PENDING_PAYMENTS_SCHEMA)),
+            new SszField(
+                BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX,
+                BeaconStateFields.BUILDER_PENDING_WITHDRAWALS,
+                () -> schemaRegistry.get(BUILDER_PENDING_WITHDRAWALS_SCHEMA)),
+            new SszField(
+                LATEST_BLOCK_HASH_FIELD_INDEX,
+                BeaconStateFields.LATEST_BLOCK_HASH,
+                () -> SszPrimitiveSchemas.BYTES32_SCHEMA),
+            new SszField(
+                LATEST_WITHDRAWALS_ROOT_FIELD_INDEX,
+                BeaconStateFields.LATEST_WITHDRAWALS_ROOT,
+                () -> SszPrimitiveSchemas.BYTES32_SCHEMA));
 
     return Stream.concat(
             BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry).stream(),
@@ -91,6 +133,23 @@ public class BeaconStateSchemaGloas
   public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
     return (SszUInt64VectorSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
+  }
+
+  public SszBitvectorSchema<?> getExecutionPayloadAvailabilitySchema() {
+    return (SszBitvectorSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszVectorSchema<BuilderPendingPayment, ?> getBuilderPendingPaymentsSchema() {
+    return (SszVectorSchema<BuilderPendingPayment, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.BUILDER_PENDING_PAYMENTS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<BuilderPendingWithdrawal, ?> getBuilderPendingWithdrawalsSchema() {
+    return (SszListSchema<BuilderPendingWithdrawal, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.BUILDER_PENDING_WITHDRAWALS));
   }
 
   @Override

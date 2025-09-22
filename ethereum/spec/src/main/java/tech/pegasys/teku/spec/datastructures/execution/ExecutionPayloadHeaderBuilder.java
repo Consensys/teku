@@ -55,18 +55,5 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
-  ExecutionPayloadHeaderBuilder parentBlockHash(Supplier<Bytes32> parentBlockHashSupplier);
-
-  ExecutionPayloadHeaderBuilder parentBlockRoot(Supplier<Bytes32> parentBlockRootSupplier);
-
-  ExecutionPayloadHeaderBuilder builderIndex(Supplier<UInt64> builderIndexSupplier);
-
-  ExecutionPayloadHeaderBuilder slot(Supplier<UInt64> slotSupplier);
-
-  ExecutionPayloadHeaderBuilder value(Supplier<UInt64> valueSupplier);
-
-  ExecutionPayloadHeaderBuilder blobKzgCommitmentsRoot(
-      Supplier<Bytes32> blobKzgCommitmentsRootSupplier);
-
   ExecutionPayloadHeader build();
 }

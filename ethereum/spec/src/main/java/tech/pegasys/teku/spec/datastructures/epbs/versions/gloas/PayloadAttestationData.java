@@ -38,6 +38,10 @@ public class PayloadAttestationData
         SszBoolean.of(blobDataAvailable));
   }
 
+  PayloadAttestationData(final PayloadAttestationDataSchema type, final TreeNode backingNode) {
+    super(type, backingNode);
+  }
+
   public Bytes32 getBeaconBlockRoot() {
     return getField0().get();
   }
@@ -46,16 +50,12 @@ public class PayloadAttestationData
     return getField1().get();
   }
 
-  public boolean getPayloadPresent() {
+  public boolean isPayloadPresent() {
     return getField2().get();
   }
 
-  public boolean getBlobDataAvailable() {
+  public boolean isBlobDataAvailable() {
     return getField3().get();
-  }
-
-  PayloadAttestationData(final PayloadAttestationDataSchema type, final TreeNode backingNode) {
-    super(type, backingNode);
   }
 
   @Override

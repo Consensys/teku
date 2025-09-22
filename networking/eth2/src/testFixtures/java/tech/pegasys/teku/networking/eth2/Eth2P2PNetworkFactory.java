@@ -118,7 +118,6 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -175,7 +174,6 @@ public class Eth2P2PNetworkFactory {
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
     protected Spec spec = TestSpecFactory.createMinimalPhase0();
-    private int earliestAvailableBlockSlotFrequency = 0;
     protected DebugDataDumper debugDataDumper;
 
     public Eth2P2PNetwork startNetwork() throws Exception {
@@ -221,12 +219,8 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final SubnetSubscriptionService dataColumnSidecarSubnetService =
             new SubnetSubscriptionService();
-        final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
-            new EarliestAvailableBlockSlot(
-                historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
         final CombinedChainDataClient combinedChainDataClient =
-            new CombinedChainDataClient(
-                recentChainData, historicalChainData, spec, earliestAvailableBlockSlot);
+            new CombinedChainDataClient(recentChainData, historicalChainData, spec);
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
@@ -667,12 +661,6 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder setRequiredCheckpoint(
         final Optional<Checkpoint> requiredCheckpoint) {
       this.requiredCheckpoint = requiredCheckpoint;
-      return this;
-    }
-
-    public Eth2P2PNetworkBuilder earliestAvailableBlockSlotFrequency(
-        final int earliestAvailableBlockSlotFrequency) {
-      this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
       return this;
     }
 
