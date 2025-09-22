@@ -51,13 +51,14 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingP
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -239,8 +240,10 @@ public class SchemaTypes {
       create("PAYLOAD_ATTESTATION_MESSAGE_SCHEMA");
   public static final SchemaId<IndexedPayloadAttestationSchema> INDEXED_PAYLOAD_ATTESTATION_SCHEMA =
       create("INDEXED_PAYLOAD_ATTESTATION_SCHEMA");
-  public static final SchemaId<SignedExecutionPayloadHeaderSchema>
-      SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA");
+  public static final SchemaId<ExecutionPayloadBidSchema> EXECUTION_PAYLOAD_BID_SCHEMA =
+      create("EXECUTION_PAYLOAD_BID_SCHEMA");
+  public static final SchemaId<SignedExecutionPayloadBidSchema>
+      SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA = create("SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA");
   public static final SchemaId<ExecutionPayloadEnvelopeSchema> EXECUTION_PAYLOAD_ENVELOPE_SCHEMA =
       create("EXECUTION_PAYLOAD_ENVELOPE_SCHEMA");
   public static final SchemaId<SignedExecutionPayloadEnvelopeSchema>

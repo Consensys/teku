@@ -279,11 +279,16 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                       SchemaDefinitionsGloas.required(schemas)
                           .getIndexedPayloadAttestationSchema()))
           .put(
-              "ssz_static/SignedExecutionPayloadHeader",
+              "ssz_static/ExecutionPayloadBid",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsGloas.required(schemas).getExecutionPayloadBidSchema()))
+          .put(
+              "ssz_static/SignedExecutionPayloadBid",
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsGloas.required(schemas)
-                          .getSignedExecutionPayloadHeaderSchema()))
+                          .getSignedExecutionPayloadBidSchema()))
           .put(
               "ssz_static/ExecutionPayloadEnvelope",
               new SszTestExecutor<>(

@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -47,11 +48,12 @@ public class BeaconStateSchemaGloas
     extends AbstractBeaconStateSchema<BeaconStateGloas, MutableBeaconStateGloas> {
   public static final long BUILDER_PENDING_WITHDRAWALS_LIMIT = 1_048_576; // 2**20
 
-  public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 38;
-  public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 39;
-  public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 40;
-  public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 41;
-  public static final int LATEST_WITHDRAWALS_ROOT_FIELD_INDEX = 42;
+  public static final int LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX = 38;
+  public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 39;
+  public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 40;
+  public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 41;
+  public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 42;
+  public static final int LATEST_WITHDRAWALS_ROOT_FIELD_INDEX = 43;
 
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
@@ -62,6 +64,10 @@ public class BeaconStateSchemaGloas
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> newFields =
         List.of(
+            new SszField(
+                LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX,
+                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
+                () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
             new SszField(
                 EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX,
                 BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY,

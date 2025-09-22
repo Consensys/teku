@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSig
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -1037,8 +1037,8 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public BeaconBlockBodyBuilder signedExecutionPayloadHeader(
-        final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
+    public BeaconBlockBodyBuilder signedExecutionPayloadBid(
+        final SignedExecutionPayloadBid signedExecutionPayloadBid) {
       return this;
     }
 

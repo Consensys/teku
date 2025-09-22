@@ -1,5 +1,5 @@
 {
-  "title" : "ExecutionPayloadHeaderGloas",
+  "title" : "ExecutionPayloadBid",
   "type" : "object",
   "required" : [ "parent_block_hash", "parent_block_root", "block_hash", "fee_recipient", "gas_limit", "builder_index", "slot", "value", "blob_kzg_commitments_root" ],
   "properties" : {

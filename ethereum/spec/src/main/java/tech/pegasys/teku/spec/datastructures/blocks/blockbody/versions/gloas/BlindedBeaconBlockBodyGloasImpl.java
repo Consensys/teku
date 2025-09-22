@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -48,7 +48,7 @@ public class BlindedBeaconBlockBodyGloasImpl
         SszList<SignedVoluntaryExit>,
         SyncAggregate,
         SszList<SignedBlsToExecutionChange>,
-        SignedExecutionPayloadHeader,
+        SignedExecutionPayloadBid,
         SszList<PayloadAttestation>>
     implements BlindedBeaconBlockBodyGloas {
 
@@ -64,7 +64,7 @@ public class BlindedBeaconBlockBodyGloasImpl
       final SszList<SignedVoluntaryExit> voluntaryExits,
       final SyncAggregate syncAggregate,
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges,
-      final SignedExecutionPayloadHeader signedExecutionPayloadHeader,
+      final SignedExecutionPayloadBid signedExecutionPayloadBid,
       final SszList<PayloadAttestation> payloadAttestations) {
     super(
         type,
@@ -78,7 +78,7 @@ public class BlindedBeaconBlockBodyGloasImpl
         voluntaryExits,
         syncAggregate,
         blsToExecutionChanges,
-        signedExecutionPayloadHeader,
+        signedExecutionPayloadBid,
         payloadAttestations);
   }
 
@@ -101,7 +101,7 @@ public class BlindedBeaconBlockBodyGloasImpl
 
   @Override
   public ExecutionPayloadHeader getExecutionPayloadHeader() {
-    return getSignedExecutionPayloadHeader().getMessage();
+    throw new UnsupportedOperationException("ExecutionPayloadHeader has been removed in Gloas");
   }
 
   @Override
@@ -165,7 +165,7 @@ public class BlindedBeaconBlockBodyGloasImpl
   }
 
   @Override
-  public SignedExecutionPayloadHeader getSignedExecutionPayloadHeader() {
+  public SignedExecutionPayloadBid getSignedExecutionPayloadBid() {
     return getField10();
   }
 

@@ -82,6 +82,7 @@ public enum BeaconStateFields implements SszFieldName {
   // Fulu fields
   PROPOSER_LOOKAHEAD,
   // Gloas fields
+  LATEST_EXECUTION_PAYLOAD_BID,
   EXECUTION_PAYLOAD_AVAILABILITY,
   BUILDER_PENDING_PAYMENTS,
   BUILDER_PENDING_WITHDRAWALS,
