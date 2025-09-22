@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,7 +40,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.QueueIsFullException;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -308,8 +308,7 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // Requesting 4 data column sidecars
     verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Request cancelled due to error
-    verify(peer, times(1))
-        .adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(0)));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -321,64 +320,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
         .isEqualTo(
             "Block root (%s) references a block earlier than the minimum_request_epoch",
             dataColumnsByRootIdentifiers[0].getBlockRoot());
-  }
-
-  @TestTemplate
-  public void shouldIgnoreQueueIsFullExceptionFromThrottlingStorageQueryChannel() {
-    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
-        generateDataColumnsByRootIdentifiers(4, 1);
-    final List<DataColumnSidecar> generatedSidecars =
-        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomDataColumnSidecar()).toList();
-
-    // simulating that the 2nd and 3rd sidecars are rejected by the throttling queue
-    final List<DataColumnSidecar> queueRejectedSidecars = generatedSidecars.subList(2, 4);
-
-    // the second block is rejected by the throttling queue
-    final Bytes32 secondBlockRoot = dataColumnsByRootIdentifiers[1].getBlockRoot();
-    when(combinedChainDataClient.getBlockByBlockRoot(secondBlockRoot))
-        .thenReturn(SafeFuture.failedFuture(new QueueIsFullException()));
-
-    when(custody.getCustodyDataColumnSidecarByRoot(any()))
-        .thenAnswer(
-            invocation -> {
-              final DataColumnIdentifier dataColumnIdentifier = invocation.getArgument(0);
-              if (dataColumnIdentifier.blockRoot().equals(secondBlockRoot)) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              for (int i = 0; i < 4; ++i) {
-                if (dataColumnsByRootIdentifiers[i]
-                    .getBlockRoot()
-                    .equals(dataColumnIdentifier.blockRoot())) {
-                  if (queueRejectedSidecars.contains(generatedSidecars.get(i))) {
-                    return SafeFuture.failedFuture(new QueueIsFullException());
-                  }
-                  return SafeFuture.completedFuture(Optional.of(generatedSidecars.get(i)));
-                }
-              }
-              throw new RuntimeException("Should never get here");
-            });
-
-    handler.onIncomingMessage(
-        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
-
-    // Requesting 4 data column sidecars
-    verify(peer).approveDataColumnSidecarsRequest(any(), eq(Long.valueOf(4)));
-    // Sending 1 data column sidecars
-    verify(peer).adjustDataColumnSidecarsRequest(eq(allowedRequest.get()), eq(Long.valueOf(1)));
-
-    verify(combinedChainDataClient, never()).getNonCanonicalSidecar(any());
-    verify(callback, times(1)).respond(datacolumnSidecarCaptor.capture());
-    verify(callback).completeSuccessfully();
-
-    final List<Bytes32> respondedDataColumnSidecarBlockRoots =
-        datacolumnSidecarCaptor.getAllValues().stream()
-            .map(DataColumnSidecar::getBlockRoot)
-            .toList();
-    final List<Bytes32> expectedDataColumnIdentifiersBlockRoots =
-        List.of(generatedSidecars.get(0).getBlockRoot());
-
-    assertThat(respondedDataColumnSidecarBlockRoots)
-        .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
   }
 
   @TestTemplate
@@ -490,6 +431,25 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
+  }
+
+  @TestTemplate
+  public void shouldNotAdjustIfAnErrorOccurs() {
+    // Be protective: do not adjust due to error
+    final DataColumnsByRootIdentifier[] dataColumnsByRootIdentifiers =
+        generateDataColumnsByRootIdentifiers(4, 1);
+
+    final RuntimeException error = new RuntimeException("Fatal error");
+
+    when(custody.getCustodyDataColumnSidecarByRoot(any()))
+        .thenReturn(SafeFuture.failedFuture(error));
+
+    handler.onIncomingMessage(
+        protocolId, peer, messageSchema.of(dataColumnsByRootIdentifiers), callback);
+
+    verify(callback)
+        .completeWithUnexpectedError(argThat(exception -> exception.getCause().equals(error)));
+    verify(peer, never()).adjustDataColumnSidecarsRequest(any(), anyLong());
   }
 
   private DataColumnsByRootIdentifier[] generateDataColumnsByRootIdentifiers(
