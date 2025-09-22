@@ -376,7 +376,11 @@ public class Eth2P2PNetworkFactory {
             .map(
                 forkAndSpecMilestone ->
                     createSubscriptions(
-                        forkAndSpecMilestone, metricsSystem, network, gossipEncoding, config.isExecutionProofTopicEnabled()))
+                        forkAndSpecMilestone,
+                        metricsSystem,
+                        network,
+                        gossipEncoding,
+                        config.isExecutionProofTopicEnabled()))
             .forEach(gossipForkManagerBuilder::fork);
 
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();

@@ -675,7 +675,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initZkChain() {
     LOG.debug("BeaconChainController.initZkChain()");
     final ZkChainConfiguration zkConfig = beaconConfig.zkChainConfiguration();
-    // TODO: We will eventually need the Gossip in the EP Manager for publishing the proofs we produce?
+    // TODO: We will eventually need the Gossip in the EP Manager for publishing the proofs we
+    // produce?
     // comment for now this will be used in the future
     //      final ExecutionProofGossipChannel executionProofGossipChannel =
     //      eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
