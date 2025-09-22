@@ -92,10 +92,11 @@ public class SanityBlocksTestExecutor implements TestExecutor {
            issue is resolved: https://github.com/ethereum/consensus-specs/issues/3122
           */
           if (testDefinition.getTestName().contains("invalid_incorrect_state_root")) {
-            throwableAssert.hasMessageContaining(STATE_ROOT_MISMATCH_ERROR_MESSAGE);
+            throwableAssert.rootCause().hasMessageContaining(STATE_ROOT_MISMATCH_ERROR_MESSAGE);
           } else {
             throwableAssert
                 .as("Expected state transition failure not caused by state root mismatch")
+                .rootCause()
                 .hasMessageNotContaining(STATE_ROOT_MISMATCH_ERROR_MESSAGE);
           }
         });
