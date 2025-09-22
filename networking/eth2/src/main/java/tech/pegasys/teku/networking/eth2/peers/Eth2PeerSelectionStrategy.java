@@ -125,7 +125,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
 
     return peerScorer
-        .scoreCandidatePeers(
+        .selectCandidatePeers(
             allCandidatePeers.stream()
                 .filter(candidate -> checkCandidate(candidate, network).isPresent())
                 .toList(),

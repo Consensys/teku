@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.io.Base58;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -199,7 +201,15 @@ public class PeerSubnetSubscriptions {
     return attestationSubnetSubscriptions.getSubnetSubscriptions(peerId);
   }
 
+  public SszBitvector getAttestationSubnetSubscriptions(final Bytes peerId) {
+    return attestationSubnetSubscriptions.getSubnetSubscriptions(peerId);
+  }
+
   public SszBitvector getSyncCommitteeSubscriptions(final NodeId peerId) {
+    return syncCommitteeSubnetSubscriptions.getSubnetSubscriptions(peerId);
+  }
+
+  public SszBitvector getSyncCommitteeSubscriptions(final Bytes peerId) {
     return syncCommitteeSubnetSubscriptions.getSubnetSubscriptions(peerId);
   }
 
@@ -288,7 +298,7 @@ public class PeerSubnetSubscriptions {
       return relevantSubnets.contains(subnetId);
     }
 
-    private IntStream streamRelevantSubnets() {
+    public IntStream streamRelevantSubnets() {
       return relevantSubnets.intStream();
     }
 
@@ -308,8 +318,30 @@ public class PeerSubnetSubscriptions {
       return subscriptionsByPeer.getOrDefault(peerId, subscriptionSchema.getDefault());
     }
 
+    public SszBitvector getSubnetSubscriptions(final Bytes peerId) {
+      return getSubnetSubscriptions(new NodeIdWrapper(peerId));
+    }
+
     public SszBitvectorSchema<?> getSubscriptionSchema() {
       return subscriptionSchema;
+    }
+
+    public static class NodeIdWrapper extends NodeId {
+      private final Bytes bytes;
+
+      public NodeIdWrapper(final Bytes bytes) {
+        this.bytes = bytes;
+      }
+
+      @Override
+      public Bytes toBytes() {
+        return bytes;
+      }
+
+      @Override
+      public String toBase58() {
+        return Base58.encode(bytes);
+      }
     }
 
     public static class Builder {

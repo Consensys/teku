@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -55,16 +56,19 @@ public class StubPeerScorer implements PeerScorer {
   }
 
   @Override
-  public List<DiscoveryPeer> scoreCandidatePeers(
+  public List<DiscoveryPeer> selectCandidatePeers(
       final List<DiscoveryPeer> candidates, final int maxToSelect) {
     return candidates.stream()
-        .sorted(Comparator.comparing(this::scoreCandidatePeer).reversed())
+        .sorted(
+            Comparator.comparing(
+                    (DiscoveryPeer candidate) -> scoreCandidatePeer(candidate, Map.of()))
+                .reversed())
         .limit(maxToSelect)
         .toList();
   }
 
-  @Override
-  public int scoreCandidatePeer(final DiscoveryPeer candidate) {
+  public int scoreCandidatePeer(
+      final DiscoveryPeer candidate, final Map<Integer, Integer> selectedDataColumnSidecarSubnets) {
     return candidateScores.getOrDefault(
         new StubPeerScorer.SubnetSubscriptionsKey(
             candidate.getPersistentAttestationSubnets(),

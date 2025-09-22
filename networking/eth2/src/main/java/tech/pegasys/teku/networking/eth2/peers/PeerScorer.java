@@ -26,10 +26,6 @@ public interface PeerScorer {
     return scoreExistingPeer(peer.getId());
   }
 
-  List<DiscoveryPeer> scoreCandidatePeers(
+  List<DiscoveryPeer> selectCandidatePeers(
       final List<DiscoveryPeer> candidates, final int maxToSelect);
-
-  // to be deprecated - individual peer scoring is not good enough unless there is really only one
-  // peer to score.
-  int scoreCandidatePeer(final DiscoveryPeer candidate);
 }

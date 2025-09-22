@@ -57,7 +57,8 @@ class SubnetScorerTest {
             scorer.scoreCandidatePeer(
                 createDiscoveryPeer(
                     schemaDefinitions.getAttnetsENRFieldSchema().getDefault(),
-                    schemaDefinitions.getSyncnetsENRFieldSchema().getDefault())))
+                    schemaDefinitions.getSyncnetsENRFieldSchema().getDefault()),
+                new SubnetScorer.SelectedCandidateSubnetCountChanges()))
         .isZero();
   }
 
@@ -117,10 +118,10 @@ class SubnetScorerTest {
 
     assertExistingPeerScores(
         scorer,
-        entry(node1, 562),
-        entry(node2, 312),
-        entry(node3, 1062),
-        entry(node4, 312),
+        entry(node1, 265),
+        entry(node2, 140),
+        entry(node3, 1015),
+        entry(node4, 140),
         entry(node5, 0));
   }
 
@@ -165,10 +166,10 @@ class SubnetScorerTest {
 
     assertCandidatePeerScores(
         scorer,
-        entry(candidateWithSubnets(IntList.of(1, 3), IntList.of(1)), 562),
-        entry(candidateWithSubnets(IntList.of(1), IntList.of(1)), 312),
-        entry(candidateWithSubnets(IntList.of(2), IntList.of(1)), 1062),
-        entry(candidateWithSubnets(IntList.of(3), IntList.of(1)), 312),
+        entry(candidateWithSubnets(IntList.of(1, 3), IntList.of(1)), 265),
+        entry(candidateWithSubnets(IntList.of(1), IntList.of(1)), 140),
+        entry(candidateWithSubnets(IntList.of(2), IntList.of(1)), 1015),
+        entry(candidateWithSubnets(IntList.of(3), IntList.of(1)), 140),
         entry(candidateWithSubnets(IntLists.emptyList(), IntLists.emptyList()), 0),
         entry(candidateWithSubnets(IntList.of(5), IntLists.emptyList()), 1000),
         entry(candidateWithSubnets(IntList.of(4), IntLists.emptyList()), 0),
@@ -188,7 +189,7 @@ class SubnetScorerTest {
 
   @SafeVarargs
   private void assertCandidatePeerScores(
-      final PeerScorer scorer,
+      final SubnetScorer scorer,
       final Map.Entry<Pair<SszBitvector, SszBitvector>, Integer>... expected) {
     final Map<Pair<SszBitvector, SszBitvector>, Integer> actual =
         Stream.of(expected)
@@ -198,8 +199,8 @@ class SubnetScorerTest {
                     Function.identity(),
                     (subscriptions) ->
                         scorer.scoreCandidatePeer(
-                            createDiscoveryPeer(
-                                subscriptions.getLeft(), subscriptions.getRight()))));
+                            createDiscoveryPeer(subscriptions.getLeft(), subscriptions.getRight()),
+                            new SubnetScorer.SelectedCandidateSubnetCountChanges())));
     assertThat(actual).contains(expected);
   }
 

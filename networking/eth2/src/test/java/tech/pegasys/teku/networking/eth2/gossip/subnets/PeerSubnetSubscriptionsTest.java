@@ -27,15 +27,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,12 +77,6 @@ class PeerSubnetSubscriptionsTest {
       nodeIdToDataColumnSidecarSubnetsCalculator =
           mock(NodeIdToDataColumnSidecarSubnetsCalculator.class);
   private final SszBitvectorSchema<?> sszBitvectorSchema = SszBitvectorSchema.create(SUBNET_COUNT);
-  private final Map<NodeId, SszBitvector> peer2subnets =
-      ImmutableMap.<NodeId, SszBitvector>builder()
-          .put(PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
-          .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
-          .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
-          .build();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -143,10 +134,16 @@ class PeerSubnetSubscriptionsTest {
   @Test
   // We currently are subscribed to the 7 subnets we need through 3 peers.
   // We have to select the lowest scoring one to disconnect.
-  // Should select PEER3 here because every subnet from PEER1 is covered by PEER2,
+  // Should select PEER2 here because every subnet from PEER2 is covered by PEER1,
   // but PEER3 has a subnet not covered by PEER1
   public void shouldScoreExistingPeersAccordingToUniqueness() {
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2, 3, 4, 5, 6, 7));
+    final Map<NodeId, SszBitvector> peer2subnets =
+        ImmutableMap.<NodeId, SszBitvector>builder()
+            .put(PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
+            .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
+            .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
+            .build();
     final Map<String, Collection<NodeId>> subscribersByTopic =
         makeSubscribersByTopic(
             Map.of(
@@ -156,8 +153,7 @@ class PeerSubnetSubscriptionsTest {
                 3, Set.of(PEER1, PEER2),
                 4, Set.of(PEER1, PEER2, PEER3),
                 5, Set.of(PEER1, PEER2, PEER3),
-                6, Set.of(PEER1),
-                7, Set.of(PEER3)));
+                6, Set.of(PEER1, PEER3)));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
@@ -171,9 +167,12 @@ class PeerSubnetSubscriptionsTest {
 
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
-            Stream.of(PEER1, PEER2, PEER3)
-                .sorted(Comparator.comparing((NodeId n) -> scorer.scoreExistingPeer(n)).reversed())
-                .limit(2))
+            scorer
+                .selectCandidatePeers(
+                    makeCandidatePeers(List.of(PEER1, PEER2, PEER3), peer2subnets), 2)
+                .stream()
+                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .toList())
         .containsExactlyInAnyOrder(PEER1, PEER3);
   }
 
@@ -246,7 +245,7 @@ class PeerSubnetSubscriptionsTest {
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
             scorer
-                .scoreCandidatePeers(
+                .selectCandidatePeers(
                     makeCandidatePeers(List.of(PEER1, PEER2, PEER3), peer2subnets), 2)
                 .stream()
                 .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
@@ -291,7 +290,7 @@ class PeerSubnetSubscriptionsTest {
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
             scorer
-                .scoreCandidatePeers(makeCandidatePeers(List.of(PEER2, PEER3), peer2subnets), 1)
+                .selectCandidatePeers(makeCandidatePeers(List.of(PEER2, PEER3), peer2subnets), 1)
                 .stream()
                 .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
                 .toList())
@@ -300,32 +299,41 @@ class PeerSubnetSubscriptionsTest {
 
   @Test
   // We have 100 PEERS numbered 0-99
-  // 0-4: supernodes
-  // 5-49: validator nodes serving 8 subnets, random but not subnets 126 and 127
-  // 50-51: full nodes serving 4 subnets including 126, 127 and 2 random ones.
-  // 52-99: full nodes serving 4 random subnets but all excluding 126, 127.
+  // 0-48: validator nodes serving 8 subnets, random but not subnets 126 and 127
+  // 50-97: full nodes serving 4 subnets, but not subnets 126 and 127
+  // 98: supernode
+  // 99: node service subnets 0,1, 126 and 127.
   // We want to be a supernode ourselves and serve all 128 from MAX 50 peers.
-  // -> Should select peer 0,1,2,3,4,50,51 + 43 others.
+  // -> Should select peer 98,99 + 48 others so that all subnets are covered.
   public void shouldScoreCandidatePeersInRealWorldScenario() {
     final List<Integer> allSubnets = IntStream.rangeClosed(0, 127).boxed().toList();
     dataColumnSubscriptions.setSubscriptions(allSubnets);
     final NodeId[] peers = new NodeId[100];
     final ImmutableMap.Builder<NodeId, SszBitvector> builder =
         ImmutableMap.<NodeId, SszBitvector>builder();
-    final Random random = new Random();
     for (int i = 0; i < 100; i++) {
       peers[i] = new MockNodeId(i);
-      if (i < 5) {
-        builder.put(peers[i], sszBitvectorSchema.ofBits(allSubnets));
-      } else if (i < 50) {
-        builder.put(peers[i], sszBitvectorSchema.ofBits(random.ints(8, 0, 126).boxed().toList()));
-      } else if (i < 52) {
+      if (i < 49) {
+        int subnetStart = i / 3 * 8 % 126;
         builder.put(
             peers[i],
             sszBitvectorSchema.ofBits(
-                Stream.concat(random.ints(2, 0, 126).boxed(), Stream.of(126, 127)).toList()));
+                IntStream.rangeClosed(subnetStart, Math.min(subnetStart + 7, 125))
+                    .boxed()
+                    .toList()));
+      } else if (i < 98) {
+        int subnetStart = (i - 50) / 3 * 4 % 122;
+        builder.put(
+            peers[i],
+            sszBitvectorSchema.ofBits(
+                IntStream.rangeClosed(subnetStart, Math.min(subnetStart + 3, 125))
+                    .boxed()
+                    .toList()));
+
+      } else if (i == 98) {
+        builder.put(peers[i], sszBitvectorSchema.ofBits(allSubnets));
       } else {
-        builder.put(peers[i], sszBitvectorSchema.ofBits(random.ints(4, 0, 126).boxed().toList()));
+        builder.put(peers[i], sszBitvectorSchema.ofBits(0, 1, 126, 127));
       }
     }
     final Map<NodeId, SszBitvector> peer2subnets = builder.build();
@@ -346,13 +354,12 @@ class PeerSubnetSubscriptionsTest {
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
             scorer
-                .scoreCandidatePeers(
+                .selectCandidatePeers(
                     makeCandidatePeers(Arrays.stream(peers).toList(), peer2subnets), 50)
                 .stream()
                 .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
                 .toList())
-        .containsAll(
-            Stream.concat(Arrays.stream(peers).limit(5), Stream.of(peers[50], peers[51])).toList());
+        .containsAll(List.of(peers[98], peers[99]));
   }
 
   @NotNull
