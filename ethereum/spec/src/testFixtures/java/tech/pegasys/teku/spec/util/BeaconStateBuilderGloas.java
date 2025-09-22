@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
@@ -66,6 +67,7 @@ public class BeaconStateBuilderGloas
   private SszList<PendingConsolidation> pendingConsolidations;
   private SszUInt64Vector proposerLookahead;
 
+  private ExecutionPayloadBid latestExecutionPayloadBid;
   private SszBitvector executionPayloadAvailability;
   private SszVector<BuilderPendingPayment> builderPendingPayments;
   private SszList<BuilderPendingWithdrawal> builderPendingWithdrawals;
@@ -107,6 +109,7 @@ public class BeaconStateBuilderGloas
     state.setPendingPartialWithdrawals(pendingPartialWithdrawals);
     state.setPendingConsolidations(pendingConsolidations);
     state.setProposerLookahead(proposerLookahead);
+    state.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
     state.setExecutionPayloadAvailability(executionPayloadAvailability);
     state.setBuilderPendingPayments(builderPendingPayments);
     state.setBuilderPendingWithdrawals(builderPendingWithdrawals);
@@ -181,6 +184,13 @@ public class BeaconStateBuilderGloas
   public BeaconStateBuilderGloas proposerLookahead(final SszUInt64Vector proposerLookahead) {
     checkNotNull(proposerLookahead);
     this.proposerLookahead = proposerLookahead;
+    return this;
+  }
+
+  public BeaconStateBuilderGloas latestExecutionPayloadBid(
+      final ExecutionPayloadBid latestExecutionPayloadBid) {
+    checkNotNull(latestExecutionPayloadBid);
+    this.latestExecutionPayloadBid = latestExecutionPayloadBid;
     return this;
   }
 
@@ -269,6 +279,7 @@ public class BeaconStateBuilderGloas
             schema.getProposerLookaheadSchema(),
             schema.getProposerLookaheadSchema().getMaxLength());
 
+    this.latestExecutionPayloadBid = dataStructureUtil.randomExecutionPayloadBid();
     this.executionPayloadAvailability =
         dataStructureUtil.randomSszBitvector(
             (int) schema.getExecutionPayloadAvailabilitySchema().getMaxLength());

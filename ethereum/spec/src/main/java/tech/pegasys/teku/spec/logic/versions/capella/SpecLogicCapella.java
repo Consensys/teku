@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaState
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.withdrawals.WithdrawalsHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
@@ -50,6 +52,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
   private final BellatrixTransitionHelpers bellatrixTransitionHelpers;
+  private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
 
   private SpecLogicCapella(
       final Predicates predicates,
@@ -63,6 +66,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorBellatrix epochProcessor,
+      final WithdrawalsHelpersCapella withdrawalsHelpers,
       final BlockProcessorCapella blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -91,6 +95,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.bellatrixTransitionHelpers = bellatrixTransitionHelpers;
+    this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
   }
 
   public static SpecLogicCapella create(
@@ -152,6 +157,9 @@ public class SpecLogicCapella extends AbstractSpecLogic {
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
+    final WithdrawalsHelpersCapella withdrawalsHelpers =
+        new WithdrawalsHelpersCapella(
+            schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);
     final BlockProcessorCapella blockProcessor =
         new BlockProcessorCapella(
             config,
@@ -165,7 +173,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             operationValidator,
-            schemaDefinitions);
+            schemaDefinitions,
+            withdrawalsHelpers);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
@@ -193,6 +202,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         operationValidator,
         validatorStatusFactory,
         epochProcessor,
+        withdrawalsHelpers,
         blockProcessor,
         forkChoiceUtil,
         blockProposalUtil,
@@ -216,6 +226,11 @@ public class SpecLogicCapella extends AbstractSpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.of(bellatrixTransitionHelpers);
+  }
+
+  @Override
+  public Optional<WithdrawalsHelpers> getWithdrawalsHelpers() {
+    return withdrawalsHelpers;
   }
 
   @Override

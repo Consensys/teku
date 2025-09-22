@@ -20,7 +20,6 @@ import tech.pegasys.teku.beacon.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
 import tech.pegasys.teku.storage.archive.BlobSidecarsArchiver;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
@@ -120,11 +118,7 @@ public class StorageSystem implements AutoCloseable {
 
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
-            chainStorageServer,
-            spec,
-            new EarliestAvailableBlockSlot(chainStorageServer, new SystemTimeProvider(), 0));
+        new CombinedChainDataClient(recentChainData, chainStorageServer, spec);
 
     final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
 

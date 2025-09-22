@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Attes
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.statetransition.epoch.EpochProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.withdrawals.WithdrawalsHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.forktransition.FuluStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
@@ -56,6 +58,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 public class SpecLogicFulu extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
   private final Optional<LightClientUtil> lightClientUtil;
+  private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
 
   private SpecLogicFulu(
@@ -70,6 +73,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorElectra epochProcessor,
+      final WithdrawalsHelpersElectra withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
       final BlockProcessorFulu blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
@@ -97,6 +101,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
     this.lightClientUtil = Optional.of(lightClientUtil);
+    this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
   }
 
@@ -162,6 +167,9 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final ExecutionRequestsDataCodec executionRequestsDataCodec =
         new ExecutionRequestsDataCodec(schemaDefinitions.getExecutionRequestsSchema());
+    final WithdrawalsHelpersElectra withdrawalsHelpers =
+        new WithdrawalsHelpersElectra(
+            schemaDefinitions, miscHelpers, config, predicates, beaconStateMutators);
     final ExecutionRequestsProcessorElectra executionRequestsProcessor =
         new ExecutionRequestsProcessorElectra(
             schemaDefinitions,
@@ -185,6 +193,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
             validatorsUtil,
             operationValidator,
             schemaDefinitions,
+            withdrawalsHelpers,
             executionRequestsDataCodec,
             executionRequestsProcessor);
     final ForkChoiceUtil forkChoiceUtil =
@@ -211,6 +220,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
         operationValidator,
         validatorStatusFactory,
         epochProcessor,
+        withdrawalsHelpers,
         executionRequestsProcessor,
         blockProcessor,
         forkChoiceUtil,
@@ -234,6 +244,11 @@ public class SpecLogicFulu extends AbstractSpecLogic {
   @Override
   public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
+  }
+
+  @Override
+  public Optional<WithdrawalsHelpers> getWithdrawalsHelpers() {
+    return withdrawalsHelpers;
   }
 
   @Override

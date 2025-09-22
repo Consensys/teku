@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExpectedWithdrawals;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -51,18 +50,20 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.common.withdrawals.WithdrawalsHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.withdrawals.WithdrawalsHelpersCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class BlockProcessorCapella extends BlockProcessorBellatrix {
-  private final SchemaDefinitionsCapella schemaDefinitionsCapella;
+
   private static final Bytes ETH1_WITHDRAWAL_KEY_PREFIX =
       Bytes.concatenate(ETH1_ADDRESS_WITHDRAWAL_PREFIX, Bytes.repeat((byte) 0x00, 11));
-  private final SpecConfigCapella specConfigCapella;
+  protected final WithdrawalsHelpers withdrawalsHelpers;
 
   public BlockProcessorCapella(
       final SpecConfigCapella specConfig,
@@ -76,7 +77,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsCapella schemaDefinitions) {
+      final SchemaDefinitionsCapella schemaDefinitions,
+      final WithdrawalsHelpersCapella withdrawalsHelpers) {
     super(
         specConfig,
         predicates,
@@ -90,8 +92,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         validatorsUtil,
         operationValidator,
         SchemaDefinitionsBellatrix.required(schemaDefinitions));
-    schemaDefinitionsCapella = schemaDefinitions;
-    this.specConfigCapella = specConfig;
+    this.withdrawalsHelpers = withdrawalsHelpers;
   }
 
   @Override
@@ -186,19 +187,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   public void processWithdrawals(
       final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
-    final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(genericState);
-    expectedWithdrawals.processWithdrawals(
-        genericState,
-        payloadSummary,
-        schemaDefinitionsCapella,
-        beaconStateMutators,
-        specConfigCapella);
-  }
-
-  @Override
-  public ExpectedWithdrawals getExpectedWithdrawals(final BeaconState preState) {
-    return ExpectedWithdrawals.create(
-        preState, schemaDefinitionsCapella, miscHelpers, specConfig, predicates);
+    withdrawalsHelpers.processWithdrawals(genericState, payloadSummary);
   }
 
   @VisibleForTesting

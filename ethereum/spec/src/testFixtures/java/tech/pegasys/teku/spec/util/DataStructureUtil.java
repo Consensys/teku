@@ -142,13 +142,14 @@ import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayl
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
@@ -680,13 +681,7 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64)
-                    .parentBlockHash(this::randomBytes32)
-                    .parentBlockRoot(this::randomBytes32)
-                    .builderIndex(this::randomUInt64)
-                    .slot(this::randomSlot)
-                    .value(this::randomUInt64)
-                    .blobKzgCommitmentsRoot(this::randomBytes32));
+                    .excessBlobGas(this::randomUInt64));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -1486,8 +1481,8 @@ public final class DataStructureUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
               }
-              if (builder.supportsSignedExecutionPayloadHeader()) {
-                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              if (builder.supportsSignedExecutionPayloadBid()) {
+                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBid());
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -1604,8 +1599,8 @@ public final class DataStructureUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
               }
-              if (builder.supportsSignedExecutionPayloadHeader()) {
-                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              if (builder.supportsSignedExecutionPayloadBid()) {
+                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBid());
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -1672,8 +1667,8 @@ public final class DataStructureUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(randomExecutionRequests());
               }
-              if (builder.supportsSignedExecutionPayloadHeader()) {
-                builder.signedExecutionPayloadHeader(randomSignedExecutionPayloadHeader());
+              if (builder.supportsSignedExecutionPayloadBid()) {
+                builder.signedExecutionPayloadBid(randomSignedExecutionPayloadBid());
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
@@ -3116,12 +3111,25 @@ public final class DataStructureUtil {
         randomSignature());
   }
 
-  public SignedExecutionPayloadHeader randomSignedExecutionPayloadHeader() {
+  public ExecutionPayloadBid randomExecutionPayloadBid() {
     return getGloasSchemaDefinitions()
-        .getSignedExecutionPayloadHeaderSchema()
+        .getExecutionPayloadBidSchema()
         .create(
-            randomExecutionPayloadHeader(spec.forMilestone(SpecMilestone.GLOAS)),
-            randomSignature());
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes32(),
+            randomEth1Address(),
+            randomUInt64(),
+            randomBuilderIndex(),
+            randomSlot(),
+            randomUInt64(),
+            randomBytes32());
+  }
+
+  public SignedExecutionPayloadBid randomSignedExecutionPayloadBid() {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadBidSchema()
+        .create(randomExecutionPayloadBid(), randomSignature());
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope() {
@@ -3144,6 +3152,7 @@ public final class DataStructureUtil {
     final ExecutionProofSchema executionProofSchema =
         schemaDefinitionsElectra.getExecutionProofSchema();
     return executionProofSchema.create(
+        SszBytes32.of(randomBytes32()),
         SszBytes32.of(randomBytes32()),
         SszUInt64.of(randomUInt64()),
         SszUInt64.of(randomUInt64()),
