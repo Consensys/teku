@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.networking.eth2.gossip.PayloadAttestationMessageGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -23,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -30,11 +35,17 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
+
+  private final OperationProcessor<PayloadAttestationMessage> payloadAttestationProcessor;
+  private Optional<PayloadAttestationMessageGossipManager> payloadAttestationMessageGossipManager =
+      Optional.empty();
 
   public GossipForkSubscriptionsGloas(
       final Fork fork,
@@ -58,6 +69,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
+      final OperationProcessor<PayloadAttestationMessage>
+          payloadAttestationMessageOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger) {
     super(
@@ -81,5 +94,47 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         dataColumnSidecarOperationProcessor,
         debugDataDumper,
         dasGossipLogger);
+
+    this.payloadAttestationProcessor = payloadAttestationMessageOperationProcessor;
+  }
+
+  void addPayloadAttestationMessageGossipManager(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
+
+    final PayloadAttestationMessageGossipManager gossipManager =
+        new PayloadAttestationMessageGossipManager(
+            recentChainData,
+            schemaDefinitions,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            forkDigest,
+            payloadAttestationProcessor,
+            spec.getNetworkingConfig(),
+            debugDataDumper);
+
+    addGossipManager(gossipManager);
+    this.payloadAttestationMessageGossipManager = Optional.of(gossipManager);
+  }
+
+  @Override
+  protected void addGossipManagers(final ForkInfo forkInfo, final Bytes4 forkDigest) {
+    super.addGossipManagers(forkInfo, forkDigest);
+    addPayloadAttestationMessageGossipManager(forkInfo, forkDigest);
+  }
+
+  @Override
+  public void publishPayloadAttestationMessage(final PayloadAttestationMessage message) {
+    payloadAttestationMessageGossipManager.ifPresent(
+        gossipManager -> gossipManager.publish(message));
+  }
+
+  @VisibleForTesting
+  void setPayloadAttestationMessageGossipManager(
+      final Optional<PayloadAttestationMessageGossipManager>
+          payloadAttestationMessageGossipManager) {
+    this.payloadAttestationMessageGossipManager = payloadAttestationMessageGossipManager;
   }
 }
