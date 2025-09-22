@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
-import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
@@ -682,8 +681,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<Bytes> getSidecarIdentifierData(final VersionedHash versionedHash) {
-    return db.get(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash.get());
+  public Optional<Bytes> getSidecarIdentifierData(final Bytes32 versionedHash) {
+    return db.get(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash);
   }
 
   static class V4CombinedUpdater<S extends SchemaCombined> implements CombinedUpdater {

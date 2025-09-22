@@ -245,7 +245,7 @@ public class VersionedHashDBSource {
   }
 
   public Optional<Sidecar> getSidecarIdentifier(final VersionedHash hash) {
-    final Optional<Bytes> maybeSidecarIdentifierData = dao.getSidecarIdentifierData(hash);
+    final Optional<Bytes> maybeSidecarIdentifierData = dao.getSidecarIdentifierData(hash.get());
     if (maybeSidecarIdentifierData.isEmpty()) {
       return Optional.empty();
     }
