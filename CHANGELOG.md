@@ -10,7 +10,11 @@
 ### Breaking Changes
 
 ### Additions and Improvements
+- Added scheduling for Fulu testnets:
+  - Holesky fork at epoch 165376 (2025-10-02 12:06:24 UTC)
+  - Sepolia fork at epoch 273152 (2025-10-16 14:12:48 UTC)
+  - Hoodi fork at epoch 50944 (2025-10-29 22:11:36 UTC)
 
 ### Bug Fixes
- - `ephemery` network now defaults to loading configuration and bootnodes directly from https://ephemery.dev.
+- `ephemery` network now defaults to loading configuration and bootnodes directly from https://ephemery.dev.
 
