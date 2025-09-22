@@ -167,6 +167,14 @@
       "created_at": "2025-09-11T16:40:40Z",
       "repoId": 147802356,
       "pullRequestNo": 9484
+    },
+    {
+      "name": "Galoretka",
+      "id": 219274369,
+      "comment_id": 3318264591,
+      "created_at": "2025-09-22T11:03:50Z",
+      "repoId": 147802356,
+      "pullRequestNo": 9922
     }
   ]
 }
