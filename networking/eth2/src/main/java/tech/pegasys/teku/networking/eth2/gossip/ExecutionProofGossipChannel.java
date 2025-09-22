@@ -21,9 +21,9 @@ public interface ExecutionProofGossipChannel extends VoidReturningChannelInterfa
 
   ExecutionProofGossipChannel NOOP = executionProof -> {};
 
-  default void publishExecutionProof(final List<ExecutionProof> executionProofs) {
-    executionProofs.forEach(this::publishExecutionProof);
+  default void publishExecutionProofs(final List<ExecutionProof> executionProofs) {
+    executionProofs.forEach(this::publishExecutionProofs);
   }
 
-  void publishExecutionProof(ExecutionProof executionProof);
+  void publishExecutionProofs(ExecutionProof executionProof);
 }

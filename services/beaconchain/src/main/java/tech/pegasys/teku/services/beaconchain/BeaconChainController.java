@@ -467,6 +467,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
     executionProofManager.subscribeToValidExecutionProofs(
         (executionProof, remoteOrigin) ->
+            // TODO add actual logic to handle valid execution proofs
             LOG.debug("Received valid execution proof: {}", executionProof));
 
     final Optional<Eth2Network> network = beaconConfig.eth2NetworkConfig().getEth2Network();

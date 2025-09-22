@@ -376,7 +376,7 @@ public class Eth2P2PNetworkFactory {
             .map(
                 forkAndSpecMilestone ->
                     createSubscriptions(
-                        forkAndSpecMilestone, metricsSystem, network, gossipEncoding))
+                        forkAndSpecMilestone, metricsSystem, network, gossipEncoding, config.isExecutionProofTopicEnabled()))
             .forEach(gossipForkManagerBuilder::fork);
 
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
@@ -405,7 +405,8 @@ public class Eth2P2PNetworkFactory {
         final ForkAndSpecMilestone forkAndSpecMilestone,
         final NoOpMetricsSystem metricsSystem,
         final DiscoveryNetwork<?> network,
-        final GossipEncoding gossipEncoding) {
+        final GossipEncoding gossipEncoding,
+        final boolean isExecutionProofTopicEnabled) {
       return switch (forkAndSpecMilestone.getSpecMilestone()) {
         case PHASE0 ->
             new GossipForkSubscriptionsPhase0(
@@ -519,7 +520,7 @@ public class Eth2P2PNetworkFactory {
                 signedBlsToExecutionChangeProcessor,
                 debugDataDumper,
                 executionProofOperationProcessor,
-                generateConfig().isExecutionProofTopicEnabled());
+                isExecutionProofTopicEnabled);
         case FULU ->
             new GossipForkSubscriptionsFulu(
                 forkAndSpecMilestone.getFork(),
@@ -543,7 +544,7 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
-                generateConfig().isExecutionProofTopicEnabled());
+                isExecutionProofTopicEnabled);
         case GLOAS ->
             new GossipForkSubscriptionsGloas(
                 forkAndSpecMilestone.getFork(),
@@ -567,7 +568,7 @@ public class Eth2P2PNetworkFactory {
                 debugDataDumper,
                 DasGossipLogger.NOOP,
                 executionProofOperationProcessor,
-                generateConfig().isExecutionProofTopicEnabled());
+                isExecutionProofTopicEnabled);
       };
     }
 
