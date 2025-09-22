@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
@@ -34,9 +35,7 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class FileBackedStorageSystemBuilder {
   private static final EventChannels EVENT_CHANNELS =
-      EventChannels.createSyncChannels(
-          (error, subscriber, invokedMethod, args) -> {}, new NoOpMetricsSystem());
-
+      new EventChannels(ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
   // Optional
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;

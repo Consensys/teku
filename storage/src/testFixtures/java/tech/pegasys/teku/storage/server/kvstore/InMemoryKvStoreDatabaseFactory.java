@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore;
 
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
@@ -27,8 +28,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState
 
 public class InMemoryKvStoreDatabaseFactory {
   private static final EventChannels EVENT_CHANNELS =
-      EventChannels.createSyncChannels(
-          (error, subscriber, invokedMethod, args) -> {}, new NoOpMetricsSystem());
+      new EventChannels(ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
 
   public static Database createV4(
       final MockKvStoreInstance hotDb,

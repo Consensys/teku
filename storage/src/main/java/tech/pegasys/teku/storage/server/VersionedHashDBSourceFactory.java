@@ -56,26 +56,25 @@ public class VersionedHashDBSourceFactory {
     final VersionedHashDBSource versionedHashDBSource =
         new VersionedHashDBSource(
             dao, blobSidecarToVersionedHash, dataColumnSidecarToVersionedHash, spec);
-    eventChannels.subscribe(
-        CustodyGroupCountChannel.class,
-        new CustodyGroupCountChannel() {
-          @Override
-          public void onGroupCountUpdate(
-              final int custodyGroupCount, final int samplingGroupCount) {
-            if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
-              return;
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      eventChannels.subscribe(
+          CustodyGroupCountChannel.class,
+          new CustodyGroupCountChannel() {
+            @Override
+            public void onGroupCountUpdate(
+                final int custodyGroupCount, final int samplingGroupCount) {
+              final int numberOfColumns =
+                  SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                      .getNumberOfColumns();
+              if (custodyGroupCount == numberOfColumns) {
+                versionedHashDBSource.storeSidecarHashes();
+              }
             }
-            final int numberOfColumns =
-                SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
-                    .getNumberOfColumns();
-            if (custodyGroupCount == numberOfColumns) {
-              versionedHashDBSource.storeSidecarHashes();
-            }
-          }
 
-          @Override
-          public void onCustodyGroupCountSynced(final int groupCount) {}
-        });
+            @Override
+            public void onCustodyGroupCountSynced(final int groupCount) {}
+          });
+    }
 
     return versionedHashDBSource;
   }
