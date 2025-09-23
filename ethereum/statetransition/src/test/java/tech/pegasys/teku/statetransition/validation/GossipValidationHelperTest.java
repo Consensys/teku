@@ -177,17 +177,15 @@ public class GossipValidationHelperTest {
     final BeaconStateSchemaFulu beaconStateSchema =
         (BeaconStateSchemaFulu)
             spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions().getBeaconStateSchema();
-    final SszUInt64VectorSchema<?> proposerLookaheadSchema =
+    final SszUInt64VectorSchema<?> proposerLookaheadVectorSchema =
         beaconStateSchema.getProposerLookaheadSchema();
     final SszMutableContainer writableCopy = headState.createWritableCopy();
     writableCopy.set(
         beaconStateSchema.getFieldIndex(PROPOSER_LOOKAHEAD),
-        beaconStateSchema
-            .getProposerLookaheadSchema()
-            .createFromElements(
-                IntStream.range(0, proposerLookaheadSchema.getLength())
-                    .mapToObj(__ -> SszUInt64.of(defaultProposerIndex))
-                    .toList()));
+        proposerLookaheadVectorSchema.createFromElements(
+            IntStream.range(0, proposerLookaheadVectorSchema.getLength())
+                .mapToObj(__ -> SszUInt64.of(defaultProposerIndex))
+                .toList()));
     final BeaconState modifiedState = (BeaconState) writableCopy.commitChanges();
 
     assertThat(
