@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,26 +78,20 @@ public class SubnetScorer implements PeerScorer {
       DiscoveryPeer highestScoringPeer = maybeHighestScoringPeer.get();
       selectedPeers.add(highestScoringPeer);
       remainingPeers.remove(highestScoringPeer);
+
       peerSubnetSubscriptions
           .getAttestationSubnetSubscriptions(highestScoringPeer.getNodeId())
           .streamAllSetBits()
-          .forEach(
-              i ->
-                  subnetChanges.attestationSubnets.put(
-                      i, subnetChanges.attestationSubnets.getOrDefault(i, 0) + 1));
+          .forEach(i -> subnetChanges.increment(SubnetType.ATTESTATION, i));
+
       peerSubnetSubscriptions
           .getSyncCommitteeSubscriptions(highestScoringPeer.getNodeId())
           .streamAllSetBits()
-          .forEach(
-              i ->
-                  subnetChanges.syncCommitteeSubnets.put(
-                      i, subnetChanges.syncCommitteeSubnets.getOrDefault(i, 0) + 1));
+          .forEach(i -> subnetChanges.increment(SubnetType.SYNC_COMMITTEE, i));
+
       getDataColumnSidecarSubnetsForCandidatePeer(highestScoringPeer)
           .streamAllSetBits()
-          .forEach(
-              i ->
-                  subnetChanges.dataColumnSidecarSubnets.put(
-                      i, subnetChanges.dataColumnSidecarSubnets.getOrDefault(i, 0) + 1));
+          .forEach(i -> subnetChanges.increment(SubnetType.DATA_COLUMN_SIDECAR, i));
     }
 
     return selectedPeers;
@@ -120,7 +115,6 @@ public class SubnetScorer implements PeerScorer {
                 cachingCandidate.getDasCustodySubnetCount()));
   }
 
-  //  @Override
   public int scoreCandidatePeer(
       final SszBitvector attSubnetSubscriptions,
       final SszBitvector syncCommitteeSubnetSubscriptions,
@@ -148,7 +142,7 @@ public class SubnetScorer implements PeerScorer {
                 subnetId -> {
                   int subscriberCount =
                       peerSubnetSubscriptions.getSubscriberCountForAttestationSubnet(subnetId)
-                          + subnetChanges.attestationSubnets.getOrDefault(subnetId, 0);
+                          + subnetChanges.get(SubnetType.ATTESTATION, subnetId);
                   return subscriberCountToScore.applyAsInt(subscriberCount);
                 })
             .sum();
@@ -161,7 +155,7 @@ public class SubnetScorer implements PeerScorer {
                 subnetId -> {
                   int subscriberCount =
                       peerSubnetSubscriptions.getSubscriberCountForSyncCommitteeSubnet(subnetId)
-                          + subnetChanges.syncCommitteeSubnets.getOrDefault(subnetId, 0);
+                          + subnetChanges.get(SubnetType.SYNC_COMMITTEE, subnetId);
                   return subscriberCountToScore.applyAsInt(subscriberCount);
                 })
             .sum();
@@ -174,7 +168,7 @@ public class SubnetScorer implements PeerScorer {
                 subnetId -> {
                   int subscriberCount =
                       peerSubnetSubscriptions.getSubscriberCountForDataColumnSidecarSubnet(subnetId)
-                          + subnetChanges.dataColumnSidecarSubnets.getOrDefault(subnetId, 0);
+                          + subnetChanges.get(SubnetType.DATA_COLUMN_SIDECAR, subnetId);
                   return subscriberCountToScore.applyAsInt(subscriberCount);
                 })
             .sum();
@@ -193,9 +187,39 @@ public class SubnetScorer implements PeerScorer {
         / (value * value * value); // third power because having a first peer is very important
   }
 
+  public enum SubnetType {
+    ATTESTATION,
+    SYNC_COMMITTEE,
+    DATA_COLUMN_SIDECAR
+  }
+
+  public static class SubnetCounts {
+    private final Int2IntOpenHashMap counts = new Int2IntOpenHashMap();
+
+    public int get(final int subnetId) {
+      return counts.getOrDefault(subnetId, 0);
+    }
+
+    public void increment(final int subnetId) {
+      counts.addTo(subnetId, 1); // efficient primitive add
+    }
+  }
+
   public static class SelectedCandidateSubnetCountChanges {
-    final Map<Integer, Integer> attestationSubnets = new HashMap<>();
-    final Map<Integer, Integer> syncCommitteeSubnets = new HashMap<>();
-    final Map<Integer, Integer> dataColumnSidecarSubnets = new HashMap<>();
+    private final Map<SubnetType, SubnetCounts> subnetChanges = new EnumMap<>(SubnetType.class);
+
+    public SelectedCandidateSubnetCountChanges() {
+      for (SubnetType type : SubnetType.values()) {
+        subnetChanges.put(type, new SubnetCounts());
+      }
+    }
+
+    public int get(final SubnetType type, final int subnetId) {
+      return subnetChanges.get(type).get(subnetId);
+    }
+
+    public void increment(final SubnetType type, final int subnetId) {
+      subnetChanges.get(type).increment(subnetId);
+    }
   }
 }
