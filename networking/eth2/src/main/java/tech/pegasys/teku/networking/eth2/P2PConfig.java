@@ -55,9 +55,9 @@ public class P2PConfig {
   // DEFAULT_BACKGROUND_THREAD_COUNT)
   // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
   // To avoid resource saturation and ensure capacity for other tasks, we limit historical data
-  // queries to 5
-  public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 5;
-  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 100_000;
+  // queries to 3
+  public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 3;
+  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 500;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;

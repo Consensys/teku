@@ -178,10 +178,7 @@ public class DataColumnSidecarsByRangeMessageHandler
           }
           responseCallbackWithLogging.completeSuccessfully();
         },
-        error -> {
-          peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
-          handleProcessingRequestError(error, responseCallbackWithLogging);
-        });
+        error -> handleProcessingRequestError(error, responseCallbackWithLogging));
   }
 
   private int calculateRequestedCount(final DataColumnSidecarsByRangeRequestMessage message) {
