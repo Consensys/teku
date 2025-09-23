@@ -91,7 +91,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -706,11 +705,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         blockProductionAndPublishingPerformanceFactory.createForPublishing(
             maybeBlindedBlockContainer.getSlot());
 
-    //TODO maybe generate proofs and publish them here
-      boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
-      if(isLocallyCreated && executionProofManager.isPresent()) {
-          executionProofManager.get().generateExecutionProof(maybeBlindedBlockContainer);
-      }
+    // TODO maybe generate proofs and publish them here
+    boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
+    if (isLocallyCreated && executionProofManager.isPresent()) {
+      executionProofManager.get().generateExecutionProof(maybeBlindedBlockContainer);
+    }
 
     return blockPublisher
         .sendSignedBlock(

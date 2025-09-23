@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.executionproofs;
 
+import static tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker.NOOP_EXECUTION_PROOF;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -20,22 +22,20 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
-import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-
-import static tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker.NOOP_EXECUTION_PROOF;
 
 public interface ExecutionProofManager extends AvailabilityCheckerFactory<ExecutionProof> {
 
   ExecutionProofManager NOOP =
       new ExecutionProofManager() {
-          @Override
-          public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(final SignedBeaconBlock block) {
-              return NOOP_EXECUTION_PROOF;
-          }
+        @Override
+        public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
+            final SignedBeaconBlock block) {
+          return NOOP_EXECUTION_PROOF;
+        }
 
-          @Override
+        @Override
         public SafeFuture<InternalValidationResult> onExecutionProofGossip(
             ExecutionProof executionProof, Optional<UInt64> arrivalTimestamp) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);

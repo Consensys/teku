@@ -173,7 +173,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             debugDataDumper,
-            metricsSystem,false);
+            metricsSystem,
+            false);
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -429,14 +430,15 @@ class ForkChoiceTest {
             recentChainData,
             BlobSidecarManager.NOOP,
             DasSamplerManager.NOOP,
-            ExecutionProofManager.NOOP, forkChoiceNotifier,
+            ExecutionProofManager.NOOP,
+            forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             DebugDataDumper.NOOP,
             metricsSystem,
-false);
+            false);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);

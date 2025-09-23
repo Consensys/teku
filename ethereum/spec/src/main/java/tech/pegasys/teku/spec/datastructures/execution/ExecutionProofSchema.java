@@ -51,14 +51,14 @@ public class ExecutionProofSchema
     return new ExecutionProof(this, blockRoot, blockHash, subnetId, version, proofData);
   }
 
-  public ExecutionProof create(Bytes32 blockRoot, Bytes32 blockHash, UInt64 subnetId, UInt64 version, Bytes proofData) {
+  public ExecutionProof create(
+      Bytes32 blockRoot, Bytes32 blockHash, UInt64 subnetId, UInt64 version, Bytes proofData) {
     return create(
         SszBytes32.of(blockRoot),
         SszBytes32.of(blockHash),
         SszUInt64.of(subnetId),
         SszUInt64.of(version),
-        getProofDataSchema().fromBytes(proofData)
-    );
+        getProofDataSchema().fromBytes(proofData));
   }
 
   @Override
