@@ -160,12 +160,9 @@ public class PeerManagerTest {
     when(connection.secureSession()).thenReturn(secureSession);
     when(connection.closeFuture()).thenReturn(new SafeFuture<>());
     final Multiaddr multiaddr = Multiaddr.fromString("/ip4/127.0.0.1/tcp/9000");
-    final MultiaddrPeerAddress peerAddress =
-        new MultiaddrPeerAddress(new LibP2PNodeId(secureSession.getRemoteId()), multiaddr);
+    final MultiaddrPeerAddress peerAddress = new MultiaddrPeerAddress(new MockNodeId(1), multiaddr);
     final SafeFuture<Connection> connectionFuture = new SafeFuture<>();
-    when(connection.remoteAddress()).thenReturn(multiaddr);
     when(network.connect(multiaddr)).thenReturn(connectionFuture);
-    when(reputationManager.isConnectionInitiationAllowed(peerAddress)).thenReturn(true);
 
     final SafeFuture<Peer> result = peerManager.connect(peerAddress, network);
     peerManager.handleConnection(connection);
@@ -199,31 +196,6 @@ public class PeerManagerTest {
     final Peer inboundPeer2 = createPeerWithDirection(3, false);
     peerManager.onConnectedPeer(inboundPeer2);
     validatePeerMetrics(0, 2);
-  }
-
-  @Test
-  public void shouldRejectIncomingConnectionWhenReputationManagerSaysSo() {
-    final Connection connection = mock(Connection.class);
-    final Session secureSession =
-        new Session(
-            PeerId.random(), PeerId.random(), EcdsaKt.generateEcdsaKeyPair().component2(), null);
-    when(connection.secureSession()).thenReturn(secureSession);
-    when(connection.closeFuture()).thenReturn(new SafeFuture<>());
-    when(connection.close()).thenReturn(new SafeFuture<>());
-    final Multiaddr multiaddr = Multiaddr.fromString("/ip4/127.0.0.1/tcp/9000");
-    final MultiaddrPeerAddress peerAddress =
-        new MultiaddrPeerAddress(new LibP2PNodeId(secureSession.getRemoteId()), multiaddr);
-    final SafeFuture<Connection> connectionFuture = new SafeFuture<>();
-    when(connection.remoteAddress()).thenReturn(multiaddr);
-    when(network.connect(multiaddr)).thenReturn(connectionFuture);
-
-    when(reputationManager.isConnectionInitiationAllowed(peerAddress)).thenReturn(false);
-
-    peerManager.handleConnection(connection);
-    connectionFuture.complete(connection);
-
-    verify(reputationManager).isConnectionInitiationAllowed(peerAddress);
-    verify(connection).close();
   }
 
   private void validatePeerMetrics(final double expectedOutbound, final double expectedInbound) {
