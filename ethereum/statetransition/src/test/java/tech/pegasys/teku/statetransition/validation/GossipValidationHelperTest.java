@@ -14,9 +14,13 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PROPOSER_LOOKAHEAD;
 
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,14 +28,19 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -39,7 +48,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(signatureVerifierNoop = true)
+@TestSpecContext(
+    signatureVerifierNoop = true,
+    milestone = {SpecMilestone.PHASE0, SpecMilestone.FULU})
 public class GossipValidationHelperTest {
   private Spec spec;
   private RecentChainData recentChainData;
@@ -150,6 +161,42 @@ public class GossipValidationHelperTest {
     assertThat(
             gossipValidationHelper.isProposerTheExpectedProposer(
                 signedBlock.getProposerIndex().increment(), nextSlot, headState))
+        .isFalse();
+  }
+
+  @TestTemplate
+  void isProposerTheExpectedProposer_GetsProposerFromStateInFulu() {
+    assumeThat(spec.atEpoch(ZERO).getMilestone()).isGreaterThanOrEqualTo(SpecMilestone.FULU);
+    final UInt64 defaultProposerIndex = UInt64.valueOf(1234);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    final BeaconState headState =
+        SafeFutureAssert.safeJoin(recentChainData.getBestState().orElseThrow());
+    final BeaconStateSchemaFulu beaconStateSchema =
+        (BeaconStateSchemaFulu)
+            spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions().getBeaconStateSchema();
+    final SszUInt64VectorSchema<?> proposerLookaheadSchema =
+        beaconStateSchema.getProposerLookaheadSchema();
+    final SszMutableContainer writableCopy = headState.createWritableCopy();
+    writableCopy.set(
+        beaconStateSchema.getFieldIndex(PROPOSER_LOOKAHEAD),
+        beaconStateSchema
+            .getProposerLookaheadSchema()
+            .createFromElements(
+                IntStream.range(0, proposerLookaheadSchema.getLength())
+                    .mapToObj(__ -> SszUInt64.of(defaultProposerIndex))
+                    .toList()));
+    final BeaconState modifiedState = (BeaconState) writableCopy.commitChanges();
+
+    assertThat(
+            gossipValidationHelper.isProposerTheExpectedProposer(
+                defaultProposerIndex, nextSlot, modifiedState))
+        .isTrue();
+    assertThat(
+            gossipValidationHelper.isProposerTheExpectedProposer(
+                defaultProposerIndex.increment(), nextSlot, modifiedState))
         .isFalse();
   }
 
