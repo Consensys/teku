@@ -81,9 +81,6 @@ public class DiscoveryNetworkIntegrationTest {
     // give some time to disconnection to reflect in both peers
     Thread.sleep(200);
 
-    // pretend time has advanced by at least COOLDOWN_PERIOD to allow reconnection
-    timeProvider.advanceTimeBySeconds(130);
-
     // But are automatically reconnected
     assertConnected(network1, network2);
   }
