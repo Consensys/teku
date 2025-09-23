@@ -137,10 +137,7 @@ public class BeaconBlocksByRootMessageHandler
           }
           callback.completeSuccessfully();
         },
-        err -> {
-          peer.adjustBlocksRequest(maybeRequestKey.get(), 0);
-          handleError(callback, err);
-        });
+        err -> handleError(callback, err));
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
