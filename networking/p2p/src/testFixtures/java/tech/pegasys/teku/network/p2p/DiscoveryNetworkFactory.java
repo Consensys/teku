@@ -71,7 +71,7 @@ public class DiscoveryNetworkFactory {
     private final List<String> bootnodes = new ArrayList<>();
     private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
-    private volatile TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+    private TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
     private DiscoveryTestNetworkBuilder() {}
 

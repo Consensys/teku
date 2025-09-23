@@ -162,9 +162,8 @@ class ConnectionManagerTest {
   public void shouldReconnectWhenPersistentPeerDisconnects_fastDisconnection() {
     final ConnectionManager manager = createManager(PEER1);
 
-    // simulate we already failed to connect one time
-    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isNull();
-    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(3));
+    // simulate we already failed to connect once
+    advanceStaticPeerRetryDelay(manager, PEER1, null, 3);
 
     final MockNodeId peerId = new MockNodeId();
     final StubPeer peer = new StubPeer(peerId);
@@ -188,16 +187,15 @@ class ConnectionManagerTest {
     verify(network, times(2)).connect(PEER1);
 
     // fast disconnection, last disconnection delay should not reset
-    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isEqualTo(9);
+    assertCurrentPeerRetryDelay(manager, PEER1, 3);
   }
 
   @Test
   public void shouldResetPersistentPeerDisconnects_stableConnection() {
     final ConnectionManager manager = createManager(PEER1);
 
-    // simulate we already failed to connect one time
-    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isNull();
-    assertThat(manager.computeStaticPeerRetryDelay(PEER1)).isEqualTo(Duration.ofSeconds(3));
+    // simulate we already failed to connect once
+    advanceStaticPeerRetryDelay(manager, PEER1, null, 3);
 
     final MockNodeId peerId = new MockNodeId();
     final StubPeer peer = new StubPeer(peerId);
@@ -207,7 +205,7 @@ class ConnectionManagerTest {
     manager.start().join();
     verify(network).connect(PEER1);
 
-    // wait more than IMMEDIATE_DISCONNECTION_THRESHOLD_MILLIS
+    // wait more than STABLE_CONNECTION_THRESHOLD_MILLIS
     timeProvider.advanceTimeBySeconds(3);
     peer.disconnectImmediately(Optional.empty(), true);
 
@@ -217,7 +215,7 @@ class ConnectionManagerTest {
     verify(network, times(2)).connect(PEER1);
 
     // stable connection, so delay should reset
-    assertThat(manager.getLastStaticPeerReconnectionDelay(PEER1)).isEqualTo(3);
+    assertCurrentPeerRetryDelay(manager, PEER1, 3);
   }
 
   @Test
@@ -506,13 +504,15 @@ class ConnectionManagerTest {
 
     final StubPeer peer1 = new StubPeer(new MockNodeId(1));
 
-    assertThat(manager.computeStaticPeerRetryDelay(peer1.getAddress()))
-        .isEqualTo(Duration.ofSeconds(3));
+    advanceStaticPeerRetryDelay(manager, peer1.getAddress(), null, 3);
+    advanceStaticPeerRetryDelay(manager, peer1.getAddress(), 3, 9);
 
     final StubPeer peer2 = new StubPeer(new MockNodeId(2));
 
-    assertThat(manager.computeStaticPeerRetryDelay(peer2.getAddress()))
-        .isEqualTo(Duration.ofSeconds(3));
+    advanceStaticPeerRetryDelay(manager, peer2.getAddress(), null, 3);
+
+    assertCurrentPeerRetryDelay(manager, peer1.getAddress(), 9);
+    assertCurrentPeerRetryDelay(manager, peer2.getAddress(), 3);
   }
 
   @Test
@@ -540,6 +540,17 @@ class ConnectionManagerTest {
   private void advanceTimeByWarmupSearchInterval() {
     timeProvider.advanceTimeBySeconds(ConnectionManager.WARMUP_DISCOVERY_INTERVAL.toSeconds());
     asyncRunner.executeDueActionsRepeatedly();
+  }
+
+  private void advanceStaticPeerRetryDelay(
+      final ConnectionManager manager, final PeerAddress peer, final Integer from, final int to) {
+    assertThat(manager.getLastStaticPeerReconnectionDelay(peer)).isEqualTo(from);
+    assertThat(manager.computeStaticPeerRetryDelay(peer)).isEqualTo(Duration.ofSeconds(to));
+  }
+
+  private void assertCurrentPeerRetryDelay(
+      final ConnectionManager manager, final PeerAddress peer, final Integer expected) {
+    assertThat(manager.getLastStaticPeerReconnectionDelay(peer)).isEqualTo(expected);
   }
 
   private PeerConnectedSubscriber<Peer> getPeerConnectedSubscriber() {

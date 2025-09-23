@@ -50,7 +50,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
-  private static final UInt64 IMMEDIATE_DISCONNECTION_THRESHOLD_MILLIS = UInt64.valueOf(2000);
+  private static final UInt64 STABLE_CONNECTION_THRESHOLD_MILLIS = UInt64.valueOf(2000);
   protected static final Duration WARMUP_DISCOVERY_INTERVAL = Duration.ofSeconds(1);
   protected static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
@@ -241,8 +241,9 @@ public class ConnectionManager extends Service {
               final UInt64 connectionTimeMillis = timeProvider.getTimeInMillis();
               peer.subscribeDisconnect(
                   (reason, locallyInitiated) -> {
-                    if (connectionLastedLongEnough(connectionTimeMillis)) {
-                      // only reset the counter if we remained connected for more than the threshold
+                    if (wasConnectionStable(connectionTimeMillis)) {
+                      // A client may disconnect us immediately after the connection is established
+                      // The delay must be reset only after a stable connection is lost
                       lastStaticPeerReconnectionDelay.remove(peerAddress);
                     }
 
@@ -271,9 +272,10 @@ public class ConnectionManager extends Service {
             });
   }
 
-  private boolean connectionLastedLongEnough(final UInt64 connectionTimeMillis) {
+  /** A connection is considered stable if it lasted more than the defined threshold */
+  private boolean wasConnectionStable(final UInt64 connectionTimeMillis) {
     final UInt64 immediateDisconnectionTime =
-        connectionTimeMillis.plus(IMMEDIATE_DISCONNECTION_THRESHOLD_MILLIS);
+        connectionTimeMillis.plus(STABLE_CONNECTION_THRESHOLD_MILLIS);
     return timeProvider.getTimeInMillis().isGreaterThanOrEqualTo(immediateDisconnectionTime);
   }
 
