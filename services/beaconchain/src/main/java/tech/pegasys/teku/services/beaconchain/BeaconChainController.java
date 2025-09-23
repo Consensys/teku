@@ -87,6 +87,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -1232,13 +1233,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recentChainData,
             blobSidecarManager,
             dasSamplerManager,
+            executionProofManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            beaconConfig.zkChainConfiguration().isStatelessValidationEnabled());
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,
@@ -1403,6 +1406,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
     } else {
       dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
+    final ExecutionProofGossipChannel executionProofGossipChannel;
+    if(beaconConfig.zkChainConfiguration().isStatelessValidationEnabled()){
+        executionProofGossipChannel = eventChannels.getPublisher(ExecutionProofGossipChannel.class, beaconAsyncRunner);
+    }
+    else{
+        executionProofGossipChannel = ExecutionProofGossipChannel.NOOP;
+    }
 
     final Optional<BlockProductionMetrics> blockProductionMetrics =
         beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
@@ -1462,7 +1472,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
-            blockPublisher);
+            blockPublisher,
+                executionProofManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)

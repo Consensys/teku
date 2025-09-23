@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
@@ -46,6 +47,19 @@ public interface AvailabilityChecker<Data> {
 
         @Override
         public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
+          return notRequiredResultFuture();
+        }
+      };
+
+  AvailabilityChecker<ExecutionProof> NOOP_EXECUTION_PROOF =
+      new AvailabilityChecker<>() {
+        @Override
+        public boolean initiateDataAvailabilityCheck() {
+          return true;
+        }
+
+        @Override
+        public SafeFuture<DataAndValidationResult<ExecutionProof>> getAvailabilityCheckResult() {
           return notRequiredResultFuture();
         }
       };

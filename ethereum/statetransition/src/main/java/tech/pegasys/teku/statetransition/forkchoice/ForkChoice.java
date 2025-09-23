@@ -76,6 +76,7 @@ import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -98,6 +99,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final RecentChainData recentChainData;
   private final BlobSidecarManager blobSidecarManager;
   private final AvailabilityCheckerFactory<UInt64> dasSamplerManager;
+  private final ExecutionProofManager executionProofManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final AttestationStateSelector attestationStateSelector;
@@ -114,6 +116,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
 
   private final DebugDataDumper debugDataDumper;
+    private final boolean executionProofValidationEnabled;
 
   public ForkChoice(
       final Spec spec,
@@ -121,17 +124,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final BlobSidecarManager blobSidecarManager,
       final AvailabilityCheckerFactory<UInt64> dasSamplerManager,
+      final ExecutionProofManager executionProofManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceLateBlockReorgEnabled,
       final DebugDataDumper debugDataDumper,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final boolean executionProofValidationEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.blobSidecarManager = blobSidecarManager;
     this.dasSamplerManager = dasSamplerManager;
+    this.executionProofManager = executionProofManager;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
@@ -143,6 +149,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.lastProcessHeadSlot.set(UInt64.ZERO);
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     this.debugDataDumper = debugDataDumper;
+    this.executionProofValidationEnabled = executionProofValidationEnabled;
     getProposerHeadSelectedCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -168,13 +175,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         recentChainData,
         blobSidecarManager,
         DasSamplerManager.NOOP,
+        ExecutionProofManager.NOOP,
         forkChoiceNotifier,
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
         false,
         DebugDataDumper.NOOP,
-        metricsSystem);
+        metricsSystem,
+        false);
   }
 
   @Override
@@ -451,48 +460,69 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
-    final AvailabilityChecker<?> availabilityChecker;
-    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      LOG.debug("Created DAS availabilityChecker for slot {}", block.getSlot());
-      availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
-    } else {
-      availabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
-    }
+      final AvailabilityChecker<?> availabilityChecker;
+      final AvailabilityChecker<?> epAvailabilityChecker;
+      if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+          LOG.debug("Created DAS availabilityChecker for slot {}", block.getSlot());
+          availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
+      } else {
+          availabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
+      }
 
-    availabilityChecker.initiateDataAvailabilityCheck();
+      epAvailabilityChecker = executionProofManager.createAvailabilityChecker(block);
 
-    final BeaconState postState;
-    try {
-      postState =
-          spec.getBlockProcessor(block.getSlot())
-              .processAndValidateBlock(
-                  block,
-                  blockSlotState.get(),
-                  indexedAttestationCache,
-                  Optional.of(payloadExecutor));
-    } catch (final StateTransitionException e) {
-      final BlockImportResult result = BlockImportResult.failedStateTransition(e);
-      reportInvalidBlock(block, result);
-      return SafeFuture.completedFuture(result);
-    }
-    blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
 
-    final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultSafeFuture =
-        availabilityChecker
-            .getAvailabilityCheckResult()
-            .thenPeek(
-                result -> {
-                  LOG.debug(
-                      "Availability check for slot: {}, block_root: {} result: {}",
-                      block.getSlot(),
-                      block.getRoot(),
-                      result.toLogString());
-                  blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
-                  // consensus validation is completed when DA check is completed
-                  if (result.isSuccess()) {
-                    blockBroadcastValidator.onConsensusValidationSucceeded();
-                  }
-                });
+      availabilityChecker.initiateDataAvailabilityCheck();
+
+      final BeaconState postState;
+      try {
+          postState =
+                  spec.getBlockProcessor(block.getSlot())
+                          .processAndValidateBlock(
+                                  block,
+                                  blockSlotState.get(),
+                                  indexedAttestationCache,
+                                  Optional.of(payloadExecutor));
+      } catch (final StateTransitionException e) {
+          final BlockImportResult result = BlockImportResult.failedStateTransition(e);
+          reportInvalidBlock(block, result);
+          return SafeFuture.completedFuture(result);
+      }
+      blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
+
+      final SafeFuture<? extends DataAndValidationResult<?>> epDataAndValidationResultSafeFuture =
+              epAvailabilityChecker
+                      .getAvailabilityCheckResult()
+                      .thenPeek(
+                              result -> {
+                                  LOG.debug(
+                                          "ExecutionProof availability check for slot: {}, block_root: {} result: {}",
+                                          block.getSlot(),
+                                          block.getRoot(),
+                                          result.toLogString());
+                                  blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
+                                  // consensus validation is completed when EP check is completed
+                                  if (result.isSuccess()) {
+                                      LOG.info("DA check result was" + result.toLogString());
+                                  }
+                              });
+
+      final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultSafeFuture =
+              availabilityChecker
+                      .getAvailabilityCheckResult()
+                      .thenPeek(
+                              result -> {
+                                  LOG.debug(
+                                          "Availability check for slot: {}, block_root: {} result: {}",
+                                          block.getSlot(),
+                                          block.getRoot(),
+                                          result.toLogString());
+                                  blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
+                                  // consensus validation is completed when DA check is completed
+                                  if (result.isSuccess()) {
+                                      blockBroadcastValidator.onConsensusValidationSucceeded();
+                                  }
+                              });
 
     final SafeFuture<PayloadValidationResult> payloadValidationFuture =
         payloadExecutor
