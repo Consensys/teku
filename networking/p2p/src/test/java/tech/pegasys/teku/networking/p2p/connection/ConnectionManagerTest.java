@@ -187,7 +187,7 @@ class ConnectionManagerTest {
     verify(network, times(2)).connect(PEER1);
 
     // fast disconnection, last disconnection delay should not reset
-    assertCurrentPeerRetryDelay(manager, PEER1, 3);
+    assertCurrentPeerRetryDelay(manager, PEER1, 9);
   }
 
   @Test
