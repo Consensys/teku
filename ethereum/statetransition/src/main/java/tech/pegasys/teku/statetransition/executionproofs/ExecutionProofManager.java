@@ -19,16 +19,23 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public interface ExecutionProofManager extends AvailabilityCheckerFactory<ExecutionProof> {
+public interface ExecutionProofManager
+    extends AvailabilityCheckerFactory<ExecutionProof>, ExecutionProofGenerator {
 
   ExecutionProofManager NOOP =
       new ExecutionProofManager() {
+        @Override
+        public SafeFuture<Void> generateExecutionProof(final SignedBlockContainer blockContainer) {
+          return SafeFuture.COMPLETE;
+        }
+
         @Override
         public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
             final SignedBeaconBlock block) {

@@ -52,7 +52,11 @@ public class ExecutionProofSchema
   }
 
   public ExecutionProof create(
-      Bytes32 blockRoot, Bytes32 blockHash, UInt64 subnetId, UInt64 version, Bytes proofData) {
+      final Bytes32 blockRoot,
+      final Bytes32 blockHash,
+      final UInt64 subnetId,
+      final UInt64 version,
+      final Bytes proofData) {
     return create(
         SszBytes32.of(blockRoot),
         SszBytes32.of(blockHash),

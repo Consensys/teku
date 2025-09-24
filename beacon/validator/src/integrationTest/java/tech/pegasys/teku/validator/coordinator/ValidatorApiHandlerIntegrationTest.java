@@ -203,7 +203,8 @@ public class ValidatorApiHandlerIntegrationTest {
                 blobSidecarGossipChannel,
                 dataColumnSidecarGossipChannel,
                 dutyMetrics,
-                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED));
+                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
+            Optional.empty());
   }
 
   @TestTemplate

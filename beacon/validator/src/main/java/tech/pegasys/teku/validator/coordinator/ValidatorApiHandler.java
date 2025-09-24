@@ -91,7 +91,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -146,7 +146,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final BlockPublisher blockPublisher;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
-  private final Optional<ExecutionProofManagerImpl> executionProofManager;
+  private final Optional<ExecutionProofManager> executionProofManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -170,7 +170,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
-      final Optional<ExecutionProofManagerImpl> executionProofManager) {
+      final Optional<ExecutionProofManager> executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -708,7 +708,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     // TODO maybe generate proofs and publish them here
     boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
     if (isLocallyCreated && executionProofManager.isPresent()) {
-      executionProofManager.get().generateExecutionProof(maybeBlindedBlockContainer);
+      executionProofManager
+          .get()
+          .generateExecutionProof(maybeBlindedBlockContainer)
+          .finish(
+              () ->
+                  LOG.info(
+                      "proofs generated for block {}",
+                      maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()),
+              error ->
+                  LOG.error(
+                      "Failed to generate execution proofs for block {}",
+                      maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()));
     }
 
     return blockPublisher

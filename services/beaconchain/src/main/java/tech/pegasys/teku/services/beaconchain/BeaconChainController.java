@@ -1406,13 +1406,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     } else {
       dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
-    final ExecutionProofGossipChannel executionProofGossipChannel;
-    if (beaconConfig.zkChainConfiguration().isStatelessValidationEnabled()) {
-      executionProofGossipChannel =
-          eventChannels.getPublisher(ExecutionProofGossipChannel.class, beaconAsyncRunner);
-    } else {
-      executionProofGossipChannel = ExecutionProofGossipChannel.NOOP;
-    }
+
 
     final Optional<BlockProductionMetrics> blockProductionMetrics =
         beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
@@ -1473,7 +1467,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
-            executionProofManager);
+            Optional.of(executionProofManager));
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.executionproofs;
 
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class ExecutionProofManagerImpl implements ExecutionProofManager, ExecutionProofGenerator {
+public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
   final ExecutionProofGossipValidator executionProofGossipValidator;
   //    final ExecutionProofGossipValidator executionProofGossipValidator;
@@ -99,7 +100,9 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager, Executi
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
     final Bytes32 blockHash = executionPayload.getBlockHash();
     Bytes dummyWitness =
-        Bytes.of(("dummy_witness_for_block_" + blockHash.toHexString()).getBytes());
+        Bytes.of(
+            ("dummy_witness_for_block_" + blockHash.toHexString())
+                .getBytes(Charset.defaultCharset()));
     Set<ExecutionProof> generatedProofs = new HashSet<>();
     for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
       final ExecutionProof executionProof =
@@ -134,6 +137,6 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager, Executi
         executionPayload.getBlockHash(),
         subnetId,
         UInt64.ONE,
-        Bytes.of(dummyProof.getBytes()));
+        Bytes.of(dummyProof.getBytes(Charset.defaultCharset())));
   }
 }

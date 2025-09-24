@@ -429,6 +429,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
    * Import a block to the store. The supplied blockSlotState must already have empty slots
    * processed to the same slot as the block.
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BeaconState> blockSlotState,
@@ -461,15 +462,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         IndexedAttestationCache.capturing();
 
     final AvailabilityChecker<?> availabilityChecker;
-    final AvailabilityChecker<?> epAvailabilityChecker;
+
     if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       LOG.debug("Created DAS availabilityChecker for slot {}", block.getSlot());
       availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
     } else {
       availabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
     }
-
-    epAvailabilityChecker = executionProofManager.createAvailabilityChecker(block);
+    LOG.info("Stateless mode enabled: {}", executionProofValidationEnabled);
+    final AvailabilityChecker<?> epAvailabilityChecker =
+        executionProofManager.createAvailabilityChecker(block);
 
     availabilityChecker.initiateDataAvailabilityCheck();
 
@@ -489,22 +491,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
 
-    final SafeFuture<? extends DataAndValidationResult<?>> epDataAndValidationResultSafeFuture =
-        epAvailabilityChecker
-            .getAvailabilityCheckResult()
-            .thenPeek(
-                result -> {
-                  LOG.debug(
-                      "ExecutionProof availability check for slot: {}, block_root: {} result: {}",
-                      block.getSlot(),
-                      block.getRoot(),
-                      result.toLogString());
-                  blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
-                  // consensus validation is completed when EP check is completed
-                  if (result.isSuccess()) {
-                    LOG.info("DA check result was" + result.toLogString());
-                  }
-                });
+    epAvailabilityChecker
+        .getAvailabilityCheckResult()
+        .thenPeek(
+            result -> {
+              LOG.debug(
+                  "ExecutionProof availability check for slot: {}, block_root: {} result: {}",
+                  block.getSlot(),
+                  block.getRoot(),
+                  result.toLogString());
+              blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
+              // consensus validation is completed when EP check is completed
+              if (result.isSuccess()) {
+                LOG.info("DA check result was" + result.toLogString());
+              }
+            });
 
     final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultSafeFuture =
         availabilityChecker
