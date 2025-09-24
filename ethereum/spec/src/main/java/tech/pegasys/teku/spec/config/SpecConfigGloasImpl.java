@@ -123,7 +123,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && payloadAttestationDueBps == that.payloadAttestationDueBps
         && ptcSize == that.ptcSize
         && syncMessageDueBps == that.syncMessageDueBps
-        && Objects.equals(builderPendingWithdrawalsLimit, that.builderPendingWithdrawalsLimit);
+        && builderPendingWithdrawalsLimit == that.builderPendingWithdrawalsLimit;
   }
 
   @Override
