@@ -301,7 +301,7 @@ public class PeerSubnetSubscriptions {
       return relevantSubnets.contains(subnetId);
     }
 
-    public IntStream streamRelevantSubnets() {
+    private IntStream streamRelevantSubnets() {
       return relevantSubnets.intStream();
     }
 
