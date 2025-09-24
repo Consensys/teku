@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -129,6 +130,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
   protected OperationProcessor<SignedBlsToExecutionChange>
       gossipedSignedBlsToExecutionChangeProcessor;
+  protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
@@ -422,6 +424,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              payloadAttestationMessageProcessor,
               debugDataDumper,
               dasGossipLogger);
     };
@@ -476,6 +479,7 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              payloadAttestationMessageProcessor,
               debugDataDumper,
               dasGossipLogger,
               bpo);
@@ -609,6 +613,9 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedSyncCommitteeMessageProcessor", gossipedSyncCommitteeMessageProcessor);
     assertNotNull(
         "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
+    assertNotNull(
+        "gossipedDataColumnSidecarOperationProcessor", dataColumnSidecarOperationProcessor);
+    assertNotNull("gossipedPayloadAttestationMessageProcessor", payloadAttestationMessageProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -745,6 +752,14 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
     checkNotNull(dataColumnSidecarOperationProcessor);
     this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedPayloadAttestationMessageProcessor(
+      final OperationProcessor<PayloadAttestationMessage>
+          gossipedPayloadAttestationMessageProcessor) {
+    checkNotNull(gossipedPayloadAttestationMessageProcessor);
+    this.payloadAttestationMessageProcessor = gossipedPayloadAttestationMessageProcessor;
     return this;
   }
 

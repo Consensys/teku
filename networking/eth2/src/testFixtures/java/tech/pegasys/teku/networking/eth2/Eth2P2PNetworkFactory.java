@@ -98,6 +98,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -161,6 +162,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<ValidatableSyncCommitteeMessage> syncCommitteeMessageProcessor;
     protected OperationProcessor<SignedBlsToExecutionChange> signedBlsToExecutionChangeProcessor;
     protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
+    protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -541,6 +543,7 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 dataColumnSidecarOperationProcessor,
+                payloadAttestationMessageProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP);
       };
@@ -635,6 +638,9 @@ public class Eth2P2PNetworkFactory {
       }
       if (signedBlsToExecutionChangeProcessor == null) {
         signedBlsToExecutionChangeProcessor = OperationProcessor.noop();
+      }
+      if (payloadAttestationMessageProcessor == null) {
+        payloadAttestationMessageProcessor = OperationProcessor.noop();
       }
     }
 
@@ -762,6 +768,14 @@ public class Eth2P2PNetworkFactory {
         final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
       checkNotNull(dataColumnSidecarOperationProcessor);
       this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedPayloadAttestationMessageProcessor(
+        final OperationProcessor<PayloadAttestationMessage>
+            gossipedPayloadAttestationMessageProcessor) {
+      checkNotNull(gossipedPayloadAttestationMessageProcessor);
+      this.payloadAttestationMessageProcessor = gossipedPayloadAttestationMessageProcessor;
       return this;
     }
 
