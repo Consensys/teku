@@ -203,7 +203,7 @@ class PeerSubnetSubscriptionsTest {
     for (Map.Entry<NodeId, int[]> nodeIdEntry : expectedProvidedSubnetCountPerPeer.entrySet()) {
       assertThat(
               subscriptions
-                  .getDataColumnSidecarSubnetSubscriptions(nodeIdEntry.getKey())
+                  .getDataColumnSidecarSubnetSubscriptions(nodeIdEntry.getKey().toBytes())
                   .getAllSetBits()
                   .intStream()
                   .boxed()
