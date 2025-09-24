@@ -108,10 +108,9 @@ public class SimpleSidecarRetriever
     final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
 
-    pendingRequests.entrySet().stream()
-        .filter(request -> request.getKey().equals(dataColumnSlotAndIdentifier))
-        .filter(request -> !request.getValue().result.isDone())
-        .forEach(requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar));
+    Optional.ofNullable(pendingRequests.get(dataColumnSlotAndIdentifier))
+        .filter(request -> !request.result.isDone())
+        .ifPresent(request -> reqRespCompleted(request, sidecar));
   }
 
   private Stream<RequestMatch> matchRequestsAndPeers() {
