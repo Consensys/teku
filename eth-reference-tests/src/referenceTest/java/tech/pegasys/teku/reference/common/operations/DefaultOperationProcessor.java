@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -137,7 +139,14 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processWithdrawals(
       final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, payloadSummary);
+    final SpecMilestone milestone = spec.atSlot(state.getSlot()).getMilestone();
+    final BlockProcessor blockProcessor = spec.getBlockProcessor(state.getSlot());
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      // >= Gloas, only state as a parameter
+      blockProcessor.processWithdrawals(state);
+    } else {
+      blockProcessor.processWithdrawals(state, payloadSummary);
+    }
   }
 
   @Override

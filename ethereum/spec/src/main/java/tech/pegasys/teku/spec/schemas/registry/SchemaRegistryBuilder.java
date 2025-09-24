@@ -1017,7 +1017,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 SszListSchema.create(
                     registry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA),
-                    BeaconStateSchemaGloas.BUILDER_PENDING_WITHDRAWALS_LIMIT))
+                    SpecConfigGloas.required(specConfig).getBuilderPendingWithdrawalsLimit()))
         .build();
   }
 

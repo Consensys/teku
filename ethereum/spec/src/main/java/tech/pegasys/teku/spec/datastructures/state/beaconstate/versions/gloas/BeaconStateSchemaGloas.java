@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaGloas
     extends AbstractBeaconStateSchema<BeaconStateGloas, MutableBeaconStateGloas> {
-  public static final long BUILDER_PENDING_WITHDRAWALS_LIMIT = 1_048_576; // 2**20
 
   public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 38;
   public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 39;

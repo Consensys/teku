@@ -59,6 +59,11 @@ public class DelegatingSpecConfigGloas extends DelegatingSpecConfigFulu implemen
   }
 
   @Override
+  public long getBuilderPendingWithdrawalsLimit() {
+    return delegate.getBuilderPendingWithdrawalsLimit();
+  }
+
+  @Override
   public Optional<SpecConfigGloas> toVersionGloas() {
     return delegate.toVersionGloas();
   }
