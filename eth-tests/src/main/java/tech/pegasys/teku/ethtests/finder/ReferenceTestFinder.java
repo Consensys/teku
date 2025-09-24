@@ -73,7 +73,19 @@ public class ReferenceTestFinder {
                         // Temporarily adding only specific test types that we support
                         new PyspecTestFinder(
                             "fork/fork", "networking/", "rewards/", "operations/withdrawals"))
-                    .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
+                    .flatMap(
+                        unchecked(
+                            finder ->
+                                finder
+                                    .findTests(fork, spec, testsPath)
+                                    .filter(
+                                        // TODO: temporary until DataColumnSidecar change for Gloas
+                                        // is implemented
+                                        // https://github.com/Consensys/teku/issues/9915
+                                        testDefinition ->
+                                            !testDefinition
+                                                .getTestType()
+                                                .equals("ssz_static/DataColumnSidecar"))));
               }
 
               return Stream.of(
