@@ -13,49 +13,43 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
-public class SignedExecutionPayloadHeaderSchema
-    extends ContainerSchema2<SignedExecutionPayloadHeader, ExecutionPayloadHeader, SszSignature> {
+public class SignedExecutionPayloadBidSchema
+    extends ContainerSchema2<SignedExecutionPayloadBid, ExecutionPayloadBid, SszSignature> {
 
-  public SignedExecutionPayloadHeaderSchema(final SchemaRegistry schemaRegistry) {
+  public SignedExecutionPayloadBidSchema(final SchemaRegistry schemaRegistry) {
     super(
-        "SignedExecutionPayloadHeader",
-        namedSchema(
-            "message",
-            SszSchema.as(
-                ExecutionPayloadHeader.class, schemaRegistry.get(EXECUTION_PAYLOAD_HEADER_SCHEMA))),
+        "SignedExecutionPayloadBid",
+        namedSchema("message", schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
         namedSchema("signature", SszSignatureSchema.INSTANCE));
   }
 
-  public SignedExecutionPayloadHeader create(
-      final ExecutionPayloadHeader message, final BLSSignature signature) {
-    return new SignedExecutionPayloadHeader(this, message, signature);
+  public SignedExecutionPayloadBid create(
+      final ExecutionPayloadBid message, final BLSSignature signature) {
+    return new SignedExecutionPayloadBid(this, message, signature);
   }
 
   @Override
-  public SignedExecutionPayloadHeader createFromBackingNode(final TreeNode node) {
-    return new SignedExecutionPayloadHeader(this, node);
+  public SignedExecutionPayloadBid createFromBackingNode(final TreeNode node) {
+    return new SignedExecutionPayloadBid(this, node);
   }
 
-  public ExecutionPayloadHeaderSchema<?> getMessageSchema() {
-    return (ExecutionPayloadHeaderSchema<?>) getChildSchema(getFieldIndex("message"));
+  public ExecutionPayloadBidSchema getMessageSchema() {
+    return (ExecutionPayloadBidSchema) getChildSchema(getFieldIndex("message"));
   }
 
   public long getBlobKzgCommitmentsRootGeneralizedIndex() {
     return GIndexUtil.gIdxCompose(
         getChildGeneralizedIndex(getFieldIndex("message")),
-        getMessageSchema().toVersionGloasRequired().getBlobKzgCommitmentsRootGeneralizedIndex());
+        getMessageSchema().getBlobKzgCommitmentsRootGeneralizedIndex());
   }
 }

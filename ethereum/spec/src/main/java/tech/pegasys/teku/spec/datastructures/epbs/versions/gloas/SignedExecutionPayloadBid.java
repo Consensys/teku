@@ -16,25 +16,24 @@ package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class SignedExecutionPayloadHeader
-    extends Container2<SignedExecutionPayloadHeader, ExecutionPayloadHeader, SszSignature> {
+public class SignedExecutionPayloadBid
+    extends Container2<SignedExecutionPayloadBid, ExecutionPayloadBid, SszSignature> {
 
-  SignedExecutionPayloadHeader(
-      final SignedExecutionPayloadHeaderSchema schema,
-      final ExecutionPayloadHeader executionPayloadHeader,
+  SignedExecutionPayloadBid(
+      final SignedExecutionPayloadBidSchema schema,
+      final ExecutionPayloadBid executionPayloadBid,
       final BLSSignature signature) {
-    super(schema, executionPayloadHeader, new SszSignature(signature));
+    super(schema, executionPayloadBid, new SszSignature(signature));
   }
 
-  SignedExecutionPayloadHeader(
-      final SignedExecutionPayloadHeaderSchema schema, final TreeNode backingNode) {
+  SignedExecutionPayloadBid(
+      final SignedExecutionPayloadBidSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public ExecutionPayloadHeader getMessage() {
+  public ExecutionPayloadBid getMessage() {
     return getField0();
   }
 
@@ -43,7 +42,7 @@ public class SignedExecutionPayloadHeader
   }
 
   @Override
-  public SignedExecutionPayloadHeaderSchema getSchema() {
-    return (SignedExecutionPayloadHeaderSchema) super.getSchema();
+  public SignedExecutionPayloadBidSchema getSchema() {
+    return (SignedExecutionPayloadBidSchema) super.getSchema();
   }
 }

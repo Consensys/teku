@@ -19,13 +19,14 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDIN
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWAL_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.INDEXED_PAYLOAD_ATTESTATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_DATA_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PAYLOAD_ATTESTATION_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -37,13 +38,14 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingP
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelopeSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessageSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelopeSchema;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
@@ -54,7 +56,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   private final PayloadAttestationSchema payloadAttestationSchema;
   private final PayloadAttestationMessageSchema payloadAttestationMessageSchema;
   private final IndexedPayloadAttestationSchema indexedPayloadAttestationSchema;
-  private final SignedExecutionPayloadHeaderSchema signedExecutionPayloadHeaderSchema;
+  private final ExecutionPayloadBidSchema executionPayloadBidSchema;
+  private final SignedExecutionPayloadBidSchema signedExecutionPayloadBidSchema;
   private final ExecutionPayloadEnvelopeSchema executionPayloadEnvelopeSchema;
   private final SignedExecutionPayloadEnvelopeSchema signedExecutionPayloadEnvelopeSchema;
   private final SszBitvectorSchema<?> executionPayloadAvailabilitySchema;
@@ -69,8 +72,8 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     this.payloadAttestationSchema = schemaRegistry.get(PAYLOAD_ATTESTATION_SCHEMA);
     this.payloadAttestationMessageSchema = schemaRegistry.get(PAYLOAD_ATTESTATION_MESSAGE_SCHEMA);
     this.indexedPayloadAttestationSchema = schemaRegistry.get(INDEXED_PAYLOAD_ATTESTATION_SCHEMA);
-    this.signedExecutionPayloadHeaderSchema =
-        schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_HEADER_SCHEMA);
+    this.executionPayloadBidSchema = schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA);
+    this.signedExecutionPayloadBidSchema = schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_BID_SCHEMA);
     this.executionPayloadEnvelopeSchema = schemaRegistry.get(EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
     this.signedExecutionPayloadEnvelopeSchema =
         schemaRegistry.get(SIGNED_EXECUTION_PAYLOAD_ENVELOPE_SCHEMA);
@@ -120,8 +123,12 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
     return indexedPayloadAttestationSchema;
   }
 
-  public SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema() {
-    return signedExecutionPayloadHeaderSchema;
+  public ExecutionPayloadBidSchema getExecutionPayloadBidSchema() {
+    return executionPayloadBidSchema;
+  }
+
+  public SignedExecutionPayloadBidSchema getSignedExecutionPayloadBidSchema() {
+    return signedExecutionPayloadBidSchema;
   }
 
   public ExecutionPayloadEnvelopeSchema getExecutionPayloadEnvelopeSchema() {

@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 
 public interface BeaconBlockBodySchemaGloas<T extends BeaconBlockBodyGloas>
     extends BeaconBlockBodySchemaElectra<T> {
@@ -31,7 +31,7 @@ public interface BeaconBlockBodySchemaGloas<T extends BeaconBlockBodyGloas>
     return (BeaconBlockBodySchemaGloas<?>) schema;
   }
 
-  SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema();
+  SignedExecutionPayloadBidSchema getSignedExecutionPayloadBidSchema();
 
   long getBlobKzgCommitmentsRootGeneralizedIndex();
 

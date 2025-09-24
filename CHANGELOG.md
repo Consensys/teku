@@ -12,5 +12,3 @@
 ### Additions and Improvements
 
 ### Bug Fixes
- - `ephemery` network now defaults to loading configuration and bootnodes directly from https://ephemery.dev.
-

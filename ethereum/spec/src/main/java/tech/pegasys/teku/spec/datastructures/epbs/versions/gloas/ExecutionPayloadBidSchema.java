@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.gloas;
+package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_KZG_COMMITMENTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
@@ -23,8 +23,6 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.SLOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.VALUE;
 
-import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -35,17 +33,10 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 
-public class ExecutionPayloadHeaderSchemaGloas
+public class ExecutionPayloadBidSchema
     extends ContainerSchema9<
-        ExecutionPayloadHeaderGloasImpl,
+        ExecutionPayloadBid,
         SszBytes32,
         SszBytes32,
         SszBytes32,
@@ -54,15 +45,11 @@ public class ExecutionPayloadHeaderSchemaGloas
         SszUInt64,
         SszUInt64,
         SszUInt64,
-        SszBytes32>
-    implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderGloasImpl> {
+        SszBytes32> {
 
-  private final ExecutionPayloadHeaderGloasImpl defaultExecutionPayloadHeader;
-  private final ExecutionPayloadHeaderGloasImpl executionPayloadHeaderOfDefaultPayload;
-
-  public ExecutionPayloadHeaderSchemaGloas(final SpecConfigGloas specConfig) {
+  public ExecutionPayloadBidSchema() {
     super(
-        "ExecutionPayloadHeaderGloas",
+        "ExecutionPayloadBid",
         namedSchema(PARENT_BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(PARENT_BLOCK_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -72,63 +59,34 @@ public class ExecutionPayloadHeaderSchemaGloas
         namedSchema(SLOT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(VALUE, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(BLOB_KZG_COMMITMENTS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
-
-    final ExecutionPayloadDenebImpl defaultExecutionPayload =
-        new ExecutionPayloadSchemaDeneb(specConfig).getDefault();
-
-    this.executionPayloadHeaderOfDefaultPayload =
-        createFromExecutionPayload(defaultExecutionPayload);
-    this.defaultExecutionPayloadHeader = createFromBackingNode(getDefaultTree());
   }
 
-  @Override
-  public LongList getBlindedNodeGeneralizedIndices() {
-    return LongList.of(getChildGeneralizedIndex(getFieldIndex(BLOB_KZG_COMMITMENTS_ROOT)));
-  }
-
-  @Override
-  public ExecutionPayloadHeader createExecutionPayloadHeader(
-      final Consumer<ExecutionPayloadHeaderBuilder> builderConsumer) {
-    final ExecutionPayloadHeaderBuilderGloas builder =
-        new ExecutionPayloadHeaderBuilderGloas().schema(this);
-    builderConsumer.accept(builder);
-    return builder.build();
-  }
-
-  @Override
-  public ExecutionPayloadHeaderGloasImpl getDefault() {
-    return defaultExecutionPayloadHeader;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderGloas getHeaderOfDefaultPayload() {
-    return executionPayloadHeaderOfDefaultPayload;
-  }
-
-  @Override
-  public ExecutionPayloadHeaderGloasImpl createFromBackingNode(final TreeNode node) {
-    return new ExecutionPayloadHeaderGloasImpl(this, node);
-  }
-
-  @Override
-  public ExecutionPayloadHeaderGloasImpl createFromExecutionPayload(
-      final ExecutionPayload payload) {
-    return new ExecutionPayloadHeaderGloasImpl(
+  public ExecutionPayloadBid create(
+      final Bytes32 parentBlockHash,
+      final Bytes32 parentBlockRoot,
+      final Bytes32 blockHash,
+      final Bytes20 feeRecipient,
+      final UInt64 gasLimit,
+      final UInt64 builderIndex,
+      final UInt64 slot,
+      final UInt64 value,
+      final Bytes32 blobKzgCommitmentsRoot) {
+    return new ExecutionPayloadBid(
         this,
-        SszBytes32.of(Bytes32.ZERO),
-        SszBytes32.of(Bytes32.ZERO),
-        SszBytes32.of(payload.getBlockHash()),
-        SszByteVector.fromBytes(payload.getFeeRecipient().getWrappedBytes()),
-        SszUInt64.of(payload.getGasLimit()),
-        SszUInt64.of(UInt64.ZERO),
-        SszUInt64.of(UInt64.ZERO),
-        SszUInt64.of(UInt64.ZERO),
-        SszBytes32.of(Bytes32.ZERO));
+        parentBlockHash,
+        parentBlockRoot,
+        blockHash,
+        feeRecipient,
+        gasLimit,
+        builderIndex,
+        slot,
+        value,
+        blobKzgCommitmentsRoot);
   }
 
   @Override
-  public ExecutionPayloadHeaderSchemaGloas toVersionGloasRequired() {
-    return this;
+  public ExecutionPayloadBid createFromBackingNode(final TreeNode node) {
+    return new ExecutionPayloadBid(this, node);
   }
 
   public int getBlobKzgCommitmentsRootGeneralizedIndex() {
