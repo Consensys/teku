@@ -186,7 +186,7 @@ public class SimpleSidecarRetriever
     final long activatedMatches =
         matchRequestsAndPeers()
             .map(this::activateMatchedRequest)
-            .filter(Boolean::booleanValue)
+            .filter(activated -> activated)
             .count();
 
     if (LOG.isTraceEnabled()) {
