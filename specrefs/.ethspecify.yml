@@ -1,4 +1,4 @@
-version: v1.6.0-alpha.6
+version: v1.6.0-beta.0
 style: full
 
 specrefs:
@@ -295,7 +295,20 @@ specrefs:
       - process_epoch#fulu
       - recover_matrix#fulu
 
-      # added at alpha.5 for Gloas fork (not yet implemented)
+      # due ms (not yet implemented)
+      - get_aggregate_due_ms#gloas
+      - get_aggregate_due_ms#phase0
+      - get_attestation_due_ms#gloas
+      - get_attestation_due_ms#phase0
+      - get_contribution_due_ms#altair
+      - get_contribution_due_ms#gloas
+      - get_execution_payload_bid_signature#gloas
+      - get_payload_attestation_due_ms#gloas
+      - get_proposer_reorg_cutoff_ms#phase0
+      - get_sync_message_due_ms#altair
+      - get_sync_message_due_ms#gloas
+
+      # added at beta.0 for Gloas fork (not yet implemented)
       - compute_balance_weighted_acceptance#gloas
       - compute_balance_weighted_selection#gloas
       - compute_fork_version#gloas
@@ -307,7 +320,7 @@ specrefs:
       - get_data_column_sidecars#gloas
       - get_data_column_sidecars_from_block#gloas
       - get_execution_payload_envelope_signature#gloas
-      - get_execution_payload_header_signature#gloas
+      - get_execution_payload_bid_signature#gloas
       - get_expected_withdrawals#gloas
       - get_forkchoice_store#gloas
       - get_head#gloas
@@ -341,7 +354,7 @@ specrefs:
       - process_builder_pending_payments#gloas
       - process_epoch#gloas
       - process_execution_payload#gloas
-      - process_execution_payload_header#gloas
+      - process_execution_payload_bid#gloas
       - process_operations#gloas
       - process_payload_attestation#gloas
       - process_slot#gloas
@@ -354,5 +367,8 @@ specrefs:
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
       - verify_data_column_sidecar_inclusion_proof#gloas
+      - get_data_column_sidecars_from_column_sidecar#gloas
       - verify_execution_payload_envelope_signature#gloas
-      - verify_execution_payload_header_signature#gloas
+      - verify_execution_payload_bid_signature#gloas
+      - process_proposer_slashing#gloas
+      - get_pending_balance_to_withdraw#gloas

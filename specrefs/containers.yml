@@ -253,7 +253,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodySchemaGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodySchemaGloasImpl.java
   spec: |
-    <spec container="BeaconBlockBody" fork="gloas" hash="8fbb9583">
+    <spec container="BeaconBlockBody" fork="gloas" hash="7e472a77">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -272,7 +272,7 @@
         # [Modified in Gloas:EIP7732]
         # Removed `execution_requests`
         # [New in Gloas:EIP7732]
-        signed_execution_payload_header: SignedExecutionPayloadHeader
+        signed_execution_payload_bid: SignedExecutionPayloadBid
         # [New in Gloas:EIP7732]
         payload_attestations: List[PayloadAttestation, MAX_PAYLOAD_ATTESTATIONS]
     </spec>
@@ -900,26 +900,6 @@
         excess_blob_gas: uint64
     </spec>
 
-- name: ExecutionPayloadHeaderGloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderGloas.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderGloasImpl.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderBuilderGloas.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderSchemaGloas.java
-  spec: |
-    <spec container="ExecutionPayloadHeader" fork="gloas" hash="5300a374">
-    class ExecutionPayloadHeader(Container):
-        parent_block_hash: Hash32
-        parent_block_root: Root
-        block_hash: Hash32
-        fee_recipient: ExecutionAddress
-        gas_limit: uint64
-        builder_index: ValidatorIndex
-        slot: Slot
-        value: Gwei
-        blob_kzg_commitments_root: Root
-    </spec>
-
 - name: ExecutionRequests
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequests.java
@@ -1213,17 +1193,6 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedExecutionPayloadHeader
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadHeader.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadHeaderSchema.java
-  spec: |
-    <spec container="SignedExecutionPayloadHeader" fork="gloas" hash="20758a79">
-    class SignedExecutionPayloadHeader(Container):
-        message: ExecutionPayloadHeader
-        signature: BLSSignature
-    </spec>
-
 - name: SignedVoluntaryExit
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedVoluntaryExit.java
@@ -1365,3 +1334,33 @@
         validator_pubkey: BLSPubkey
         amount: Gwei
     </spec>
+
+- name: ExecutionPayloadBid
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBid.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBidSchema.java
+  spec: |
+    <spec container="ExecutionPayloadBid" fork="gloas" hash="175bc24b">
+    class ExecutionPayloadBid(Container):
+        parent_block_hash: Hash32
+        parent_block_root: Root
+        block_hash: Hash32
+        fee_recipient: ExecutionAddress
+        gas_limit: uint64
+        builder_index: ValidatorIndex
+        slot: Slot
+        value: Gwei
+        blob_kzg_commitments_root: Root
+    </spec>
+
+- name: SignedExecutionPayloadBid
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadBid.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadBidSchema.java
+  spec: |
+    <spec container="SignedExecutionPayloadBid" fork="gloas" hash="6b344341">
+    class SignedExecutionPayloadBid(Container):
+        message: ExecutionPayloadBid
+        signature: BLSSignature
+    </spec>
+    
