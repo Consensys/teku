@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
 
@@ -257,5 +258,10 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return taskQueue.queueTask(delegate::getEarliestDataColumnSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SidecarIdentifier>> getSidecarIdentifier(final VersionedHash hash) {
+    return taskQueue.queueTask(() -> delegate.getSidecarIdentifier(hash));
   }
 }

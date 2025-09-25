@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Longs;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.storage.api.SidecarIdentifier;
 import tech.pegasys.teku.storage.server.kvstore.serialization.UInt64Serializer;
 
 public class VersionedHashDBSource {
@@ -95,18 +97,23 @@ public class VersionedHashDBSource {
 
   public void addBlobSidecarVersionedHash(
       final BlobSidecar blobSidecar, final KvStoreCombinedDao.FinalizedUpdater updater) {
-    LOG.trace("Adding BlobSidecar versioned hash {}", blobSidecar::toLogString);
-    updater.addVersionedHash(
-        blobSidecarToVersionedHash.apply(blobSidecar).get(),
-        computeCanonicalBlobSidecarMetadata(blobSidecar));
+    final Bytes32 versionedHashBytes = blobSidecarToVersionedHash.apply(blobSidecar).get();
+    LOG.trace(
+        "Adding BlobSidecar versioned hash {}: {}",
+        versionedHashBytes::toHexString,
+        blobSidecar::toLogString);
+    updater.addVersionedHash(versionedHashBytes, computeCanonicalBlobSidecarMetadata(blobSidecar));
   }
 
   public void addNonCanonicalBlobSidecarVersionedHash(
       final BlobSidecar blobSidecar, final KvStoreCombinedDao.FinalizedUpdater updater) {
-    LOG.trace("Adding non-canonical BlobSidecar versioned hash {}", blobSidecar::toLogString);
+    final Bytes32 versionedHashBytes = blobSidecarToVersionedHash.apply(blobSidecar).get();
+    LOG.trace(
+        "Adding non-canonical BlobSidecar versioned hash {}: {}",
+        versionedHashBytes::toHexString,
+        blobSidecar::toLogString);
     updater.addVersionedHash(
-        blobSidecarToVersionedHash.apply(blobSidecar).get(),
-        computeNonCanonicalBlobSidecarMetadata(blobSidecar));
+        versionedHashBytes, computeNonCanonicalBlobSidecarMetadata(blobSidecar));
   }
 
   public void addNonCanonicalBlobSidecarVersionedHash(
@@ -126,8 +133,12 @@ public class VersionedHashDBSource {
               .get()
               .getBlobSidecarSchema()
               .sszDeserialize(maybeBlobSidecarRaw.get());
-      LOG.trace("Removing BlobSidecar versioned hash {}", blobSidecar::toLogString);
-      updater.removeVersionedHash(blobSidecarToVersionedHash.apply(blobSidecar).get());
+      final Bytes32 versionedHashBytes = blobSidecarToVersionedHash.apply(blobSidecar).get();
+      LOG.trace(
+          "Removing BlobSidecar versioned hash {}: {}",
+          versionedHashBytes::toHexString,
+          blobSidecar::toLogString);
+      updater.removeVersionedHash(versionedHashBytes);
     }
   }
 
@@ -141,8 +152,12 @@ public class VersionedHashDBSource {
               .get()
               .getBlobSidecarSchema()
               .sszDeserialize(maybeNonCanonicalBlobSidecarRaw.get());
-      LOG.trace("Removing non-canonical BlobSidecar versioned hash {}", blobSidecar::toLogString);
-      updater.removeVersionedHash(blobSidecarToVersionedHash.apply(blobSidecar).get());
+      final Bytes32 versionedHashBytes = blobSidecarToVersionedHash.apply(blobSidecar).get();
+      LOG.trace(
+          "Removing non-canonical BlobSidecar versioned hash {}: {}",
+          versionedHashBytes::toHexString,
+          blobSidecar::toLogString);
+      updater.removeVersionedHash(versionedHashBytes);
     }
   }
 
@@ -244,7 +259,7 @@ public class VersionedHashDBSource {
     }
   }
 
-  public Optional<Sidecar> getSidecarIdentifier(final VersionedHash hash) {
+  public Optional<SidecarIdentifier> getSidecarIdentifier(final VersionedHash hash) {
     final Optional<Bytes> maybeSidecarIdentifierData = dao.getSidecarIdentifierData(hash.get());
     if (maybeSidecarIdentifierData.isEmpty()) {
       return Optional.empty();
@@ -258,19 +273,19 @@ public class VersionedHashDBSource {
     return switch (data.get(0)) {
       case 0x00 ->
           Optional.of(
-              new Sidecar(
+              new SidecarIdentifier(
                   Optional.of(new SlotAndBlockRootAndBlobIndex(slot, blockRoot, blobIndex)),
                   Optional.empty(),
                   true));
       case 0x10 ->
           Optional.of(
-              new Sidecar(
+              new SidecarIdentifier(
                   Optional.of(new SlotAndBlockRootAndBlobIndex(slot, blockRoot, blobIndex)),
                   Optional.empty(),
                   false));
       case 0x20 ->
           Optional.of(
-              new Sidecar(
+              new SidecarIdentifier(
                   Optional.empty(),
                   Optional.of(
                       Pair.of(
@@ -279,7 +294,7 @@ public class VersionedHashDBSource {
                   true));
       case 0x30 ->
           Optional.of(
-              new Sidecar(
+              new SidecarIdentifier(
                   Optional.empty(),
                   Optional.of(
                       Pair.of(
@@ -290,66 +305,42 @@ public class VersionedHashDBSource {
     };
   }
 
-  public record Sidecar(
-      Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
-      Optional<Pair<DataColumnSlotAndIdentifier, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
-      boolean canonical) {
-    public Sidecar(
-        final Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
-        final Optional<Pair<DataColumnSlotAndIdentifier, UInt64>>
-            dataColumnSidecarIdentifierAndBlobIndex,
-        final boolean canonical) {
-      if (blobSidecarIdentifier.isPresent()
-          == dataColumnSidecarIdentifierAndBlobIndex.isPresent()) {
-        throw new RuntimeException(
-            "Either blob sidecar or data column sidecars identifier have to be set");
-      }
-      this.blobSidecarIdentifier = blobSidecarIdentifier;
-      this.dataColumnSidecarIdentifierAndBlobIndex = dataColumnSidecarIdentifierAndBlobIndex;
-      this.canonical = canonical;
-    }
-
-    boolean isBlobSidecar() {
-      return blobSidecarIdentifier.isPresent();
-    }
-
-    boolean isDataColumnSidecars() {
-      return dataColumnSidecarIdentifierAndBlobIndex.isPresent();
-    }
-  }
-
-  private Bytes computeCanonicalBlobSidecarMetadata(final BlobSidecar blobSidecar) {
+  @VisibleForTesting
+  static Bytes computeCanonicalBlobSidecarMetadata(final BlobSidecar blobSidecar) {
     return Bytes.concatenate(
         CANONICAL_BLOB_SIDECAR_TYPE, computeBlobSidecarIdentifierPartial(blobSidecar));
   }
 
-  private Bytes computeNonCanonicalBlobSidecarMetadata(final BlobSidecar blobSidecar) {
+  @VisibleForTesting
+  static Bytes computeNonCanonicalBlobSidecarMetadata(final BlobSidecar blobSidecar) {
     return Bytes.concatenate(
         NON_CANONICAL_BLOB_SIDECAR_TYPE, computeBlobSidecarIdentifierPartial(blobSidecar));
   }
 
-  private Bytes computeCanonicalDataColumnSidecarMetadata(
+  @VisibleForTesting
+  static Bytes computeCanonicalDataColumnSidecarMetadata(
       final DataColumnSidecar sidecar, final UInt64 blobIndex) {
     return Bytes.concatenate(
         CANONICAL_DATA_COLUMN_SIDECAR_TYPE,
         computeDataColumnSidecarIdentifierPartial(sidecar, blobIndex));
   }
 
-  private Bytes computeNonCanonicalDataColumnSidecarMetadata(
+  @VisibleForTesting
+  static Bytes computeNonCanonicalDataColumnSidecarMetadata(
       final DataColumnSidecar sidecar, final UInt64 blobIndex) {
     return Bytes.concatenate(
         NON_CANONICAL_DATA_COLUMN_SIDECAR_TYPE,
         computeDataColumnSidecarIdentifierPartial(sidecar, blobIndex));
   }
 
-  private Bytes computeBlobSidecarIdentifierPartial(final BlobSidecar blobSidecar) {
+  private static Bytes computeBlobSidecarIdentifierPartial(final BlobSidecar blobSidecar) {
     return Bytes.concatenate(
         Bytes.wrap(Longs.toByteArray(blobSidecar.getSlot().longValue())),
         blobSidecar.getBlockRoot(),
         Bytes.wrap(Longs.toByteArray(blobSidecar.getIndex().longValue())));
   }
 
-  private Bytes computeDataColumnSidecarIdentifierPartial(
+  private static Bytes computeDataColumnSidecarIdentifierPartial(
       final DataColumnSidecar sidecar, final UInt64 blobIndex) {
     return Bytes.concatenate(
         Bytes.wrap(Longs.toByteArray(sidecar.getSlot().longValue())),

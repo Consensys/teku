@@ -69,7 +69,9 @@ import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -106,6 +108,7 @@ class Store extends CacheableStore {
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
+  private final Map<VersionedHash, SlotAndBlockRootAndBlobIndex> blobSidecarByVersionedHash;
   private UInt64 timeMillis;
   private UInt64 genesisTime;
   private AnchorPoint finalizedAnchor;
@@ -141,6 +144,7 @@ class Store extends CacheableStore {
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
+      final Map<VersionedHash, SlotAndBlockRootAndBlobIndex> blobSidecarByVersionedHash,
       final Optional<UInt64> custodyGroupCount) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
@@ -166,6 +170,7 @@ class Store extends CacheableStore {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
     this.blobSidecars = blobSidecars;
+    this.blobSidecarByVersionedHash = blobSidecarByVersionedHash;
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
@@ -245,6 +250,9 @@ class Store extends CacheableStore {
             : Optional.empty();
     final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
+    // TODO: limit ??
+    final Map<VersionedHash, SlotAndBlockRootAndBlobIndex> blobSidecarByVersionedHash =
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize() * 10);
 
     return new Store(
         metricsSystem,
@@ -267,6 +275,7 @@ class Store extends CacheableStore {
         checkpointStateTaskQueue,
         maybeEpochStates,
         blobSidecars,
+        blobSidecarByVersionedHash,
         custodyGroupCount);
   }
 

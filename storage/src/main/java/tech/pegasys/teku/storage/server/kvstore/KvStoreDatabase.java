@@ -67,7 +67,9 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.SidecarIdentifier;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.UpdateResult;
@@ -361,10 +363,13 @@ public class KvStoreDatabase implements Database {
             if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlotAndBlockRoot())) {
               return;
             }
-            // TODO
             finalizedBlobSidecarsBySlot
                 .get(block.getSlotAndBlockRoot())
-                .forEach(updater::addBlobSidecar);
+                .forEach(
+                    blobSidecar -> {
+                      updater.addBlobSidecar(blobSidecar);
+                      versionedHashDBSource.addBlobSidecarVersionedHash(blobSidecar, updater);
+                    });
           });
 
       needToUpdateEarliestBlockSlot(blocks.stream().findFirst())
@@ -1311,6 +1316,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<SidecarIdentifier> getSidecarIdentifier(final VersionedHash hash) {
+    return versionedHashDBSource.getSidecarIdentifier(hash);
+  }
+
+  @Override
   public void close() throws Exception {
     dao.close();
   }
@@ -1485,10 +1495,12 @@ public class KvStoreDatabase implements Database {
                       dao.getBlobSidecar(key)
                           .ifPresent(
                               blobSidecarBytes -> {
+                                updater.addNonCanonicalBlobSidecarRaw(blobSidecarBytes, key);
+                                updater.removeBlobSidecar(key);
+                                // Don't need to remove canonical VersionedHash, it will be
+                                // overridden
                                 versionedHashDBSource.addNonCanonicalBlobSidecarVersionedHash(
                                     blobSidecarBytes, updater);
-                                updater.addNonCanonicalBlobSidecarRaw(blobSidecarBytes, key);
-                                removeBlobSidecar(key, updater);
                               });
                     });
             index++;
@@ -1533,7 +1545,7 @@ public class KvStoreDatabase implements Database {
                 dao.getDataColumnIdentifiers(nonCanonicalBlocksIterator.next());
             if (!dataColumnIdentifiers.isEmpty()) {
               final DataColumnSlotAndIdentifier first = dataColumnIdentifiers.getFirst();
-              versionedHashDBSource.removeSidecarVersionedHashes(first, updater);
+              // Don't need to remove canonical VersionedHash, it will be overridden
               dao.getSidecar(first)
                   .ifPresent(
                       sidecar ->
