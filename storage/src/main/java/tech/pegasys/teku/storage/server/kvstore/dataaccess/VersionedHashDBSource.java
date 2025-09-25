@@ -333,6 +333,10 @@ public class VersionedHashDBSource {
         computeDataColumnSidecarIdentifierPartial(sidecar, blobIndex));
   }
 
+  public boolean isStoreSidecarHashes() {
+    return storeSidecarHashes.get();
+  }
+
   private static Bytes computeBlobSidecarIdentifierPartial(final BlobSidecar blobSidecar) {
     return Bytes.concatenate(
         Bytes.wrap(Longs.toByteArray(blobSidecar.getSlot().longValue())),
