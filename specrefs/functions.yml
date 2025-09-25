@@ -2704,11 +2704,12 @@
     - file: storage/src/main/java/tech/pegasys/teku/storage/client/LateBlockReorgLogic.java
       search: public boolean isProposingOnTime(
   spec: |
-    <spec fn="is_proposing_on_time" fork="phase0" hash="cadfde05">
+    <spec fn="is_proposing_on_time" fork="phase0" hash="dc5256b4">
     def is_proposing_on_time(store: Store) -> bool:
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        proposer_reorg_cutoff_ms = get_slot_component_duration_ms(PROPOSER_REORG_CUTOFF_BPS)
+        epoch = get_current_store_epoch(store)
+        proposer_reorg_cutoff_ms = get_proposer_reorg_cutoff_ms(epoch)
         return time_into_slot_ms <= proposer_reorg_cutoff_ms
     </spec>
 
@@ -2998,7 +2999,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="phase0" hash="0bd081f0">
+    <spec fn="on_block" fork="phase0" hash="aff24b59">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         block = signed_block.message
         # Parent block must be known
@@ -3031,7 +3032,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3053,7 +3055,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="bellatrix" hash="cceac63a">
+    <spec fn="on_block" fork="bellatrix" hash="a3193d92">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3097,7 +3099,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3119,7 +3122,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="capella" hash="b051b7c6">
+    <spec fn="on_block" fork="capella" hash="560056ad">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3155,7 +3158,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3177,7 +3181,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="deneb" hash="1f48df4d">
+    <spec fn="on_block" fork="deneb" hash="9565acee">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3218,7 +3222,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3240,7 +3245,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="fulu" hash="a27a9edb">
+    <spec fn="on_block" fork="fulu" hash="4f955de9">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3281,7 +3286,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
