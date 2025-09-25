@@ -17,7 +17,7 @@ import java.util.Comparator;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64 columnIndex)
@@ -32,7 +32,7 @@ public record DataColumnSlotAndIdentifier(UInt64 slot, Bytes32 blockRoot, UInt64
       final DataColumnSidecar dataColumnSidecar) {
     return new DataColumnSlotAndIdentifier(
         dataColumnSidecar.getSlot(),
-        dataColumnSidecar.getBlockRoot(),
+        dataColumnSidecar.getBeaconBlockRoot(),
         dataColumnSidecar.getIndex());
   }
 

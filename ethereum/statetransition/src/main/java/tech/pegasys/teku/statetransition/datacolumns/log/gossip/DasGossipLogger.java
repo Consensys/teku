@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns.log.gossip;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface DasGossipLogger extends SubnetGossipLogger<DataColumnSidecar> {

@@ -25,13 +25,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
@@ -211,8 +212,8 @@ public class SchemaTypes {
   // Fulu
   public static final SchemaId<CellSchema> CELL_SCHEMA = create("CELL_SCHEMA");
   public static final SchemaId<DataColumnSchema> DATA_COLUMN_SCHEMA = create("DATA_COLUMN_SCHEMA");
-  public static final SchemaId<DataColumnSidecarSchema> DATA_COLUMN_SIDECAR_SCHEMA =
-      create("DATA_COLUMN_SIDECAR_SCHEMA");
+  public static final SchemaId<DataColumnSidecarSchema<? extends DataColumnSidecar>>
+      DATA_COLUMN_SIDECAR_SCHEMA = create("DATA_COLUMN_SIDECAR_SCHEMA");
   public static final SchemaId<DataColumnsByRootIdentifierSchema>
       DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA = create("DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA");
   public static final SchemaId<MatrixEntrySchema> MATRIX_ENTRY_SCHEMA =
