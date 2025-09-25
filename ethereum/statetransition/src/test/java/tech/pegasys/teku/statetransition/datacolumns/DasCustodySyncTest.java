@@ -398,7 +398,7 @@ public class DasCustodySyncTest {
                           assertThat(sidecar.getSlot()).isEqualTo(uSlot);
                           assertThat(sidecar.getIndex()).isEqualTo(colIndex);
 
-                          assertThat(sidecar.getBlockRoot()).isEqualTo(block.getRoot());
+                          assertThat(sidecar.getBeaconBlockRoot()).isEqualTo(block.getRoot());
                         });
               }
             }

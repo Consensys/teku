@@ -110,7 +110,7 @@ public class DataColumnSidecarsByRootIntegrationTest extends AbstractRpcMethodIn
                         sidecar ->
                             dataColumnsIdentifierSchema
                                 .orElseThrow()
-                                .create(sidecar.getBlockRoot(), sidecar.getIndex())))
+                                .create(sidecar.getBeaconBlockRoot(), sidecar.getIndex())))
             .toList();
 
     final List<DataColumnSidecar> dataColumnSidecars =
