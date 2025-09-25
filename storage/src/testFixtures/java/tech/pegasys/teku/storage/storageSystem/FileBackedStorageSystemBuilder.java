@@ -17,12 +17,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
@@ -30,6 +34,9 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class FileBackedStorageSystemBuilder {
+  public static final EventChannels EVENT_CHANNELS =
+      EventChannels.createSyncChannels(
+          ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
   // Optional
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
@@ -147,10 +154,14 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createLevelDb1Database() {
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
+
     return LevelDbDatabaseFactory.createLevelDb(
         new StubMetricsSystem(),
         KvStoreConfiguration.v5HotDefaults().withDatabaseDir(hotDir),
         KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
+        versionedHashDBSourceFactory,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -161,10 +172,13 @@ public class FileBackedStorageSystemBuilder {
     KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
 
     final V6SchemaCombinedSnapshot schema = V6SchemaCombinedSnapshot.createV6(spec);
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
         schema,
+        versionedHashDBSourceFactory,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -173,9 +187,12 @@ public class FileBackedStorageSystemBuilder {
 
   private Database createLevelDb2Database() {
     KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
     return LevelDbDatabaseFactory.createLevelDbV2(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
+        versionedHashDBSourceFactory,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -184,9 +201,12 @@ public class FileBackedStorageSystemBuilder {
 
   private Database createLevelDbTrieDatabase() {
     KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
     return LevelDbDatabaseFactory.createLevelDbTree(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
+        versionedHashDBSourceFactory,
         storageMode,
         storeNonCanonicalBlocks,
         10_000,
@@ -194,10 +214,13 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV5Database() {
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
     return RocksDbDatabaseFactory.createV4(
         new StubMetricsSystem(),
         KvStoreConfiguration.v5HotDefaults().withDatabaseDir(hotDir),
         KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
+        versionedHashDBSourceFactory,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -205,10 +228,13 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV4Database() {
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
     return RocksDbDatabaseFactory.createV4(
         new StubMetricsSystem(),
         KvStoreConfiguration.v4Settings(hotDir),
         KvStoreConfiguration.v4Settings(archiveDir),
+        versionedHashDBSourceFactory,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,

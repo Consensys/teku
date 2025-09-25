@@ -190,7 +190,12 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   List<DataColumnSlotAndIdentifier> getDataColumnIdentifiers(SlotAndBlockRoot slotAndBlockRoot);
 
+  List<DataColumnSlotAndIdentifier> getNonCanonicalDataColumnIdentifiers(
+      SlotAndBlockRoot slotAndBlockRoot);
+
   Optional<UInt64> getEarliestDataSidecarColumnSlot();
+
+  Optional<Bytes> getSidecarIdentifierData(final Bytes32 versionedHash);
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -308,6 +313,10 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void removeSidecar(DataColumnSlotAndIdentifier identifier);
 
     void removeNonCanonicalSidecar(DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier);
+
+    void addVersionedHash(final Bytes32 versionedHash, final Bytes metadata);
+
+    void removeVersionedHash(final Bytes32 versionedHash);
 
     void commit();
 
