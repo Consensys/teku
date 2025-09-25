@@ -655,7 +655,7 @@
         selection_proof: BLSSignature
     </spec>
 
-- name: DataColumnSidecar
+- name: DataColumnSidecarFulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarFulu.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarSchemaFulu.java
@@ -1500,7 +1500,21 @@
     class SignedExecutionPayloadEnvelope(Container):
         message: ExecutionPayloadEnvelope
         signature: BLSSignature
-    </spec> 
+    </spec>
+
+- name: DataColumnSidecarGloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarSchemaGloas.java
+  spec: |
+    <spec container="DataColumnSidecar" fork="gloas" hash="240a2d70">
+    class DataColumnSidecar(Container):
+        index: ColumnIndex
+        column: List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        kzg_proofs: List[KZGProof, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        beacon_block_root: Root
+    </spec>
     
 
     

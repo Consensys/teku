@@ -93,6 +93,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -2882,11 +2883,7 @@ public final class DataStructureUtil {
                   .kzgCommitmentsInclusionProof(
                       kzgCommitmentsInclusionProof.orElseGet(
                           () ->
-                              IntStream.range(
-                                      0,
-                                      dataColumnSidecarSchema
-                                          .getKzgCommitmentsInclusionProofSchema()
-                                          .getLength())
+                              IntStream.range(0, getKzgCommitmentsInclusionProofDepth())
                                   .mapToObj(__ -> randomBytes32())
                                   .toList()))
                   .beaconBlockRoot(
@@ -3245,6 +3242,14 @@ public final class DataStructureUtil {
         specConfig ->
             SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig())
                 .getPtcSize());
+  }
+
+  int getKzgCommitmentsInclusionProofDepth() {
+    return getConstant(
+            specConfig ->
+                SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
+                    .getKzgCommitmentsInclusionProofDepth())
+        .intValue();
   }
 
   int getJustificationBitsLength() {
