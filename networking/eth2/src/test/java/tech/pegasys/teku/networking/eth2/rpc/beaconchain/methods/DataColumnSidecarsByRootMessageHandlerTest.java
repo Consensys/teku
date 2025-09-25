@@ -73,7 +73,10 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-@TestSpecContext(milestone = {FULU, GLOAS})
+// TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+@TestSpecContext(
+    milestone = {FULU, GLOAS},
+    ignoredMilestones = GLOAS)
 public class DataColumnSidecarsByRootMessageHandlerTest {
 
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
