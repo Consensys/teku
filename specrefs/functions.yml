@@ -755,6 +755,18 @@
         return bls.Sign(privkey, signing_root)
     </spec>
 
+- name: get_aggregate_due_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getAggregateDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getAggregateDueMillis(
+  spec: |
+    <spec fn="get_aggregate_due_ms" fork="phase0" hash="0e8d370d">
+    def get_aggregate_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(AGGREGATE_DUE_BPS)
+    </spec>
+
 - name: get_ancestor
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
@@ -798,6 +810,18 @@
             else:
                 penalties[index] += get_base_reward(state, index)
         return rewards, penalties
+    </spec>
+
+- name: get_attestation_due_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getAttestationDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getAttestationDueMillis(
+  spec: |
+    <spec fn="get_attestation_due_ms" fork="phase0" hash="d3b17e38">
+    def get_attestation_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
     </spec>
 
 - name: get_attestation_participation_flag_indices#altair
@@ -1194,6 +1218,18 @@
         )
         signing_root = compute_signing_root(contribution_and_proof, domain)
         return bls.Sign(privkey, signing_root)
+    </spec>
+
+- name: get_contribution_due_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getContributionDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getContributionDueMillis(
+  spec: |
+    <spec fn="get_contribution_due_ms" fork="altair" hash="e647c2b1">
+    def get_contribution_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(CONTRIBUTION_DUE_BPS)
     </spec>
 
 - name: get_current_epoch
@@ -1815,6 +1851,18 @@
         return GENESIS_EPOCH if current_epoch == GENESIS_EPOCH else Epoch(current_epoch - 1)
     </spec>
 
+- name: get_proposer_reorg_cutoff_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getProposerReorgCutoffMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getProposerReorgCutoffMillis(
+  spec: |
+    <spec fn="get_proposer_reorg_cutoff_ms" fork="phase0" hash="20263733">
+    def get_proposer_reorg_cutoff_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(PROPOSER_REORG_CUTOFF_BPS)
+    </spec>
+
 - name: get_proposer_head
   sources:
     - file: storage/src/main/java/tech/pegasys/teku/storage/client/LateBlockReorgLogic.java
@@ -1961,6 +2009,18 @@
             state, get_previous_epoch(state)
         )
         return get_attestation_component_deltas(state, matching_source_attestations)
+    </spec>
+
+- name: get_sync_message_due_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getSyncMessageDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getSyncMessageDueMillis(
+  spec: |
+    <spec fn="get_sync_message_due_ms" fork="altair" hash="4d86dced">
+    def get_sync_message_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(SYNC_MESSAGE_DUE_BPS)
     </spec>
 
 - name: get_target_deltas

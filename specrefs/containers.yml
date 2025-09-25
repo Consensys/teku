@@ -1500,7 +1500,7 @@
     class SignedExecutionPayloadEnvelope(Container):
         message: ExecutionPayloadEnvelope
         signature: BLSSignature
-    </spec> 
-    
+    </spec>
 
-    
+
+
