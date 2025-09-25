@@ -1,4 +1,4 @@
-version: v1.6.0-alpha.6
+version: v1.6.0-beta.0
 style: full
 
 specrefs:
@@ -41,10 +41,9 @@ specrefs:
       - RANDOM_CHALLENGE_KZG_BATCH_DOMAIN
       - RANDOM_CHALLENGE_KZG_CELL_BATCH_DOMAIN
 
-      # added at alpha.5 for Gloas fork (not yet implemented)
+      # Not yet implemented for Gloas
       - BUILDER_PAYMENT_THRESHOLD_DENOMINATOR#gloas
       - BUILDER_PAYMENT_THRESHOLD_NUMERATOR#gloas
-      - BUILDER_PENDING_WITHDRAWALS_LIMIT#gloas
       - BUILDER_WITHDRAWAL_PREFIX#gloas
       - DOMAIN_BEACON_BUILDER#gloas
       - DOMAIN_PTC_ATTESTER#gloas
@@ -60,16 +59,10 @@ specrefs:
       - LightClientFinalityUpdate
       - LightClientHeader
       - LightClientOptimisticUpdate
-      # added at alpha.5 for Gloas fork (not yet implemented)
-      - BeaconState#gloas
-      - BuilderPendingPayment#gloas
-      - BuilderPendingWithdrawal#gloas
+
+      # Not yet implemented for Gloas
       - DataColumnSidecar#gloas
-      - ExecutionPayloadEnvelope#gloas
       - ForkChoiceNode#gloas
-      - IndexedPayloadAttestation#gloas
-      - PayloadAttestationMessage#gloas
-      - SignedExecutionPayloadEnvelope#gloas
 
     dataclasses:
       # Not defined, implemented differently
@@ -80,10 +73,6 @@ specrefs:
       # No light client support
       - LightClientStore
 
-    presets:
-      - KZG_COMMITMENTS_INCLUSION_PROOF_DEPTH_GLOAS#gloas
-      - MAX_PAYLOAD_ATTESTATIONS#gloas
-      - PTC_SIZE#gloas
     functions:
       # Functions implemented by KZG library for EIP-4844
       - bit_reversal_permutation#deneb
@@ -295,7 +284,20 @@ specrefs:
       - process_epoch#fulu
       - recover_matrix#fulu
 
-      # added at alpha.5 for Gloas fork (not yet implemented)
+      # added at beta.0 for slot time deadlines
+      - get_aggregate_due_ms#gloas
+      - get_aggregate_due_ms#phase0
+      - get_attestation_due_ms#gloas
+      - get_attestation_due_ms#phase0
+      - get_contribution_due_ms#altair
+      - get_contribution_due_ms#gloas
+      - get_payload_attestation_due_ms#gloas
+      - get_proposer_reorg_cutoff_ms#phase0
+      - get_sync_message_due_ms#altair
+      - get_sync_message_due_ms#gloas
+      - seconds_to_milliseconds#phase0
+
+      # gloas
       - compute_balance_weighted_acceptance#gloas
       - compute_balance_weighted_selection#gloas
       - compute_fork_version#gloas
@@ -307,7 +309,7 @@ specrefs:
       - get_data_column_sidecars#gloas
       - get_data_column_sidecars_from_block#gloas
       - get_execution_payload_envelope_signature#gloas
-      - get_execution_payload_header_signature#gloas
+      - get_execution_payload_bid_signature#gloas
       - get_expected_withdrawals#gloas
       - get_forkchoice_store#gloas
       - get_head#gloas
@@ -341,18 +343,21 @@ specrefs:
       - process_builder_pending_payments#gloas
       - process_epoch#gloas
       - process_execution_payload#gloas
-      - process_execution_payload_header#gloas
+      - process_execution_payload_bid#gloas
       - process_operations#gloas
       - process_payload_attestation#gloas
       - process_slot#gloas
       - process_withdrawals#gloas
       - remove_flag#gloas
-      - seconds_to_milliseconds#phase0
       - should_extend_payload#gloas
       - update_latest_messages#gloas
       - upgrade_to_gloas#gloas
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
       - verify_data_column_sidecar_inclusion_proof#gloas
+      - get_data_column_sidecars_from_column_sidecar#gloas
       - verify_execution_payload_envelope_signature#gloas
-      - verify_execution_payload_header_signature#gloas
+      - verify_execution_payload_bid_signature#gloas
+      - process_proposer_slashing#gloas
+      - get_pending_balance_to_withdraw#gloas
+      - get_execution_payload_bid_signature#gloas

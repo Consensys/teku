@@ -137,7 +137,7 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processWithdrawals(
       final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, payloadSummary);
+    spec.getBlockProcessor(state.getSlot()).processWithdrawals(state, Optional.of(payloadSummary));
   }
 
   @Override
