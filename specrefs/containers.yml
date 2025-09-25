@@ -744,8 +744,8 @@
 
 - name: DataColumnSidecar
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecar.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarFulu.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarSchemaFulu.java
   spec: |
     <spec container="DataColumnSidecar" fork="fulu" hash="03586114">
     class DataColumnSidecar(Container):
