@@ -267,13 +267,13 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final List<Bytes32> respondedDataColumnSidecarBlockRoots =
         datacolumnSidecarCaptor.getAllValues().stream()
-            .map(DataColumnSidecar::getBlockRoot)
+            .map(DataColumnSidecar::getBeaconBlockRoot)
             .toList();
     final List<Bytes32> expectedDataColumnIdentifiersBlockRoots =
         List.of(
-            generatedSidecars.get(0).getBlockRoot(),
-            generatedSidecars.get(2).getBlockRoot(),
-            generatedSidecars.get(3).getBlockRoot());
+            generatedSidecars.get(0).getBeaconBlockRoot(),
+            generatedSidecars.get(2).getBeaconBlockRoot(),
+            generatedSidecars.get(3).getBeaconBlockRoot());
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
@@ -371,13 +371,13 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final List<Bytes32> respondedDataColumnSidecarBlockRoots =
         datacolumnSidecarCaptor.getAllValues().stream()
-            .map(DataColumnSidecar::getBlockRoot)
+            .map(DataColumnSidecar::getBeaconBlockRoot)
             .toList();
     final List<Bytes32> expectedDataColumnIdentifiersBlockRoots =
         List.of(
-            generatedSidecars.get(0).getBlockRoot(),
-            generatedSidecars.get(1).getBlockRoot(),
-            generatedSidecars.get(2).getBlockRoot());
+            generatedSidecars.get(0).getBeaconBlockRoot(),
+            generatedSidecars.get(1).getBeaconBlockRoot(),
+            generatedSidecars.get(2).getBeaconBlockRoot());
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
@@ -420,14 +420,14 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final List<Bytes32> respondedDataColumnSidecarBlockRoots =
         datacolumnSidecarCaptor.getAllValues().stream()
-            .map(DataColumnSidecar::getBlockRoot)
+            .map(DataColumnSidecar::getBeaconBlockRoot)
             .toList();
     final List<Bytes32> expectedDataColumnIdentifiersBlockRoots =
         List.of(
-            generatedSidecars.get(0).getBlockRoot(),
-            generatedSidecars.get(1).getBlockRoot(),
-            generatedSidecars.get(2).getBlockRoot(),
-            generatedSidecars.get(3).getBlockRoot());
+            generatedSidecars.get(0).getBeaconBlockRoot(),
+            generatedSidecars.get(1).getBeaconBlockRoot(),
+            generatedSidecars.get(2).getBeaconBlockRoot(),
+            generatedSidecars.get(3).getBeaconBlockRoot());
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
