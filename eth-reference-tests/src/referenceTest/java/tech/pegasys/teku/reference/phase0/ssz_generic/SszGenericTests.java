@@ -30,6 +30,5 @@ public class SszGenericTests {
           .put("ssz_generic/progressive_bitlist", TestExecutor.IGNORE_TESTS)
           .put("ssz_generic/progressive_containers", TestExecutor.IGNORE_TESTS)
           .put("ssz_generic/uints", new SszGenericUIntTestExecutor())
-          .put("ssz_generic/progressive_containers", TestExecutor.IGNORE_TESTS)
           .build();
 }
