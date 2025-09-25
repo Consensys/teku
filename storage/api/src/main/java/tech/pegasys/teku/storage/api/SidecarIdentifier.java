@@ -16,17 +16,16 @@ package tech.pegasys.teku.storage.api;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public record SidecarIdentifier(
     Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
-    Optional<Pair<DataColumnSlotAndIdentifier, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
+    Optional<Pair<SlotAndBlockRoot, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
     boolean canonical) {
   public SidecarIdentifier(
       final Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
-      final Optional<Pair<DataColumnSlotAndIdentifier, UInt64>>
-          dataColumnSidecarIdentifierAndBlobIndex,
+      final Optional<Pair<SlotAndBlockRoot, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
       final boolean canonical) {
     if (blobSidecarIdentifier.isPresent() == dataColumnSidecarIdentifierAndBlobIndex.isPresent()) {
       throw new RuntimeException(
@@ -41,7 +40,7 @@ public record SidecarIdentifier(
     return blobSidecarIdentifier.isPresent();
   }
 
-  boolean isDataColumnSidecars() {
+  boolean isDataColumnSidecar() {
     return dataColumnSidecarIdentifierAndBlobIndex.isPresent();
   }
 }

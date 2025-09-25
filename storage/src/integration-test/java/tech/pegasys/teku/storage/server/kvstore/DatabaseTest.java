@@ -3137,13 +3137,11 @@ public class DatabaseTest {
                                     .dataColumnSidecarIdentifierAndBlobIndex()
                                     .isPresent())
                             .isTrue();
-                        final Pair<DataColumnSlotAndIdentifier, UInt64>
+                        final Pair<SlotAndBlockRoot, UInt64>
                             dataColumnSlotAndIdentifierAndBlobIndex =
                                 sidecarIdentifier.dataColumnSidecarIdentifierAndBlobIndex().get();
                         assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getKey())
-                            .isEqualTo(
-                                new DataColumnSlotAndIdentifier(
-                                    sidecar.getSlot(), sidecar.getBlockRoot(), ZERO));
+                            .isEqualTo(sidecar.getSlotAndBlockRoot());
                         assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getValue().intValue())
                             .isEqualTo(index);
                         assertThat(sidecarIdentifier.canonical()).isEqualTo(canonical);

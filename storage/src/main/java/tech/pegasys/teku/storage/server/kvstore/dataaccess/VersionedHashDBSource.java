@@ -287,19 +287,13 @@ public class VersionedHashDBSource {
           Optional.of(
               new SidecarIdentifier(
                   Optional.empty(),
-                  Optional.of(
-                      Pair.of(
-                          new DataColumnSlotAndIdentifier(slot, blockRoot, UInt64.ZERO),
-                          blobIndex)),
+                  Optional.of(Pair.of(new SlotAndBlockRoot(slot, blockRoot), blobIndex)),
                   true));
       case 0x30 ->
           Optional.of(
               new SidecarIdentifier(
                   Optional.empty(),
-                  Optional.of(
-                      Pair.of(
-                          new DataColumnSlotAndIdentifier(slot, blockRoot, UInt64.ZERO),
-                          blobIndex)),
+                  Optional.of(Pair.of(new SlotAndBlockRoot(slot, blockRoot), blobIndex)),
                   false));
       default -> throw new IllegalStateException("Unexpected encoded data: " + data.toHexString());
     };
