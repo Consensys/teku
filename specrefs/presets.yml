@@ -636,3 +636,21 @@
     <spec preset_var="WHISTLEBLOWER_REWARD_QUOTIENT_ELECTRA" fork="electra" hash="8021dedf">
     WHISTLEBLOWER_REWARD_QUOTIENT_ELECTRA: uint64 = 4096
     </spec>
+    
+- name: MAX_PAYLOAD_ATTESTATIONS
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/gloas.yaml
+      search: MAX_PAYLOAD_ATTESTATIONS:
+  spec: |
+    <spec preset_var="MAX_PAYLOAD_ATTESTATIONS" fork="gloas" hash="fc24e7ea">
+    MAX_PAYLOAD_ATTESTATIONS = 4
+    </spec>
+
+- name: PTC_SIZE
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/gloas.yaml
+      search: PTC_SIZE:
+  spec: |
+    <spec preset_var="PTC_SIZE" fork="gloas" hash="d61c5930">
+    PTC_SIZE: uint64 = 512
+    </spec>
