@@ -1220,7 +1220,7 @@
         return bls.Sign(privkey, signing_root)
     </spec>
 
-- name: get_contribution_due_ms#phase0
+- name: get_contribution_due_ms#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
       search: public int getContributionDueMillis(
@@ -2011,7 +2011,7 @@
         return get_attestation_component_deltas(state, matching_source_attestations)
     </spec>
 
-- name: get_sync_message_due_ms#phase0
+- name: get_sync_message_due_ms#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
       search: public int getSyncMessageDueMillis(
