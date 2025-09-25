@@ -29,11 +29,11 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.VersionedHashDBSource;
 
 public class VersionedHashDBSourceFactory {
-
-  final Function<BlobSidecar, VersionedHash> blobSidecarToVersionedHash;
-  final Function<Pair<DataColumnSidecar, UInt64>, VersionedHash> dataColumnSidecarToVersionedHash;
-  final EventChannels eventChannels;
-  final Spec spec;
+  private final Function<BlobSidecar, VersionedHash> blobSidecarToVersionedHash;
+  private final Function<Pair<DataColumnSidecar, UInt64>, VersionedHash>
+      dataColumnSidecarToVersionedHash;
+  private final EventChannels eventChannels;
+  private final Spec spec;
 
   public VersionedHashDBSourceFactory(final Spec spec, final EventChannels eventChannels) {
     this.spec = spec;
