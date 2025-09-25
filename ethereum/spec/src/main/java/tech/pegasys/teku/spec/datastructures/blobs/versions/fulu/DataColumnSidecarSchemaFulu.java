@@ -49,7 +49,7 @@ public class DataColumnSidecarSchemaFulu
       final DataColumnSchema dataColumnSchema,
       final SpecConfigFulu specConfig) {
     super(
-        "DataColumnSidecar",
+        "DataColumnSidecarFulu",
         namedSchema(FIELD_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(FIELD_BLOB, dataColumnSchema),
         namedSchema(

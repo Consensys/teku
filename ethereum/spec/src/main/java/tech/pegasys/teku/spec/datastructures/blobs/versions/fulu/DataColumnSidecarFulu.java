@@ -38,12 +38,11 @@ public class DataColumnSidecarFulu
         SszBytes32Vector>
     implements DataColumnSidecar {
 
-  public DataColumnSidecarFulu(
-      final DataColumnSidecarSchemaFulu schema, final TreeNode backingNode) {
+  DataColumnSidecarFulu(final DataColumnSidecarSchemaFulu schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public DataColumnSidecarFulu(
+  DataColumnSidecarFulu(
       final DataColumnSidecarSchemaFulu schema,
       final UInt64 index,
       final DataColumn column,

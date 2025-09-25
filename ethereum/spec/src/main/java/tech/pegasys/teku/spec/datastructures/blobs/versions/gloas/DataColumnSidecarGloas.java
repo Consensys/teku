@@ -37,24 +37,23 @@ public class DataColumnSidecarGloas
         SszBytes32>
     implements DataColumnSidecar {
 
-  public DataColumnSidecarGloas(
-      final DataColumnSidecarSchemaGloas schema, final TreeNode backingNode) {
+  DataColumnSidecarGloas(final DataColumnSidecarSchemaGloas schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public DataColumnSidecarGloas(
+  DataColumnSidecarGloas(
       final DataColumnSidecarSchemaGloas schema,
       final UInt64 index,
-      final DataColumn dataColumn,
-      final SszList<SszKZGCommitment> sszKzgCommitments,
-      final SszList<SszKZGProof> sszKzgProofs,
+      final DataColumn column,
+      final SszList<SszKZGCommitment> kzgCommitments,
+      final SszList<SszKZGProof> kzgProofs,
       final Bytes32 beaconBlockRoot) {
     super(
         schema,
         SszUInt64.of(index),
-        dataColumn,
-        sszKzgCommitments,
-        sszKzgProofs,
+        column,
+        kzgCommitments,
+        kzgProofs,
         SszBytes32.of(beaconBlockRoot));
   }
 

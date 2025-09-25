@@ -45,7 +45,6 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   private final DebugDataDumper debugDataDumper;
   private final MiscHelpersFulu miscHelpersFulu;
 
-  @SuppressWarnings("unchecked")
   public DataColumnSidecarSubnetSubscriptions(
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -66,9 +65,8 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
     final SpecVersion specVersion =
         spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone());
     this.dataColumnSidecarSchema =
-        (DataColumnSidecarSchema<DataColumnSidecar>)
-            SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
-                .getDataColumnSidecarSchema();
+        SchemaDefinitionsFulu.required(specVersion.getSchemaDefinitions())
+            .getDataColumnSidecarSchema();
     this.miscHelpersFulu =
         MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   }

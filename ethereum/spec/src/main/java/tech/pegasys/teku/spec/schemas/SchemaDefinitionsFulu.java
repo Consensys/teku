@@ -26,6 +26,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKA
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64VectorSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
@@ -43,7 +44,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
 
   private final CellSchema cellSchema;
   private final DataColumnSchema dataColumnSchema;
-  private final DataColumnSidecarSchema<?> dataColumnSidecarSchema;
+  private final DataColumnSidecarSchema<DataColumnSidecar> dataColumnSidecarSchema;
   private final DataColumnsByRootIdentifierSchema dataColumnsByRootIdentifierSchema;
   private final MatrixEntrySchema matrixEntrySchema;
   private final SszUInt64VectorSchema<?> proposerLookaheadSchema;
@@ -59,7 +60,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     super(schemaRegistry);
     this.cellSchema = schemaRegistry.get(CELL_SCHEMA);
     this.dataColumnSchema = schemaRegistry.get(DATA_COLUMN_SCHEMA);
-    this.dataColumnSidecarSchema = schemaRegistry.get(DATA_COLUMN_SIDECAR_SCHEMA);
+    this.dataColumnSidecarSchema = schemaRegistry.get(DATA_COLUMN_SIDECAR_SCHEMA).toBaseSchema();
     this.dataColumnsByRootIdentifierSchema =
         schemaRegistry.get(DATA_COLUMNS_BY_ROOT_IDENTIFIER_SCHEMA);
     this.matrixEntrySchema = schemaRegistry.get(MATRIX_ENTRY_SCHEMA);
@@ -96,7 +97,7 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
     return dataColumnSchema;
   }
 
-  public DataColumnSidecarSchema<?> getDataColumnSidecarSchema() {
+  public DataColumnSidecarSchema<DataColumnSidecar> getDataColumnSidecarSchema() {
     return dataColumnSidecarSchema;
   }
 
