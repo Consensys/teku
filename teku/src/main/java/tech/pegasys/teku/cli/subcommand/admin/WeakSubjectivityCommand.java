@@ -21,6 +21,7 @@ import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -110,6 +111,11 @@ public class WeakSubjectivityCommand implements Runnable {
     final Eth2NetworkConfiguration networkConfiguration =
         eth2NetworkOptions.getNetworkConfiguration();
     final Spec spec = networkConfiguration.getSpec();
+    final EventChannels eventChannels =
+        EventChannels.createSyncChannels(
+            ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, eventChannels);
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -120,10 +126,7 @@ public class WeakSubjectivityCommand implements Runnable {
                 .specProvider(spec)
                 .build(),
             Optional.empty(),
-            new VersionedHashDBSourceFactory(
-                spec,
-                EventChannels.createSyncChannels(
-                    (error, subscriber, invokedMethod, args) -> {}, new NoOpMetricsSystem())));
+            versionedHashDBSourceFactory);
     return databaseFactory.createDatabase();
   }
 

@@ -42,6 +42,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -974,6 +975,11 @@ public class DebugDbCommand implements Runnable {
     final Eth2NetworkConfiguration networkConfiguration =
         eth2NetworkOptions.getNetworkConfiguration();
     final Spec spec = networkConfiguration.getSpec();
+    final EventChannels eventChannels =
+        EventChannels.createSyncChannels(
+            ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, eventChannels);
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -984,10 +990,7 @@ public class DebugDbCommand implements Runnable {
                 .specProvider(spec)
                 .build(),
             Optional.empty(),
-            new VersionedHashDBSourceFactory(
-                spec,
-                EventChannels.createSyncChannels(
-                    (error, subscriber, invokedMethod, args) -> {}, new NoOpMetricsSystem())));
+            versionedHashDBSourceFactory);
     return databaseFactory.createDatabase();
   }
 

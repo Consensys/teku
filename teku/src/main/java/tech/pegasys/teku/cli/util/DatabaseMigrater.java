@@ -27,6 +27,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -182,6 +183,11 @@ public class DatabaseMigrater {
   KvStoreDatabase createDatabase(final Path databasePath, final DatabaseVersion databaseVersion)
       throws DatabaseMigraterError {
     final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
+    final EventChannels eventChannels =
+        EventChannels.createSyncChannels(
+            ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, eventChannels);
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -194,12 +200,7 @@ public class DatabaseMigrater {
                 .dataStorageCreateDbVersion(databaseVersion)
                 .build(),
             Optional.empty(),
-            new VersionedHashDBSourceFactory(
-                // FIXME: how do we know here if we are a supernode? we could read custody
-                // requirements from db and init it later?
-                config.getSpec(),
-                EventChannels.createSyncChannels(
-                    (error, subscriber, invokedMethod, args) -> {}, new NoOpMetricsSystem())));
+            versionedHashDBSourceFactory);
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {
       throw new DatabaseMigraterError(
