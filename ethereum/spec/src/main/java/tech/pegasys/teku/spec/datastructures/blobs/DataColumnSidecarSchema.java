@@ -43,4 +43,9 @@ public interface DataColumnSidecarSchema<T extends DataColumnSidecar>
   SszBytes32VectorSchema<?> getKzgCommitmentsInclusionProofSchema();
 
   DataColumnSidecar create(Consumer<DataColumnSidecarBuilder> builderConsumer);
+
+  @SuppressWarnings("unchecked")
+  default DataColumnSidecarSchema<DataColumnSidecar> toBaseSchema() {
+    return (DataColumnSidecarSchema<DataColumnSidecar>) this;
+  }
 }

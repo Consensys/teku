@@ -61,11 +61,9 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public SszSchema<DataColumnSidecar> getSchemaFromSchemaDefinitions(
             final SchemaDefinitions schemaDefinitions) {
-          return (SszSchema<DataColumnSidecar>)
-              SchemaDefinitionsFulu.required(schemaDefinitions).getDataColumnSidecarSchema();
+          return SchemaDefinitionsFulu.required(schemaDefinitions).getDataColumnSidecarSchema();
         }
       };
 

@@ -108,14 +108,12 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
-  @SuppressWarnings("unchecked")
   private static SerializableTypeDefinition<DataColumnSidecarsAndMetaData> getResponseType(
       final SchemaDefinitionCache schemaCache) {
     final DeserializableTypeDefinition<DataColumnSidecar> dataColumnSidecarType =
-        (DeserializableTypeDefinition<DataColumnSidecar>)
-            SchemaDefinitionsFulu.required(schemaCache.getSchemaDefinition(SpecMilestone.FULU))
-                .getDataColumnSidecarSchema()
-                .getJsonTypeDefinition();
+        SchemaDefinitionsFulu.required(schemaCache.getSchemaDefinition(SpecMilestone.FULU))
+            .getDataColumnSidecarSchema()
+            .getJsonTypeDefinition();
     return SerializableTypeDefinition.<DataColumnSidecarsAndMetaData>object()
         .name("GetDataColumnSidecarsResponse")
         .withField("version", MILESTONE_TYPE, DataColumnSidecarsAndMetaData::getMilestone)

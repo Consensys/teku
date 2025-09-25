@@ -46,7 +46,7 @@ public class DataColumnSidecarSchemaGloas
   public DataColumnSidecarSchemaGloas(
       final DataColumnSchema dataColumnSchema, final SpecConfigGloas specConfig) {
     super(
-        "DataColumnSidecar",
+        "DataColumnSidecarGloas",
         namedSchema(FIELD_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(FIELD_BLOB, dataColumnSchema),
         namedSchema(
