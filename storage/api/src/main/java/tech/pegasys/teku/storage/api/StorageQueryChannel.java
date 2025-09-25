@@ -136,5 +136,5 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot();
 
-  SafeFuture<Optional<SidecarIdentifier>> getSidecarIdentifier(final VersionedHash hash);
+  SafeFuture<Optional<SidecarIdentifier>> getSidecarIdentifier(VersionedHash hash);
 }

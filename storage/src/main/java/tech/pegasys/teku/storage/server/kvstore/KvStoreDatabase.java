@@ -1497,8 +1497,8 @@ public class KvStoreDatabase implements Database {
                               blobSidecarBytes -> {
                                 updater.addNonCanonicalBlobSidecarRaw(blobSidecarBytes, key);
                                 updater.removeBlobSidecar(key);
-                                // Don't need to remove canonical VersionedHash, it will be
-                                // overridden
+                                // Don't need to remove canonical VersionedHash,
+                                // it will be overridden
                                 versionedHashDBSource.addNonCanonicalBlobSidecarVersionedHash(
                                     blobSidecarBytes, updater);
                               });

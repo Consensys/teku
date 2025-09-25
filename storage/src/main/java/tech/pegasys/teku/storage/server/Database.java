@@ -297,5 +297,5 @@ public interface Database extends AutoCloseable {
   // prunes both canonical and non canonical sidecars
   void pruneAllSidecars(UInt64 tillSlotInclusive, int pruneLimit);
 
-  Optional<SidecarIdentifier> getSidecarIdentifier(final VersionedHash hash);
+  Optional<SidecarIdentifier> getSidecarIdentifier(VersionedHash hash);
 }
