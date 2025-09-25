@@ -1501,6 +1501,3 @@
         message: ExecutionPayloadEnvelope
         signature: BLSSignature
     </spec>
-
-
-
