@@ -34,8 +34,9 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class FileBackedStorageSystemBuilder {
-  private static final EventChannels EVENT_CHANNELS =
-      new EventChannels(ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
+  public static final EventChannels EVENT_CHANNELS =
+      EventChannels.createSyncChannels(
+          ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
   // Optional
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;

@@ -27,8 +27,9 @@ import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 public class InMemoryKvStoreDatabaseFactory {
-  private static final EventChannels EVENT_CHANNELS =
-      new EventChannels(ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
+  public static final EventChannels EVENT_CHANNELS =
+      EventChannels.createSyncChannels(
+          ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
 
   public static Database createV4(
       final MockKvStoreInstance hotDb,

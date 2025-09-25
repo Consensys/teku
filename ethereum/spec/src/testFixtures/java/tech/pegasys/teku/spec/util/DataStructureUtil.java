@@ -2883,6 +2883,17 @@ public final class DataStructureUtil {
   }
 
   public DataColumnSidecar randomDataColumnSidecar(
+      final SignedBeaconBlockHeader header,
+      final SszList<SszKZGCommitment> kzgCommitments,
+      final UInt64 index) {
+    return new RandomSidecarBuilder()
+        .signedBeaconBlockHeader(header)
+        .kzgCommitments(kzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment).toList())
+        .index(index)
+        .build();
+  }
+
+  public DataColumnSidecar randomDataColumnSidecar(
       final List<KZGCommitment> kzgCommitments, final DataColumn dataColumn) {
     return new RandomSidecarBuilder().kzgCommitments(kzgCommitments).dataColumn(dataColumn).build();
   }
