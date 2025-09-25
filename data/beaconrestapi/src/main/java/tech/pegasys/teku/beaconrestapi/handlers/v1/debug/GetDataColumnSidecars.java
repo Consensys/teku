@@ -42,7 +42,7 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResp
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.metadata.DataColumnSidecarsAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -108,12 +108,14 @@ public class GetDataColumnSidecars extends RestApiEndpoint {
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
+  @SuppressWarnings("unchecked")
   private static SerializableTypeDefinition<DataColumnSidecarsAndMetaData> getResponseType(
       final SchemaDefinitionCache schemaCache) {
     final DeserializableTypeDefinition<DataColumnSidecar> dataColumnSidecarType =
-        SchemaDefinitionsFulu.required(schemaCache.getSchemaDefinition(SpecMilestone.FULU))
-            .getDataColumnSidecarSchema()
-            .getJsonTypeDefinition();
+        (DeserializableTypeDefinition<DataColumnSidecar>)
+            SchemaDefinitionsFulu.required(schemaCache.getSchemaDefinition(SpecMilestone.FULU))
+                .getDataColumnSidecarSchema()
+                .getJsonTypeDefinition();
     return SerializableTypeDefinition.<DataColumnSidecarsAndMetaData>object()
         .name("GetDataColumnSidecarsResponse")
         .withField("version", MILESTONE_TYPE, DataColumnSidecarsAndMetaData::getMilestone)
