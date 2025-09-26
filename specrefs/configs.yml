@@ -1,4 +1,4 @@
-- name: AGGREGATE_DUE_BPS#phase0
+- name: AGGREGATE_DUE_BPS
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
       search: "AGGREGATE_DUE_BPS:"
@@ -7,7 +7,7 @@
     AGGREGATE_DUE_BPS: uint64 = 6667
     </spec>
 
-- name: AGGREGATE_DUE_BPS_GLOAS#gloas
+- name: AGGREGATE_DUE_BPS_GLOAS
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
       search: "AGGREGATE_DUE_BPS_GLOAS:"
@@ -34,7 +34,7 @@
     ALTAIR_FORK_VERSION: Version = '0x01000000'
     </spec>
 
-- name: ATTESTATION_DUE_BPS#phase0
+- name: ATTESTATION_DUE_BPS
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
       search: "^ATTESTATION_DUE_BPS:"
