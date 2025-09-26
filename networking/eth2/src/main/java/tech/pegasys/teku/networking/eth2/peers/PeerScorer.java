@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.List;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -25,5 +26,6 @@ public interface PeerScorer {
     return scoreExistingPeer(peer.getId());
   }
 
-  int scoreCandidatePeer(final DiscoveryPeer candidate);
+  List<DiscoveryPeer> selectCandidatePeers(
+      final List<DiscoveryPeer> candidates, final int maxToSelect);
 }
