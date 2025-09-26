@@ -55,21 +55,12 @@ specrefs:
 
       # No light client support
       - LightClientFinalityUpdate
-      - LightClientHeader
+      - LightClientHeader#capella
       - LightClientOptimisticUpdate
 
       # Not implemented: gloas
-      - BeaconState#gloas
-      - BuilderPendingPayment#gloas
-      - BuilderPendingWithdrawal#gloas
       - DataColumnSidecar#gloas
-      - ExecutionPayloadBid#gloas
-      - ExecutionPayloadEnvelope#gloas
       - ForkChoiceNode#gloas
-      - IndexedPayloadAttestation#gloas
-      - PayloadAttestationMessage#gloas
-      - SignedExecutionPayloadBid#gloas
-      - SignedExecutionPayloadEnvelope#gloas
 
     dataclasses:
       # Not defined, implemented differently
@@ -188,11 +179,6 @@ specrefs:
       - compute_fork_version#capella
       - compute_fork_version#deneb
       - compute_fork_version#electra
-
-      # Implemented by BLS library, see:
-      # infrastructure/bls/src/main/java/tech/pegasys/teku/bls/impl/BLS12381.java
-      - eth_aggregate_pubkeys#altair
-      - eth_fast_aggregate_verify#altair
 
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
@@ -342,7 +328,6 @@ specrefs:
       - process_epoch#gloas
       - process_execution_payload#gloas
       - process_execution_payload_bid#gloas
-      - process_execution_payload_header#gloas
       - process_operations#gloas
       - process_payload_attestation#gloas
       - process_proposer_slashing#gloas
