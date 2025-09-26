@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.metadata;
 
 import java.util.List;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 
 public class DataColumnSidecarsAndMetaData extends ObjectAndMetaData<List<DataColumnSidecar>> {
 

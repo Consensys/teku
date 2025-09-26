@@ -32,8 +32,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class DebugDataFileDumper implements DebugDataDumper {
@@ -199,7 +199,7 @@ public class DebugDataFileDumper implements DebugDataDumper {
     sidecars.forEach(
         sidecar -> {
           final UInt64 slot = sidecar.getSlot();
-          final Bytes32 blockRoot = sidecar.getBlockRoot();
+          final Bytes32 blockRoot = sidecar.getBeaconBlockRoot();
           final UInt64 index = sidecar.getIndex();
           final String fileName =
               String.format("%s_%s_%s.ssz", slot, blockRoot.toUnprefixedHexString(), index);

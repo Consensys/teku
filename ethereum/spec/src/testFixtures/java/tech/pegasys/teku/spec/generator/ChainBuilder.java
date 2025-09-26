@@ -47,10 +47,10 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -146,7 +146,7 @@ public class ChainBuilder {
         .forEach(
             dc -> {
               if (!dc.isEmpty()) {
-                dataColumnSidecarsByHash.put(dc.getFirst().getBlockRoot(), dc);
+                dataColumnSidecarsByHash.put(dc.getFirst().getBeaconBlockRoot(), dc);
               }
             });
   }

@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -245,7 +245,7 @@ public class DasGossipBatchLogger implements DasGossipLogger {
         final TEvent e = (TEvent) event;
         final DataColumnSidecar sidecar = e.sidecar();
         final SlotAndBlockRoot blockId =
-            new SlotAndBlockRoot(sidecar.getSlot(), sidecar.getBlockRoot());
+            new SlotAndBlockRoot(sidecar.getSlot(), sidecar.getBeaconBlockRoot());
         eventsByBlock.computeIfAbsent(blockId, __ -> new ArrayList<>()).add(e);
       }
     }

@@ -26,8 +26,8 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -41,7 +41,7 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   private final OperationProcessor<DataColumnSidecar> processor;
   private final ForkInfo forkInfo;
   private final Bytes4 forkDigest;
-  private final DataColumnSidecarSchema dataColumnSidecarSchema;
+  private final DataColumnSidecarSchema<DataColumnSidecar> dataColumnSidecarSchema;
   private final DebugDataDumper debugDataDumper;
   private final MiscHelpersFulu miscHelpersFulu;
 

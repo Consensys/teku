@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -153,7 +153,7 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
               final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
               // check sidecar is created using the prepared BlobsCellBundle
               assertThat(
-                      dataColumnSidecar.getSszKZGProofs().stream()
+                      dataColumnSidecar.getKzgProofs().stream()
                           .map(SszKZGProof::getKZGProof)
                           .toList())
                   .isEqualTo(
@@ -164,7 +164,7 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
                                       .getProofs()
                                       .get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());
-              assertThat(dataColumnSidecar.getSszKZGCommitments()).isEqualTo(expectedCommitments);
+              assertThat(dataColumnSidecar.getKzgCommitments()).isEqualTo(expectedCommitments);
             });
   }
 
