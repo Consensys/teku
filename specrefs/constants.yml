@@ -422,3 +422,23 @@
     <spec constant_var="BUILDER_PENDING_WITHDRAWALS_LIMIT" fork="gloas" hash="a71d297e">
     BUILDER_PENDING_WITHDRAWALS_LIMIT: uint64 = 2**20
     </spec>
+
+- name: BUILDER_WITHDRAWAL_PREFIX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/WithdrawalPrefixes.java
+      search: BUILDER_WITHDRAWAL_PREFIX =
+  spec: |
+    <spec constant_var="BUILDER_WITHDRAWAL_PREFIX" fork="gloas" hash="1094ce21">
+    BUILDER_WITHDRAWAL_PREFIX: Bytes1 = '0x03'
+    </spec>
+
+- name: DOMAIN_BEACON_BUILDER
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: BEACON_BUILDER =
+  spec: |
+    <spec constant_var="DOMAIN_BEACON_BUILDER" fork="gloas" hash="31821111">
+    DOMAIN_BEACON_BUILDER: DomainType = '0x1B000000'
+    </spec>
+    
+

@@ -1489,7 +1489,8 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomSszList(
-                        BeaconBlockBodySchemaGloas.required(schema).getPayloadAttestationsSchema(),
+                        BlindedBeaconBlockBodySchemaGloas.required(schema)
+                            .getPayloadAttestationsSchema(),
                         this::randomPayloadAttestation,
                         getMaxPayloadAttestations()));
               }
@@ -1607,8 +1608,7 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomSszList(
-                        BlindedBeaconBlockBodySchemaGloas.required(schema)
-                            .getPayloadAttestationsSchema(),
+                        BeaconBlockBodySchemaGloas.required(schema).getPayloadAttestationsSchema(),
                         this::randomPayloadAttestation,
                         getMaxPayloadAttestations()));
               }
