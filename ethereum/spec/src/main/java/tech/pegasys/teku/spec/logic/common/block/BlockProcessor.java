@@ -165,6 +165,9 @@ public interface BlockProcessor {
       MutableBeaconState state, Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException;
 
+  void processExecutionPayloadBid(MutableBeaconState state, BeaconBlock beaconBlock)
+      throws BlockProcessingException;
+
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();
   }

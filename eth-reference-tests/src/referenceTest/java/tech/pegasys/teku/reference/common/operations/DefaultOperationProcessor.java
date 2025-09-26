@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -163,5 +164,12 @@ public class DefaultOperationProcessor implements OperationProcessor {
       final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests) {
     spec.getExecutionRequestsProcessor(state.getSlot())
         .processConsolidationRequests(state, consolidationRequests);
+  }
+
+  @Override
+  public void processExecutionPayloadBid(
+      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      throws BlockProcessingException {
+    spec.getBlockProcessor(beaconBlock.getSlot()).processExecutionPayloadBid(state, beaconBlock);
   }
 }

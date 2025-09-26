@@ -334,6 +334,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     throw new UnsupportedOperationException("No withdrawals in Altair");
   }
 
+  @Override
+  public void processExecutionPayloadBid(
+      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
+  }
+
   public static boolean eth2FastAggregateVerify(
       final BLSSignatureVerifier signatureVerifier,
       final List<BLSPublicKey> pubkeys,

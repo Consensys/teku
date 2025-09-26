@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -227,19 +225,6 @@ public class BeaconBlockBodySchemaGloasImpl
   @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of();
-  }
-
-  @Override
-  public long getBlobKzgCommitmentsRootGeneralizedIndex() {
-    return GIndexUtil.gIdxCompose(
-        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_BID)),
-        getSignedExecutionPayloadBidSchema().getBlobKzgCommitmentsRootGeneralizedIndex());
-  }
-
-  @Override
-  public SignedExecutionPayloadBidSchema getSignedExecutionPayloadBidSchema() {
-    return (SignedExecutionPayloadBidSchema)
-        getChildSchema(getFieldIndex(BlockBodyFields.SIGNED_EXECUTION_PAYLOAD_BID));
   }
 
   @SuppressWarnings("unchecked")

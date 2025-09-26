@@ -18,6 +18,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -158,5 +159,11 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in phase0");
+  }
+
+  @Override
+  public void processExecutionPayloadBid(
+      final MutableBeaconState state, final BeaconBlock beaconBlock) {
+    throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
   }
 }
