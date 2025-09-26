@@ -27,6 +27,8 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 
 public class DatabaseMigrater {
@@ -180,6 +183,11 @@ public class DatabaseMigrater {
   KvStoreDatabase createDatabase(final Path databasePath, final DatabaseVersion databaseVersion)
       throws DatabaseMigraterError {
     final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
+    final EventChannels eventChannels =
+        EventChannels.createSyncChannels(
+            ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, eventChannels);
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -191,7 +199,8 @@ public class DatabaseMigrater {
                 .eth1DepositContract(config.getEth1DepositContractAddress())
                 .dataStorageCreateDbVersion(databaseVersion)
                 .build(),
-            Optional.empty());
+            Optional.empty(),
+            versionedHashDBSourceFactory);
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {
       throw new DatabaseMigraterError(

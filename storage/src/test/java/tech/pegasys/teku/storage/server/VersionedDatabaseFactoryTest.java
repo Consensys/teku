@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.io.File;
@@ -40,6 +41,8 @@ public class VersionedDatabaseFactoryTest {
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+      mock(VersionedHashDBSourceFactory.class);
   @TempDir Path dataDir;
 
   @Test
@@ -52,7 +55,8 @@ public class VersionedDatabaseFactoryTest {
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
                 .build(),
-            Optional.empty());
+            Optional.empty(),
+            versionedHashDBSourceFactory);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -79,7 +83,8 @@ public class VersionedDatabaseFactoryTest {
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
                 .build(),
-            Optional.empty());
+            Optional.empty(),
+            versionedHashDBSourceFactory);
 
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -101,7 +106,8 @@ public class VersionedDatabaseFactoryTest {
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
                 .build(),
-            Optional.empty());
+            Optional.empty(),
+            versionedHashDBSourceFactory);
 
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
@@ -120,7 +126,8 @@ public class VersionedDatabaseFactoryTest {
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
                 .build(),
-            Optional.empty());
+            Optional.empty(),
+            versionedHashDBSourceFactory);
 
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
@@ -141,7 +148,8 @@ public class VersionedDatabaseFactoryTest {
                 .dataStorageMode(DATA_STORAGE_MODE)
                 .dataStorageCreateDbVersion(version)
                 .build(),
-            Optional.empty());
+            Optional.empty(),
+            versionedHashDBSourceFactory);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
   }
 

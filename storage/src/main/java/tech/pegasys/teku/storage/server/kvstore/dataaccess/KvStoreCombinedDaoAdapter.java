@@ -371,8 +371,19 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public List<DataColumnSlotAndIdentifier> getNonCanonicalDataColumnIdentifiers(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return finalizedDao.getNonCanonicalDataColumnIdentifiers(slotAndBlockRoot);
+  }
+
+  @Override
   public Optional<UInt64> getEarliestDataSidecarColumnSlot() {
     return finalizedDao.getEarliestAvailableDataColumnSlot();
+  }
+
+  @Override
+  public Optional<Bytes> getSidecarIdentifierData(final Bytes32 versionedHash) {
+    return finalizedDao.getSidecarIdentifierData(versionedHash);
   }
 
   @Override
@@ -703,6 +714,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       finalizedUpdater.removeNonCanonicalSidecar(identifier);
+    }
+
+    @Override
+    public void addVersionedHash(final Bytes32 versionedHash, final Bytes metadata) {
+      finalizedUpdater.addVersionedHash(versionedHash, metadata);
+    }
+
+    @Override
+    public void removeVersionedHash(final Bytes32 versionedHash) {
+      finalizedUpdater.removeVersionedHash(versionedHash);
     }
 
     @Override
