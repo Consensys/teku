@@ -12,10 +12,8 @@ specrefs:
 
   exceptions:
     constants:
-      # added at alpha.5 for basis points spec change
-      - BASIS_POINTS#phase0
-
       # Not defined as a constant, unnecessary
+      - BASIS_POINTS#phase0
       - DOMAIN_APPLICATION_MASK
       - ENDIANNESS
       - INTERVALS_PER_SLOT#phase0
@@ -41,7 +39,7 @@ specrefs:
       - RANDOM_CHALLENGE_KZG_BATCH_DOMAIN
       - RANDOM_CHALLENGE_KZG_CELL_BATCH_DOMAIN
 
-      # Not yet implemented for Gloas
+      # Not implemented: gloas
       - BUILDER_PAYMENT_THRESHOLD_DENOMINATOR#gloas
       - BUILDER_PAYMENT_THRESHOLD_NUMERATOR#gloas
       - BUILDER_WITHDRAWAL_PREFIX#gloas
@@ -57,10 +55,10 @@ specrefs:
 
       # No light client support
       - LightClientFinalityUpdate
-      - LightClientHeader
+      - LightClientHeader#capella
       - LightClientOptimisticUpdate
 
-      # Not yet implemented for Gloas
+      # Not implemented: gloas
       - DataColumnSidecar#gloas
       - ForkChoiceNode#gloas
 
@@ -182,19 +180,10 @@ specrefs:
       - compute_fork_version#deneb
       - compute_fork_version#electra
 
-      # Implemented by BLS library, see:
-      # infrastructure/bls/src/main/java/tech/pegasys/teku/bls/impl/BLS12381.java
-      - eth_aggregate_pubkeys#altair
-      - eth_fast_aggregate_verify#altair
-
       # Still need to implement this for Electra
       - compute_weak_subjectivity_period#electra
 
-      #
-      # Not implemented
-      #
-
-      # phase0
+      # Not implemented: phase0
       - check_if_validator_active#phase0
       - compute_new_state_root#phase0
       - compute_pulled_up_tip#phase0
@@ -221,13 +210,14 @@ specrefs:
       - is_finalization_ok#phase0
       - is_proposer#phase0
       - on_tick_per_slot#phase0
+      - seconds_to_milliseconds#phase0
       - store_target_checkpoint_state#phase0
       - update_latest_messages#phase0
       - update_unrealized_checkpoints#phase0
       - validate_target_epoch_against_current_time#phase0
       - xor#phase0
 
-      # altair
+      # Not implemented: altair
       - compute_subnets_for_sync_committee#altair
       - get_contribution_and_proof#altair
       - get_index_for_new_validator#altair
@@ -241,7 +231,7 @@ specrefs:
       - process_sync_committee_contributions#altair
       - set_or_append_list#altair
 
-      # bellatrix
+      # Not implemented: bellatrix
       - get_execution_payload#bellatrix
       - get_pow_block_at_terminal_total_difficulty#bellatrix
       - get_terminal_pow_block#bellatrix
@@ -252,19 +242,19 @@ specrefs:
       - prepare_execution_payload#bellatrix
       - process_slashings#bellatrix
 
-      # capella
+      # Not implemented: capella
       - prepare_execution_payload#capella
       - process_epoch#capella
       - process_execution_payload#capella
 
-      # deneb
+      # Not implemented: deneb
       - compute_signed_block_header#deneb
       - get_blob_sidecars#deneb
       - prepare_execution_payload#deneb
       - process_registry_updates#deneb
       - process_voluntary_exit#deneb
 
-      # electra
+      # Not implemented: electra
       - add_validator_to_registry#electra
       - compute_on_chain_aggregate#electra
       - get_committee_indices#electra
@@ -276,7 +266,7 @@ specrefs:
       - process_execution_payload#electra
       - process_voluntary_exit#electra
 
-      # fulu
+      # Not implemented: fulu
       - compute_matrix#fulu
       - get_data_column_sidecars#fulu
       - get_data_column_sidecars_from_block#fulu
@@ -284,32 +274,23 @@ specrefs:
       - process_epoch#fulu
       - recover_matrix#fulu
 
-      # added at beta.0 for slot time deadlines
-      - get_aggregate_due_ms#gloas
-      - get_aggregate_due_ms#phase0
-      - get_attestation_due_ms#gloas
-      - get_attestation_due_ms#phase0
-      - get_contribution_due_ms#altair
-      - get_contribution_due_ms#gloas
-      - get_payload_attestation_due_ms#gloas
-      - get_proposer_reorg_cutoff_ms#phase0
-      - get_sync_message_due_ms#altair
-      - get_sync_message_due_ms#gloas
-      - seconds_to_milliseconds#phase0
-
-      # gloas
+      # Not implemented: gloas
       - compute_balance_weighted_acceptance#gloas
       - compute_balance_weighted_selection#gloas
       - compute_fork_version#gloas
       - compute_proposer_indices#gloas
+      - get_aggregate_due_ms#gloas
       - get_ancestor#gloas
+      - get_attestation_due_ms#gloas
       - get_attestation_participation_flag_indices#gloas
       - get_builder_payment_quorum_threshold#gloas
       - get_checkpoint_block#gloas
+      - get_contribution_due_ms#gloas
       - get_data_column_sidecars#gloas
       - get_data_column_sidecars_from_block#gloas
-      - get_execution_payload_envelope_signature#gloas
+      - get_data_column_sidecars_from_column_sidecar#gloas
       - get_execution_payload_bid_signature#gloas
+      - get_execution_payload_envelope_signature#gloas
       - get_expected_withdrawals#gloas
       - get_forkchoice_store#gloas
       - get_head#gloas
@@ -317,10 +298,13 @@ specrefs:
       - get_next_sync_committee_indices#gloas
       - get_node_children#gloas
       - get_parent_payload_status#gloas
+      - get_payload_attestation_due_ms#gloas
       - get_payload_attestation_message_signature#gloas
       - get_payload_status_tiebreaker#gloas
+      - get_pending_balance_to_withdraw#gloas
       - get_ptc#gloas
       - get_ptc_assignment#gloas
+      - get_sync_message_due_ms#gloas
       - get_weight#gloas
       - has_builder_withdrawal_credential#gloas
       - has_compounding_withdrawal_credential#gloas
@@ -346,6 +330,7 @@ specrefs:
       - process_execution_payload_bid#gloas
       - process_operations#gloas
       - process_payload_attestation#gloas
+      - process_proposer_slashing#gloas
       - process_slot#gloas
       - process_withdrawals#gloas
       - remove_flag#gloas
@@ -355,9 +340,5 @@ specrefs:
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
       - verify_data_column_sidecar_inclusion_proof#gloas
-      - get_data_column_sidecars_from_column_sidecar#gloas
-      - verify_execution_payload_envelope_signature#gloas
       - verify_execution_payload_bid_signature#gloas
-      - process_proposer_slashing#gloas
-      - get_pending_balance_to_withdraw#gloas
-      - get_execution_payload_bid_signature#gloas
+      - verify_execution_payload_envelope_signature#gloas
