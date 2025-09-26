@@ -40,6 +40,26 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return snapshotDelegate.getColumnFinalizedStatesBySlot();
   }
 
+  public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {
+    return delegate.getColumnSlotsByFinalizedRoot();
+  }
+
+  public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
+    return delegate.getColumnFinalizedBlocksBySlot();
+  }
+
+  public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
+    return delegate.getColumnSlotsByFinalizedStateRoot();
+  }
+
+  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot() {
+    return delegate.getColumnNonCanonicalBlocksByRoot();
+  }
+
+  public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
+    return delegate.getColumnNonCanonicalRootsBySlot();
+  }
+
   public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
       getColumnBlobSidecarBySlotRootBlobIndex() {
     return delegate.getColumnBlobSidecarBySlotRootBlobIndex();
@@ -60,6 +80,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier();
   }
 
+  public KvStoreColumn<Bytes32, Bytes> getColumnSidecarIdentifierByVersionedHash() {
+    return delegate.getColumnSidecarIdentifierByVersionedHash();
+  }
+
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
@@ -78,6 +102,9 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         .put(
             "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
             getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
+        .put(
+            "COLUMN_SIDECAR_IDENTIFIER_BY_VERSIONED_HASH",
+            getColumnSidecarIdentifierByVersionedHash())
         .build();
   }
 
@@ -93,28 +120,8 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return snapshotDelegate.getDeletedColumnIds();
   }
 
-  public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {
-    return delegate.getColumnSlotsByFinalizedRoot();
-  }
-
-  public KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
-    return delegate.getColumnFinalizedBlocksBySlot();
-  }
-
-  public KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
-    return delegate.getColumnSlotsByFinalizedStateRoot();
-  }
-
   public KvStoreVariable<Bytes32> getVariableLatestCanonicalBlockRoot() {
     return delegate.getVariableLatestCanonicalBlockRoot();
-  }
-
-  public KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot() {
-    return delegate.getColumnNonCanonicalBlocksByRoot();
-  }
-
-  public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
-    return delegate.getColumnNonCanonicalRootsBySlot();
   }
 
   public KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot() {

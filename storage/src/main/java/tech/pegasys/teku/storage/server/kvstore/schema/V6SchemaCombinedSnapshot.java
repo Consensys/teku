@@ -52,6 +52,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes> sidecarByColumnSlotAndIdentifier;
   private final KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       nonCanonicalSidecarByColumnSlotAndIdentifier;
+  private final KvStoreColumn<Bytes32, Bytes> sidecarIdentifierByVersionedHash;
   private final List<Bytes> deletedColumnIds;
 
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
@@ -94,6 +95,9 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
     nonCanonicalSidecarByColumnSlotAndIdentifier =
         KvStoreColumn.create(
             finalizedOffset + 15, COLUMN_SLOT_AND_IDENTIFIER_KEY_SERIALIZER, BYTES_SERIALIZER);
+
+    sidecarIdentifierByVersionedHash =
+        KvStoreColumn.create(finalizedOffset + 16, BYTES32_SERIALIZER, BYTES_SERIALIZER);
 
     deletedColumnIds =
         List.of(
@@ -167,6 +171,11 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   }
 
   @Override
+  public KvStoreColumn<Bytes32, Bytes> getColumnSidecarIdentifierByVersionedHash() {
+    return sidecarIdentifierByVersionedHash;
+  }
+
+  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
@@ -192,6 +201,9 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put(
             "NON_CANONICAL_SIDECAR_BY_COLUMN_SLOT_AND_IDENTIFIER",
             getColumnNonCanonicalSidecarByColumnSlotAndIdentifier())
+        .put(
+            "COLUMN_SIDECAR_IDENTIFIER_BY_VERSIONED_HASH",
+            getColumnSidecarIdentifierByVersionedHash())
         .build();
   }
 
