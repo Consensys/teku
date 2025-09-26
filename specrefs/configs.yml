@@ -38,7 +38,7 @@
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
       search: "^ATTESTATION_DUE_BPS:"
-      regex: True
+      regex: true
   spec: |
     <spec config_var="ATTESTATION_DUE_BPS" fork="phase0" hash="929dd1c9">
     ATTESTATION_DUE_BPS: uint64 = 3333
@@ -193,7 +193,7 @@
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
       search: "^CUSTODY_REQUIREMENT:"
-      regex: True
+      regex: true
   spec: |
     <spec config_var="CUSTODY_REQUIREMENT" fork="fulu" hash="b7340203">
     CUSTODY_REQUIREMENT = 4

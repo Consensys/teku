@@ -12,6 +12,19 @@
         return flags | flag
     </spec>
 
+- name: add_validator_to_registry#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
+      search: public void addValidatorToRegistry(
+  spec: |
+    <spec fn="add_validator_to_registry" fork="phase0" hash="53699dc0">
+    def add_validator_to_registry(
+        state: BeaconState, pubkey: BLSPubkey, withdrawal_credentials: Bytes32, amount: uint64
+    ) -> None:
+        state.validators.append(get_validator_from_deposit(pubkey, withdrawal_credentials, amount))
+        state.balances.append(amount)
+    </spec>
+
 - name: add_validator_to_registry#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateMutatorsAltair.java
@@ -31,17 +44,36 @@
         set_or_append_list(state.inactivity_scores, index, uint64(0))
     </spec>
 
-- name: add_validator_to_registry#phase0
+- name: apply_deposit#phase0
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
-      search: public void addValidatorToRegistry(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void applyDeposit(
   spec: |
-    <spec fn="add_validator_to_registry" fork="phase0" hash="53699dc0">
-    def add_validator_to_registry(
-        state: BeaconState, pubkey: BLSPubkey, withdrawal_credentials: Bytes32, amount: uint64
+    <spec fn="apply_deposit" fork="phase0" hash="a53ef920">
+    def apply_deposit(
+        state: BeaconState,
+        pubkey: BLSPubkey,
+        withdrawal_credentials: Bytes32,
+        amount: uint64,
+        signature: BLSSignature,
     ) -> None:
-        state.validators.append(get_validator_from_deposit(pubkey, withdrawal_credentials, amount))
-        state.balances.append(amount)
+        validator_pubkeys = [v.pubkey for v in state.validators]
+        if pubkey not in validator_pubkeys:
+            # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
+            deposit_message = DepositMessage(
+                pubkey=pubkey,
+                withdrawal_credentials=withdrawal_credentials,
+                amount=amount,
+            )
+            # Fork-agnostic domain since deposits are valid across forks
+            domain = compute_domain(DOMAIN_DEPOSIT)
+            signing_root = compute_signing_root(deposit_message, domain)
+            if bls.Verify(pubkey, signing_root, signature):
+                add_validator_to_registry(state, pubkey, withdrawal_credentials, amount)
+        else:
+            # Increase balance by deposit amount
+            index = ValidatorIndex(validator_pubkeys.index(pubkey))
+            increase_balance(state, index, amount)
     </spec>
 
 - name: apply_deposit#electra
@@ -77,38 +109,6 @@
                 slot=GENESIS_SLOT,  # Use GENESIS_SLOT to distinguish from a pending deposit request
             )
         )
-    </spec>
-
-- name: apply_deposit#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: public void applyDeposit(
-  spec: |
-    <spec fn="apply_deposit" fork="phase0" hash="a53ef920">
-    def apply_deposit(
-        state: BeaconState,
-        pubkey: BLSPubkey,
-        withdrawal_credentials: Bytes32,
-        amount: uint64,
-        signature: BLSSignature,
-    ) -> None:
-        validator_pubkeys = [v.pubkey for v in state.validators]
-        if pubkey not in validator_pubkeys:
-            # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
-            deposit_message = DepositMessage(
-                pubkey=pubkey,
-                withdrawal_credentials=withdrawal_credentials,
-                amount=amount,
-            )
-            # Fork-agnostic domain since deposits are valid across forks
-            domain = compute_domain(DOMAIN_DEPOSIT)
-            signing_root = compute_signing_root(deposit_message, domain)
-            if bls.Verify(pubkey, signing_root, signature):
-                add_validator_to_registry(state, pubkey, withdrawal_credentials, amount)
-        else:
-            # Increase balance by deposit amount
-            index = ValidatorIndex(validator_pubkeys.index(pubkey))
-            increase_balance(state, index, amount)
     </spec>
 
 - name: apply_pending_deposit
@@ -245,7 +245,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
       search: public Bytes32 computeDomain\($
-      regex: True
+      regex: true
   spec: |
     <spec fn="compute_domain" fork="phase0" hash="948e1334">
     def compute_domain(
@@ -325,6 +325,27 @@
         )
     </spec>
 
+- name: compute_fork_digest#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
+      search: public Bytes4 computeForkDigest(
+  spec: |
+    <spec fn="compute_fork_digest" fork="phase0" hash="e206968f">
+    def compute_fork_digest(
+        genesis_validators_root: Root,
+        epoch: Epoch,
+    ) -> ForkDigest:
+        """
+        Return the 4-byte fork digest for the ``genesis_validators_root`` at a given ``epoch``.
+
+        This is a digest primarily used for domain separation on the p2p layer.
+        4-bytes suffices for practical separation of forks/chains.
+        """
+        fork_version = compute_fork_version(epoch)
+        base_digest = compute_fork_data_root(fork_version, genesis_validators_root)
+        return ForkDigest(base_digest[:4])
+    </spec>
+
 - name: compute_fork_digest#fulu
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
@@ -358,27 +379,6 @@
                 )
             )[:4]
         )
-    </spec>
-
-- name: compute_fork_digest#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
-      search: public Bytes4 computeForkDigest(
-  spec: |
-    <spec fn="compute_fork_digest" fork="phase0" hash="e206968f">
-    def compute_fork_digest(
-        genesis_validators_root: Root,
-        epoch: Epoch,
-    ) -> ForkDigest:
-        """
-        Return the 4-byte fork digest for the ``genesis_validators_root`` at a given ``epoch``.
-
-        This is a digest primarily used for domain separation on the p2p layer.
-        4-bytes suffices for practical separation of forks/chains.
-        """
-        fork_version = compute_fork_version(epoch)
-        base_digest = compute_fork_data_root(fork_version, genesis_validators_root)
-        return ForkDigest(base_digest[:4])
     </spec>
 
 - name: compute_fork_version
@@ -917,6 +917,20 @@
         return bls.Sign(privkey, signing_root)
     </spec>
 
+- name: get_attesting_indices#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
+      search: public IntList getAttestingIndices(
+  spec: |
+    <spec fn="get_attesting_indices" fork="phase0" hash="abbf9f2d">
+    def get_attesting_indices(state: BeaconState, attestation: Attestation) -> Set[ValidatorIndex]:
+        """
+        Return the set of attesting indices corresponding to ``data`` and ``bits``.
+        """
+        committee = get_beacon_committee(state, attestation.data.slot, attestation.data.index)
+        return set(index for i, index in enumerate(committee) if attestation.aggregation_bits[i])
+    </spec>
+
 - name: get_attesting_indices#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/util/AttestationUtilElectra.java
@@ -944,20 +958,6 @@
         return output
     </spec>
 
-- name: get_attesting_indices#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
-      search: public IntList getAttestingIndices(
-  spec: |
-    <spec fn="get_attesting_indices" fork="phase0" hash="abbf9f2d">
-    def get_attesting_indices(state: BeaconState, attestation: Attestation) -> Set[ValidatorIndex]:
-        """
-        Return the set of attesting indices corresponding to ``data`` and ``bits``.
-        """
-        committee = get_beacon_committee(state, attestation.data.slot, attestation.data.index)
-        return set(index for i, index in enumerate(committee) if attestation.aggregation_bits[i])
-    </spec>
-
 - name: get_balance_churn_limit
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateAccessorsElectra.java
@@ -972,20 +972,6 @@
             MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA, get_total_active_balance(state) // CHURN_LIMIT_QUOTIENT
         )
         return churn - churn % EFFECTIVE_BALANCE_INCREMENT
-    </spec>
-
-- name: get_base_reward#altair
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
-      search: public UInt64 getBaseReward(
-  spec: |
-    <spec fn="get_base_reward" fork="altair" hash="edb30df0">
-    def get_base_reward(state: BeaconState, index: ValidatorIndex) -> Gwei:
-        """
-        Return the base reward for the validator defined by ``index`` with respect to the current ``state``.
-        """
-        increments = state.validators[index].effective_balance // EFFECTIVE_BALANCE_INCREMENT
-        return Gwei(increments * get_base_reward_per_increment(state))
     </spec>
 
 - name: get_base_reward#phase0
@@ -1003,6 +989,20 @@
             // integer_squareroot(total_balance)
             // BASE_REWARDS_PER_EPOCH
         )
+    </spec>
+
+- name: get_base_reward#altair
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateAccessorsAltair.java
+      search: public UInt64 getBaseReward(
+  spec: |
+    <spec fn="get_base_reward" fork="altair" hash="edb30df0">
+    def get_base_reward(state: BeaconState, index: ValidatorIndex) -> Gwei:
+        """
+        Return the base reward for the validator defined by ``index`` with respect to the current ``state``.
+        """
+        increments = state.validators[index].effective_balance // EFFECTIVE_BALANCE_INCREMENT
+        return Gwei(increments * get_base_reward_per_increment(state))
     </spec>
 
 - name: get_base_reward_per_increment
@@ -1041,19 +1041,6 @@
         )
     </spec>
 
-- name: get_beacon_proposer_index#fulu
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/BeaconStateAccessorsFulu.java
-      search: public int getBeaconProposerIndex(
-  spec: |
-    <spec fn="get_beacon_proposer_index" fork="fulu" hash="8e1ef77d">
-    def get_beacon_proposer_index(state: BeaconState) -> ValidatorIndex:
-        """
-        Return the beacon proposer index at the current slot.
-        """
-        return state.proposer_lookahead[state.slot % SLOTS_PER_EPOCH]
-    </spec>
-
 - name: get_beacon_proposer_index#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateAccessors.java
@@ -1068,6 +1055,19 @@
         seed = hash(get_seed(state, epoch, DOMAIN_BEACON_PROPOSER) + uint_to_bytes(state.slot))
         indices = get_active_validator_indices(state, epoch)
         return compute_proposer_index(state, indices, seed)
+    </spec>
+
+- name: get_beacon_proposer_index#fulu
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/BeaconStateAccessorsFulu.java
+      search: public int getBeaconProposerIndex(
+  spec: |
+    <spec fn="get_beacon_proposer_index" fork="fulu" hash="8e1ef77d">
+    def get_beacon_proposer_index(state: BeaconState) -> ValidatorIndex:
+        """
+        Return the beacon proposer index at the current slot.
+        """
+        return state.proposer_lookahead[state.slot % SLOTS_PER_EPOCH]
     </spec>
 
 - name: get_beacon_proposer_indices
@@ -1315,17 +1315,13 @@
         return bls.Sign(privkey, signing_root)
     </spec>
 
-- name: get_eth1_vote#electra
+- name: get_eth1_vote#phase0
   sources:
     - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/Eth1DataCache.java
       search: public Eth1Data getEth1Vote(
   spec: |
-    <spec fn="get_eth1_vote" fork="electra" hash="978c2389">
+    <spec fn="get_eth1_vote" fork="phase0" hash="850a63eb">
     def get_eth1_vote(state: BeaconState, eth1_chain: Sequence[Eth1Block]) -> Eth1Data:
-        # [New in Electra:EIP6110]
-        if state.eth1_deposit_index == state.deposit_requests_start_index:
-            return state.eth1_data
-
         period_start = voting_period_start_time(state)
         # `eth1_chain` abstractly represents all blocks in the eth1 chain sorted by ascending block height
         votes_to_consider = [
@@ -1359,13 +1355,17 @@
         )
     </spec>
 
-- name: get_eth1_vote#phase0
+- name: get_eth1_vote#electra
   sources:
     - file: beacon/validator/src/main/java/tech/pegasys/teku/validator/coordinator/Eth1DataCache.java
       search: public Eth1Data getEth1Vote(
   spec: |
-    <spec fn="get_eth1_vote" fork="phase0" hash="850a63eb">
+    <spec fn="get_eth1_vote" fork="electra" hash="978c2389">
     def get_eth1_vote(state: BeaconState, eth1_chain: Sequence[Eth1Block]) -> Eth1Data:
+        # [New in Electra:EIP6110]
+        if state.eth1_deposit_index == state.deposit_requests_start_index:
+            return state.eth1_data
+
         period_start = voting_period_start_time(state)
         # `eth1_chain` abstractly represents all blocks in the eth1 chain sorted by ascending block height
         votes_to_consider = [
@@ -2128,6 +2128,29 @@
         )
     </spec>
 
+- name: get_validator_from_deposit#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
+      search: public Validator getValidatorFromDeposit(
+  spec: |
+    <spec fn="get_validator_from_deposit" fork="phase0" hash="d267aa31">
+    def get_validator_from_deposit(
+        pubkey: BLSPubkey, withdrawal_credentials: Bytes32, amount: uint64
+    ) -> Validator:
+        effective_balance = min(amount - amount % EFFECTIVE_BALANCE_INCREMENT, MAX_EFFECTIVE_BALANCE)
+
+        return Validator(
+            pubkey=pubkey,
+            withdrawal_credentials=withdrawal_credentials,
+            effective_balance=effective_balance,
+            slashed=False,
+            activation_eligibility_epoch=FAR_FUTURE_EPOCH,
+            activation_epoch=FAR_FUTURE_EPOCH,
+            exit_epoch=FAR_FUTURE_EPOCH,
+            withdrawable_epoch=FAR_FUTURE_EPOCH,
+        )
+    </spec>
+
 - name: get_validator_from_deposit#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/MiscHelpersElectra.java
@@ -2155,29 +2178,6 @@
         )
 
         return validator
-    </spec>
-
-- name: get_validator_from_deposit#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/MiscHelpers.java
-      search: public Validator getValidatorFromDeposit(
-  spec: |
-    <spec fn="get_validator_from_deposit" fork="phase0" hash="d267aa31">
-    def get_validator_from_deposit(
-        pubkey: BLSPubkey, withdrawal_credentials: Bytes32, amount: uint64
-    ) -> Validator:
-        effective_balance = min(amount - amount % EFFECTIVE_BALANCE_INCREMENT, MAX_EFFECTIVE_BALANCE)
-
-        return Validator(
-            pubkey=pubkey,
-            withdrawal_credentials=withdrawal_credentials,
-            effective_balance=effective_balance,
-            slashed=False,
-            activation_eligibility_epoch=FAR_FUTURE_EPOCH,
-            activation_epoch=FAR_FUTURE_EPOCH,
-            exit_epoch=FAR_FUTURE_EPOCH,
-            withdrawable_epoch=FAR_FUTURE_EPOCH,
-        )
     </spec>
 
 - name: get_validators_custody_requirement
@@ -2368,29 +2368,6 @@
         return lookahead
     </spec>
 
-- name: initiate_validator_exit#electra
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateMutatorsElectra.java
-      search: public void initiateValidatorExit(
-  spec: |
-    <spec fn="initiate_validator_exit" fork="electra" hash="0adfd988">
-    def initiate_validator_exit(state: BeaconState, index: ValidatorIndex) -> None:
-        """
-        Initiate the exit of the validator with index ``index``.
-        """
-        # Return if validator already initiated exit
-        validator = state.validators[index]
-        if validator.exit_epoch != FAR_FUTURE_EPOCH:
-            return
-
-        # Compute exit queue epoch [Modified in Electra:EIP7251]
-        exit_queue_epoch = compute_exit_epoch_and_update_churn(state, validator.effective_balance)
-
-        # Set validator exit epoch and withdrawable epoch
-        validator.exit_epoch = exit_queue_epoch
-        validator.withdrawable_epoch = Epoch(validator.exit_epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY)
-    </spec>
-
 - name: initiate_validator_exit#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
@@ -2412,6 +2389,29 @@
         exit_queue_churn = len([v for v in state.validators if v.exit_epoch == exit_queue_epoch])
         if exit_queue_churn >= get_validator_churn_limit(state):
             exit_queue_epoch += Epoch(1)
+
+        # Set validator exit epoch and withdrawable epoch
+        validator.exit_epoch = exit_queue_epoch
+        validator.withdrawable_epoch = Epoch(validator.exit_epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY)
+    </spec>
+
+- name: initiate_validator_exit#electra
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateMutatorsElectra.java
+      search: public void initiateValidatorExit(
+  spec: |
+    <spec fn="initiate_validator_exit" fork="electra" hash="0adfd988">
+    def initiate_validator_exit(state: BeaconState, index: ValidatorIndex) -> None:
+        """
+        Initiate the exit of the validator with index ``index``.
+        """
+        # Return if validator already initiated exit
+        validator = state.validators[index]
+        if validator.exit_epoch != FAR_FUTURE_EPOCH:
+            return
+
+        # Compute exit queue epoch [Modified in Electra:EIP7251]
+        exit_queue_epoch = compute_exit_epoch_and_update_churn(state, validator.effective_balance)
 
         # Set validator exit epoch and withdrawable epoch
         validator.exit_epoch = exit_queue_epoch
@@ -2551,6 +2551,22 @@
         )
     </spec>
 
+- name: is_eligible_for_activation_queue#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: protected boolean isEligibleForActivationQueue(
+  spec: |
+    <spec fn="is_eligible_for_activation_queue" fork="phase0" hash="513e6ed5">
+    def is_eligible_for_activation_queue(validator: Validator) -> bool:
+        """
+        Check if ``validator`` is eligible to be placed into the activation queue.
+        """
+        return (
+            validator.activation_eligibility_epoch == FAR_FUTURE_EPOCH
+            and validator.effective_balance == MAX_EFFECTIVE_BALANCE
+        )
+    </spec>
+
 - name: is_eligible_for_activation_queue#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/statetransition/epoch/EpochProcessorElectra.java
@@ -2565,22 +2581,6 @@
             validator.activation_eligibility_epoch == FAR_FUTURE_EPOCH
             # [Modified in Electra:EIP7251]
             and validator.effective_balance >= MIN_ACTIVATION_BALANCE
-        )
-    </spec>
-
-- name: is_eligible_for_activation_queue#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-      search: protected boolean isEligibleForActivationQueue(
-  spec: |
-    <spec fn="is_eligible_for_activation_queue" fork="phase0" hash="513e6ed5">
-    def is_eligible_for_activation_queue(validator: Validator) -> bool:
-        """
-        Check if ``validator`` is eligible to be placed into the activation queue.
-        """
-        return (
-            validator.activation_eligibility_epoch == FAR_FUTURE_EPOCH
-            and validator.effective_balance == MAX_EFFECTIVE_BALANCE
         )
     </spec>
 
@@ -2871,7 +2871,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/AttestationUtil.java
       search: public AttestationProcessingResult\s+isValidIndexedAttestation\s*\(\s*final\s+Fork\s+\w+\s*,\s*final\s+BeaconState\s+\w+\s*,\s*final\s+ValidatableAttestation\s+\w+\s*\)
-      regex: True
+      regex: true
   spec: |
     <spec fn="is_valid_indexed_attestation" fork="phase0" hash="31223a33">
     def is_valid_indexed_attestation(
@@ -3052,6 +3052,62 @@
         indices = set(attestation_1.attesting_indices).intersection(attestation_2.attesting_indices)
         for index in indices:
             store.equivocating_indices.add(index)
+    </spec>
+
+- name: on_block#phase0
+  sources:
+    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
+      search: private SafeFuture<BlockImportResult> onBlock(
+  spec: |
+    <spec fn="on_block" fork="phase0" hash="aff24b59">
+    def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
+        block = signed_block.message
+        # Parent block must be known
+        assert block.parent_root in store.block_states
+        # Make a copy of the state to avoid mutability issues
+        pre_state = copy(store.block_states[block.parent_root])
+        # Blocks cannot be in the future. If they are, their consideration must be delayed until they are in the past.
+        assert get_current_slot(store) >= block.slot
+
+        # Check that block is later than the finalized epoch slot (optimization to reduce calls to get_ancestor)
+        finalized_slot = compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
+        assert block.slot > finalized_slot
+        # Check block is a descendant of the finalized block at the checkpoint finalized slot
+        finalized_checkpoint_block = get_checkpoint_block(
+            store,
+            block.parent_root,
+            store.finalized_checkpoint.epoch,
+        )
+        assert store.finalized_checkpoint.root == finalized_checkpoint_block
+
+        # Check the block is valid and compute the post-state
+        state = pre_state.copy()
+        block_root = hash_tree_root(block)
+        state_transition(state, signed_block, True)
+        # Add new block to the store
+        store.blocks[block_root] = block
+        # Add new state for this block to the store
+        store.block_states[block_root] = state
+
+        # Add block timeliness to the store
+        seconds_since_genesis = store.time - store.genesis_time
+        time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
+        is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
+        is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
+        store.block_timeliness[hash_tree_root(block)] = is_timely
+
+        # Add proposer score boost if the block is timely and not conflicting with an existing block
+        is_first_block = store.proposer_boost_root == Root()
+        if is_timely and is_first_block:
+            store.proposer_boost_root = hash_tree_root(block)
+
+        # Update checkpoints in store if necessary
+        update_checkpoints(store, state.current_justified_checkpoint, state.finalized_checkpoint)
+
+        # Eagerly compute unrealized justification and finality
+        compute_pulled_up_tip(store, block_root)
     </spec>
 
 - name: on_block#bellatrix
@@ -3308,62 +3364,6 @@
         compute_pulled_up_tip(store, block_root)
     </spec>
 
-- name: on_block#phase0
-  sources:
-    - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
-      search: private SafeFuture<BlockImportResult> onBlock(
-  spec: |
-    <spec fn="on_block" fork="phase0" hash="aff24b59">
-    def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
-        block = signed_block.message
-        # Parent block must be known
-        assert block.parent_root in store.block_states
-        # Make a copy of the state to avoid mutability issues
-        pre_state = copy(store.block_states[block.parent_root])
-        # Blocks cannot be in the future. If they are, their consideration must be delayed until they are in the past.
-        assert get_current_slot(store) >= block.slot
-
-        # Check that block is later than the finalized epoch slot (optimization to reduce calls to get_ancestor)
-        finalized_slot = compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
-        assert block.slot > finalized_slot
-        # Check block is a descendant of the finalized block at the checkpoint finalized slot
-        finalized_checkpoint_block = get_checkpoint_block(
-            store,
-            block.parent_root,
-            store.finalized_checkpoint.epoch,
-        )
-        assert store.finalized_checkpoint.root == finalized_checkpoint_block
-
-        # Check the block is valid and compute the post-state
-        state = pre_state.copy()
-        block_root = hash_tree_root(block)
-        state_transition(state, signed_block, True)
-        # Add new block to the store
-        store.blocks[block_root] = block
-        # Add new state for this block to the store
-        store.block_states[block_root] = state
-
-        # Add block timeliness to the store
-        seconds_since_genesis = store.time - store.genesis_time
-        time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        epoch = get_current_store_epoch(store)
-        attestation_threshold_ms = get_attestation_due_ms(epoch)
-        is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
-        is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
-        store.block_timeliness[hash_tree_root(block)] = is_timely
-
-        # Add proposer score boost if the block is timely and not conflicting with an existing block
-        is_first_block = store.proposer_boost_root == Root()
-        if is_timely and is_first_block:
-            store.proposer_boost_root = hash_tree_root(block)
-
-        # Update checkpoints in store if necessary
-        update_checkpoints(store, state.current_justified_checkpoint, state.finalized_checkpoint)
-
-        # Eagerly compute unrealized justification and finality
-        compute_pulled_up_tip(store, block_root)
-    </spec>
-
 - name: on_tick
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
@@ -3378,6 +3378,41 @@
             previous_time = store.genesis_time + (get_current_slot(store) + 1) * SECONDS_PER_SLOT
             on_tick_per_slot(store, previous_time)
         on_tick_per_slot(store, time)
+    </spec>
+
+- name: process_attestation#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/block/BlockProcessorPhase0.java
+      search: protected void processAttestation(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/operations/validation/AttestationDataValidatorPhase0.java
+  spec: |
+    <spec fn="process_attestation" fork="phase0" hash="6ac78cd0">
+    def process_attestation(state: BeaconState, attestation: Attestation) -> None:
+        data = attestation.data
+        assert data.target.epoch in (get_previous_epoch(state), get_current_epoch(state))
+        assert data.target.epoch == compute_epoch_at_slot(data.slot)
+        assert data.slot + MIN_ATTESTATION_INCLUSION_DELAY <= state.slot <= data.slot + SLOTS_PER_EPOCH
+        assert data.index < get_committee_count_per_slot(state, data.target.epoch)
+
+        committee = get_beacon_committee(state, data.slot, data.index)
+        assert len(attestation.aggregation_bits) == len(committee)
+
+        pending_attestation = PendingAttestation(
+            data=data,
+            aggregation_bits=attestation.aggregation_bits,
+            inclusion_delay=state.slot - data.slot,
+            proposer_index=get_beacon_proposer_index(state),
+        )
+
+        if data.target.epoch == get_current_epoch(state):
+            assert data.source == state.current_justified_checkpoint
+            state.current_epoch_attestations.append(pending_attestation)
+        else:
+            assert data.source == state.previous_justified_checkpoint
+            state.previous_epoch_attestations.append(pending_attestation)
+
+        # Verify signature
+        assert is_valid_indexed_attestation(state, get_indexed_attestation(state, attestation))
     </spec>
 
 - name: process_attestation#altair
@@ -3538,46 +3573,11 @@
         increase_balance(state, get_beacon_proposer_index(state), proposer_reward)
     </spec>
 
-- name: process_attestation#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/block/BlockProcessorPhase0.java
-      search: protected void processAttestation(
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/operations/validation/AttestationDataValidatorPhase0.java
-  spec: |
-    <spec fn="process_attestation" fork="phase0" hash="6ac78cd0">
-    def process_attestation(state: BeaconState, attestation: Attestation) -> None:
-        data = attestation.data
-        assert data.target.epoch in (get_previous_epoch(state), get_current_epoch(state))
-        assert data.target.epoch == compute_epoch_at_slot(data.slot)
-        assert data.slot + MIN_ATTESTATION_INCLUSION_DELAY <= state.slot <= data.slot + SLOTS_PER_EPOCH
-        assert data.index < get_committee_count_per_slot(state, data.target.epoch)
-
-        committee = get_beacon_committee(state, data.slot, data.index)
-        assert len(attestation.aggregation_bits) == len(committee)
-
-        pending_attestation = PendingAttestation(
-            data=data,
-            aggregation_bits=attestation.aggregation_bits,
-            inclusion_delay=state.slot - data.slot,
-            proposer_index=get_beacon_proposer_index(state),
-        )
-
-        if data.target.epoch == get_current_epoch(state):
-            assert data.source == state.current_justified_checkpoint
-            state.current_epoch_attestations.append(pending_attestation)
-        else:
-            assert data.source == state.previous_justified_checkpoint
-            state.previous_epoch_attestations.append(pending_attestation)
-
-        # Verify signature
-        assert is_valid_indexed_attestation(state, get_indexed_attestation(state, attestation))
-    </spec>
-
 - name: process_attester_slashing
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
       search: public void processAttesterSlashings\s*\([^,]+,[^,]+\)\s*throws
-      regex: True
+      regex: true
   spec: |
     <spec fn="process_attester_slashing" fork="phase0" hash="e47f6e1e">
     def process_attester_slashing(state: BeaconState, attester_slashing: AttesterSlashing) -> None:
@@ -3594,6 +3594,19 @@
                 slash_validator(state, index)
                 slashed_any = True
         assert slashed_any
+    </spec>
+
+- name: process_block#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: protected void processBlock(
+  spec: |
+    <spec fn="process_block" fork="phase0" hash="188d4c44">
+    def process_block(state: BeaconState, block: BeaconBlock) -> None:
+        process_block_header(state, block)
+        process_randao(state, block.body)
+        process_eth1_data(state, block.body)
+        process_operations(state, block.body)
     </spec>
 
 - name: process_block#altair
@@ -3665,19 +3678,6 @@
         # [Modified in Electra:EIP6110:EIP7002:EIP7549:EIP7251]
         process_operations(state, block.body)
         process_sync_aggregate(state, block.body.sync_aggregate)
-    </spec>
-
-- name: process_block#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: protected void processBlock(
-  spec: |
-    <spec fn="process_block" fork="phase0" hash="188d4c44">
-    def process_block(state: BeaconState, block: BeaconBlock) -> None:
-        process_block_header(state, block)
-        process_randao(state, block.body)
-        process_eth1_data(state, block.body)
-        process_operations(state, block.body)
     </spec>
 
 - name: process_block_header
@@ -3820,6 +3820,35 @@
         )
     </spec>
 
+- name: process_deposit#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processDeposit(
+  spec: |
+    <spec fn="process_deposit" fork="phase0" hash="ee6b3afe">
+    def process_deposit(state: BeaconState, deposit: Deposit) -> None:
+        # Verify the Merkle branch
+        assert is_valid_merkle_branch(
+            leaf=hash_tree_root(deposit.data),
+            branch=deposit.proof,
+            # Add 1 for the List length mix-in
+            depth=DEPOSIT_CONTRACT_TREE_DEPTH + 1,
+            index=state.eth1_deposit_index,
+            root=state.eth1_data.deposit_root,
+        )
+
+        # Deposits must be processed in order
+        state.eth1_deposit_index += 1
+
+        apply_deposit(
+            state=state,
+            pubkey=deposit.data.pubkey,
+            withdrawal_credentials=deposit.data.withdrawal_credentials,
+            amount=deposit.data.amount,
+            signature=deposit.data.signature,
+        )
+    </spec>
+
 - name: process_deposit#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/block/BlockProcessorElectra.java
@@ -3841,35 +3870,6 @@
         state.eth1_deposit_index += 1
 
         # [Modified in Electra:EIP7251]
-        apply_deposit(
-            state=state,
-            pubkey=deposit.data.pubkey,
-            withdrawal_credentials=deposit.data.withdrawal_credentials,
-            amount=deposit.data.amount,
-            signature=deposit.data.signature,
-        )
-    </spec>
-
-- name: process_deposit#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: public void processDeposit(
-  spec: |
-    <spec fn="process_deposit" fork="phase0" hash="ee6b3afe">
-    def process_deposit(state: BeaconState, deposit: Deposit) -> None:
-        # Verify the Merkle branch
-        assert is_valid_merkle_branch(
-            leaf=hash_tree_root(deposit.data),
-            branch=deposit.proof,
-            # Add 1 for the List length mix-in
-            depth=DEPOSIT_CONTRACT_TREE_DEPTH + 1,
-            index=state.eth1_deposit_index,
-            root=state.eth1_data.deposit_root,
-        )
-
-        # Deposits must be processed in order
-        state.eth1_deposit_index += 1
-
         apply_deposit(
             state=state,
             pubkey=deposit.data.pubkey,
@@ -3902,6 +3902,28 @@
         )
     </spec>
 
+- name: process_effective_balance_updates#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processEffectiveBalanceUpdates(
+  spec: |
+    <spec fn="process_effective_balance_updates" fork="phase0" hash="678d0327">
+    def process_effective_balance_updates(state: BeaconState) -> None:
+        # Update effective balances with hysteresis
+        for index, validator in enumerate(state.validators):
+            balance = state.balances[index]
+            HYSTERESIS_INCREMENT = uint64(EFFECTIVE_BALANCE_INCREMENT // HYSTERESIS_QUOTIENT)
+            DOWNWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_DOWNWARD_MULTIPLIER
+            UPWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_UPWARD_MULTIPLIER
+            if (
+                balance + DOWNWARD_THRESHOLD < validator.effective_balance
+                or validator.effective_balance + UPWARD_THRESHOLD < balance
+            ):
+                validator.effective_balance = min(
+                    balance - balance % EFFECTIVE_BALANCE_INCREMENT, MAX_EFFECTIVE_BALANCE
+                )
+    </spec>
+
 - name: process_effective_balance_updates#electra
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/statetransition/epoch/EpochProcessorElectra.java
@@ -3924,28 +3946,6 @@
             ):
                 validator.effective_balance = min(
                     balance - balance % EFFECTIVE_BALANCE_INCREMENT, max_effective_balance
-                )
-    </spec>
-
-- name: process_effective_balance_updates#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-      search: public void processEffectiveBalanceUpdates(
-  spec: |
-    <spec fn="process_effective_balance_updates" fork="phase0" hash="678d0327">
-    def process_effective_balance_updates(state: BeaconState) -> None:
-        # Update effective balances with hysteresis
-        for index, validator in enumerate(state.validators):
-            balance = state.balances[index]
-            HYSTERESIS_INCREMENT = uint64(EFFECTIVE_BALANCE_INCREMENT // HYSTERESIS_QUOTIENT)
-            DOWNWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_DOWNWARD_MULTIPLIER
-            UPWARD_THRESHOLD = HYSTERESIS_INCREMENT * HYSTERESIS_UPWARD_MULTIPLIER
-            if (
-                balance + DOWNWARD_THRESHOLD < validator.effective_balance
-                or validator.effective_balance + UPWARD_THRESHOLD < balance
-            ):
-                validator.effective_balance = min(
-                    balance - balance % EFFECTIVE_BALANCE_INCREMENT, MAX_EFFECTIVE_BALANCE
                 )
     </spec>
 
@@ -4232,6 +4232,29 @@
         )
     </spec>
 
+- name: process_operations#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: protected void processOperationsNoValidation(
+  spec: |
+    <spec fn="process_operations" fork="phase0" hash="eb7114df">
+    def process_operations(state: BeaconState, body: BeaconBlockBody) -> None:
+        # Verify that outstanding deposits are processed up to the maximum number of deposits
+        assert len(body.deposits) == min(
+            MAX_DEPOSITS, state.eth1_data.deposit_count - state.eth1_deposit_index
+        )
+
+        def for_ops(operations: Sequence[Any], fn: Callable[[BeaconState, Any], None]) -> None:
+            for operation in operations:
+                fn(state, operation)
+
+        for_ops(body.proposer_slashings, process_proposer_slashing)
+        for_ops(body.attester_slashings, process_attester_slashing)
+        for_ops(body.attestations, process_attestation)
+        for_ops(body.deposits, process_deposit)
+        for_ops(body.voluntary_exits, process_voluntary_exit)
+    </spec>
+
 - name: process_operations#capella
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/block/BlockProcessorCapella.java
@@ -4294,29 +4317,6 @@
         for_ops(body.execution_requests.withdrawals, process_withdrawal_request)
         # [New in Electra:EIP7251]
         for_ops(body.execution_requests.consolidations, process_consolidation_request)
-    </spec>
-
-- name: process_operations#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-      search: protected void processOperationsNoValidation(
-  spec: |
-    <spec fn="process_operations" fork="phase0" hash="eb7114df">
-    def process_operations(state: BeaconState, body: BeaconBlockBody) -> None:
-        # Verify that outstanding deposits are processed up to the maximum number of deposits
-        assert len(body.deposits) == min(
-            MAX_DEPOSITS, state.eth1_data.deposit_count - state.eth1_deposit_index
-        )
-
-        def for_ops(operations: Sequence[Any], fn: Callable[[BeaconState, Any], None]) -> None:
-            for operation in operations:
-                fn(state, operation)
-
-        for_ops(body.proposer_slashings, process_proposer_slashing)
-        for_ops(body.attester_slashings, process_attester_slashing)
-        for_ops(body.attestations, process_attestation)
-        for_ops(body.deposits, process_deposit)
-        for_ops(body.voluntary_exits, process_voluntary_exit)
     </spec>
 
 - name: process_participation_flag_updates
@@ -4526,31 +4526,6 @@
         )
     </spec>
 
-- name: process_registry_updates#electra
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/statetransition/epoch/EpochProcessorElectra.java
-      search: public void processRegistryUpdates(
-  spec: |
-    <spec fn="process_registry_updates" fork="electra" hash="8a75e443">
-    def process_registry_updates(state: BeaconState) -> None:
-        current_epoch = get_current_epoch(state)
-        activation_epoch = compute_activation_exit_epoch(current_epoch)
-
-        # Process activation eligibility, ejections, and activations
-        for index, validator in enumerate(state.validators):
-            # [Modified in Electra:EIP7251]
-            if is_eligible_for_activation_queue(validator):
-                validator.activation_eligibility_epoch = current_epoch + 1
-            elif (
-                is_active_validator(validator, current_epoch)
-                and validator.effective_balance <= EJECTION_BALANCE
-            ):
-                # [Modified in Electra:EIP7251]
-                initiate_validator_exit(state, ValidatorIndex(index))
-            elif is_eligible_for_activation(state, validator):
-                validator.activation_epoch = activation_epoch
-    </spec>
-
 - name: process_registry_updates#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
@@ -4585,6 +4560,31 @@
             validator.activation_epoch = compute_activation_exit_epoch(get_current_epoch(state))
     </spec>
 
+- name: process_registry_updates#electra
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/statetransition/epoch/EpochProcessorElectra.java
+      search: public void processRegistryUpdates(
+  spec: |
+    <spec fn="process_registry_updates" fork="electra" hash="8a75e443">
+    def process_registry_updates(state: BeaconState) -> None:
+        current_epoch = get_current_epoch(state)
+        activation_epoch = compute_activation_exit_epoch(current_epoch)
+
+        # Process activation eligibility, ejections, and activations
+        for index, validator in enumerate(state.validators):
+            # [Modified in Electra:EIP7251]
+            if is_eligible_for_activation_queue(validator):
+                validator.activation_eligibility_epoch = current_epoch + 1
+            elif (
+                is_active_validator(validator, current_epoch)
+                and validator.effective_balance <= EJECTION_BALANCE
+            ):
+                # [Modified in Electra:EIP7251]
+                initiate_validator_exit(state, ValidatorIndex(index))
+            elif is_eligible_for_activation(state, validator):
+                validator.activation_epoch = activation_epoch
+    </spec>
+
 - name: process_rewards_and_penalties#phase0
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
@@ -4600,6 +4600,31 @@
         for index in range(len(state.validators)):
             increase_balance(state, ValidatorIndex(index), rewards[index])
             decrease_balance(state, ValidatorIndex(index), penalties[index])
+    </spec>
+
+- name: process_slashings#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processSlashings(
+  spec: |
+    <spec fn="process_slashings" fork="phase0" hash="a18a9045">
+    def process_slashings(state: BeaconState) -> None:
+        epoch = get_current_epoch(state)
+        total_balance = get_total_active_balance(state)
+        adjusted_total_slashing_balance = min(
+            sum(state.slashings) * PROPORTIONAL_SLASHING_MULTIPLIER, total_balance
+        )
+        for index, validator in enumerate(state.validators):
+            if (
+                validator.slashed
+                and epoch + EPOCHS_PER_SLASHINGS_VECTOR // 2 == validator.withdrawable_epoch
+            ):
+                increment = EFFECTIVE_BALANCE_INCREMENT  # Factored out from penalty numerator to avoid uint64 overflow
+                penalty_numerator = (
+                    validator.effective_balance // increment * adjusted_total_slashing_balance
+                )
+                penalty = penalty_numerator // total_balance * increment
+                decrease_balance(state, ValidatorIndex(index), penalty)
     </spec>
 
 - name: process_slashings#electra
@@ -4628,31 +4653,6 @@
                 effective_balance_increments = validator.effective_balance // increment
                 # [Modified in Electra:EIP7251]
                 penalty = penalty_per_effective_balance_increment * effective_balance_increments
-                decrease_balance(state, ValidatorIndex(index), penalty)
-    </spec>
-
-- name: process_slashings#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-      search: public void processSlashings(
-  spec: |
-    <spec fn="process_slashings" fork="phase0" hash="a18a9045">
-    def process_slashings(state: BeaconState) -> None:
-        epoch = get_current_epoch(state)
-        total_balance = get_total_active_balance(state)
-        adjusted_total_slashing_balance = min(
-            sum(state.slashings) * PROPORTIONAL_SLASHING_MULTIPLIER, total_balance
-        )
-        for index, validator in enumerate(state.validators):
-            if (
-                validator.slashed
-                and epoch + EPOCHS_PER_SLASHINGS_VECTOR // 2 == validator.withdrawable_epoch
-            ):
-                increment = EFFECTIVE_BALANCE_INCREMENT  # Factored out from penalty numerator to avoid uint64 overflow
-                penalty_numerator = (
-                    validator.effective_balance // increment * adjusted_total_slashing_balance
-                )
-                penalty = penalty_numerator // total_balance * increment
                 decrease_balance(state, ValidatorIndex(index), penalty)
     </spec>
 
@@ -5034,6 +5034,40 @@
         )
     </spec>
 
+- name: slash_validator#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
+      search: public void slashValidator(
+  spec: |
+    <spec fn="slash_validator" fork="phase0" hash="85d8d7c9">
+    def slash_validator(
+        state: BeaconState, slashed_index: ValidatorIndex, whistleblower_index: ValidatorIndex = None
+    ) -> None:
+        """
+        Slash the validator with index ``slashed_index``.
+        """
+        epoch = get_current_epoch(state)
+        initiate_validator_exit(state, slashed_index)
+        validator = state.validators[slashed_index]
+        validator.slashed = True
+        validator.withdrawable_epoch = max(
+            validator.withdrawable_epoch, Epoch(epoch + EPOCHS_PER_SLASHINGS_VECTOR)
+        )
+        state.slashings[epoch % EPOCHS_PER_SLASHINGS_VECTOR] += validator.effective_balance
+        decrease_balance(
+            state, slashed_index, validator.effective_balance // MIN_SLASHING_PENALTY_QUOTIENT
+        )
+
+        # Apply proposer and whistleblower rewards
+        proposer_index = get_beacon_proposer_index(state)
+        if whistleblower_index is None:
+            whistleblower_index = proposer_index
+        whistleblower_reward = Gwei(validator.effective_balance // WHISTLEBLOWER_REWARD_QUOTIENT)
+        proposer_reward = Gwei(whistleblower_reward // PROPOSER_REWARD_QUOTIENT)
+        increase_balance(state, proposer_index, proposer_reward)
+        increase_balance(state, whistleblower_index, Gwei(whistleblower_reward - proposer_reward))
+    </spec>
+
 - name: slash_validator#altair
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/helpers/BeaconStateMutatorsAltair.java
@@ -5141,40 +5175,6 @@
             validator.effective_balance // WHISTLEBLOWER_REWARD_QUOTIENT_ELECTRA
         )
         proposer_reward = Gwei(whistleblower_reward * PROPOSER_WEIGHT // WEIGHT_DENOMINATOR)
-        increase_balance(state, proposer_index, proposer_reward)
-        increase_balance(state, whistleblower_index, Gwei(whistleblower_reward - proposer_reward))
-    </spec>
-
-- name: slash_validator#phase0
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateMutators.java
-      search: public void slashValidator(
-  spec: |
-    <spec fn="slash_validator" fork="phase0" hash="85d8d7c9">
-    def slash_validator(
-        state: BeaconState, slashed_index: ValidatorIndex, whistleblower_index: ValidatorIndex = None
-    ) -> None:
-        """
-        Slash the validator with index ``slashed_index``.
-        """
-        epoch = get_current_epoch(state)
-        initiate_validator_exit(state, slashed_index)
-        validator = state.validators[slashed_index]
-        validator.slashed = True
-        validator.withdrawable_epoch = max(
-            validator.withdrawable_epoch, Epoch(epoch + EPOCHS_PER_SLASHINGS_VECTOR)
-        )
-        state.slashings[epoch % EPOCHS_PER_SLASHINGS_VECTOR] += validator.effective_balance
-        decrease_balance(
-            state, slashed_index, validator.effective_balance // MIN_SLASHING_PENALTY_QUOTIENT
-        )
-
-        # Apply proposer and whistleblower rewards
-        proposer_index = get_beacon_proposer_index(state)
-        if whistleblower_index is None:
-            whistleblower_index = proposer_index
-        whistleblower_reward = Gwei(validator.effective_balance // WHISTLEBLOWER_REWARD_QUOTIENT)
-        proposer_reward = Gwei(whistleblower_reward // PROPOSER_REWARD_QUOTIENT)
         increase_balance(state, proposer_index, proposer_reward)
         increase_balance(state, whistleblower_index, Gwei(whistleblower_reward - proposer_reward))
     </spec>
