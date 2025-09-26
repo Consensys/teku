@@ -441,7 +441,7 @@ public abstract class AbstractBlockFactoryTest {
             genericState.getSlot(),
             builder ->
                 builder
-                    .parentHash(state.getLatestExecutionPayloadHeader().getBlockHash())
+                    .parentHash(state.getLatestExecutionPayloadHeaderRequired().getBlockHash())
                     .prevRandao(
                         beaconStateAccessors.getRandaoMix(
                             state, beaconStateAccessors.getCurrentEpoch(state)))

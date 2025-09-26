@@ -37,7 +37,7 @@ public class PredicatesGloas extends PredicatesElectra {
 
   public boolean isParentBlockFull(final BeaconState state) {
     return BeaconStateGloas.required(state)
-        .getLatestExecutionPayloadHeader()
+        .getLatestExecutionPayloadBid()
         .getBlockHash()
         .equals(BeaconStateGloas.required(state).getLatestBlockHash());
   }

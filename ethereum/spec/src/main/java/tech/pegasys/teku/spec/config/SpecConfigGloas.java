@@ -33,6 +33,8 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
 
   int getMaxPayloadAttestations();
 
+  long getBuilderPendingWithdrawalsLimit();
+
   @Override
   Optional<SpecConfigGloas> toVersionGloas();
 }
