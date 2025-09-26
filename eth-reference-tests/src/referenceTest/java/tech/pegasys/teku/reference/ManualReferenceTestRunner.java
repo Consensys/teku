@@ -31,7 +31,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
  * <p>The test case is disabled as the tests run via the generated classes in CI, but it still runs
  * without removing the @Disabled in IntelliJ.
  */
-//@Disabled
+@Disabled
 public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
 
   /**
@@ -42,21 +42,21 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    *
    * <p>May be overridden by the ENV_TEST_TYPE environment variable.
    */
-  private static final String TEST_TYPE = "operations/execution_payload_bid";
+  private static final String TEST_TYPE = "";
 
   /**
    * Filter test to run to those from the specified spec. One of general, minimal or mainnet
    *
    * <p>May be overridden by the ENV_SPEC environment variable.
    */
-  private static final String SPEC = "mainnet";
+  private static final String SPEC = "";
 
   /**
    * Filter test to run only those for a specific milestone. Use values from TestFork.
    *
    * <p>May be overridden by the ENV_MILESTONE environment variable.
    */
-  private static final String MILESTONE = "gloas";
+  private static final String MILESTONE = "";
 
   /**
    * Filter tests to run only those where the display name contains this string.
@@ -68,7 +68,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")
   void shouldRunReferenceTest(final String name, final TestDefinition testDefinition)
-          throws Throwable {
+      throws Throwable {
     runReferenceTest(testDefinition);
   }
 
@@ -76,11 +76,11 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   @MustBeClosed
   static Stream<Arguments> loadReferenceTests() throws IOException {
     return ReferenceTestFinder.findReferenceTests()
-            .filter(ManualReferenceTestRunner::filterBySpec)
-            .filter(ManualReferenceTestRunner::filterByTestType)
-            .filter(ManualReferenceTestRunner::filterByMilestone)
-            .filter(ManualReferenceTestRunner::filterByDisplayName)
-            .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
+        .filter(ManualReferenceTestRunner::filterBySpec)
+        .filter(ManualReferenceTestRunner::filterByTestType)
+        .filter(ManualReferenceTestRunner::filterByMilestone)
+        .filter(ManualReferenceTestRunner::filterByDisplayName)
+        .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
   }
 
   private static boolean filterByTestType(final TestDefinition testDefinition) {
@@ -118,7 +118,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   @SuppressWarnings("ConstantConditions")
   private static boolean filterByDisplayName(final TestDefinition testDefinition) {
     final Optional<String> maybeDisplayNameOverride =
-            environmentVariableOverride("ENV_DISPLAY_NAME");
+        environmentVariableOverride("ENV_DISPLAY_NAME");
 
     if (DISPLAY_NAME.isBlank() && maybeDisplayNameOverride.isEmpty()) {
       return true;
