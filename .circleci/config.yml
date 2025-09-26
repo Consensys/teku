@@ -183,7 +183,7 @@ jobs:
       - run:
           name: Assemble
           command: |
-            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
+            ./gradlew --no-daemon --no-parallel --max-workers=1 clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
       - run:
           name: Prep Artifacts
           command: |
