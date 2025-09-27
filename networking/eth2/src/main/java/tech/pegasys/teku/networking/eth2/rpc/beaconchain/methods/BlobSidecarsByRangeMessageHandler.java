@@ -213,10 +213,7 @@ public class BlobSidecarsByRangeMessageHandler
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
-            error -> {
-              peer.adjustBlobSidecarsRequest(maybeRequestKey.get(), 0);
-              handleProcessingRequestError(error, callback);
-            });
+            error -> handleProcessingRequestError(error, callback));
   }
 
   private int calculateRequestedCount(

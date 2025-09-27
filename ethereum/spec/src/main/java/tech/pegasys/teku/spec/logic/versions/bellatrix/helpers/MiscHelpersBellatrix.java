@@ -29,7 +29,7 @@ public class MiscHelpersBellatrix extends MiscHelpersAltair {
   @Override
   public boolean isMergeTransitionComplete(final BeaconState genericState) {
     final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
-    return !state.getLatestExecutionPayloadHeader().isDefault();
+    return !state.getLatestExecutionPayloadHeaderRequired().isDefault();
   }
 
   private boolean isMergeTransitionBlock(final BeaconState genericState, final BeaconBlock block) {

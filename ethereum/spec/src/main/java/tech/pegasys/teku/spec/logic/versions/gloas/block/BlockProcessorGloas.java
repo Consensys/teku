@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -80,11 +81,14 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     // only withdrawals
-    safelyProcess(() -> processWithdrawals(genericState));
+    safelyProcess(() -> processWithdrawals(genericState, Optional.empty()));
   }
 
+  // process_withdrawals with only state as a parameter
   @Override
-  public void processWithdrawals(final MutableBeaconState state) {
+  public void processWithdrawals(
+      final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
+      throws BlockProcessingException {
     withdrawalsHelpers.processWithdrawals(state);
   }
 

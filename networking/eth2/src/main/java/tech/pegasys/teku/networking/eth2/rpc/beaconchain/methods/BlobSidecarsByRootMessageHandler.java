@@ -145,10 +145,7 @@ public class BlobSidecarsByRootMessageHandler
           }
           callback.completeSuccessfully();
         },
-        err -> {
-          peer.adjustBlobSidecarsRequest(maybeRequestKey.get(), 0);
-          handleError(callback, err);
-        });
+        err -> handleError(callback, err));
   }
 
   private int getMaxRequestBlobSidecars() {

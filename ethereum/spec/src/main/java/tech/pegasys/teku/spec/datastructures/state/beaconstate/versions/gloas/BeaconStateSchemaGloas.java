@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix.LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_PAYMENTS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.BUILDER_PENDING_WITHDRAWALS_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
@@ -46,14 +47,12 @@ import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 
 public class BeaconStateSchemaGloas
     extends AbstractBeaconStateSchema<BeaconStateGloas, MutableBeaconStateGloas> {
-  public static final long BUILDER_PENDING_WITHDRAWALS_LIMIT = 1_048_576; // 2**20
 
-  public static final int LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX = 38;
-  public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 39;
-  public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 40;
-  public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 41;
-  public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 42;
-  public static final int LATEST_WITHDRAWALS_ROOT_FIELD_INDEX = 43;
+  public static final int EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX = 38;
+  public static final int BUILDER_PENDING_PAYMENTS_FIELD_INDEX = 39;
+  public static final int BUILDER_PENDING_WITHDRAWALS_FIELD_INDEX = 40;
+  public static final int LATEST_BLOCK_HASH_FIELD_INDEX = 41;
+  public static final int LATEST_WITHDRAWALS_ROOT_FIELD_INDEX = 42;
 
   @VisibleForTesting
   BeaconStateSchemaGloas(final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
@@ -64,10 +63,6 @@ public class BeaconStateSchemaGloas
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> newFields =
         List.of(
-            new SszField(
-                LATEST_EXECUTION_PAYLOAD_BID_FIELD_INDEX,
-                BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
-                () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA)),
             new SszField(
                 EXECUTION_PAYLOAD_AVAILABILITY_FIELD_INDEX,
                 BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY,
@@ -90,7 +85,20 @@ public class BeaconStateSchemaGloas
                 () -> SszPrimitiveSchemas.BYTES32_SCHEMA));
 
     return Stream.concat(
-            BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry).stream(),
+            BeaconStateSchemaFulu.getUniqueFields(specConfig, schemaRegistry).stream()
+                .map(
+                    field -> {
+                      // replacing the old `latest_execution_payload_header` with the new
+                      // `latest_execution_payload_bid`
+                      if (field.getIndex() == LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX) {
+                        return new SszField(
+                            LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
+                            BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID,
+                            () -> schemaRegistry.get(EXECUTION_PAYLOAD_BID_SCHEMA));
+                      } else {
+                        return field;
+                      }
+                    }),
             newFields.stream())
         .toList();
   }

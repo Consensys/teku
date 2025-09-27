@@ -103,7 +103,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     final ExecutionPayloadHeader executionPayloadHeader =
         extractExecutionPayloadHeader(beaconBlockBody);
-    processWithdrawals(genericState, executionPayloadHeader);
+    processWithdrawals(genericState, Optional.of(executionPayloadHeader));
     super.executionProcessing(genericState, beaconBlockBody, payloadExecutor);
   }
 
@@ -185,9 +185,9 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   // process_withdrawals
   @Override
   public void processWithdrawals(
-      final MutableBeaconState genericState, final ExecutionPayloadSummary payloadSummary)
+      final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
-    withdrawalsHelpers.processWithdrawals(genericState, payloadSummary);
+    withdrawalsHelpers.processWithdrawals(state, payloadSummary.orElseThrow());
   }
 
   @VisibleForTesting

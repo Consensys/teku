@@ -329,16 +329,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processWithdrawals(
-      final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
+      final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
-
     throw new UnsupportedOperationException("No withdrawals in Altair");
-  }
-
-  @Override
-  public void processWithdrawals(final MutableBeaconState state) {
-    throw new UnsupportedOperationException(
-        "No process_withdrawals with only state as a parameter until Gloas");
   }
 
   public static boolean eth2FastAggregateVerify(
