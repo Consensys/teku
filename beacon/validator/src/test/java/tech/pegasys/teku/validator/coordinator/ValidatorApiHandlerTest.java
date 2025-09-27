@@ -190,7 +190,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
-            Optional.empty());
+            Optional.empty(),
+            false);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
@@ -443,7 +444,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
-            Optional.empty());
+            Optional.empty(),
+            false);
     // Best state is still in Phase0
     final BeaconState state =
         dataStructureUtil.stateBuilderPhase0().slot(previousEpochStartSlot.minus(1)).build();
@@ -879,7 +881,8 @@ class ValidatorApiHandlerTest {
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
-            Optional.empty());
+            Optional.empty(),
+            false);
 
     final Attestation attestation = dataStructureUtil.randomSingleAttestation();
     final Attestation convertedAttestation = dataStructureUtil.randomAttestation();

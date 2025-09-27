@@ -119,6 +119,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -135,6 +136,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -678,13 +680,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // TODO: We will eventually need the Gossip in the EP Manager for publishing the proofs we
     // produce?
     // comment for now this will be used in the future
-    //      final ExecutionProofGossipChannel executionProofGossipChannel =
-    //      eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
+
+          final ExecutionProofGossipChannel executionProofGossipChannel =
+          eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
+
     if (zkConfig.isStatelessValidationEnabled()) {
       final ExecutionProofGossipValidator executionProofGossipValidator =
           ExecutionProofGossipValidator.create();
-
-      executionProofManager = new ExecutionProofManagerImpl(executionProofGossipValidator);
+      final SpecVersion specVersionElectra = spec.forMilestone(SpecMilestone.ELECTRA);
+      final SchemaDefinitionsElectra schemaDefinitionsElectra =
+          SchemaDefinitionsElectra.required(specVersionElectra.getSchemaDefinitions());
+      executionProofManager =
+          new ExecutionProofManagerImpl(executionProofGossipValidator, executionProofGossipChannel::publishExecutionProofs, schemaDefinitionsElectra, zkConfig.getStatelessMinProofsRequired());
 
     } else {
       executionProofManager = ExecutionProofManager.NOOP;
@@ -1407,7 +1414,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
       dataColumnSidecarGossipChannel = DataColumnSidecarGossipChannel.NOOP;
     }
 
-
     final Optional<BlockProductionMetrics> blockProductionMetrics =
         beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled()
             ? Optional.of(BlockProductionMetrics.create(metricsSystem))
@@ -1467,7 +1473,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
-            Optional.of(executionProofManager));
+            Optional.of(executionProofManager),
+            beaconConfig.zkChainConfiguration().isGenerateExecutionProofsEnabled());
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)
@@ -1623,7 +1630,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedDataColumnSidecarOperationProcessor(
                 dataColumnSidecarManager::onDataColumnSidecarGossip)
-            .gossipedExecutionProofOperationProcessor(executionProofManager::onExecutionProofGossip)
+            .gossipedExecutionProofOperationProcessor(executionProofManager::onReceivedExecutionProofGossip)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
