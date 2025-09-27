@@ -57,7 +57,7 @@ public class ExecutionProofGossipValidator {
 
     // Validated the execution proof
     LOG.trace(
-        "Received and validated execution proof for block root {}", executionProof.getBlockRoot());
+        "Received and validated execution proof for block root {}, block hash {}", executionProof.getBlockRoot(), executionProof.getBlockHash());
     receivedValidExecutionProofSet.add(executionProof);
     return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
   }
