@@ -61,7 +61,7 @@ public class ExecutionProofGossipManager implements GossipManager {
     executionProofSubnetSubscriptions
         .gossip(executionProof)
         .finish(
-            __ -> LOG.info(executionProof + " published successfully"),
-            error -> LOG.info(executionProof + error.getMessage()));
+            __ -> LOG.trace(executionProof + " published successfully"),
+            error -> LOG.trace(executionProof + error.getMessage()));
   }
 }
