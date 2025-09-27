@@ -30,7 +30,7 @@ public class ExecutionProofGossipValidator {
 
   public static ExecutionProofGossipValidator create() {
     return new ExecutionProofGossipValidator(
-            // max subnets * 2 epochs * slots per epoch 32 based on mainnet for now
+        // max subnets * 2 epochs * slots per epoch 32 based on mainnet for now
         LimitedSet.createSynchronized(MAX_EXECUTION_PROOF_SUBNETS.intValue() * 64));
   }
 
@@ -57,7 +57,9 @@ public class ExecutionProofGossipValidator {
 
     // Validated the execution proof
     LOG.trace(
-        "Received and validated execution proof for block root {}, block hash {}", executionProof.getBlockRoot(), executionProof.getBlockHash());
+        "Received and validated execution proof for block root {}, block hash {}",
+        executionProof.getBlockRoot(),
+        executionProof.getBlockHash());
     receivedValidExecutionProofSet.add(executionProof);
     return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
   }
