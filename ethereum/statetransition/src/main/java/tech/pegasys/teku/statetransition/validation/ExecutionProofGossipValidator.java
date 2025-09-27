@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
 
+import java.util.List;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,10 +23,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 
 public class ExecutionProofGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
+  //TODO fix this to be a map of block/proof
   private final Set<ExecutionProof> receivedValidExecutionProofSet;
 
   public static ExecutionProofGossipValidator create() {
@@ -41,7 +44,13 @@ public class ExecutionProofGossipValidator {
   public SafeFuture<InternalValidationResult> validate(
       final ExecutionProof executionProof, final UInt64 subnetId) {
 
-    // TODO need to check for other validations done in the prototype and spec
+  if(!executionProof.getVersion().equals(UInt64.ONE)){
+      LOG.trace(
+              "ExecutionProof for block root {} has unsupported version {}",
+              executionProof.getBlockRoot(), executionProof.getVersion());
+      return SafeFuture.completedFuture(InternalValidationResult.reject("Unsupported version"));
+  }
+
     if (executionProof.getSubnetId().longValue() != subnetId.longValue()) {
       LOG.trace(
           "ExecutionProof for block root {} does not match the gossip subnetId",
@@ -54,10 +63,15 @@ public class ExecutionProofGossipValidator {
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
+    // some of the todos in the LH prototype apply to us atm
+    // TODO: Add timing validation based on slot
+    // TODO: Add block existence validation
+
     // Validated the execution proof
     LOG.trace(
         "Received and validated execution proof for block root {}", executionProof.getBlockRoot());
     receivedValidExecutionProofSet.add(executionProof);
     return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
   }
+
 }
