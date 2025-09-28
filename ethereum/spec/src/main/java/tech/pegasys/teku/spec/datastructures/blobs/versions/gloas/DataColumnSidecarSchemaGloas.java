@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -71,12 +70,6 @@ public class DataColumnSidecarSchemaGloas
   @SuppressWarnings("unchecked")
   public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
     return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
-  }
-
-  @Override
-  public SszBytes32VectorSchema<?> getKzgCommitmentsInclusionProofSchema() {
-    throw new UnsupportedOperationException(
-        "kzg_commitments_inclusion_proof has been removed in Gloas");
   }
 
   @Override

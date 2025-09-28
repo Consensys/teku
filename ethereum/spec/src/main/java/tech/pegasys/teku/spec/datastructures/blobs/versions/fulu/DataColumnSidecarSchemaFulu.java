@@ -44,6 +44,15 @@ public class DataColumnSidecarSchemaFulu
         SszBytes32Vector>
     implements DataColumnSidecarSchema<DataColumnSidecarFulu> {
 
+  public static DataColumnSidecarSchemaFulu required(final DataColumnSidecarSchema<?> schema) {
+    try {
+      return (DataColumnSidecarSchemaFulu) schema;
+    } catch (final ClassCastException __) {
+      throw new IllegalArgumentException(
+          "Expected DataColumnSidecarSchemaFulu but got: " + schema.getClass().getSimpleName());
+    }
+  }
+
   public DataColumnSidecarSchemaFulu(
       final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
       final DataColumnSchema dataColumnSchema,
@@ -80,7 +89,6 @@ public class DataColumnSidecarSchemaFulu
     return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
-  @Override
   public SszBytes32VectorSchema<?> getKzgCommitmentsInclusionProofSchema() {
     return (SszBytes32VectorSchema<?>)
         getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENTS_INCLUSION_PROOF));

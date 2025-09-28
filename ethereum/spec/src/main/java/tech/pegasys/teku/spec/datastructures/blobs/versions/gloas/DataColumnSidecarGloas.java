@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.gloas;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -23,7 +22,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
@@ -78,14 +76,9 @@ public class DataColumnSidecarGloas
   }
 
   @Override
-  public SignedBeaconBlockHeader getSignedBlockHeader() {
-    throw new UnsupportedOperationException("signed_block_header has been removed in Gloas");
-  }
-
-  @Override
-  public SszBytes32Vector getKzgCommitmentsInclusionProof() {
+  public UInt64 getSlot() {
     throw new UnsupportedOperationException(
-        "kzg_commitments_inclusion_proof has been removed in Gloas");
+        "Adding `slot` field to DataColumnSidecar in Gloas is TBD");
   }
 
   @Override

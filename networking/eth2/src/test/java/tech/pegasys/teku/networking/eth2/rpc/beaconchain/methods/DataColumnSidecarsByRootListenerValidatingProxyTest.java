@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
@@ -157,9 +158,12 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
                     // replacing to empty commitments
                     .kzgCommitments(sidecarSchema.getKzgCommitmentsSchema().of())
                     .kzgProofs(dataColumnSidecar.getKzgProofs())
-                    .signedBlockHeader(dataColumnSidecar.getSignedBlockHeader())
+                    .signedBlockHeader(
+                        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
                     .kzgCommitmentsInclusionProof(
-                        dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed())
+                        DataColumnSidecarFulu.required(dataColumnSidecar)
+                            .getKzgCommitmentsInclusionProof()
+                            .asListUnboxed())
                     .beaconBlockRoot(dataColumnSidecar.getBeaconBlockRoot()));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecarModified);
@@ -218,9 +222,13 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
                     .column(dataColumnSidecar.getColumn())
                     .kzgCommitments(dataColumnSidecar.getKzgCommitments())
                     .kzgProofs(dataColumnSidecar.getKzgProofs())
-                    .signedBlockHeader(dataColumnSidecar.getSignedBlockHeader())
+                    .signedBlockHeader(
+                        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
                     .kzgCommitmentsInclusionProof(
-                        dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed().stream()
+                        DataColumnSidecarFulu.required(dataColumnSidecar)
+                            .getKzgCommitmentsInclusionProof()
+                            .asListUnboxed()
+                            .stream()
                             .map(Bytes32::not) // modify inclusion proof list
                             .toList()));
 

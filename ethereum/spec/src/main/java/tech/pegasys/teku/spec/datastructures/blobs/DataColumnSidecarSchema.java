@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -39,8 +38,6 @@ public interface DataColumnSidecarSchema<T extends DataColumnSidecar>
   SszListSchema<SszKZGCommitment, ?> getKzgCommitmentsSchema();
 
   SszListSchema<SszKZGProof, ?> getKzgProofsSchema();
-
-  SszBytes32VectorSchema<?> getKzgCommitmentsInclusionProofSchema();
 
   DataColumnSidecar create(Consumer<DataColumnSidecarBuilder> builderConsumer);
 

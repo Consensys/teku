@@ -38,6 +38,16 @@ public class DataColumnSidecarFulu
         SszBytes32Vector>
     implements DataColumnSidecar {
 
+  public static DataColumnSidecarFulu required(final DataColumnSidecar dataColumnSidecar) {
+    try {
+      return (DataColumnSidecarFulu) dataColumnSidecar;
+    } catch (final ClassCastException __) {
+      throw new IllegalArgumentException(
+          "Expected DataColumnSidecarFulu but got: "
+              + dataColumnSidecar.getClass().getSimpleName());
+    }
+  }
+
   DataColumnSidecarFulu(final DataColumnSidecarSchemaFulu schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
@@ -83,18 +93,25 @@ public class DataColumnSidecarFulu
     return getField3();
   }
 
-  @Override
   public SignedBeaconBlockHeader getSignedBlockHeader() {
     return getField4();
   }
 
-  @Override
   public SszBytes32Vector getKzgCommitmentsInclusionProof() {
     return getField5();
   }
 
   @Override
+  public UInt64 getSlot() {
+    return getSignedBlockHeader().getMessage().getSlot();
+  }
+
+  @Override
   public Bytes32 getBeaconBlockRoot() {
     return getSignedBlockHeader().getMessage().getRoot();
+  }
+
+  public Bytes32 getBlockBodyRoot() {
+    return getSignedBlockHeader().getMessage().getBodyRoot();
   }
 }

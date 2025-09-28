@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -315,10 +316,10 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     }
     return predicates.isValidMerkleBranch(
         dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-        dataColumnSidecar.getKzgCommitmentsInclusionProof(),
+        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof(),
         specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
         getBlockBodyKzgCommitmentsGeneralizedIndex(),
-        dataColumnSidecar.getBlockBodyRoot());
+        DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot());
   }
 
   public int getBlockBodyKzgCommitmentsGeneralizedIndex() {
@@ -524,11 +525,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final DataColumnSidecar anyExistingSidecar =
         existingSidecars.stream().findFirst().orElseThrow();
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
-        anyExistingSidecar.getSignedBlockHeader();
+        DataColumnSidecarFulu.required(anyExistingSidecar).getSignedBlockHeader();
     return constructDataColumnSidecars(
         signedBeaconBlockHeader,
         anyExistingSidecar.getKzgCommitments(),
-        anyExistingSidecar.getKzgCommitmentsInclusionProof().asListUnboxed(),
+        DataColumnSidecarFulu.required(anyExistingSidecar)
+            .getKzgCommitmentsInclusionProof()
+            .asListUnboxed(),
         extendedMatrix);
   }
 

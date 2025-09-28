@@ -43,6 +43,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -306,7 +307,7 @@ class BlockOperationSelectorFactoryFuluTest {
             index -> {
               final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
               assertThat(dataColumnSidecar.getIndex()).isEqualTo(UInt64.valueOf(index));
-              assertThat(dataColumnSidecar.getSignedBlockHeader())
+              assertThat(DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
                   .isEqualTo(signedBlockContents.getSignedBlock().asHeader());
               assertThat(dataColumnSidecar.getKzgProofs().asList())
                   .isEqualTo(
@@ -363,7 +364,7 @@ class BlockOperationSelectorFactoryFuluTest {
             index -> {
               final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
               assertThat(dataColumnSidecar.getIndex()).isEqualTo(UInt64.valueOf(index));
-              assertThat(dataColumnSidecar.getSignedBlockHeader())
+              assertThat(DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
                   .isEqualTo(signedBlindedBeaconBlock.asHeader());
               assertThat(dataColumnSidecar.getKzgProofs().asList())
                   .isEqualTo(

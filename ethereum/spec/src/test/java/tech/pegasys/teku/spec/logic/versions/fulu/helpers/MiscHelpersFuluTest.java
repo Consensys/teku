@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
@@ -190,10 +191,10 @@ public class MiscHelpersFuluTest {
     assertThat(
             predicatesMock.isValidMerkleBranch(
                 dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
-                dataColumnSidecar.getKzgCommitmentsInclusionProof(),
+                DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof(),
                 specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
                 miscHelpersFuluWithMockPredicates.getBlockBodyKzgCommitmentsGeneralizedIndex(),
-                dataColumnSidecar.getBlockBodyRoot()))
+                DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot()))
         .isTrue();
     assertThat(
             miscHelpersFuluWithMockPredicates.verifyDataColumnSidecarInclusionProof(

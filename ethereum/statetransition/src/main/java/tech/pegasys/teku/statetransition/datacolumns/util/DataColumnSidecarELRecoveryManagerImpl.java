@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -199,9 +200,11 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     return recoveryTasks.putIfAbsent(
             dataColumnSidecar.getSlotAndBlockRoot(),
             new RecoveryTask(
-                dataColumnSidecar.getSignedBlockHeader(),
+                DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
                 dataColumnSidecar.getKzgCommitments(),
-                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed(),
+                DataColumnSidecarFulu.required(dataColumnSidecar)
+                    .getKzgCommitmentsInclusionProof()
+                    .asListUnboxed(),
                 Collections.newSetFromMap(new ConcurrentHashMap<>())))
         == null;
   }

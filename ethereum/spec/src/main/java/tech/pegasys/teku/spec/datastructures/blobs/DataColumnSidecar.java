@@ -17,10 +17,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -35,19 +33,9 @@ public interface DataColumnSidecar extends SszContainer {
 
   SszList<SszKZGProof> getKzgProofs();
 
-  SignedBeaconBlockHeader getSignedBlockHeader();
-
-  SszBytes32Vector getKzgCommitmentsInclusionProof();
+  UInt64 getSlot();
 
   Bytes32 getBeaconBlockRoot();
-
-  default UInt64 getSlot() {
-    return getSignedBlockHeader().getMessage().getSlot();
-  }
-
-  default Bytes32 getBlockBodyRoot() {
-    return getSignedBlockHeader().getMessage().getBodyRoot();
-  }
 
   default SlotAndBlockRoot getSlotAndBlockRoot() {
     return new SlotAndBlockRoot(getSlot(), getBeaconBlockRoot());
