@@ -27,7 +27,6 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
   final ExecutionProofGossipValidator executionProofGossipValidator;
-  //    final ExecutionProofGossipValidator executionProofGossipValidator;
   private final Subscribers<ValidExecutionProofListener> receivedExecutionProofSubscribers =
       Subscribers.create(true);
 
