@@ -75,6 +75,8 @@ public class ReferenceTestFinder {
                             "fork/fork",
                             "networking/",
                             "rewards/",
+                            "operations/withdrawals",
+                            "operations/proposer_slashing",
                             "operations/execution_payload_bid"))
                     .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
               }
