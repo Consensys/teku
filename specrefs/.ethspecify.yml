@@ -59,7 +59,6 @@ specrefs:
       - LightClientOptimisticUpdate
 
       # Not implemented: gloas
-      - DataColumnSidecar#gloas
       - ForkChoiceNode#gloas
 
     dataclasses:
