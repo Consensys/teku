@@ -16,24 +16,31 @@ package tech.pegasys.teku.validator.remote;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockserver.model.HttpRequest.request;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.MAX_API_EXECUTOR_QUEUE_SIZE;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockserver.integration.ClientAndServer;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 
 class RemoteBeaconNodeApiTest {
 
@@ -117,5 +124,39 @@ class RemoteBeaconNodeApiTest {
         .createAsyncRunner("validatorBeaconAPIReadiness", 4, MAX_API_EXECUTOR_QUEUE_SIZE);
 
     verify(serviceConfig, times(2)).createAsyncRunner(anyString(), anyInt(), anyInt());
+  }
+
+  @Test
+  public void validatorClientRequestSendsUserAgentHeader() throws Exception {
+    final StubAsyncRunnerFactory stubAsyncRunnerFactory = new StubAsyncRunnerFactory();
+    when(serviceConfig.getAsyncRunnerFactory()).thenReturn(stubAsyncRunnerFactory);
+    when(serviceConfig.createAsyncRunner(eq("validatorBeaconAPI"), anyInt(), anyInt()))
+        .thenReturn(SYNC_RUNNER);
+
+    try (final ClientAndServer mockServer = new ClientAndServer()) {
+      final BeaconNodeApi beaconNodeApi =
+          RemoteBeaconNodeApi.create(
+              serviceConfig,
+              validatorConfig,
+              spec,
+              List.of(new URI("http://username:password@localhost:" + mockServer.getLocalPort())));
+
+      beaconNodeApi
+          .getValidatorApi()
+          .getGenesisData()
+          .thenRun(
+              () ->
+                  mockServer.verify(
+                      request()
+                          .withHeader("User-Agent", "teku\\/v.*")
+                          // Ensures we are not overriding any previous headers added via app
+                          // interceptors
+                          .withHeader("Authorization", ".*")
+                          .withHeader("content-length", ".*")
+                          .withHeader("Host", ".*")
+                          .withHeader("Connection", ".*")
+                          .withHeader("Accept-Encoding", ".*")))
+          .get(1, TimeUnit.SECONDS);
+    }
   }
 }
