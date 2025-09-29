@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.block;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloa
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
@@ -225,6 +227,28 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor) {
     throw new UnsupportedOperationException("process_execution_payload has been removed in Gloas");
+  }
+
+  // Remove the BuilderPendingPayment corresponding to this proposal if it is still in the 2-epoch
+  // window.
+  @Override
+  protected void removeBuilderPendingPayment(
+      final ProposerSlashing proposerSlashing, final MutableBeaconState state) {
+    final UInt64 slot = proposerSlashing.getHeader1().getMessage().getSlot();
+    final UInt64 proposalEpoch = miscHelpers.computeEpochAtSlot(slot);
+    OptionalInt paymentIndex = OptionalInt.empty();
+    if (proposalEpoch.equals(beaconStateAccessors.getCurrentEpoch(state))) {
+      paymentIndex =
+          OptionalInt.of(
+              specConfig.getSlotsPerEpoch() + slot.mod(specConfig.getSlotsPerEpoch()).intValue());
+    } else if (proposalEpoch.equals(beaconStateAccessors.getPreviousEpoch(state))) {
+      paymentIndex = OptionalInt.of(slot.mod(specConfig.getSlotsPerEpoch()).intValue());
+    }
+    paymentIndex.ifPresent(
+        index ->
+            MutableBeaconStateGloas.required(state)
+                .getBuilderPendingPayments()
+                .set(index, schemaDefinitionsGloas.getBuilderPendingPaymentSchema().getDefault()));
   }
 
   @Override
