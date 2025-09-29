@@ -139,7 +139,7 @@ class RemoteBeaconNodeApiTest {
               serviceConfig,
               validatorConfig,
               spec,
-              List.of(new URI("http://localhost:" + mockServer.getLocalPort())));
+              List.of(new URI("http://username:password@localhost:" + mockServer.getLocalPort())));
 
       beaconNodeApi
           .getValidatorApi()
@@ -149,10 +149,13 @@ class RemoteBeaconNodeApiTest {
                   mockServer.verify(
                       request()
                           .withHeader("User-Agent", "teku/v<Unknown>")
-                          .withHeader("content-length", anyString())
-                          .withHeader("Host", anyString())
-                          .withHeader("Connection", anyString())
-                          .withHeader("Accept-Encoding", anyString())))
+                          // Ensures we are not overriding any previous headers added via app
+                          // interceptors
+                          .withHeader("Authorization", ".*")
+                          .withHeader("content-length", ".*")
+                          .withHeader("Host", ".*")
+                          .withHeader("Connection", ".*")
+                          .withHeader("Accept-Encoding", ".*")))
           .get(1, TimeUnit.SECONDS);
     }
   }

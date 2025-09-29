@@ -17,8 +17,6 @@ import com.google.common.base.Preconditions;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
-import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -48,10 +46,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final Map<String, String> USER_AGENT_HEADER =
-      Map.of(
-          "User-Agent",
-          VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.IMPLEMENTATION_VERSION);
+  private static final String USER_AGENT_HEADER_VALUE =
+      VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.IMPLEMENTATION_VERSION;
 
   /** Time until we timeout the event stream if no events are received. */
   public static final Duration EVENT_STREAM_READ_TIMEOUT = Duration.ofSeconds(60);
@@ -276,6 +272,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     httpClientBuilder.addInterceptor(
         chain ->
             chain.proceed(
-                chain.request().newBuilder().headers(Headers.of(USER_AGENT_HEADER)).build()));
+                chain
+                    .request()
+                    .newBuilder()
+                    .header("User-Agent", USER_AGENT_HEADER_VALUE)
+                    .build()));
   }
 }
