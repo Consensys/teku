@@ -103,6 +103,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void sanityTest() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -172,6 +173,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void succeededAndFailedRetrievalShouldBeImmediatelyRemovedFromPendingPromises() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -204,6 +206,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void testMoreThanOneBlockWithBlobsOnSameSlot() {
     int blobCount = 1;
     int columnsInDbCount = 13;
@@ -249,6 +252,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void cancellingRequestShouldStopRecovery() {
     int blobCount = 3;
     int columnsInDbCount = 3;

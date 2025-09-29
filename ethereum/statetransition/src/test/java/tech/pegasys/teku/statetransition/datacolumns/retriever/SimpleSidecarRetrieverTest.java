@@ -120,6 +120,7 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void sanityTest() {
     final TestPeer custodyPeerMissingData =
         new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100));
