@@ -145,9 +145,14 @@ class RemoteBeaconNodeApiTest {
           .getValidatorApi()
           .getGenesisData()
           .thenRun(
-              () -> {
-                mockServer.verify(request().withHeader("User-Agent", "teku/v<Unknown>"));
-              })
+              () ->
+                  mockServer.verify(
+                      request()
+                          .withHeader("User-Agent", "teku/v<Unknown>")
+                          .withHeader("content-length", anyString())
+                          .withHeader("Host", anyString())
+                          .withHeader("Connection", anyString())
+                          .withHeader("Accept-Encoding", anyString())))
           .get(1, TimeUnit.SECONDS);
     }
   }
