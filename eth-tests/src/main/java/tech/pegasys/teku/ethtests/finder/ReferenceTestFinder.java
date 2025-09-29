@@ -74,7 +74,7 @@ public class ReferenceTestFinder {
                         new PyspecTestFinder(
                             "fork/fork",
                             "networking/",
-                            "rewards/",                           
+                            "rewards/",
                             "operations/withdrawals",
                             "operations/proposer_slashing",
                             "operations/execution_payload",
