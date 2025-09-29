@@ -20,8 +20,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.statetransition.api.CustodyGroupCountChannel;
@@ -47,7 +47,7 @@ public class VersionedHashDBSourceFactory {
             MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
                 .kzgCommitmentToVersionedHash(
                     pair.getKey()
-                        .getSszKZGCommitments()
+                        .getKzgCommitments()
                         .get(pair.getValue().intValue())
                         .getKZGCommitment());
   }
