@@ -42,8 +42,8 @@ env:
 jobs:
 
   spotless:
-    # circle small = 2m10s
-    # gha ubuntu-24.04 4/16   
+    # circle small            = 2m10s
+    # gha ubuntu-24.04 4/16   = 2m
     runs-on: ubuntu-24.04
     environment: dev
     steps:
@@ -61,8 +61,8 @@ jobs:
 
      
   moduleChecks:
-    # circle small = 1m10s
-    # gha ubuntu-24.04 4/16     
+    # circle small            = 1m10s
+    # gha ubuntu-24.04 4/16   = 1m20s
     runs-on: ubuntu-24.04
     environment: dev
     steps:
@@ -82,7 +82,7 @@ jobs:
     needs: [spotless, moduleChecks ]
     # circle xlarge  8/32 = 1m10s
     # gha windows-2025 4/16     
-    runs-on: windows-2025
+    runs-on: windows-2022
     environment: dev
     steps:
       - name: Checkout
@@ -91,7 +91,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Prepare
-        uses: ./.github/actions/prepareWindows
+        uses: ./.github/actions/prepare
 
       - name: Build
         shell: powershell
@@ -105,7 +105,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force build\test-results
           Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
-      
+
       - name: Publish Windows Test Results and Reports
         uses: actions/upload-artifact@v4
         if: always()
@@ -117,8 +117,8 @@ jobs:
 
 
   assemble:
-    # circle large 4/16  = 7m30s
-    # gha ubuntu-24.04 4/16
+    # circle large 4/16       = 7m30s
+    # gha ubuntu-24.04 4/16   = 8m20s
     runs-on: ubuntu-24.04
     environment: dev
     outputs:
@@ -167,8 +167,8 @@ jobs:
           retention-days: 1
 
   unitTests:
-    # circle large 4/16 PARALLEL = 8m
-    # gha ubuntu-latest-128 32/128
+    # circle large 4/16 PARALLEL      = 8m
+    # gha ubuntu-latest-128 32/128    = 8m
     needs: assemble
     runs-on: ubuntu-latest-128
     environment: dev
@@ -203,8 +203,8 @@ jobs:
           suiteName: 'unitTests'
 
   integrationTests:
-    # circle large 4/16 PARALLEL = 18m
-    # gha ubuntu-latest-128 32/64  
+    # circle large 4/16 PARALLEL      = 18m
+    # gha ubuntu-latest-128 32/64     = 16m
     needs: assemble
     runs-on: ubuntu-latest-128
     environment: dev
@@ -235,9 +235,9 @@ jobs:
 
   propertyTests:
     # circle medium_plus_executor 4/16 PARALLEL = 30m
-    # gha ubuntu-latest-128 32/64  
+    # gha ubuntu-latest-128 32/64               = 50m
     needs: assemble
-    runs-on: ubuntu-latest-128
+    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-med
     environment: dev
     steps:
       - name: Checkout
@@ -270,7 +270,7 @@ jobs:
           suiteName: 'propertyTests'
 
   acceptanceTests:
-    # circle large 4/16 PARALLEL = 12m
+    # circle large 4/16 PARALLEL        = 12m
     # gha ubuntu-latest-128 32/64  
     needs: assemble
     runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-med
