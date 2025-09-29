@@ -17,6 +17,8 @@ import com.google.common.base.Preconditions;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -44,6 +47,11 @@ import tech.pegasys.teku.validator.remote.eventsource.EventSourceBeaconChainEven
 public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final Map<String, String> USER_AGENT_HEADER =
+      Map.of(
+          "User-Agent",
+          VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.IMPLEMENTATION_VERSION);
 
   /** Time until we timeout the event stream if no events are received. */
   public static final Duration EVENT_STREAM_READ_TIMEOUT = Duration.ofSeconds(60);
@@ -258,6 +266,16 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     } else {
       OkHttpClientAuth.addAuthInterceptor(endpoints.get(0), httpClientBuilder);
     }
+    addInterceptorForUserAgentHeader(httpClientBuilder);
+
     return httpClientBuilder.build();
+  }
+
+  private static void addInterceptorForUserAgentHeader(
+      final OkHttpClient.Builder httpClientBuilder) {
+    httpClientBuilder.addInterceptor(
+        chain ->
+            chain.proceed(
+                chain.request().newBuilder().headers(Headers.of(USER_AGENT_HEADER)).build()));
   }
 }
