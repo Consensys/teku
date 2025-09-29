@@ -1,0 +1,345 @@
+
+name: ci
+
+# Circle
+# https://circleci.com/pricing/price-list/
+# medium   2    4
+# medium+  3    6
+# large    4    8
+# xlarge   8    16
+# 2xlarge  16   32
+# 2xlarge+ 20   40
+
+
+## RUNNERS
+# https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+# ubuntu-24.04 = 4cpu, 16GB
+# ubuntu-latest-128= 32, 128GB
+# windows-2025 = 4 cpu, 16GB
+# ubuntu-24.04-arm = 4cpu, 16GB
+# macos-13 = 4cpu, 14GB
+# macos-15 = 3cpu(M1), 7GB
+# gha-runner-scale-set-ubuntu-22.04-amd64-med   = 64 , 251G 
+# gha-runner-scale-set-ubuntu-22.04-amd64-large = 96 , 377G 
+
+on:
+  pull_request:
+  push:
+    branches: [ gha ]
+
+  workflow_call:
+    outputs:
+      workflow_run_id: 
+        description: "the run id of the workflow"
+        value: ${{ jobs.build.outputs.workflow_run_id }}
+
+  workflow_dispatch:
+
+env:
+  JAVA_TOOL_OPTIONS: -Xmx4096m
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
+
+jobs:
+
+  spotless:
+    # circle small = 2m10s
+    # gha ubuntu-24.04 4/16   
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Spotless
+        run: |
+          ./gradlew spotlessCheck
+
+     
+  moduleChecks:
+    # circle small = 1m10s
+    # gha ubuntu-24.04 4/16     
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Check modules
+        run: |
+          ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
+
+  windowsBuild:
+    needs: [spotless, moduleChecks ]
+    # circle xlarge  8/32 = 1m10s
+    # gha windows-2025 4/16     
+    runs-on: windows-2025
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepareWindows
+
+      - name: Build
+        shell: powershell
+        run: |
+          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
+          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
+          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
+      
+      - name: Build
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force build\test-results
+          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+      
+      - name: Publish Windows Test Results and Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            build/test-results/
+
+
+  assemble:
+    # circle large 4/16  = 7m30s
+    # gha ubuntu-24.04 4/16
+    runs-on: ubuntu-24.04
+    environment: dev
+    outputs:
+      workflow_run_id: ${{ steps.workflowdetails.outputs.id }}    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: get workflow_details
+        id: workflowdetails
+        shell: bash      
+        run: |
+          echo "id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "build_date=$(date --rfc-3339=date)" >> $GITHUB_OUTPUT
+    
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+    # TODO: remove me later 
+    #   - name: ssh
+    #     uses: ryanchapman/gha-ssh@v1
+    #     timeout-minutes: 10
+    #     with:
+    #         authorized_github_users: 'joshuafernandes'
+            
+      - name: Assemble
+        run: |
+          ./gradlew clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compilePropertyTestJava assemble
+
+    # TODO: check why this is done
+    #   - run:
+    #       name: Prep Artifacts
+    #       command: |
+    #         mkdir /tmp/teku-distributions
+    #         cp build/distributions/*.tar.gz /tmp/teku-distributions/
+
+      - name: Upload workspace build
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace
+          path: |
+            ./
+            !./.git/**
+          retention-days: 1
+
+  unitTests:
+    # circle large 4/16 PARALLEL = 8m
+    # gha ubuntu-latest-128 32/128
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Unit Tests
+        run: |
+          CLASSNAMES=$(find . -iwholename "**/src/test/java/**/*.java" \
+              | sed 's@.*/src/test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          ./gradlew test $GRADLE_ARGS
+
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'unitTests'
+
+  integrationTests:
+    # circle large 4/16 PARALLEL = 18m
+    # gha ubuntu-latest-128 32/64  
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Integration Tests
+        run: |
+          ls -la .
+          ./gradlew integrationTest
+
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'integrationTests'
+
+  propertyTests:
+    # circle medium_plus_executor 4/16 PARALLEL = 30m
+    # gha ubuntu-latest-128 32/64  
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Acceptance Tests
+        run: |
+          CLASSNAMES=$(find . -iwholename "**/src/property-test/java/**/*.java" \
+              | sed 's@.*/src/property-test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          ./gradlew --info propertyTest $GRADLE_ARGS
+
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'propertyTests'
+
+  acceptanceTests:
+    # circle large 4/16 PARALLEL = 12m
+    # gha ubuntu-latest-128 32/64  
+    needs: assemble
+    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-med
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Download workspace build
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Acceptance Tests
+        run: |
+          CLASSNAMES=$(find . -iwholename "**/src/acceptance-test/java/**/*.java" \
+              | sed 's@.*/src/acceptance-test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' )
+          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          ./gradlew acceptanceTest $GRADLE_ARGS
+
+      - name: Test results 
+        uses: ./.github/actions/testResults
+        if: always()        
+        with:
+          suiteName: 'acceptanceTests'
+
+  # referenceTests:
+  #   needs: assemble
+  #   runs-on: ubuntu-latest-128
+  #   environment: dev
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #       with:
+  #         submodules: 'recursive'
+
+  #     - name: Prepare
+  #       uses: ./.github/actions/prepare
+
+  #     - name: Download workspace build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: workspace
+
+  #     - name: Fetch Reference Tests
+  #       run: |
+  #         if [ ! -d "eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/tests" ]
+  #         then
+  #           ./gradlew --no-daemon expandRefTests
+  #         fi
+
+  #     - name: Compile Reference Tests
+  #       run: |
+  #         ./gradlew --no-daemon --parallel compileReferenceTestJava
+
+  #     - name: Reference Tests      
+  #       run: |
+  #         ./gradlew -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest
+
+  #     - name: Test results 
+  #       uses: ./.github/actions/testResults
+  #       if: always()        
+  #       with:
+  #         suiteName: 'referenceTests'

@@ -1,0 +1,81 @@
+---
+name: 'testResults'
+description: 'Collate test results and reports'
+
+inputs:
+  suiteName:  
+    description: 'name of the test suite'
+    required: false
+    default: 'test'
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Gather test results
+      shell: bash
+      run: |
+        # rm -rf build/test-output
+        FILES=`find . -name test-results`
+        for FILE in $FILES
+        do
+          MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-results@\1@'`
+          TARGET="build/test-output/$MODULE"
+          mkdir -p "$TARGET"
+          # cp -rf ${FILE}/*/* "$TARGET"
+          find ${FILE} -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I{} cp -rf {} $TARGET
+        done
+        tree build/test-output/
+
+    - name: Collate acceptance Test reports 
+      if: "${{ inputs.suiteName == 'acceptanceTests' }}"
+      shell: bash
+      run: |
+        cp -r acceptance-tests/build/reports/tests/acceptanceTest  build/test-reports/
+
+    - name: Gather extra artifacts for acceptance tests
+      if: "${{ github.event.inputs.suiteName == 'acceptanceTests' }}"
+      shell: bash
+      run: |
+        FILES=`find . -name test-artifacts`
+        for FILE in $FILES
+        do
+          MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-artifacts@\1@'`
+          TARGET="build/test-artifacts/$MODULE"
+          mkdir -p "$TARGET"
+          cp -rf ${FILE}/*/* "$TARGET"
+        done
+        tree build/test-artifacts/
+
+    - name: Gather test reports
+      shell: bash
+      run: |
+        # rm -rf build/test-reports
+        FILES=`find . -name reports -not -path './build/reports'`
+        for FILE in $FILES
+        do
+          MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/reports@\1@'`
+          TARGET="build/test-reports/$MODULE"
+          SOURCE="${FILE}/tests/test"
+          mkdir -p "$TARGET"
+          if [[ -d "$SOURCE" ]]; then
+            cp -rf "$SOURCE" "$TARGET"
+          fi
+        done
+        if [[ -f 'build/reports/dependency-check-report.html' ]]; then
+          cp 'build/reports/dependency-check-report.html' 'build/test-reports'
+        fi
+        tree build/test-reports/
+
+    - name: Publish Test Results and Reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ inputs.suiteName }}
+        if-no-files-found: ignore
+        retention-days: 7
+        path: |
+          build/test-output/
+          build/test-artifacts/
+          build/test-reports/
+          

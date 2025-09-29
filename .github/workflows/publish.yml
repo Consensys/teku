@@ -1,0 +1,232 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+    tags:        
+      - '[0-9]+.[0-9]+.[0-9]+(-?.*)'
+
+env:
+  JAVA_TOOL_OPTIONS: -Xmx4096m
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
+
+permissions:
+  actions: read
+  id-token: write  
+  contents: write
+
+jobs:
+
+  ci: 
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit    
+
+  publishOpenApiSpec:
+    if: startsWith(github.ref, 'refs/tags/') && contains('0123456789', github.ref[10])
+    needs:
+      - ci
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+           
+      - name: Get workspace from ci.yml
+        run: |
+          echo "ci artifacts workflow_run_id: ${{ github.run_id }}"
+
+      - name: download ci workspace
+        uses: actions/download-artifact@v4
+        with:
+          repository: Consensys/teku
+          name: workspace
+          path: ./
+          run-id: ${{ github.run_id }}
+
+      - name: List workspace
+        run: |
+          tree .
+
+      - name: Build runnable Teku binaries
+        run: |
+          tree .          
+          ./gradlew installDist
+
+      - name: Extract OpenAPI JSON
+        run: |
+          mkdir -p .openapidoc/spec
+
+          build/install/teku/bin/teku --network=mainnet --ee-endpoint=unsafe-test-stub --ignore-weak-subjectivity-period-enabled --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+          TEKU_PID=$!
+
+          EXIT_CODE=0
+          wget --timeout=30 --retry-connrefused --output-document=.openapidoc/spec/teku.json http://localhost:5051/swagger-docs
+          if [ $? != 0 ]; then
+            EXIT_CODE=1
+          fi
+
+          kill $TEKU_PID
+          exit $EXIT_CODE
+
+      - name: List openapidoc spec
+        run: |
+          tree .openapidoc/spec/
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache-dependency-path: '.openapidoc/package-lock.json'
+      
+      - name: Build openapidoc
+        run: |
+          cd .openapidoc
+          ls -la .openapidoc/spec/
+          npm ci
+          OA_GIT_USERNAME="${GITHUB_ACTOR}" OA_GIT_EMAIL="${GITHUB_ACTOR}@users.noreply.github.com" OA_GIT_URL="${GITHUB_REPOSITORY}" OA_GH_PAGES_BRANCH="gh-pages" node publish.js
+
+      - name: OpenAPI Spec
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.suiteName }}
+          if-no-files-found: ignore
+          retention-days: 1
+          path: |
+            .openapidoc/spec/teku.json
+
+  # publish:
+  #   needs: [ ci ]
+  #   if: startsWith(github.ref, 'refs/tags/') && contains('0123456789', github.ref[10])
+  #   runs-on: ubuntu-24.04
+  #   environment: dev
+  #   permissions:
+  #     id-token: write  
+  #     contents: read    
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: 'recursive'
+
+  #     - name: Prepare
+  #       uses: ./.github/actions/prepare
+
+  #     - name: Download workspace build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: workspace
+
+  #     - name: Create Artifacts
+  #       run: |
+  #         ./gradlew distTar distZip
+
+  #     - name: Create Release Notes
+  #       run: |
+  #         prevTag=$(git tag --sort=-creatordate | sed -n '2p')
+  #         echo "# Release ${{ github.ref_name }}" > output.md
+  #         echo "### Downloads" >> output.md
+  #         echo "| Module | SHA-256 |" >> output.md
+  #         echo "|--------|--------------|" >> output.md
+  #         echo "| web3signer.tar.gz | $(sha256sum build/distributions/web3signer-${{ github.ref_name }}.tar.gz | awk '{ print $1 }' ) |" >> output.md
+  #         echo "| web3signer.zip | $(sha256sum build/distributions/web3signer-${{ github.ref_name }}.zip | awk '{ print $1 }' ) |" >> output.md 
+  #         echo "" >> output.md
+
+  #         ### Full Changelog: https://github.com/$REPOSITORY/compare/${prevTag}...${{ github.ref_name }}
+  #         echo "" >> output.md
+
+  #     - name: Create Release
+  #       id: release_publish
+  #       uses: softprops/action-gh-release@v2
+  #       with:
+  #         name: Release ${{ github.ref_name }}
+  #         body_path: output.md
+  #         generate_release_notes: true
+  #         fail_on_unmatched_files: true
+  #         files: |
+  #           build/distributions/web3signer-${{ github.ref_name }}.tar.gz
+  #           build/distributions/web3signer-${{ github.ref_name }}.zip
+
+  # publishDocker:
+  #   needs: [ buildTestDocker, acceptanceTests ]
+  #   if: startsWith(github.ref, 'refs/tags/') && contains('0123456789', github.ref[10])
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: 'recursive'
+
+  #     - name: Prepare
+  #       id: prepare
+  #       uses: ./.github/actions/prepare         
+
+  #     - name: Download workspace build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: workspace
+
+  #     - name: get workflow_details
+  #       id: details
+  #       shell: bash
+  #       run: |
+  #         echo "id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+  #         echo "build_date=$(date --rfc-3339=date)" >> $GITHUB_OUTPUT
+
+  #         # on a release tag also add `latest` and `maj.min` version tags if it's not an `rc`
+  #         if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref_type }}" == "tag" ]; then
+  #           echo "buildVersion=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+  #           dockertags="consensys/web3signer:${{ github.ref_name }},consensys/web3signer:${{ github.ref_name }}-jdk21"
+            
+  #           semver=${{ github.ref_name }}
+  #           if [[ ${semver,,} != *"-rc"* ]]; then
+  #             echo "It's not an rc version, proceeding with extra tags..."
+  #             # Extract major.minor 
+  #             if [[ $semver =~ ^([0-9]+)\.([0-9]+)\.[0-9]+(-rc)?$ ]]; then
+  #               major_minor="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+  #               echo "major.minor: $major_minor"
+  #             else
+  #               echo "Invalid semver string"
+  #             fi              
+  #             dockertags="${dockertags},consensys/web3signer:${major_minor},consensys/web3signer:${major_minor}-jdk21"
+  #             dockertags="${dockertags},consensys/web3signer:latest,consensys/web3signer:latest-jdk21"
+  #           fi
+  #           echo "dockertags=${dockertags}" >> $GITHUB_OUTPUT
+
+  #         else
+  #           echo "buildVersion=develop" >> $GITHUB_OUTPUT
+  #           dockertags="consensys/web3signer:develop,consensys/web3signer:develop-jdk21"
+  #           echo "dockertags=${dockertags}" >> $GITHUB_OUTPUT
+  #         fi
+          
+  #     - name: Get the artifacts in one place
+  #       run: |
+  #         mkdir -p build/docker-web3signer/
+  #         ./gradlew dockerDistUntar
+  #         cp docker/jdk21/Dockerfile build/docker-web3signer/
+
+  #         echo "Creating buildVersion: ${{ steps.details.outputs.buildVersion }}"
+  #         echo "Creating dockertags: ${{ steps.details.outputs.dockertags }}"
+          
+  #     - name: build and push the combined manifest
+  #       uses: docker/build-push-action@v6
+  #       env:
+  #         DOCKER_BUILD_SUMMARY: false
+  #       with:
+  #         context: build/docker-web3signer/.
+  #         platforms: linux/arm64,linux/amd64
+  #         provenance: false
+  #         cache-from: type=local,src=/tmp/.buildx-cache
+  #         cache-to: type=local,dest=/tmp/.buildx-cache          
+  #         build-args: |
+  #           VERSION=${{ steps.details.outputs.buildVersion }}
+  #           VCS_REF=${{ github.sha }}
+  #           BUILD_DATE=${{ steps.details.outputs.build_date }}
+  #         push: true
+  #         tags: ${{ steps.details.outputs.dockertags }}
