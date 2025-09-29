@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.Volun
 import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.forktransition.GloasStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
@@ -54,6 +56,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   private final Optional<LightClientUtil> lightClientUtil;
   private final Optional<WithdrawalsHelpers> withdrawalsHelpers;
   private final Optional<ExecutionRequestsProcessor> executionRequestsProcessor;
+  private final Optional<ExecutionPayloadProcessor> executionPayloadProcessor;
 
   private SpecLogicGloas(
       final PredicatesGloas predicates,
@@ -70,6 +73,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
       final WithdrawalsHelpersGloas withdrawalsHelpers,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor,
       final BlockProcessorGloas blockProcessor,
+      final ExecutionPayloadProcessorGloas executionPayloadProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtilFulu blindBlockUtil,
@@ -97,6 +101,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     this.lightClientUtil = Optional.of(lightClientUtil);
     this.executionRequestsProcessor = Optional.of(executionRequestsProcessor);
     this.withdrawalsHelpers = Optional.of(withdrawalsHelpers);
+    this.executionPayloadProcessor = Optional.of(executionPayloadProcessor);
   }
 
   public static SpecLogicGloas create(
@@ -191,6 +196,14 @@ public class SpecLogicGloas extends AbstractSpecLogic {
             withdrawalsHelpers,
             executionRequestsDataCodec,
             executionRequestsProcessor);
+    final ExecutionPayloadProcessorGloas executionPayloadProcessor =
+        new ExecutionPayloadProcessorGloas(
+            config,
+            miscHelpers,
+            beaconStateAccessors,
+            beaconStateMutators,
+            executionRequestsDataCodec,
+            executionRequestsProcessor);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
@@ -218,6 +231,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         withdrawalsHelpers,
         executionRequestsProcessor,
         blockProcessor,
+        executionPayloadProcessor,
         forkChoiceUtil,
         blockProposalUtil,
         blindBlockUtil,
@@ -249,5 +263,10 @@ public class SpecLogicGloas extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return executionRequestsProcessor;
+  }
+
+  @Override
+  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
+    return executionPayloadProcessor;
   }
 }
