@@ -71,7 +71,7 @@ class NatManagerTest {
 
     verify(upnpClient).startup();
 
-    assertThat(natManager.start()).hasFailed();
+    assertThat(natManager.start()).isCompletedExceptionally().isNotCancelled();
 
     verifyNoMoreInteractions(upnpClient);
   }
