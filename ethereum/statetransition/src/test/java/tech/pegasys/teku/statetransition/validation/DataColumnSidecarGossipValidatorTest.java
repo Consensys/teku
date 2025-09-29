@@ -39,7 +39,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -196,7 +197,10 @@ public class DataColumnSidecarGossipValidatorTest {
   void shouldRejectIfFinalizedCheckpointIsNotAnAncestorOfDataColumnSidecarsBlock() {
     when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
             dataColumnSidecar.getSlot(),
-            dataColumnSidecar.getSignedBeaconBlockHeader().getMessage().getParentRoot()))
+            DataColumnSidecarFulu.required(dataColumnSidecar)
+                .getSignedBlockHeader()
+                .getMessage()
+                .getParentRoot()))
         .thenReturn(false);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
@@ -300,7 +304,7 @@ public class DataColumnSidecarGossipValidatorTest {
     // Other DataColumnSidecar from the same block
     final DataColumnSidecar dataColumnSidecar0 =
         dataStructureUtil.randomDataColumnSidecar(
-            dataColumnSidecar.getSignedBeaconBlockHeader(), UInt64.ZERO);
+            DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(), UInt64.ZERO);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar0))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
@@ -318,7 +322,10 @@ public class DataColumnSidecarGossipValidatorTest {
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(), UInt64.ZERO);
     final Bytes32 parentRoot =
-        dataColumnSidecarNew.getSignedBeaconBlockHeader().getMessage().getParentRoot();
+        DataColumnSidecarFulu.required(dataColumnSidecarNew)
+            .getSignedBlockHeader()
+            .getMessage()
+            .getParentRoot();
 
     when(gossipValidationHelper.isSlotFinalized(dataColumnSidecarNew.getSlot())).thenReturn(false);
     when(gossipValidationHelper.isSlotFromFuture(dataColumnSidecarNew.getSlot())).thenReturn(false);
@@ -380,7 +387,7 @@ public class DataColumnSidecarGossipValidatorTest {
     // validation is used
     final DataColumnSidecar dataColumnSidecar0 =
         dataStructureUtil.randomDataColumnSidecar(
-            dataColumnSidecar.getSignedBeaconBlockHeader(), UInt64.ZERO);
+            DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(), UInt64.ZERO);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar0))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
@@ -428,7 +435,8 @@ public class DataColumnSidecarGossipValidatorTest {
     // DataColumnSidecar from the same block as DataColumnSidecar0 and DataColumnSidecar
     final DataColumnSidecar dataColumnSidecar5 =
         dataStructureUtil.randomDataColumnSidecar(
-            dataColumnSidecar.getSignedBeaconBlockHeader(), UInt64.valueOf(2));
+            DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
+            UInt64.valueOf(2));
     when(gossipValidationHelper.getSlotForBlockRoot(any()))
         .thenReturn(Optional.of(dataColumnSidecar5.getSlot().decrement()));
 

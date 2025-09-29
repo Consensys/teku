@@ -48,7 +48,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -165,7 +166,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
           dataColumnSidecar.toLogString());
       return;
     }
-    if (recentChainData.containsBlock(dataColumnSidecar.getBlockRoot())) {
+    if (recentChainData.containsBlock(dataColumnSidecar.getBeaconBlockRoot())) {
       LOG.debug(
           "Data column sidecar {} is from already imported block. Ignoring.",
           dataColumnSidecar.toLogString());
@@ -199,9 +200,11 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     return recoveryTasks.putIfAbsent(
             dataColumnSidecar.getSlotAndBlockRoot(),
             new RecoveryTask(
-                dataColumnSidecar.getSignedBeaconBlockHeader(),
-                dataColumnSidecar.getSszKZGCommitments(),
-                dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed(),
+                DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
+                dataColumnSidecar.getKzgCommitments(),
+                DataColumnSidecarFulu.required(dataColumnSidecar)
+                    .getKzgCommitmentsInclusionProof()
+                    .asListUnboxed(),
                 Collections.newSetFromMap(new ConcurrentHashMap<>())))
         == null;
   }
