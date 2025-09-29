@@ -13,14 +13,10 @@
 
 package tech.pegasys.teku.storage.server;
 
-import static org.assertj.core.api.Fail.fail;
-
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,12 +56,13 @@ public class MultiThreadedStoreTest {
   private AtomicLong slot;
 
   @BeforeEach
-  public void setup() {
+  public void setup(@TempDir final Path tempDir) {
     LOG.info("Starting test");
     this.slot = new AtomicLong(1);
     this.chainBuilder = ChainBuilder.create(SPEC, VALIDATOR_KEYS);
     this.storageSystem =
-        createStorageSystemInternal(STORAGE_MODE, StoreConfig.createDefault(), true);
+        createStorageSystemInternal(
+            tempDir.toFile(), STORAGE_MODE, StoreConfig.createDefault(), true);
     this.recentChainData = storageSystem.recentChainData();
     final SignedBlockAndState genesisBlockAndState =
         chainBuilder.generateGenesis(GENESIS_TIME, true);
@@ -129,22 +127,11 @@ public class MultiThreadedStoreTest {
   }
 
   private StorageSystem createStorageSystemInternal(
+      final File tempDir,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
-    final File tmpDir;
-    try {
-      tmpDir =
-          Files.createTempDirectory(
-                  "",
-                  PosixFilePermissions.asFileAttribute(
-                      PosixFilePermissions.fromString("rwx------")))
-              .toFile();
-      tmpDirectories.add(tmpDir);
-      return createStorageSystem(tmpDir, storageMode, storeConfig, storeNonCanonicalBlocks);
-    } catch (IOException e) {
-      fail("Failed creating temporary directory", e);
-      return null;
-    }
+    tmpDirectories.add(tempDir);
+    return createStorageSystem(tempDir, storageMode, storeConfig, storeNonCanonicalBlocks);
   }
 }
