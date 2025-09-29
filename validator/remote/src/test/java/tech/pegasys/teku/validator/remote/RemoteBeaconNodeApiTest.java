@@ -148,7 +148,7 @@ class RemoteBeaconNodeApiTest {
               () ->
                   mockServer.verify(
                       request()
-                          .withHeader("User-Agent", "teku/v<Unknown>")
+                          .withHeader("User-Agent", "teku\\/v.*")
                           // Ensures we are not overriding any previous headers added via app
                           // interceptors
                           .withHeader("Authorization", ".*")
