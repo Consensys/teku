@@ -59,7 +59,6 @@ jobs:
         run: |
           ./gradlew spotlessCheck
 
-     
   moduleChecks:
     # circle small            = 1m10s
     # gha ubuntu-24.04 4/16   = 1m20s
@@ -80,8 +79,8 @@ jobs:
 
   windowsBuild:
     needs: [spotless, moduleChecks ]
-    # circle xlarge  8/32 = 1m10s
-    # gha windows-2025 4/16     
+    # circle xlarge  8/32    = 13m10s
+    # gha windows-2025 4/16  = 21m     
     runs-on: windows-2022
     environment: dev
     steps:
@@ -237,8 +236,13 @@ jobs:
     # circle medium_plus_executor 4/16 PARALLEL = 30m
     # gha ubuntu-latest-128 32/64               = 50m
     needs: assemble
-    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-med
+    runs-on: ubuntu-latest-128
     environment: dev
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]   # <= number of parallel shards
+        total: [24]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -253,21 +257,55 @@ jobs:
         with:
           name: workspace
 
-      - name: Acceptance Tests
-        run: |
-          CLASSNAMES=$(find . -iwholename "**/src/property-test/java/**/*.java" \
-              | sed 's@.*/src/property-test/java/@@' \
-              | sed 's@/@.@g' \
-              | sed 's/.\{5\}$//' )
-          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
-          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-          ./gradlew --info propertyTest $GRADLE_ARGS
+      # - name: Property Tests
+      #   run: |
+          # CLASSNAMES=$(find . -iwholename "**/src/property-test/java/**/*.java" \
+          #     | sed 's@.*/src/property-test/java/@@' \
+          #     | sed 's@/@.@g' \
+          #     | sed 's/.\{5\}$//' )
+          # GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          # echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          # ./gradlew --info propertyTest $GRADLE_ARGS
 
-      - name: Test results 
-        uses: ./.github/actions/testResults
-        if: always()        
+      - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }}
+        id: shard
+        shell: bash
+        run: |
+          # 1) Collect property-test classes and convert to FQNs
+          CLASSNAMES=$(find . -type f -name "*.java" -path "*/src/property-test/java/*" \
+            | sed 's@.*/src/property-test/java/@@' \
+            | sed 's@/@.@g' \
+            | sed 's/.\{5\}$//' )
+
+          # 2) Deterministic assignment: modulo on line index (0-based)
+          CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
+            | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
+
+          if [ -z "$CLASSES_FOR_SHARD" ]; then
+            echo "No tests in this shard."
+            echo "args=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 3) Build Gradle --tests args
+          GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
+          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+          echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
+
+      - name: Run property tests (shard)
+        if: steps.shard.outputs.args != ''
+        run: |
+          ./gradlew --no-daemon --parallel --info propertyTest ${{ steps.shard.outputs.args }}
+
+      - name: Upload test reports (always)
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          suiteName: 'propertyTests'
+          name: property-test-reports-shard-${{ matrix.shard }}
+          path: |
+            **/build/test-results/**
+            **/build/reports/tests/**
+          if-no-files-found: ignore
 
   acceptanceTests:
     # circle large 4/16 PARALLEL        = 12m
