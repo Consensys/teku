@@ -10,5 +10,6 @@
 ### Breaking Changes
 
 ### Additions and Improvements
-
+- Add User-Agent header to all VC-initiated requests with a client identifier and version.
+- 
 ### Bug Fixes
