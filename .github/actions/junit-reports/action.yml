@@ -1,0 +1,33 @@
+---
+name: 'junit results'
+description: 'Composite action to gather junit results'
+
+inputs:
+  stage_key:
+    type: string
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Gather junit results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ${{inputs.stage_key}}-reports-*
+        path: reports/${{inputs.stage_key}}
+        merge-multiple: true
+
+    - shell: bash
+      run: |
+        tree reports/
+
+    - name: Test Reporter
+      uses: dorny/test-reporter@v1
+      with:
+        name: Combined ${{inputs.stage_key}} tests
+        path: "reports/${{inputs.stage_key}}/**/TEST-*.xml"
+        reporter: java-junit
+        only-summary: true
+        list-tests: failed
+        list-suites: failed
+        

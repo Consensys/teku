@@ -1177,7 +1177,8 @@ def calculateVersion() {
 
 task printVersion() {
   doFirst {
-    print "Specific version: ${specificVersion}  Publish version: ${project.version}"
+    println "specific-version=${specificVersion}"
+    println "publish-version=${project.version}"
   }
 }
 

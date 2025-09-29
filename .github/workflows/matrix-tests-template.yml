@@ -1,0 +1,116 @@
+name: matrix-tests-template
+
+on:
+  workflow_call:
+
+    inputs:
+      assemble_output_run_id:
+        type: string
+        required: true
+      stage_name:
+        type: string
+        required: true
+      stage_key:
+        type: string
+        required: true
+      gradle_task:
+        type: string
+        required: true
+      # Where to look for test sources, and the root segment used to compute FQNs
+      src_pattern:
+        type: string
+        required: true
+      src_root:
+        type: string
+        required: true
+      runner:
+        type: string
+        required: false
+        default: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
+
+permissions:
+  actions: read     # download the assemble output as an artifacts
+  contents: read
+
+jobs:
+  matrix-tests-template:
+    runs-on: ${{ inputs.runner }}
+    environment: dev
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]   # parallel shards
+        total: [32]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.assemble_output_run_id }}
+          name: assemble-output
+          merge-multiple: true
+          path: ${{ github.workspace }}
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER_RO }}
+          password: ${{ secrets.DOCKER_PASSWORD_RO }}
+
+      # TODO: remove this step
+      - shell: bash
+        run: |
+          sudo apt-get update && sudo apt-get install -y tree
+          tree .          
+
+      - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ${{ inputs.stage_name }}
+        id: shard
+        shell: bash
+        run: |
+          SRC_PATTERN="${{ inputs.src_pattern }}" # e.g. */src/test/java/* or */src/property-test/java/* etc 
+          # 1) Collect test classes by pattern = FQNs
+          CLASSNAMES=$(find . -type f -name "*.java" -path "$SRC_PATTERN" \
+            | sed "s@.*/${{ inputs.src_root }}/@@" \
+            | sed 's@/@.@g' \
+            | sed 's/.\{5\}$//')
+
+          # 2) Modulo split
+          CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
+            | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
+
+          if [ -z "$CLASSES_FOR_SHARD" ]; then
+            echo "args=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 3) Build --tests args
+          GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
+          echo "Prepared arguments for Gradle (${{ inputs.stage_name }}): $GRADLE_ARGS"
+          echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
+
+      - name: Run ${{ inputs.stage_name }} (shard)
+        if: steps.shard.outputs.args != ''
+        run: |
+          ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
+
+      - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.stage_key }}-reports-${{ matrix.shard }}
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: ignore
+          retention-days: 1
+          
