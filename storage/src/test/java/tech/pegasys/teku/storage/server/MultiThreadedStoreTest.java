@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.storage.server;
 
-import com.google.common.io.Files;
+import static org.assertj.core.api.Fail.fail;
+
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -128,8 +132,19 @@ public class MultiThreadedStoreTest {
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
-    final File tmpDir = Files.createTempDir();
-    tmpDirectories.add(tmpDir);
-    return createStorageSystem(tmpDir, storageMode, storeConfig, storeNonCanonicalBlocks);
+    final File tmpDir;
+    try {
+      tmpDir =
+          Files.createTempDirectory(
+                  "",
+                  PosixFilePermissions.asFileAttribute(
+                      PosixFilePermissions.fromString("rwx------")))
+              .toFile();
+      tmpDirectories.add(tmpDir);
+      return createStorageSystem(tmpDir, storageMode, storeConfig, storeNonCanonicalBlocks);
+    } catch (IOException e) {
+      fail("Failed creating temporary directory", e);
+      return null;
+    }
   }
 }
