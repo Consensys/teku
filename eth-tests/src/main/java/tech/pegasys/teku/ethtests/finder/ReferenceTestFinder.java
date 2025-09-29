@@ -76,19 +76,7 @@ public class ReferenceTestFinder {
                             "networking/",
                             "rewards/",
                             "operations/execution_payload_bid"))
-                    .flatMap(
-                        unchecked(
-                            finder ->
-                                finder
-                                    .findTests(fork, spec, testsPath)
-                                    .filter(
-                                        // TODO: temporary until DataColumnSidecar change for Gloas
-                                        // is implemented
-                                        // https://github.com/Consensys/teku/issues/9915
-                                        testDefinition ->
-                                            !testDefinition
-                                                .getTestType()
-                                                .equals("ssz_static/DataColumnSidecar"))));
+                    .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
               }
 
               return Stream.of(

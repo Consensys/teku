@@ -42,7 +42,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -306,16 +307,16 @@ class BlockOperationSelectorFactoryFuluTest {
             index -> {
               final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
               assertThat(dataColumnSidecar.getIndex()).isEqualTo(UInt64.valueOf(index));
-              assertThat(dataColumnSidecar.getSignedBeaconBlockHeader())
+              assertThat(DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
                   .isEqualTo(signedBlockContents.getSignedBlock().asHeader());
-              assertThat(dataColumnSidecar.getSszKZGProofs().asList())
+              assertThat(dataColumnSidecar.getKzgProofs().asList())
                   .isEqualTo(
                       IntStream.range(0, expectedCommitments.size())
                           .mapToObj(
                               blobIndex ->
                                   expectedProofs.get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());
-              assertThat(dataColumnSidecar.getSszKZGCommitments()).isEqualTo(expectedCommitments);
+              assertThat(dataColumnSidecar.getKzgCommitments()).isEqualTo(expectedCommitments);
               // verify the merkle proof
               assertThat(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar))
                   .isTrue();
@@ -363,16 +364,16 @@ class BlockOperationSelectorFactoryFuluTest {
             index -> {
               final DataColumnSidecar dataColumnSidecar = dataColumnSidecars.get(index);
               assertThat(dataColumnSidecar.getIndex()).isEqualTo(UInt64.valueOf(index));
-              assertThat(dataColumnSidecar.getSignedBeaconBlockHeader())
+              assertThat(DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
                   .isEqualTo(signedBlindedBeaconBlock.asHeader());
-              assertThat(dataColumnSidecar.getSszKZGProofs().asList())
+              assertThat(dataColumnSidecar.getKzgProofs().asList())
                   .isEqualTo(
                       IntStream.range(0, expectedCommitments.size())
                           .mapToObj(
                               blobIndex ->
                                   expectedProofs.get(blobIndex * CELLS_PER_EXT_BLOB + index))
                           .toList());
-              assertThat(dataColumnSidecar.getSszKZGCommitments()).isEqualTo(expectedCommitments);
+              assertThat(dataColumnSidecar.getKzgCommitments()).isEqualTo(expectedCommitments);
               // verify the merkle proof
               assertThat(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(dataColumnSidecar))
                   .isTrue();

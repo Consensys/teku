@@ -11,4 +11,6 @@
 
 ### Additions and Improvements
 
+- Add User-Agent header to requests initiated from the Validator Client with the client identifier and version.
+
 ### Bug Fixes

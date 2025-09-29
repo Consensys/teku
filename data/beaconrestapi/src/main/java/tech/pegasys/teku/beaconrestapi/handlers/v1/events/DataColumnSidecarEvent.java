@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataColumnSidecarData> {
@@ -54,10 +54,10 @@ public class DataColumnSidecarEvent extends Event<DataColumnSidecarEvent.DataCol
 
   public static DataColumnSidecarEvent create(final DataColumnSidecar dataColumnSidecar) {
     return new DataColumnSidecarEvent(
-        dataColumnSidecar.getBlockRoot(),
+        dataColumnSidecar.getBeaconBlockRoot(),
         dataColumnSidecar.getIndex(),
         dataColumnSidecar.getSlot(),
-        dataColumnSidecar.getSszKZGCommitments().asList().stream()
+        dataColumnSidecar.getKzgCommitments().asList().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .toList());
   }
