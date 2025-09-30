@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
+import static tech.pegasys.teku.spec.constants.WithdrawalPrefixes.BUILDER_WITHDRAWAL_BYTE;
+
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -40,6 +44,14 @@ public class PredicatesGloas extends PredicatesElectra {
         .getLatestExecutionPayloadBid()
         .getBlockHash()
         .equals(BeaconStateGloas.required(state).getLatestBlockHash());
+  }
+
+  public boolean hasBuilderWithdrawalCredential(final Validator validator) {
+    return isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
+  }
+
+  public boolean isBuilderWithdrawalCredential(final Bytes32 withdrawalCredentials) {
+    return withdrawalCredentials.get(0) == BUILDER_WITHDRAWAL_BYTE;
   }
 
   @Override
