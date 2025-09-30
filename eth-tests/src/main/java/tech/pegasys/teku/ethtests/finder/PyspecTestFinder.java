@@ -77,8 +77,8 @@ public class PyspecTestFinder implements TestFinder {
             })
         .filter(
             testDefinition ->
-                !onlyTestTypesToRun.isEmpty()
-                    && onlyTestTypesToRun.stream()
+                onlyTestTypesToRun.isEmpty()
+                    || onlyTestTypesToRun.stream()
                         .anyMatch(type -> testDefinition.getTestType().startsWith(type)))
         .filter(
             testDefinition ->
