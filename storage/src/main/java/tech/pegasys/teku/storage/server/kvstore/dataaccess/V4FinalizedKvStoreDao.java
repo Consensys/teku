@@ -29,8 +29,8 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -504,7 +504,7 @@ public class V4FinalizedKvStoreDao {
       transaction.put(
           schema.getColumnSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
@@ -513,7 +513,7 @@ public class V4FinalizedKvStoreDao {
       transaction.put(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 

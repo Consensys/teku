@@ -15,7 +15,7 @@ package tech.pegasys.teku.statetransition.datacolumns.log.rpc;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 
 class DasReqRespLoggerImpl implements DasReqRespLogger {
