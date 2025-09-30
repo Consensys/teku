@@ -31,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.bls.BatchBLSSignatureVerifier;
 import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -67,7 +68,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -134,7 +134,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
-    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    final BatchBLSSignatureVerifier signatureVerifier =
+        specConfig.getBLSSignatureVerifier().createBatchVerifier();
     final BeaconState result =
         processAndValidateBlock(
             signedBlock,

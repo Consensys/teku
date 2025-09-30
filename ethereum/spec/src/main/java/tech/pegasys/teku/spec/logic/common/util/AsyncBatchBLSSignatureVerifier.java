@@ -19,6 +19,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.bls.BatchBLSSignatureVerifier;
+import tech.pegasys.teku.bls.BatchSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncBatchBLSSignatureVerifier implements BLSSignatureVerifier {
@@ -76,5 +78,11 @@ public class AsyncBatchBLSSignatureVerifier implements BLSSignatureVerifier {
         return TRUE;
       }
     };
+  }
+
+  /** Creates non-async batch verifier to comply with the {@link BLSSignatureVerifier} interface. */
+  @Override
+  public BatchBLSSignatureVerifier createBatchVerifier() {
+    return new BatchSignatureVerifier();
   }
 }
