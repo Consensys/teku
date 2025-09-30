@@ -350,8 +350,6 @@ public class Eth2P2PNetworkFactory {
                                 syncCommitteeSubnetService,
                                 dataColumnSidecarSubnetTopicProvider,
                                 dataColumnSidecarSubnetService,
-                                executionProofSubnetTopicProvider,
-                                executionProofSubnetService,
                                 config.getTargetSubnetSubscriberCount(),
                                 subnetPeerCountGauge),
                         reputationManager,

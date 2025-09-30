@@ -594,8 +594,6 @@ public class Eth2P2PNetworkBuilder {
                         syncCommitteeSubnetService,
                         dataColumnSidecarSubnetTopicProvider,
                         dataColumnSidecarSubnetService,
-                        executionProofSubnetTopicProvider,
-                        executionProofSubnetService,
                         config.getTargetSubnetSubscriberCount(),
                         subnetPeerCountGauge),
                 reputationManager,

@@ -53,8 +53,7 @@ class SubnetScorerTest {
         SubnetScorer.create(
             PeerSubnetSubscriptions.createEmpty(
                 () -> schemaDefinitions,
-                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT),
-                SszBitvectorSchema.create(EXECUTION_PROOF_SUBNET_COUNT)));
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
     assertThat(
             scorer.scoreCandidatePeer(
                 createDiscoveryPeer(
@@ -69,8 +68,7 @@ class SubnetScorerTest {
         SubnetScorer.create(
             PeerSubnetSubscriptions.createEmpty(
                 () -> schemaDefinitions,
-                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT),
-                SszBitvectorSchema.create(EXECUTION_PROOF_SUBNET_COUNT)));
+                SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
     assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
   }
 
@@ -85,8 +83,7 @@ class SubnetScorerTest {
         SubnetScorer.create(
             PeerSubnetSubscriptions.builder(
                     () -> schemaDefinitions,
-                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT),
-                    SszBitvectorSchema.create(EXECUTION_PROOF_SUBNET_COUNT))
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
                 .attestationSubnetSubscriptions(
                     b ->
                         b.addRelevantSubnet(1)
@@ -137,8 +134,7 @@ class SubnetScorerTest {
         SubnetScorer.create(
             PeerSubnetSubscriptions.builder(
                     () -> schemaDefinitions,
-                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT),
-                    SszBitvectorSchema.create(EXECUTION_PROOF_SUBNET_COUNT))
+                    SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT))
                 .attestationSubnetSubscriptions(
                     b ->
                         b.addRelevantSubnet(1)

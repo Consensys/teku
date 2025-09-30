@@ -218,8 +218,6 @@ class PeerSubnetSubscriptionsTest {
         syncnetSubscriptions,
         dataColumnSidecarSubnetTopicProvider,
         dataColumnSubscriptions,
-        executionProofSubnetTopicProvider,
-        executionProofSubscriptions,
         TARGET_SUBSCRIBER_COUNT,
         subnetPeerCountGauge);
   }
