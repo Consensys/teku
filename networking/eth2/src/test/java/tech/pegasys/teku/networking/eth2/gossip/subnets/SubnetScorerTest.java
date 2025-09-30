@@ -45,7 +45,6 @@ class SubnetScorerTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
   private static final int DATA_COLUMN_SIDECAR_SUBNET_COUNT = 128;
-  private static final int EXECUTION_PROOF_SUBNET_COUNT = 8;
 
   @Test
   void shouldScoreCandidatePeerWithNoSubnetsAsZero() {
