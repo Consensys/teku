@@ -18,11 +18,13 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 
 public class DefaultOperationProcessor implements OperationProcessor {
@@ -122,6 +125,17 @@ public class DefaultOperationProcessor implements OperationProcessor {
   }
 
   @Override
+  public void processExecutionPayload(
+      final MutableBeaconState state,
+      final SignedExecutionPayloadEnvelope signedEnvelope,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws ExecutionPayloadProcessingException {
+    spec.getExecutionPayloadProcessor(state.getSlot())
+        .processExecutionPayload(
+            signedEnvelope, state, BLSSignatureVerifier.SIMPLE, payloadExecutor, true);
+  }
+
+  @Override
   public void processBlsToExecutionChange(
       final MutableBeaconState state, final SignedBlsToExecutionChange blsToExecutionChange)
       throws BlockProcessingException {
@@ -163,5 +177,12 @@ public class DefaultOperationProcessor implements OperationProcessor {
       final MutableBeaconState state, final List<ConsolidationRequest> consolidationRequests) {
     spec.getExecutionRequestsProcessor(state.getSlot())
         .processConsolidationRequests(state, consolidationRequests);
+  }
+
+  @Override
+  public void processExecutionPayloadBid(
+      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      throws BlockProcessingException {
+    spec.getBlockProcessor(beaconBlock.getSlot()).processExecutionPayloadBid(state, beaconBlock);
   }
 }

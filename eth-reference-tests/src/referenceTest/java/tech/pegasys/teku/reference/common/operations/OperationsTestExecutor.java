@@ -23,8 +23,10 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -36,10 +38,12 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
@@ -57,10 +61,12 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionPayloadProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
 import tech.pegasys.teku.statetransition.attestation.PooledAttestationWithData;
 import tech.pegasys.teku.statetransition.attestation.utils.RewardBasedAttestationSorter;
@@ -142,9 +148,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/consolidation_request",
               new OperationsTestExecutor<>(
                   "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
-          // TODO-GLOAS Add test for execution_payload_bid
-          // (https://github.com/Consensys/teku/issues/9821)
-          .put("operations/execution_payload_bid", IGNORE_TESTS)
+          .put(
+              "operations/execution_payload_bid",
+              new OperationsTestExecutor<>("block.ssz_snappy", Operation.EXECUTION_PAYLOAD_BID))
           .build();
 
   private final String dataFileName;
@@ -169,6 +175,12 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final TestDefinition testDefinition,
       final BeaconState preState)
       throws Exception {
+    // TODO-GLOAS: https://github.com/ethereum/consensus-specs/issues/4545
+    if (testDefinition.getFork().equals(TestFork.GLOAS)
+        && operation.equals(Operation.EXECUTION_PAYLOAD)
+        && !Files.exists(testDefinition.getTestDirectory().resolve("signed_envelope.ssz_snappy"))) {
+      return;
+    }
     final boolean isOperationValid =
         testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists();
     if (isOperationValid) {
@@ -264,7 +276,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final OperationProcessor processor,
       final BeaconState preState) {
     assertThatThrownBy(() -> applyOperation(testDefinition, processor, preState))
-        .isInstanceOf(BlockProcessingException.class);
+        .isInstanceOfAny(BlockProcessingException.class, ExecutionPayloadProcessingException.class);
   }
 
   private BeaconState applyOperation(
@@ -333,29 +345,46 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         final ExecutionMeta executionMeta =
             loadYaml(testDefinition, "execution.yaml", ExecutionMeta.class);
 
-        final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-            testDefinition
-                .getSpec()
-                .getGenesisSchemaDefinitions()
-                .toVersionBellatrix()
-                .orElseThrow();
-        final BeaconBlockBody beaconBlockBody =
-            loadSsz(
-                testDefinition,
-                dataFileName,
-                schemaDefinitionsBellatrix.getBeaconBlockBodySchema());
+        final SchemaDefinitions schemaDefinitions =
+            testDefinition.getSpec().getGenesisSchemaDefinitions();
 
-        processor.processExecutionPayload(
-            state,
-            beaconBlockBody,
-            Optional.of(
-                (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
+        if (schemaDefinitions.toVersionGloas().isPresent()) {
+          final SignedExecutionPayloadEnvelope signedEnvelope =
+              loadSsz(
+                  testDefinition,
+                  "signed_envelope.ssz_snappy",
+                  SchemaDefinitionsGloas.required(schemaDefinitions)
+                      .getSignedExecutionPayloadEnvelopeSchema());
+          processor.processExecutionPayload(
+              state,
+              signedEnvelope,
+              Optional.of(
+                  (latestExecutionPayloadHeader, payloadToExecute) ->
+                      executionMeta.executionValid));
+        } else {
+          final BeaconBlockBody beaconBlockBody =
+              loadSsz(testDefinition, dataFileName, schemaDefinitions.getBeaconBlockBodySchema());
+          processor.processExecutionPayload(
+              state,
+              beaconBlockBody,
+              Optional.of(
+                  (latestExecutionPayloadHeader, payloadToExecute) ->
+                      executionMeta.executionValid));
+        }
       }
       case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
       case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
       case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
       case WITHDRAWAL_REQUEST -> processWithdrawalRequest(testDefinition, state, processor);
       case CONSOLIDATION_REQUEST -> processConsolidations(testDefinition, state, processor);
+      case EXECUTION_PAYLOAD_BID -> {
+        final BeaconBlock beaconBlock =
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema());
+        processor.processExecutionPayloadBid(state, beaconBlock);
+      }
       default ->
           throw new UnsupportedOperationException(
               "Operation " + operation + " not implemented in OperationTestExecutor");

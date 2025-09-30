@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 public class VersionedHash {
 
   public static final int SIZE = 32;
-  public static final VersionedHash EMPTY = new VersionedHash(Bytes32.wrap(new byte[Bytes32.SIZE]));
+  public static final VersionedHash EMPTY = new VersionedHash(Bytes32.ZERO);
 
   final Bytes version;
   final Bytes value;

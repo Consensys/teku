@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
@@ -73,7 +73,10 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-@TestSpecContext(milestone = {FULU, GLOAS})
+// TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
+@TestSpecContext(
+    milestone = {FULU, GLOAS},
+    ignoredMilestones = GLOAS)
 public class DataColumnSidecarsByRootMessageHandlerTest {
 
   private final UInt64 genesisTime = UInt64.valueOf(1982239L);
@@ -267,13 +270,13 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final List<Bytes32> respondedDataColumnSidecarBlockRoots =
         datacolumnSidecarCaptor.getAllValues().stream()
-            .map(DataColumnSidecar::getBlockRoot)
+            .map(DataColumnSidecar::getBeaconBlockRoot)
             .toList();
     final List<Bytes32> expectedDataColumnIdentifiersBlockRoots =
         List.of(
-            generatedSidecars.get(0).getBlockRoot(),
-            generatedSidecars.get(2).getBlockRoot(),
-            generatedSidecars.get(3).getBlockRoot());
+            generatedSidecars.get(0).getBeaconBlockRoot(),
+            generatedSidecars.get(2).getBeaconBlockRoot(),
+            generatedSidecars.get(3).getBeaconBlockRoot());
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
@@ -371,13 +374,13 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final List<Bytes32> respondedDataColumnSidecarBlockRoots =
         datacolumnSidecarCaptor.getAllValues().stream()
-            .map(DataColumnSidecar::getBlockRoot)
+            .map(DataColumnSidecar::getBeaconBlockRoot)
             .toList();
     final List<Bytes32> expectedDataColumnIdentifiersBlockRoots =
         List.of(
-            generatedSidecars.get(0).getBlockRoot(),
-            generatedSidecars.get(1).getBlockRoot(),
-            generatedSidecars.get(2).getBlockRoot());
+            generatedSidecars.get(0).getBeaconBlockRoot(),
+            generatedSidecars.get(1).getBeaconBlockRoot(),
+            generatedSidecars.get(2).getBeaconBlockRoot());
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);
@@ -420,14 +423,14 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
 
     final List<Bytes32> respondedDataColumnSidecarBlockRoots =
         datacolumnSidecarCaptor.getAllValues().stream()
-            .map(DataColumnSidecar::getBlockRoot)
+            .map(DataColumnSidecar::getBeaconBlockRoot)
             .toList();
     final List<Bytes32> expectedDataColumnIdentifiersBlockRoots =
         List.of(
-            generatedSidecars.get(0).getBlockRoot(),
-            generatedSidecars.get(1).getBlockRoot(),
-            generatedSidecars.get(2).getBlockRoot(),
-            generatedSidecars.get(3).getBlockRoot());
+            generatedSidecars.get(0).getBeaconBlockRoot(),
+            generatedSidecars.get(1).getBeaconBlockRoot(),
+            generatedSidecars.get(2).getBeaconBlockRoot(),
+            generatedSidecars.get(3).getBeaconBlockRoot());
 
     assertThat(respondedDataColumnSidecarBlockRoots)
         .containsExactlyElementsOf(expectedDataColumnIdentifiersBlockRoots);

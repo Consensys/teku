@@ -26,8 +26,8 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -297,5 +297,5 @@ public interface Database extends AutoCloseable {
   // prunes both canonical and non canonical sidecars
   void pruneAllSidecars(UInt64 tillSlotInclusive, int pruneLimit);
 
-  Optional<SidecarIdentifier> getSidecarIdentifier(final VersionedHash hash);
+  Optional<SidecarIdentifier> getSidecarIdentifier(VersionedHash hash);
 }

@@ -44,6 +44,7 @@ public class InMemoryKvStoreDatabaseFactory {
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
     final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
         new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
+
     return KvStoreDatabase.createV4(
         hotDb,
         coldDb,
@@ -65,6 +66,7 @@ public class InMemoryKvStoreDatabaseFactory {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV6(spec);
     final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
         new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
+
     return KvStoreDatabase.createWithStateSnapshots(
         db,
         combinedSchema,
@@ -81,9 +83,9 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
-
     final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
         new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
+
     return KvStoreDatabase.createWithStateTree(
         new StubMetricsSystem(),
         db,

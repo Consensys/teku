@@ -58,6 +58,11 @@ public class BuilderPendingWithdrawal
     return getField3().get();
   }
 
+  public BuilderPendingWithdrawal copyWithNewWithdrawableEpoch(final UInt64 withdrawableEpoch) {
+    return new BuilderPendingWithdrawal(
+        getSchema(), getFeeRecipient(), getAmount(), getBuilderIndex(), withdrawableEpoch);
+  }
+
   @Override
   public BuilderPendingWithdrawalSchema getSchema() {
     return (BuilderPendingWithdrawalSchema) super.getSchema();

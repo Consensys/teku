@@ -21,26 +21,26 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public record SidecarIdentifier(
     Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
-    Optional<Pair<SlotAndBlockRoot, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
+    Optional<Pair<SlotAndBlockRoot, UInt64>> dataColumnSidecarsIdentifierAndBlobIndex,
     boolean canonical) {
   public SidecarIdentifier(
       final Optional<SlotAndBlockRootAndBlobIndex> blobSidecarIdentifier,
-      final Optional<Pair<SlotAndBlockRoot, UInt64>> dataColumnSidecarIdentifierAndBlobIndex,
+      final Optional<Pair<SlotAndBlockRoot, UInt64>> dataColumnSidecarsIdentifierAndBlobIndex,
       final boolean canonical) {
-    if (blobSidecarIdentifier.isPresent() == dataColumnSidecarIdentifierAndBlobIndex.isPresent()) {
+    if (blobSidecarIdentifier.isPresent() == dataColumnSidecarsIdentifierAndBlobIndex.isPresent()) {
       throw new RuntimeException(
           "Either blob sidecar or data column sidecars identifier have to be set");
     }
     this.blobSidecarIdentifier = blobSidecarIdentifier;
-    this.dataColumnSidecarIdentifierAndBlobIndex = dataColumnSidecarIdentifierAndBlobIndex;
+    this.dataColumnSidecarsIdentifierAndBlobIndex = dataColumnSidecarsIdentifierAndBlobIndex;
     this.canonical = canonical;
   }
 
-  boolean isBlobSidecar() {
+  public boolean isBlobSidecar() {
     return blobSidecarIdentifier.isPresent();
   }
 
-  boolean isDataColumnSidecar() {
-    return dataColumnSidecarIdentifierAndBlobIndex.isPresent();
+  public boolean isDataColumnSidecars() {
+    return dataColumnSidecarsIdentifierAndBlobIndex.isPresent();
   }
 }

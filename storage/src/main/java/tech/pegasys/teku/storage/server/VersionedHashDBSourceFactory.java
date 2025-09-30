@@ -14,14 +14,11 @@
 package tech.pegasys.teku.storage.server;
 
 import java.util.function.Function;
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.statetransition.api.CustodyGroupCountChannel;
@@ -29,33 +26,22 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.VersionedHashDBSource;
 
 public class VersionedHashDBSourceFactory {
-  private final Function<BlobSidecar, VersionedHash> blobSidecarToVersionedHash;
-  private final Function<Pair<DataColumnSidecar, UInt64>, VersionedHash>
-      dataColumnSidecarToVersionedHash;
+  private final Function<KZGCommitment, VersionedHash> kzgCommitmentToVersionedHash;
   private final EventChannels eventChannels;
   private final Spec spec;
 
   public VersionedHashDBSourceFactory(final Spec spec, final EventChannels eventChannels) {
     this.spec = spec;
     this.eventChannels = eventChannels;
-    this.blobSidecarToVersionedHash =
-        blobSidecar ->
+    this.kzgCommitmentToVersionedHash =
+        kzgCommitment ->
             MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
-                .kzgCommitmentToVersionedHash(blobSidecar.getKZGCommitment());
-    this.dataColumnSidecarToVersionedHash =
-        pair ->
-            MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers())
-                .kzgCommitmentToVersionedHash(
-                    pair.getKey()
-                        .getSszKZGCommitments()
-                        .get(pair.getValue().intValue())
-                        .getKZGCommitment());
+                .kzgCommitmentToVersionedHash(kzgCommitment);
   }
 
   public VersionedHashDBSource createVersionedHashDBSource(final KvStoreCombinedDao dao) {
     final VersionedHashDBSource versionedHashDBSource =
-        new VersionedHashDBSource(
-            dao, blobSidecarToVersionedHash, dataColumnSidecarToVersionedHash, spec);
+        new VersionedHashDBSource(dao, kzgCommitmentToVersionedHash, spec);
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       eventChannels.subscribe(
           CustodyGroupCountChannel.class,

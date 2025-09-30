@@ -13,21 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.fulu;
 
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -35,30 +33,32 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
-public class DataColumnSidecarSchema
+public class DataColumnSidecarSchemaFulu
     extends ContainerSchema6<
-        DataColumnSidecar,
+        DataColumnSidecarFulu,
         SszUInt64,
         DataColumn,
         SszList<SszKZGCommitment>,
         SszList<SszKZGProof>,
         SignedBeaconBlockHeader,
-        SszBytes32Vector> {
+        SszBytes32Vector>
+    implements DataColumnSidecarSchema<DataColumnSidecarFulu> {
 
-  static final SszFieldName FIELD_INDEX = () -> "index";
-  static final SszFieldName FIELD_BLOB = () -> "column";
-  static final SszFieldName FIELD_KZG_COMMITMENTS = () -> "kzg_commitments";
-  static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
-  static final SszFieldName FIELD_SIGNED_BLOCK_HEADER = () -> "signed_block_header";
-  static final SszFieldName FIELD_KZG_COMMITMENTS_INCLUSION_PROOF =
-      () -> "kzg_commitments_inclusion_proof";
+  public static DataColumnSidecarSchemaFulu required(final DataColumnSidecarSchema<?> schema) {
+    try {
+      return (DataColumnSidecarSchemaFulu) schema;
+    } catch (final ClassCastException __) {
+      throw new IllegalArgumentException(
+          "Expected DataColumnSidecarSchemaFulu but got: " + schema.getClass().getSimpleName());
+    }
+  }
 
-  DataColumnSidecarSchema(
+  public DataColumnSidecarSchemaFulu(
       final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
       final DataColumnSchema dataColumnSchema,
       final SpecConfigFulu specConfig) {
     super(
-        "DataColumnSidecar",
+        "DataColumnSidecarFulu",
         namedSchema(FIELD_INDEX, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(FIELD_BLOB, dataColumnSchema),
         namedSchema(
@@ -76,12 +76,17 @@ public class DataColumnSidecarSchema
                 specConfig.getKzgCommitmentsInclusionProofDepth().intValue())));
   }
 
-  public DataColumnSchema getDataColumnSszSchema() {
-    return (DataColumnSchema) getChildSchema(getFieldIndex(FIELD_BLOB));
+  @Override
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszKZGCommitment, ?> getKzgCommitmentsSchema() {
+    return (SszListSchema<SszKZGCommitment, ?>)
+        getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENTS));
   }
 
-  public SignedBeaconBlockHeaderSchema getSignedBlockHeaderSchema() {
-    return (SignedBeaconBlockHeaderSchema) getFieldSchema4();
+  @Override
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
+    return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
   }
 
   public SszBytes32VectorSchema<?> getKzgCommitmentsInclusionProofSchema() {
@@ -89,60 +94,15 @@ public class DataColumnSidecarSchema
         getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENTS_INCLUSION_PROOF));
   }
 
-  @SuppressWarnings("unchecked")
-  public SszListSchema<SszKZGCommitment, ?> getKzgCommitmentsSchema() {
-    return (SszListSchema<SszKZGCommitment, ?>)
-        getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENTS));
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
-    return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
-  }
-
-  public DataColumnSidecar create(
-      final UInt64 index,
-      final DataColumn dataColumn,
-      final SszList<SszKZGCommitment> sszKzgCommitments,
-      final SszList<SszKZGProof> sszKzgProofs,
-      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-      final List<Bytes32> kzgCommitmentsInclusionProof) {
-    return new DataColumnSidecar(
-        this,
-        index,
-        dataColumn,
-        sszKzgCommitments,
-        sszKzgProofs,
-        signedBeaconBlockHeader,
-        kzgCommitmentsInclusionProof);
-  }
-
-  public DataColumnSidecar create(
-      final UInt64 index,
-      final DataColumn dataColumn,
-      final List<KZGCommitment> kzgCommitments,
-      final List<KZGProof> kzgProofs,
-      final SignedBeaconBlockHeader signedBeaconBlockHeader,
-      final List<Bytes32> kzgCommitmentsInclusionProof) {
-    return new DataColumnSidecar(
-        this,
-        index,
-        dataColumn,
-        kzgCommitments,
-        kzgProofs,
-        signedBeaconBlockHeader,
-        kzgCommitmentsInclusionProof);
-  }
-
-  public static DataColumnSidecarSchema create(
-      final SignedBeaconBlockHeaderSchema signedBeaconBlockHeaderSchema,
-      final DataColumnSchema dataColumnSchema,
-      final SpecConfigFulu specConfig) {
-    return new DataColumnSidecarSchema(signedBeaconBlockHeaderSchema, dataColumnSchema, specConfig);
+  @Override
+  public DataColumnSidecar create(final Consumer<DataColumnSidecarBuilder> builderConsumer) {
+    final DataColumnSidecarBuilderFulu builder = new DataColumnSidecarBuilderFulu().schema(this);
+    builderConsumer.accept(builder);
+    return builder.build();
   }
 
   @Override
-  public DataColumnSidecar createFromBackingNode(final TreeNode node) {
-    return new DataColumnSidecar(this, node);
+  public DataColumnSidecarFulu createFromBackingNode(final TreeNode node) {
+    return new DataColumnSidecarFulu(this, node);
   }
 }

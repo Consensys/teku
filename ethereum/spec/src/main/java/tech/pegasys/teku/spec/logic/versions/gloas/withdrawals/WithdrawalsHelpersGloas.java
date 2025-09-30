@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
 
   private final PredicatesGloas predicatesGloas;
+  private final SchemaDefinitionsGloas schemaDefinitionsGloas;
 
   public WithdrawalsHelpersGloas(
       final SchemaDefinitionsGloas schemaDefinitions,
@@ -44,6 +45,7 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
       final BeaconStateMutatorsElectra beaconStateMutators) {
     super(schemaDefinitions, miscHelpers, specConfig, predicates, beaconStateMutators);
     this.predicatesGloas = predicates;
+    this.schemaDefinitionsGloas = schemaDefinitions;
   }
 
   @Override
@@ -52,6 +54,18 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
       return;
     }
     super.processWithdrawals(state);
+  }
+
+  @Override
+  protected void setLatestWithdrawalsRoot(
+      final List<Withdrawal> expectedWithdrawals, final MutableBeaconState state) {
+    MutableBeaconStateGloas.required(state)
+        .setLatestWithdrawalsRoot(
+            schemaDefinitionsGloas
+                .getExecutionPayloadSchema()
+                .getWithdrawalsSchemaRequired()
+                .createFromElements(expectedWithdrawals)
+                .hashTreeRoot());
   }
 
   @Override

@@ -26,8 +26,8 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -195,7 +195,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getEarliestDataSidecarColumnSlot();
 
-  Optional<Bytes> getSidecarIdentifierData(final Bytes32 versionedHash);
+  Optional<Bytes> getSidecarIdentifierData(Bytes32 versionedHash);
 
   interface CombinedUpdater extends HotUpdater, FinalizedUpdater {}
 
@@ -314,9 +314,9 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void removeNonCanonicalSidecar(DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier);
 
-    void addVersionedHash(final Bytes32 versionedHash, final Bytes metadata);
+    void addVersionedHash(Bytes32 versionedHash, Bytes metadata);
 
-    void removeVersionedHash(final Bytes32 versionedHash);
+    void removeVersionedHash(Bytes32 versionedHash);
 
     void commit();
 
