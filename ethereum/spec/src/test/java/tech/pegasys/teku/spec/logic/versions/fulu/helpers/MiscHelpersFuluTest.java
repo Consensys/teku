@@ -339,8 +339,7 @@ public class MiscHelpersFuluTest {
     
     final KZG kzg = KZG.getInstance(false);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(
-        dataStructureUtil.randomKZGCommitments(blobs.size()));
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
     final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
         signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
@@ -377,8 +376,7 @@ public class MiscHelpersFuluTest {
     
     final KZG kzg = KZG.getInstance(false);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(
-        dataStructureUtil.randomKZGCommitments(blobs.size()));
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
     final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
         signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
@@ -410,8 +408,7 @@ public class MiscHelpersFuluTest {
     
     final KZG kzg = KZG.getInstance(false);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(
-        dataStructureUtil.randomKZGCommitments(blobs.size()));
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
     final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
         signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
@@ -436,8 +433,7 @@ public class MiscHelpersFuluTest {
     
     final KZG kzg = KZG.getInstance(false);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(
-        dataStructureUtil.randomKZGCommitments(blobs.size()));
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
     final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
         signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
@@ -465,8 +461,7 @@ public class MiscHelpersFuluTest {
     
     final KZG kzg = KZG.getInstance(false);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(
-        dataStructureUtil.randomKZGCommitments(blobs.size()));
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
     final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
         signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
