@@ -196,6 +196,8 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGeneratorImpl;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -690,8 +692,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final SpecVersion specVersionElectra = spec.forMilestone(SpecMilestone.ELECTRA);
       final SchemaDefinitionsElectra schemaDefinitionsElectra =
           SchemaDefinitionsElectra.required(specVersionElectra.getSchemaDefinitions());
+      final ExecutionProofGenerator executionProofGenerator = new ExecutionProofGeneratorImpl(schemaDefinitionsElectra);
+
       executionProofManager =
-          new ExecutionProofManagerImpl(executionProofGossipValidator, executionProofGossipChannel::publishExecutionProofs, schemaDefinitionsElectra, zkConfig.getStatelessMinProofsRequired());
+          new ExecutionProofManagerImpl(executionProofGossipValidator,executionProofGenerator, executionProofGossipChannel::publishExecutionProofs, zkConfig.getStatelessMinProofsRequired());
 
     } else {
       executionProofManager = ExecutionProofManager.NOOP;

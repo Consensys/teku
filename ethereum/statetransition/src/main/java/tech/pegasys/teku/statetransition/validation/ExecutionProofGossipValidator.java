@@ -44,7 +44,7 @@ public class ExecutionProofGossipValidator {
   public SafeFuture<InternalValidationResult> validate(
       final ExecutionProof executionProof, final UInt64 subnetId) {
 
-  if(!executionProof.getVersion().equals(UInt64.ONE)){
+  if(!executionProof.getVersion().get().equals(UInt64.ONE)){
       LOG.trace(
               "ExecutionProof for block root {} has unsupported version {}",
               executionProof.getBlockRoot(), executionProof.getVersion());

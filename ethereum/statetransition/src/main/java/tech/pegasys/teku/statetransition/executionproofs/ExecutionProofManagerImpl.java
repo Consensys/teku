@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -43,7 +45,8 @@ import tech.pegasys.teku.statetransition.forkchoice.ExecutionProofsAvailabilityC
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-import static tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker.NOOP_EXECUTION_PROOF;
+import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
+
 
 public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
@@ -54,19 +57,20 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private final Map<Bytes32, Set<ExecutionProof>> validatedExecutionProofsByBlockRoot =
       new ConcurrentHashMap<>();
     private final Consumer<ExecutionProof> onCreatedProof;
-    private final SchemaDefinitionsElectra schemaDefinitionsElectra;
     private final int minProofsRequired;
-  private static final Logger LOG = LogManager.getLogger();
+    private static final Logger LOG = LogManager.getLogger();
+    private final int attemptsToGetProof = 3;
+    final ExecutionProofGenerator executionProofGenerator;
 
   public ExecutionProofManagerImpl(
           final ExecutionProofGossipValidator executionProofGossipValidator,
+          final ExecutionProofGenerator executionProofGenerator,
           final Consumer<ExecutionProof> onCreatedProof,
-      final SchemaDefinitionsElectra schemaDefinitionsElectra,
           final int minProofsRequired) {
     this.executionProofGossipValidator = executionProofGossipValidator;
       this.onCreatedProof = onCreatedProof;
-      this.schemaDefinitionsElectra = schemaDefinitionsElectra;
       this.minProofsRequired = minProofsRequired;
+    this.executionProofGenerator = executionProofGenerator;
   }
 
   @Override
@@ -80,7 +84,20 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       final ExecutionProof executionProof, final Optional<UInt64> arrivalTimestamp) {
     LOG.debug("Received execution proof for block {}", executionProof);
     return executionProofGossipValidator.validate(
-        executionProof, executionProof.getSubnetId().get());
+        executionProof, executionProof.getSubnetId().get()).thenApply(result -> {
+            if(result.isAccept()){
+                //TODO check if proof for same block and subnet already exists this could be a different proof for same block and subnet
+                // in this case do we want to replace a existing valid proof with a new one?
+                LOG.debug("Adding execution proof for block {} to cache", executionProof );
+                validatedExecutionProofsByBlockRoot
+                        .computeIfAbsent(executionProof.getBlockRoot().get(), k -> ConcurrentHashMap.newKeySet())
+                        .add(executionProof);
+                LOG.debug("Added execution proof to cache {}", validatedExecutionProofsByBlockRoot.toString() );
+            } else {
+                LOG.debug("Rejected execution proof for block {}: {}", executionProof.getBlockRoot(), result);
+            }
+        return result;
+    });
   }
 
   @Override
@@ -95,79 +112,60 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     return new ExecutionProofsAvailabilityChecker(this,block);
   }
 
+  @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> validateBlockWithExecutionProofs(final SignedBeaconBlock block) {
-      if(validatedExecutionProofsByBlockRoot.containsKey(block.getRoot())) {
-          List<ExecutionProof> proofs = validatedExecutionProofsByBlockRoot.get(block.getRoot()).stream().toList();
-          if(proofs.size() >= minProofsRequired) {
-              return SafeFuture.completedFuture(
-                      DataAndValidationResult.validResult(proofs));
+      for(int attempt=0; attempt < attemptsToGetProof; attempt++) {
+          final DataAndValidationResult<ExecutionProof> result = checkForValidProofs(block);
+          if (result.isValid()) {
+              return SafeFuture.completedFuture(result);
+          }
+          try {
+              Thread.sleep(100L);
+          } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+              return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
           }
       }
+      LOG.debug("Checking proofs for block {}",block.getRoot());
+
       return SafeFuture.completedFuture(
               DataAndValidationResult.notAvailable());
   }
 
-  @Override
-  public SafeFuture<Void> generateExecutionProof(final SignedBlockContainer blockContainer) {
-    // maybe we want to dealy proof generation like Kev did in LH
-    // something between 1000-3000ms randomly, for now just do it immediately
-      try {
-          Thread.sleep(1000);
-      } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-      }
-      final ExecutionPayload executionPayload =
-        blockContainer
-            .getSignedBlock()
-            .getBeaconBlock()
-            .get()
-            .getBody()
-            .getOptionalExecutionPayload()
-            .get();
-    final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
-    final Bytes32 blockHash = executionPayload.getBlockHash();
-    Bytes dummyWitness =
-        Bytes.of(
-            ("dummy_witness_for_block_" + blockHash.toHexString())
-                .getBytes(Charset.defaultCharset()));
-    Set<ExecutionProof> generatedProofs = new HashSet<>();
-    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
-      final ExecutionProof executionProof =
-          generateProof(blockRoot, executionPayload, dummyWitness, UInt64.valueOf(i));
-      generatedProofs.add(executionProof);
-      LOG.info("Generated proof for subnet {}", executionProof.getSubnetId());
-        onCreatedProof.accept(executionProof);
+    private DataAndValidationResult<ExecutionProof> checkForValidProofs(final SignedBeaconBlock block) {
+        if(validatedExecutionProofsByBlockRoot.containsKey(block.getRoot())) {
+            final List<ExecutionProof> proofs = validatedExecutionProofsByBlockRoot.get(block.getRoot()).stream().toList();
+            LOG.debug("Found {} previously validated proofs for block {}",proofs.size(),block.getRoot());
+            if(proofs.size() >= minProofsRequired) {
+                return DataAndValidationResult.validResult(proofs);
+            }
+            else{
+                return DataAndValidationResult.invalidResult(proofs);
+            }
+        }
+        else{
+            return DataAndValidationResult.notAvailable();
+        }
     }
-    validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
-    LOG.debug("Generated execution proof for block {}: {}", blockRoot, generatedProofs);
 
+  public SafeFuture<Void> generateExecutionProof(final SignedBlockContainer blockContainer) {
+        final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
+        LOG.info("Generating execution proofs for block {}", blockRoot);
+        final Set<ExecutionProof> generatedProofs = new HashSet<>();
+        // Generate proofs for all subnets
+    IntStream.range(0, MAX_EXECUTION_PROOF_SUBNETS).forEach(subnetIndex -> {
+        executionProofGenerator.generateExecutionProof(blockContainer, subnetIndex)
+                .thenAccept(proof-> {
+                            generatedProofs.add(proof);
+                            LOG.info("Generated proof for subnet {}", proof.getSubnetId());
+                            onCreatedProof.accept(proof);
+                            LOG.debug("Generated execution proof for block {}: {}", blockRoot, generatedProofs);
+                });
+        validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
+    });
 
     return SafeFuture.completedFuture(null);
   }
 
-  private ExecutionProof generateProof(
-      final Bytes32 blockRoot,
-      final ExecutionPayload executionPayload,
-      final Bytes dummyWitness,
-      final UInt64 subnetId) {
-    final Bytes32 blockHash = executionPayload.getBlockHash();
-    final UInt64 blockNumber = executionPayload.getBlockNumber();
-    final String dummyProof =
-        "dummy_proof_subnet_"
-            + subnetId.intValue()
-            + "_block_"
-            + blockHash.toHexString()
-            + "_number_"
-            + blockNumber.intValue()
-            + "_witness_len_"
-            + dummyWitness.size();
 
-    ExecutionProofSchema executionProofSchema = schemaDefinitionsElectra.getExecutionProofSchema();
-    return executionProofSchema.create(
-        blockRoot,
-        executionPayload.getBlockHash(),
-        subnetId,
-        UInt64.ONE,
-        Bytes.of(dummyProof.getBytes(Charset.defaultCharset())));
-  }
 }

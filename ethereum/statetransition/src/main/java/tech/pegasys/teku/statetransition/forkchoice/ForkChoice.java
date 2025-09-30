@@ -474,6 +474,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         executionProofManager.createAvailabilityChecker(block);
 
     availabilityChecker.initiateDataAvailabilityCheck();
+    epAvailabilityChecker.initiateDataAvailabilityCheck();
 
     final BeaconState postState;
     try {
@@ -505,6 +506,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               if (result.isSuccess()) {
                 LOG.info("DA check result was" + result.toLogString());
               }
+              LOG.info("DAS availability check result was" + result.toLogString());
             });
 
     final SafeFuture<? extends DataAndValidationResult<?>> dataAndValidationResultSafeFuture =

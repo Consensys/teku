@@ -8,6 +8,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 
+import java.time.Duration;
+
 public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<ExecutionProof> {
     private final ExecutionProofManager executionProofManager;
     private final SafeFuture<DataAndValidationResult<ExecutionProof>> validationResult =
@@ -22,7 +24,7 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
 
     @Override
     public boolean initiateDataAvailabilityCheck() {
-        executionProofManager.validateBlockWithExecutionProofs(block).propagateTo(validationResult);
+        executionProofManager.validateBlockWithExecutionProofs(block).orTimeout(Duration.ofSeconds(10)).propagateTo(validationResult);
         return true;
     }
 
