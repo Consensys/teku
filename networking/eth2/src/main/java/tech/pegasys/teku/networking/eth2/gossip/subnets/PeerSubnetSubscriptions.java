@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
-
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -87,9 +85,7 @@ public class PeerSubnetSubscriptions {
             .orElse(1);
 
     final PeerSubnetSubscriptions subscriptions =
-        builder(
-                currentSchemaDefinitions,
-                SszBitvectorSchema.create(dataColumnSidecarSubnetCount))
+        builder(currentSchemaDefinitions, SszBitvectorSchema.create(dataColumnSidecarSubnetCount))
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
             .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(
@@ -175,18 +171,14 @@ public class PeerSubnetSubscriptions {
   static Builder builder(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
       final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
-    return new Builder(
-        currentSchemaDefinitions,
-        dataColumnSidecarSubnetBitmaskSchema);
+    return new Builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema);
   }
 
   @VisibleForTesting
   static PeerSubnetSubscriptions createEmpty(
       final SchemaDefinitionsSupplier currentSchemaDefinitions,
       final SszBitvectorSchema<?> dataColumnSidecarSubnetBitmaskSchema) {
-    return builder(
-            currentSchemaDefinitions,
-            dataColumnSidecarSubnetBitmaskSchema)
+    return builder(currentSchemaDefinitions, dataColumnSidecarSubnetBitmaskSchema)
         .nodeIdToDataColumnSidecarSubnetsCalculator(NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
         .build();
   }
@@ -234,7 +226,7 @@ public class PeerSubnetSubscriptions {
     return dataColumnSidecarSubnetSubscriptions.isSubnetRelevant(subnetId);
   }
 
-    public PeerScorer createScorer() {
+  public PeerScorer createScorer() {
     return SubnetScorer.create(this);
   }
 
@@ -371,7 +363,6 @@ public class PeerSubnetSubscriptions {
           SubnetSubscriptions.builder(currentSchemaDefinitions.getSyncnetsENRFieldSchema());
       dataColumnSidecarSubnetSubscriptions =
           SubnetSubscriptions.builder(dataColumnSidecarSubnetBitmaskSchema);
-
     }
 
     public PeerSubnetSubscriptions build() {

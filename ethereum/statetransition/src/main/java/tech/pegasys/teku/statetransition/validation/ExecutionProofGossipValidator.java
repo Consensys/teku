@@ -46,12 +46,13 @@ public class ExecutionProofGossipValidator {
     if (executionProof.getSubnetId().longValue() != subnetId.longValue()) {
       LOG.trace(
           "ExecutionProof for block root {} / block hash {} does not match the gossip subnetId",
-          executionProof.getBlockRoot(),executionProof.getBlockHash());
+          executionProof.getBlockRoot(),
+          executionProof.getBlockHash());
       return SafeFuture.completedFuture(InternalValidationResult.reject("SubnetId mismatch"));
     }
 
     if (receivedValidExecutionProofSet.contains(executionProof)) {
-        LOG.trace("Received duplicate execution proof {}", executionProof);
+      LOG.trace("Received duplicate execution proof {}", executionProof);
       // Already seen and valid
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
