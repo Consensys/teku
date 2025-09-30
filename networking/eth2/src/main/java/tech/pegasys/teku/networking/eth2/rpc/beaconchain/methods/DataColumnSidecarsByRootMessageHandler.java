@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
@@ -115,15 +115,15 @@ public class DataColumnSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final DataColumnSidecarsByRootRequestMessage request) {
-    final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
-    if (request.getMaximumResponseChunks() > maxRequestDataColumnSidecars) {
+    final int maxRequestIdentifiers = specConfigFulu.getMaxRequestBlocksDeneb();
+    if (request.size() > maxRequestIdentifiers) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
-                  "Only a maximum of %s data column sidecars can be requested per request",
-                  maxRequestDataColumnSidecars)));
+                  "Only a maximum of %d by root identifiers are allowed per request",
+                  maxRequestIdentifiers)));
     }
     return Optional.empty();
   }
@@ -192,11 +192,7 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               responseCallbackWithLogging.completeSuccessfully();
             })
-        .finish(
-            err -> {
-              peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
-              handleError(responseCallbackWithLogging, err);
-            });
+        .finish(err -> handleError(responseCallbackWithLogging, err));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
@@ -228,10 +224,11 @@ public class DataColumnSidecarsByRootMessageHandler
       final DataColumnIdentifier identifier, final Optional<DataColumnSidecar> maybeSidecar) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
-        .orElse(
-            combinedChainDataClient
-                .getBlockByBlockRoot(identifier.blockRoot())
-                .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
+        .orElseGet(
+            () ->
+                combinedChainDataClient
+                    .getBlockByBlockRoot(identifier.blockRoot())
+                    .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
               if (maybeSlot.isEmpty()) {

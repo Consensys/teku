@@ -29,6 +29,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -74,6 +76,10 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
     return Optional.empty();
   }
 
+  default Optional<BeaconBlockBodySchemaGloas<?>> toVersionGloas() {
+    return Optional.empty();
+  }
+
   default Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
     return Optional.empty();
   }
@@ -87,6 +93,10 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   }
 
   default Optional<BlindedBeaconBlockBodySchemaElectra<?>> toBlindedVersionElectra() {
+    return Optional.empty();
+  }
+
+  default Optional<BlindedBeaconBlockBodySchemaGloas<?>> toBlindedVersionGloas() {
     return Optional.empty();
   }
 

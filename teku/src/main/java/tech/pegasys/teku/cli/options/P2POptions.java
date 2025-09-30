@@ -29,9 +29,9 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.converter.OptionalIntConverter;
-import tech.pegasys.teku.cli.util.MultilineEntriesReader;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.MultilineEntriesReader;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -495,6 +495,16 @@ public class P2POptions {
   private int historicalDataMaxConcurrentQueries =
       P2PConfig.DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES;
 
+  @Option(
+      names = {"--Xp2p-historical-data-max-query-queue-size"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "Limits the number of queries being queued when handling RPC requests. It has no effect if max-concurrent-queries is set to 0.",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "1")
+  private int historicalDataMaxQueryQueueSize = P2PConfig.DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE;
+
   private OptionalInt getP2pLowerBound() {
     if (p2pUpperBound.isPresent() && p2pLowerBound.isPresent()) {
       return p2pLowerBound.getAsInt() < p2pUpperBound.getAsInt() ? p2pLowerBound : p2pUpperBound;
@@ -581,7 +591,8 @@ public class P2POptions {
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
-                  .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries);
+                  .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
+                  .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

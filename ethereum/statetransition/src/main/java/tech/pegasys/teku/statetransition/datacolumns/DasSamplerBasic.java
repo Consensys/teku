@@ -30,11 +30,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
@@ -147,7 +148,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                               blockRoot);
 
                           retrievedColumns.stream()
-                              .map(custody::onNewValidatedDataColumnSidecar)
+                              .map(
+                                  sidecar ->
+                                      custody.onNewValidatedDataColumnSidecar(
+                                          sidecar, RemoteOrigin.RPC))
                               .forEach(updateFuture -> updateFuture.finishStackTrace());
                         } else {
                           throw new IllegalStateException(

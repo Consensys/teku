@@ -48,8 +48,8 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -204,6 +204,11 @@ public class KvStoreDatabase implements Database {
   @Override
   public Optional<Bytes32> getLatestCanonicalBlockRoot() {
     return dao.getLatestCanonicalBlockRoot();
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return dao.getCustodyGroupCount();
   }
 
   @Override
@@ -763,6 +768,7 @@ public class KvStoreDatabase implements Database {
     final Checkpoint bestJustifiedCheckpoint = dao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = dao.getLatestFinalizedState().orElseThrow();
     final Optional<Bytes32> latestCanonicalBlockRoot = dao.getLatestCanonicalBlockRoot();
+    final Optional<UInt64> custodyGroupCount = dao.getCustodyGroupCount();
 
     final Map<UInt64, VoteTracker> votes = dao.getVotes();
 
@@ -810,7 +816,8 @@ public class KvStoreDatabase implements Database {
             bestJustifiedCheckpoint,
             blockInformation,
             votes,
-            latestCanonicalBlockRoot));
+            latestCanonicalBlockRoot,
+            custodyGroupCount));
   }
 
   @Override
@@ -1297,6 +1304,7 @@ public class KvStoreDatabase implements Database {
               });
 
       update.getLatestCanonicalBlockRoot().ifPresent(updater::setLatestCanonicalBlockRoot);
+      update.getCustodyGroupCount().ifPresent(updater::setCustodyGroupCount);
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       latestFinalizedStateUpdateStartTime = System.currentTimeMillis();

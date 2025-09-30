@@ -366,7 +366,7 @@ public class DebugDbCommand implements Runnable {
           .forEach(
               k -> {
                 if (filter == null || k.contains(filter)) {
-                  System.out.printf("%-30s: %s\n", k, variables.get(k).orElse("EMPTY"));
+                  System.out.printf("%-33s: %s\n", k, variables.get(k).orElse("EMPTY"));
                 }
               });
     }

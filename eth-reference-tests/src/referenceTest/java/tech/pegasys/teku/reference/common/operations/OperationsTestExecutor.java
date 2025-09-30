@@ -36,6 +36,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -58,7 +59,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBal
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.statetransition.attestation.PooledAttestation;
@@ -89,7 +89,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     WITHDRAWAL,
     DEPOSIT_REQUEST,
     WITHDRAWAL_REQUEST,
-    CONSOLIDATION_REQUEST
+    CONSOLIDATION_REQUEST,
+    EXECUTION_PAYLOAD_BID;
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -141,6 +142,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/consolidation_request",
               new OperationsTestExecutor<>(
                   "consolidation_request.ssz_snappy", Operation.CONSOLIDATION_REQUEST))
+          .put(
+              "operations/execution_payload_bid",
+              new OperationsTestExecutor<>("block.ssz_snappy", Operation.EXECUTION_PAYLOAD_BID))
           .build();
 
   private final String dataFileName;
@@ -329,17 +333,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         final ExecutionMeta executionMeta =
             loadYaml(testDefinition, "execution.yaml", ExecutionMeta.class);
 
-        final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
-            testDefinition
-                .getSpec()
-                .getGenesisSchemaDefinitions()
-                .toVersionBellatrix()
-                .orElseThrow();
         final BeaconBlockBody beaconBlockBody =
             loadSsz(
                 testDefinition,
                 dataFileName,
-                schemaDefinitionsBellatrix.getBeaconBlockBodySchema());
+                testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockBodySchema());
 
         processor.processExecutionPayload(
             state,
@@ -352,6 +350,14 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       case DEPOSIT_REQUEST -> processDepositRequest(testDefinition, state, processor);
       case WITHDRAWAL_REQUEST -> processWithdrawalRequest(testDefinition, state, processor);
       case CONSOLIDATION_REQUEST -> processConsolidations(testDefinition, state, processor);
+      case EXECUTION_PAYLOAD_BID -> {
+        final BeaconBlock beaconBlock =
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema());
+        processor.processExecutionPayloadBid(state, beaconBlock);
+      }
       default ->
           throw new UnsupportedOperationException(
               "Operation " + operation + " not implemented in OperationTestExecutor");
@@ -383,8 +389,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processDepositRequest(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<DepositRequest, ?> depositRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -399,8 +404,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processWithdrawalRequest(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<WithdrawalRequest, ?> withdrawalRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -415,8 +419,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
   private void processConsolidations(
       final TestDefinition testDefinition,
       final MutableBeaconState state,
-      final OperationProcessor processor)
-      throws BlockProcessingException {
+      final OperationProcessor processor) {
     final SszListSchema<ConsolidationRequest, ?> consolidationRequestsSchema =
         SchemaDefinitionsElectra.required(
                 testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
@@ -494,7 +497,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           WITHDRAWAL,
           DEPOSIT_REQUEST,
           WITHDRAWAL_REQUEST,
-          CONSOLIDATION_REQUEST -> {}
+          CONSOLIDATION_REQUEST,
+          EXECUTION_PAYLOAD_BID -> {}
     }
   }
 

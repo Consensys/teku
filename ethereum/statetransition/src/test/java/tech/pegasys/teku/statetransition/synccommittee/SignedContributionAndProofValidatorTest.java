@@ -14,9 +14,9 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 
-import java.time.Duration;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -83,16 +83,15 @@ class SignedContributionAndProofValidatorTest {
   @Test
   void shouldAcceptWhenValidInSlotLastSlotOfSyncCommitteePeriod() {
     setupWithDefaultSpec();
-    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(ZERO);
     final UInt64 period2StartEpoch =
-        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
+        syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(ZERO);
     final UInt64 period3StartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(period2StartEpoch);
     final UInt64 period2StartSlot = spec.computeStartSlotAtEpoch(period2StartEpoch);
     final UInt64 period3StartSlot = spec.computeStartSlotAtEpoch(period3StartEpoch);
     final UInt64 lastSlotOfPeriod = period3StartSlot.minus(1);
-    final UInt64 slotSeconds = lastSlotOfPeriod.times(spec.getSecondsPerSlot(lastSlotOfPeriod));
-    timeProvider.advanceTimeBy(Duration.ofSeconds(slotSeconds.longValue()));
+    timeProvider.advanceTimeByMillis(lastSlotOfPeriod.times(spec.getSlotDurationMillis(ZERO)));
 
     // The first two sync committees are the same so advance the chain into the second period
     // so we can test going into the third period which is actually different
@@ -114,9 +113,8 @@ class SignedContributionAndProofValidatorTest {
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
     final UInt64 slot = message.getMessage().getContribution().getSlot().plus(1);
-    // disparity is 500 millis, so 1 second into next slot will be time
-    final UInt64 slotSeconds = slot.times(spec.getSecondsPerSlot(slot)).plus(1);
-    timeProvider.advanceTimeBy(Duration.ofSeconds(slotSeconds.longValue()));
+    // disparity is 500 millis, so 501 millis will be minimum
+    timeProvider.advanceTimeByMillis(slot.times(spec.getSlotDurationMillis(slot)).plus(501));
 
     storageSystem
         .chainUpdater()
@@ -157,8 +155,7 @@ class SignedContributionAndProofValidatorTest {
     setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
-            .createValidSignedContributionAndProofBuilder(
-                UInt64.ZERO, dataStructureUtil.randomBytes32())
+            .createValidSignedContributionAndProofBuilder(ZERO, dataStructureUtil.randomBytes32())
             .build();
     final SafeFuture<InternalValidationResult> result = validator.validate(message);
     assertThat(result).isCompletedWithValue(ACCEPT);
@@ -216,7 +213,7 @@ class SignedContributionAndProofValidatorTest {
 
     assertThat(validator.validate(message)).isCompletedWithValue(ACCEPT);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
-    timeProvider.advanceTimeBySeconds(spec.getSecondsPerSlot(nextSlot));
+    timeProvider.advanceTimeByMillis(spec.getSlotDurationMillis(nextSlot));
     assertThat(validator.validate(nextSlotMessage)).isCompletedWithValue(ACCEPT);
   }
 
@@ -307,8 +304,7 @@ class SignedContributionAndProofValidatorTest {
     final Bytes32 blockRoot = chainBuilder.getLatestBlockAndState().getRoot();
     final UInt64 slot =
         UInt64.valueOf(config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1);
-    final UInt64 slotSeconds = slot.times(spec.getSecondsPerSlot(slot));
-    timeProvider.advanceTimeBy(Duration.ofSeconds(slotSeconds.longValue()));
+    timeProvider.advanceTimeByMillis(slot.times(spec.getSlotDurationMillis(slot)));
     storageSystem.chainUpdater().advanceChain(slot);
 
     final SignedContributionAndProof message =
@@ -342,7 +338,7 @@ class SignedContributionAndProofValidatorTest {
   void shouldUseCorrectForkForSignatureVerificationWhenHeadStateIsBeforeNewMilestone() {
     final SignedBlockAndState genesis =
         setupWithSpec(
-            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE));
+            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(ZERO, UInt64.ONE));
     final UInt64 bellatrixStartSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
     storageSystem.chainUpdater().setCurrentSlot(bellatrixStartSlot);
     timeProvider.advanceTimeBySeconds(
@@ -365,7 +361,7 @@ class SignedContributionAndProofValidatorTest {
   void shouldUseCorrectForkForSignatureVerificationWhenSlotIsJustBeforeNewMilestone() {
     final SignedBlockAndState genesis =
         setupWithSpec(
-            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(UInt64.ZERO, UInt64.ONE));
+            TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(ZERO, UInt64.ONE));
     final UInt64 lastAltairSlot = spec.computeStartSlotAtEpoch(UInt64.ONE).minus(1);
     storageSystem.chainUpdater().setCurrentSlot(lastAltairSlot);
     timeProvider.advanceTimeBySeconds(

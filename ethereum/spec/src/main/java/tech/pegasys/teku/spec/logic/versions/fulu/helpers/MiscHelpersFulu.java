@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,12 +48,13 @@ import tech.pegasys.teku.kzg.KZGCellID;
 import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -241,23 +243,22 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
           numberOfColumns);
       return false;
     }
-    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
+    if (dataColumnSidecar.getKzgCommitments().isEmpty()) {
       LOG.trace("DataColumnSidecar has no kzg commitments");
       return false;
     }
-    if (dataColumnSidecar.getDataColumn().size()
-        != dataColumnSidecar.getSszKZGCommitments().size()) {
+    if (dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgCommitments().size()) {
       LOG.trace(
           "DataColumnSidecar has unequal data column ({}) and kzg commitments ({}) sizes",
-          dataColumnSidecar.getDataColumn().size(),
-          dataColumnSidecar.getSszKZGCommitments().size());
+          dataColumnSidecar.getColumn().size(),
+          dataColumnSidecar.getKzgCommitments().size());
       return false;
     }
-    if (dataColumnSidecar.getDataColumn().size() != dataColumnSidecar.getSszKZGProofs().size()) {
+    if (dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgProofs().size()) {
       LOG.trace(
           "DataColumnSidecar has unequal data column ({}) and kzg proofs ({}) sizes",
-          dataColumnSidecar.getDataColumn().size(),
-          dataColumnSidecar.getSszKZGProofs().size());
+          dataColumnSidecar.getColumn().size(),
+          dataColumnSidecar.getKzgProofs().size());
       return false;
     }
     return true;
@@ -267,19 +268,19 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
 
     final List<KZGCellWithColumnId> cellWithIds =
-        IntStream.range(0, dataColumnSidecar.getDataColumn().size())
+        IntStream.range(0, dataColumnSidecar.getColumn().size())
             .mapToObj(
                 rowIndex ->
                     KZGCellWithColumnId.fromCellAndColumn(
-                        new KZGCell(dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
+                        new KZGCell(dataColumnSidecar.getColumn().get(rowIndex).getBytes()),
                         dataColumnSidecar.getIndex().intValue()))
             .collect(Collectors.toList());
     return kzg.verifyCellProofBatch(
-        dataColumnSidecar.getSszKZGCommitments().stream()
+        dataColumnSidecar.getKzgCommitments().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .toList(),
         cellWithIds,
-        dataColumnSidecar.getSszKZGProofs().stream().map(SszKZGProof::getKZGProof).toList());
+        dataColumnSidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList());
   }
 
   public boolean verifyDataColumnSidecarKzgProofsBatch(
@@ -289,36 +290,36 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         dataColumnSidecars.stream()
             .flatMap(
                 dataColumnSidecar ->
-                    IntStream.range(0, dataColumnSidecar.getDataColumn().size())
+                    IntStream.range(0, dataColumnSidecar.getColumn().size())
                         .mapToObj(
                             rowIndex ->
                                 KZGCellWithColumnId.fromCellAndColumn(
                                     new KZGCell(
-                                        dataColumnSidecar.getDataColumn().get(rowIndex).getBytes()),
+                                        dataColumnSidecar.getColumn().get(rowIndex).getBytes()),
                                     dataColumnSidecar.getIndex().intValue())))
             .toList();
     return kzg.verifyCellProofBatch(
         dataColumnSidecars.stream()
-            .flatMap(sidecar -> sidecar.getSszKZGCommitments().stream())
+            .flatMap(sidecar -> sidecar.getKzgCommitments().stream())
             .map(SszKZGCommitment::getKZGCommitment)
             .toList(),
         cellWithIds,
         dataColumnSidecars.stream()
-            .flatMap(sidecar -> sidecar.getSszKZGProofs().stream())
+            .flatMap(sidecar -> sidecar.getKzgProofs().stream())
             .map(SszKZGProof::getKZGProof)
             .toList());
   }
 
   public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
-    if (dataColumnSidecar.getSszKZGCommitments().isEmpty()) {
+    if (dataColumnSidecar.getKzgCommitments().isEmpty()) {
       return false;
     }
     return predicates.isValidMerkleBranch(
-        dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
-        dataColumnSidecar.getKzgCommitmentsInclusionProof(),
+        dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
+        DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof(),
         specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
         getBlockBodyKzgCommitmentsGeneralizedIndex(),
-        dataColumnSidecar.getBlockBodyRoot());
+        DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot());
   }
 
   public int getBlockBodyKzgCommitmentsGeneralizedIndex() {
@@ -457,7 +458,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     }
 
     final DataColumnSchema dataColumnSchema = schemaDefinitionsFulu.getDataColumnSchema();
-    final DataColumnSidecarSchema dataColumnSidecarSchema =
+    final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
         schemaDefinitionsFulu.getDataColumnSidecarSchema();
     final SszListSchema<SszKZGProof, ?> kzgProofsSchema =
         dataColumnSidecarSchema.getKzgProofsSchema();
@@ -479,12 +480,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final DataColumn dataColumn = dataColumnSchema.create(columnCells);
 
               return dataColumnSidecarSchema.create(
-                  UInt64.valueOf(cellID),
-                  dataColumn,
-                  sszKZGCommitments,
-                  columnProofs,
-                  signedBeaconBlockHeader,
-                  kzgCommitmentsInclusionProof);
+                  builder ->
+                      builder
+                          .index(UInt64.valueOf(cellID))
+                          .column(dataColumn)
+                          .kzgCommitments(sszKZGCommitments)
+                          .kzgProofs(columnProofs)
+                          .signedBlockHeader(signedBeaconBlockHeader)
+                          .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof));
             })
         .toList();
   }
@@ -502,16 +505,17 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     }
     final List<List<MatrixEntry>> columnBlobEntries =
         existingSidecars.stream()
+            .sorted(Comparator.comparing(DataColumnSidecar::getIndex))
             .map(
                 sidecar ->
-                    IntStream.range(0, sidecar.getDataColumn().size())
+                    IntStream.range(0, sidecar.getColumn().size())
                         .mapToObj(
                             rowIndex ->
                                 schemaDefinitionsFulu
                                     .getMatrixEntrySchema()
                                     .create(
-                                        sidecar.getDataColumn().get(rowIndex),
-                                        sidecar.getSszKZGProofs().get(rowIndex).getKZGProof(),
+                                        sidecar.getColumn().get(rowIndex),
+                                        sidecar.getKzgProofs().get(rowIndex).getKZGProof(),
                                         sidecar.getIndex(),
                                         UInt64.valueOf(rowIndex)))
                         .toList())
@@ -521,11 +525,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final DataColumnSidecar anyExistingSidecar =
         existingSidecars.stream().findFirst().orElseThrow();
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
-        anyExistingSidecar.getSignedBeaconBlockHeader();
+        DataColumnSidecarFulu.required(anyExistingSidecar).getSignedBlockHeader();
     return constructDataColumnSidecars(
         signedBeaconBlockHeader,
-        anyExistingSidecar.getSszKZGCommitments(),
-        anyExistingSidecar.getKzgCommitmentsInclusionProof().asListUnboxed(),
+        anyExistingSidecar.getKzgCommitments(),
+        DataColumnSidecarFulu.required(anyExistingSidecar)
+            .getKzgCommitmentsInclusionProof()
+            .asListUnboxed(),
         extendedMatrix);
   }
 
@@ -536,7 +542,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>The data structure for storing cells is implementation-dependent.
    */
-  public List<List<MatrixEntry>> recoverMatrix(
+  private List<List<MatrixEntry>> recoverMatrix(
       final List<List<MatrixEntry>> partialMatrix, final KZG kzg) {
     return IntStream.range(0, partialMatrix.size())
         .parallel()

@@ -745,10 +745,7 @@ public class ChainDataProvider {
     try {
       // need to get preState
       final BeaconState preState = spec.processSlots(data, proposalSlot);
-      return spec.atSlot(proposalSlot)
-          .getBlockProcessor()
-          .getExpectedWithdrawals(preState)
-          .getWithdrawalList();
+      return spec.getExpectedWithdrawals(preState).orElse(List.of());
     } catch (SlotProcessingException | EpochProcessingException e) {
       LOG.debug("Failed to get expected withdrawals for slot {}", proposalSlot, e);
     }

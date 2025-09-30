@@ -310,6 +310,37 @@ class ForkChoiceUtilTest {
     assertThat(forkChoiceUtil.canOptimisticallyImport(store, blockToImport)).isTrue();
   }
 
+  public static Stream<Arguments> basisPointsComputationParameters() {
+    return Stream.of(
+        Arguments.of(1667, 1000),
+        Arguments.of(3333, 1999),
+        Arguments.of(6667, 4000),
+        Arguments.of(10000, 6000));
+  }
+
+  @ParameterizedTest
+  @MethodSource("basisPointsComputationParameters")
+  void canComputeSlotComponentDurationMillis(
+      final int basisPoints, final int expectedDurationMillis) {
+    assertThat(forkChoiceUtil.getSlotComponentDurationMillis(basisPoints))
+        .isEqualTo(expectedDurationMillis);
+  }
+
+  @Test
+  void check_AttestationDueMillis() {
+    assertThat(forkChoiceUtil.getAttestationDueMillis()).isEqualTo(1999);
+  }
+
+  @Test
+  void check_AggregateDueMillis() {
+    assertThat(forkChoiceUtil.getAggregateDueMillis()).isEqualTo(4000);
+  }
+
+  @Test
+  void check_proposerReorgCutoffMillis() {
+    assertThat(forkChoiceUtil.getProposerReorgCutoffMillis()).isEqualTo(1000);
+  }
+
   private ReadOnlyStore mockStore(
       final long currentSlot, final Bytes32... blocksWithNonDefaultPayloads) {
     final ReadOnlyStore store = mock(ReadOnlyStore.class);

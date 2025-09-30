@@ -35,7 +35,7 @@ public class CompressedBranchInfoSerializerPropertyTest {
     final byte[] serialized = COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER.serialize(value);
     final TreeNodeSource.CompressedBranchInfo deserialized =
         COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER.deserialize(serialized);
-    assertThat(deserialized).isEqualToComparingFieldByField(value);
+    assertThat(deserialized).usingDefaultComparator().isEqualTo(value);
   }
 
   @Provide

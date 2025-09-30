@@ -27,8 +27,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -289,6 +289,11 @@ public class ChainStorage
   @Override
   public SafeFuture<Optional<Bytes32>> getLatestCanonicalBlockRoot() {
     return SafeFuture.of(database::getLatestCanonicalBlockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getCustodyGroupCount() {
+    return SafeFuture.of(database::getCustodyGroupCount);
   }
 
   @Override

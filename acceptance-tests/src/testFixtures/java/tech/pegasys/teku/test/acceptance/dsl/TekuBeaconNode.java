@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -516,7 +517,12 @@ public class TekuBeaconNode extends TekuNode {
           assertThat(maybeState.get().toVersionBellatrix()).isPresent();
           final BeaconStateBellatrix genesisState =
               maybeState.get().toVersionBellatrix().orElseThrow();
-          assertThat(genesisState.getLatestExecutionPayloadHeader().isDefault())
+          assertThat(
+                  genesisState
+                      .getLatestExecutionPayloadHeader()
+                      .map(ExecutionPayloadHeader::isDefault)
+                      // >= Gloas
+                      .orElse(false))
               .describedAs("Is latest execution payload header a default payload header")
               .isFalse();
         });

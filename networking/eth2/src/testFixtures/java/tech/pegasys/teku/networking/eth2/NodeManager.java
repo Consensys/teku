@@ -34,6 +34,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+@SuppressWarnings("deprecation")
 public class NodeManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final Spec DEFAULT_SPEC = TestSpecFactory.createMinimalPhase0();

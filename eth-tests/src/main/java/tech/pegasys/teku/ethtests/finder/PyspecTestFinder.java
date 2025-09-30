@@ -19,12 +19,30 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 @SuppressWarnings("MustBeClosedChecker")
 public class PyspecTestFinder implements TestFinder {
 
   public static final String PYSPEC_TEST_DIRECTORY_NAME = "pyspec_tests";
+
+  private final List<String> testTypeFilter = new ArrayList<>();
+
+  /** Used when we want to run ALL pyspec tests. */
+  public PyspecTestFinder() {}
+
+  /**
+   * Used when we want to limit the spec test for specific test types. This is particularly useful
+   * when we are implementing a new fork and can't support all test types yet.
+   *
+   * @param testTypesToFilter Only tests matching these types are going to run. The match is a
+   *     partial match (if type starts with the filter value)
+   */
+  public PyspecTestFinder(final String... testTypesToFilter) {
+    this.testTypeFilter.addAll(List.of(testTypesToFilter));
+  }
 
   @Override
   @MustBeClosed
@@ -34,12 +52,17 @@ public class PyspecTestFinder implements TestFinder {
         .filter(path -> path.resolve(PYSPEC_TEST_DIRECTORY_NAME).toFile().exists())
         .flatMap(
             unchecked(
-                testCategoryDir -> findPyspecTestCases(fork, config, testRoot, testCategoryDir)));
+                testCategoryDir ->
+                    findPyspecTestCases(fork, config, testRoot, testCategoryDir, testTypeFilter)));
   }
 
   @MustBeClosed
   private static Stream<TestDefinition> findPyspecTestCases(
-      final String fork, final String config, final Path testRoot, final Path testCategoryDir)
+      final String fork,
+      final String config,
+      final Path testRoot,
+      final Path testCategoryDir,
+      final List<String> testTypeFilter)
       throws IOException {
     final String testType = testRoot.relativize(testCategoryDir).toString();
     final Path pyspecDir = testCategoryDir.resolve(PYSPEC_TEST_DIRECTORY_NAME);
@@ -50,6 +73,11 @@ public class PyspecTestFinder implements TestFinder {
               final String testName = pyspecDir.relativize(testDir).toString();
               return new TestDefinition(
                   fork, config, testType, testName, testRoot.relativize(testDir));
-            });
+            })
+        .filter(
+            testDefinition ->
+                testTypeFilter.isEmpty()
+                    || testTypeFilter.stream()
+                        .anyMatch(type -> testDefinition.getTestType().startsWith(type)));
   }
 }

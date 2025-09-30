@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec;
 
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
@@ -38,6 +37,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -58,9 +59,9 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -96,6 +97,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -113,6 +115,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
 public class Spec {
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<SpecMilestone, SpecVersion> specVersions;
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
@@ -301,14 +304,6 @@ public class Spec {
 
   public int getSlotsPerEpoch(final UInt64 slot) {
     return atSlot(slot).getConfig().getSlotsPerEpoch();
-  }
-
-  public int getSecondsPerSlot(final UInt64 slot) {
-    return atSlot(slot).getConfig().getSecondsPerSlot();
-  }
-
-  public UInt64 getMillisPerSlot(final UInt64 slot) {
-    return secondsToMillis(getSecondsPerSlot(slot));
   }
 
   public long getMaxDeposits(final BeaconState state) {
@@ -548,6 +543,30 @@ public class Spec {
     return atState(state).beaconStateAccessors().getCommitteeCountPerSlot(state, epoch);
   }
 
+  public int getAttestationDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAttestationDueMillis();
+  }
+
+  public int getAggregateDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getAggregateDueMillis();
+  }
+
+  public int getProposerReorgCutoffMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getProposerReorgCutoffMillis();
+  }
+
+  public int getSlotDurationMillis(final UInt64 slot) {
+    return atSlot(slot).getConfig().getSlotDurationMillis();
+  }
+
+  public int getSyncMessageDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getSyncMessageDueMillis();
+  }
+
+  public int getContributionDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
+  }
+
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }
@@ -611,6 +630,28 @@ public class Spec {
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    final UInt64 attestationEpoch =
+        atEpoch(stateEpoch).miscHelpers().computeEpochAtSlot(attestation.getData().getSlot());
+    final UInt64 earliestEpochInRange =
+        attestationEpoch.minusMinZero(atEpoch(attestationEpoch).getConfig().getMaxSeedLookahead());
+    if (stateEpoch.isLessThan(earliestEpochInRange)) {
+      final UInt64 earliestSlot =
+          atEpoch(stateEpoch).miscHelpers().computeStartSlotAtEpoch(earliestEpochInRange);
+      LOG.debug(
+          "Processing empty slots for state at slot {}, target slot {}",
+          state.getSlot(),
+          earliestSlot);
+      try {
+        final BeaconState advancedState = processSlots(state, earliestSlot);
+        return atState(advancedState)
+            .getBeaconStateUtil()
+            .computeSubnetForAttestation(advancedState, attestation);
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        LOG.debug("Couldn't wind state at slot {} forward", state.getSlot(), e);
+      }
+    }
+
     return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
   }
 
@@ -821,11 +862,9 @@ public class Spec {
   }
 
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState state) {
-    if (!atState(state).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      return Optional.empty();
-    }
-    return Optional.of(
-        atState(state).getBlockProcessor().getExpectedWithdrawals(state).getWithdrawalList());
+    return atState(state)
+        .getWithdrawalsHelpers()
+        .map(withdrawalsHelpers -> withdrawalsHelpers.getExpectedWithdrawals(state).withdrawals());
   }
 
   // Block Processor Utils
@@ -924,6 +963,17 @@ public class Spec {
   public Optional<BLSPublicKey> getValidatorPubKey(
       final BeaconState state, final UInt64 validatorIndex) {
     return atState(state).beaconStateAccessors().getValidatorPubKey(state, validatorIndex);
+  }
+
+  // Execution Requests Processor Utils
+
+  public ExecutionRequestsProcessor getExecutionRequestsProcessor(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionRequestsProcessor()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution requests processor when spec does not have execution requests processor"));
   }
 
   // Validator Utils

@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference.common.operations;
 
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -67,13 +68,14 @@ public interface OperationProcessor {
   void processWithdrawals(MutableBeaconState state, ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException;
 
-  void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest)
-      throws BlockProcessingException;
+  void processDepositRequest(MutableBeaconState state, List<DepositRequest> depositRequest);
 
-  void processWithdrawalRequest(MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest)
-      throws BlockProcessingException;
+  void processWithdrawalRequest(
+      MutableBeaconState state, List<WithdrawalRequest> withdrawalRequest);
 
   void processConsolidationRequests(
-      MutableBeaconState state, List<ConsolidationRequest> consolidationRequest)
+      MutableBeaconState state, List<ConsolidationRequest> consolidationRequest);
+
+  void processExecutionPayloadBid(MutableBeaconState state, BeaconBlock beaconBlock)
       throws BlockProcessingException;
 }

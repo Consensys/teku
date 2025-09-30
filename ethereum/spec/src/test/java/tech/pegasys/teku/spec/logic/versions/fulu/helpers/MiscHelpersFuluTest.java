@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.google.common.io.Resources;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
@@ -38,12 +39,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
@@ -162,30 +167,34 @@ public class MiscHelpersFuluTest {
     final MiscHelpersFulu miscHelpersFuluWithMockPredicates =
         new MiscHelpersFulu(specConfigFulu, predicatesMock, schemaDefinitionsFulu);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
+        SchemaDefinitionsFulu.required(schemaDefinitionsFulu).getDataColumnSidecarSchema();
     final DataColumnSidecar dataColumnSidecar =
-        SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
-            .getDataColumnSidecarSchema()
-            .create(
-                ZERO,
-                SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
-                    .getDataColumnSchema()
-                    .create(List.of()),
-                List.of(),
-                List.of(),
-                dataStructureUtil.randomSignedBeaconBlockHeader(),
-                List.of(
-                    dataStructureUtil.randomBytes32(),
-                    dataStructureUtil.randomBytes32(),
-                    dataStructureUtil.randomBytes32(),
-                    dataStructureUtil.randomBytes32()));
+        dataColumnSidecarSchema.create(
+            builder ->
+                builder
+                    .index(ZERO)
+                    .column(
+                        SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
+                            .getDataColumnSchema()
+                            .create(List.of()))
+                    .kzgCommitments(dataColumnSidecarSchema.getKzgCommitmentsSchema().of())
+                    .kzgProofs(dataColumnSidecarSchema.getKzgProofsSchema().of())
+                    .signedBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader())
+                    .kzgCommitmentsInclusionProof(
+                        List.of(
+                            dataStructureUtil.randomBytes32(),
+                            dataStructureUtil.randomBytes32(),
+                            dataStructureUtil.randomBytes32(),
+                            dataStructureUtil.randomBytes32())));
 
     assertThat(
             predicatesMock.isValidMerkleBranch(
-                dataColumnSidecar.getSszKZGCommitments().hashTreeRoot(),
-                dataColumnSidecar.getKzgCommitmentsInclusionProof(),
+                dataColumnSidecar.getKzgCommitments().hashTreeRoot(),
+                DataColumnSidecarFulu.required(dataColumnSidecar).getKzgCommitmentsInclusionProof(),
                 specConfigFulu.getKzgCommitmentsInclusionProofDepth().intValue(),
                 miscHelpersFuluWithMockPredicates.getBlockBodyKzgCommitmentsGeneralizedIndex(),
-                dataColumnSidecar.getBlockBodyRoot()))
+                DataColumnSidecarFulu.required(dataColumnSidecar).getBlockBodyRoot()))
         .isTrue();
     assertThat(
             miscHelpersFuluWithMockPredicates.verifyDataColumnSidecarInclusionProof(
@@ -204,38 +213,43 @@ public class MiscHelpersFuluTest {
         specMainnet.getGenesisSpecConfig().toVersionFulu().orElseThrow();
     final MiscHelpersFulu miscHelpersFuluMainnet =
         new MiscHelpersFulu(specConfigFuluMainnet, predicatesMainnet, schemaDefinitionsFuluMainnet);
+    final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
+        SchemaDefinitionsFulu.required(schemaDefinitionsFulu).getDataColumnSidecarSchema();
     final DataColumnSidecar dataColumnSidecar =
-        SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
-            .getDataColumnSidecarSchema()
-            .create(
-                ZERO,
-                SchemaDefinitionsFulu.required(schemaDefinitionsFuluMainnet)
-                    .getDataColumnSchema()
-                    .create(List.of()),
-                List.of(),
-                List.of(),
-                new SignedBeaconBlockHeader(
-                    new BeaconBlockHeader(
-                        UInt64.valueOf(37),
-                        UInt64.valueOf(3426),
-                        Bytes32.fromHexString(
-                            "0x6d3091dae0e2a0251cc2c0d9fef846e1c6e685f18fc8a2c7734f25750c22da36"),
-                        Bytes32.fromHexString(
-                            "0x715f24108254c3fcbef60c739fe702aed3ee692cb223c884b3db6e041c56c2a6"),
-                        Bytes32.fromHexString(
-                            "0xbea87258cde49915c8c929b6b91fbbcde004aeaaa08a3ccdc3248dc62b0e682f")),
-                    BLSSignature.fromBytesCompressed(
-                        Bytes.fromHexString(
-                            "0xb4c313365edbc7cfa9319c54ecba0a8dc54c8537752c72a86c762eb0a81b3ad1eda43f0f3b19a9c9523a6a42450c1d070556e0a443d4733922765764ef5850b41d20b4f6af6cc93a70eb1023cc63473f111de772315a2726406be9dc6cb24e67"))),
-                List.of(
-                    Bytes32.fromHexString(
-                        "0x792930bbd5baac43bcc798ee49aa8185ef76bb3b44ba62b91d86ae569e4bb535"),
-                    Bytes32.fromHexString(
-                        "0xcd581849371d5f91b7d02a366b23402397007b50180069584f2bd4e14397540b"),
-                    Bytes32.fromHexString(
-                        "0xdb56114e00fdd4c1f85c892bf35ac9a89289aaecb1ebd0a96cde606a748b5d71"),
-                    Bytes32.fromHexString(
-                        "0x9535c3eb42aaf182b13b18aacbcbc1df6593ecafd0bf7d5e94fb727b2dc1f265")));
+        dataColumnSidecarSchema.create(
+            builder ->
+                builder
+                    .index(ZERO)
+                    .column(
+                        SchemaDefinitionsFulu.required(schemaDefinitionsFulu)
+                            .getDataColumnSchema()
+                            .create(List.of()))
+                    .kzgCommitments(dataColumnSidecarSchema.getKzgCommitmentsSchema().of())
+                    .kzgProofs(dataColumnSidecarSchema.getKzgProofsSchema().of())
+                    .signedBlockHeader(
+                        new SignedBeaconBlockHeader(
+                            new BeaconBlockHeader(
+                                UInt64.valueOf(37),
+                                UInt64.valueOf(3426),
+                                Bytes32.fromHexString(
+                                    "0x6d3091dae0e2a0251cc2c0d9fef846e1c6e685f18fc8a2c7734f25750c22da36"),
+                                Bytes32.fromHexString(
+                                    "0x715f24108254c3fcbef60c739fe702aed3ee692cb223c884b3db6e041c56c2a6"),
+                                Bytes32.fromHexString(
+                                    "0xbea87258cde49915c8c929b6b91fbbcde004aeaaa08a3ccdc3248dc62b0e682f")),
+                            BLSSignature.fromBytesCompressed(
+                                Bytes.fromHexString(
+                                    "0xb4c313365edbc7cfa9319c54ecba0a8dc54c8537752c72a86c762eb0a81b3ad1eda43f0f3b19a9c9523a6a42450c1d070556e0a443d4733922765764ef5850b41d20b4f6af6cc93a70eb1023cc63473f111de772315a2726406be9dc6cb24e67"))))
+                    .kzgCommitmentsInclusionProof(
+                        List.of(
+                            Bytes32.fromHexString(
+                                "0x792930bbd5baac43bcc798ee49aa8185ef76bb3b44ba62b91d86ae569e4bb535"),
+                            Bytes32.fromHexString(
+                                "0xcd581849371d5f91b7d02a366b23402397007b50180069584f2bd4e14397540b"),
+                            Bytes32.fromHexString(
+                                "0xdb56114e00fdd4c1f85c892bf35ac9a89289aaecb1ebd0a96cde606a748b5d71"),
+                            Bytes32.fromHexString(
+                                "0x9535c3eb42aaf182b13b18aacbcbc1df6593ecafd0bf7d5e94fb727b2dc1f265"))));
     assertThat(miscHelpersFuluMainnet.verifyDataColumnSidecarInclusionProof(dataColumnSidecar))
         .isFalse();
   }
@@ -281,6 +295,22 @@ public class MiscHelpersFuluTest {
             state, epoch, epochSeed, activeValidatorIndicesIntList);
 
     assertThat(proposerIndices).hasSize(slotsPerEpoch);
+  }
+
+  @Test
+  public void verifyKzgProofExampleFromDevnet() throws Exception {
+    final KZG kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
+
+    final byte[] sidecarSsz =
+        Resources.toByteArray(Resources.getResource(MiscHelpersFuluTest.class, "sidecar.ssz"));
+    assertThat(
+            miscHelpersFulu.verifyDataColumnSidecarKzgProofs(
+                kzg,
+                schemaDefinitionsFulu
+                    .getDataColumnSidecarSchema()
+                    .sszDeserialize(Bytes.wrap(sidecarSsz))))
+        .isTrue();
   }
 
   static Stream<Arguments> getValidatorCustodyRequirementFixtures() {

@@ -66,7 +66,7 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
                       epoch));
 
               final ExecutionPayloadHeader bellatrixHeader =
-                  preStateBellatrix.getLatestExecutionPayloadHeader();
+                  preStateBellatrix.getLatestExecutionPayloadHeaderRequired();
               final ExecutionPayloadHeader upgradedExecutionPayloadHeader =
                   schemaDefinitions
                       .getExecutionPayloadHeaderSchema()
