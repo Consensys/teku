@@ -24,6 +24,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
@@ -184,5 +186,17 @@ public class DefaultOperationProcessor implements OperationProcessor {
       final MutableBeaconState state, final BeaconBlock beaconBlock)
       throws BlockProcessingException {
     spec.getBlockProcessor(beaconBlock.getSlot()).processExecutionPayloadBid(state, beaconBlock);
+  }
+
+  @Override
+  public void processPayloadAttestation(
+      final MutableBeaconState state, final PayloadAttestation payloadAttestation)
+      throws BlockProcessingException {
+    spec.getBlockProcessor(state.getSlot())
+        .processPayloadAttestations(
+            state,
+            BeaconBlockBodySchemaGloas.required(beaconBlockBodySchema)
+                .getPayloadAttestationsSchema()
+                .of(payloadAttestation));
   }
 }

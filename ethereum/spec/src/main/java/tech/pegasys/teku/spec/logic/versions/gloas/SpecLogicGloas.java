@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequests
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.AttestationDataValidatorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.operations.validation.VoluntaryExitValidatorElectra;
-import tech.pegasys.teku.spec.logic.versions.electra.util.AttestationUtilElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.execution.ExecutionPayloadProcessorGloas;
@@ -48,6 +47,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsG
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -113,7 +113,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     final MiscHelpersGloas miscHelpers =
         new MiscHelpersGloas(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsGloas beaconStateAccessors =
-        new BeaconStateAccessorsGloas(config, predicates, miscHelpers);
+        new BeaconStateAccessorsGloas(config, schemaDefinitions, predicates, miscHelpers);
     final BeaconStateMutatorsElectra beaconStateMutators =
         new BeaconStateMutatorsElectra(
             config, miscHelpers, beaconStateAccessors, schemaDefinitions);
@@ -128,8 +128,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
-    final AttestationUtil attestationUtil =
-        new AttestationUtilElectra(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+    final AttestationUtilGloas attestationUtil =
+        new AttestationUtilGloas(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorElectra(config, miscHelpers, beaconStateAccessors);
     final VoluntaryExitValidatorElectra voluntaryExitValidatorElectra =

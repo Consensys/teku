@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
@@ -97,6 +98,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     WITHDRAWAL_REQUEST,
     CONSOLIDATION_REQUEST,
     EXECUTION_PAYLOAD_BID,
+    PAYLOAD_ATTESTATION
   }
 
   public static final ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
@@ -151,6 +153,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/execution_payload_bid",
               new OperationsTestExecutor<>("block.ssz_snappy", Operation.EXECUTION_PAYLOAD_BID))
+          .put(
+              "operations/payload_attestation",
+              new OperationsTestExecutor<>(
+                  "payload_attestation.ssz_snappy", Operation.PAYLOAD_ATTESTATION))
           .build();
 
   private final String dataFileName;
@@ -385,6 +391,16 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema());
         processor.processExecutionPayloadBid(state, beaconBlock);
       }
+      case PAYLOAD_ATTESTATION -> {
+        final PayloadAttestation payloadAttestation =
+            loadSsz(
+                testDefinition,
+                dataFileName,
+                SchemaDefinitionsGloas.required(
+                        testDefinition.getSpec().getGenesisSchemaDefinitions())
+                    .getPayloadAttestationSchema());
+        processor.processPayloadAttestation(state, payloadAttestation);
+      }
       default ->
           throw new UnsupportedOperationException(
               "Operation " + operation + " not implemented in OperationTestExecutor");
@@ -418,8 +434,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final MutableBeaconState state,
       final OperationProcessor processor) {
     final SszListSchema<DepositRequest, ?> depositRequestsSchema =
-        SchemaDefinitionsElectra.required(
-                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+        SchemaDefinitionsElectra.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
             .getExecutionRequestsSchema()
             .getDepositRequestsSchema();
     final SszList<DepositRequest> depositRequests =
@@ -433,8 +448,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final MutableBeaconState state,
       final OperationProcessor processor) {
     final SszListSchema<WithdrawalRequest, ?> withdrawalRequestsSchema =
-        SchemaDefinitionsElectra.required(
-                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+        SchemaDefinitionsElectra.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
             .getExecutionRequestsSchema()
             .getWithdrawalRequestsSchema();
     final SszList<WithdrawalRequest> withdrawalRequests =
@@ -448,8 +462,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final MutableBeaconState state,
       final OperationProcessor processor) {
     final SszListSchema<ConsolidationRequest, ?> consolidationRequestsSchema =
-        SchemaDefinitionsElectra.required(
-                testDefinition.getSpec().forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions())
+        SchemaDefinitionsElectra.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
             .getExecutionRequestsSchema()
             .getConsolidationRequestsSchema();
     final SszList<ConsolidationRequest> consolidationRequests =
@@ -525,7 +538,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           DEPOSIT_REQUEST,
           WITHDRAWAL_REQUEST,
           CONSOLIDATION_REQUEST,
-          EXECUTION_PAYLOAD_BID -> {}
+          EXECUTION_PAYLOAD_BID,
+          PAYLOAD_ATTESTATION -> {}
     }
   }
 
