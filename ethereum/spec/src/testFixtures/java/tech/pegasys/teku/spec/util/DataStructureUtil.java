@@ -126,6 +126,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsFulu;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -1488,7 +1490,8 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomSszList(
-                        schema.getPayloadAttestationsSchema(),
+                        BlindedBeaconBlockBodySchemaGloas.required(schema)
+                            .getPayloadAttestationsSchema(),
                         this::randomPayloadAttestation,
                         getMaxPayloadAttestations()));
               }
@@ -1606,7 +1609,7 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomSszList(
-                        schema.getPayloadAttestationsSchema(),
+                        BeaconBlockBodySchemaGloas.required(schema).getPayloadAttestationsSchema(),
                         this::randomPayloadAttestation,
                         getMaxPayloadAttestations()));
               }
@@ -1674,7 +1677,8 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomFullSszList(
-                        schema.getPayloadAttestationsSchema(), this::randomPayloadAttestation));
+                        BeaconBlockBodySchemaGloas.required(schema).getPayloadAttestationsSchema(),
+                        this::randomPayloadAttestation));
               }
               builderModifier.accept(builder);
               return SafeFuture.COMPLETE;
@@ -3113,7 +3117,8 @@ public final class DataStructureUtil {
 
   public SszList<PayloadAttestation> randomPayloadAttestations() {
     final SszListSchema<PayloadAttestation, ?> schema =
-        getGloasSchemaDefinitions().getBeaconBlockBodySchema().getPayloadAttestationsSchema();
+        BeaconBlockBodySchemaGloas.required(getGloasSchemaDefinitions().getBeaconBlockBodySchema())
+            .getPayloadAttestationsSchema();
     return randomSszList(schema, this::randomPayloadAttestation, schema.getMaxLength());
   }
 

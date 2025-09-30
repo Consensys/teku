@@ -71,7 +71,15 @@ public class ReferenceTestFinder {
                         new SszTestFinder("ssz_generic"),
                         new SszTestFinder("ssz_static"),
                         // Temporarily adding only specific test types that we support
-                        new PyspecTestFinder("fork/fork", "networking/", "rewards/"))
+                        new PyspecTestFinder(
+                            "fork/fork",
+                            "networking/",
+                            "rewards/",
+                            "epoch_processing/",
+                            "operations/withdrawals",
+                            "operations/proposer_slashing",
+                            "operations/execution_payload",
+                            "operations/execution_payload_bid"))
                     .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
               }
 
