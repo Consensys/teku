@@ -78,6 +78,7 @@ public class VersionedHashDBSourceTest {
     versionedHashDBSource.addBlobSidecarVersionedHash(blobSidecar, updater);
     verify(commitmentToVersionedHashFunction).apply(blobSidecar.getKZGCommitment());
     verify(updater).addVersionedHash(eq(versionedHash.get()), any());
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
@@ -88,6 +89,7 @@ public class VersionedHashDBSourceTest {
     versionedHashDBSource.addNonCanonicalBlobSidecarVersionedHash(blobSidecar, updater);
     verify(commitmentToVersionedHashFunction).apply(blobSidecar.getKZGCommitment());
     verify(updater).addVersionedHash(eq(versionedHash.get()), any());
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
@@ -99,6 +101,7 @@ public class VersionedHashDBSourceTest {
         blobSidecar.sszSerialize(), updater);
     verify(commitmentToVersionedHashFunction).apply(blobSidecar.getKZGCommitment());
     verify(updater).addVersionedHash(eq(versionedHash.get()), any());
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
@@ -111,6 +114,7 @@ public class VersionedHashDBSourceTest {
     versionedHashDBSource.removeBlobSidecarVersionedHash(blobSidecar.sszSerialize(), updater);
     verify(commitmentToVersionedHashFunction).apply(blobSidecar.getKZGCommitment());
     verify(updater).removeVersionedHash(eq(versionedHash.get()));
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
@@ -124,6 +128,7 @@ public class VersionedHashDBSourceTest {
         blobSidecar.sszSerialize(), updater);
     verify(commitmentToVersionedHashFunction).apply(blobSidecar.getKZGCommitment());
     verify(updater).removeVersionedHash(eq(versionedHash.get()));
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
@@ -144,6 +149,7 @@ public class VersionedHashDBSourceTest {
                     .apply(dataColumnSidecar.getKzgCommitments().get(index).getKZGCommitment()));
     verify(updater, times(dataColumnSidecar.getKzgCommitments().size()))
         .addVersionedHash(eq(versionedHash.get()), any());
+    verify(dao).getDataColumnIdentifiers(eq(dataColumnSidecar.getSlotAndBlockRoot()));
 
     // stored only once, ignores next sidecars from the same block
     versionedHashDBSource.addSidecarVersionedHashes(
@@ -151,7 +157,7 @@ public class VersionedHashDBSourceTest {
             DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
             dataColumnSidecar.getIndex().increment()),
         updater);
-    verifyNoMoreInteractions(commitmentToVersionedHashFunction, updater);
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
@@ -172,6 +178,7 @@ public class VersionedHashDBSourceTest {
                     .apply(dataColumnSidecar.getKzgCommitments().get(index).getKZGCommitment()));
     verify(updater, times(dataColumnSidecar.getKzgCommitments().size()))
         .addVersionedHash(eq(versionedHash.get()), any());
+    verify(dao).getNonCanonicalDataColumnIdentifiers(eq(dataColumnSidecar.getSlotAndBlockRoot()));
 
     // stored only once, ignores next sidecars from the same block
     versionedHashDBSource.addSidecarVersionedHashes(
@@ -179,7 +186,7 @@ public class VersionedHashDBSourceTest {
             DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
             dataColumnSidecar.getIndex().increment()),
         updater);
-    verifyNoMoreInteractions(commitmentToVersionedHashFunction, updater);
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
@@ -207,6 +214,7 @@ public class VersionedHashDBSourceTest {
                     .apply(dataColumnSidecar.getKzgCommitments().get(index).getKZGCommitment()));
     verify(updater, times(dataColumnSidecar.getKzgCommitments().size()))
         .removeVersionedHash(eq(versionedHash.get()));
+    verifyNoMoreInteractions(dao, updater, commitmentToVersionedHashFunction);
   }
 
   @Test
