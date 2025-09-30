@@ -39,12 +39,14 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
   @Override
   public void onExecutionProofPublish(
-      final ExecutionProof executionProof, final RemoteOrigin remoteOrigin) {}
-
+      final ExecutionProof executionProof, final RemoteOrigin remoteOrigin) {
+      LOG.trace("Published execution proof {}", executionProof);
+  }
   @Override
   public SafeFuture<InternalValidationResult> onExecutionProofGossip(
       final ExecutionProof executionProof, final Optional<UInt64> arrivalTimestamp) {
     LOG.debug("Received execution proof for block {}", executionProof);
+    //TODO fix this as this needs to obtain subnetId from the topic we received the proof from
     return executionProofGossipValidator.validate(
         executionProof, executionProof.getSubnetId().get());
   }
