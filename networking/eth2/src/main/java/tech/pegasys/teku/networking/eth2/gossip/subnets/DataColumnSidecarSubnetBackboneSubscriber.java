@@ -23,7 +23,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.api.CustodyGroupCountChannel;
 
 public class DataColumnSidecarSubnetBackboneSubscriber
     implements SlotEventsChannel, CustodyGroupCountChannel {
