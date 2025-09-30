@@ -300,9 +300,6 @@ public class ChainStorageTest {
                                       blobSidecar.getBlockRoot(),
                                       blobSidecar.getIndex()))
                           .toList();
-                  if (!expectedBlockRootAndBlobIndices.isEmpty()) {
-                    System.out.println("got something");
-                  }
                   assertThat(blockRootAndBlobIndices)
                       .containsExactlyInAnyOrderElementsOf(expectedBlockRootAndBlobIndices);
                   return true;

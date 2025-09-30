@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -62,7 +61,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void storeSidecarHashes_isFunctional() {
+  public void storeSidecarHashes() {
     assertThat(versionedHashDBSource.isStoreSidecarHashes()).isFalse();
     versionedHashDBSource.storeSidecarHashes();
     assertThat(versionedHashDBSource.isStoreSidecarHashes()).isTrue();
@@ -72,7 +71,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void addBlobSidecarVersionedHash_isFunctional() {
+  public void addBlobSidecarVersionedHash() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
@@ -82,7 +81,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void addNonCanonicalBlobSidecarVersionedHash_isFunctional() {
+  public void addNonCanonicalBlobSidecarVersionedHash() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
@@ -92,7 +91,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void addNonCanonicalBlobSidecarVersionedHashRaw_isFunctional() {
+  public void addNonCanonicalBlobSidecarVersionedHashRaw() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
@@ -103,7 +102,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void removeBlobSidecarVersionedHash_isFunctional() {
+  public void removeBlobSidecarVersionedHash() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
@@ -115,7 +114,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void removeNonCanonicalBlobSidecarVersionedHash_isFunctional() {
+  public void removeNonCanonicalBlobSidecarVersionedHash() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
@@ -128,7 +127,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void addSidecarVersionedHashes_isFunctional() {
+  public void addSidecarVersionedHashes() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
@@ -156,35 +155,7 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void addNonCanonicalSidecarVersionedHashes_isFunctional() {
-    final KvStoreCombinedDao.FinalizedUpdater updater =
-        mock(KvStoreCombinedDao.FinalizedUpdater.class);
-    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
-    versionedHashDBSource.addSidecarVersionedHashes(dataColumnSidecar, updater);
-    // not activated yet
-    verifyNoInteractions(updater);
-
-    versionedHashDBSource.storeSidecarHashes();
-    versionedHashDBSource.addNonCanonicalSidecarVersionedHashes(dataColumnSidecar, updater);
-    IntStream.range(0, dataColumnSidecar.getKzgCommitments().size())
-        .forEach(
-            index ->
-                verify(commitmentToVersionedHashFunction)
-                    .apply(dataColumnSidecar.getKzgCommitments().get(index).getKZGCommitment()));
-    verify(updater, times(dataColumnSidecar.getKzgCommitments().size()))
-        .addVersionedHash(eq(versionedHash.get()), any());
-
-    // stored only once, ignores next sidecars from the same block
-    versionedHashDBSource.addSidecarVersionedHashes(
-        dataStructureUtil.randomDataColumnSidecar(
-            DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader(),
-            dataColumnSidecar.getIndex().increment()),
-        updater);
-    verifyNoMoreInteractions(commitmentToVersionedHashFunction, updater);
-  }
-
-  @Test
-  public void addNonCanonicalSidecarVersionedHashesRaw_isFunctional() {
+  public void addNonCanonicalSidecarVersionedHashes() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
@@ -212,40 +183,13 @@ public class VersionedHashDBSourceTest {
   }
 
   @Test
-  public void removeSidecarVersionedHashes_isFunctional() {
+  public void removeSidecarVersionedHashes() {
     final KvStoreCombinedDao.FinalizedUpdater updater =
         mock(KvStoreCombinedDao.FinalizedUpdater.class);
     final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
     final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
         DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
     when(dao.getSidecar(dataColumnSlotAndIdentifier))
-        .thenReturn(Optional.of(dataColumnSidecar.sszSerialize()));
-
-    versionedHashDBSource.removeSidecarVersionedHashes(
-        dataColumnSidecar.getKzgCommitments(), updater);
-    // not activated yet
-    verifyNoInteractions(updater, dao);
-
-    versionedHashDBSource.storeSidecarHashes();
-    versionedHashDBSource.removeSidecarVersionedHashes(
-        dataColumnSidecar.getKzgCommitments(), updater);
-    IntStream.range(0, dataColumnSidecar.getKzgCommitments().size())
-        .forEach(
-            index ->
-                verify(commitmentToVersionedHashFunction)
-                    .apply(dataColumnSidecar.getKzgCommitments().get(index).getKZGCommitment()));
-    verify(updater, times(dataColumnSidecar.getKzgCommitments().size()))
-        .removeVersionedHash(eq(versionedHash.get()));
-  }
-
-  @Test
-  public void removeNonCanonicalSidecarVersionedHashes_isFunctional() {
-    final KvStoreCombinedDao.FinalizedUpdater updater =
-        mock(KvStoreCombinedDao.FinalizedUpdater.class);
-    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
-    final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
-    when(dao.getNonCanonicalSidecar(dataColumnSlotAndIdentifier))
         .thenReturn(Optional.of(dataColumnSidecar.sszSerialize()));
 
     versionedHashDBSource.removeSidecarVersionedHashes(
@@ -313,16 +257,12 @@ public class VersionedHashDBSourceTest {
     final Optional<SidecarIdentifier> maybeSidecarIdentifier =
         versionedHashDBSource.getSidecarIdentifier(versionedHash);
     verify(dao).getSidecarIdentifierData(any());
-    assertThat(maybeSidecarIdentifier.isPresent()).isTrue();
-    final SidecarIdentifier sidecarIdentifier = maybeSidecarIdentifier.get();
-    assertThat(sidecarIdentifier.canonical()).isTrue();
-    assertThat(sidecarIdentifier.blobSidecarIdentifier()).isEmpty();
-    assertThat(sidecarIdentifier.dataColumnSidecarsIdentifierAndBlobIndex()).isPresent();
-    final Pair<SlotAndBlockRoot, UInt64> dataColumnSlotAndIdentifierAndBlobIndex =
-        sidecarIdentifier.dataColumnSidecarsIdentifierAndBlobIndex().get();
-    assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getKey())
-        .isEqualTo(dataColumnSidecar.getSlotAndBlockRoot());
-    assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getValue()).isEqualTo(expectedBlobIndex);
+    final SidecarIdentifier expectedSidecarIdentifier =
+        new SidecarIdentifier(
+            Optional.empty(),
+            Optional.of(Pair.of(dataColumnSidecar.getSlotAndBlockRoot(), expectedBlobIndex)),
+            true);
+    assertThat(maybeSidecarIdentifier).contains(expectedSidecarIdentifier);
   }
 
   @Test
@@ -337,15 +277,11 @@ public class VersionedHashDBSourceTest {
     final Optional<SidecarIdentifier> maybeSidecarIdentifier =
         versionedHashDBSource.getSidecarIdentifier(versionedHash);
     verify(dao).getSidecarIdentifierData(any());
-    assertThat(maybeSidecarIdentifier.isPresent()).isTrue();
-    final SidecarIdentifier sidecarIdentifier = maybeSidecarIdentifier.get();
-    assertThat(sidecarIdentifier.canonical()).isFalse();
-    assertThat(sidecarIdentifier.blobSidecarIdentifier()).isEmpty();
-    assertThat(sidecarIdentifier.dataColumnSidecarsIdentifierAndBlobIndex()).isPresent();
-    final Pair<SlotAndBlockRoot, UInt64> dataColumnSlotAndIdentifierAndBlobIndex =
-        sidecarIdentifier.dataColumnSidecarsIdentifierAndBlobIndex().get();
-    assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getKey())
-        .isEqualTo(dataColumnSidecar.getSlotAndBlockRoot());
-    assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getValue()).isEqualTo(expectedBlobIndex);
+    final SidecarIdentifier expectedSidecarIdentifier =
+        new SidecarIdentifier(
+            Optional.empty(),
+            Optional.of(Pair.of(dataColumnSidecar.getSlotAndBlockRoot(), expectedBlobIndex)),
+            false);
+    assertThat(maybeSidecarIdentifier).contains(expectedSidecarIdentifier);
   }
 }
