@@ -338,6 +338,7 @@ public class MiscHelpersFuluTest {
         .toList();
     
     final KZG kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
@@ -375,6 +376,7 @@ public class MiscHelpersFuluTest {
         .toList();
     
     final KZG kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
@@ -383,7 +385,7 @@ public class MiscHelpersFuluTest {
     
     // Test with less than half of the sidecars (should fail)
     final int halfSize = originalSidecars.size() / 2;
-    final List<DataColumnSidecar> insufficientSidecars = originalSidecars.subList(0, halfSize);
+    final List<DataColumnSidecar> insufficientSidecars = originalSidecars.subList(0, halfSize - 1);
     
     assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars, kzg))
         .isInstanceOf(IllegalArgumentException.class)
@@ -407,6 +409,7 @@ public class MiscHelpersFuluTest {
         .toList();
     
     final KZG kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
@@ -432,6 +435,7 @@ public class MiscHelpersFuluTest {
         .toList();
     
     final KZG kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
@@ -460,6 +464,7 @@ public class MiscHelpersFuluTest {
         .toList();
     
     final KZG kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
     
