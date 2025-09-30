@@ -25,7 +25,7 @@ public interface BLSSignatureVerifier {
 
   /** Just delegates verify to {@link BLS#fastAggregateVerify(List, Bytes, BLSSignature)} */
   BLSSignatureVerifier SIMPLE =
-      new BatchBLSSignatureVerifier() {
+      new BLSSignatureVerifier() {
         @Override
         public boolean verify(
             final List<BLSPublicKey> publicKeys,
@@ -43,13 +43,13 @@ public interface BLSSignatureVerifier {
         }
 
         @Override
-        public boolean batchVerify() {
-          return true;
+        public BatchBLSSignatureVerifier createBatchVerifier() {
+          return new BatchSignatureVerifier();
         }
       };
 
   BLSSignatureVerifier NO_OP =
-      new BLSSignatureVerifier() {
+      new BatchBLSSignatureVerifier() {
         @Override
         public boolean verify(
             final List<BLSPublicKey> publicKeys,
@@ -67,8 +67,8 @@ public interface BLSSignatureVerifier {
         }
 
         @Override
-        public BatchBLSSignatureVerifier createBatchVerifier() {
-          return new BatchSignatureVerifier();
+        public boolean batchVerify() {
+          return true;
         }
       };
 
