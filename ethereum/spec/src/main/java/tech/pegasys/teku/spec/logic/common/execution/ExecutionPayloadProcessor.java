@@ -37,7 +37,8 @@ public interface ExecutionPayloadProcessor {
    *
    * @param signedEnvelope The execution payload to be processed
    * @param state The preState on which this execution payload should be processed, this preState
-   *     must be the state of the block of the current slot
+   *     must be the state of the block of the current slot. The state will be mutated if processing
+   *     was successful.
    * @param signatureVerifier The signature verifier to use
    * @param payloadExecutor the optimistic payload executor to begin execution with
    * @param verify enable pre and post verification
