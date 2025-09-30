@@ -333,36 +333,40 @@ public class MiscHelpersFuluTest {
   @Test
   public void reconstructAllDataColumnSidecars_withSufficientSidecars_shouldReconstructAll() {
     // Create test data similar to SidecarBenchmarkConfig
-    final List<Blob> blobs = IntStream.range(0, 4)
-        .mapToObj(__ -> dataStructureUtil.randomValidBlob())
-        .toList();
-    
+    final List<Blob> blobs =
+        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+
     final KZG kzg = KZG.getInstance(false);
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-    
-    final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
-        signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-    
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+
+    final List<DataColumnSidecar> originalSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
     // Test with more than half of the sidecars (should succeed)
     final int halfSize = originalSidecars.size() / 2;
-    final List<DataColumnSidecar> partialSidecars = originalSidecars.subList(halfSize, originalSidecars.size());
-    
-    final List<DataColumnSidecar> reconstructedSidecars = miscHelpersFulu.reconstructAllDataColumnSidecars(
-        partialSidecars, kzg);
-    
+    final List<DataColumnSidecar> partialSidecars =
+        originalSidecars.subList(halfSize, originalSidecars.size());
+
+    final List<DataColumnSidecar> reconstructedSidecars =
+        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, kzg);
+
     // Verify that all sidecars were reconstructed
     assertThat(reconstructedSidecars).hasSize(originalSidecars.size());
-    
+
     // Verify that the reconstructed sidecars have the same structure as original
     for (int i = 0; i < reconstructedSidecars.size(); i++) {
       final DataColumnSidecar reconstructed = reconstructedSidecars.get(i);
       final DataColumnSidecar original = originalSidecars.get(i);
-      
+
       assertThat(reconstructed.getIndex()).isEqualTo(original.getIndex());
       assertThat(reconstructed.getColumn().size()).isEqualTo(original.getColumn().size());
-      assertThat(reconstructed.getKzgCommitments().size()).isEqualTo(original.getKzgCommitments().size());
+      assertThat(reconstructed.getKzgCommitments().size())
+          .isEqualTo(original.getKzgCommitments().size());
       assertThat(reconstructed.getKzgProofs().size()).isEqualTo(original.getKzgProofs().size());
       assertThat(reconstructed.getSlot()).isEqualTo(original.getSlot());
     }
@@ -371,58 +375,66 @@ public class MiscHelpersFuluTest {
   @Test
   public void reconstructAllDataColumnSidecars_withInsufficientSidecars_shouldThrowException() {
     // Create test data
-    final List<Blob> blobs = IntStream.range(0, 4)
-        .mapToObj(__ -> dataStructureUtil.randomValidBlob())
-        .toList();
-    
+    final List<Blob> blobs =
+        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+
     final KZG kzg = KZG.getInstance(false);
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-    
-    final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
-        signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-    
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+
+    final List<DataColumnSidecar> originalSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
     // Test with less than half of the sidecars (should fail)
     final int halfSize = originalSidecars.size() / 2;
     final List<DataColumnSidecar> insufficientSidecars = originalSidecars.subList(0, halfSize - 1);
-    
-    assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars, kzg))
+
+    assertThatThrownBy(
+            () -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars, kzg))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Number of sidecars must be greater than or equal to the half of column count");
+        .hasMessageContaining(
+            "Number of sidecars must be greater than or equal to the half of column count");
   }
 
   @Test
   public void reconstructAllDataColumnSidecars_withEmptyCollection_shouldThrowException() {
     final KZG kzg = KZG.getInstance(false);
-    
+
     assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(List.of(), kzg))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Number of sidecars must be greater than or equal to the half of column count");
+        .hasMessageContaining(
+            "Number of sidecars must be greater than or equal to the half of column count");
   }
 
   @Test
   public void reconstructAllDataColumnSidecars_withExactlyHalfSidecars_shouldSucceed() {
     // Create test data with even number of sidecars
-    final List<Blob> blobs = IntStream.range(0, 6)
-        .mapToObj(__ -> dataStructureUtil.randomValidBlob())
-        .toList();
-    
+    final List<Blob> blobs =
+        IntStream.range(0, 6).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+
     final KZG kzg = KZG.getInstance(false);
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-    
-    final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
-        signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-    
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+
+    final List<DataColumnSidecar> originalSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
     // Test with exactly half of the sidecars (should succeed)
     final int halfSize = originalSidecars.size() / 2;
-    final List<DataColumnSidecar> halfSidecars = originalSidecars.subList(halfSize, originalSidecars.size());
-    
-    final List<DataColumnSidecar> reconstructedSidecars = miscHelpersFulu.reconstructAllDataColumnSidecars(
-        halfSidecars, kzg);
-    
+    final List<DataColumnSidecar> halfSidecars =
+        originalSidecars.subList(halfSize, originalSidecars.size());
+
+    final List<DataColumnSidecar> reconstructedSidecars =
+        miscHelpersFulu.reconstructAllDataColumnSidecars(halfSidecars, kzg);
+
     // Verify that all sidecars were reconstructed
     assertThat(reconstructedSidecars).hasSize(originalSidecars.size());
   }
@@ -430,25 +442,28 @@ public class MiscHelpersFuluTest {
   @Test
   public void reconstructAllDataColumnSidecars_preservesSidecarOrdering() {
     // Create test data
-    final List<Blob> blobs = IntStream.range(0, 4)
-        .mapToObj(__ -> dataStructureUtil.randomValidBlob())
-        .toList();
-    
+    final List<Blob> blobs =
+        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+
     final KZG kzg = KZG.getInstance(false);
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-    
-    final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
-        signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-    
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+
+    final List<DataColumnSidecar> originalSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
     // Test with more than half of the sidecars
     final int halfSize = originalSidecars.size() / 2;
-    final List<DataColumnSidecar> partialSidecars = originalSidecars.subList(halfSize, originalSidecars.size());
-    
-    final List<DataColumnSidecar> reconstructedSidecars = miscHelpersFulu.reconstructAllDataColumnSidecars(
-        partialSidecars, kzg);
-    
+    final List<DataColumnSidecar> partialSidecars =
+        originalSidecars.subList(halfSize, originalSidecars.size());
+
+    final List<DataColumnSidecar> reconstructedSidecars =
+        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, kzg);
+
     // Verify that sidecars are ordered by index
     for (int i = 0; i < reconstructedSidecars.size() - 1; i++) {
       assertThat(reconstructedSidecars.get(i).getIndex())
@@ -459,23 +474,26 @@ public class MiscHelpersFuluTest {
   @Test
   public void reconstructAllDataColumnSidecars_withSingleSidecar_shouldThrowException() {
     // Create test data
-    final List<Blob> blobs = IntStream.range(0, 4)
-        .mapToObj(__ -> dataStructureUtil.randomValidBlob())
-        .toList();
-    
+    final List<Blob> blobs =
+        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+
     final KZG kzg = KZG.getInstance(false);
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-    
-    final List<DataColumnSidecar> originalSidecars = miscHelpersFulu.constructDataColumnSidecars(
-        signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-    
+    final List<List<MatrixEntry>> extendedMatrix =
+        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+
+    final List<DataColumnSidecar> originalSidecars =
+        miscHelpersFulu.constructDataColumnSidecars(
+            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
+
     // Test with only one sidecar (should fail)
     final List<DataColumnSidecar> singleSidecar = List.of(originalSidecars.get(0));
-    
+
     assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(singleSidecar, kzg))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Number of sidecars must be greater than or equal to the half of column count");
+        .hasMessageContaining(
+            "Number of sidecars must be greater than or equal to the half of column count");
   }
 }
