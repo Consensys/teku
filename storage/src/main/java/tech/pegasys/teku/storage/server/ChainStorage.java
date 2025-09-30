@@ -41,8 +41,10 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.storage.api.ChainStorageFacade;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.SidecarIdentifier;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -461,5 +463,10 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onNewNonCanonicalSidecar(final DataColumnSidecar sidecar) {
     return SafeFuture.fromRunnable(() -> database.addNonCanonicalSidecar(sidecar));
+  }
+
+  @Override
+  public SafeFuture<Optional<SidecarIdentifier>> getSidecarIdentifier(final VersionedHash hash) {
+    return SafeFuture.of(() -> database.getSidecarIdentifier(hash));
   }
 }

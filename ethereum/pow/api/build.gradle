@@ -7,3 +7,9 @@ dependencies {
 
   testImplementation testFixtures(project(':ethereum:spec'))
 }
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) { artifactId 'ethereum-pow-api' }
+  }
+}

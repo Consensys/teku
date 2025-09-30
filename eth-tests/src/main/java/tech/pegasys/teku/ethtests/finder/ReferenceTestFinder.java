@@ -75,6 +75,7 @@ public class ReferenceTestFinder {
                             "fork/fork",
                             "networking/",
                             "rewards/",
+                            "epoch_processing/",
                             "operations/withdrawals",
                             "operations/proposer_slashing",
                             "operations/execution_payload",

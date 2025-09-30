@@ -13,16 +13,24 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotStateAdapter;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHotAdapter;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 public class InMemoryKvStoreDatabaseFactory {
+  public static final EventChannels EVENT_CHANNELS =
+      EventChannels.createSyncChannels(
+          ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
+
   public static Database createV4(
       final MockKvStoreInstance hotDb,
       final MockKvStoreInstance coldDb,
@@ -34,11 +42,15 @@ public class InMemoryKvStoreDatabaseFactory {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
     final SchemaHotAdapter schemaHot = combinedSchema.asSchemaHot();
     final SchemaFinalizedSnapshotStateAdapter schemaFinalized = combinedSchema.asSchemaFinalized();
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
+
     return KvStoreDatabase.createV4(
         hotDb,
         coldDb,
         schemaHot,
         schemaFinalized,
+        versionedHashDBSourceFactory,
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -52,8 +64,17 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV6(spec);
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
+
     return KvStoreDatabase.createWithStateSnapshots(
-        db, combinedSchema, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        db,
+        combinedSchema,
+        versionedHashDBSourceFactory,
+        storageMode,
+        stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec);
   }
 
   public static Database createTree(
@@ -62,7 +83,17 @@ public class InMemoryKvStoreDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
+    final VersionedHashDBSourceFactory versionedHashDBSourceFactory =
+        new VersionedHashDBSourceFactory(spec, EVENT_CHANNELS);
+
     return KvStoreDatabase.createWithStateTree(
-        new StubMetricsSystem(), db, schema, storageMode, storeNonCanonicalBlocks, 1000, spec);
+        new StubMetricsSystem(),
+        db,
+        schema,
+        versionedHashDBSourceFactory,
+        storageMode,
+        storeNonCanonicalBlocks,
+        1000,
+        spec);
   }
 }

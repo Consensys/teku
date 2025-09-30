@@ -25,6 +25,24 @@
     BLS_WITHDRAWAL_PREFIX: Bytes1 = '0x00'
     </spec>
 
+- name: BUILDER_PAYMENT_THRESHOLD_DENOMINATOR
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
+      search: BUILDER_PAYMENT_THRESHOLD_DENOMINATOR =
+  spec: |
+    <spec constant_var="BUILDER_PAYMENT_THRESHOLD_DENOMINATOR" fork="gloas" hash="2b5e020f">
+    BUILDER_PAYMENT_THRESHOLD_DENOMINATOR: uint64 = 10
+    </spec>
+
+- name: BUILDER_PAYMENT_THRESHOLD_NUMERATOR
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
+      search: BUILDER_PAYMENT_THRESHOLD_NUMERATOR =
+  spec: |
+    <spec constant_var="BUILDER_PAYMENT_THRESHOLD_NUMERATOR" fork="gloas" hash="f7d031d3">
+    BUILDER_PAYMENT_THRESHOLD_NUMERATOR: uint64 = 6
+    </spec>  
+
 - name: BUILDER_PENDING_WITHDRAWALS_LIMIT
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/gloas.yaml
