@@ -231,7 +231,6 @@ public class Eth2P2PNetworkFactory {
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
-
         if (rpcEncoding == null) {
           rpcEncoding =
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
