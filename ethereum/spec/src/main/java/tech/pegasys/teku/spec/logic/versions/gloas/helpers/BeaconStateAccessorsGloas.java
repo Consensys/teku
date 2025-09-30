@@ -15,7 +15,9 @@ package tech.pegasys.teku.spec.logic.versions.gloas.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 
@@ -36,5 +38,18 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
       final PredicatesGloas predicates,
       final MiscHelpersGloas miscHelpers) {
     super(config, predicates, miscHelpers);
+  }
+
+  /**
+   * get_builder_payment_quorum_threshold
+   *
+   * <p>Calculate the quorum threshold for builder payments.
+   */
+  public UInt64 getBuilderPaymentQuorumThreshold(final BeaconState state) {
+    final UInt64 quorum =
+        getTotalActiveBalance(state)
+            .dividedBy(config.getSlotsPerEpoch())
+            .times(SpecConfigGloas.BUILDER_PAYMENT_THRESHOLD_NUMERATOR);
+    return quorum.dividedBy(SpecConfigGloas.BUILDER_PAYMENT_THRESHOLD_DENOMINATOR);
   }
 }
