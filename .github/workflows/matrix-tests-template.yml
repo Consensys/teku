@@ -2,7 +2,11 @@ name: matrix-tests-template
 
 on:
   workflow_call:
+
     inputs:
+      assemble_output_run_id:
+        type: string
+        required: true
       stage_name:
         type: string
         required: true
@@ -13,7 +17,6 @@ on:
         type: string
         required: true
       # Where to look for test sources, and the root segment used to compute FQNs:
-      # (Adjust to your project layout)
       src_pattern:
         type: string
         required: true
@@ -21,22 +24,36 @@ on:
         type: string
         required: true
 
+
+permissions:
+  actions: read     # download the assemble output as an artifacts
+  contents: read
+
 jobs:
   matrix-tests-template:
 
-    runs-on: ubuntu-latest-128
+    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-med
     environment: dev
     strategy:
       fail-fast: false
       matrix:
-        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]   # <= number of parallel shards
-        total: [24]
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]   # parallel shards
+        total: [32]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           submodules: 'recursive'
+
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.assemble_output_run_id }}
+          name: assemble-output
+          merge-multiple: true
 
       - name: Prepare
         uses: ./.github/actions/prepare
@@ -80,3 +97,4 @@ jobs:
             **/build/test-results/**/TEST-*.xml
             **/build/reports/tests/**
           if-no-files-found: ignore
+          retention-days: 1
