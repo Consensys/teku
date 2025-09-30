@@ -64,8 +64,6 @@ class PeerSubnetSubscriptionsTest {
       mock(DataColumnSidecarSubnetTopicProvider.class);
   private final SubnetSubscriptionService syncnetSubscriptions = new SubnetSubscriptionService();
   private final SubnetSubscriptionService dataColumnSubscriptions = new SubnetSubscriptionService();
-  private final SubnetSubscriptionService executionProofSubscriptions =
-      new SubnetSubscriptionService();
 
   @BeforeEach
   public void setUp() {
