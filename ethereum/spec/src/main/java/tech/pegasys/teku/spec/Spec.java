@@ -97,6 +97,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
@@ -974,6 +975,17 @@ public class Spec {
             () ->
                 new IllegalStateException(
                     "Attempting to use execution requests processor when spec does not have execution requests processor"));
+  }
+
+  // Execution Payload Processor Utils
+
+  public ExecutionPayloadProcessor getExecutionPayloadProcessor(final UInt64 slot) {
+    return atSlot(slot)
+        .getExecutionPayloadProcessor()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to use execution payload processor when spec does not have execution payload processor"));
   }
 
   // Validator Utils
