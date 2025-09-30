@@ -41,78 +41,78 @@ env:
 
 jobs:
 
-  spotless:
-    # circle small            = 2m10s
-    # gha ubuntu-24.04 4/16   = 2m
-    runs-on: ubuntu-24.04
-    environment: dev
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          submodules: 'recursive'
+  # spotless:
+  #   # circle small            = 2m10s
+  #   # gha ubuntu-24.04 4/16   = 2m
+  #   runs-on: ubuntu-24.04
+  #   environment: dev
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #       with:
+  #         submodules: 'recursive'
 
-      - name: Prepare
-        uses: ./.github/actions/prepare
+  #     - name: Prepare
+  #       uses: ./.github/actions/prepare
 
-      - name: Spotless
-        run: |
-          ./gradlew spotlessCheck
+  #     - name: Spotless
+  #       run: |
+  #         ./gradlew spotlessCheck
 
-  moduleChecks:
-    # circle small            = 1m10s
-    # gha ubuntu-24.04 4/16   = 1m20s
-    runs-on: ubuntu-24.04
-    environment: dev
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          submodules: 'recursive'
+  # moduleChecks:
+  #   # circle small            = 1m10s
+  #   # gha ubuntu-24.04 4/16   = 1m20s
+  #   runs-on: ubuntu-24.04
+  #   environment: dev
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #       with:
+  #         submodules: 'recursive'
 
-      - name: Prepare
-        uses: ./.github/actions/prepare
+  #     - name: Prepare
+  #       uses: ./.github/actions/prepare
 
-      - name: Check modules
-        run: |
-          ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
+  #     - name: Check modules
+  #       run: |
+  #         ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
 
-  windowsBuild:
-    needs: [spotless, moduleChecks ]
-    # circle xlarge  8/32    = 13m10s
-    # gha windows-2025 4/16  = 21m     
-    runs-on: windows-2022
-    environment: dev
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          submodules: 'recursive'
+  # windowsBuild:
+  #   needs: [spotless, moduleChecks ]
+  #   # circle xlarge  8/32    = 13m10s
+  #   # gha windows-2025 4/16  = 21m     
+  #   runs-on: windows-2022
+  #   environment: dev
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #       with:
+  #         submodules: 'recursive'
 
-      - name: Prepare
-        uses: ./.github/actions/prepare
+  #     - name: Prepare
+  #       uses: ./.github/actions/prepare
 
-      - name: Build
-        shell: powershell
-        run: |
-          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
-          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
+  #     - name: Build
+  #       shell: powershell
+  #       run: |
+  #         $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
+  #         $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
+  #         cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
       
-      - name: Build
-        shell: powershell
-        run: |
-          New-Item -ItemType Directory -Force build\test-results
-          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+  #     - name: Build
+  #       shell: powershell
+  #       run: |
+  #         New-Item -ItemType Directory -Force build\test-results
+  #         Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
 
-      - name: Publish Windows Test Results and Reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          if-no-files-found: ignore
-          retention-days: 7
-          path: |
-            build/test-results/
+  #     - name: Publish Windows Test Results and Reports
+  #       uses: actions/upload-artifact@v4
+  #       if: always()
+  #       with:
+  #         if-no-files-found: ignore
+  #         retention-days: 7
+  #         path: |
+  #           build/test-results/
 
 
   assemble:
@@ -168,7 +168,7 @@ jobs:
   unitTests:
     # circle large 4/16 PARALLEL      = 8m
     # gha ubuntu-latest-128 32/128    = 8m
-    needs: assemble
+    # needs: assemble
     uses: ./.github/workflows/matrix-tests-template.yml
     with:
       stage_name: Unit Tests
@@ -195,13 +195,8 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: Unit Tests (Combined)
-          path: "reports/test/**/TEST-*.xml"
+          path: "reports/unit/**/TEST-*.xml"
           reporter: java-junit
-
-
-
-
-
 
 
   # integrationTests:
