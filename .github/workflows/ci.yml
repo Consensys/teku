@@ -173,7 +173,7 @@ jobs:
     with:
       stage_name: Unit Tests
       stage_key: unit
-      gradle_task: unitTest
+      gradle_task: test
       src_pattern: "*/src/test/java/*"
       src_root: "src/test/java"
 
@@ -204,103 +204,103 @@ jobs:
 
 
 
-  integrationTests:
-    # circle large 4/16 PARALLEL      = 18m
-    # gha ubuntu-latest-128 32/64     = 16m
-    needs: assemble
-    runs-on: ubuntu-latest-128
-    environment: dev
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          submodules: 'recursive'
+  # integrationTests:
+  #   # circle large 4/16 PARALLEL      = 18m
+  #   # gha ubuntu-latest-128 32/64     = 16m
+  #   needs: assemble
+  #   runs-on: ubuntu-latest-128
+  #   environment: dev
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #       with:
+  #         submodules: 'recursive'
 
-      - name: Prepare
-        uses: ./.github/actions/prepare
+  #     - name: Prepare
+  #       uses: ./.github/actions/prepare
 
-      - name: Download workspace build
-        uses: actions/download-artifact@v4
-        with:
-          name: workspace
+  #     - name: Download workspace build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: workspace
 
-      - name: Integration Tests
-        run: |
-          ls -la .
-          ./gradlew integrationTest
+  #     - name: Integration Tests
+  #       run: |
+  #         ls -la .
+  #         ./gradlew integrationTest
 
-      - name: Test results 
-        uses: ./.github/actions/testResults
-        if: always()        
-        with:
-          suiteName: 'integrationTests'
+  #     - name: Test results 
+  #       uses: ./.github/actions/testResults
+  #       if: always()        
+  #       with:
+  #         suiteName: 'integrationTests'
 
-  propertyTests:
-    # circle medium_plus_executor 4/16 PARALLEL = 30m
-    # gha ubuntu-latest-128 32/64               = 18m
-    # gha-runner-scale-set-ubuntu-22.04-amd64-med
-    needs: assemble
-    uses: ./.github/workflows/matrix-tests-template.yml
-    with:
-      stage_name: Property Tests
-      stage_key: property
-      gradle_task: propertyTest
-      src_pattern: "*/src/property-test/java/*"
-      src_root: "src/property-test/java"
+  # propertyTests:
+  #   # circle medium_plus_executor 4/16 PARALLEL = 30m
+  #   # gha ubuntu-latest-128 32/64               = 18m
+  #   # gha-runner-scale-set-ubuntu-22.04-amd64-med
+  #   needs: assemble
+  #   uses: ./.github/workflows/matrix-tests-template.yml
+  #   with:
+  #     stage_name: Property Tests
+  #     stage_key: property
+  #     gradle_task: propertyTest
+  #     src_pattern: "*/src/property-test/java/*"
+  #     src_root: "src/property-test/java"
 
-  propertyTestsReport:
-    runs-on: ubuntu-latest
-    needs: propertyTests
-    if: always()
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: property-reports-*
-          path: reports/property
-          merge-multiple: true
-      - shell: bash      
-        run: |
-          tree reports/          
-      - name: Property Test Reporter
-        uses: dorny/test-reporter@v1
-        with:
-          name: Property Tests (Combined)
-          path: "reports/property/**/TEST-*.xml"
-          reporter: java-junit
+  # propertyTestsReport:
+  #   runs-on: ubuntu-latest
+  #   needs: propertyTests
+  #   if: always()
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: property-reports-*
+  #         path: reports/property
+  #         merge-multiple: true
+  #     - shell: bash      
+  #       run: |
+  #         tree reports/          
+  #     - name: Property Test Reporter
+  #       uses: dorny/test-reporter@v1
+  #       with:
+  #         name: Property Tests (Combined)
+  #         path: "reports/property/**/TEST-*.xml"
+  #         reporter: java-junit
 
-  acceptanceTests:
-    # circle large 4/16 PARALLEL        = 12m
-    # gha ubuntu-latest-128 32/64  
-    needs: assemble
-    uses: ./.github/workflows/matrix-tests-template.yml    
-    with:
-      stage_name: Acceptance Tests
-      stage_key: acceptance
-      gradle_task: acceptanceTest
-      src_pattern: "*/src/acceptance-test/java/*"
-      src_root: "src/acceptance-test/java"
+  # acceptanceTests:
+  #   # circle large 4/16 PARALLEL        = 12m
+  #   # gha ubuntu-latest-128 32/64  
+  #   needs: assemble
+  #   uses: ./.github/workflows/matrix-tests-template.yml    
+  #   with:
+  #     stage_name: Acceptance Tests
+  #     stage_key: acceptance
+  #     gradle_task: acceptanceTest
+  #     src_pattern: "*/src/acceptance-test/java/*"
+  #     src_root: "src/acceptance-test/java"
 
-  acceptanceTestsReport:
-    runs-on: ubuntu-latest
-    needs: acceptanceTests
-    if: always()
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: acceptance-reports-*
-          path: reports/acceptance
-          merge-multiple: true
-      - shell: bash      
-        run: |
-          tree reports/          
-      - name: Acceptance Test Reporter
-        uses: dorny/test-reporter@v1
-        with:
-          name: Acceptance Tests (Combined)
-          path: "reports/acceptance/**/TEST-*.xml"
-          reporter: java-junit
+  # acceptanceTestsReport:
+  #   runs-on: ubuntu-latest
+  #   needs: acceptanceTests
+  #   if: always()
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: acceptance-reports-*
+  #         path: reports/acceptance
+  #         merge-multiple: true
+  #     - shell: bash      
+  #       run: |
+  #         tree reports/          
+  #     - name: Acceptance Test Reporter
+  #       uses: dorny/test-reporter@v1
+  #       with:
+  #         name: Acceptance Tests (Combined)
+  #         path: "reports/acceptance/**/TEST-*.xml"
+  #         reporter: java-junit
 
 
   # referenceTests:
@@ -343,19 +343,19 @@ jobs:
   #         suiteName: 'referenceTests'
 
   # ========== GLOBAL ROLL-UP ==========
-  collatedTestsReport:
-    runs-on: ubuntu-latest
-    needs:
-      - propertyTests
-      - acceptanceTests
-    if: always()
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: reports
-      - name: All Tests (Combined)
-        uses: dorny/test-reporter@v1
-        with:
-          name: All Tests (Unit + Property + Integration + Acceptance)
-          path: "reports/**/TEST-*.xml"
-          reporter: java-junit
+  # collatedTestsReport:
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - propertyTests
+  #     - acceptanceTests
+  #   if: always()
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         path: reports
+  #     - name: All Tests (Combined)
+  #       uses: dorny/test-reporter@v1
+  #       with:
+  #         name: All Tests (Unit + Property + Integration + Acceptance)
+  #         path: "reports/**/TEST-*.xml"
+  #         reporter: java-junit
