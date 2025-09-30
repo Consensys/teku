@@ -24,10 +24,11 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
     private final SchemaDefinitionsElectra schemaDefinitionsElectra;
     private static final Logger LOG = LogManager.getLogger();
 
-    public ExecutionProofGeneratorImpl(SchemaDefinitionsElectra schemaDefinitionsElectra) {
+    public ExecutionProofGeneratorImpl(final SchemaDefinitionsElectra schemaDefinitionsElectra) {
         this.schemaDefinitionsElectra = schemaDefinitionsElectra;
     }
 
+    @Override
     public SafeFuture<ExecutionProof> generateExecutionProof(final SignedBlockContainer blockContainer, final int subnetId) {
         final ExecutionPayload executionPayload = getExecutionPayload(blockContainer);
         final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
@@ -38,7 +39,7 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
                                 .getBytes(Charset.defaultCharset()));
 
             final ExecutionProof executionProof =
-                    createProof(blockRoot, executionPayload, dummyWitness, UInt64.valueOf(subnetId));
+                    createProof(blockRoot, executionPayload, dummyWitness, subnetId);
             LOG.trace("Generated proof for subnet {}", executionProof.getSubnetId());
 
         return SafeFuture.completedFuture(executionProof);
@@ -59,7 +60,7 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
             final Bytes32 blockRoot,
             final ExecutionPayload executionPayload,
             final Bytes dummyWitness,
-            final UInt64 subnetId) {
+            final int subnetId) {
         final Bytes32 blockHash = executionPayload.getBlockHash();
         final UInt64 blockNumber = executionPayload.getBlockNumber();
         final String dummyProof = getProof(blockHash, blockNumber, subnetId, dummyWitness);
@@ -69,18 +70,18 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
         return executionProofSchema.create(
                 blockRoot,
                 executionPayload.getBlockHash(),
-                subnetId,
+                UInt64.valueOf(subnetId),
                 UInt64.ONE,
                 Bytes.of(dummyProof.getBytes(Charset.defaultCharset())));
     }
 
-    private String getProof(final Bytes32 blockHash, final UInt64 blockNumber, final UInt64 subnetId, final Bytes dummyWitness) {
+    private String getProof(final Bytes32 blockHash, final UInt64 blockNumber, final int subnetId, final Bytes dummyWitness) {
         return "dummy_proof_subnet_"
-                        + subnetId.intValue()
+                        + subnetId
                         + "_block_"
                         + blockHash.toHexString()
                         + "_number_"
-                        + blockNumber.intValue()
+                        + blockNumber.longValue()
                         + "_witness_len_"
                         + dummyWitness.size();
     }

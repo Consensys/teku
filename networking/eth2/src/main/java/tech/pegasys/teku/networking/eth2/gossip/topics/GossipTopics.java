@@ -26,6 +26,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
+
 /**
  * Helpers for getting the full topic strings formatted like: /eth2/ForkDigestValue/Name/Encoding
  */
@@ -118,7 +120,7 @@ public class GossipTopics {
     topics.addAll(getAllDataColumnSidecarSubnetTopics(gossipEncoding, forkDigest, spec));
 
     if (p2pConfig.isExecutionProofTopicEnabled()) {
-      for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
+      for (int i = 0; i < MAX_EXECUTION_PROOF_SUBNETS; i++) {
         topics.add(getExecutionProofSubnetTopic(forkDigest, i, gossipEncoding));
       }
     }

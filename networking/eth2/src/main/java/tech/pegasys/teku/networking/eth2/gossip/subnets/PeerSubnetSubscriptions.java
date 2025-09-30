@@ -95,7 +95,7 @@ public class PeerSubnetSubscriptions {
         builder(
                 currentSchemaDefinitions,
                 SszBitvectorSchema.create(dataColumnSidecarSubnetCount),
-                SszBitvectorSchema.create(MAX_EXECUTION_PROOF_SUBNETS.intValue()))
+                SszBitvectorSchema.create(MAX_EXECUTION_PROOF_SUBNETS))
             .targetSubnetSubscriberCount(targetSubnetSubscriberCount)
             .nodeIdToDataColumnSidecarSubnetsCalculator(nodeIdToDataColumnSidecarSubnetsCalculator)
             .attestationSubnetSubscriptions(

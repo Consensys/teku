@@ -33,7 +33,7 @@ public class ExecutionProofGossipValidator {
 
   public static ExecutionProofGossipValidator create() {
     return new ExecutionProofGossipValidator(
-        LimitedSet.createSynchronized(MAX_EXECUTION_PROOF_SUBNETS.intValue()));
+        LimitedSet.createSynchronized((int)MAX_EXECUTION_PROOF_SUBNETS));
   }
 
   public ExecutionProofGossipValidator(final Set<ExecutionProof> receivedValidExecutionProofSet) {

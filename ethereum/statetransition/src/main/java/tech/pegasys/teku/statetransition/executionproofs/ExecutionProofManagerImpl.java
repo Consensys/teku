@@ -148,12 +148,13 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<Void> generateExecutionProof(final SignedBlockContainer blockContainer) {
         final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
         LOG.info("Generating execution proofs for block {}", blockRoot);
         final Set<ExecutionProof> generatedProofs = new HashSet<>();
         // Generate proofs for all subnets
-    IntStream.range(0, MAX_EXECUTION_PROOF_SUBNETS).forEach(subnetIndex -> {
+    IntStream.range(0, (int)MAX_EXECUTION_PROOF_SUBNETS).forEach(subnetIndex -> {
         executionProofGenerator.generateExecutionProof(blockContainer, subnetIndex)
                 .thenAccept(proof-> {
                             generatedProofs.add(proof);
