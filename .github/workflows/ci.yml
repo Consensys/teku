@@ -169,37 +169,40 @@ jobs:
     # circle large 4/16 PARALLEL      = 8m
     # gha ubuntu-latest-128 32/128    = 8m
     needs: assemble
-    runs-on: ubuntu-latest-128
-    environment: dev
+    uses: ./.github/workflows/matrix-tests-template.yml
+    with:
+      stage_name: Unit Tests
+      stage_key: unit
+      gradle_task: unitTest
+      src_pattern: "*/src/test/java/*"
+      src_root: "src/test/java"
+
+  unitTestsReport:
+    runs-on: ubuntu-latest
+    needs: unitTests
+    if: always()
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
         with:
-          submodules: 'recursive'
-
-      - name: Prepare
-        uses: ./.github/actions/prepare
-
-      - name: Download workspace build
-        uses: actions/download-artifact@v4
-        with:
-          name: workspace
-
-      - name: Unit Tests
+          pattern: unit-reports-*
+          path: reports/unit
+          merge-multiple: true
+      - shell: bash      
         run: |
-          CLASSNAMES=$(find . -iwholename "**/src/test/java/**/*.java" \
-              | sed 's@.*/src/test/java/@@' \
-              | sed 's@/@.@g' \
-              | sed 's/.\{5\}$//' )
-          GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
-          echo "Prepared arguments for Gradle: $GRADLE_ARGS"
-          ./gradlew test $GRADLE_ARGS
-
-      - name: Test results 
-        uses: ./.github/actions/testResults
-        if: always()        
+          tree reports/
+      - name: Unit Test Reporter
+        uses: dorny/test-reporter@v1
         with:
-          suiteName: 'unitTests'
+          name: Unit Tests (Combined)
+          path: "reports/test/**/TEST-*.xml"
+          reporter: java-junit
+
+
+
+
+
+
 
   integrationTests:
     # circle large 4/16 PARALLEL      = 18m
@@ -256,6 +259,9 @@ jobs:
           pattern: property-reports-*
           path: reports/property
           merge-multiple: true
+      - shell: bash      
+        run: |
+          tree reports/          
       - name: Property Test Reporter
         uses: dorny/test-reporter@v1
         with:
@@ -286,6 +292,9 @@ jobs:
           pattern: acceptance-reports-*
           path: reports/acceptance
           merge-multiple: true
+      - shell: bash      
+        run: |
+          tree reports/          
       - name: Acceptance Test Reporter
         uses: dorny/test-reporter@v1
         with:
