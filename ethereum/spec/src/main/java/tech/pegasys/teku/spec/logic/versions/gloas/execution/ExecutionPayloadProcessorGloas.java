@@ -237,7 +237,9 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
     stateGloas.setExecutionPayloadAvailability(
         schemaDefinitions
             .getExecutionPayloadAvailabilitySchema()
-            .wrapBitSet(newExecutionPayloadAvailability.size(), newExecutionPayloadAvailability));
+            .wrapBitSet(
+                stateGloas.getExecutionPayloadAvailability().size(),
+                newExecutionPayloadAvailability));
     stateGloas.setLatestBlockHash(payload.getBlockHash());
   }
 
