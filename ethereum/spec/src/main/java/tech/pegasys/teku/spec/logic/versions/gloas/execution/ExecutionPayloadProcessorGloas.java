@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.execution;
 
+import java.util.BitSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -51,10 +49,12 @@ import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequests
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProcessor {
 
   private final SpecConfigGloas specConfig;
+  private final SchemaDefinitionsGloas schemaDefinitions;
   private final MiscHelpersGloas miscHelpers;
   private final BeaconStateAccessorsGloas beaconStateAccessors;
   private final BeaconStateMutatorsElectra beaconStateMutators;
@@ -63,12 +63,14 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
 
   public ExecutionPayloadProcessorGloas(
       final SpecConfigGloas specConfig,
+      final SchemaDefinitionsGloas schemaDefinitions,
       final MiscHelpersGloas miscHelpers,
       final BeaconStateAccessorsGloas beaconStateAccessors,
       final BeaconStateMutatorsElectra beaconStateMutators,
       final ExecutionRequestsDataCodec executionRequestsDataCodec,
       final ExecutionRequestsProcessorElectra executionRequestsProcessor) {
     this.specConfig = specConfig;
+    this.schemaDefinitions = schemaDefinitions;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.beaconStateMutators = beaconStateMutators;
@@ -220,36 +222,27 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
                   exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay()));
       stateGloas.getBuilderPendingWithdrawals().append(withdrawalToQueue);
     }
-    // BuilderPendingPayment()
-    stateGloas.getBuilderPendingPayments().set(paymentIndex, payment.getSchema().getDefault());
+    stateGloas
+        .getBuilderPendingPayments()
+        // BuilderPendingPayment()
+        .set(paymentIndex, schemaDefinitions.getBuilderPendingPaymentSchema().getDefault());
 
     // Cache the execution payload hash
     // TODO-GLOAS: https://github.com/Consensys/teku/issues/9936
-    final SszBitvector currentExecutionPayloadAvailability =
-        stateGloas.getExecutionPayloadAvailability();
+    final BitSet newExecutionPayloadAvailability =
+        stateGloas.getExecutionPayloadAvailability().getAsBitSet();
     final int indexToModify =
         state.getSlot().mod(specConfig.getSlotsPerHistoricalRoot()).intValue();
-    final SszBitvector newExecutionPayloadAvailability =
-        IntStream.range(0, currentExecutionPayloadAvailability.size())
-            .mapToObj(
-                index -> {
-                  if (index == indexToModify) {
-                    return SszBit.of(true);
-                  }
-                  return currentExecutionPayloadAvailability.get(index);
-                })
-            .collect(currentExecutionPayloadAvailability.getSchema().collector());
-    stateGloas.setExecutionPayloadAvailability(newExecutionPayloadAvailability);
+    newExecutionPayloadAvailability.set(indexToModify, true);
+    stateGloas.setExecutionPayloadAvailability(
+        schemaDefinitions
+            .getExecutionPayloadAvailabilitySchema()
+            .wrapBitSet(newExecutionPayloadAvailability.size(), newExecutionPayloadAvailability));
     stateGloas.setLatestBlockHash(payload.getBlockHash());
   }
 
   @Override
   protected ExecutionPayloadValidationResult validateExecutionPayloadPostProcessing(
-      final BeaconState postState, final ExecutionPayloadEnvelope envelope) {
-    return ExecutionPayloadValidationResult.allOf(() -> validatePostState(postState, envelope));
-  }
-
-  private ExecutionPayloadValidationResult validatePostState(
       final BeaconState postState, final ExecutionPayloadEnvelope envelope) {
     if (!postState.hashTreeRoot().equals(envelope.getStateRoot())) {
       return ExecutionPayloadValidationResult.failed(

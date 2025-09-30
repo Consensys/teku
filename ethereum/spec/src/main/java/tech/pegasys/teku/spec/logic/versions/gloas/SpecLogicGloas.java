@@ -199,6 +199,7 @@ public class SpecLogicGloas extends AbstractSpecLogic {
     final ExecutionPayloadProcessorGloas executionPayloadProcessor =
         new ExecutionPayloadProcessorGloas(
             config,
+            schemaDefinitions,
             miscHelpers,
             beaconStateAccessors,
             beaconStateMutators,

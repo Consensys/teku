@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.executionpayloadvalidator;
 
-import java.util.function.Supplier;
-
 /**
  * Represents execution payload validation result which may contain reason exception in case of a
  * failure
@@ -47,17 +45,5 @@ public class ExecutionPayloadValidationResult {
 
   public String getFailureReason() {
     return failureReason;
-  }
-
-  @SafeVarargs
-  public static ExecutionPayloadValidationResult allOf(
-      final Supplier<ExecutionPayloadValidationResult>... checks) {
-    for (Supplier<ExecutionPayloadValidationResult> check : checks) {
-      final ExecutionPayloadValidationResult result = check.get();
-      if (!result.isValid()) {
-        return result;
-      }
-    }
-    return SUCCESSFUL;
   }
 }
