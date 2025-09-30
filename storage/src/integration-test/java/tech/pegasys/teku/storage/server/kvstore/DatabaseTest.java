@@ -2465,7 +2465,7 @@ public class DatabaseTest {
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
     final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getSszKZGCommitments(), ONE);
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
     final DataColumnSlotAndIdentifier block1Column1 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
 
@@ -2515,7 +2515,7 @@ public class DatabaseTest {
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
     final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getSszKZGCommitments(), ONE);
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
     final DataColumnSlotAndIdentifier block1Column1 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
 
@@ -2649,12 +2649,12 @@ public class DatabaseTest {
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
     final DataColumnSidecar block1Sidecar1 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getSszKZGCommitments(), ONE);
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
     final DataColumnSlotAndIdentifier block1Column1 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
     final DataColumnSidecar block1Sidecar2 =
         dataStructureUtil.randomDataColumnSidecar(
-            blockHeader1, block1Sidecar0.getSszKZGCommitments(), UInt64.valueOf(2));
+            blockHeader1, block1Sidecar0.getKzgCommitments(), UInt64.valueOf(2));
     final DataColumnSlotAndIdentifier block1Column2 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar2);
 
@@ -3117,7 +3117,7 @@ public class DatabaseTest {
     final MiscHelpersDeneb miscHelpersDeneb =
         MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
     final List<VersionedHash> versionedHashes =
-        sidecar.getSszKZGCommitments().stream()
+        sidecar.getKzgCommitments().stream()
             .map(
                 sszKzgCommitment ->
                     miscHelpersDeneb.kzgCommitmentToVersionedHash(
@@ -3134,12 +3134,12 @@ public class DatabaseTest {
                         final SidecarIdentifier sidecarIdentifier = maybeSidecarIdentifier.get();
                         assertThat(
                                 sidecarIdentifier
-                                    .dataColumnSidecarIdentifierAndBlobIndex()
+                                    .dataColumnSidecarsIdentifierAndBlobIndex()
                                     .isPresent())
                             .isTrue();
                         final Pair<SlotAndBlockRoot, UInt64>
                             dataColumnSlotAndIdentifierAndBlobIndex =
-                                sidecarIdentifier.dataColumnSidecarIdentifierAndBlobIndex().get();
+                                sidecarIdentifier.dataColumnSidecarsIdentifierAndBlobIndex().get();
                         assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getKey())
                             .isEqualTo(sidecar.getSlotAndBlockRoot());
                         assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getValue().intValue())
@@ -3153,7 +3153,7 @@ public class DatabaseTest {
     final MiscHelpersDeneb miscHelpersDeneb =
         MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
     final List<VersionedHash> versionedHashes =
-        sidecar.getSszKZGCommitments().stream()
+        sidecar.getKzgCommitments().stream()
             .map(
                 sszKzgCommitment ->
                     miscHelpersDeneb.kzgCommitmentToVersionedHash(
