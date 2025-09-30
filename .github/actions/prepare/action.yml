@@ -9,7 +9,7 @@ runs:
       uses: actions/setup-java@v4.2.1
       with:
         java-version: 21
-        distribution: 'adopt'
+        distribution: 'temurin'
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
