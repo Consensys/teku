@@ -65,8 +65,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -250,6 +250,7 @@ public class DatabaseTest {
             false,
             Optional.empty(),
             Optional.empty(),
+            Optional.empty(),
             true,
             false));
     database.update(
@@ -265,6 +266,7 @@ public class DatabaseTest {
             Map.of(),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             true,
@@ -414,6 +416,7 @@ public class DatabaseTest {
             false,
             Optional.empty(),
             Optional.empty(),
+            Optional.empty(),
             true,
             false));
     database.update(
@@ -429,6 +432,7 @@ public class DatabaseTest {
             Map.of(block3Sidecar0.getBlockRoot(), block3Sidecar0.getSlot()),
             Map.of(),
             false,
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             true,
@@ -534,6 +538,17 @@ public class DatabaseTest {
 
     // check if the pruned blob was written to disk. Not validating contents here.
     assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).exists();
+  }
+
+  @TestTemplate
+  public void canGetAndUpdateCustodyGroupCount(final DatabaseContext context) throws IOException {
+    initialize(context);
+    assertThat(recentChainData.getCustodyGroupCount()).isEmpty();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.setCustodyGroupCount(UInt64.ONE);
+    assertThat(transaction.commit()).isCompleted();
+    assertThat(recentChainData.getCustodyGroupCount()).contains(UInt64.ONE);
+    assertThat(database.getCustodyGroupCount()).contains(UInt64.ONE);
   }
 
   @TestTemplate

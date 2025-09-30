@@ -23,12 +23,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory.DiscoveryTestNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 
 public class DiscoveryNetworkIntegrationTest {
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(101);
 
   @AfterEach
   public void tearDown() throws InterruptedException, ExecutionException, TimeoutException {
@@ -37,14 +39,36 @@ public class DiscoveryNetworkIntegrationTest {
 
   @Test
   public void shouldConnectToStaticPeers() throws Exception {
-    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network1 = buildAndStartNetwork();
     final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
     assertConnected(network1, network2);
   }
 
   @Test
-  public void shouldReconnectToStaticPeersAfterDisconnection() throws Exception {
-    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+  public void shouldReconnectToStaticPeersAfterDisconnectionWhenMutualStaticPeers()
+      throws Exception {
+    final DiscoveryNetwork<?> network1 = buildAndStartNetwork();
+    final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
+    network2.getNodeAddresses().forEach(network1::addStaticPeer);
+    assertConnected(network1, network2);
+
+    // Peers disconnect
+    network1
+        .getPeer(network2.getNodeId())
+        .orElseThrow()
+        .disconnectImmediately(Optional.empty(), true);
+
+    // give some time to disconnection to reflect in both peers
+    Thread.sleep(200);
+
+    // But are automatically reconnected
+    assertConnected(network1, network2);
+  }
+
+  @Test
+  public void shouldReconnectToStaticPeersAfterDisconnectionWhenNonMutualStaticPeers()
+      throws Exception {
+    final DiscoveryNetwork<?> network1 = buildAndStartNetwork();
     final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
     assertConnected(network1, network2);
 
@@ -54,13 +78,16 @@ public class DiscoveryNetworkIntegrationTest {
         .orElseThrow()
         .disconnectImmediately(Optional.empty(), true);
 
+    // give some time to disconnection to reflect in both peers
+    Thread.sleep(200);
+
     // But are automatically reconnected
     assertConnected(network1, network2);
   }
 
   @Test
   public void shouldReconnectToStaticPeersWhenAlreadyConnected() throws Exception {
-    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network1 = buildAndStartNetwork();
     final DiscoveryNetwork<?> network2 = buildAndStartNetworkWithStaticPeers(network1);
     assertConnected(network1, network2);
 
@@ -79,30 +106,45 @@ public class DiscoveryNetworkIntegrationTest {
 
   @Test
   public void shouldConnectToBootnodes() throws Exception {
-    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network1 = buildAndStartNetwork();
     final DiscoveryNetwork<?> network2 =
-        discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
+        buildAndStartNetworkWithBootNode(network1.getEnr().orElseThrow());
     assertConnected(network1, network2);
   }
 
   @Test
   @Disabled("Discovery library still buggy")
   public void shouldDiscoverPeers() throws Exception {
-    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network1 = buildAndStartNetwork();
     final DiscoveryNetwork<?> network2 =
-        discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
+        buildAndStartNetworkWithBootNode(network1.getEnr().orElseThrow());
     assertConnected(network1, network2);
 
     // Only knows about network1, but should discovery network2
     final DiscoveryNetwork<?> network3 =
-        discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
+        buildAndStartNetworkWithBootNode(network1.getEnr().orElseThrow());
     assertConnected(network1, network3);
     assertConnected(network2, network3);
+  }
+
+  private DiscoveryNetwork<?> buildAndStartNetwork() throws Exception {
+    final DiscoveryTestNetworkBuilder builder = discoveryNetworkFactory.builder();
+    builder.timeProvider(timeProvider);
+    return builder.buildAndStart();
+  }
+
+  private DiscoveryNetwork<?> buildAndStartNetworkWithBootNode(final String bootNode)
+      throws Exception {
+    final DiscoveryTestNetworkBuilder builder = discoveryNetworkFactory.builder();
+    builder.timeProvider(timeProvider);
+    builder.bootnode(bootNode);
+    return builder.buildAndStart();
   }
 
   private DiscoveryNetwork<?> buildAndStartNetworkWithStaticPeers(final DiscoveryNetwork<?> network)
       throws Exception {
     final DiscoveryTestNetworkBuilder builder = discoveryNetworkFactory.builder();
+    builder.timeProvider(timeProvider);
     network.getNodeAddresses().forEach(builder::staticPeer);
     return builder.buildAndStart();
   }

@@ -31,8 +31,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -67,17 +67,13 @@ public class CombinedChainDataClient {
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
 
-  private final EarliestAvailableBlockSlot earliestAvailableBlockSlot;
-
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
-      final Spec spec,
-      final EarliestAvailableBlockSlot earliestAvailableBlockSlot) {
+      final Spec spec) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
-    this.earliestAvailableBlockSlot = earliestAvailableBlockSlot;
   }
 
   /**
@@ -507,7 +503,7 @@ public class CombinedChainDataClient {
    * @return The earliest available block's slot
    */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
-    return earliestAvailableBlockSlot.get();
+    return historicalChainData.getEarliestAvailableBlockSlot();
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
@@ -617,9 +613,8 @@ public class CombinedChainDataClient {
     return recentChainData.getGenesisData();
   }
 
-  public Optional<UInt64> getCurrentCustodyGroupCount() {
-    // TODO: 9845
-    return Optional.empty();
+  public Optional<UInt64> getCustodyGroupCount() {
+    return recentChainData.getCustodyGroupCount();
   }
 
   public SafeFuture<Optional<BeaconBlockSummary>> getEarliestAvailableBlockSummary() {
@@ -902,7 +897,9 @@ public class CombinedChainDataClient {
   }
 
   public void updateCustodyGroupCount(final int newCustodyGroupCount) {
-    // TODO: 9845
     LOG.debug("Updating custody count to {}", newCustodyGroupCount);
+    final UpdatableStore.StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.setCustodyGroupCount(UInt64.valueOf(newCustodyGroupCount));
+    transaction.commit().finish(error -> LOG.error("Failed to store custody group count", error));
   }
 }

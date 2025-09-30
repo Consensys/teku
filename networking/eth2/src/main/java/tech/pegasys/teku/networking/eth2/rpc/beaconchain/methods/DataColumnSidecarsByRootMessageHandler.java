@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
@@ -50,7 +50,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCust
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.LoggingPeerId;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogger;
-import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -193,11 +192,7 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               responseCallbackWithLogging.completeSuccessfully();
             })
-        .finish(
-            err -> {
-              peer.adjustDataColumnSidecarsRequest(maybeRequestKey.get(), 0);
-              handleError(responseCallbackWithLogging, err);
-            });
+        .finish(err -> handleError(responseCallbackWithLogging, err));
   }
 
   private SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalDataColumnSidecar(
@@ -233,7 +228,6 @@ public class DataColumnSidecarsByRootMessageHandler
             () ->
                 combinedChainDataClient
                     .getBlockByBlockRoot(identifier.blockRoot())
-                    .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException)
                     .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
             maybeSlot -> {
@@ -264,8 +258,7 @@ public class DataColumnSidecarsByRootMessageHandler
               }
               // Fallback to non-canonical sidecar if the canonical one is not found
               return getNonCanonicalDataColumnSidecar(identifier);
-            })
-        .exceptionally(ThrottlingStorageQueryChannel::ignoreQueueIsFullException);
+            });
   }
 
   private void handleError(

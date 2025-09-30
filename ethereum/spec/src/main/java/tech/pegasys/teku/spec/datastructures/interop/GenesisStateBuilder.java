@@ -165,13 +165,6 @@ public class GenesisStateBuilder {
               // Deneb
               b.blobGasUsed(() -> UInt64.ZERO);
               b.excessBlobGas(() -> UInt64.ZERO);
-              // Gloas
-              b.parentBlockHash(() -> Bytes32.ZERO);
-              b.parentBlockRoot(() -> Bytes32.ZERO);
-              b.builderIndex(() -> UInt64.ZERO);
-              b.slot(() -> UInt64.ZERO);
-              b.value(() -> UInt64.ZERO);
-              b.blobKzgCommitmentsRoot(() -> Bytes32.ZERO);
             });
   }
 }

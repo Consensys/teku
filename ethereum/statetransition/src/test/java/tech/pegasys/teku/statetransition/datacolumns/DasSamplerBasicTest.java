@@ -112,7 +112,7 @@ public class DasSamplerBasicTest {
       final int configuredCustodyCount,
       final int validatorCount,
       final int expectedSamplingRequests) {
-    when(combinedChainDataClient.getCurrentCustodyGroupCount())
+    when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(configuredCustodyCount)));
     final CustodyGroupCountManagerImpl custodyGroupCountManager =
         new CustodyGroupCountManagerImpl(
@@ -167,7 +167,7 @@ public class DasSamplerBasicTest {
                   dataStructureUtil.randomDataColumnSidecar(
                       dataStructureUtil.randomSignedBeaconBlockHeader(UInt64.ZERO),
                       missingColumn)));
-      when(custody.onNewValidatedDataColumnSidecar(any())).thenReturn(SafeFuture.COMPLETE);
+      when(custody.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
     }
 
     final SafeFuture<List<UInt64>> result = sampler.checkDataAvailability(UInt64.ZERO, blockRoot);

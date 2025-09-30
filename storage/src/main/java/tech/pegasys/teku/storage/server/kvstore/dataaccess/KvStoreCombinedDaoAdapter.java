@@ -28,8 +28,8 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -140,6 +140,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<Bytes32> getLatestCanonicalBlockRoot() {
     return hotDao.getLatestCanonicalBlockRoot();
+  }
+
+  @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return hotDao.getCustodyGroupCount();
   }
 
   @Override
@@ -495,6 +500,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
       hotUpdater.setLatestCanonicalBlockRoot(canonicalBlockRoot);
+    }
+
+    @Override
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      hotUpdater.setCustodyGroupCount(custodyGroupCount);
     }
 
     @Override

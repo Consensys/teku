@@ -32,11 +32,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.db.DelayedDasDb;
@@ -117,7 +118,7 @@ public class DasLongPollCustodyTest {
     assertThat(fRet0_1).isNotDone();
     assertThat(fRet1).isNotDone();
 
-    custody.onNewValidatedDataColumnSidecar(sidecar10_0);
+    custody.onNewValidatedDataColumnSidecar(sidecar10_0, RemoteOrigin.GOSSIP);
 
     advanceTimeGradually(dbDelay);
 
@@ -145,7 +146,7 @@ public class DasLongPollCustodyTest {
 
     // quicker DB write
     delayedDb.setDelay(ofMillis(5));
-    custody.onNewValidatedDataColumnSidecar(sidecar10_0);
+    custody.onNewValidatedDataColumnSidecar(sidecar10_0, RemoteOrigin.GOSSIP);
 
     advanceTimeGradually(ofMillis(10));
     assertThat(fRet0).isCompletedWithValue(Optional.ofNullable(sidecar10_0));
@@ -159,7 +160,7 @@ public class DasLongPollCustodyTest {
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
             List.of(UInt64.valueOf(0), UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4)));
-    custody.onNewValidatedDataColumnSidecar(sidecar10_0);
+    custody.onNewValidatedDataColumnSidecar(sidecar10_0, RemoteOrigin.GOSSIP);
 
     advanceTimeGradually(ofMillis(1));
     // quicker DB read

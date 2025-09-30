@@ -132,9 +132,9 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
-              if (builder.supportsSignedExecutionPayloadHeader()) {
-                builder.signedExecutionPayloadHeader(
-                    dataStructureUtil.randomSignedExecutionPayloadHeader());
+              if (builder.supportsSignedExecutionPayloadBid()) {
+                builder.signedExecutionPayloadBid(
+                    dataStructureUtil.randomSignedExecutionPayloadBid());
               }
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(dataStructureUtil.randomPayloadAttestations());
@@ -255,13 +255,15 @@ public class BlockProposalTestUtil {
       return schema.getDefault();
     }
 
-    Bytes32 currentExecutionPayloadBlockHash =
-        BeaconStateBellatrix.required(state).getLatestExecutionPayloadHeader().getBlockHash();
+    final Bytes32 currentExecutionPayloadBlockHash =
+        BeaconStateBellatrix.required(state)
+            .getLatestExecutionPayloadHeaderRequired()
+            .getBlockHash();
     if (!currentExecutionPayloadBlockHash.isZero() && terminalBlock.isPresent()) {
       throw new IllegalArgumentException("Merge already happened, cannot set terminal block hash");
     }
-    Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
-    UInt64 currentEpoch = specVersion.beaconStateAccessors().getCurrentEpoch(state);
+    final Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
+    final UInt64 currentEpoch = specVersion.beaconStateAccessors().getCurrentEpoch(state);
 
     return schema.createExecutionPayload(
         builder ->

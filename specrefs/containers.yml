@@ -253,7 +253,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodySchemaGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/gloas/BeaconBlockBodySchemaGloasImpl.java
   spec: |
-    <spec container="BeaconBlockBody" fork="gloas" hash="8fbb9583">
+    <spec container="BeaconBlockBody" fork="gloas" hash="7e472a77">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -272,7 +272,7 @@
         # [Modified in Gloas:EIP7732]
         # Removed `execution_requests`
         # [New in Gloas:EIP7732]
-        signed_execution_payload_header: SignedExecutionPayloadHeader
+        signed_execution_payload_bid: SignedExecutionPayloadBid
         # [New in Gloas:EIP7732]
         payload_attestations: List[PayloadAttestation, MAX_PAYLOAD_ATTESTATIONS]
     </spec>
@@ -596,6 +596,69 @@
         proposer_lookahead: Vector[ValidatorIndex, (MIN_SEED_LOOKAHEAD + 1) * SLOTS_PER_EPOCH]
     </spec>
 
+- name: BeaconStateGloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/BeaconStateGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/BeaconStateGloasImpl.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/BeaconStateSchemaGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/MutableBeaconStateGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/gloas/MutableBeaconStateGloasImpl.java
+  spec: |
+    <spec container="BeaconState" fork="gloas" hash="5da9e0b9">
+    class BeaconState(Container):
+        genesis_time: uint64
+        genesis_validators_root: Root
+        slot: Slot
+        fork: Fork
+        latest_block_header: BeaconBlockHeader
+        block_roots: Vector[Root, SLOTS_PER_HISTORICAL_ROOT]
+        state_roots: Vector[Root, SLOTS_PER_HISTORICAL_ROOT]
+        historical_roots: List[Root, HISTORICAL_ROOTS_LIMIT]
+        eth1_data: Eth1Data
+        eth1_data_votes: List[Eth1Data, EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH]
+        eth1_deposit_index: uint64
+        validators: List[Validator, VALIDATOR_REGISTRY_LIMIT]
+        balances: List[Gwei, VALIDATOR_REGISTRY_LIMIT]
+        randao_mixes: Vector[Bytes32, EPOCHS_PER_HISTORICAL_VECTOR]
+        slashings: Vector[Gwei, EPOCHS_PER_SLASHINGS_VECTOR]
+        previous_epoch_participation: List[ParticipationFlags, VALIDATOR_REGISTRY_LIMIT]
+        current_epoch_participation: List[ParticipationFlags, VALIDATOR_REGISTRY_LIMIT]
+        justification_bits: Bitvector[JUSTIFICATION_BITS_LENGTH]
+        previous_justified_checkpoint: Checkpoint
+        current_justified_checkpoint: Checkpoint
+        finalized_checkpoint: Checkpoint
+        inactivity_scores: List[uint64, VALIDATOR_REGISTRY_LIMIT]
+        current_sync_committee: SyncCommittee
+        next_sync_committee: SyncCommittee
+        # [Modified in Gloas:EIP7732]
+        # Removed `latest_execution_payload_header`
+        # [New in Gloas:EIP7732]
+        latest_execution_payload_bid: ExecutionPayloadBid
+        next_withdrawal_index: WithdrawalIndex
+        next_withdrawal_validator_index: ValidatorIndex
+        historical_summaries: List[HistoricalSummary, HISTORICAL_ROOTS_LIMIT]
+        deposit_requests_start_index: uint64
+        deposit_balance_to_consume: Gwei
+        exit_balance_to_consume: Gwei
+        earliest_exit_epoch: Epoch
+        consolidation_balance_to_consume: Gwei
+        earliest_consolidation_epoch: Epoch
+        pending_deposits: List[PendingDeposit, PENDING_DEPOSITS_LIMIT]
+        pending_partial_withdrawals: List[PendingPartialWithdrawal, PENDING_PARTIAL_WITHDRAWALS_LIMIT]
+        pending_consolidations: List[PendingConsolidation, PENDING_CONSOLIDATIONS_LIMIT]
+        proposer_lookahead: Vector[ValidatorIndex, (MIN_SEED_LOOKAHEAD + 1) * SLOTS_PER_EPOCH]
+        # [New in Gloas:EIP7732]
+        execution_payload_availability: Bitvector[SLOTS_PER_HISTORICAL_ROOT]
+        # [New in Gloas:EIP7732]
+        builder_pending_payments: Vector[BuilderPendingPayment, 2 * SLOTS_PER_EPOCH]
+        # [New in Gloas:EIP7732]
+        builder_pending_withdrawals: List[BuilderPendingWithdrawal, BUILDER_PENDING_WITHDRAWALS_LIMIT]
+        # [New in Gloas:EIP7732]
+        latest_block_hash: Hash32
+        # [New in Gloas:EIP7732]
+        latest_withdrawals_root: Root
+    </spec>
+
 - name: BlobIdentifier
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/networking/libp2p/rpc/BlobIdentifier.java
@@ -619,6 +682,30 @@
         kzg_proof: KZGProof
         signed_block_header: SignedBeaconBlockHeader
         kzg_commitment_inclusion_proof: Vector[Bytes32, KZG_COMMITMENT_INCLUSION_PROOF_DEPTH]
+    </spec>
+
+- name: BuilderPendingPayment
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingPayment.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingPaymentSchema.java
+  spec: |
+    <spec container="BuilderPendingPayment" fork="gloas" hash="73cf1649">
+    class BuilderPendingPayment(Container):
+        weight: Gwei
+        withdrawal: BuilderPendingWithdrawal
+    </spec>
+
+- name: BuilderPendingWithdrawal
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingWithdrawal.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/BuilderPendingWithdrawalSchema.java
+  spec: |
+    <spec container="BuilderPendingWithdrawal" fork="gloas" hash="ead16c8b">
+    class BuilderPendingWithdrawal(Container):
+        fee_recipient: ExecutionAddress
+        amount: Gwei
+        builder_index: ValidatorIndex
+        withdrawable_epoch: Epoch
     </spec>
 
 - name: Checkpoint
@@ -655,10 +742,10 @@
         selection_proof: BLSSignature
     </spec>
 
-- name: DataColumnSidecar
+- name: DataColumnSidecarFulu
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecar.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarFulu.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarSchemaFulu.java
   spec: |
     <spec container="DataColumnSidecar" fork="fulu" hash="03586114">
     class DataColumnSidecar(Container):
@@ -669,6 +756,20 @@
         signed_block_header: SignedBeaconBlockHeader
         kzg_commitments_inclusion_proof: Vector[Bytes32, KZG_COMMITMENTS_INCLUSION_PROOF_DEPTH]
     </spec>
+
+- name: DataColumnSidecarGloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarGloas.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarSchemaGloas.java
+  spec: |
+    <spec container="DataColumnSidecar" fork="gloas" hash="240a2d70">
+    class DataColumnSidecar(Container):
+        index: ColumnIndex
+        column: List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        kzg_proofs: List[KZGProof, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        beacon_block_root: Root
+    </spec> 
 
 - name: DataColumnsByRootIdentifier
   sources:
@@ -819,6 +920,40 @@
         excess_blob_gas: uint64
     </spec>
 
+- name: ExecutionPayloadBid
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBid.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadBidSchema.java
+  spec: |
+    <spec container="ExecutionPayloadBid" fork="gloas" hash="175bc24b">
+    class ExecutionPayloadBid(Container):
+        parent_block_hash: Hash32
+        parent_block_root: Root
+        block_hash: Hash32
+        fee_recipient: ExecutionAddress
+        gas_limit: uint64
+        builder_index: ValidatorIndex
+        slot: Slot
+        value: Gwei
+        blob_kzg_commitments_root: Root
+    </spec>
+
+- name: ExecutionPayloadEnvelope
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelope.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/ExecutionPayloadEnvelopeSchema.java
+  spec: |
+    <spec container="ExecutionPayloadEnvelope" fork="gloas" hash="898d1db9">
+    class ExecutionPayloadEnvelope(Container):
+        payload: ExecutionPayload
+        execution_requests: ExecutionRequests
+        builder_index: ValidatorIndex
+        beacon_block_root: Root
+        slot: Slot
+        blob_kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        state_root: Root
+    </spec>
+
 - name: ExecutionPayloadHeaderBellatrix
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadHeaderBellatrix.java
@@ -898,26 +1033,6 @@
         blob_gas_used: uint64
         # [New in Deneb:EIP4844]
         excess_blob_gas: uint64
-    </spec>
-
-- name: ExecutionPayloadHeaderGloas
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderGloas.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderGloasImpl.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderBuilderGloas.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/gloas/ExecutionPayloadHeaderSchemaGloas.java
-  spec: |
-    <spec container="ExecutionPayloadHeader" fork="gloas" hash="5300a374">
-    class ExecutionPayloadHeader(Container):
-        parent_block_hash: Hash32
-        parent_block_root: Root
-        block_hash: Hash32
-        fee_recipient: ExecutionAddress
-        gas_limit: uint64
-        builder_index: ValidatorIndex
-        slot: Slot
-        value: Gwei
-        blob_kzg_commitments_root: Root
     </spec>
 
 - name: ExecutionRequests
@@ -1004,6 +1119,18 @@
         signature: BLSSignature
     </spec>
 
+- name: IndexedPayloadAttestation
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/IndexedPayloadAttestation.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/IndexedPayloadAttestationSchema.java
+  spec: |
+    <spec container="IndexedPayloadAttestation" fork="gloas" hash="fa4832c8">
+    class IndexedPayloadAttestation(Container):
+        attesting_indices: List[ValidatorIndex, PTC_SIZE]
+        data: PayloadAttestationData
+        signature: BLSSignature
+    </spec>
+
 - name: LightClientBootstrap
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientBootstrap.java
@@ -1084,6 +1211,18 @@
         slot: Slot
         payload_present: boolean
         blob_data_available: boolean
+    </spec>
+
+- name: PayloadAttestationMessage
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationMessage.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/PayloadAttestationMessageSchema.java
+  spec: |
+    <spec container="PayloadAttestationMessage" fork="gloas" hash="3707678d">
+    class PayloadAttestationMessage(Container):
+        validator_index: ValidatorIndex
+        data: PayloadAttestationData
+        signature: BLSSignature
     </spec>
 
 - name: PendingAttestation
@@ -1213,14 +1352,25 @@
         signature: BLSSignature
     </spec>
 
-- name: SignedExecutionPayloadHeader
+- name: SignedExecutionPayloadBid
   sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadHeader.java
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadHeaderSchema.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadBid.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadBidSchema.java
   spec: |
-    <spec container="SignedExecutionPayloadHeader" fork="gloas" hash="20758a79">
-    class SignedExecutionPayloadHeader(Container):
-        message: ExecutionPayloadHeader
+    <spec container="SignedExecutionPayloadBid" fork="gloas" hash="6b344341">
+    class SignedExecutionPayloadBid(Container):
+        message: ExecutionPayloadBid
+        signature: BLSSignature
+    </spec>
+
+- name: SignedExecutionPayloadEnvelope
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadEnvelope.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/epbs/versions/gloas/SignedExecutionPayloadEnvelopeSchema.java
+  spec: |
+    <spec container="SignedExecutionPayloadEnvelope" fork="gloas" hash="ab8f3404">
+    class SignedExecutionPayloadEnvelope(Container):
+        message: ExecutionPayloadEnvelope
         signature: BLSSignature
     </spec>
 

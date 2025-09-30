@@ -26,8 +26,8 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -121,6 +121,8 @@ public interface Database extends AutoCloseable {
   Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
   Optional<Bytes32> getLatestCanonicalBlockRoot();
+
+  Optional<UInt64> getCustodyGroupCount();
 
   /**
    * Return the finalized block at this slot if such a block exists.

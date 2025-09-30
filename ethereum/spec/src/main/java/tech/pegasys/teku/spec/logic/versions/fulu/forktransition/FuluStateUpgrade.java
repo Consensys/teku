@@ -66,7 +66,7 @@ public class FuluStateUpgrade implements StateUpgrade<BeaconStateElectra> {
                       epoch));
 
               state.setLatestExecutionPayloadHeader(
-                  preStateElectra.getLatestExecutionPayloadHeader());
+                  preStateElectra.getLatestExecutionPayloadHeaderRequired());
               state.setNextWithdrawalValidatorIndex(
                   preStateElectra.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());

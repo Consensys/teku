@@ -34,8 +34,8 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -337,6 +337,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<UInt64> getCustodyGroupCount() {
+    return db.get(schema.getVariableCustodyGroupCount());
+  }
+
+  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UInt64> maybeSlot = db.get(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot);
@@ -470,7 +475,8 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         .put("MIN_GENESIS_TIME_BLOCK", getMinGenesisTimeBlock().map(Objects::toString))
         .put(
             "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
-            getOptimisticTransitionBlockSlot().map(Objects::toString));
+            getOptimisticTransitionBlockSlot().map(Objects::toString))
+        .put("CUSTODY_GROUP_COUNT", getCustodyGroupCount().map(Objects::toString));
 
     // get a list of the known keys, so that we can add missing variables
     final Map<String, Optional<String>> knownVariables = knownVariablesBuilder.build();
@@ -705,6 +711,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void setLatestCanonicalBlockRoot(final Bytes32 canonicalBlockRoot) {
       transaction.put(schema.getVariableLatestCanonicalBlockRoot(), canonicalBlockRoot);
+    }
+
+    @Override
+    public void setCustodyGroupCount(final UInt64 custodyGroupCount) {
+      transaction.put(schema.getVariableCustodyGroupCount(), custodyGroupCount);
     }
 
     @Override
@@ -961,7 +972,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       transaction.put(
           schema.getColumnSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
@@ -970,7 +981,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       transaction.put(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
           new DataColumnSlotAndIdentifier(
-              sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex()),
+              sidecar.getSlot(), sidecar.getBeaconBlockRoot(), sidecar.getIndex()),
           sidecar.sszSerialize());
     }
 
