@@ -303,6 +303,8 @@ jobs:
   #         stage_key: acceptance
 
   referenceTestsPrep:
+  # circle = 14m
+  # gha = 15m        
     needs: assemble
     runs-on: ubuntu-24.04
     environment: dev
@@ -359,6 +361,8 @@ jobs:
           include-hidden-files: 'true'
 
   referenceTests:
+  # circle = 18m
+  # gha = 11m      
     needs: referenceTestsPrep
     runs-on: ubuntu-latest-128
     environment: dev
@@ -400,16 +404,14 @@ jobs:
       - shell: bash
         run: |
           tree ${{ github.workspace }}                   
-      # - uses: actions/cache/restore@v4
-      #   with:
-      #     path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-      #     key: reftests-${{ hashFiles('build.gradle') }}
-
+      - uses: actions/cache/restore@v4
+        with:
+          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          key: reftests-${{ hashFiles('build.gradle') }}
       - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ReferenceTests
         id: shard
         shell: bash
         run: |
-
           SRC_PATTERN="*/src/referenceTest/generated_tests/*Test.java"
           SRC_ROOT="src/referenceTest/generated_tests"
 
@@ -432,7 +434,6 @@ jobs:
           GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
           echo "Prepared arguments for Gradle (ReferenceTests): $GRADLE_ARGS"
           echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
-
       - name: Run ReferenceTests (shard)
         if: steps.shard.outputs.args != ''
         run: |
@@ -441,66 +442,27 @@ jobs:
             -x processReferenceTestResources \
             -x cleanReferenceTestClasses \
             referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
+      - name: Upload JUnit XML + HTML for ReferenceTests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-reports-${{ matrix.shard }}
+          path: |
+            **/build/test-results/**/TEST-*.xml
+            **/build/reports/tests/**
+          if-no-files-found: ignore
+          retention-days: 1
 
-  referenceTestsManual:
-    needs: referenceTestsPrep
-    runs-on: ubuntu-24.04
-    environment: dev
+  referenceTestsReport:
+    runs-on: ubuntu-latest
+    needs: referenceTests
+    if: always()
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/junit-reports
+        if: always()
         with:
-          submodules: 'recursive'
-
-      - name: Download assemble-output
-        uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          name: assemble-output
-          merge-multiple: true
-          path: ${{ github.workspace }}
-      - name: Download reftests-prep (optional)
-        uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          name: reftests
-          merge-multiple: true
-          path: ${{ github.workspace }}
-      - name: Prepare
-        uses: ./.github/actions/prepare
-
-      - shell: bash
-        run: |
-          tree ${{ github.workspace }}
-
-
-  # referenceTests:
-  #   needs: referenceTestsPrep
-  #   uses: ./.github/workflows/matrix-tests-template.yml
-  #   secrets: inherit    
-  #   with:
-  #     assemble_output_run_id: ${{ github.run_id }}
-  #     stage_name: Reference Tests
-  #     stage_key: reference
-  #     gradle_task: "-x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest"
-  #     src_pattern: "*/src/referenceTest/generated_tests/*"
-  #     src_root: "src/referenceTest/generated_tests"
-  #     runner: "ubuntu-latest-128"
-
-  # referenceTestsReport:
-  #   runs-on: ubuntu-latest
-  #   needs: referenceTests
-  #   if: always()
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: ./.github/actions/junit-reports
-  #       if: always()
-  #       with:
-  #         stage_key: reference
+          stage_key: reference
 
   # # ========== GLOBAL ROLL-UP ==========
   # collatedTestsReport:
