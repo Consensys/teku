@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.gloas.util;
 
+import com.google.common.collect.Comparators;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,7 +49,7 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
       final BeaconState state, final IndexedPayloadAttestation indexedPayloadAttestation) {
     // Verify indices are non-empty and sorted
     final List<UInt64> indices = indexedPayloadAttestation.getAttestingIndices().asListUnboxed();
-    if (indices.isEmpty() || !indices.equals(indices.stream().sorted().toList())) {
+    if (indices.isEmpty() || !Comparators.isInOrder(indices, UInt64::compareTo)) {
       return false;
     }
     // Verify aggregate signature
