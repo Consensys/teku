@@ -233,7 +233,7 @@ public class NetworkConfig {
               .count()
           > 1) {
         throw new InvalidConfigurationException(
-            "Only a single private key option should be specified.");
+            "Only single private key option should be specified.");
       }
 
       return new NetworkConfig(

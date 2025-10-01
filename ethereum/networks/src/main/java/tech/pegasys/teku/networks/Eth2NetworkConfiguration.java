@@ -59,8 +59,6 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
-  public static final boolean DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED = false;
-
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_PROFILING_ENABLED = false;
   public static final boolean DEFAULT_AGGREGATING_ATTESTATION_POOL_V2_ENABLED = true;
   public static final int
@@ -124,7 +122,6 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> denebForkEpoch;
   private final Optional<UInt64> electraForkEpoch;
   private final Optional<UInt64> fuluForkEpoch;
-  private final Optional<UInt64> gloasForkEpoch;
   private final Optional<UInt64> eip7805ForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
@@ -139,7 +136,6 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
-  private final boolean prepareBlockProductionEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
   private final int pendingAttestationsMaxQueue;
   private final boolean rustKzgEnabled;
@@ -167,7 +163,6 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> denebForkEpoch,
       final Optional<UInt64> electraForkEpoch,
       final Optional<UInt64> fuluForkEpoch,
-      final Optional<UInt64> gloasForkEpoch,
       final Optional<UInt64> eip7805ForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
@@ -179,7 +174,6 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
-      final boolean prepareBlockProductionEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes,
       final int pendingAttestationsMaxQueue,
       final boolean rustKzgEnabled,
@@ -201,9 +195,8 @@ public class Eth2NetworkConfiguration {
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
     this.electraForkEpoch = electraForkEpoch;
-    this.fuluForkEpoch = fuluForkEpoch;
-    this.gloasForkEpoch = gloasForkEpoch;
     this.eip7805ForkEpoch = eip7805ForkEpoch;
+    this.fuluForkEpoch = fuluForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -220,7 +213,6 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
-    this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
     this.pendingAttestationsMaxQueue = pendingAttestationsMaxQueue;
@@ -310,7 +302,6 @@ public class Eth2NetworkConfiguration {
       case DENEB -> denebForkEpoch;
       case ELECTRA -> electraForkEpoch;
       case FULU -> fuluForkEpoch;
-      case GLOAS -> gloasForkEpoch;
       case EIP7805 -> eip7805ForkEpoch;
       default -> Optional.empty();
     };
@@ -354,10 +345,6 @@ public class Eth2NetworkConfiguration {
 
   public boolean isForkChoiceLateBlockReorgEnabled() {
     return forkChoiceLateBlockReorgEnabled;
-  }
-
-  public boolean isPrepareBlockProductionEnabled() {
-    return prepareBlockProductionEnabled;
   }
 
   public boolean isAggregatingAttestationPoolV2Enabled() {
@@ -417,7 +404,6 @@ public class Eth2NetworkConfiguration {
         && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
         && asyncP2pMaxQueue == that.asyncP2pMaxQueue
         && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
-        && prepareBlockProductionEnabled == that.prepareBlockProductionEnabled
         && aggregatingAttestationPoolV2Enabled == that.aggregatingAttestationPoolV2Enabled
         && aggregatingAttestationPoolProfilingEnabled
             == that.aggregatingAttestationPoolProfilingEnabled
@@ -438,7 +424,6 @@ public class Eth2NetworkConfiguration {
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
-        && Objects.equals(gloasForkEpoch, that.gloasForkEpoch)
         && Objects.equals(eip7805ForkEpoch, that.eip7805ForkEpoch)
         && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
         && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
@@ -465,7 +450,6 @@ public class Eth2NetworkConfiguration {
         denebForkEpoch,
         electraForkEpoch,
         fuluForkEpoch,
-        gloasForkEpoch,
         eip7805ForkEpoch,
         eth1DepositContractAddress,
         eth1DepositContractDeployBlock,
@@ -480,7 +464,6 @@ public class Eth2NetworkConfiguration {
         asyncBeaconChainMaxQueue,
         asyncP2pMaxQueue,
         forkChoiceLateBlockReorgEnabled,
-        prepareBlockProductionEnabled,
         forkChoiceUpdatedAlwaysSendPayloadAttributes,
         rustKzgEnabled);
   }
@@ -510,7 +493,6 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<UInt64> electraForkEpoch = Optional.empty();
     private Optional<UInt64> fuluForkEpoch = Optional.empty();
-    private Optional<UInt64> gloasForkEpoch = Optional.empty();
     private Optional<UInt64> eip7805ForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
@@ -519,7 +501,6 @@ public class Eth2NetworkConfiguration {
     private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-    private boolean prepareBlockProductionEnabled = DEFAULT_PREPARE_BLOCK_PRODUCTION_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
     private OptionalInt pendingAttestationsMaxQueue = OptionalInt.empty();
@@ -563,7 +544,6 @@ public class Eth2NetworkConfiguration {
                   denebForkEpoch.ifPresent(builder::denebForkEpoch);
                   electraForkEpoch.ifPresent(builder::electraForkEpoch);
                   fuluForkEpoch.ifPresent(builder::fuluForkEpoch);
-                  gloasForkEpoch.ifPresent(builder::gloasForkEpoch);
                   eip7805ForkEpoch.ifPresent(builder::eip7805ForkEpoch);
                   builder.bellatrixBuilder(
                       bellatrixBuilder -> {
@@ -619,7 +599,6 @@ public class Eth2NetworkConfiguration {
           denebForkEpoch,
           electraForkEpoch,
           fuluForkEpoch,
-          gloasForkEpoch,
           eip7805ForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
@@ -631,7 +610,6 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue.orElse(DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE),
           forkChoiceLateBlockReorgEnabled,
-          prepareBlockProductionEnabled,
           forkChoiceUpdatedAlwaysSendPayloadAttributes,
           pendingAttestationsMaxQueue.orElse(DEFAULT_MAX_QUEUE_PENDING_ATTESTATIONS),
           rustKzgEnabled,
@@ -809,13 +787,11 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder trustedSetup(final String trustedSetup) {
-      checkNotNull(trustedSetup);
       this.trustedSetup = Optional.of(trustedSetup);
       return this;
     }
 
     public Builder trustedSetupFromClasspath(final String filename) {
-      checkNotNull(filename);
       this.trustedSetup =
           Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
               .map(URL::toExternalForm);
@@ -823,49 +799,36 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder altairForkEpoch(final UInt64 altairForkEpoch) {
-      checkNotNull(altairForkEpoch);
       this.altairForkEpoch = Optional.of(altairForkEpoch);
       return this;
     }
 
     public Builder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
-      checkNotNull(bellatrixForkEpoch);
       this.bellatrixForkEpoch = Optional.of(bellatrixForkEpoch);
       return this;
     }
 
     public Builder capellaForkEpoch(final UInt64 capellaForkEpoch) {
-      checkNotNull(capellaForkEpoch);
       this.capellaForkEpoch = Optional.of(capellaForkEpoch);
       return this;
     }
 
     public Builder denebForkEpoch(final UInt64 denebForkEpoch) {
-      checkNotNull(denebForkEpoch);
       this.denebForkEpoch = Optional.of(denebForkEpoch);
       return this;
     }
 
     public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
-      checkNotNull(electraForkEpoch);
       this.electraForkEpoch = Optional.of(electraForkEpoch);
       return this;
     }
 
     public Builder fuluForkEpoch(final UInt64 fuluForkEpoch) {
-      checkNotNull(fuluForkEpoch);
       this.fuluForkEpoch = Optional.of(fuluForkEpoch);
       return this;
     }
 
-    public Builder gloasForkEpoch(final UInt64 gloasForkEpoch) {
-      checkNotNull(gloasForkEpoch);
-      this.gloasForkEpoch = Optional.of(gloasForkEpoch);
-      return this;
-    }
-
     public Builder eip7805ForkEpoch(final UInt64 eip7805ForkEpoch) {
-      checkNotNull(eip7805ForkEpoch);
       this.eip7805ForkEpoch = Optional.of(eip7805ForkEpoch);
       return this;
     }
@@ -881,19 +844,16 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder totalTerminalDifficultyOverride(final UInt256 totalTerminalDifficultyOverride) {
-      checkNotNull(totalTerminalDifficultyOverride);
       this.totalTerminalDifficultyOverride = Optional.of(totalTerminalDifficultyOverride);
       return this;
     }
 
     public Builder terminalBlockHashOverride(final Bytes32 terminalBlockHashOverride) {
-      checkNotNull(terminalBlockHashOverride);
       this.terminalBlockHashOverride = Optional.of(terminalBlockHashOverride);
       return this;
     }
 
     public Builder terminalBlockHashEpochOverride(final UInt64 terminalBlockHashEpochOverride) {
-      checkNotNull(terminalBlockHashEpochOverride);
       this.terminalBlockHashEpochOverride = Optional.of(terminalBlockHashEpochOverride);
       return this;
     }
@@ -915,14 +875,12 @@ public class Eth2NetworkConfiguration {
 
     public Builder dataColumnSidecarRecoveryMaxDelayMillis(
         final Long dataColumnSidecarRecoveryMaxDelayMillis) {
-      checkNotNull(dataColumnSidecarRecoveryMaxDelayMillis);
       this.dataColumnSidecarRecoveryMaxDelayMillis =
           OptionalLong.of(dataColumnSidecarRecoveryMaxDelayMillis);
       return this;
     }
 
     public Builder applyNetworkDefaults(final String networkName) {
-      checkNotNull(networkName);
       Eth2Network.fromStringLenient(networkName)
           .ifPresentOrElse(
               this::applyNetworkDefaults, () -> resetAndApplyBasicDefaults(networkName));
@@ -930,7 +888,6 @@ public class Eth2NetworkConfiguration {
     }
 
     private Builder resetAndApplyBasicDefaults(final String networkName) {
-      checkNotNull(networkName);
       return reset()
           .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .constants(networkName);
@@ -1212,11 +1169,6 @@ public class Eth2NetworkConfiguration {
 
     public Builder forkChoiceLateBlockReorgEnabled(final boolean forkChoiceLateBlockReorgEnabled) {
       this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
-      return this;
-    }
-
-    public Builder prepareBlockProductionEnabled(final boolean prepareBlockProductionEnabled) {
-      this.prepareBlockProductionEnabled = prepareBlockProductionEnabled;
       return this;
     }
 

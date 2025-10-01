@@ -13,23 +13,18 @@
 
 package tech.pegasys.teku.api;
 
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache.TRACKED_EPOCHS;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -43,8 +38,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -177,46 +170,7 @@ public class NodeDataProvider {
   }
 
   public SafeFuture<InternalValidationResult> postVoluntaryExit(final SignedVoluntaryExit exit) {
-    final Optional<SafeFuture<BeaconState>> maybeFutureState = recentChainData.getBestState();
-
-    return maybeFutureState
-        .map(
-            beaconStateSafeFuture ->
-                beaconStateSafeFuture
-                    .thenApply(
-                        state -> {
-                          final SszList<Validator> validators = state.getValidators();
-                          final int validatorId = exit.getValidatorId();
-                          if (validators.size() <= validatorId) {
-                            return InternalValidationResult.reject(
-                                "Validator index %s was not found", exit.getValidatorId());
-                          } else if (validators
-                              .get(validatorId)
-                              .getExitEpoch()
-                              .isLessThan(FAR_FUTURE_EPOCH)) {
-                            return InternalValidationResult.reject(
-                                "Validator index %s is already exiting (or exited)",
-                                exit.getValidatorId());
-                          }
-                          return InternalValidationResult.ACCEPT;
-                        })
-                    .thenApply(
-                        result -> {
-                          if (result.isAccept()) {
-                            try {
-                              // if we can't add this in a reasonable time we should fail.
-                              return voluntaryExitPool.addLocal(exit).get(5, TimeUnit.SECONDS);
-                            } catch (InterruptedException
-                                | ExecutionException
-                                | TimeoutException e) {
-                              return InternalValidationResult.reject(
-                                  "Failed to add voluntary exit for validator index %s to pool: %s",
-                                  exit.getValidatorId(), e.getMessage());
-                            }
-                          }
-                          return result;
-                        }))
-        .orElseGet(() -> SafeFuture.failedFuture(new ServiceUnavailableException()));
+    return voluntaryExitPool.addLocal(exit);
   }
 
   public SafeFuture<InternalValidationResult> postAttesterSlashing(

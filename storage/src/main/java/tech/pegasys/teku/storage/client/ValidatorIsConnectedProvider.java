@@ -13,24 +13,10 @@
 
 package tech.pegasys.teku.storage.client;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ValidatorIsConnectedProvider {
-  ValidatorIsConnectedProvider ALWAYS =
-      new ValidatorIsConnectedProvider() {
-        @Override
-        public boolean isValidatorConnected(final int validatorId, final UInt64 slot) {
-          return true;
-        }
-
-        @Override
-        public SafeFuture<Boolean> isBlockProposerConnected(final UInt64 slot) {
-          return SafeFuture.completedFuture(true);
-        }
-      };
+  ValidatorIsConnectedProvider NOOP = (validatorId, slot) -> true;
 
   boolean isValidatorConnected(int validatorId, UInt64 slot);
-
-  SafeFuture<Boolean> isBlockProposerConnected(UInt64 slot);
 }

@@ -439,7 +439,7 @@ class LateBlockReorgLogicTest {
 
     final Optional<BeaconState> maybeParentState = Optional.of(signedBlockAndState.getState());
     when(store.getBlockStateIfAvailable(any())).thenReturn(maybeParentState);
-    when(recentChainData.isValidatorConnected(anyInt(), any())).thenReturn(false);
+    when(recentChainData.validatorIsConnected(anyInt(), any())).thenReturn(false);
     assertThat(
             reorgLogicInstrumented.shouldOverrideFcuCheckProposerPreState(
                 UInt64.valueOf(2), dataStructureUtil.randomBytes32()))
@@ -451,7 +451,7 @@ class LateBlockReorgLogicTest {
 
     final Optional<BeaconState> maybeParentState = Optional.of(signedBlockAndState.getState());
     when(store.getBlockStateIfAvailable(any())).thenReturn(maybeParentState);
-    when(recentChainData.isValidatorConnected(anyInt(), any())).thenReturn(true);
+    when(recentChainData.validatorIsConnected(anyInt(), any())).thenReturn(true);
     assertThat(
             reorgLogicInstrumented.shouldOverrideFcuCheckProposerPreState(
                 UInt64.valueOf(2), dataStructureUtil.randomBytes32()))

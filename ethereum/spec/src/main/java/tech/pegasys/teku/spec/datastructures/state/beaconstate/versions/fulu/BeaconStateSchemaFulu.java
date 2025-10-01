@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.PROPOSER_LOOKAHEAD_SCHEMA;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -45,14 +44,17 @@ public class BeaconStateSchemaFulu
     super("BeaconStateFulu", getUniqueFields(specConfig, schemaRegistry), specConfig);
   }
 
-  public static List<SszField> getUniqueFields(
+  private static List<SszField> getUniqueFields(
       final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
     final List<SszField> newFields =
         List.of(
             new SszField(
                 PROPOSER_LOOKAHEAD_FIELD_INDEX,
                 BeaconStateFields.PROPOSER_LOOKAHEAD,
-                () -> schemaRegistry.get(PROPOSER_LOOKAHEAD_SCHEMA)));
+                () ->
+                    SszUInt64VectorSchema.create(
+                        (long) (specConfig.getMinSeedLookahead() + 1)
+                            * specConfig.getSlotsPerEpoch())));
 
     return Stream.concat(
             BeaconStateSchemaElectra.getUniqueFields(specConfig, schemaRegistry).stream(),
@@ -77,6 +79,24 @@ public class BeaconStateSchemaFulu
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
   }
 
+  @Override
+  public MutableBeaconStateFulu createBuilder() {
+    return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
+  }
+
+  public static BeaconStateSchemaFulu create(
+      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
+    return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
+  }
+
+  public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
+    checkArgument(
+        schema instanceof BeaconStateSchemaFulu,
+        "Expected a BeaconStateSchemaFulu but was %s",
+        schema.getClass());
+    return (BeaconStateSchemaFulu) schema;
+  }
+
   @SuppressWarnings("unchecked")
   public SszListSchema<PendingDeposit, ?> getPendingDepositsSchema() {
     return (SszListSchema<PendingDeposit, ?>)
@@ -98,24 +118,6 @@ public class BeaconStateSchemaFulu
   public SszUInt64VectorSchema<?> getProposerLookaheadSchema() {
     return (SszUInt64VectorSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.PROPOSER_LOOKAHEAD));
-  }
-
-  @Override
-  public MutableBeaconStateFulu createBuilder() {
-    return new MutableBeaconStateFuluImpl(createEmptyBeaconStateImpl(), true);
-  }
-
-  public static BeaconStateSchemaFulu create(
-      final SpecConfig specConfig, final SchemaRegistry schemaRegistry) {
-    return new BeaconStateSchemaFulu(specConfig, schemaRegistry);
-  }
-
-  public static BeaconStateSchemaFulu required(final BeaconStateSchema<?, ?> schema) {
-    checkArgument(
-        schema instanceof BeaconStateSchemaFulu,
-        "Expected a BeaconStateSchemaFulu but was %s",
-        schema.getClass());
-    return (BeaconStateSchemaFulu) schema;
   }
 
   @Override

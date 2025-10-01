@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -78,9 +79,8 @@ public abstract class TransitionBenchmark {
   @Setup(Level.Trial)
   @SuppressWarnings("deprecation")
   public void init() throws Exception {
-    spec =
-        TestSpecFactory.createMainnetAltair(
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+    spec = TestSpecFactory.createMainnetAltair();
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
     String blocksFile =

@@ -32,6 +32,8 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.ArrayUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -60,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AggregateGenerator;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -111,9 +114,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
  *
  * <p>The signature of aggregate is valid.
  */
-@TestSpecContext(
-    milestone = {PHASE0, ELECTRA},
-    signatureVerifierNoop = true)
+@TestSpecContext(milestone = {PHASE0, ELECTRA})
 class AggregateAttestationValidatorTest {
 
   private Spec spec;
@@ -129,6 +130,17 @@ class AggregateAttestationValidatorTest {
   private AggregateAttestationValidator validator;
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
+
+  @BeforeAll
+  public static void init() {
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+  }
+
+  @AfterAll
+  public static void reset() {
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
+  }
 
   @BeforeEach
   public void setUp(final SpecContext specContext) {

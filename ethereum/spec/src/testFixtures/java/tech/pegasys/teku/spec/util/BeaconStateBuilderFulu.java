@@ -208,6 +208,18 @@ public class BeaconStateBuilderFulu
     this.exitBalanceToConsume = UInt64.ZERO;
     this.earliestExitEpoch = UInt64.ZERO;
     this.consolidationBalanceToConsume = UInt64.ZERO;
+    this.pendingDeposits =
+        schema
+            .getPendingDepositsSchema()
+            .createFromElements(List.of(dataStructureUtil.randomPendingDeposit()));
+    this.pendingPartialWithdrawals =
+        schema
+            .getPendingPartialWithdrawalsSchema()
+            .createFromElements(List.of(dataStructureUtil.randomPendingPartialWithdrawal()));
+    this.pendingConsolidations =
+        schema
+            .getPendingConsolidationsSchema()
+            .createFromElements(List.of(dataStructureUtil.randomPendingConsolidation()));
     this.earliestConsolidationEpoch = UInt64.ZERO;
     this.pendingDeposits = schema.getPendingDepositsSchema().createFromElements(List.of());
     this.pendingPartialWithdrawals =

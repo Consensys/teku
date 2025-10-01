@@ -22,20 +22,8 @@ INACTIVITY_SCORE_RECOVERY_RATE: 16
 # ---------------------------------------------------------------
 # 2**8 (= 256)
 #EPOCHS_PER_SYNC_COMMITTEE_PERIOD: 256
-# [customized] 6000 milliseconds
-SLOT_DURATION_MS: 6000
-# 1667 basis points, ~17% of SLOT_DURATION_MS
-PROPOSER_REORG_CUTOFF_BPS: 1667
-# 3333 basis points, ~33% of SLOT_DURATION_MS
-ATTESTATION_DUE_BPS: 3333
-# 6667 basis points, ~67% of SLOT_DURATION_MS
-AGGREGATE_DUE_BPS: 6667
 
-# Altair
-# 3333 basis points, ~33% of SLOT_DURATION_MS
-SYNC_MESSAGE_DUE_BPS: 3333
-# 6667 basis points, ~67% of SLOT_DURATION_MS
-CONTRIBUTION_DUE_BPS: 6667
+
 # Signature domains
 # ---------------------------------------------------------------
 DOMAIN_SYNC_COMMITTEE: 0x07000000

@@ -33,7 +33,7 @@ public record TypedFilePrivateKeySource(String fileName, Type type) implements P
       return getPrivateKeyBytesFromTextFile();
     }
     throw new InvalidConfigurationException(
-        String.format("Private key file %s does not exist.", fileName));
+        String.format("File %s with private key does not exist", fileName));
   }
 
   private Bytes getPrivateKeyBytesFromTextFile() {
@@ -45,9 +45,7 @@ public record TypedFilePrivateKeySource(String fileName, Type type) implements P
     } catch (MalformedInputException e) {
       return getPrivateKeyBytesFromBytesFile();
     } catch (IOException e) {
-      throw new RuntimeException(
-          String.format(
-              "Private key file %s could not be read: %s", fileName, e.getClass().getSimpleName()));
+      throw new RuntimeException("p2p private key file not found - " + fileName);
     }
   }
 
@@ -57,9 +55,7 @@ public record TypedFilePrivateKeySource(String fileName, Type type) implements P
       STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
       return privateKeyBytes;
     } catch (IOException e) {
-      throw new RuntimeException(
-          String.format(
-              "Private key file %s could not be read: %s", fileName, e.getClass().getSimpleName()));
+      throw new RuntimeException("p2p private key file not found - " + fileName);
     }
   }
 

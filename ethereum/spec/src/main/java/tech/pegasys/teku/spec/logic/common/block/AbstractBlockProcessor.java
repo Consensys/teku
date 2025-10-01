@@ -702,7 +702,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         signatures.add(deposit.getData().getSignature());
       }
       // Overwhelmingly often we expect all the deposit signatures to be good
-      return specConfig.getBLSSignatureVerifier().verify(publicKeys, messages, signatures);
+      return depositSignatureVerifier.verify(publicKeys, messages, signatures);
     } catch (final BlsException e) {
       return false;
     }

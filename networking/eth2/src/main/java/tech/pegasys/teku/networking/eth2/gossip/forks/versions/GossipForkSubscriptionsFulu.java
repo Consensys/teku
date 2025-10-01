@@ -39,6 +39,7 @@ import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+// Capella because we don't need blobSidecar subscriptions
 public class GossipForkSubscriptionsFulu extends GossipForkSubscriptionsElectra {
 
   private final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;

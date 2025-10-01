@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
@@ -99,11 +100,9 @@ public class EpochTransitionBenchmark {
   @Setup(Level.Trial)
   @SuppressWarnings("deprecation")
   public void init() throws Exception {
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
-    spec =
-        TestSpecFactory.createMainnetAltair(
-            specConfigBuilder ->
-                specConfigBuilder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+    spec = TestSpecFactory.createMainnetAltair();
     asyncRunner = DelayedExecutorAsyncRunner.create();
     String blocksFile =
         "/blocks/blocks_epoch_"

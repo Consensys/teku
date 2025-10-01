@@ -15,6 +15,8 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -23,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
@@ -31,15 +34,24 @@ public class BuilderCircuitBreakerImplTest {
   private static final int ALLOWED_FAULTS = 5;
   private static final int ALLOWED_CONSECUTIVE_FAULTS = 2;
 
-  private final Spec spec =
-      TestSpecFactory.createMinimalBellatrix(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
 
   private final BuilderCircuitBreakerImpl builderCircuitBreaker =
       new BuilderCircuitBreakerImpl(
           spec, INSPECTION_WINDOW, ALLOWED_FAULTS, ALLOWED_CONSECUTIVE_FAULTS);
 
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+
+  @BeforeAll
+  public static void disableDepositBlsVerification() {
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+  }
+
+  @AfterAll
+  public static void enableDepositBlsVerification() {
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
+  }
 
   @BeforeEach
   void setUp() {

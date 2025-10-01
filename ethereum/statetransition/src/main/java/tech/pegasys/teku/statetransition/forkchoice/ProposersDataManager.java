@@ -41,9 +41,8 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
 
-public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConnectedProvider {
+public class ProposersDataManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
   private static final long PROPOSER_PREPARATION_EXPIRATION_EPOCHS = 3;
   private static final long VALIDATOR_REGISTRATION_EXPIRATION_EPOCHS = 2;
@@ -132,25 +131,10 @@ public class ProposersDataManager implements SlotEventsChannel, ValidatorIsConne
                     headState, signedValidatorRegistrations, currentSlot));
   }
 
-  @Override
-  public boolean isValidatorConnected(final int validatorIndex, final UInt64 currentSlot) {
-    final PreparedProposerInfo info =
-        preparedProposerInfoByValidatorIndex.get(UInt64.valueOf(validatorIndex));
+  // used in ForkChoice validator_is_connected
+  public boolean validatorIsConnected(final UInt64 validatorIndex, final UInt64 currentSlot) {
+    final PreparedProposerInfo info = preparedProposerInfoByValidatorIndex.get(validatorIndex);
     return info != null && !info.hasExpired(currentSlot);
-  }
-
-  @Override
-  public SafeFuture<Boolean> isBlockProposerConnected(final UInt64 blockSlot) {
-    final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    return getStateInEpoch(epoch)
-        .thenApply(
-            maybeState -> {
-              if (maybeState.isEmpty()) {
-                return false;
-              }
-              return isValidatorConnected(
-                  spec.getBeaconProposerIndex(maybeState.get(), blockSlot), blockSlot);
-            });
   }
 
   private void updatePreparedProposerCache(

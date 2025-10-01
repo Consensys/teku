@@ -20,13 +20,20 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.EIP7805;
 import static tech.pegasys.teku.spec.SpecMilestone.ELECTRA;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
-import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigEip7805;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
@@ -46,26 +53,68 @@ public class SpecFactory {
   }
 
   public static Spec create(final SpecConfigAndParent<? extends SpecConfig> config) {
-    final SpecConfig specConfig = config.specConfig();
+    final UInt64 altairForkEpoch =
+        config
+            .specConfig()
+            .toVersionAltair()
+            .map(SpecConfigAltair::getAltairForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 bellatrixForkEpoch =
+        config
+            .specConfig()
+            .toVersionBellatrix()
+            .map(SpecConfigBellatrix::getBellatrixForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 capellaForkEpoch =
+        config
+            .specConfig()
+            .toVersionCapella()
+            .map(SpecConfigCapella::getCapellaForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 denebForkEpoch =
+        config
+            .specConfig()
+            .toVersionDeneb()
+            .map(SpecConfigDeneb::getDenebForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 electraForkEpoch =
+        config
+            .specConfig()
+            .toVersionElectra()
+            .map(SpecConfigElectra::getElectraForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 fuluForkEpoch =
+        config
+            .specConfig()
+            .toVersionFulu()
+            .map(SpecConfigFulu::getFuluForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
+    final UInt64 eip7805ForkEpoch =
+        config
+            .specConfig()
+            .toVersionEip7805()
+            .map(SpecConfigEip7805::getEip7805ForkEpoch)
+            .orElse(FAR_FUTURE_EPOCH);
+    final SpecMilestone highestMilestoneSupported;
 
-    if (!specConfig.getEip7805ForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, EIP7805);
-    } else if (!specConfig.getGloasForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, GLOAS);
-    } else if (!specConfig.getFuluForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, FULU);
-    } else if (!specConfig.getElectraForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, ELECTRA);
-    } else if (!specConfig.getDenebForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, DENEB);
-    } else if (!specConfig.getCapellaForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, CAPELLA);
-    } else if (!specConfig.getBellatrixForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, BELLATRIX);
-    } else if (!specConfig.getAltairForkEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return Spec.create(config, ALTAIR);
+    if (!eip7805ForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = EIP7805;
+    } else if (!fuluForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = FULU;
+    } else if (!electraForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = ELECTRA;
+    } else if (!denebForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = DENEB;
+    } else if (!capellaForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = CAPELLA;
+    } else if (!bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = BELLATRIX;
+    } else if (!altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = ALTAIR;
+    } else {
+      highestMilestoneSupported = PHASE0;
     }
 
-    return Spec.create(config, PHASE0);
+    return Spec.create(config, highestMilestoneSupported);
   }
 }

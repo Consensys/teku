@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -61,9 +62,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
   public static Consumer<Object> blackHole = o -> {};
-  private Spec spec =
-      TestSpecFactory.createMainnetPhase0(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+  private Spec spec = TestSpecFactory.createMainnetPhase0();
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -72,6 +71,9 @@ public class ProfilingRun {
   @Test
   @SuppressWarnings("deprecation")
   public void importBlocks() throws Exception {
+
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+
     int validatorsCount = 32 * 1024;
     int iterationBlockLimit = 1024;
 
@@ -162,6 +164,9 @@ public class ProfilingRun {
   @Test
   @SuppressWarnings("deprecation")
   public void importBlocksMemProfiling() throws Exception {
+
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+
     final int validatorsCount = 32 * 1024;
 
     final String blocksFile =

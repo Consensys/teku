@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -214,16 +213,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getGloasForkVersion() {
-    return specConfig.getGloasForkVersion();
-  }
-
-  @Override
-  public UInt64 getGloasForkEpoch() {
-    return specConfig.getGloasForkEpoch();
-  }
-
-  @Override
   public Bytes4 getEip7805ForkVersion() {
     return specConfig.getEip7805ForkVersion();
   }
@@ -236,26 +225,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public int getSecondsPerSlot() {
     return specConfig.getSecondsPerSlot();
-  }
-
-  @Override
-  public int getProposerReorgCutoffBps() {
-    return specConfig.getProposerReorgCutoffBps();
-  }
-
-  @Override
-  public int getAttestationDueBps() {
-    return specConfig.getAttestationDueBps();
-  }
-
-  @Override
-  public int getAggregateDueBps() {
-    return specConfig.getAggregateDueBps();
-  }
-
-  @Override
-  public int getSlotDurationMillis() {
-    return specConfig.getSlotDurationMillis();
   }
 
   @Override
@@ -491,10 +460,5 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public SpecMilestone getMilestone() {
     return specConfig.getMilestone();
-  }
-
-  @Override
-  public BLSSignatureVerifier getBLSSignatureVerifier() {
-    return specConfig.getBLSSignatureVerifier();
   }
 }

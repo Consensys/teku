@@ -2,13 +2,13 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AggregateAndProof.java
   spec: |
-    <spec container="AggregateAndProof" fork="phase0" hash="a218764f">
+    <spec ssz_object="AggregateAndProof" fork="phase0" hash="a218764f">
     class AggregateAndProof(Container):
         aggregator_index: ValidatorIndex
         aggregate: Attestation
         selection_proof: BLSSignature
     </spec>
-    <spec container="AggregateAndProof" fork="electra" hash="a7f482d7">
+    <spec ssz_object="AggregateAndProof" fork="electra" hash="a7f482d7">
     class AggregateAndProof(Container):
         aggregator_index: ValidatorIndex
         # [Modified in Electra:EIP7549]
@@ -23,7 +23,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/phase0/AttestationPhase0.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/phase0/AttestationPhase0Schema.java
   spec: |
-    <spec container="Attestation" fork="phase0" hash="5fc71dce">
+    <spec ssz_object="Attestation" fork="phase0" hash="5fc71dce">
     class Attestation(Container):
         aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE]
         data: AttestationData
@@ -37,7 +37,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/electra/AttestationElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/electra/AttestationElectraSchema.java
   spec: |
-    <spec container="Attestation" fork="electra" hash="a27cddfb">
+    <spec ssz_object="Attestation" fork="electra" hash="a27cddfb">
     class Attestation(Container):
         # [Modified in Electra:EIP7549]
         aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE * MAX_COMMITTEES_PER_SLOT]
@@ -51,7 +51,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttestationData.java
   spec: |
-    <spec container="AttestationData" fork="phase0" hash="854be491">
+    <spec ssz_object="AttestationData" fork="phase0" hash="854be491">
     class AttestationData(Container):
         slot: Slot
         index: CommitteeIndex
@@ -65,12 +65,12 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttesterSlashing.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/AttesterSlashingSchema.java
   spec: |
-    <spec container="AttesterSlashing" fork="phase0" hash="caf8a91a">
+    <spec ssz_object="AttesterSlashing" fork="phase0" hash="caf8a91a">
     class AttesterSlashing(Container):
         attestation_1: IndexedAttestation
         attestation_2: IndexedAttestation
     </spec>
-    <spec container="AttesterSlashing" fork="electra" hash="2b9f773d">
+    <spec ssz_object="AttesterSlashing" fork="electra" hash="2b9f773d">
     class AttesterSlashing(Container):
         # [Modified in Electra:EIP7549]
         attestation_1: IndexedAttestation
@@ -83,7 +83,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/BlsToExecutionChange.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/BlsToExecutionChangeSchema.java
   spec: |
-    <spec container="BLSToExecutionChange" fork="capella" hash="9271c356">
+    <spec ssz_object="BLSToExecutionChange" fork="capella" hash="9271c356">
     class BLSToExecutionChange(Container):
         validator_index: ValidatorIndex
         from_bls_pubkey: BLSPubkey
@@ -95,7 +95,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BeaconBlock.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BeaconBlockSchema.java
   spec: |
-    <spec container="BeaconBlock" fork="phase0" hash="79909f0a">
+    <spec ssz_object="BeaconBlock" fork="phase0" hash="79909f0a">
     class BeaconBlock(Container):
         slot: Slot
         proposer_index: ValidatorIndex
@@ -110,7 +110,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/phase0/BeaconBlockBodyBuilderPhase0.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/phase0/BeaconBlockBodySchemaPhase0.java
   spec: |
-    <spec container="BeaconBlockBody" fork="phase0" hash="e982fea2">
+    <spec ssz_object="BeaconBlockBody" fork="phase0" hash="e982fea2">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -130,7 +130,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/BeaconBlockBodySchemaAltair.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/BeaconBlockBodySchemaAltairImpl.java
   spec: |
-    <spec container="BeaconBlockBody" fork="altair" hash="4afb2e64">
+    <spec ssz_object="BeaconBlockBody" fork="altair" hash="4afb2e64">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -152,7 +152,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/bellatrix/BeaconBlockBodySchemaBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/bellatrix/BeaconBlockBodySchemaBellatrixImpl.java
   spec: |
-    <spec container="BeaconBlockBody" fork="bellatrix" hash="2ba73fc8">
+    <spec ssz_object="BeaconBlockBody" fork="bellatrix" hash="2ba73fc8">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -175,7 +175,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/capella/BeaconBlockBodySchemaCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/capella/BeaconBlockBodySchemaCapellaImpl.java
   spec: |
-    <spec container="BeaconBlockBody" fork="capella" hash="3136f99b">
+    <spec ssz_object="BeaconBlockBody" fork="capella" hash="3136f99b">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -199,7 +199,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/deneb/BeaconBlockBodySchemaDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/deneb/BeaconBlockBodySchemaDenebImpl.java
   spec: |
-    <spec container="BeaconBlockBody" fork="deneb" hash="cf0c1053">
+    <spec ssz_object="BeaconBlockBody" fork="deneb" hash="cf0c1053">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -225,7 +225,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/electra/BeaconBlockBodySchemaElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/electra/BeaconBlockBodySchemaElectraImpl.java
   spec: |
-    <spec container="BeaconBlockBody" fork="electra" hash="cd172b8c">
+    <spec ssz_object="BeaconBlockBody" fork="electra" hash="cd172b8c">
     class BeaconBlockBody(Container):
         randao_reveal: BLSSignature
         eth1_data: Eth1Data
@@ -249,7 +249,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/BeaconBlockHeader.java
   spec: |
-    <spec container="BeaconBlockHeader" fork="phase0" hash="0be4f2e7">
+    <spec ssz_object="BeaconBlockHeader" fork="phase0" hash="0be4f2e7">
     class BeaconBlockHeader(Container):
         slot: Slot
         proposer_index: ValidatorIndex
@@ -266,7 +266,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/phase0/MutableBeaconStatePhase0.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/phase0/MutableBeaconStatePhase0Impl.java
   spec: |
-    <spec container="BeaconState" fork="phase0" hash="05beaa1c">
+    <spec ssz_object="BeaconState" fork="phase0" hash="05beaa1c">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -299,7 +299,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/altair/MutableBeaconStateAltair.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/altair/MutableBeaconStateAltairImpl.java
   spec: |
-    <spec container="BeaconState" fork="altair" hash="8de7d5fb">
+    <spec ssz_object="BeaconState" fork="altair" hash="8de7d5fb">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -340,7 +340,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/bellatrix/MutableBeaconStateBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/bellatrix/MutableBeaconStateBellatrixImpl.java
   spec: |
-    <spec container="BeaconState" fork="bellatrix" hash="e5633a51">
+    <spec ssz_object="BeaconState" fork="bellatrix" hash="e5633a51">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -378,7 +378,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/capella/MutableBeaconStateCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/capella/MutableBeaconStateCapellaImpl.java
   spec: |
-    <spec container="BeaconState" fork="capella" hash="245ba83b">
+    <spec ssz_object="BeaconState" fork="capella" hash="245ba83b">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -422,7 +422,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/deneb/MutableBeaconStateDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/deneb/MutableBeaconStateDenebImpl.java
   spec: |
-    <spec container="BeaconState" fork="deneb" hash="32fd9dc4">
+    <spec ssz_object="BeaconState" fork="deneb" hash="32fd9dc4">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -463,7 +463,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/electra/MutableBeaconStateElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/electra/MutableBeaconStateElectraImpl.java
   spec: |
-    <spec container="BeaconState" fork="electra" hash="55e40daf">
+    <spec ssz_object="BeaconState" fork="electra" hash="55e40daf">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -521,7 +521,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/fulu/MutableBeaconStateFulu.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/beaconstate/versions/fulu/MutableBeaconStateFuluImpl.java
   spec: |
-    <spec container="BeaconState" fork="fulu" hash="0923b253">
+    <spec ssz_object="BeaconState" fork="fulu" hash="0923b253">
     class BeaconState(Container):
         genesis_time: uint64
         genesis_validators_root: Root
@@ -568,7 +568,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/networking/libp2p/rpc/BlobIdentifier.java
   spec: |
-    <spec container="BlobIdentifier" fork="deneb" hash="14d845de">
+    <spec ssz_object="BlobIdentifier" fork="deneb" hash="14d845de">
     class BlobIdentifier(Container):
         block_root: Root
         index: BlobIndex
@@ -579,7 +579,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/deneb/BlobSidecar.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/deneb/BlobSidecarSchema.java
   spec: |
-    <spec container="BlobSidecar" fork="deneb" hash="b4f28e34">
+    <spec ssz_object="BlobSidecar" fork="deneb" hash="b4f28e34">
     class BlobSidecar(Container):
         index: BlobIndex
         blob: Blob
@@ -593,7 +593,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/Checkpoint.java
   spec: |
-    <spec container="Checkpoint" fork="phase0" hash="24947006">
+    <spec ssz_object="Checkpoint" fork="phase0" hash="24947006">
     class Checkpoint(Container):
         epoch: Epoch
         root: Root
@@ -604,7 +604,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ConsolidationRequest.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ConsolidationRequestSchema.java
   spec: |
-    <spec container="ConsolidationRequest" fork="electra" hash="269fdb77">
+    <spec ssz_object="ConsolidationRequest" fork="electra" hash="269fdb77">
     class ConsolidationRequest(Container):
         source_address: ExecutionAddress
         source_pubkey: BLSPubkey
@@ -616,7 +616,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/ContributionAndProof.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/ContributionAndProofSchema.java
   spec: |
-    <spec container="ContributionAndProof" fork="altair" hash="f7a5150c">
+    <spec ssz_object="ContributionAndProof" fork="altair" hash="f7a5150c">
     class ContributionAndProof(Container):
         aggregator_index: ValidatorIndex
         contribution: SyncCommitteeContribution
@@ -628,7 +628,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecar.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/DataColumnSidecarSchema.java
   spec: |
-    <spec container="DataColumnSidecar" fork="fulu" hash="03586114">
+    <spec ssz_object="DataColumnSidecar" fork="fulu" hash="03586114">
     class DataColumnSidecar(Container):
         index: ColumnIndex
         column: List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]
@@ -642,7 +642,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/networking/libp2p/rpc/DataColumnsByRootIdentifier.java
   spec: |
-    <spec container="DataColumnsByRootIdentifier" fork="fulu" hash="f0478456">
+    <spec ssz_object="DataColumnsByRootIdentifier" fork="fulu" hash="f0478456">
     class DataColumnsByRootIdentifier(Container):
         block_root: Root
         columns: List[ColumnIndex, NUMBER_OF_COLUMNS]
@@ -652,7 +652,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/Deposit.java
   spec: |
-    <spec container="Deposit" fork="phase0" hash="cc281399">
+    <spec ssz_object="Deposit" fork="phase0" hash="cc281399">
     class Deposit(Container):
         proof: Vector[Bytes32, DEPOSIT_CONTRACT_TREE_DEPTH + 1]
         data: DepositData
@@ -662,7 +662,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/DepositData.java
   spec: |
-    <spec container="DepositData" fork="phase0" hash="44ba3a61">
+    <spec ssz_object="DepositData" fork="phase0" hash="44ba3a61">
     class DepositData(Container):
         pubkey: BLSPubkey
         withdrawal_credentials: Bytes32
@@ -674,7 +674,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/DepositMessage.java
   spec: |
-    <spec container="DepositMessage" fork="phase0" hash="d6f4c2ef">
+    <spec ssz_object="DepositMessage" fork="phase0" hash="d6f4c2ef">
     class DepositMessage(Container):
         pubkey: BLSPubkey
         withdrawal_credentials: Bytes32
@@ -686,7 +686,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/DepositRequest.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/DepositRequestSchema.java
   spec: |
-    <spec container="DepositRequest" fork="electra" hash="3af9895d">
+    <spec ssz_object="DepositRequest" fork="electra" hash="3af9895d">
     class DepositRequest(Container):
         pubkey: BLSPubkey
         withdrawal_credentials: Bytes32
@@ -699,7 +699,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/Eth1Data.java
   spec: |
-    <spec container="Eth1Data" fork="phase0" hash="1d7be228">
+    <spec ssz_object="Eth1Data" fork="phase0" hash="1d7be228">
     class Eth1Data(Container):
         deposit_root: Root
         deposit_count: uint64
@@ -712,7 +712,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadBuilderBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadSchemaBellatrix.java
   spec: |
-    <spec container="ExecutionPayload" fork="bellatrix" hash="da4d8580">
+    <spec ssz_object="ExecutionPayload" fork="bellatrix" hash="da4d8580">
     class ExecutionPayload(Container):
         parent_hash: Hash32
         fee_recipient: ExecutionAddress
@@ -737,7 +737,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadBuilderCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadSchemaCapella.java
   spec: |
-    <spec container="ExecutionPayload" fork="capella" hash="5533cb47">
+    <spec ssz_object="ExecutionPayload" fork="capella" hash="5533cb47">
     class ExecutionPayload(Container):
         parent_hash: Hash32
         fee_recipient: ExecutionAddress
@@ -764,7 +764,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadBuilderDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadSchemaDeneb.java
   spec: |
-    <spec container="ExecutionPayload" fork="deneb" hash="974f7cc9">
+    <spec ssz_object="ExecutionPayload" fork="deneb" hash="974f7cc9">
     class ExecutionPayload(Container):
         parent_hash: Hash32
         fee_recipient: ExecutionAddress
@@ -793,7 +793,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadHeaderBuilderBellatrix.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/bellatrix/ExecutionPayloadHeaderSchemaBellatrix.java
   spec: |
-    <spec container="ExecutionPayloadHeader" fork="bellatrix" hash="08fc7165">
+    <spec ssz_object="ExecutionPayloadHeader" fork="bellatrix" hash="08fc7165">
     class ExecutionPayloadHeader(Container):
         parent_hash: Hash32
         fee_recipient: ExecutionAddress
@@ -818,7 +818,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadHeaderBuilderCapella.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/ExecutionPayloadHeaderSchemaCapella.java
   spec: |
-    <spec container="ExecutionPayloadHeader" fork="capella" hash="5f481de3">
+    <spec ssz_object="ExecutionPayloadHeader" fork="capella" hash="5f481de3">
     class ExecutionPayloadHeader(Container):
         parent_hash: Hash32
         fee_recipient: ExecutionAddress
@@ -845,7 +845,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadHeaderBuilderDeneb.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/deneb/ExecutionPayloadHeaderSchemaDeneb.java
   spec: |
-    <spec container="ExecutionPayloadHeader" fork="deneb" hash="957fa918">
+    <spec ssz_object="ExecutionPayloadHeader" fork="deneb" hash="957fa918">
     class ExecutionPayloadHeader(Container):
         parent_hash: Hash32
         fee_recipient: ExecutionAddress
@@ -874,7 +874,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsBuilderElectra.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/ExecutionRequestsSchema.java
   spec: |
-    <spec container="ExecutionRequests" fork="electra" hash="048c4a44">
+    <spec ssz_object="ExecutionRequests" fork="electra" hash="048c4a44">
     class ExecutionRequests(Container):
         # [New in Electra:EIP6110]
         deposits: List[DepositRequest, MAX_DEPOSIT_REQUESTS_PER_PAYLOAD]
@@ -888,7 +888,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/Fork.java
   spec: |
-    <spec container="Fork" fork="phase0" hash="d210b04e">
+    <spec ssz_object="Fork" fork="phase0" hash="d210b04e">
     class Fork(Container):
         previous_version: Version
         current_version: Version
@@ -899,7 +899,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/ForkData.java
   spec: |
-    <spec container="ForkData" fork="phase0" hash="8ed39352">
+    <spec ssz_object="ForkData" fork="phase0" hash="8ed39352">
     class ForkData(Container):
         current_version: Version
         genesis_validators_root: Root
@@ -909,7 +909,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/HistoricalBatch.java
   spec: |
-    <spec container="HistoricalBatch" fork="phase0" hash="3b677eb3">
+    <spec ssz_object="HistoricalBatch" fork="phase0" hash="3b677eb3">
     class HistoricalBatch(Container):
         block_roots: Vector[Root, SLOTS_PER_HISTORICAL_ROOT]
         state_roots: Vector[Root, SLOTS_PER_HISTORICAL_ROOT]
@@ -919,7 +919,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/capella/HistoricalSummary.java
   spec: |
-    <spec container="HistoricalSummary" fork="capella" hash="bfff1483">
+    <spec ssz_object="HistoricalSummary" fork="capella" hash="bfff1483">
     class HistoricalSummary(Container):
         block_summary_root: Root
         state_summary_root: Root
@@ -931,7 +931,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/IndexedAttestationSchema.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/schemas/registry/SchemaRegistryBuilder.java#L817-L819
   spec: |
-    <spec container="IndexedAttestation" fork="phase0" hash="b321d4c3">
+    <spec ssz_object="IndexedAttestation" fork="phase0" hash="b321d4c3">
     class IndexedAttestation(Container):
         attesting_indices: List[ValidatorIndex, MAX_VALIDATORS_PER_COMMITTEE]
         data: AttestationData
@@ -944,7 +944,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/IndexedAttestationSchema.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/schemas/registry/SchemaRegistryBuilder.java#L821-L823
   spec: |
-    <spec container="IndexedAttestation" fork="electra" hash="2f924640">
+    <spec ssz_object="IndexedAttestation" fork="electra" hash="2f924640">
     class IndexedAttestation(Container):
         # [Modified in Electra:EIP7549]
         attesting_indices: List[ValidatorIndex, MAX_VALIDATORS_PER_COMMITTEE * MAX_COMMITTEES_PER_SLOT]
@@ -957,7 +957,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientBootstrap.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientBootstrapSchema.java
   spec: |
-    <spec container="LightClientBootstrap" fork="altair" hash="e0d2fa88">
+    <spec ssz_object="LightClientBootstrap" fork="altair" hash="e0d2fa88">
     class LightClientBootstrap(Container):
         # Header matching the requested beacon block root
         header: LightClientHeader
@@ -971,7 +971,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientHeader.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientHeaderSchema.java
   spec: |
-    <spec container="LightClientHeader" fork="altair" hash="53de7cd2">
+    <spec ssz_object="LightClientHeader" fork="altair" hash="53de7cd2">
     class LightClientHeader(Container):
         beacon: BeaconBlockHeader
     </spec>
@@ -981,7 +981,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientUpdate.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/lightclient/LightClientUpdateSchema.java
   spec: |
-    <spec container="LightClientUpdate" fork="altair" hash="abbfc36b">
+    <spec ssz_object="LightClientUpdate" fork="altair" hash="abbfc36b">
     class LightClientUpdate(Container):
         # Header attested to by the sync committee
         attested_header: LightClientHeader
@@ -1001,7 +1001,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/fulu/MatrixEntry.java
   spec: |
-    <spec container="MatrixEntry" fork="fulu" hash="0da9cc8e">
+    <spec ssz_object="MatrixEntry" fork="fulu" hash="0da9cc8e">
     class MatrixEntry(Container):
         cell: Cell
         kzg_proof: KZGProof
@@ -1013,7 +1013,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/PendingAttestation.java
   spec: |
-    <spec container="PendingAttestation" fork="phase0" hash="e0a37cea">
+    <spec ssz_object="PendingAttestation" fork="phase0" hash="e0a37cea">
     class PendingAttestation(Container):
         aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE]
         data: AttestationData
@@ -1025,7 +1025,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/electra/PendingConsolidation.java
   spec: |
-    <spec container="PendingConsolidation" fork="electra" hash="6ded98cf">
+    <spec ssz_object="PendingConsolidation" fork="electra" hash="6ded98cf">
     class PendingConsolidation(Container):
         source_index: ValidatorIndex
         target_index: ValidatorIndex
@@ -1035,7 +1035,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/electra/PendingDeposit.java
   spec: |
-    <spec container="PendingDeposit" fork="electra" hash="62923226">
+    <spec ssz_object="PendingDeposit" fork="electra" hash="62923226">
     class PendingDeposit(Container):
         pubkey: BLSPubkey
         withdrawal_credentials: Bytes32
@@ -1048,7 +1048,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/versions/electra/PendingPartialWithdrawal.java
   spec: |
-    <spec container="PendingPartialWithdrawal" fork="electra" hash="44f687d1">
+    <spec ssz_object="PendingPartialWithdrawal" fork="electra" hash="44f687d1">
     class PendingPartialWithdrawal(Container):
         validator_index: ValidatorIndex
         amount: Gwei
@@ -1059,7 +1059,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/PowBlock.java
   spec: |
-    <spec container="PowBlock" fork="bellatrix" hash="c6c8739a">
+    <spec ssz_object="PowBlock" fork="bellatrix" hash="c6c8739a">
     class PowBlock(Container):
         block_hash: Hash32
         parent_hash: Hash32
@@ -1070,7 +1070,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/ProposerSlashing.java
   spec: |
-    <spec container="ProposerSlashing" fork="phase0" hash="2cd89ad8">
+    <spec ssz_object="ProposerSlashing" fork="phase0" hash="2cd89ad8">
     class ProposerSlashing(Container):
         signed_header_1: SignedBeaconBlockHeader
         signed_header_2: SignedBeaconBlockHeader
@@ -1080,12 +1080,12 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedAggregateAndProof.java
   spec: |
-    <spec container="SignedAggregateAndProof" fork="phase0" hash="52046edd">
+    <spec ssz_object="SignedAggregateAndProof" fork="phase0" hash="52046edd">
     class SignedAggregateAndProof(Container):
         message: AggregateAndProof
         signature: BLSSignature
     </spec>
-    <spec container="SignedAggregateAndProof" fork="electra" hash="7e784e12">
+    <spec ssz_object="SignedAggregateAndProof" fork="electra" hash="7e784e12">
     class SignedAggregateAndProof(Container):
         # [Modified in Electra:EIP7549]
         message: AggregateAndProof
@@ -1097,7 +1097,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedBlsToExecutionChange.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedBlsToExecutionChangeSchema.java
   spec: |
-    <spec container="SignedBLSToExecutionChange" fork="capella" hash="09a5e4b9">
+    <spec ssz_object="SignedBLSToExecutionChange" fork="capella" hash="09a5e4b9">
     class SignedBLSToExecutionChange(Container):
         message: BLSToExecutionChange
         signature: BLSSignature
@@ -1108,7 +1108,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlock.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlockSchema.java
   spec: |
-    <spec container="SignedBeaconBlock" fork="phase0" hash="627b8629">
+    <spec ssz_object="SignedBeaconBlock" fork="phase0" hash="627b8629">
     class SignedBeaconBlock(Container):
         message: BeaconBlock
         signature: BLSSignature
@@ -1119,7 +1119,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlockHeader.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/SignedBeaconBlockHeaderSchema.java
   spec: |
-    <spec container="SignedBeaconBlockHeader" fork="phase0" hash="5784d47c">
+    <spec ssz_object="SignedBeaconBlockHeader" fork="phase0" hash="5784d47c">
     class SignedBeaconBlockHeader(Container):
         message: BeaconBlockHeader
         signature: BLSSignature
@@ -1130,7 +1130,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SignedContributionAndProof.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SignedContributionAndProofSchema.java
   spec: |
-    <spec container="SignedContributionAndProof" fork="altair" hash="56c7a91a">
+    <spec ssz_object="SignedContributionAndProof" fork="altair" hash="56c7a91a">
     class SignedContributionAndProof(Container):
         message: ContributionAndProof
         signature: BLSSignature
@@ -1140,7 +1140,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SignedVoluntaryExit.java
   spec: |
-    <spec container="SignedVoluntaryExit" fork="phase0" hash="89ba48b3">
+    <spec ssz_object="SignedVoluntaryExit" fork="phase0" hash="89ba48b3">
     class SignedVoluntaryExit(Container):
         message: VoluntaryExit
         signature: BLSSignature
@@ -1150,7 +1150,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/SigningData.java
   spec: |
-    <spec container="SigningData" fork="phase0" hash="c9a66f76">
+    <spec ssz_object="SigningData" fork="phase0" hash="c9a66f76">
     class SigningData(Container):
         object_root: Root
         domain: Domain
@@ -1161,7 +1161,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SingleAttestation.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/SingleAttestationSchema.java
   spec: |
-    <spec container="SingleAttestation" fork="electra" hash="f67f746a">
+    <spec ssz_object="SingleAttestation" fork="electra" hash="f67f746a">
     class SingleAttestation(Container):
         committee_index: CommitteeIndex
         attester_index: ValidatorIndex
@@ -1174,7 +1174,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/SyncAggregate.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blocks/blockbody/versions/altair/SyncAggregateSchema.java
   spec: |
-    <spec container="SyncAggregate" fork="altair" hash="51e247e5">
+    <spec ssz_object="SyncAggregate" fork="altair" hash="51e247e5">
     class SyncAggregate(Container):
         sync_committee_bits: Bitvector[SYNC_COMMITTEE_SIZE]
         sync_committee_signature: BLSSignature
@@ -1185,7 +1185,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncAggregatorSelectionData.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncAggregatorSelectionDataSchema.java
   spec: |
-    <spec container="SyncAggregatorSelectionData" fork="altair" hash="990a8a7f">
+    <spec ssz_object="SyncAggregatorSelectionData" fork="altair" hash="990a8a7f">
     class SyncAggregatorSelectionData(Container):
         slot: Slot
         subcommittee_index: uint64
@@ -1195,7 +1195,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/SyncCommittee.java
   spec: |
-    <spec container="SyncCommittee" fork="altair" hash="b1d52376">
+    <spec ssz_object="SyncCommittee" fork="altair" hash="b1d52376">
     class SyncCommittee(Container):
         pubkeys: Vector[BLSPubkey, SYNC_COMMITTEE_SIZE]
         aggregate_pubkey: BLSPubkey
@@ -1206,7 +1206,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeContribution.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeContributionSchema.java
   spec: |
-    <spec container="SyncCommitteeContribution" fork="altair" hash="9f9b0125">
+    <spec ssz_object="SyncCommitteeContribution" fork="altair" hash="9f9b0125">
     class SyncCommitteeContribution(Container):
         slot: Slot
         beacon_block_root: Root
@@ -1220,7 +1220,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeMessage.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/versions/altair/SyncCommitteeMessageSchema.java
   spec: |
-    <spec container="SyncCommitteeMessage" fork="altair" hash="0764ce67">
+    <spec ssz_object="SyncCommitteeMessage" fork="altair" hash="0764ce67">
     class SyncCommitteeMessage(Container):
         slot: Slot
         beacon_block_root: Root
@@ -1232,7 +1232,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/state/Validator.java
   spec: |
-    <spec container="Validator" fork="phase0" hash="54f88c17">
+    <spec ssz_object="Validator" fork="phase0" hash="54f88c17">
     class Validator(Container):
         pubkey: BLSPubkey
         withdrawal_credentials: Bytes32
@@ -1248,7 +1248,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/operations/VoluntaryExit.java
   spec: |
-    <spec container="VoluntaryExit" fork="phase0" hash="aa780f75">
+    <spec ssz_object="VoluntaryExit" fork="phase0" hash="aa780f75">
     class VoluntaryExit(Container):
         epoch: Epoch
         validator_index: ValidatorIndex
@@ -1258,7 +1258,7 @@
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/capella/Withdrawal.java
   spec: |
-    <spec container="Withdrawal" fork="capella" hash="ba17e57d">
+    <spec ssz_object="Withdrawal" fork="capella" hash="ba17e57d">
     class Withdrawal(Container):
         index: WithdrawalIndex
         validator_index: ValidatorIndex
@@ -1271,7 +1271,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/WithdrawalRequest.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/execution/versions/electra/WithdrawalRequestSchema.java
   spec: |
-    <spec container="WithdrawalRequest" fork="electra" hash="05b4d2de">
+    <spec ssz_object="WithdrawalRequest" fork="electra" hash="05b4d2de">
     class WithdrawalRequest(Container):
         source_address: ExecutionAddress
         validator_pubkey: BLSPubkey

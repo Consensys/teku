@@ -21,10 +21,10 @@ import java.util.function.BiConsumer;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805Impl;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
 public class Eip7805Builder extends BaseForkBuilder
-    implements ForkConfigBuilder<SpecConfigGloas, SpecConfigEip7805> {
+    implements ForkConfigBuilder<SpecConfigFulu, SpecConfigEip7805> {
 
   private Integer inclusionListCommitteeSize;
   private Integer maxRequestInclusionList;
@@ -37,7 +37,7 @@ public class Eip7805Builder extends BaseForkBuilder
 
   @Override
   public SpecConfigAndParent<SpecConfigEip7805> build(
-      final SpecConfigAndParent<SpecConfigGloas> specConfigAndParent) {
+      final SpecConfigAndParent<SpecConfigFulu> specConfigAndParent) {
     return SpecConfigAndParent.of(
         new SpecConfigEip7805Impl(
             specConfigAndParent.specConfig(),

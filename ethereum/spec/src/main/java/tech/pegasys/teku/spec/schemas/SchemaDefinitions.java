@@ -125,11 +125,6 @@ public interface SchemaDefinitions {
   }
 
   @NonSchema
-  default Optional<SchemaDefinitionsGloas> toVersionGloas() {
-    return Optional.empty();
-  }
-
-  @NonSchema
   default Optional<SchemaDefinitionsEip7805> toVersionEip7805() {
     return Optional.empty();
   }

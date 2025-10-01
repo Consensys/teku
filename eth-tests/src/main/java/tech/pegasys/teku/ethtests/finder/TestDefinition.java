@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
@@ -53,17 +52,13 @@ public class TestDefinition {
   }
 
   public Spec getSpec() {
-    return getSpec(true);
-  }
-
-  public Spec getSpec(final boolean blsSignatureVerificationEnabled) {
     if (spec == null) {
-      createSpec(blsSignatureVerificationEnabled);
+      createSpec();
     }
     return spec;
   }
 
-  private void createSpec(final boolean blsSignatureVerificationEnabled) {
+  private void createSpec() {
     final Eth2Network network =
         switch (configName) {
           case TestSpecConfig.MAINNET -> Eth2Network.MAINNET;
@@ -81,11 +76,7 @@ public class TestDefinition {
           case TestFork.FULU -> SpecMilestone.FULU;
           default -> throw new IllegalArgumentException("Unknown fork: " + fork);
         };
-    final BLSSignatureVerifier blsSignatureVerifier =
-        blsSignatureVerificationEnabled ? BLSSignatureVerifier.SIMPLE : BLSSignatureVerifier.NO_OP;
-    spec =
-        TestSpecFactory.create(
-            milestone, network, builder -> builder.blsSignatureVerifier(blsSignatureVerifier));
+    spec = TestSpecFactory.create(milestone, network);
   }
 
   public String getTestType() {

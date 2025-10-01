@@ -82,15 +82,6 @@ public class TransitionTestExecutor implements TestExecutor {
                         .denebForkEpoch(UInt64.ZERO)
                         .electraForkEpoch(UInt64.ZERO)
                         .fuluForkEpoch(forkEpoch);
-                case GLOAS ->
-                    builder
-                        .altairForkEpoch(UInt64.ZERO)
-                        .bellatrixForkEpoch(UInt64.ZERO)
-                        .capellaForkEpoch(UInt64.ZERO)
-                        .denebForkEpoch(UInt64.ZERO)
-                        .electraForkEpoch(UInt64.ZERO)
-                        .fuluForkEpoch(UInt64.ZERO)
-                        .gloasForkEpoch(forkEpoch);
                 default ->
                     throw new IllegalStateException(
                         "Unhandled fork transition for test "
