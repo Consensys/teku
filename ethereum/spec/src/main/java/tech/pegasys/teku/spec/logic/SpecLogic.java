@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -78,4 +79,6 @@ public interface SpecLogic {
   Optional<WithdrawalsHelpers> getWithdrawalsHelpers();
 
   Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor();
+
+  Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor();
 }

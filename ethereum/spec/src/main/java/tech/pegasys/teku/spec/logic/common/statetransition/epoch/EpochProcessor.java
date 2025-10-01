@@ -108,4 +108,6 @@ public interface EpochProcessor {
   void processPendingConsolidations(MutableBeaconState state);
 
   void processProposerLookahead(MutableBeaconState state);
+
+  void processBuilderPendingPayments(MutableBeaconState state);
 }
