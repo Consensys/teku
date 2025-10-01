@@ -114,7 +114,9 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
  *
  * <p>The signature of aggregate is valid.
  */
-@TestSpecContext(milestone = {PHASE0, ELECTRA})
+@TestSpecContext(
+    milestone = {PHASE0, ELECTRA},
+    signatureVerifierNoop = true)
 class AggregateAttestationValidatorTest {
 
   private Spec spec;

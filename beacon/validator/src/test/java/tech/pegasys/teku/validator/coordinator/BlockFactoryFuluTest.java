@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
@@ -45,7 +46,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalFulu();
+  private final Spec spec =
+      TestSpecFactory.createMinimalFulu(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test

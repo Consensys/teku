@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -121,6 +122,8 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final UInt64 maxPerEpochActivationExitChurnLimit;
 
+  private final BLSSignatureVerifier blsSignatureVerifier;
+
   // altair fork information
   private final Bytes4 altairForkVersion;
   private final UInt64 altairForkEpoch;
@@ -217,6 +220,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgHeadWeightThreshold,
       final int reorgParentWeightThreshold,
       final UInt64 maxPerEpochActivationExitChurnLimit,
+      final BLSSignatureVerifier blsSignatureVerifier,
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
       final Bytes4 bellatrixForkVersion,
@@ -313,6 +317,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.fuluForkEpoch = fuluForkEpoch;
     this.eip7805ForkVersion = eip7805ForkVersion;
     this.eip7805ForkEpoch = eip7805ForkEpoch;
+    this.blsSignatureVerifier = blsSignatureVerifier;
   }
 
   @Override
@@ -748,6 +753,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public SpecMilestone getMilestone() {
     return SpecMilestone.PHASE0;
+  }
+
+  @Override
+  public BLSSignatureVerifier getBLSSignatureVerifier() {
+    return blsSignatureVerifier;
   }
 
   @Override

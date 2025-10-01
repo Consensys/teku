@@ -27,7 +27,7 @@ public interface MutableBeaconStateFulu extends MutableBeaconStateElectra, Beaco
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected an Electra state but got: " + state.getClass().getSimpleName()));
+                    "Expected an Fulu state but got: " + state.getClass().getSimpleName()));
   }
 
   @Override

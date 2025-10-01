@@ -54,7 +54,8 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
       SpecMilestone.BELLATRIX,
       SpecMilestone.DENEB,
       SpecMilestone.ELECTRA
-    })
+    },
+    signatureVerifierNoop = true)
 public class BlockGossipValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;

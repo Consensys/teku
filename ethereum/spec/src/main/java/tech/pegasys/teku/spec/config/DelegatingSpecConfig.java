@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -460,5 +461,10 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public SpecMilestone getMilestone() {
     return specConfig.getMilestone();
+  }
+
+  @Override
+  public BLSSignatureVerifier getBLSSignatureVerifier() {
+    return specConfig.getBLSSignatureVerifier();
   }
 }

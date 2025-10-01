@@ -38,7 +38,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class BlockArchiveGenerator {
   private final int validatorCount;
   private final int epochCount;
-  private final Spec spec = TestSpecFactory.createMainnetAltair();
+  private final Spec spec =
+      TestSpecFactory.createMainnetAltair(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   private final List<BLSKeyPair> validatorKeys;
   private final RecentChainData localStorage;
   private final AttestationGenerator attestationGenerator;

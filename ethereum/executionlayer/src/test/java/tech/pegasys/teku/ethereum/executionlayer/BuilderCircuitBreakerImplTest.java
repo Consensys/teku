@@ -34,7 +34,9 @@ public class BuilderCircuitBreakerImplTest {
   private static final int ALLOWED_FAULTS = 5;
   private static final int ALLOWED_CONSECUTIVE_FAULTS = 2;
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec =
+      TestSpecFactory.createMinimalBellatrix(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
 
   private final BuilderCircuitBreakerImpl builderCircuitBreaker =
       new BuilderCircuitBreakerImpl(

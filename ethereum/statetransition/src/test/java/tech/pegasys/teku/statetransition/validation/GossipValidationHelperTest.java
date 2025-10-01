@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext
+@TestSpecContext(signatureVerifierNoop = true)
 public class GossipValidationHelperTest {
   private Spec spec;
   private RecentChainData recentChainData;

@@ -43,7 +43,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ForkChoicePayloadExecutorTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec =
+      TestSpecFactory.createMinimalBellatrix(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   private final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
       spec.getGenesisSchemaDefinitions().toVersionBellatrix().orElseThrow();
   private final ExecutionPayload defaultPayload =

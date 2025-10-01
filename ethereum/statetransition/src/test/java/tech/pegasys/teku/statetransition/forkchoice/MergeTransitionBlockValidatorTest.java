@@ -46,11 +46,13 @@ class MergeTransitionBlockValidatorTest {
   private final UInt64 terminalEpoch = UInt64.ZERO;
   private final Spec spec =
       TestSpecFactory.createMinimalBellatrix(
-          b ->
-              b.bellatrixBuilder(
-                  bb ->
-                      bb.terminalBlockHash(terminalBlockHash)
-                          .terminalBlockHashActivationEpoch(terminalEpoch)));
+          b -> {
+            b.blsSignatureVerifier(BLSSignatureVerifier.NO_OP);
+            b.bellatrixBuilder(
+                bb ->
+                    bb.terminalBlockHash(terminalBlockHash)
+                        .terminalBlockHashActivationEpoch(terminalEpoch));
+          });
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionLayerChannelStub executionLayer =
       new ExecutionLayerChannelStub(spec, false);

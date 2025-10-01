@@ -83,7 +83,9 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
   private final AsyncRunner asyncRunner = mock(AsyncRunner.class);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec =
+      TestSpecFactory.createMinimalPhase0(
+          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final AttestationSchema<?> attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();

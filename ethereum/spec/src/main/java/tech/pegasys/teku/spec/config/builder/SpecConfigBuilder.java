@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -154,6 +155,8 @@ public class SpecConfigBuilder {
   private UInt64 fuluForkEpoch = FAR_FUTURE_EPOCH;
   private UInt64 eip7805ForkEpoch = FAR_FUTURE_EPOCH;
 
+  private BLSSignatureVerifier blsSignatureVerifier = BLSSignatureVerifier.SIMPLE;
+
   private UInt64 maxPerEpochActivationExitChurnLimit = UInt64.valueOf(256000000000L);
   private final BuilderChain<SpecConfig, SpecConfigEip7805> builderChain =
       BuilderChain.create(altairBuilder)
@@ -255,6 +258,7 @@ public class SpecConfigBuilder {
                 reorgHeadWeightThreshold,
                 reorgParentWeightThreshold,
                 maxPerEpochActivationExitChurnLimit,
+                blsSignatureVerifier,
                 altairForkVersion,
                 altairForkEpoch,
                 bellatrixForkVersion,
@@ -900,6 +904,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder reorgParentWeightThreshold(final Integer reorgParentWeightThreshold) {
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
+    return this;
+  }
+
+  public SpecConfigBuilder blsSignatureVerifier(final BLSSignatureVerifier blsSignatureVerifier) {
+    this.blsSignatureVerifier = blsSignatureVerifier;
     return this;
   }
 
