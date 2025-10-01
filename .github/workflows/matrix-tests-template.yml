@@ -76,6 +76,10 @@ jobs:
           username: ${{ secrets.DOCKER_USER_RO }}
           password: ${{ secrets.DOCKER_PASSWORD_RO }}
 
+      - shell: bash
+        run: |
+          tree .          
+
       - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ${{ inputs.stage_name }}
         id: shard
         shell: bash

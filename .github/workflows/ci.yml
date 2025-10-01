@@ -389,20 +389,108 @@ jobs:
       - shell: bash
         run: |
           tree .
-          
+
 
   referenceTests:
-    needs: referenceTestsPrep
-    uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit    
-    with:
-      assemble_output_run_id: ${{ github.run_id }}
-      stage_name: Reference Tests
-      stage_key: reference
-      gradle_task: "-x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest"
-      src_pattern: "*/src/referenceTest/generated_tests/**/*Test.java"
-      src_root: "src/referenceTest/generated_tests"
-      runner: "ubuntu-latest-128"
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    environment: dev
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]   # parallel shards
+        total: [32]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: assemble-output
+          merge-multiple: true
+      - uses: actions/cache/restore@v4
+        with:
+          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          key: reftests-${{ hashFiles('build.gradle') }}
+      - name: FetchReferenceTests
+        shell: bash
+        run: |
+          if [ ! -d "eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/tests" ]
+          then
+            ./gradlew --no-daemon expandRefTests
+          fi
+      - name: CompileReferenceTests
+        # Compile separately so that we have the generated test files for splitting across nodes
+        shell: bash
+        run: |
+          ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - name: Determine test classes for this shard
+        id: split
+        run: |
+          # Gather all generated reference test classes
+          ALL_CLASSES=$(find . -path "*/src/referenceTest/generated_tests/*Test.java" \
+            | sed 's@.*/src/referenceTest/generated_tests/@@' \
+            | sed 's@/@.@g' \
+            | sed 's/.\{5\}$//')
+
+          # Sort and unique for determinism
+          ALL_CLASSES=$(echo "$ALL_CLASSES" | sort -u)
+
+          # Convert to array
+          mapfile -t CLASS_ARRAY <<< "$ALL_CLASSES"
+
+          TOTAL=${#CLASS_ARRAY[@]}
+          SHARDS=${{ matrix.total }}
+          INDEX=${{ matrix.shard }}
+
+          # Split into shards
+          TESTS=""
+          for ((i=0; i<$TOTAL; i++)); do
+            if (( i % SHARDS == INDEX )); then
+              TESTS="$TESTS --tests ${CLASS_ARRAY[$i]}"
+            fi
+          done
+
+          echo "Shard $INDEX has tests: $TESTS"
+
+          # Save to output
+          echo "gradle_args=$TESTS" >> $GITHUB_OUTPUT
+
+      - name: Run reference tests
+        run: |
+          ./gradlew --no-daemon --parallel --stacktrace \
+            -x generateReferenceTestClasses \
+            -x processReferenceTestResources \
+            -x cleanReferenceTestClasses \
+            referenceTest ${{ inputs.gradle_args }} ${{ steps.split.outputs.gradle_args }}
+
+      - name: Caching reference tests 
+        uses: actions/cache/save@v4
+        with:
+          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+          key: reftests-${{ hashFiles('build.gradle') }}
+
+
+
+  # referenceTests:
+  #   needs: referenceTestsPrep
+  #   uses: ./.github/workflows/matrix-tests-template.yml
+  #   secrets: inherit    
+  #   with:
+  #     assemble_output_run_id: ${{ github.run_id }}
+  #     stage_name: Reference Tests
+  #     stage_key: reference
+  #     gradle_task: "-x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest"
+  #     src_pattern: "*/src/referenceTest/generated_tests/*"
+  #     src_root: "src/referenceTest/generated_tests"
+  #     runner: "ubuntu-latest-128"
 
   # referenceTestsReport:
   #   runs-on: ubuntu-latest
