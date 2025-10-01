@@ -33,8 +33,10 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -259,6 +261,51 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
             MutableBeaconStateGloas.required(state)
                 .getBuilderPendingPayments()
                 .set(index, schemaDefinitionsGloas.getBuilderPendingPaymentSchema().getDefault()));
+  }
+
+  @Override
+  protected void consumeAttestationProcessingResult(
+      final AttestationData data,
+      final AttestationProcessingResult attestationProcessingResult,
+      final MutableBeaconState state) {
+    super.consumeAttestationProcessingResult(data, attestationProcessingResult, state);
+    // update builder payment weight
+    final UInt64 weightDelta = attestationProcessingResult.builderPaymentWeightDelta();
+    if (!weightDelta.isZero()) {
+      final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+      final int builderPaymentIndex;
+      if (attestationProcessingResult.currentEpochTarget()) {
+        builderPaymentIndex =
+            specConfig.getSlotsPerEpoch()
+                + data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
+      } else {
+        builderPaymentIndex = data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
+      }
+      final BuilderPendingPayment currentPendingPayment =
+          stateGloas.getBuilderPendingPayments().get(builderPaymentIndex);
+      stateGloas
+          .getBuilderPendingPayments()
+          .set(
+              builderPaymentIndex,
+              currentPendingPayment.copyWithNewWeight(
+                  currentPendingPayment.getWeight().plus(weightDelta)));
+    }
+  }
+
+  // Add weight for same-slot attestations when any new flag is set
+  // This ensures each validator contributes exactly once per slot
+  @Override
+  protected UInt64 updateBuilderPaymentWeight(
+      final UInt64 builderPaymentWeightDelta,
+      final AttestationData data,
+      final int attestingIndex,
+      final BeaconState state) {
+    if (beaconStateAccessorsGloas.isAttestationSameSlot(state, data)) {
+      return builderPaymentWeightDelta.plus(
+          state.getValidators().get(attestingIndex).getEffectiveBalance());
+    } else {
+      return builderPaymentWeightDelta;
+    }
   }
 
   @Override

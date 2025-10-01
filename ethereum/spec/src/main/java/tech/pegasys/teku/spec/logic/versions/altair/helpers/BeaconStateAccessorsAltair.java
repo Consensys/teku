@@ -190,9 +190,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     final boolean isMatchingTarget =
         isMatchingSource
             && data.getTarget().getRoot().equals(getBlockRoot(state, data.getTarget().getEpoch()));
-    final boolean isMatchingHead =
-        isMatchingTarget
-            && data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
+    final boolean isMatchingHead = computeIsMatchingHead(isMatchingTarget, data, state);
 
     // Participation flag indices
     final IntList participationFlagIndices = new IntArrayList();
@@ -208,6 +206,12 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
     }
     return participationFlagIndices;
+  }
+
+  protected boolean computeIsMatchingHead(
+      final boolean isMatchingTarget, final AttestationData data, final BeaconState state) {
+    return isMatchingTarget
+        && data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
   }
 
   protected boolean shouldSetTargetTimelinessFlag(
