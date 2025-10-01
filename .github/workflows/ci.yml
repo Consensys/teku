@@ -142,6 +142,7 @@ jobs:
             ./
             !./.git/**
           retention-days: 1
+          include-hidden-files: 'true'
 
   ## OpenAPI spec
   # 6m
@@ -302,7 +303,7 @@ jobs:
   #         stage_key: acceptance
 
   referenceTestsPrep:
-    # needs: assemble
+    needs: assemble
     runs-on: ubuntu-24.04
     environment: dev
     steps:
@@ -320,6 +321,7 @@ jobs:
           run-id: ${{ github.run_id }}
           name: assemble-output
           merge-multiple: true
+          path: ${{ github.workspace }}          
       - uses: actions/cache/restore@v4
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
@@ -389,7 +391,7 @@ jobs:
           run-id: ${{ github.run_id }}
           name: reftests
           merge-multiple: true 
-          path: ${{ github.workspace }}
+          path: ./eth-reference-tests
       - name: Login to dockerhub
         uses: docker/login-action@v3
         with:
