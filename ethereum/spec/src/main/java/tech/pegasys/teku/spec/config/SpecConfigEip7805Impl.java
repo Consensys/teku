@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.SpecMilestone;
 
-public class SpecConfigEip7805Impl extends DelegatingSpecConfigGloas implements SpecConfigEip7805 {
+public class SpecConfigEip7805Impl extends DelegatingSpecConfigFulu implements SpecConfigEip7805 {
 
   private final int inclusionListCommitteeSize;
   private final int maxRequestInclusionList;
@@ -27,7 +27,7 @@ public class SpecConfigEip7805Impl extends DelegatingSpecConfigGloas implements 
   private final int viewFreezeDeadline;
 
   public SpecConfigEip7805Impl(
-      final SpecConfigGloas specConfig,
+      final SpecConfigFulu specConfig,
       final int inclusionListCommitteeSize,
       final int maxRequestInclusionList,
       final int maxBytesPerInclusionList,

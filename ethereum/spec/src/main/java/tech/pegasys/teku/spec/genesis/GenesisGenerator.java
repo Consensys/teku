@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.BeaconStateSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -156,7 +157,9 @@ public class GenesisGenerator {
 
       MutableBeaconStateFulu.required(state)
           .setProposerLookahead(
-              schemaDefinitionsFulu.getProposerLookaheadSchema().of(proposerLookahead));
+              BeaconStateSchemaFulu.required(schemaDefinitionsFulu.getBeaconStateSchema())
+                  .getProposerLookaheadSchema()
+                  .of(proposerLookahead));
     }
   }
 

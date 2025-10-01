@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor.depositSignatureVerifier;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
@@ -59,7 +60,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 
 public class MiscHelpers {
 
@@ -78,8 +78,6 @@ public class MiscHelpers {
   public Bytes4 computeForkVersion(final UInt64 epoch) {
     if (epoch.isGreaterThanOrEqualTo(specConfig.getEip7805ForkEpoch())) {
       return specConfig.getEip7805ForkVersion();
-    } else if (epoch.isGreaterThanOrEqualTo(specConfig.getGloasForkEpoch())) {
-      return specConfig.getGloasForkVersion();
     } else if (epoch.isGreaterThanOrEqualTo(specConfig.getFuluForkEpoch())) {
       return specConfig.getFuluForkVersion();
     } else if (epoch.isGreaterThanOrEqualTo(specConfig.getElectraForkEpoch())) {
@@ -419,10 +417,8 @@ public class MiscHelpers {
       final UInt64 amount,
       final BLSSignature signature) {
     try {
-      return specConfig
-          .getBLSSignatureVerifier()
-          .verify(
-              pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
+      return depositSignatureVerifier.verify(
+          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
     } catch (final BlsException e) {
       return false;
     }
@@ -523,10 +519,6 @@ public class MiscHelpers {
   }
 
   public Optional<MiscHelpersFulu> toVersionFulu() {
-    return Optional.empty();
-  }
-
-  public Optional<MiscHelpersGloas> toVersionGloas() {
     return Optional.empty();
   }
 

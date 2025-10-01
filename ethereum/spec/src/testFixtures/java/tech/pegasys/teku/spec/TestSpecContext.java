@@ -36,6 +36,4 @@ public @interface TestSpecContext {
   boolean allNetworks() default false;
 
   boolean doNotGenerateSpec() default false;
-
-  boolean signatureVerifierNoop() default false;
 }

@@ -25,7 +25,6 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -49,8 +47,8 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 public class Phase0AttestationValidatorTest extends AbstractAttestationValidatorTest {
 
   @Override
-  public Spec createSpec(final Consumer<SpecConfigBuilder> configAdapter) {
-    return TestSpecFactory.createMinimalPhase0(configAdapter);
+  public Spec createSpec() {
+    return TestSpecFactory.createMinimalPhase0();
   }
 
   @Test

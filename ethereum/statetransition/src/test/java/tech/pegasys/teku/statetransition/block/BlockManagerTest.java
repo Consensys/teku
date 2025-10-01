@@ -55,7 +55,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -71,7 +73,6 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -82,11 +83,11 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
@@ -146,6 +147,17 @@ public class BlockManagerTest {
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
+  @BeforeAll
+  public static void initSession() {
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+  }
+
+  @AfterAll
+  public static void resetSession() {
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
+  }
+
   @BeforeEach
   public void setup() {
     // prepare an async runner
@@ -157,9 +169,7 @@ public class BlockManagerTest {
         .when(asyncRunner)
         .runAsync((ExceptionThrowingFutureSupplier<?>) any());
 
-    setupWithSpec(
-        TestSpecFactory.createMinimalDeneb(
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
   }
 
   private void setupWithSpec(final Spec spec) {
@@ -834,10 +844,7 @@ public class BlockManagerTest {
   @Test
   void onDeneb_shouldStoreBlobSidecarsAlongWithBlock() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
-    setupWithSpec(
-        TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
     incrementSlotTo(slotsPerEpoch);
 
@@ -937,10 +944,7 @@ public class BlockManagerTest {
 
   @Test
   void onDeneb_shouldStoreEarliestBlobSidecarSlotCorrectlyWhenThereIsGap() {
-    setupWithSpec(
-        TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
 
     currentSlot = currentSlot.plus(slotsPerEpoch.plus(2));
@@ -969,10 +973,7 @@ public class BlockManagerTest {
   @Test
   void onDeneb_shouldStoreBlockWhenBlobSidecarsNotRequired() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
-    setupWithSpec(
-        TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
     incrementSlotTo(slotsPerEpoch);
 
@@ -1003,10 +1004,7 @@ public class BlockManagerTest {
   @Test
   void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsNotAvailable() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
-    setupWithSpec(
-        TestSpecFactory.createMinimalWithDenebForkEpoch(
-            UInt64.valueOf(1),
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
     incrementSlotTo(slotsPerEpoch);
 
@@ -1039,11 +1037,7 @@ public class BlockManagerTest {
 
   @Test
   void preDeneb_shouldNotWorryAboutBlobSidecars() {
-    setupWithSpec(
-        TestSpecFactory.create(
-            SpecMilestone.CAPELLA,
-            Eth2Network.MAINNET,
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP)));
+    setupWithSpec(TestSpecFactory.createMinimalCapella());
     final SignedBlockAndState signedBlockAndState1 =
         localChain
             .chainBuilder()

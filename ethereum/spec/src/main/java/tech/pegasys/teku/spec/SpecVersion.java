@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigEip7805;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.SpecLogicDeneb;
 import tech.pegasys.teku.spec.logic.versions.eip7805.SpecLogicEip7805;
 import tech.pegasys.teku.spec.logic.versions.electra.SpecLogicElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.SpecLogicFulu;
-import tech.pegasys.teku.spec.logic.versions.gloas.SpecLogicGloas;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -44,7 +42,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistry;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
@@ -73,23 +70,35 @@ public class SpecVersion extends DelegatingSpecLogic {
     return switch (milestone) {
       case PHASE0 -> Optional.of(createPhase0(specConfig, schemaRegistryBuilder));
       case ALTAIR ->
-          specConfig.toVersionAltair().map(config -> createAltair(config, schemaRegistryBuilder));
+          specConfig
+              .toVersionAltair()
+              .map(specConfigAltair -> createAltair(specConfigAltair, schemaRegistryBuilder));
       case BELLATRIX ->
           specConfig
               .toVersionBellatrix()
-              .map(config -> createBellatrix(config, schemaRegistryBuilder));
+              .map(
+                  specConfigBellatrix ->
+                      createBellatrix(specConfigBellatrix, schemaRegistryBuilder));
       case CAPELLA ->
-          specConfig.toVersionCapella().map(config -> createCapella(config, schemaRegistryBuilder));
+          specConfig
+              .toVersionCapella()
+              .map(specConfigCapella -> createCapella(specConfigCapella, schemaRegistryBuilder));
       case DENEB ->
-          specConfig.toVersionDeneb().map(config -> createDeneb(config, schemaRegistryBuilder));
+          specConfig
+              .toVersionDeneb()
+              .map(specConfigDeneb -> createDeneb(specConfigDeneb, schemaRegistryBuilder));
       case ELECTRA ->
-          specConfig.toVersionElectra().map(config -> createElectra(config, schemaRegistryBuilder));
+          specConfig
+              .toVersionElectra()
+              .map(specConfigElectra -> createElectra(specConfigElectra, schemaRegistryBuilder));
       case FULU ->
-          specConfig.toVersionFulu().map(config -> createFulu(config, schemaRegistryBuilder));
-      case GLOAS ->
-          specConfig.toVersionGloas().map(config -> createGloas(config, schemaRegistryBuilder));
+          specConfig
+              .toVersionFulu()
+              .map(specConfigFulu -> createFulu(specConfigFulu, schemaRegistryBuilder));
       case EIP7805 ->
-          specConfig.toVersionEip7805().map(config -> createEip7805(config, schemaRegistryBuilder));
+          specConfig
+              .toVersionEip7805()
+              .map(specConfigEip7732 -> createEip7805(specConfigEip7732, schemaRegistryBuilder));
     };
   }
 
@@ -162,16 +171,6 @@ public class SpecVersion extends DelegatingSpecLogic {
     final SpecLogicFulu specLogic =
         SpecLogicFulu.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
     return new SpecVersion(SpecMilestone.FULU, specConfig, schemaDefinitions, specLogic);
-  }
-
-  static SpecVersion createGloas(
-      final SpecConfigGloas specConfig, final SchemaRegistryBuilder schemaRegistryBuilder) {
-    final SchemaRegistry schemaRegistry =
-        schemaRegistryBuilder.build(SpecMilestone.GLOAS, specConfig);
-    final SchemaDefinitionsGloas schemaDefinitions = new SchemaDefinitionsGloas(schemaRegistry);
-    final SpecLogicGloas specLogic =
-        SpecLogicGloas.create(specConfig, schemaDefinitions, SYSTEM_TIME_PROVIDER);
-    return new SpecVersion(SpecMilestone.GLOAS, specConfig, schemaDefinitions, specLogic);
   }
 
   static SpecVersion createEip7805(

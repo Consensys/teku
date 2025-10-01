@@ -87,8 +87,6 @@ BLS_WITHDRAWAL_PREFIX: 0x00
 GENESIS_DELAY: 300
 # [customized] Faster for testing purposes
 SECONDS_PER_SLOT: 6
-# [customized] 6000 milliseconds
-SLOT_DURATION_MS: 6000
 # 2**0 (= 1) slots 6 seconds
 MIN_ATTESTATION_INCLUSION_DELAY: 1
 # [customized] fast epochs
@@ -107,18 +105,7 @@ MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 SHARD_COMMITTEE_PERIOD: 64
 # 2**2 (= 4) epochs
 MIN_EPOCHS_TO_INACTIVITY_PENALTY: 4
-# 1667 basis points, ~17% of SLOT_DURATION_MS
-PROPOSER_REORG_CUTOFF_BPS: 1667
-# 3333 basis points, ~33% of SLOT_DURATION_MS
-ATTESTATION_DUE_BPS: 3333
-# 6667 basis points, ~67% of SLOT_DURATION_MS
-AGGREGATE_DUE_BPS: 6667
 
-# Altair
-# 3333 basis points, ~33% of SLOT_DURATION_MS
-SYNC_MESSAGE_DUE_BPS: 3333
-# 6667 basis points, ~67% of SLOT_DURATION_MS
-CONTRIBUTION_DUE_BPS: 6667
 
 # State vector lengths
 # ---------------------------------------------------------------

@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -69,10 +68,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int slotsPerHistoricalRoot;
   private final int minValidatorWithdrawabilityDelay;
   private final UInt64 shardCommitteePeriod;
-  private final int slotDurationMillis;
-  private final int attestationDueBps;
-  private final int aggregateDueBps;
-  private final int proposerReorgCutoffBps;
 
   // State list lengths
   private final int epochsPerHistoricalVector;
@@ -126,9 +121,7 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final UInt64 maxPerEpochActivationExitChurnLimit;
 
-  private final BLSSignatureVerifier blsSignatureVerifier;
-
-  // altair fork
+  // altair fork information
   private final Bytes4 altairForkVersion;
   private final UInt64 altairForkEpoch;
 
@@ -151,10 +144,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   // fulu fork
   private final Bytes4 fuluForkVersion;
   private final UInt64 fuluForkEpoch;
-
-  // gloas fork
-  private final Bytes4 gloasForkVersion;
-  private final UInt64 gloasForkEpoch;
 
   // eip7805 fork
   private final Bytes4 eip7805ForkVersion;
@@ -228,11 +217,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int reorgHeadWeightThreshold,
       final int reorgParentWeightThreshold,
       final UInt64 maxPerEpochActivationExitChurnLimit,
-      final int slotDurationMillis,
-      final int attestationDueBps,
-      final int aggregateDueBps,
-      final int proposerReorgCutoffBps,
-      final BLSSignatureVerifier blsSignatureVerifier,
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
       final Bytes4 bellatrixForkVersion,
@@ -245,8 +229,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final UInt64 electraForkEpoch,
       final Bytes4 fuluForkVersion,
       final UInt64 fuluForkEpoch,
-      final Bytes4 gloasForkVersion,
-      final UInt64 gloasForkEpoch,
       final Bytes4 eip7805ForkVersion,
       final UInt64 eip7805ForkEpoch) {
     this.rawConfig = rawConfig;
@@ -317,10 +299,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
     this.reorgParentWeightThreshold = reorgParentWeightThreshold;
     this.maxPerEpochActivationExitChurnLimit = maxPerEpochActivationExitChurnLimit;
-    this.slotDurationMillis = slotDurationMillis;
-    this.attestationDueBps = attestationDueBps;
-    this.aggregateDueBps = aggregateDueBps;
-    this.proposerReorgCutoffBps = proposerReorgCutoffBps;
     this.altairForkVersion = altairForkVersion;
     this.altairForkEpoch = altairForkEpoch;
     this.bellatrixForkVersion = bellatrixForkVersion;
@@ -333,9 +311,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.electraForkEpoch = electraForkEpoch;
     this.fuluForkVersion = fuluForkVersion;
     this.fuluForkEpoch = fuluForkEpoch;
-    this.gloasForkVersion = gloasForkVersion;
-    this.gloasForkEpoch = gloasForkEpoch;
-    this.blsSignatureVerifier = blsSignatureVerifier;
     this.eip7805ForkVersion = eip7805ForkVersion;
     this.eip7805ForkEpoch = eip7805ForkEpoch;
   }
@@ -526,16 +501,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getGloasForkVersion() {
-    return gloasForkVersion;
-  }
-
-  @Override
-  public UInt64 getGloasForkEpoch() {
-    return gloasForkEpoch;
-  }
-
-  @Override
   public Bytes4 getEip7805ForkVersion() {
     return eip7805ForkVersion;
   }
@@ -548,26 +513,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getSecondsPerSlot() {
     return secondsPerSlot;
-  }
-
-  @Override
-  public int getProposerReorgCutoffBps() {
-    return proposerReorgCutoffBps;
-  }
-
-  @Override
-  public int getAttestationDueBps() {
-    return attestationDueBps;
-  }
-
-  @Override
-  public int getAggregateDueBps() {
-    return aggregateDueBps;
-  }
-
-  @Override
-  public int getSlotDurationMillis() {
-    return slotDurationMillis;
   }
 
   @Override
@@ -806,11 +751,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public BLSSignatureVerifier getBLSSignatureVerifier() {
-    return blsSignatureVerifier;
-  }
-
-  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -885,8 +825,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
         && Objects.equals(fuluForkVersion, that.fuluForkVersion)
         && Objects.equals(fuluForkEpoch, that.fuluForkEpoch)
-        && Objects.equals(gloasForkVersion, that.gloasForkVersion)
-        && Objects.equals(gloasForkEpoch, that.gloasForkEpoch)
         && Objects.equals(eip7805ForkVersion, that.eip7805ForkVersion)
         && Objects.equals(eip7805ForkEpoch, that.eip7805ForkEpoch)
         && Objects.equals(genesisDelay, that.genesisDelay)
@@ -975,8 +913,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         electraForkEpoch,
         fuluForkVersion,
         fuluForkEpoch,
-        gloasForkVersion,
-        gloasForkEpoch,
         eip7805ForkVersion,
         eip7805ForkEpoch,
         attestationSubnetPrefixBits);

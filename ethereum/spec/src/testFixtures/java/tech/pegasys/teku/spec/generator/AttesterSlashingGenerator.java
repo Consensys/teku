@@ -72,7 +72,7 @@ public class AttesterSlashingGenerator {
         spec.getGenericAttestationData(
             blockAndState.getSlot(),
             blockAndState.getState(),
-            blockAndState.getBlock(),
+            blockAndState.getBlock().getRoot(),
             committeeIndex);
     AttestationData brokenAttestationData =
         new AttestationData(

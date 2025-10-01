@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -60,9 +61,8 @@ public class ProcessSyncAggregateBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    spec =
-        TestSpecFactory.createMainnetAltair(
-            builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+    spec = TestSpecFactory.createMainnetAltair();
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
     final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 

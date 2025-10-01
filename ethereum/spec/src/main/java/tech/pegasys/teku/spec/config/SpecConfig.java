@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -68,24 +67,12 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   UInt64 getFuluForkEpoch();
 
-  Bytes4 getGloasForkVersion();
-
-  UInt64 getGloasForkEpoch();
-
   Bytes4 getEip7805ForkVersion();
 
   UInt64 getEip7805ForkEpoch();
 
   // Config: Time parameters
   int getSecondsPerSlot();
-
-  int getProposerReorgCutoffBps();
-
-  int getAttestationDueBps();
-
-  int getAggregateDueBps();
-
-  int getSlotDurationMillis();
 
   default int getMillisPerSlot() {
     return getSecondsPerSlot() * 1000;
@@ -233,15 +220,9 @@ public interface SpecConfig extends NetworkingSpecConfig {
     return Optional.empty();
   }
 
-  default Optional<SpecConfigGloas> toVersionGloas() {
-    return Optional.empty();
-  }
-
   default Optional<SpecConfigEip7805> toVersionEip7805() {
     return Optional.empty();
   }
 
   SpecMilestone getMilestone();
-
-  BLSSignatureVerifier getBLSSignatureVerifier();
 }

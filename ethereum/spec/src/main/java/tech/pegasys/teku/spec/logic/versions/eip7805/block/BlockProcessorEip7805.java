@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.spec.config.SpecConfigEip7805;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.operations.InclusionList;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -36,30 +37,29 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.BeaconStateAccessorsEip7805;
 import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.MiscHelpersEip7805;
-import tech.pegasys.teku.spec.logic.versions.eip7805.helpers.PredicatesEip7805;
+import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
+import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
-import tech.pegasys.teku.spec.logic.versions.gloas.block.BlockProcessorGloas;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class BlockProcessorEip7805 extends BlockProcessorGloas {
+public class BlockProcessorEip7805 extends BlockProcessorElectra {
 
   private final ExecutionRequestsDataCodec executionRequestsDataCodec7805;
 
   public BlockProcessorEip7805(
-      final SpecConfigEip7805 specConfig,
-      final PredicatesEip7805 predicates,
+      final SpecConfigElectra specConfig,
+      final Predicates predicates,
       final MiscHelpersEip7805 miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final BeaconStateAccessorsEip7805 beaconStateAccessors,
+      final BeaconStateAccessorsElectra beaconStateAccessors,
       final BeaconStateMutatorsElectra beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsEip7805 schemaDefinitions,
+      final SchemaDefinitionsElectra schemaDefinitions,
       final ExecutionRequestsDataCodec executionRequestsDataCodec) {
     super(
         specConfig,

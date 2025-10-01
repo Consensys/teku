@@ -19,7 +19,9 @@ import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -30,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -37,15 +40,24 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class PeerStatusIntegrationTest {
 
   private static final int VALIDATOR_COUNT = 16;
-  private final Spec spec =
-      TestSpecFactory.createMinimalPhase0(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RpcEncoding rpcEncoding =
       RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
   private final StorageSystem storageSystem = createStorageSystem();
 
   private final RecentChainData recentChainData1 = storageSystem.recentChainData();
+
+  @BeforeAll
+  public static void initSession() {
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+  }
+
+  @AfterAll
+  public static void resetSession() {
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
+  }
 
   @AfterEach
   public void tearDown() throws Exception {

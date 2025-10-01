@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -40,9 +39,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
-  private final Spec spec =
-      TestSpecFactory.createMinimalDeneb(
-          builder -> builder.blsSignatureVerifier(BLSSignatureVerifier.NO_OP));
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test

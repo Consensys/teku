@@ -115,7 +115,7 @@ public class StorageSystem implements AutoCloseable {
             chainStorageServer,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            ValidatorIsConnectedProvider.ALWAYS,
+            ValidatorIsConnectedProvider.NOOP,
             spec);
 
     // Create combined client

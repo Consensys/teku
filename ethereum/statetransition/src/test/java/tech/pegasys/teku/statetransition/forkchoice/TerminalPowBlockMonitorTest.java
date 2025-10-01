@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -68,6 +71,17 @@ public class TerminalPowBlockMonitorTest {
   private RecentChainData recentChainData;
   private TerminalPowBlockMonitor terminalPowBlockMonitor;
 
+  @BeforeAll
+  public static void initSession() {
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+  }
+
+  @AfterAll
+  public static void resetSession() {
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
+  }
+
   private void setUpTerminalBlockHashConfig() {
     setUpCommon(
         bellatrixBuilder ->
@@ -87,7 +101,6 @@ public class TerminalPowBlockMonitorTest {
                 "minimal",
                 phase0Builder ->
                     phase0Builder
-                        .blsSignatureVerifier(BLSSignatureVerifier.NO_OP)
                         .altairForkEpoch(UInt64.ZERO)
                         .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                         .bellatrixBuilder(bellatrixBuilder)));

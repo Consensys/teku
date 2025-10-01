@@ -23,7 +23,6 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -35,11 +34,10 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip7805;
-import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class GossipForkSubscriptionsEip7805 extends GossipForkSubscriptionsGloas {
+public class GossipForkSubscriptionsEip7805 extends GossipForkSubscriptionsElectra {
 
   private final OperationProcessor<SignedInclusionList> signedInclusionListOperationProcessor;
   private SignedInclusionListGossipManager signedInclusionListGossipManager;
@@ -65,10 +63,8 @@ public class GossipForkSubscriptionsEip7805 extends GossipForkSubscriptionsGloas
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
-      final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
       final OperationProcessor<SignedInclusionList> signedInclusionListOperationProcessor,
-      final DebugDataDumper debugDataDumper,
-      final DasGossipLogger dasGossipLogger) {
+      final DebugDataDumper debugDataDumper) {
     super(
         fork,
         spec,
@@ -87,9 +83,7 @@ public class GossipForkSubscriptionsEip7805 extends GossipForkSubscriptionsGloas
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor,
-        dataColumnSidecarOperationProcessor,
-        debugDataDumper,
-        dasGossipLogger);
+        debugDataDumper);
     this.signedInclusionListOperationProcessor = signedInclusionListOperationProcessor;
   }
 

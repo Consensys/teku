@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.config.builder.DenebBuilder;
 import tech.pegasys.teku.spec.config.builder.Eip7805Builder;
 import tech.pegasys.teku.spec.config.builder.ElectraBuilder;
 import tech.pegasys.teku.spec.config.builder.FuluBuilder;
-import tech.pegasys.teku.spec.config.builder.GloasBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
 public class SpecConfigReader {
@@ -218,16 +217,6 @@ public class SpecConfigReader {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConfig.get(constantKey);
               invokeSetter(setter, configBuilder::fuluBuilder, constantKey, rawValue);
-              unprocessedConfig.remove(constantKey);
-            });
-
-    // Process gloas config
-    streamConfigSetters(GloasBuilder.class)
-        .forEach(
-            setter -> {
-              final String constantKey = camelToSnakeCase(setter.getName());
-              final Object rawValue = unprocessedConfig.get(constantKey);
-              invokeSetter(setter, configBuilder::gloasBuilder, constantKey, rawValue);
               unprocessedConfig.remove(constantKey);
             });
 

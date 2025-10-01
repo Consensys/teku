@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
 
-public interface SpecConfigEip7805 extends SpecConfigGloas {
+public interface SpecConfigEip7805 extends SpecConfigFulu {
 
   static SpecConfigEip7805 required(final SpecConfig specConfig) {
     return specConfig
