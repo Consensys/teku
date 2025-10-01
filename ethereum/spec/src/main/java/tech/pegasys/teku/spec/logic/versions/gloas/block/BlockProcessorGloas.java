@@ -17,7 +17,9 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -25,6 +27,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
@@ -36,7 +41,6 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -47,6 +51,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.block.BlockProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.BeaconStateAccessorsGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.MiscHelpersGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.helpers.PredicatesGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -54,6 +59,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
 
   private final PredicatesGloas predicatesGloas;
   private final SchemaDefinitionsGloas schemaDefinitionsGloas;
+  private final BeaconStateAccessorsGloas beaconStateAccessorsGloas;
+  private final AttestationUtilGloas attestationUtilGloas;
 
   public BlockProcessorGloas(
       final SpecConfigGloas specConfig,
@@ -64,7 +71,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       final BeaconStateMutatorsElectra beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
-      final AttestationUtil attestationUtil,
+      final AttestationUtilGloas attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
       final SchemaDefinitionsGloas schemaDefinitions,
@@ -89,6 +96,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
         executionRequestsProcessor);
     this.predicatesGloas = predicates;
     this.schemaDefinitionsGloas = schemaDefinitions;
+    this.beaconStateAccessorsGloas = beaconStateAccessors;
+    this.attestationUtilGloas = attestationUtil;
   }
 
   @Override
@@ -112,6 +121,7 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     withdrawalsHelpers.processWithdrawals(state);
   }
 
+  // process_execution_payload_bid
   @Override
   public void processExecutionPayloadBid(
       final MutableBeaconState state, final BeaconBlock beaconBlock)
@@ -252,11 +262,59 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   @Override
+  protected void processOperationsNoValidation(
+      final MutableBeaconState state,
+      final BeaconBlockBody body,
+      final IndexedAttestationCache indexedAttestationCache,
+      final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier)
+      throws BlockProcessingException {
+    super.processOperationsNoValidation(
+        state, body, indexedAttestationCache, validatorExitContextSupplier);
+
+    safelyProcess(
+        () ->
+            processPayloadAttestations(
+                state,
+                body.getOptionalPayloadAttestations()
+                    .orElseThrow(
+                        () ->
+                            new BlockProcessingException(
+                                "Payload attestations expected as part of the body"))));
+  }
+
+  @Override
   public void processExecutionRequests(
       final MutableBeaconState state,
       final BeaconBlockBody body,
       final Supplier<BeaconStateMutators.ValidatorExitContext> validatorExitContextSupplier) {
     // Execution requests are removed from the BeaconBlockBody in Gloas and are instead processed as
     // part of process_execution_payload
+  }
+
+  @Override
+  public void processPayloadAttestations(
+      final MutableBeaconState state, final SszList<PayloadAttestation> payloadAttestations)
+      throws BlockProcessingException {
+    // process_payload_attestation
+    for (final PayloadAttestation payloadAttestation : payloadAttestations) {
+      // Check that the attestation is for the parent beacon block
+      final PayloadAttestationData data = payloadAttestation.getData();
+      if (!data.getBeaconBlockRoot().equals(state.getLatestBlockHeader().getParentRoot())) {
+        throw new BlockProcessingException("Attestation is NOT for the parent beacon block");
+      }
+      // Check that the attestation is for the previous slot
+      if (!data.getSlot().increment().equals(state.getSlot())) {
+        throw new BlockProcessingException("Attestation is NOT for the previous slot");
+      }
+      // Verify signature
+      final IndexedPayloadAttestation indexedPayloadAttestation =
+          beaconStateAccessorsGloas.getIndexedPayloadAttestation(
+              state, data.getSlot(), payloadAttestation);
+
+      if (!attestationUtilGloas.isValidIndexedPayloadAttestation(
+          state, indexedPayloadAttestation)) {
+        throw new BlockProcessingException("Indexed payload attestation is NOT valid");
+      }
+    }
   }
 }

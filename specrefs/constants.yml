@@ -171,6 +171,15 @@
     DOMAIN_DEPOSIT: DomainType = '0x03000000'
     </spec>
 
+- name: DOMAIN_PTC_ATTESTER
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: PTC_ATTESTER =
+  spec: |
+    <spec constant_var="DOMAIN_PTC_ATTESTER" fork="gloas" hash="4feba202">
+    DOMAIN_PTC_ATTESTER: DomainType = '0x0C000000'
+    </spec>
+
 - name: DOMAIN_RANDAO
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
