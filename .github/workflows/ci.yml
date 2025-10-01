@@ -302,7 +302,7 @@ jobs:
   #         stage_key: acceptance
 
   referenceTestsPrep:
-    needs: assemble
+    # needs: assemble
     runs-on: ubuntu-24.04
     environment: dev
     steps:
@@ -373,21 +373,23 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
       - name: Download assemble-output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: assemble-output
           merge-multiple: true
+          path: ${{ github.workspace }}
       - name: Download reftests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
           name: reftests
           merge-multiple: true 
+          path: ${{ github.workspace }}
       - name: Login to dockerhub
         uses: docker/login-action@v3
         with:
@@ -395,7 +397,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD_RO }}
       - shell: bash
         run: |
-          tree .                      
+          tree ${{ github.workspace }}                   
       # - uses: actions/cache/restore@v4
       #   with:
       #     path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
@@ -456,7 +458,7 @@ jobs:
           run-id: ${{ github.run_id }}
           name: assemble-output
           merge-multiple: true
-
+          path: ${{ github.workspace }}
       - name: Download reftests-prep (optional)
         uses: actions/download-artifact@v4
         with:
@@ -465,13 +467,13 @@ jobs:
           run-id: ${{ github.run_id }}
           name: reftests
           merge-multiple: true
-
+          path: ${{ github.workspace }}
       - name: Prepare
         uses: ./.github/actions/prepare
 
       - shell: bash
         run: |
-          tree .
+          tree ${{ github.workspace }}
 
 
   # referenceTests:
