@@ -11,6 +11,6 @@
 
 ### Additions and Improvements
 
-### Bug Fixes
- - `ephemery` network now defaults to loading configuration and bootnodes directly from https://ephemery.dev.
+- Add User-Agent header to requests initiated from the Validator Client with the client identifier and version.
 
+### Bug Fixes

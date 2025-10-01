@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -43,6 +44,9 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.storage.api.SidecarIdentifier;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 
@@ -257,6 +261,49 @@ public class ChainStorageTest {
         assertThat(maybeEarliestBlobSidecarSlot).isNotEmpty();
         assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
             .isCompletedWithValue(maybeEarliestBlobSidecarSlot);
+        final MiscHelpersDeneb miscHelpersDeneb =
+            MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+        final List<VersionedHash> expectedVersionedHashes =
+            missingHistoricalBlobSidecars
+                .getOrDefault(missingHistoricalBlock.getSlotAndBlockRoot(), Collections.emptyList())
+                .stream()
+                .map(
+                    blobSidecar ->
+                        miscHelpersDeneb.kzgCommitmentToVersionedHash(
+                            blobSidecar.getKZGCommitment()))
+                .toList();
+        final SafeFuture<List<Optional<SidecarIdentifier>>> sidecarIdentifierFutures =
+            SafeFuture.collectAll(
+                expectedVersionedHashes.stream()
+                    .map(versionedHash -> chainStorage.getSidecarIdentifier(versionedHash)));
+        assertThat(sidecarIdentifierFutures)
+            .isCompletedWithValueMatching(
+                res -> {
+                  final List<SidecarIdentifier> sidecarIdentifiers =
+                      res.stream().filter(Optional::isPresent).map(Optional::get).toList();
+                  assertThat(sidecarIdentifiers).hasSize(expectedVersionedHashes.size());
+                  final List<SlotAndBlockRootAndBlobIndex> blockRootAndBlobIndices =
+                      sidecarIdentifiers.stream()
+                          .map(
+                              sidecarIdentifier ->
+                                  sidecarIdentifier.blobSidecarIdentifier().orElseThrow())
+                          .toList();
+                  final List<SlotAndBlockRootAndBlobIndex> expectedBlockRootAndBlobIndices =
+                      missingHistoricalBlobSidecars
+                          .getOrDefault(
+                              missingHistoricalBlock.getSlotAndBlockRoot(), Collections.emptyList())
+                          .stream()
+                          .map(
+                              blobSidecar ->
+                                  new SlotAndBlockRootAndBlobIndex(
+                                      blobSidecar.getSlot(),
+                                      blobSidecar.getBlockRoot(),
+                                      blobSidecar.getIndex()))
+                          .toList();
+                  assertThat(blockRootAndBlobIndices)
+                      .containsExactlyInAnyOrderElementsOf(expectedBlockRootAndBlobIndices);
+                  return true;
+                });
       } else {
         assertThatSafeFuture(sidecarsResult).isCompletedWithValueMatching(List::isEmpty);
         assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())

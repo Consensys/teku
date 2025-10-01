@@ -66,7 +66,7 @@ public class NoOpKZG implements KZG {
 
   @Override
   public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-    return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
+    return KZGCommitment.fromBytesCompressed(Bytes48.wrap(blob.slice(0, Bytes48.SIZE)));
   }
 
   @Override

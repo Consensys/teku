@@ -45,7 +45,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -63,10 +65,13 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -83,8 +88,12 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.api.CustodyGroupCountChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.SidecarIdentifier;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.archive.filesystem.FileSystemBlobSidecarsArchiver;
@@ -96,6 +105,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.TestDatabaseContext;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
+import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -235,6 +245,8 @@ public class DatabaseTest {
     database.storeBlobSidecar(block3Sidecar0);
 
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(5L);
+    Stream.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForBlobSidecar);
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -280,9 +292,12 @@ public class DatabaseTest {
             blobSidecar ->
                 assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecar)))
                     .contains(blobSidecar));
+    Stream.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForBlobSidecar);
 
     // non added blobs must not be there
     assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecarNotAdded))).isEmpty();
+    assertNoVersionedHashForBlobSidecar(blobSidecarNotAdded);
 
     // all blobs must be streamed ordered by slot
     assertBlobSidecarKeys(
@@ -326,6 +341,11 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(block1Sidecar0)).exists();
     assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).doesNotExist();
 
+    // check VersionedHashes
+    Stream.of(block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForBlobSidecar);
+    assertNoVersionedHashForBlobSidecar(block1Sidecar0);
+
     // let's prune up to slot 1 (nothing will be pruned)
     assertThat(database.pruneOldestBlobSidecars(ONE, 10, blobSidecarsArchiver)).isFalse();
     assertBlobSidecarKeys(
@@ -342,6 +362,9 @@ public class DatabaseTest {
             block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(2));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
+    Stream.of(block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForBlobSidecar);
+    assertNoVersionedHashForBlobSidecar(block1Sidecar0);
 
     // let's prune all from slot 4 excluded
     assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(3), 10, blobSidecarsArchiver))
@@ -357,6 +380,11 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(block3Sidecar0)).exists();
     assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).doesNotExist();
 
+    // check VersionedHashes
+    assertVersionedHashForBlobSidecar(block5Sidecar0);
+    Stream.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0)
+        .forEach(this::assertNoVersionedHashForBlobSidecar);
+
     // let's prune all
     assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 1, blobSidecarsArchiver))
         .isTrue();
@@ -364,6 +392,8 @@ public class DatabaseTest {
     assertBlobSidecarKeys(ZERO, UInt64.valueOf(10));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(6));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(0L);
+    Stream.of(block2Sidecar0, block5Sidecar0, block1Sidecar0, block2Sidecar1, block3Sidecar0)
+        .forEach(this::assertNoVersionedHashForBlobSidecar);
 
     // check if the pruned blob was written to disk. Not validating contents here.
     assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).exists();
@@ -400,6 +430,11 @@ public class DatabaseTest {
     database.storeNonCanonicalBlobSidecar(block3Sidecar0);
 
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(5L);
+
+    // check VersionedHashes
+    Stream.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForNonCanonicalBlobSidecar);
+    assertNoVersionedHashForBlobSidecar(blobSidecarNotAdded);
 
     database.update(
         new StorageUpdate(
@@ -468,6 +503,9 @@ public class DatabaseTest {
             List.of(block3Sidecar0),
             block5Sidecar0.getSlot(),
             List.of(block5Sidecar0)));
+    // check VersionedHashes
+    Stream.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForNonCanonicalBlobSidecar);
 
     // Pruning with a prune limit set to 1: Only blobSidecar1 will be pruned
     assertThat(
@@ -486,6 +524,11 @@ public class DatabaseTest {
             block3Sidecar0.getSlot(), List.of(block3Sidecar0),
             block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
+
+    // check VersionedHashes
+    Stream.of(block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForNonCanonicalBlobSidecar);
+    assertNoVersionedHashForBlobSidecar(block1Sidecar0);
 
     // check if the pruned blob was written to disk. Not validating contents here.
     assertThat(getSlotBlobsArchiveFile(block1Sidecar0)).exists();
@@ -512,6 +555,11 @@ public class DatabaseTest {
     assertThat(getSlotBlobsArchiveFile(block1Sidecar0)).exists();
     assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).doesNotExist();
 
+    // check VersionedHashes
+    Stream.of(block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertVersionedHashForNonCanonicalBlobSidecar);
+    assertNoVersionedHashForBlobSidecar(block1Sidecar0);
+
     // Prune blobs up to slot 3
     assertThat(
             database.pruneOldestNonCanonicalBlobSidecars(
@@ -521,6 +569,11 @@ public class DatabaseTest {
         block1Sidecar0.getSlot(), block5Sidecar0.getSlot(), blobSidecarToKey(block5Sidecar0));
     assertNonCanonicalBlobSidecars(Map.of(block5Sidecar0.getSlot(), List.of(block5Sidecar0)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(1L);
+
+    // check VersionedHashes
+    Stream.of(block5Sidecar0).forEach(this::assertVersionedHashForNonCanonicalBlobSidecar);
+    Stream.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0)
+        .forEach(this::assertNoVersionedHashForBlobSidecar);
 
     // check if the pruned blob was written to disk. Not validating contents here.
     assertThat(getSlotBlobsArchiveFile(block2Sidecar0)).exists();
@@ -535,6 +588,10 @@ public class DatabaseTest {
     // No blobs should be left
     assertNonCanonicalBlobSidecarKeys(ZERO, UInt64.valueOf(10));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(0L);
+
+    // check VersionedHashes
+    Stream.of(block1Sidecar0, block2Sidecar0, block2Sidecar1, block3Sidecar0, block5Sidecar0)
+        .forEach(this::assertNoVersionedHashForBlobSidecar);
 
     // check if the pruned blob was written to disk. Not validating contents here.
     assertThat(getSlotBlobsArchiveFile(block5Sidecar0)).exists();
@@ -627,8 +684,10 @@ public class DatabaseTest {
     assertThat(block10Roots.size()).isEqualTo(3);
 
     // Add blocks at same height sequentially
-    add(List.of(blockA), forkA.getBlobSidecars(blockA.getRoot()));
-    add(List.of(blockB), forkB.getBlobSidecars(blockB.getRoot()));
+    final List<BlobSidecar> blockABlobSidecars = forkA.getBlobSidecars(blockA.getRoot());
+    add(List.of(blockA), blockABlobSidecars);
+    final List<BlobSidecar> blockBBlobSidecars = forkB.getBlobSidecars(blockB.getRoot());
+    add(List.of(blockB), blockBBlobSidecars);
     add(List.of(blockC), chainBuilder.getBlobSidecars(blockC.getRoot()));
 
     // Verify all blocks are available
@@ -649,7 +708,8 @@ public class DatabaseTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
-    assertBlobSidecarsAvailabilityExceptPruned(blocksWithAvailableSidecars, List.of());
+    assertBlobSidecarsAndVersionedHashesAvailabilityExceptPruned(
+        blocksWithAvailableSidecars, List.of(), List.of());
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateBlockAtSlot(11, randomBlobsOptions);
@@ -674,8 +734,14 @@ public class DatabaseTest {
             .map(SignedBlockAndState::getBlock)
             .collect(toList());
 
-    assertBlobSidecarsAvailabilityExceptPruned(
-        canonicalBlocksWithAvailableSidecars, List.of(blockA.getBlock(), blockB.getBlock()));
+    final List<KZGCommitment> prunedBlobSidecarKzgCommitments =
+        Streams.concat(blockABlobSidecars.stream(), blockBBlobSidecars.stream())
+            .map(BlobSidecar::getKZGCommitment)
+            .toList();
+    assertBlobSidecarsAndVersionedHashesAvailabilityExceptPruned(
+        canonicalBlocksWithAvailableSidecars,
+        List.of(blockA.getBlock(), blockB.getBlock()),
+        prunedBlobSidecarKzgCommitments);
   }
 
   @TestTemplate
@@ -1475,6 +1541,7 @@ public class DatabaseTest {
                       .orElseThrow();
 
               assertThat(database.getNonCanonicalBlobSidecar(key)).contains(blobSidecar);
+              assertVersionedHashForNonCanonicalBlobSidecar(blobSidecar);
             });
 
     SlotAndBlockRootAndBlobIndex key =
@@ -1486,6 +1553,8 @@ public class DatabaseTest {
         new SlotAndBlockRootAndBlobIndex(
             UInt64.valueOf(2), primaryChain.getBlockAtSlot(2).getRoot(), ONE);
     assertThat(database.getNonCanonicalBlobSidecar(key)).isEmpty();
+
+    primaryChain.streamBlobSidecars().forEach(this::assertVersionedHashForBlobSidecar);
   }
 
   @TestTemplate
@@ -2338,8 +2407,25 @@ public class DatabaseTest {
         DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
     assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
 
+    activateVersionedHashesForDataColumnSidecars();
     database.addSidecar(dataColumnSidecar);
     assertThat(database.getSidecar(columnSlotAndIdentifier)).contains(dataColumnSidecar);
+    assertVersionedHashesForDataColumnSidecar(dataColumnSidecar, true);
+  }
+
+  @TestTemplate
+  public void addSidecar_NotAddsVersionedHashesWithoutActivation(final DatabaseContext context)
+      throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+    final DataColumnSidecar dataColumnSidecar = dataStructureUtil.randomDataColumnSidecar();
+    final DataColumnSlotAndIdentifier columnSlotAndIdentifier =
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier).isEmpty()).isTrue();
+
+    database.addSidecar(dataColumnSidecar);
+    assertThat(database.getSidecar(columnSlotAndIdentifier)).contains(dataColumnSidecar);
+    assertNoVersionedHashesForDataColumnSidecar(dataColumnSidecar);
   }
 
   @TestTemplate
@@ -2378,7 +2464,8 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block1Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
     final DataColumnSidecar block1Sidecar1 =
-        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
     final DataColumnSlotAndIdentifier block1Column1 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
 
@@ -2390,6 +2477,7 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block2Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
 
+    activateVersionedHashesForDataColumnSidecars();
     database.addSidecar(block1Sidecar0);
     database.addSidecar(block1Sidecar1);
     database.addSidecar(block2Sidecar0);
@@ -2410,6 +2498,8 @@ public class DatabaseTest {
             block1Sidecar0.getSlot().plus(1), block2Sidecar0.getSlot().plus(1))) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block2Column0);
     }
+    Stream.of(block1Sidecar0, block1Sidecar1, block2Sidecar0)
+        .forEach(sidecar -> assertVersionedHashesForDataColumnSidecar(sidecar, true));
   }
 
   @TestTemplate
@@ -2424,7 +2514,8 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block1Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
     final DataColumnSidecar block1Sidecar1 =
-        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ONE);
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
     final DataColumnSlotAndIdentifier block1Column1 =
         DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
 
@@ -2436,9 +2527,13 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block2Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
 
+    activateVersionedHashesForDataColumnSidecars();
     database.addSidecar(block1Sidecar0);
     database.addSidecar(block1Sidecar1);
     database.addSidecar(block2Sidecar0);
+
+    Stream.of(block1Sidecar0, block1Sidecar1, block2Sidecar0)
+        .forEach(sidecar -> assertVersionedHashesForDataColumnSidecar(sidecar, true));
 
     database.pruneAllSidecars(ZERO, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
@@ -2446,18 +2541,25 @@ public class DatabaseTest {
       assertThat(dataColumnIdentifiersStream.toList())
           .containsExactly(block1Column0, block1Column1, block2Column0);
     }
+    Stream.of(block1Sidecar0, block1Sidecar1, block2Sidecar0)
+        .forEach(sidecar -> assertVersionedHashesForDataColumnSidecar(sidecar, true));
 
     database.pruneAllSidecars(ONE, 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block2Column0);
     }
+    assertVersionedHashesForDataColumnSidecar(block2Sidecar0, true);
+    Stream.of(block1Sidecar0, block1Sidecar1)
+        .forEach(this::assertNoVersionedHashesForDataColumnSidecar);
 
     database.pruneAllSidecars(block2Sidecar0.getSlot(), 10);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block2Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
+    Stream.of(block1Sidecar0, block1Sidecar1, block2Sidecar0)
+        .forEach(this::assertNoVersionedHashesForDataColumnSidecar);
   }
 
   @TestTemplate
@@ -2495,6 +2597,7 @@ public class DatabaseTest {
     final DataColumnSlotAndIdentifier block3Column0 =
         DataColumnSlotAndIdentifier.fromDataColumn(block3Sidecar0);
 
+    activateVersionedHashesForDataColumnSidecars();
     database.addSidecar(block1Sidecar0);
     database.addSidecar(block1Sidecar1);
     database.addSidecar(block1Sidecar2);
@@ -2508,6 +2611,8 @@ public class DatabaseTest {
           .containsExactly(
               block1Column0, block1Column1, block1Column2, block2Column0, block3Column0);
     }
+    Stream.of(block1Sidecar0, block2Sidecar0, block3Sidecar0)
+        .forEach(sidecar -> assertVersionedHashesForDataColumnSidecar(sidecar, true));
 
     // prune sidecars passing 2 as the limit should prune sidecars from the first 2 slots that it
     // can find,
@@ -2518,12 +2623,108 @@ public class DatabaseTest {
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
     }
+    assertVersionedHashesForDataColumnSidecar(block3Sidecar0, true);
+    Stream.of(block1Sidecar0, block2Sidecar0)
+        .forEach(this::assertNoVersionedHashesForDataColumnSidecar);
 
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
+    Stream.of(block1Sidecar0, block2Sidecar0, block3Sidecar0)
+        .forEach(this::assertNoVersionedHashesForDataColumnSidecar);
+  }
+
+  @TestTemplate
+  public void pruneAllSidecars_pruneNonCanonical(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+    final DataColumnSidecar block1Sidecar1 =
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
+    final DataColumnSlotAndIdentifier block1Column1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
+    final DataColumnSidecar block1Sidecar2 =
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), UInt64.valueOf(2));
+    final DataColumnSlotAndIdentifier block1Column2 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar2);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
+    final SignedBeaconBlockHeader blockHeader3 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(200));
+    final DataColumnSidecar block3Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader3, ZERO);
+    final DataColumnSlotAndIdentifier block3Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block3Sidecar0);
+
+    activateVersionedHashesForDataColumnSidecars();
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block1Sidecar2);
+    database.addNonCanonicalSidecar(block2Sidecar0);
+    database.addNonCanonicalSidecar(block3Sidecar0);
+
+    // not pruned yet should contain all sidecars
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(block1Column0, block1Column1, block1Column2);
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(block2Column0, block3Column0);
+    }
+    Stream.of(block1Sidecar0, block1Sidecar1, block1Sidecar2)
+        .forEach(sidecar -> assertVersionedHashesForDataColumnSidecar(sidecar, true));
+    Stream.of(block2Sidecar0, block3Sidecar0)
+        .forEach(sidecar -> assertVersionedHashesForDataColumnSidecar(sidecar, false));
+
+    // prune sidecars passing 1 as the limit should prune sidecars from the first 2 slots that it
+    // can find, one canonical and one non-canonical, limit is passed separately.
+    // So leaving only the sidecar from block header 3
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 1);
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
+    }
+    assertVersionedHashesForDataColumnSidecar(block3Sidecar0, false);
+    Stream.of(block1Sidecar0, block2Sidecar0)
+        .forEach(this::assertNoVersionedHashesForDataColumnSidecar);
+
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+
+    Stream.of(block1Sidecar0, block2Sidecar0, block3Sidecar0)
+        .forEach(this::assertNoVersionedHashesForDataColumnSidecar);
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
@@ -2820,13 +3021,146 @@ public class DatabaseTest {
     }
   }
 
-  private void assertBlobSidecarsAvailabilityExceptPruned(
+  private void assertBlobSidecarsAndVersionedHashesAvailabilityExceptPruned(
       final Collection<SignedBeaconBlock> availableBlocksSidecars,
-      final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
+      final Collection<SignedBeaconBlock> prunedBlocksSidecars,
+      final Collection<KZGCommitment> prunedBlobSidecarCommitments) {
     availableBlocksSidecars.forEach(
-        block -> assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isNotEmpty());
+        block -> {
+          final List<SlotAndBlockRootAndBlobIndex> blobSidecarKeys =
+              database.getBlobSidecarKeys(block.getSlotAndBlockRoot());
+          assertThat(blobSidecarKeys).isNotEmpty();
+          assertVersionedHashesForBlobSidecars(blobSidecarKeys);
+        });
+
     prunedBlocksSidecars.forEach(
-        block -> assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isEmpty());
+        block -> {
+          final List<SlotAndBlockRootAndBlobIndex> blobSidecarKeys =
+              database.getBlobSidecarKeys(block.getSlotAndBlockRoot());
+          assertThat(blobSidecarKeys).isEmpty();
+          assertNoVersionedHashesForCommitments(prunedBlobSidecarCommitments);
+        });
+  }
+
+  private void assertVersionedHashesForBlobSidecars(
+      final List<SlotAndBlockRootAndBlobIndex> blobSidecarKeys) {
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+    final List<SidecarIdentifier> sidecarIdentifiers =
+        blobSidecarKeys.stream()
+            .map(
+                key -> {
+                  final BlobSidecar blobSidecar = database.getBlobSidecar(key).orElseThrow();
+                  final VersionedHash versionedHash =
+                      miscHelpersDeneb.kzgCommitmentToVersionedHash(blobSidecar.getKZGCommitment());
+                  return database.getSidecarIdentifier(versionedHash).orElseThrow();
+                })
+            .toList();
+    assertThat(sidecarIdentifiers).hasSize(blobSidecarKeys.size());
+  }
+
+  private void assertNoVersionedHashesForCommitments(
+      final Collection<KZGCommitment> kzgCommitments) {
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+    final List<Optional<SidecarIdentifier>> maybeSidecarIdentifiers =
+        kzgCommitments.stream()
+            .map(
+                kzgCommitment -> {
+                  final VersionedHash versionedHash =
+                      miscHelpersDeneb.kzgCommitmentToVersionedHash(kzgCommitment);
+                  return database.getSidecarIdentifier(versionedHash);
+                })
+            .toList();
+    assertThat(maybeSidecarIdentifiers).containsOnly(Optional.empty());
+  }
+
+  private void assertVersionedHashForBlobSidecar(final BlobSidecar blobSidecar) {
+    assertVersionedHashForBlobSidecar(blobSidecar, true);
+  }
+
+  private void assertVersionedHashForNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+    assertVersionedHashForBlobSidecar(blobSidecar, false);
+  }
+
+  private void assertVersionedHashForBlobSidecar(
+      final BlobSidecar blobSidecar, final boolean canonical) {
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+    final VersionedHash versionedHash =
+        miscHelpersDeneb.kzgCommitmentToVersionedHash(blobSidecar.getKZGCommitment());
+    assertThat(database.getSidecarIdentifier(versionedHash))
+        .satisfies(
+            maybeSidecarIdentifier -> {
+              assertThat(maybeSidecarIdentifier.isPresent()).isTrue();
+              final SidecarIdentifier sidecarIdentifier = maybeSidecarIdentifier.get();
+              assertThat(sidecarIdentifier.blobSidecarIdentifier().isPresent()).isTrue();
+              final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex =
+                  new SlotAndBlockRootAndBlobIndex(
+                      blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex());
+              assertThat(sidecarIdentifier.blobSidecarIdentifier())
+                  .contains(slotAndBlockRootAndBlobIndex);
+              assertThat(sidecarIdentifier.canonical()).isEqualTo(canonical);
+            });
+  }
+
+  private void assertNoVersionedHashForBlobSidecar(final BlobSidecar blobSidecar) {
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+    final VersionedHash versionedHash =
+        miscHelpersDeneb.kzgCommitmentToVersionedHash(blobSidecar.getKZGCommitment());
+    assertThat(database.getSidecarIdentifier(versionedHash)).isEmpty();
+  }
+
+  private void assertVersionedHashesForDataColumnSidecar(
+      final DataColumnSidecar sidecar, final boolean canonical) {
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+    final List<VersionedHash> versionedHashes =
+        sidecar.getKzgCommitments().stream()
+            .map(
+                sszKzgCommitment ->
+                    miscHelpersDeneb.kzgCommitmentToVersionedHash(
+                        sszKzgCommitment.getKZGCommitment()))
+            .toList();
+    IntStream.range(0, versionedHashes.size())
+        .forEach(
+            index -> {
+              final VersionedHash versionedHash = versionedHashes.get(index);
+              assertThat(database.getSidecarIdentifier(versionedHash))
+                  .satisfies(
+                      maybeSidecarIdentifier -> {
+                        assertThat(maybeSidecarIdentifier.isPresent()).isTrue();
+                        final SidecarIdentifier sidecarIdentifier = maybeSidecarIdentifier.get();
+                        assertThat(
+                                sidecarIdentifier
+                                    .dataColumnSidecarsIdentifierAndBlobIndex()
+                                    .isPresent())
+                            .isTrue();
+                        final Pair<SlotAndBlockRoot, UInt64>
+                            dataColumnSlotAndIdentifierAndBlobIndex =
+                                sidecarIdentifier.dataColumnSidecarsIdentifierAndBlobIndex().get();
+                        assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getKey())
+                            .isEqualTo(sidecar.getSlotAndBlockRoot());
+                        assertThat(dataColumnSlotAndIdentifierAndBlobIndex.getValue().intValue())
+                            .isEqualTo(index);
+                        assertThat(sidecarIdentifier.canonical()).isEqualTo(canonical);
+                      });
+            });
+  }
+
+  private void assertNoVersionedHashesForDataColumnSidecar(final DataColumnSidecar sidecar) {
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+    final List<VersionedHash> versionedHashes =
+        sidecar.getKzgCommitments().stream()
+            .map(
+                sszKzgCommitment ->
+                    miscHelpersDeneb.kzgCommitmentToVersionedHash(
+                        sszKzgCommitment.getKZGCommitment()))
+            .toList();
+    versionedHashes.forEach(
+        versionedHash -> assertThat(database.getSidecarIdentifier(versionedHash)).isEmpty());
   }
 
   private void addBlocks(final SignedBlockAndState... blocks) {
@@ -3030,6 +3364,19 @@ public class DatabaseTest {
     }
 
     assertThat(blobSidecarsDb).isEqualTo(blobSidecars);
+  }
+
+  private void activateVersionedHashesForDataColumnSidecars() {
+    final SpecConfigFulu specConfigFulu =
+        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+    InMemoryKvStoreDatabaseFactory.EVENT_CHANNELS
+        .getPublisher(CustodyGroupCountChannel.class)
+        .onGroupCountUpdate(
+            specConfigFulu.getNumberOfCustodyGroups(), specConfigFulu.getNumberOfCustodyGroups());
+    FileBackedStorageSystemBuilder.EVENT_CHANNELS
+        .getPublisher(CustodyGroupCountChannel.class)
+        .onGroupCountUpdate(
+            specConfigFulu.getNumberOfCustodyGroups(), specConfigFulu.getNumberOfCustodyGroups());
   }
 
   public static class CreateForkChainResult {

@@ -22,12 +22,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.BeaconBlockBodyBuilderFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
 
-  private SignedExecutionPayloadHeader signedExecutionPayloadHeader;
+  private SignedExecutionPayloadBid signedExecutionPayloadBid;
   private SszList<PayloadAttestation> payloadAttestations;
 
   public BeaconBlockBodyBuilderGloas(
@@ -52,14 +52,14 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
   }
 
   @Override
-  public Boolean supportsSignedExecutionPayloadHeader() {
+  public Boolean supportsSignedExecutionPayloadBid() {
     return true;
   }
 
   @Override
-  public BeaconBlockBodyBuilder signedExecutionPayloadHeader(
-      final SignedExecutionPayloadHeader signedExecutionPayloadHeader) {
-    this.signedExecutionPayloadHeader = signedExecutionPayloadHeader;
+  public BeaconBlockBodyBuilder signedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    this.signedExecutionPayloadBid = signedExecutionPayloadBid;
     return this;
   }
 
@@ -90,7 +90,7 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
     checkNotNull(syncAggregate, "syncAggregate must be specified");
     checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
     // new fields
-    checkNotNull(signedExecutionPayloadHeader, "signedExecutionPayloadHeader must be specified");
+    checkNotNull(signedExecutionPayloadBid, "signedExecutionPayloadBid must be specified");
     checkNotNull(payloadAttestations, "payloadAttestations must be specified");
   }
 
@@ -119,7 +119,7 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
           voluntaryExits,
           syncAggregate,
           getBlsToExecutionChanges(),
-          signedExecutionPayloadHeader,
+          signedExecutionPayloadBid,
           payloadAttestations);
     }
     final BeaconBlockBodySchemaGloasImpl schema =
@@ -136,7 +136,7 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
         voluntaryExits,
         syncAggregate,
         getBlsToExecutionChanges(),
-        signedExecutionPayloadHeader,
+        signedExecutionPayloadBid,
         payloadAttestations);
   }
 }

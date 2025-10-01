@@ -44,8 +44,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -441,7 +441,7 @@ public abstract class AbstractBlockFactoryTest {
             genericState.getSlot(),
             builder ->
                 builder
-                    .parentHash(state.getLatestExecutionPayloadHeader().getBlockHash())
+                    .parentHash(state.getLatestExecutionPayloadHeaderRequired().getBlockHash())
                     .prevRandao(
                         beaconStateAccessors.getRandaoMix(
                             state, beaconStateAccessors.getCurrentEpoch(state)))

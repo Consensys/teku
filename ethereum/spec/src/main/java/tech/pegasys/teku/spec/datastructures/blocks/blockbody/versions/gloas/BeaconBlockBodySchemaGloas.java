@@ -16,9 +16,10 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 
 public interface BeaconBlockBodySchemaGloas<T extends BeaconBlockBodyGloas>
     extends BeaconBlockBodySchemaElectra<T> {
@@ -31,9 +32,7 @@ public interface BeaconBlockBodySchemaGloas<T extends BeaconBlockBodyGloas>
     return (BeaconBlockBodySchemaGloas<?>) schema;
   }
 
-  SignedExecutionPayloadHeaderSchema getSignedExecutionPayloadHeaderSchema();
-
-  long getBlobKzgCommitmentsRootGeneralizedIndex();
+  SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaGloas<?>> toVersionGloas() {

@@ -41,6 +41,20 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
         .isSameAs(t);
   }
 
+  public void isCompletedExceptionallyWithSuppressed(final Throwable[] suppressed) {
+    isCompletedExceptionally();
+    Assertions.assertThatThrownBy(actual::join)
+        .extracting(Throwable::getCause)
+        .extracting(Throwable::getSuppressed)
+        .isEqualTo(suppressed);
+  }
+
+  public void isCompletedExceptionallyWithCauseAndSuppressed(
+      final Throwable cause, final Throwable... suppressed) {
+    isCompletedExceptionallyWith(cause);
+    isCompletedExceptionallyWithSuppressed(suppressed);
+  }
+
   public <X extends Throwable> ThrowableAssert<X> isCompletedExceptionallyWith(
       final Class<X> exceptionType) {
     isCompletedExceptionally();

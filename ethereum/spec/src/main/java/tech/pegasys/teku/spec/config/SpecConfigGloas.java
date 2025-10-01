@@ -14,8 +14,12 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGloas {
+
+  UInt64 BUILDER_PAYMENT_THRESHOLD_NUMERATOR = UInt64.valueOf(6);
+  UInt64 BUILDER_PAYMENT_THRESHOLD_DENOMINATOR = UInt64.valueOf(10);
 
   static SpecConfigGloas required(final SpecConfig specConfig) {
     return specConfig
@@ -32,6 +36,8 @@ public interface SpecConfigGloas extends SpecConfigFulu, NetworkingSpecConfigGlo
   int getPtcSize();
 
   int getMaxPayloadAttestations();
+
+  long getBuilderPendingWithdrawalsLimit();
 
   @Override
   Optional<SpecConfigGloas> toVersionGloas();

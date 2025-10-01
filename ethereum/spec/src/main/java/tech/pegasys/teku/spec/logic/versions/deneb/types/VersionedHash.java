@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 public class VersionedHash {
 
   public static final int SIZE = 32;
+  public static final VersionedHash EMPTY = new VersionedHash(Bytes32.ZERO);
 
   final Bytes version;
   final Bytes value;
@@ -51,6 +52,10 @@ public class VersionedHash {
 
   public Bytes getValue() {
     return value;
+  }
+
+  public Bytes32 get() {
+    return Bytes32.wrap(Bytes.concatenate(version, value));
   }
 
   public String toHexString() {

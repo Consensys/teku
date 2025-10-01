@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateSchemaGloas;
@@ -50,7 +50,6 @@ public class BeaconStateBuilderGloas
   private SszUInt64List inactivityScores;
   private SyncCommittee currentSyncCommittee;
   private SyncCommittee nextSyncCommittee;
-  private ExecutionPayloadHeader latestExecutionPayloadHeader;
 
   private UInt64 depositRequestsStartIndex;
   private UInt64 depositBalanceToConsume;
@@ -66,6 +65,7 @@ public class BeaconStateBuilderGloas
   private SszList<PendingConsolidation> pendingConsolidations;
   private SszUInt64Vector proposerLookahead;
 
+  private ExecutionPayloadBid latestExecutionPayloadBid;
   private SszBitvector executionPayloadAvailability;
   private SszVector<BuilderPendingPayment> builderPendingPayments;
   private SszList<BuilderPendingWithdrawal> builderPendingWithdrawals;
@@ -94,7 +94,8 @@ public class BeaconStateBuilderGloas
     state.setInactivityScores(inactivityScores);
     state.setCurrentSyncCommittee(currentSyncCommittee);
     state.setNextSyncCommittee(nextSyncCommittee);
-    state.setLatestExecutionPayloadHeader(latestExecutionPayloadHeader);
+    // `latest_execution_payload_header` has been replaced with `latest_execution_payload_bid`
+    state.setLatestExecutionPayloadBid(latestExecutionPayloadBid);
     state.setNextWithdrawalIndex(nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(nextWithdrawalValidatorIndex);
     state.setDepositRequestsStartIndex(depositRequestsStartIndex);
@@ -184,6 +185,13 @@ public class BeaconStateBuilderGloas
     return this;
   }
 
+  public BeaconStateBuilderGloas latestExecutionPayloadBid(
+      final ExecutionPayloadBid latestExecutionPayloadBid) {
+    checkNotNull(latestExecutionPayloadBid);
+    this.latestExecutionPayloadBid = latestExecutionPayloadBid;
+    return this;
+  }
+
   public BeaconStateBuilderGloas executionPayloadAvailability(
       final SszBitvector executionPayloadAvailability) {
     checkNotNull(executionPayloadAvailability);
@@ -242,9 +250,6 @@ public class BeaconStateBuilderGloas
             schema.getInactivityScoresSchema(), defaultItemsInSSZLists);
     currentSyncCommittee = dataStructureUtil.randomSyncCommittee();
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
-    latestExecutionPayloadHeader =
-        dataStructureUtil.randomExecutionPayloadHeader(
-            dataStructureUtil.getSpec().forMilestone(SpecMilestone.GLOAS));
 
     this.nextWithdrawalIndex = UInt64.ZERO;
     this.nextWithdrawalValidatorIndex =
@@ -269,6 +274,7 @@ public class BeaconStateBuilderGloas
             schema.getProposerLookaheadSchema(),
             schema.getProposerLookaheadSchema().getMaxLength());
 
+    this.latestExecutionPayloadBid = dataStructureUtil.randomExecutionPayloadBid();
     this.executionPayloadAvailability =
         dataStructureUtil.randomSszBitvector(
             (int) schema.getExecutionPayloadAvailabilitySchema().getMaxLength());

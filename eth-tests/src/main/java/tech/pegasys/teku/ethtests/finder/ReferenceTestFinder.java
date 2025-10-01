@@ -68,10 +68,27 @@ public class ReferenceTestFinder {
               // (see https://github.com/Consensys/teku-internal/issues/221)
               if (fork.equals(TestFork.GLOAS)) {
                 return Stream.of(
+                        new BlsTestFinder(),
+                        new KzgTestFinder(),
                         new SszTestFinder("ssz_generic"),
                         new SszTestFinder("ssz_static"),
+                        new ShufflingTestFinder(),
                         // Temporarily adding only specific test types that we support
-                        new PyspecTestFinder("fork/fork", "networking/", "rewards/"))
+                        new PyspecTestFinder(
+                            List.of(
+                                "fork/fork",
+                                "networking/",
+                                "rewards/",
+                                "epoch_processing/",
+                                "operations/withdrawals",
+                                "operations/proposer_slashing",
+                                "operations/execution_payload",
+                                "operations/execution_payload_bid",
+                                "operations/payload_attestation"),
+                            List.of())
+                        // merkle proof tests are not applicable in Gloas, these will be removed in
+                        // next reference tests release
+                        )
                     .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
               }
 

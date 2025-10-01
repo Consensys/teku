@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.BUILDER_PENDING_WITHDRAWALS;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.EXECUTION_PAYLOAD_AVAILABILITY;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_BLOCK_HASH;
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_EXECUTION_PAYLOAD_BID;
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.LATEST_WITHDRAWALS_ROOT;
 
 import java.util.Optional;
@@ -29,6 +30,8 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 
@@ -43,11 +46,22 @@ public interface MutableBeaconStateGloas extends MutableBeaconStateFulu, BeaconS
   }
 
   @Override
+  default void setLatestExecutionPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader) {
+    // NO-OP (`latest_execution_payload_header` has been removed in Gloas)
+  }
+
+  @Override
   BeaconStateGloas commitChanges();
 
   @Override
   default Optional<MutableBeaconStateGloas> toMutableVersionGloas() {
     return Optional.of(this);
+  }
+
+  default void setLatestExecutionPayloadBid(final ExecutionPayloadBid latestExecutionPayloadBid) {
+    final int fieldIndex = getSchema().getFieldIndex(LATEST_EXECUTION_PAYLOAD_BID);
+    set(fieldIndex, latestExecutionPayloadBid);
   }
 
   default void setExecutionPayloadAvailability(final SszBitvector executionPayloadAvailability) {

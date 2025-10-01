@@ -64,7 +64,7 @@ public enum BeaconStateFields implements SszFieldName {
   CURRENT_SYNC_COMMITTEE,
   NEXT_SYNC_COMMITTEE,
   // Bellatrix fields
-  LATEST_EXECUTION_PAYLOAD_HEADER,
+  LATEST_EXECUTION_PAYLOAD_HEADER, // removed in Gloas
   // Capella fields
   NEXT_WITHDRAWAL_INDEX,
   NEXT_WITHDRAWAL_VALIDATOR_INDEX,
@@ -82,6 +82,7 @@ public enum BeaconStateFields implements SszFieldName {
   // Fulu fields
   PROPOSER_LOOKAHEAD,
   // Gloas fields
+  LATEST_EXECUTION_PAYLOAD_BID,
   EXECUTION_PAYLOAD_AVAILABILITY,
   BUILDER_PENDING_PAYMENTS,
   BUILDER_PENDING_WITHDRAWALS,

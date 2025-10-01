@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
@@ -35,7 +35,7 @@ public interface BlindedBeaconBlockBodyGloas extends BlindedBeaconBlockBodyElect
   @Override
   BlindedBeaconBlockBodySchemaGloas<?> getSchema();
 
-  SignedExecutionPayloadHeader getSignedExecutionPayloadHeader();
+  SignedExecutionPayloadBid getSignedExecutionPayloadBid();
 
   SszList<PayloadAttestation> getPayloadAttestations();
 
@@ -45,8 +45,8 @@ public interface BlindedBeaconBlockBodyGloas extends BlindedBeaconBlockBodyElect
   }
 
   @Override
-  default Optional<SignedExecutionPayloadHeader> getOptionalSignedExecutionPayloadHeader() {
-    return Optional.of(getSignedExecutionPayloadHeader());
+  default Optional<SignedExecutionPayloadBid> getOptionalSignedExecutionPayloadBid() {
+    return Optional.of(getSignedExecutionPayloadBid());
   }
 
   @Override
@@ -56,12 +56,12 @@ public interface BlindedBeaconBlockBodyGloas extends BlindedBeaconBlockBodyElect
 
   @Override
   default SszList<SszKZGCommitment> getBlobKzgCommitments() {
-    throw new UnsupportedOperationException("BlobKzgCommitments were removed in Gloas");
+    throw new UnsupportedOperationException("BlobKzgCommitments was removed in Gloas");
   }
 
   @Override
   default ExecutionRequests getExecutionRequests() {
-    throw new UnsupportedOperationException("ExecutionRequests were removed in Gloas");
+    throw new UnsupportedOperationException("ExecutionRequests was removed in Gloas");
   }
 
   @Override

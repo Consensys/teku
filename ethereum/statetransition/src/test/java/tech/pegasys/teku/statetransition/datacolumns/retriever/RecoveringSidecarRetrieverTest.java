@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -103,6 +103,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void sanityTest() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -127,8 +128,8 @@ public class RecoveringSidecarRetrieverTest {
     assertThat(delegateRetriever.requests).hasSize(3);
     assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(3);
 
-    // id2 promise completes immediately
-    delegateRetriever.requests.get(2).promise().complete(sidecars.get(2));
+    // id2 future completes immediately
+    delegateRetriever.requests.get(2).future().complete(sidecars.get(2));
     assertThat(res2).isCompletedWithValue(sidecars.get(2));
     assertThat(recoverRetriever.pendingRequestsCount()).isEqualTo(2);
 
@@ -161,16 +162,18 @@ public class RecoveringSidecarRetrieverTest {
         .skip(50)
         .limit(columnCount / 2 - columnsInDbCount)
         .forEach(
-            req -> req.promise().complete(sidecars.get(req.columnId().columnIndex().intValue())));
+            req -> req.future().complete(sidecars.get(req.columnId().columnIndex().intValue())));
 
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     assertThat(res0).isCompletedWithValue(sidecars.get(0));
     assertThat(res1).isCompletedWithValue(sidecars.get(1));
-    assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
+
+    assertThat(delegateRetriever.requests).allMatch(r -> r.future().isDone());
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void succeededAndFailedRetrievalShouldBeImmediatelyRemovedFromPendingPromises() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -203,6 +206,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void testMoreThanOneBlockWithBlobsOnSameSlot() {
     int blobCount = 1;
     int columnsInDbCount = 13;
@@ -239,15 +243,16 @@ public class RecoveringSidecarRetrieverTest {
         .limit(columnCount / 2 - columnsInDbCount)
         .forEach(
             req ->
-                req.promise().complete(sidecars_10_1.get(req.columnId().columnIndex().intValue())));
+                req.future().complete(sidecars_10_1.get(req.columnId().columnIndex().intValue())));
 
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     assertThat(res0).isCompletedWithValue(sidecars_10_1.get(100));
-    assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isDone());
+    assertThat(delegateRetriever.requests).allMatch(r -> r.future().isDone());
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void cancellingRequestShouldStopRecovery() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -277,6 +282,6 @@ public class RecoveringSidecarRetrieverTest {
 
     stubAsyncRunner.executeQueuedActions();
 
-    assertThat(delegateRetriever.requests).allMatch(r -> r.promise().isCancelled());
+    assertThat(delegateRetriever.requests).allMatch(r -> r.future().isCancelled());
   }
 }

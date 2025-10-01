@@ -40,7 +40,7 @@ public class DepositsFromBlockSerializerTest {
                 dataStructureUtil.randomDepositEvent(5)));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
-    assertThat(result).isEqualToComparingFieldByField(event);
+    assertThat(result).usingDefaultComparator().isEqualTo(event);
   }
 
   @Test
@@ -53,6 +53,6 @@ public class DepositsFromBlockSerializerTest {
             Stream.of(dataStructureUtil.randomDepositEvent()));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
-    assertThat(result).isEqualToComparingFieldByField(event);
+    assertThat(result).usingDefaultComparator().isEqualTo(event);
   }
 }

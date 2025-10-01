@@ -6,6 +6,7 @@ idea {
 
 dependencies {
   api project(':ethereum:events')
+  api project(':ethereum:statetransition:api')
 
   implementation project(':ethereum:performance-trackers')
   implementation project(':ethereum:execution-types')

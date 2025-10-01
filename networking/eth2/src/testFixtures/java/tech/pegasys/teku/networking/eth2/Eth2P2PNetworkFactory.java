@@ -95,9 +95,10 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -118,7 +119,6 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -162,6 +162,7 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<ValidatableSyncCommitteeMessage> syncCommitteeMessageProcessor;
     protected OperationProcessor<SignedBlsToExecutionChange> signedBlsToExecutionChangeProcessor;
     protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
+    protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -175,7 +176,6 @@ public class Eth2P2PNetworkFactory {
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
     protected Spec spec = TestSpecFactory.createMinimalPhase0();
-    private int earliestAvailableBlockSlotFrequency = 0;
     protected DebugDataDumper debugDataDumper;
 
     public Eth2P2PNetwork startNetwork() throws Exception {
@@ -221,12 +221,8 @@ public class Eth2P2PNetworkFactory {
             new SubnetSubscriptionService();
         final SubnetSubscriptionService dataColumnSidecarSubnetService =
             new SubnetSubscriptionService();
-        final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
-            new EarliestAvailableBlockSlot(
-                historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
         final CombinedChainDataClient combinedChainDataClient =
-            new CombinedChainDataClient(
-                recentChainData, historicalChainData, spec, earliestAvailableBlockSlot);
+            new CombinedChainDataClient(recentChainData, historicalChainData, spec);
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
@@ -279,10 +275,7 @@ public class Eth2P2PNetworkFactory {
         final PeerPools peerPools = new PeerPools();
         final ReputationManager reputationManager =
             new DefaultReputationManager(
-                metricsSystem,
-                StubTimeProvider.withTimeInSeconds(1000),
-                Constants.REPUTATION_MANAGER_CAPACITY,
-                peerPools);
+                metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
         final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
@@ -356,6 +349,7 @@ public class Eth2P2PNetworkFactory {
                 .discoveryConfig(config.getDiscoveryConfig())
                 .p2pConfig(config.getNetworkConfig())
                 .spec(config.getSpec())
+                .timeProvider(timeProvider)
                 .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
                 .build();
 
@@ -549,6 +543,7 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 dataColumnSidecarOperationProcessor,
+                payloadAttestationMessageProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP);
       };
@@ -575,6 +570,7 @@ public class Eth2P2PNetworkFactory {
           .build();
     }
 
+    @SuppressWarnings("deprecation")
     private void setDefaults() {
       if (eventChannels == null) {
         eventChannels =
@@ -644,6 +640,9 @@ public class Eth2P2PNetworkFactory {
       if (signedBlsToExecutionChangeProcessor == null) {
         signedBlsToExecutionChangeProcessor = OperationProcessor.noop();
       }
+      if (payloadAttestationMessageProcessor == null) {
+        payloadAttestationMessageProcessor = OperationProcessor.noop();
+      }
     }
 
     public Eth2P2PNetworkBuilder spec(final Spec spec) {
@@ -667,12 +666,6 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder setRequiredCheckpoint(
         final Optional<Checkpoint> requiredCheckpoint) {
       this.requiredCheckpoint = requiredCheckpoint;
-      return this;
-    }
-
-    public Eth2P2PNetworkBuilder earliestAvailableBlockSlotFrequency(
-        final int earliestAvailableBlockSlotFrequency) {
-      this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
       return this;
     }
 
@@ -776,6 +769,14 @@ public class Eth2P2PNetworkFactory {
         final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor) {
       checkNotNull(dataColumnSidecarOperationProcessor);
       this.dataColumnSidecarOperationProcessor = dataColumnSidecarOperationProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedPayloadAttestationMessageProcessor(
+        final OperationProcessor<PayloadAttestationMessage>
+            gossipedPayloadAttestationMessageProcessor) {
+      checkNotNull(gossipedPayloadAttestationMessageProcessor);
+      this.payloadAttestationMessageProcessor = gossipedPayloadAttestationMessageProcessor;
       return this;
     }
 
