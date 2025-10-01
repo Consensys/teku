@@ -356,43 +356,8 @@ jobs:
           retention-days: 1
           include-hidden-files: 'true'
 
-  referenceTestsManual:
-    needs: referenceTestsPrep
-    runs-on: ubuntu-24.04
-    environment: dev
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          submodules: 'recursive'
-
-      - name: Download assemble-output
-        uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          name: assemble-output
-          merge-multiple: true
-
-      - name: Download reftests-prep (optional)
-        uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
-          name: reftests
-          merge-multiple: true
-
-      - name: Prepare
-        uses: ./.github/actions/prepare
-
-      - shell: bash
-        run: |
-          tree .
-
   referenceTests:
-    needs: assemble
+    needs: referenceTestsPrep
     runs-on: ubuntu-latest-128
     environment: dev
     strategy:
@@ -472,6 +437,42 @@ jobs:
             -x processReferenceTestResources \
             -x cleanReferenceTestClasses \
             referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
+
+  referenceTestsManual:
+    needs: referenceTestsPrep
+    runs-on: ubuntu-24.04
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: assemble-output
+          merge-multiple: true
+
+      - name: Download reftests-prep (optional)
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: reftests
+          merge-multiple: true
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - shell: bash
+        run: |
+          tree .
+
 
   # referenceTests:
   #   needs: referenceTestsPrep
