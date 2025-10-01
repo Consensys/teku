@@ -57,8 +57,24 @@ jobs:
           name: assemble-output
           merge-multiple: true
 
+      - name: Download reftests-prep (optional)
+        if: ${{ inputs.stage_key == 'reference' }}
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.assemble_output_run_id }}
+          name: reftests
+          merge-multiple: true
+
       - name: Prepare
         uses: ./.github/actions/prepare
+
+      - name: Login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER_RO }}
+          password: ${{ secrets.DOCKER_PASSWORD_RO }}
 
       - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ${{ inputs.stage_name }}
         id: shard

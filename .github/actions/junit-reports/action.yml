@@ -17,9 +17,9 @@ runs:
         path: reports/${{inputs.stage_key}}
         merge-multiple: true
 
-    - shell: bash      
+    - shell: bash
       run: |
-        tree reports/          
+        tree reports/
 
     - name: Test Reporter
       uses: dorny/test-reporter@v1
