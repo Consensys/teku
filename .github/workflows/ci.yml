@@ -323,7 +323,10 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }} 
+          key: reftests-${{ hashFiles('build.gradle') }}
+      - shell: bash
+        run: |
+          tree ./eth-reference-tests/            
       - name: FetchReferenceTests
         shell: bash
         run: |
@@ -336,6 +339,9 @@ jobs:
         shell: bash
         run: |
           ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - shell: bash
+        run: |
+          tree ./eth-reference-tests/    
       - name: Caching reference tests 
         uses: actions/cache/save@v4
         with:
