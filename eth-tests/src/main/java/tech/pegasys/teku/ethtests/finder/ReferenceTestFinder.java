@@ -80,6 +80,7 @@ public class ReferenceTestFinder {
                                 "networking/",
                                 "rewards/",
                                 "epoch_processing/",
+                                "operations/attestation",
                                 "operations/withdrawals",
                                 "operations/proposer_slashing",
                                 "operations/execution_payload",

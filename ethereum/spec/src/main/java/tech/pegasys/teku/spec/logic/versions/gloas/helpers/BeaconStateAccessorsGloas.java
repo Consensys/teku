@@ -29,7 +29,9 @@ import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
@@ -123,5 +125,45 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
             .dividedBy(config.getSlotsPerEpoch())
             .times(SpecConfigGloas.BUILDER_PAYMENT_THRESHOLD_NUMERATOR);
     return quorum.dividedBy(SpecConfigGloas.BUILDER_PAYMENT_THRESHOLD_DENOMINATOR);
+  }
+
+  /**
+   * is_attestation_same_slot
+   *
+   * <p>Checks if the attestation was for the block proposed at the attestation slot
+   */
+  public boolean isAttestationSameSlot(final BeaconState state, final AttestationData data) {
+    if (data.getSlot().isZero()) {
+      return true;
+    }
+    final boolean isMatchingBlockRoot =
+        data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
+    final boolean isCurrentBlockRoot =
+        !data.getBeaconBlockRoot()
+            .equals(getBlockRootAtSlot(state, data.getSlot().minusMinZero(1)));
+    return isMatchingBlockRoot && isCurrentBlockRoot;
+  }
+
+  @Override
+  protected boolean computeIsMatchingHead(
+      final boolean isMatchingTarget, final AttestationData data, final BeaconState state) {
+    final boolean isMatchingBlockRoot =
+        isMatchingTarget
+            && data.getBeaconBlockRoot().equals(getBlockRootAtSlot(state, data.getSlot()));
+    final boolean isMatchingPayload;
+    if (isAttestationSameSlot(state, data)) {
+      checkArgument(data.getIndex().isZero(), "Index must be set to zero");
+      isMatchingPayload = true;
+    } else {
+      isMatchingPayload =
+          data.getIndex().intValue()
+              == (BeaconStateGloas.required(state)
+                      .getExecutionPayloadAvailability()
+                      .get(data.getSlot().mod(config.getSlotsPerHistoricalRoot()).intValue())
+                      .get()
+                  ? 1
+                  : 0);
+    }
+    return isMatchingBlockRoot && isMatchingPayload;
   }
 }
