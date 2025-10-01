@@ -354,6 +354,7 @@ jobs:
           path: |
             ./eth-reference-tests/
           retention-days: 1
+          include-hidden-files: 'true'
 
   referenceTestsManual:
     needs: referenceTestsPrep
@@ -390,7 +391,6 @@ jobs:
         run: |
           tree .
 
-
   referenceTests:
     needs: assemble
     runs-on: ubuntu-latest-128
@@ -415,69 +415,63 @@ jobs:
           run-id: ${{ github.run_id }}
           name: assemble-output
           merge-multiple: true
-      - uses: actions/cache/restore@v4
+      - name: Download reftests
+        uses: actions/download-artifact@v4
         with:
-          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
-      - name: FetchReferenceTests
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          name: reftests
+          merge-multiple: true 
+      - name: Login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER_RO }}
+          password: ${{ secrets.DOCKER_PASSWORD_RO }}
+      - shell: bash
+        run: |
+          tree .                      
+      # - uses: actions/cache/restore@v4
+      #   with:
+      #     path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
+      #     key: reftests-${{ hashFiles('build.gradle') }}
+
+      - name: Compute shard ${{ matrix.shard }} of ${{ matrix.total }} for ReferenceTests
+        id: shard
         shell: bash
         run: |
-          if [ ! -d "eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/tests" ]
-          then
-            ./gradlew --no-daemon expandRefTests
-          fi
-      - name: CompileReferenceTests
-        # Compile separately so that we have the generated test files for splitting across nodes
-        shell: bash
-        run: |
-          ./gradlew --no-daemon --parallel compileReferenceTestJava
-      - name: Determine test classes for this shard
-        id: split
-        run: |
-          # Gather all generated reference test classes
-          ALL_CLASSES=$(find . -path "*/src/referenceTest/generated_tests/*Test.java" \
-            | sed 's@.*/src/referenceTest/generated_tests/@@' \
+
+          SRC_PATTERN="*/src/referenceTest/generated_tests/*Test.java"
+          SRC_ROOT="src/referenceTest/generated_tests"
+
+          # 1) Collect test classes by pattern = FQNs
+          CLASSNAMES=$(find . -type f -name "*.java" -path "$SRC_PATTERN" \
+            | sed "s@.*/$SRC_ROOT/@@" \
             | sed 's@/@.@g' \
             | sed 's/.\{5\}$//')
 
-          # Sort and unique for determinism
-          ALL_CLASSES=$(echo "$ALL_CLASSES" | sort -u)
+          # 2) Modulo split
+          CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
+            | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
 
-          # Convert to array
-          mapfile -t CLASS_ARRAY <<< "$ALL_CLASSES"
+          if [ -z "$CLASSES_FOR_SHARD" ]; then
+            echo "args=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-          TOTAL=${#CLASS_ARRAY[@]}
-          SHARDS=${{ matrix.total }}
-          INDEX=${{ matrix.shard }}
+          # 3) Build --tests args
+          GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
+          echo "Prepared arguments for Gradle (ReferenceTests): $GRADLE_ARGS"
+          echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
 
-          # Split into shards
-          TESTS=""
-          for ((i=0; i<$TOTAL; i++)); do
-            if (( i % SHARDS == INDEX )); then
-              TESTS="$TESTS --tests ${CLASS_ARRAY[$i]}"
-            fi
-          done
-
-          echo "Shard $INDEX has tests: $TESTS"
-
-          # Save to output
-          echo "gradle_args=$TESTS" >> $GITHUB_OUTPUT
-
-      - name: Run reference tests
+      - name: Run ReferenceTests (shard)
+        if: steps.shard.outputs.args != ''
         run: |
-          ./gradlew --no-daemon --parallel --stacktrace \
+          ./gradlew --no-daemon --parallel --info \
             -x generateReferenceTestClasses \
             -x processReferenceTestResources \
             -x cleanReferenceTestClasses \
-            referenceTest ${{ inputs.gradle_args }} ${{ steps.split.outputs.gradle_args }}
-
-      - name: Caching reference tests 
-        uses: actions/cache/save@v4
-        with:
-          path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
-          key: reftests-${{ hashFiles('build.gradle') }}
-
-
+            referenceTest ${{ inputs.gradle_args }} ${{ steps.shard.outputs.args }}
 
   # referenceTests:
   #   needs: referenceTestsPrep
