@@ -477,10 +477,27 @@ public class TekuBeaconNode extends TekuNode {
         () -> {
           final Optional<SignedBeaconBlock> block = fetchHeadBlock();
           assertThat(block).isPresent();
-          checkExecutionPayloadInBlock(block.get());
+          final SignedBeaconBlock signedBlock = block.get();
+          if (spec.atSlot(signedBlock.getSlot())
+              .getMilestone()
+              .isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+            // block with bid means non default execution payload
+            checkExecutionPayloadBidInBlock(signedBlock);
+          } else {
+            checkExecutionPayloadInBlock(signedBlock);
+          }
         },
         5,
         MINUTES);
+  }
+
+  private void checkExecutionPayloadBidInBlock(final SignedBeaconBlock signedBlock) {
+    final BeaconBlock beaconBlock = signedBlock.getMessage();
+    final UInt64 slot = beaconBlock.getSlot();
+    assertThat(beaconBlock.getBody().getOptionalSignedExecutionPayloadBid())
+        .describedAs("Block body should contain a signed execution payload bid")
+        .isPresent();
+    LOG.debug("Signed execution payload bid found at slot " + slot);
   }
 
   private void checkExecutionPayloadInBlock(final SignedBeaconBlock signedBlock) {
