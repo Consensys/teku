@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -57,7 +57,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final MiscHelpersFulu miscHelpers;
   private final KZG kzg;
   private final Spec spec;
-  private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher;
+  private final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
 
   private final long columnCount;
@@ -77,7 +77,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final Spec spec,
       final MiscHelpersFulu miscHelpers,
       final KZG kzg,
-      final Consumer<DataColumnSidecar> dataColumnSidecarPublisher,
+      final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final int columnCount,
       final int groupCount,
@@ -244,7 +244,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               delegate
                   .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
                   .finishError(LOG);
-              dataColumnSidecarPublisher.accept(dataColumnSidecar);
+              dataColumnSidecarPublisher.accept(dataColumnSidecar, RemoteOrigin.RECOVERED);
             });
     recoveryTask.existingSidecars.clear();
     LOG.debug(

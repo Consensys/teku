@@ -832,9 +832,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             miscHelpersFulu,
             kzg,
-            dataColumnSidecar ->
-                dataColumnSidecarGossipChannel.publishDataColumnSidecar(
-                    dataColumnSidecar, RemoteOrigin.RECOVERED),
+            dataColumnSidecarGossipChannel::publishDataColumnSidecar,
             this::getCustodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
             specConfigFulu.getNumberOfCustodyGroups(),
