@@ -260,8 +260,7 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsPayloadAttestations()) {
         // no payload attestations used for local interop temporarily
         bodyBuilder.payloadAttestations(
-            BeaconBlockBodySchemaGloas.required(
-                    SchemaDefinitionsGloas.required(schemaDefinitions).getBeaconBlockBodySchema())
+            BeaconBlockBodySchemaGloas.required(schemaDefinitions.getBeaconBlockBodySchema())
                 .getPayloadAttestationsSchema()
                 .of());
       }
