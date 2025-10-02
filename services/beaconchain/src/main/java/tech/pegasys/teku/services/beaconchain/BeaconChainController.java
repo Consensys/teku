@@ -825,8 +825,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             UInt64.valueOf(slotsPerEpoch)
                 .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
 
-    final DataColumnSidecarGossipChannel publisher = eventChannels
-            .getPublisher(DataColumnSidecarGossipChannel.class);
+    final DataColumnSidecarGossipChannel publisher =
+        eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         new DataColumnSidecarRecoveringCustodyImpl(
@@ -836,8 +836,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             miscHelpersFulu,
             kzg,
             dataColumnSidecar ->
-                    publisher
-                    .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
+                publisher.publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
             this::getCustodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
             specConfigFulu.getNumberOfCustodyGroups(),
@@ -1024,7 +1023,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               metricsSystem,
               timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
-      dataColumnSidecarManager.subscribeToValidDataColumnSidecars(recoveryManager::onNewDataColumnSidecar);
+      dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+          recoveryManager::onNewDataColumnSidecar);
       blockManager.subscribePreImportBlocks(recoveryManager::onNewBlock);
       dataColumnSidecarELRecoveryManager = recoveryManager;
     } else {
