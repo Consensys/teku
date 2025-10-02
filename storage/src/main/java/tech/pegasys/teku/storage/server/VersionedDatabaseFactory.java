@@ -63,19 +63,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final boolean storeNonCanonicalBlocks;
   private final SyncDataAccessor dbSettingFileSyncDataAccessor;
   private final Optional<Eth2Network> maybeNetwork;
-  private final VersionedHashDBSourceFactory versionedHashDBSourceFactory;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final Path dataPath,
       final StorageConfiguration config,
-      final Optional<Eth2Network> maybeNetwork,
-      final VersionedHashDBSourceFactory versionedHashDBSourceFactory) {
+      final Optional<Eth2Network> maybeNetwork) {
 
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.maybeNetwork = maybeNetwork;
-    this.versionedHashDBSourceFactory = versionedHashDBSourceFactory;
 
     this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
     this.maxKnownNodeCacheSize = config.getMaxKnownNodeCacheSize();
@@ -183,7 +180,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           KvStoreConfiguration.v4Settings(dbDirectory.toPath()),
           KvStoreConfiguration.v4Settings(v5ArchiveDirectory.toPath()),
-          versionedHashDBSourceFactory,
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -212,7 +208,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
           metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
-          versionedHashDBSourceFactory,
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -232,7 +227,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
           schema,
-          versionedHashDBSourceFactory,
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -261,7 +255,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
           metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
-          versionedHashDBSourceFactory,
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -278,7 +271,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       return LevelDbDatabaseFactory.createLevelDbV2(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          versionedHashDBSourceFactory,
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -295,7 +287,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       return LevelDbDatabaseFactory.createLevelDbTree(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          versionedHashDBSourceFactory,
           stateStorageMode,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,

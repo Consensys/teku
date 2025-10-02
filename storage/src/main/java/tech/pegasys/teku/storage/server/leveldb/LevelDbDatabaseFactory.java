@@ -21,7 +21,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
@@ -36,7 +35,6 @@ public class LevelDbDatabaseFactory {
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
       final KvStoreConfiguration finalizedConfiguration,
-      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -58,7 +56,6 @@ public class LevelDbDatabaseFactory {
         finalizedDb,
         schemaHot,
         schemaFinalized,
-        versionedHashDBSourceFactory,
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -68,7 +65,6 @@ public class LevelDbDatabaseFactory {
   public static Database createLevelDbV2(
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
-      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -79,19 +75,12 @@ public class LevelDbDatabaseFactory {
             metricsSystem, STORAGE, hotConfiguration, schema.getAllColumns());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        schema,
-        versionedHashDBSourceFactory,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createLevelDbTree(
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
-      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
@@ -105,7 +94,6 @@ public class LevelDbDatabaseFactory {
         metricsSystem,
         db,
         schema,
-        versionedHashDBSourceFactory,
         stateStorageMode,
         storeNonCanonicalBlocks,
         maxKnownNodeCacheSize,

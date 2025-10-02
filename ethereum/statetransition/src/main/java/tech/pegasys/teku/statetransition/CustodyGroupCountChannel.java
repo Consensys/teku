@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.api;
+package tech.pegasys.teku.statetransition;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;

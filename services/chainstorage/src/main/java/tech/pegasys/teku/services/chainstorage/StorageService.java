@@ -49,7 +49,6 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.server.network.EphemeryException;
 import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
@@ -103,9 +102,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                       serviceConfig.getMetricsSystem(),
                       serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                       config,
-                      maybeNetwork,
-                      new VersionedHashDBSourceFactory(
-                          config.getSpec(), serviceConfig.getEventChannels()));
+                      maybeNetwork);
               try {
                 database = dbFactory.createDatabase();
               } catch (EphemeryException e) {
