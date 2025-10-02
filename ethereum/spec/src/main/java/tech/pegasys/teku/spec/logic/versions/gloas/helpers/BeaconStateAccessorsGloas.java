@@ -27,10 +27,13 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.IndexedPayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
@@ -38,7 +41,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
 public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
 
-  protected final SchemaDefinitionsGloas schemaDefinitions;
+  private final MiscHelpersGloas miscHelpersGloas;
+  private final SchemaDefinitionsGloas schemaDefinitions;
 
   public static BeaconStateAccessorsGloas required(
       final BeaconStateAccessors beaconStateAccessors) {
@@ -57,6 +61,7 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
       final MiscHelpersGloas miscHelpers) {
     super(config, predicates, miscHelpers);
     this.schemaDefinitions = schemaDefinitions;
+    this.miscHelpersGloas = miscHelpers;
   }
 
   /**
@@ -165,5 +170,43 @@ public class BeaconStateAccessorsGloas extends BeaconStateAccessorsFulu {
                   : 0);
     }
     return isMatchingBlockRoot && isMatchingPayload;
+  }
+
+  /** get_pending_balance_to_withdraw is modified to account for pending builder payments. */
+  @Override
+  public UInt64 getPendingBalanceToWithdraw(
+      final BeaconStateElectra state, final int validatorIndex) {
+    final BeaconStateGloas stateGloas = BeaconStateGloas.required(state);
+    final UInt64 pendingPartialWithdrawalsBalance =
+        super.getPendingBalanceToWithdraw(state, validatorIndex);
+    final UInt64 pendingBuilderWithdrawalsBalance =
+        stateGloas.getBuilderPendingWithdrawals().stream()
+            .filter(withdrawal -> withdrawal.getBuilderIndex().intValue() == validatorIndex)
+            .map(BuilderPendingWithdrawal::getAmount)
+            .reduce(UInt64.ZERO, UInt64::plus);
+    final UInt64 pendingBuilderPaymentsBalance =
+        stateGloas.getBuilderPendingPayments().stream()
+            .map(BuilderPendingPayment::getWithdrawal)
+            .filter(withdrawal -> withdrawal.getBuilderIndex().intValue() == validatorIndex)
+            .map(BuilderPendingWithdrawal::getAmount)
+            .reduce(UInt64.ZERO, UInt64::plus);
+    return pendingPartialWithdrawalsBalance
+        .plus(pendingBuilderWithdrawalsBalance)
+        .plus(pendingBuilderPaymentsBalance);
+  }
+
+  /**
+   * get_next_sync_committee_indices is refactored to use compute_balance_weighted_selection as a
+   * helper for the balance-weighted sampling process.
+   */
+  @Override
+  public IntList getNextSyncCommitteeIndices(final BeaconState state) {
+    final UInt64 epoch = getCurrentEpoch(state).plus(1);
+    final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
+    final int activeValidatorCount = activeValidatorIndices.size();
+    checkArgument(activeValidatorCount > 0, "Provided state has no active validators");
+    final Bytes32 seed = getSeed(state, epoch, Domain.SYNC_COMMITTEE);
+    return miscHelpersGloas.computeBalanceWeightedSelection(
+        state, activeValidatorIndices, seed, configElectra.getSyncCommitteeSize(), true);
   }
 }
