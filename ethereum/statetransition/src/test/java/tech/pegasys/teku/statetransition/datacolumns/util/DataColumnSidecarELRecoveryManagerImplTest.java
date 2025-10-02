@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.util;
+package tech.pegasys.teku.statetransition.datacolumns.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
+import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.LOCAL_OR_RECOVERED_ORIGINS;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -64,7 +65,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
-import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarELRecoveryManagerImplTest {
@@ -172,10 +174,12 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block, UInt64.ZERO);
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
-    dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(
-        dataColumnSidecar, RemoteOrigin.LOCAL_PROPOSAL);
-    dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(
-        dataColumnSidecar, RemoteOrigin.RECOVERED);
+
+    LOCAL_OR_RECOVERED_ORIGINS.forEach(
+        origin -> {
+          dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(dataColumnSidecar, origin);
+        });
+
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     verifyNoInteractions(executionLayer);
   }

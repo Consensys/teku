@@ -105,6 +105,14 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final Duration localElBlobsFetchingRetryDelay;
   private final int localElBlobsFetchingMaxRetries;
 
+  static final Set<RemoteOrigin> LOCAL_OR_RECOVERED_ORIGINS =
+      Set.of(LOCAL_PROPOSAL, LOCAL_EL, RECOVERED);
+
+  private static boolean isLocalBlockProductionOrRecovered(
+      final Optional<RemoteOrigin> remoteOrigin) {
+    return remoteOrigin.map(LOCAL_OR_RECOVERED_ORIGINS::contains).orElse(false);
+  }
+
   @VisibleForTesting
   public DataColumnSidecarELRecoveryManagerImpl(
       final Spec spec,
@@ -159,14 +167,19 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onNewDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
+    if (isLocalBlockProductionOrRecovered(Optional.of(remoteOrigin))) {
+      LOG.debug(
+          "Data from {} with origin {} is not subject to recovery",
+          dataColumnSidecar::toLogString,
+          () -> remoteOrigin);
+      return;
+    }
+
     LOG.debug(
         "Received data column sidecar {} from {}",
         dataColumnSidecar::toLogString,
         () -> remoteOrigin);
-    if (remoteOrigin.equals(RemoteOrigin.LOCAL_EL)) {
-      // skip processing sidecars just published by this class
-      return;
-    }
+
     if (spec.atSlot(dataColumnSidecar.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
       LOG.debug(
           "Received data column sidecar {} before FULU. Ignoring.", dataColumnSidecar::toLogString);
@@ -281,6 +294,14 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    if (isLocalBlockProductionOrRecovered(remoteOrigin)) {
+      LOG.debug(
+          "Block {} from {} is not subject to recovery",
+          block::getSlotAndBlockRoot,
+          () -> remoteOrigin);
+      return;
+    }
+
     LOG.debug("Received block {} from {}", block::getSlotAndBlockRoot, () -> remoteOrigin);
     final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
     // TODO-GLOAS: this could still be useful, but ignoring it for the moment since the recovery
@@ -318,15 +339,13 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
-    if (LOG.isTraceEnabled()) {
-      LOG.trace(
-          "Recovery tasks: {}",
-          () -> {
-            final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
-                new HashMap<>(recoveryTasks);
-            return recoveryTasksCopy.toString();
-          });
-    }
+    LOG.trace(
+        "Recovery tasks: {}",
+        () -> {
+          final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
+              new HashMap<>(recoveryTasks);
+          return recoveryTasksCopy.toString();
+        });
   }
 
   @VisibleForTesting
@@ -352,15 +371,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private void onFirstSeen(
       final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
     LOG.debug("Data from {} is first seen, checking if recovery is needed", slotAndBlockRoot);
-    final boolean isLocalBlockProductionOrRecovered =
-        remoteOrigin.map(ro -> Set.of(LOCAL_PROPOSAL, RECOVERED).contains(ro)).orElse(false);
-    if (isLocalBlockProductionOrRecovered) {
-      LOG.debug(
-          "Data from {} is produced by {}. Recovery is not needed.",
-          slotAndBlockRoot,
-          remoteOrigin);
-      return;
-    }
 
     asyncRunner
         .runWithRetry(
