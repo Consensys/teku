@@ -20,7 +20,9 @@ import static tech.pegasys.teku.spec.logic.versions.electra.helpers.MiscHelpersE
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -49,6 +51,33 @@ public class MiscHelpersGloas extends MiscHelpersFulu {
       final PredicatesGloas predicates,
       final SchemaDefinitionsGloas schemaDefinitions) {
     super(specConfig, predicates, schemaDefinitions);
+  }
+
+  /**
+   * compute_proposer_indices is refactored to use compute_balance_weighted_selection as a helper
+   * for the balance-weighted sampling process.
+   */
+  @Override
+  public List<Integer> computeProposerIndices(
+      final BeaconState state,
+      final UInt64 epoch,
+      final Bytes32 epochSeed,
+      final IntList activeValidatorIndices) {
+    final UInt64 startSlot = computeStartSlotAtEpoch(epoch);
+    return IntStream.range(0, specConfig.getSlotsPerEpoch())
+        .mapToObj(
+            i -> {
+              final Bytes32 seed =
+                  Hash.sha256(Bytes.concatenate(epochSeed, uint64ToBytes(startSlot.plus(i))));
+              return computeBalanceWeightedSelection(state, activeValidatorIndices, seed, 1, true)
+                  .getInt(0);
+            })
+        .toList();
+  }
+
+  public byte removeFlag(final byte participationFlags, final int flagIndex) {
+    final byte flag = (byte) (1 << flagIndex);
+    return (byte) (participationFlags & ~flag);
   }
 
   /**
