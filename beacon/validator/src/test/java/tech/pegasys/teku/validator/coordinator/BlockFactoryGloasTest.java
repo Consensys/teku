@@ -21,7 +21,10 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
@@ -33,7 +36,10 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
 
   @Test
   void shouldCreateBlock() {
-    assertBlockCreated(1, spec, false, state -> {}, false).blockContainer();
+    final BlockContainer blockContainer =
+        assertBlockCreated(1, spec, false, state -> {}, false).blockContainer();
+    assertThat(blockContainer).isInstanceOf(BeaconBlock.class);
+    assertThat(blockContainer.getBlock().getBody()).isInstanceOf(BeaconBlockBodyGloas.class);
   }
 
   @Test
