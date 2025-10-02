@@ -1013,9 +1013,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               kzg,
-              sidecars ->
-                  dataColumnSidecarGossipChannel.publishDataColumnSidecars(
-                      sidecars, RemoteOrigin.LOCAL_EL),
+              dataColumnSidecarGossipChannel::publishDataColumnSidecars,
               this::getCustodyGroupCountManager,
               metricsSystem,
               timeProvider);
