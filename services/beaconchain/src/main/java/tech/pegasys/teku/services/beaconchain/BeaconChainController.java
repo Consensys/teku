@@ -32,11 +32,9 @@ import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
@@ -112,7 +110,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -825,7 +822,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             UInt64.valueOf(slotsPerEpoch)
                 .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
 
-    final DataColumnSidecarGossipChannel publisher =
+    final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
         eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
@@ -836,7 +833,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             miscHelpersFulu,
             kzg,
             dataColumnSidecar ->
-                publisher.publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
+                dataColumnSidecarGossipChannel.publishDataColumnSidecar(
+                    dataColumnSidecar, RemoteOrigin.RECOVERED),
             this::getCustodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
             specConfigFulu.getNumberOfCustodyGroups(),
@@ -1005,11 +1003,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initDataColumnSidecarELRecoveryManager()");
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
 
-      final Consumer<List<DataColumnSidecar>> recoveredDataColumnSidecarPublisher =
-          dataColumnSidecars ->
-              eventChannels
-                  .getPublisher(DataColumnSidecarGossipChannel.class)
-                  .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.RECOVERED);
+      final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
+          eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
       final DataColumnSidecarELRecoveryManager recoveryManager =
           poolFactory.createDataColumnSidecarELRecoveryManager(
@@ -1018,7 +1013,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               kzg,
-              recoveredDataColumnSidecarPublisher,
+              sidecars ->
+                  dataColumnSidecarGossipChannel.publishDataColumnSidecars(
+                      sidecars, RemoteOrigin.LOCAL_EL),
               this::getCustodyGroupCountManager,
               metricsSystem,
               timeProvider);
