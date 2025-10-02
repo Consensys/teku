@@ -201,7 +201,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     final SlotAndBlockRoot slotAndBlockRoot = dataColumnSidecar.getSlotAndBlockRoot();
 
     if (createRecoveryTaskFromDataColumnSidecar(dataColumnSidecar)) {
-      onFirstSeen(slotAndBlockRoot, Optional.of(remoteOrigin));
+      onFirstSeen(slotAndBlockRoot);
     }
   }
 
@@ -323,7 +323,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       return;
     }
     if (createRecoveryTaskFromBlock(block)) {
-      onFirstSeen(block.getSlotAndBlockRoot(), remoteOrigin);
+      onFirstSeen(block.getSlotAndBlockRoot());
     }
   }
 
@@ -368,8 +368,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     }
   }
 
-  private void onFirstSeen(
-      final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
+  private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
     LOG.debug("Data from {} is first seen, checking if recovery is needed", slotAndBlockRoot);
 
     asyncRunner
