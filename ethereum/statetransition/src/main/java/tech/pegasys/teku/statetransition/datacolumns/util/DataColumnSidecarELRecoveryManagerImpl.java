@@ -301,8 +301,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
           () -> remoteOrigin);
       return;
     }
-
-    LOG.debug("Received block {} from {}", block::getSlotAndBlockRoot, () -> remoteOrigin);
     final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
     // TODO-GLOAS: this could still be useful, but ignoring it for the moment since the recovery
     // task relies on blob kzg commitments
@@ -314,6 +312,9 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
           milestone::lowerCaseName);
       return;
     }
+
+    LOG.debug("Received block {} from {}", block::getSlotAndBlockRoot, () -> remoteOrigin);
+
     if (recentChainData.containsBlock(block.getRoot())) {
       LOG.debug("Block {} is already imported. Ignoring.", block::getSlotAndBlockRoot);
       return;
