@@ -69,9 +69,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   final Function<UInt64, Duration> slotToRecoveryDelay;
   private final Map<SlotAndBlockRoot, RecoveryTask> recoveryTasks;
 
-  private final Subscribers<DataColumnSidecarManager.ValidDataColumnSidecarsListener>
-      validDataColumnSidecarsSubscribers = Subscribers.create(true);
-
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
 
@@ -205,12 +202,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     return true;
   }
 
-  @Override
-  public void subscribeToValidDataColumnSidecars(
-      final DataColumnSidecarManager.ValidDataColumnSidecarsListener sidecarsListener) {
-    validDataColumnSidecarsSubscribers.subscribe(sidecarsListener);
-  }
-
   private boolean isActiveSuperNode(final UInt64 slot) {
     return isSuperNode.get()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU);
@@ -251,8 +242,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         .filter(sidecar -> !existingSidecarsIndices.contains(sidecar.getIndex()))
         .forEach(
             dataColumnSidecar -> {
-              validDataColumnSidecarsSubscribers.forEach(
-                  l -> l.onNewValidSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED));
               delegate
                   .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
                   .finishError(LOG);
