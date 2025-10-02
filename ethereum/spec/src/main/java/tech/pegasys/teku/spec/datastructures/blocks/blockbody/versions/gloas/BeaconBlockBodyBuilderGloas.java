@@ -97,7 +97,7 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
   @Override
   protected Boolean isBlinded() {
     // in ePBS always build non-blinded blocks, since the "blinded" concept has been dropped
-    // this method is adapted only for backwards compatibility purposes
+    // this method is adapted only for testing purposes
     return schema == null && blindedSchema != null;
   }
 
