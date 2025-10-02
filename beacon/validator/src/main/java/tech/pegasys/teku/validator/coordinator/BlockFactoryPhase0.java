@@ -82,7 +82,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
         .thenApply(this::beaconBlockAndStateToBlockContainerAndMetaData);
   }
 
-  private BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
+  protected BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
       final BeaconBlockAndState blockAndState) {
     final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
     return new BlockContainerAndMetaData(
