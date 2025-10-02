@@ -59,8 +59,8 @@ class CombinedChainDataClientTest {
 
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(recentChainData, historicalChainData, spec,
-              lateBlockReorgPreparationHandler);
+      new CombinedChainDataClient(
+          recentChainData, historicalChainData, spec, lateBlockReorgPreparationHandler);
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();

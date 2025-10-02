@@ -1586,10 +1586,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   recentChainData,
                   throttlingStorageQueryChannel,
                   spec,
-                  new EarliestAvailableBlockSlot(
-                      throttlingStorageQueryChannel,
-                      timeProvider,
-                      beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())));
+                  LateBlockReorgPreparationHandler.NOOP));
     }
 
     this.p2pNetwork =
