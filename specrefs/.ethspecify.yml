@@ -40,7 +40,6 @@ specrefs:
       - RANDOM_CHALLENGE_KZG_CELL_BATCH_DOMAIN
 
       # Not implemented: gloas
-      - DOMAIN_PTC_ATTESTER#gloas
       - PAYLOAD_STATUS_EMPTY#gloas
       - PAYLOAD_STATUS_FULL#gloas
       - PAYLOAD_STATUS_PENDING#gloas

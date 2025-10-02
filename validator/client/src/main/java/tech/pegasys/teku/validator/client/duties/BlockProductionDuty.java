@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -179,10 +181,18 @@ public class BlockProductionDuty implements Duty {
   }
 
   private Optional<String> getExecutionSummary(final BeaconBlockBody blockBody) {
-    return blockBody.getOptionalExecutionPayloadSummary().map(this::getExecutionSummaryString);
+    return blockBody
+        .getOptionalExecutionPayloadSummary()
+        .map(this::getExecutionSummaryFromExecutionPayloadSummary)
+        .or(
+            () ->
+                blockBody
+                    .getOptionalSignedExecutionPayloadBid()
+                    .map(signedBid -> getExecutionSummaryFromBid(signedBid.getMessage())));
   }
 
-  private String getExecutionSummaryString(final ExecutionPayloadSummary summary) {
+  private String getExecutionSummaryFromExecutionPayloadSummary(
+      final ExecutionPayloadSummary summary) {
     UInt64 gasPercentage;
     try {
       gasPercentage =
@@ -199,6 +209,14 @@ public class BlockProductionDuty implements Duty {
         gasPercentage,
         summary.getBlockHash().toUnprefixedHexString(),
         summary.getBlockNumber());
+  }
+
+  private String getExecutionSummaryFromBid(final ExecutionPayloadBid bid) {
+    return String.format(
+        "Builder: %s, Bid gas limit: %s, Bid EL block: %s",
+        bid.getBuilderIndex(),
+        bid.getGasLimit(),
+        LogFormatter.formatAbbreviatedHashRoot(bid.getBlockHash()));
   }
 
   @Override

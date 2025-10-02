@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchemaDeneb;
@@ -58,11 +59,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
               if (block.isBlinded()) {
                 return SafeFuture.completedFuture(blockContainerAndMetaData);
               }
-              // The execution BlobsBundle has been cached as part of the block creation
-              return operationSelector
-                  .createBlobsBundleSelector()
-                  .apply(block)
-                  .thenApply(blobsBundle -> createBlockContents(block, blobsBundle))
+              return createBlockContents(block)
                   .thenApply(blockContainerAndMetaData::withBlockContents);
             });
   }
@@ -70,6 +67,14 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   @Override
   public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
     return operationSelector.createBlobSidecarsSelector().apply(blockContainer);
+  }
+
+  protected SafeFuture<BlockContainer> createBlockContents(final BeaconBlock block) {
+    // The execution BlobsBundle has been cached as part of the block creation
+    return operationSelector
+        .createBlobsBundleSelector()
+        .apply(block)
+        .thenApply(blobsBundle -> createBlockContents(block, blobsBundle));
   }
 
   private BlockContentsDeneb createBlockContents(
