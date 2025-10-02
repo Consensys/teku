@@ -2411,12 +2411,10 @@ public final class DataStructureUtil {
             randomEth1Address().getWrappedBytes()));
   }
 
-  public VersionedHash randomVersionedHash() {
-    return new VersionedHash(randomBytes32());
-  }
-
   public List<VersionedHash> randomVersionedHashes(final int count) {
-    return IntStream.range(0, count).mapToObj(__ -> randomVersionedHash()).collect(toList());
+    return IntStream.range(0, count)
+        .mapToObj(__ -> new VersionedHash(randomBytes32()))
+        .collect(toList());
   }
 
   public Blob randomValidBlob() {
@@ -2919,17 +2917,6 @@ public final class DataStructureUtil {
   public DataColumnSidecar randomDataColumnSidecar(
       final SignedBeaconBlockHeader header, final UInt64 index) {
     return new RandomSidecarBuilder().signedBeaconBlockHeader(header).index(index).build();
-  }
-
-  public DataColumnSidecar randomDataColumnSidecar(
-      final SignedBeaconBlockHeader header,
-      final SszList<SszKZGCommitment> kzgCommitments,
-      final UInt64 index) {
-    return new RandomSidecarBuilder()
-        .signedBeaconBlockHeader(header)
-        .kzgCommitments(kzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment).toList())
-        .index(index)
-        .build();
   }
 
   public DataColumnSidecar randomDataColumnSidecar(
