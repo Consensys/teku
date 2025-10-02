@@ -1,9 +1,0 @@
-dependencies {
-  implementation project(':infrastructure:events')
-}
-
-publishing {
-  publications {
-    mavenJava(MavenPublication) { artifactId 'ethereum-statetransition-api' }
-  }
-}

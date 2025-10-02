@@ -21,7 +21,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.VersionedHashDBSourceFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
@@ -36,7 +35,6 @@ public class RocksDbDatabaseFactory {
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
       final KvStoreConfiguration finalizedConfiguration,
-      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -64,7 +62,6 @@ public class RocksDbDatabaseFactory {
         finalizedDb,
         schemaHot,
         schemaFinalized,
-        versionedHashDBSourceFactory,
         stateStorageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -75,7 +72,6 @@ public class RocksDbDatabaseFactory {
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
       final SchemaCombinedSnapshotState schema,
-      final VersionedHashDBSourceFactory versionedHashDBSourceFactory,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
@@ -90,12 +86,6 @@ public class RocksDbDatabaseFactory {
             schema.getDeletedColumnIds());
 
     return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        schema,
-        versionedHashDBSourceFactory,
-        stateStorageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        spec);
+        db, schema, stateStorageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 }

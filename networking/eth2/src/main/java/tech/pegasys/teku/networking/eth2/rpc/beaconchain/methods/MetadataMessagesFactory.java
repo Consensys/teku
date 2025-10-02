@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
-import tech.pegasys.teku.statetransition.api.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
 public class MetadataMessagesFactory implements CustodyGroupCountChannel {
   private static final Logger LOG = LogManager.getLogger();

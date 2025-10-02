@@ -5,7 +5,6 @@ dependencies {
   implementation project(':ethereum:networks')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
-  implementation project(':ethereum:statetransition:api')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:bytes')
