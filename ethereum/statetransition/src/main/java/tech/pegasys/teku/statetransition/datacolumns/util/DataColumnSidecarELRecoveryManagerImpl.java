@@ -276,8 +276,15 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     LOG.debug("Received block {} from {}", block.getSlotAndBlockRoot(), remoteOrigin);
-    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
-      LOG.debug("Received block {} before Fulu. Ignoring.", block.getSlotAndBlockRoot());
+    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
+    // TODO-GLOAS: this could still be useful, but ignoring it for the moment since the recovery
+    // task relies on blob kzg commitments
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
+        || milestone.isLessThan(SpecMilestone.FULU)) {
+      LOG.debug(
+          "Received block {} for {} fork. Ignoring.",
+          block.getSlotAndBlockRoot(),
+          milestone.lowerCaseName());
       return;
     }
     if (recentChainData.containsBlock(block.getRoot())) {
