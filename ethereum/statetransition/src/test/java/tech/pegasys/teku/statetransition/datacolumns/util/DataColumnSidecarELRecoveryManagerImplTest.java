@@ -11,10 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.util;
+package tech.pegasys.teku.statetransition.datacolumns.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -25,19 +26,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.datacolumns.DasCustodyStand.createCustodyGroupCountManager;
+import static tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl.LOCAL_OR_RECOVERED_ORIGINS;
 
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -64,7 +65,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
-import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarELRecoveryManagerImplTest {
@@ -84,7 +86,8 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
       IntStream.range(0, 128).mapToObj(__ -> new KZGCell(Bytes.random(2048))).toList();
 
   @SuppressWarnings("unchecked")
-  final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher = mock(Consumer.class);
+  final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher =
+      mock(BiConsumer.class);
 
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
   private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
@@ -171,10 +174,12 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block, UInt64.ZERO);
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
-    dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(
-        dataColumnSidecar, RemoteOrigin.LOCAL_PROPOSAL);
-    dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(
-        dataColumnSidecar, RemoteOrigin.RECOVERED);
+
+    LOCAL_OR_RECOVERED_ORIGINS.forEach(
+        origin -> {
+          dataColumnSidecarELRecoveryManager.onNewDataColumnSidecar(dataColumnSidecar, origin);
+        });
+
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     verifyNoInteractions(executionLayer);
   }
@@ -226,7 +231,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   public void shouldPublish_whenAllBlobsRetrieved() {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
@@ -247,10 +251,10 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    final ArgumentCaptor<List<DataColumnSidecar>> dataColumnSidecarsCaptor =
-        ArgumentCaptor.forClass(List.class);
-    verify(dataColumnSidecarPublisher).accept(dataColumnSidecarsCaptor.capture());
-    assertThat(dataColumnSidecarsCaptor.getValue().size()).isEqualTo(sampleGroupCount);
+    verify(dataColumnSidecarPublisher)
+        .accept(
+            argThat(dataColumnSidecars -> dataColumnSidecars.size() == sampleGroupCount),
+            argThat(origin -> origin == RemoteOrigin.LOCAL_EL));
   }
 
   @Test
@@ -474,7 +478,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   public void shouldStopRetry_whenElBlobsAreFetched() {
     final DataColumnSidecarELRecoveryManagerImpl dataColumnSidecarELRecoveryManager =
         new DataColumnSidecarELRecoveryManagerImpl(
@@ -524,10 +527,10 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     verify(executionLayer, times(2)).engineGetBlobAndCellProofsList(any(), any());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    final ArgumentCaptor<List<DataColumnSidecar>> dataColumnSidecarsCaptor =
-        ArgumentCaptor.forClass(List.class);
-    verify(dataColumnSidecarPublisher).accept(dataColumnSidecarsCaptor.capture());
-    assertThat(dataColumnSidecarsCaptor.getValue().size()).isEqualTo(sampleGroupCount);
+    verify(dataColumnSidecarPublisher)
+        .accept(
+            argThat(dataColumnSidecars -> dataColumnSidecars.size() == sampleGroupCount),
+            argThat(origin -> origin == RemoteOrigin.LOCAL_EL));
   }
 
   private List<VersionedHash> getVersionedHashes(

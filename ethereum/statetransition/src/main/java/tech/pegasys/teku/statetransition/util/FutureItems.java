@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 /** Holds items with slots that are in the future relative to our node's current slot */
 public class FutureItems<T> implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
-  static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
+  public static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
   private static final int MAX_ITEMS_PER_SLOT = 500;
 
   private final SettableLabelledGauge futureItemsCounter;

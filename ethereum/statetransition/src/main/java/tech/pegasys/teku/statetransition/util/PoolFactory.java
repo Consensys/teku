@@ -17,7 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
@@ -152,7 +153,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final KZG kzg,
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
+      final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
