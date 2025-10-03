@@ -21,6 +21,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -86,7 +88,15 @@ public interface GossipForkSubscriptions {
     // since Fulu
   }
 
+  default void publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
+    // since Gloas
+  }
+
   default void publishPayloadAttestationMessage(final PayloadAttestationMessage message) {
+    // since Gloas
+  }
+
+  default void publishExecutionPayloadBid(final SignedExecutionPayloadBid message) {
     // since Gloas
   }
 }

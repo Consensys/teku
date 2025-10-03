@@ -340,13 +340,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
-    LOG.trace(
-        "Recovery tasks: {}",
-        () -> {
-          final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
-              new HashMap<>(recoveryTasks);
-          return recoveryTasksCopy.toString();
-        });
+    LOG.trace("Recovery tasks: {}", () -> new HashMap<>(recoveryTasks));
   }
 
   @VisibleForTesting
