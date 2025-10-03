@@ -37,11 +37,31 @@ public interface AvailabilityChecker<Data> {
         }
       };
 
-  @SuppressWarnings("unchecked")
-  AvailabilityChecker<BlobSidecar> NOOP_BLOB_SIDECAR = (AvailabilityChecker<BlobSidecar>) NOOP;
+  AvailabilityChecker<BlobSidecar> NOOP_BLOB_SIDECAR =
+      new AvailabilityChecker<>() {
+        @Override
+        public boolean initiateDataAvailabilityCheck() {
+          return true;
+        }
 
-  @SuppressWarnings("unchecked")
-  AvailabilityChecker<UInt64> NOOP_DATACOLUMN_SIDECAR = (AvailabilityChecker<UInt64>) NOOP;
+        @Override
+        public SafeFuture<DataAndValidationResult<BlobSidecar>> getAvailabilityCheckResult() {
+          return notRequiredResultFuture();
+        }
+      };
+
+  AvailabilityChecker<UInt64> NOOP_DATACOLUMN_SIDECAR =
+      new AvailabilityChecker<>() {
+        @Override
+        public boolean initiateDataAvailabilityCheck() {
+          return true;
+        }
+
+        @Override
+        public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
+          return notRequiredResultFuture();
+        }
+      };
 
   /**
    * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(
