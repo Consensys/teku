@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
@@ -292,9 +292,7 @@ public class DasCustodySyncTest {
 
   @Test
   void nonFinalizationShouldNotPreventSyncingAndOverloadDB() {
-    // TODO-fulu this is too high and needs to be fixed
-    // (https://github.com/Consensys/teku/issues/9470)
-    final int maxAverageColumnDbReadsPerSlot = 400;
+    // all the block data will be coming from the proto array, so it's not a problem
     final int maxAverageBlockDbReadsPerSlot = 400;
 
     custodyStand.setCurrentSlot(0);
@@ -311,7 +309,7 @@ public class DasCustodySyncTest {
     }
 
     assertThat(custodyStand.db.getDbReadCounter().get() / 1000)
-        .isLessThan(maxAverageColumnDbReadsPerSlot);
+        .isLessThan(MAX_AVERAGE_COLUMN_DB_READS_PER_SLOT);
     assertThat(custodyStand.blockResolver.getBlockAccessCounter().get() / 1000)
         .isLessThan(maxAverageBlockDbReadsPerSlot);
 
@@ -322,7 +320,7 @@ public class DasCustodySyncTest {
     advanceTimeGraduallyUntilAllDone();
     printAndResetStats();
 
-    List<DataColumnSlotAndIdentifier> missingColumns =
+    final List<DataColumnSlotAndIdentifier> missingColumns =
         await(custodyStand.custody.retrieveMissingColumns().toList());
     assertThat(missingColumns).isEmpty();
     assertAllCustodyColumnsPresent();
@@ -398,7 +396,7 @@ public class DasCustodySyncTest {
                           assertThat(sidecar.getSlot()).isEqualTo(uSlot);
                           assertThat(sidecar.getIndex()).isEqualTo(colIndex);
 
-                          assertThat(sidecar.getBlockRoot()).isEqualTo(block.getRoot());
+                          assertThat(sidecar.getBeaconBlockRoot()).isEqualTo(block.getRoot());
                         });
               }
             }

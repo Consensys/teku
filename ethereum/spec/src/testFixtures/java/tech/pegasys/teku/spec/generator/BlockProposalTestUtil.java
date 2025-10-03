@@ -26,20 +26,23 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -50,12 +53,15 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -93,9 +99,10 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, blockSlotState.getForkInfo()).join();
 
+    final int proposerIndex = spec.getBeaconProposerIndex(blockSlotState, newSlot);
     return spec.createNewUnsignedBlock(
             newSlot,
-            spec.getBeaconProposerIndex(blockSlotState, newSlot),
+            proposerIndex,
             blockSlotState,
             parentBlockSigningRoot,
             builder -> {
@@ -132,12 +139,15 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
+              // TODO-GLOAS: potentially better stubbing of bid and payload attestations
+              // https://github.com/Consensys/teku/issues/9959
               if (builder.supportsSignedExecutionPayloadBid()) {
                 builder.signedExecutionPayloadBid(
-                    dataStructureUtil.randomSignedExecutionPayloadBid());
+                    createSignedExecutionPayloadBid(
+                        newSlot, blockSlotState, proposerIndex, kzgCommitments));
               }
               if (builder.supportsPayloadAttestations()) {
-                builder.payloadAttestations(dataStructureUtil.randomPayloadAttestations());
+                builder.payloadAttestations(createEmptyPayloadAttestations(newSlot));
               }
               return SafeFuture.COMPLETE;
             },
@@ -180,6 +190,7 @@ public class BlockProposalTestUtil {
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
 
     // Sign block and set block signature
+    int proposerIndex = spec.getBeaconProposerIndex(blockSlotState, newSlot);
     return spec.atSlot(newSlot)
         .getSchemaDefinitions()
         .getBeaconBlockBodySchema()
@@ -215,6 +226,16 @@ public class BlockProposalTestUtil {
               if (builder.supportsExecutionRequests()) {
                 builder.executionRequests(dataStructureUtil.randomExecutionRequests());
               }
+              // TODO-GLOAS: potentially better stubbing of bid and payload attestations
+              // https://github.com/Consensys/teku/issues/9959
+              if (builder.supportsSignedExecutionPayloadBid()) {
+                builder.signedExecutionPayloadBid(
+                    createSignedExecutionPayloadBid(
+                        newSlot, blockSlotState, proposerIndex, kzgCommitments));
+              }
+              if (builder.supportsPayloadAttestations()) {
+                builder.payloadAttestations(createEmptyPayloadAttestations(newSlot));
+              }
               return SafeFuture.COMPLETE;
             })
         .thenApply(
@@ -225,7 +246,7 @@ public class BlockProposalTestUtil {
                       .getBeaconBlockSchema()
                       .create(
                           newSlot,
-                          UInt64.valueOf(spec.getBeaconProposerIndex(blockSlotState, newSlot)),
+                          UInt64.valueOf(proposerIndex),
                           parentBlockSigningRoot,
                           blockSlotState.hashTreeRoot(),
                           blockBody);
@@ -286,6 +307,42 @@ public class BlockProposalTestUtil {
                 .withdrawals(List::of)
                 .blobGasUsed(() -> UInt64.ZERO)
                 .excessBlobGas(() -> UInt64.ZERO));
+  }
+
+  private SignedExecutionPayloadBid createSignedExecutionPayloadBid(
+      final UInt64 newSlot,
+      final BeaconState state,
+      final int proposerIndex,
+      final Optional<SszList<SszKZGCommitment>> kzgCommitments) {
+    final SpecVersion specVersion = spec.atSlot(newSlot);
+    final SchemaDefinitionsGloas schemaDefinitions =
+        SchemaDefinitionsGloas.required(specVersion.getSchemaDefinitions());
+    // self-building bid
+    final ExecutionPayloadBid bid =
+        schemaDefinitions
+            .getExecutionPayloadBidSchema()
+            .create(
+                BeaconStateGloas.required(state).getLatestBlockHash(),
+                state.getLatestBlockHeader().getRoot(),
+                dataStructureUtil.randomBytes32(),
+                Bytes20.ZERO,
+                UInt64.valueOf(30_000_000L),
+                UInt64.valueOf(proposerIndex),
+                newSlot,
+                UInt64.ZERO,
+                kzgCommitments
+                    .orElse(schemaDefinitions.getBlobKzgCommitmentsSchema().of())
+                    .hashTreeRoot());
+    return schemaDefinitions
+        .getSignedExecutionPayloadBidSchema()
+        .create(bid, BLSSignature.infinity());
+  }
+
+  private SszList<PayloadAttestation> createEmptyPayloadAttestations(final UInt64 newSlot) {
+    return BeaconBlockBodySchemaGloas.required(
+            spec.atSlot(newSlot).getSchemaDefinitions().getBeaconBlockBodySchema())
+        .getPayloadAttestationsSchema()
+        .of();
   }
 
   private Boolean isMergeTransitionComplete(final BeaconState state) {
@@ -374,15 +431,14 @@ public class BlockProposalTestUtil {
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpecAtSlot(spec, newSlot);
     final List<KZGCommitment> generatedBlobKzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
 
-    final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
-        ((BeaconBlockBodySchemaDeneb<?>)
-                spec.atSlot(newSlot).getSchemaDefinitions().getBeaconBlockBodySchema())
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(newSlot).getSchemaDefinitions())
             .getBlobKzgCommitmentsSchema();
 
     final SszList<SszKZGCommitment> kzgCommitments =
         generatedBlobKzgCommitments.stream()
             .map(SszKZGCommitment::new)
-            .collect(blobKZGCommitmentsSchema.collector());
+            .collect(blobKzgCommitmentsSchema.collector());
 
     if (skipStateTransition) {
       return createNewBlockSkippingStateTransition(

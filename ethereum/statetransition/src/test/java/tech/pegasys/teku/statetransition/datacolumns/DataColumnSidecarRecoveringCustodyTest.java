@@ -29,7 +29,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -69,13 +69,12 @@ public class DataColumnSidecarRecoveringCustodyTest {
   private final DataColumnSidecarByRootCustody delegate =
       mock(DataColumnSidecarByRootCustody.class);
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
-  private final DataColumnSidecarManager.ValidDataColumnSidecarsListener listener =
-      mock(DataColumnSidecarManager.ValidDataColumnSidecarsListener.class);
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
   @SuppressWarnings("unchecked")
-  private final Consumer<DataColumnSidecar> dataColumnSidecarPublisher = mock(Consumer.class);
+  private final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher =
+      mock(BiConsumer.class);
 
   private final Supplier<Stream<UInt64>> columnIndices =
       () ->
@@ -108,7 +107,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
 
   @BeforeEach
   public void setup() {
-    custody.subscribeToValidDataColumnSidecars(listener);
     when(delegate.onNewValidatedDataColumnSidecar(any(), any())).thenReturn(SafeFuture.COMPLETE);
   }
 
@@ -184,8 +182,8 @@ public class DataColumnSidecarRecoveringCustodyTest {
             i -> {
               verify(delegate)
                   .onNewValidatedDataColumnSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
-              verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
-              verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
+              verify(dataColumnSidecarPublisher)
+                  .accept(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
             });
     columnIndices
         .get()
@@ -194,8 +192,8 @@ public class DataColumnSidecarRecoveringCustodyTest {
             i -> {
               verify(delegate)
                   .onNewValidatedDataColumnSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
-              verify(listener).onNewValidSidecar(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
-              verify(dataColumnSidecarPublisher).accept(eq(sidecars.get(i)));
+              verify(dataColumnSidecarPublisher)
+                  .accept(eq(sidecars.get(i)), eq(RemoteOrigin.RECOVERED));
             });
   }
 
@@ -267,8 +265,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
 
     // post reconstructed
     verify(delegate, times(58)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(listener, times(58)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(dataColumnSidecarPublisher, times(58)).accept(any());
+    verify(dataColumnSidecarPublisher, times(58)).accept(any(), eq(RemoteOrigin.RECOVERED));
   }
 
   @Test
@@ -303,8 +300,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
 
     // post reconstructed
     verify(delegate, times(64)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(listener, times(64)).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(dataColumnSidecarPublisher, times(64)).accept(any());
+    verify(dataColumnSidecarPublisher, times(64)).accept(any(), eq(RemoteOrigin.RECOVERED));
   }
 
   @Test
@@ -365,7 +361,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
     stubAsyncRunner.executeDueActionsRepeatedly();
 
     verifyNoInteractions(miscHelpersFulu);
-    verify(listener, never()).onNewValidSidecar(any(), eq(RemoteOrigin.RECOVERED));
-    verify(dataColumnSidecarPublisher, never()).accept(any());
+    verify(dataColumnSidecarPublisher, never()).accept(any(), eq(RemoteOrigin.RECOVERED));
   }
 }

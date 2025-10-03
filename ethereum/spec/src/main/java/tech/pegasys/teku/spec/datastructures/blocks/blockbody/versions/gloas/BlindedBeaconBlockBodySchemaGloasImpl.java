@@ -191,13 +191,6 @@ public class BlindedBeaconBlockBodySchemaGloasImpl
         getChildSchema(getFieldIndex(BlockBodyFields.VOLUNTARY_EXITS));
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
-    return (SszListSchema<PayloadAttestation, ?>)
-        getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
-  }
-
   @Override
   public SyncAggregateSchema getSyncAggregateSchema() {
     return (SyncAggregateSchema) getChildSchema(getFieldIndex(BlockBodyFields.SYNC_AGGREGATE));
@@ -211,6 +204,13 @@ public class BlindedBeaconBlockBodySchemaGloasImpl
   @Override
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
     throw new UnsupportedOperationException("BlobKzgCommitments were removed in Gloas");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
+    return (SszListSchema<PayloadAttestation, ?>)
+        getChildSchema(getFieldIndex(BlockBodyFields.PAYLOAD_ATTESTATIONS));
   }
 
   @Override

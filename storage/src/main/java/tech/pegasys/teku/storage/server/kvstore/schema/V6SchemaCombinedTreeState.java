@@ -105,7 +105,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             asColumnId(finalizedOffset + 10),
             asColumnId(finalizedOffset + 11),
             asColumnId(finalizedOffset + 12),
-            asColumnId(finalizedOffset + 13));
+            asColumnId(finalizedOffset + 13),
+            asColumnId(finalizedOffset + 18));
   }
 
   @Override

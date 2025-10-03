@@ -195,6 +195,8 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
       final int processedPartialWithdrawalsCount,
       final int processedBuilderWithdrawalsCount) {
 
+    setLatestWithdrawalsRoot(expectedWithdrawals, state);
+
     for (final Withdrawal withdrawal : expectedWithdrawals) {
       beaconStateMutators.decreaseBalance(
           state, withdrawal.getValidatorIndex().intValue(), withdrawal.getAmount());
@@ -233,6 +235,10 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
           UInt64.valueOf(nextWithdrawalValidatorIndex % validatorCount));
     }
   }
+
+  // NO-OP
+  protected void setLatestWithdrawalsRoot(
+      final List<Withdrawal> expectedWithdrawals, final MutableBeaconState state) {}
 
   // NO-OP
   protected void updatePendingBuilderWithdrawals(

@@ -30,8 +30,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -55,13 +55,17 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
         Suppliers.memoize(() -> new BlockFactoryDeneb(spec, operationSelector));
     final Supplier<BlockFactoryFulu> blockFactoryFuluSupplier =
         Suppliers.memoize(() -> new BlockFactoryFulu(spec, operationSelector, kzg));
+    final Supplier<BlockFactoryGloas> blockFactoryGloasSupplier =
+        Suppliers.memoize(() -> new BlockFactoryGloas(spec, operationSelector));
 
     // Populate forks factories
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+                registeredFactories.put(milestone, blockFactoryGloasSupplier.get());
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
                 registeredFactories.put(milestone, blockFactoryFuluSupplier.get());
               } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredFactories.put(milestone, blockFactoryDenebSupplier.get());

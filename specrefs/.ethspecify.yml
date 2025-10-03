@@ -40,11 +40,6 @@ specrefs:
       - RANDOM_CHALLENGE_KZG_CELL_BATCH_DOMAIN
 
       # Not implemented: gloas
-      - BUILDER_PAYMENT_THRESHOLD_DENOMINATOR#gloas
-      - BUILDER_PAYMENT_THRESHOLD_NUMERATOR#gloas
-      - BUILDER_WITHDRAWAL_PREFIX#gloas
-      - DOMAIN_BEACON_BUILDER#gloas
-      - DOMAIN_PTC_ATTESTER#gloas
       - PAYLOAD_STATUS_EMPTY#gloas
       - PAYLOAD_STATUS_FULL#gloas
       - PAYLOAD_STATUS_PENDING#gloas
@@ -59,7 +54,6 @@ specrefs:
       - LightClientOptimisticUpdate
 
       # Not implemented: gloas
-      - DataColumnSidecar#gloas
       - ForkChoiceNode#gloas
 
     dataclasses:
