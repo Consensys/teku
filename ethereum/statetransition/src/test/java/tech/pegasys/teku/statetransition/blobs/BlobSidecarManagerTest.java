@@ -198,16 +198,6 @@ public class BlobSidecarManagerTest {
   }
 
   @Test
-  void createAvailabilityChecker_shouldReturnANoOpAvailabilityCheckerWhenBlockIsPreDeneb() {
-    final Spec spec = TestSpecFactory.createMainnetCapella();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-
-    assertThat(blobSidecarManager.createAvailabilityChecker(block))
-        .isEqualTo(AvailabilityChecker.NOOP_BLOB_SIDECAR);
-  }
-
-  @Test
   void
       createAvailabilityCheckerAndValidateImmediately_shouldReturnANotRequiredAvailabilityCheckerWhenBlockIsPreDeneb() {
     final Spec spec = TestSpecFactory.createMainnetCapella();
