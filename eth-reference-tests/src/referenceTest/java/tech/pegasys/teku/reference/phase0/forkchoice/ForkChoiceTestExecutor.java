@@ -155,7 +155,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         new StubDataColumnSidecarManager(spec, recentChainData, kzg, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
     // executor
-    spec.initialize(blobSidecarManager, dataColumnSidecarManager);
+    spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,

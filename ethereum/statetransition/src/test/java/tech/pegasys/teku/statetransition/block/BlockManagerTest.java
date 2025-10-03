@@ -162,7 +162,7 @@ public class BlockManagerTest {
   }
 
   private void setupWithSpec(final Spec spec) {
-    spec.initialize(blobSidecarManager, NOOP_DATACOLUMN_SIDECAR);
+    spec.reinitializeForTesting(blobSidecarManager, NOOP_DATACOLUMN_SIDECAR);
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();

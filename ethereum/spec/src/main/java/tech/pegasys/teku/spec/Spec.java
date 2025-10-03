@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -152,6 +153,21 @@ public class Spec {
     if (initialized) {
       throw new IllegalStateException("Spec already initialized");
     }
+    initializeInternal(
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory);
+  }
+
+  @VisibleForTesting
+  public void reinitializeForTesting(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory) {
+    initializeInternal(
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory);
+  }
+
+  private void initializeInternal(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory) {
     initialized = true;
 
     specVersions
