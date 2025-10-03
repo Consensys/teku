@@ -19,11 +19,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 @FunctionalInterface
 public interface AvailabilityCheckerFactory<T> {
-  @SuppressWarnings("unchecked")
-  AvailabilityCheckerFactory<?> NOOP =
-      (AvailabilityCheckerFactory<Object>)
-          block -> (AvailabilityChecker<Object>) AvailabilityChecker.NOOP;
-
   AvailabilityCheckerFactory<BlobSidecar> NOOP_BLOB_SIDECAR =
       block -> AvailabilityChecker.NOOP_BLOB_SIDECAR;
   AvailabilityCheckerFactory<UInt64> NOOP_DATACOLUMN_SIDECAR =
