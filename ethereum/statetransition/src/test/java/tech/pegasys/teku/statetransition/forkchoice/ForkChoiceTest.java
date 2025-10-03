@@ -60,6 +60,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -144,7 +145,8 @@ class ForkChoiceTest {
   private void setupWithSpec(final Spec unmockedSpec) {
     unmockedSpec.reinitializeForTesting(
         (block) -> blobSidecarsAvailabilityChecker,
-        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR);
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        KZG.DISABLED);
     // Setting up spec and all dependants
     this.spec = spy(unmockedSpec);
     this.dataStructureUtil = new DataStructureUtil(spec);

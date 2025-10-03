@@ -51,6 +51,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
@@ -116,6 +117,7 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -149,25 +151,28 @@ public class Spec {
   // dependencies lazily created during initialization in BeaconChainController
   public void initialize(
       final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
-      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory) {
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
     if (initialized) {
       throw new IllegalStateException("Spec already initialized");
     }
     initializeInternal(
-        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory);
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory, kzg);
   }
 
   @VisibleForTesting
   public void reinitializeForTesting(
       final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
-      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory) {
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
     initializeInternal(
-        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory);
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory, kzg);
   }
 
   private void initializeInternal(
       final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
-      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory) {
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
     initialized = true;
 
     specVersions
@@ -183,6 +188,12 @@ public class Spec {
               if (forkChoiceUtil instanceof ForkChoiceUtilDeneb forkChoiceUtilDeneb) {
                 forkChoiceUtilDeneb.setBlobSidecarAvailabilityCheckerFactory(
                     blobSidecarAvailabilityCheckerFactory);
+              }
+
+              // inject kzg instance
+              final MiscHelpers miscHelpers = specVersion.miscHelpers();
+              if (miscHelpers instanceof MiscHelpersDeneb miscHelpersDeneb) {
+                miscHelpersDeneb.setKzg(kzg);
               }
             });
   }

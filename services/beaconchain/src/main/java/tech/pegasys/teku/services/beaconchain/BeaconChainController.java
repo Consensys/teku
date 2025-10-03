@@ -585,7 +585,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .thenRun(
             () -> {
               // complete spec initialization
-              spec.initialize(blobSidecarManager, dasSamplerManager);
+              spec.initialize(blobSidecarManager, dasSamplerManager, kzg);
 
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               recentChainData.subscribeBestBlockInitialized(this::startServices);
@@ -744,14 +744,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
           MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
       blobSidecarValidator =
           BlobSidecarGossipValidator.create(
-              spec, invalidBlockRoots, gossipValidationHelper, miscHelpers, kzg);
+              spec, invalidBlockRoots, gossipValidationHelper, miscHelpers);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
               spec,
               recentChainData,
               blockBlobSidecarsTrackersPool,
               blobSidecarValidator,
-              kzg,
               futureBlobSidecars,
               invalidBlobSidecarRoots);
       eventChannels.subscribe(SlotEventsChannel.class, blobSidecarManagerImpl);
@@ -765,7 +764,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void initDasSamplerManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Activated DAS Sampler Manager for Fulu");
-      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, kzg, spec);
+      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, spec);
     } else {
       LOG.info("Using NOOP DAS Sampler Manager");
       this.dasSamplerManager = DasSamplerManager.NOOP;
@@ -780,7 +779,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               invalidBlockRoots,
               gossipValidationHelper,
               MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
-              kzg,
               metricsSystem,
               timeProvider);
       dataColumnSidecarManager =
@@ -867,7 +865,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasAsyncRunner,
             spec,
             miscHelpersFulu,
-            kzg,
             dataColumnSidecarGossipChannel::publishDataColumnSidecar,
             this::getCustodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
@@ -940,16 +937,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       recoveringSidecarRetriever =
           new RecoveringSidecarRetriever(
               sidecarRetriever,
-              kzg,
               miscHelpersFulu,
-              canonicalBlockResolver,
-              dbAccessor,
-              dasAsyncRunner,
-              Duration.ofMinutes(5),
-              Duration.ofSeconds(30),
-              timeProvider,
-              specConfigFulu.getNumberOfColumns());
-    }
+            canonicalBlockResolver,
+            dbAccessor,
+            dasAsyncRunner,
+            Duration.ofMinutes(5),
+            Duration.ofSeconds(30),
+            timeProvider,
+            specConfigFulu.getNumberOfColumns());}
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
@@ -1062,7 +1057,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               beaconAsyncRunner,
               recentChainData,
               executionLayer,
-              kzg,
               dataColumnSidecarGossipChannel::publishDataColumnSidecars,
               this::getCustodyGroupCountManager,
               metricsSystem,
@@ -1403,7 +1397,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayerBlockProductionManager,
             metricsSystem,
             timeProvider);
-    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector, kzg);
+    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -1668,7 +1662,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .keyValueStore(keyValueStore)
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
-            .kzg(kzg)
             .recordMessageArrival(true)
             .p2pDebugDataDumper(debugDataDumper)
             .build();

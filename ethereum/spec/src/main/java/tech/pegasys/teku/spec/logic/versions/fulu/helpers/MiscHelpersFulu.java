@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCell;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCellID;
@@ -264,8 +263,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     return true;
   }
 
-  public boolean verifyDataColumnSidecarKzgProofs(
-      final KZG kzg, final DataColumnSidecar dataColumnSidecar) {
+  public boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
 
     final List<KZGCellWithColumnId> cellWithIds =
         IntStream.range(0, dataColumnSidecar.getColumn().size())
@@ -284,7 +282,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public boolean verifyDataColumnSidecarKzgProofsBatch(
-      final KZG kzg, final List<DataColumnSidecar> dataColumnSidecars) {
+      final List<DataColumnSidecar> dataColumnSidecars) {
 
     final List<KZGCellWithColumnId> cellWithIds =
         dataColumnSidecars.stream()
@@ -337,32 +335,29 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   @VisibleForTesting
   @Deprecated
   public List<DataColumnSidecar> constructDataColumnSidecarsOld(
-      final SignedBeaconBlock signedBeaconBlock, final List<Blob> blobs, final KZG kzg) {
+      final SignedBeaconBlock signedBeaconBlock, final List<Blob> blobs) {
     return constructDataColumnSidecars(
         signedBeaconBlock.getMessage(),
         signedBeaconBlock.asHeader(),
-        computeExtendedMatrixAndProofs(blobs, kzg));
+        computeExtendedMatrixAndProofs(blobs));
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final SignedBeaconBlock signedBeaconBlock,
-      final List<BlobAndCellProofs> blobAndCellProofsList,
-      final KZG kzg) {
+      final List<BlobAndCellProofs> blobAndCellProofsList) {
     return constructDataColumnSidecars(
         signedBeaconBlock.getMessage(),
         signedBeaconBlock.asHeader(),
-        computeExtendedMatrix(blobAndCellProofsList, kzg));
+        computeExtendedMatrix(blobAndCellProofsList));
   }
 
   public List<DataColumnSidecar> constructDataColumnSidecars(
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final SszList<SszKZGCommitment> sszKZGCommitments,
       final List<Bytes32> kzgCommitmentsInclusionProof,
-      final List<BlobAndCellProofs> blobAndCellProofsList,
-      final KZG kzg) {
-    final List<List<MatrixEntry>> extendedMatrix =
-        computeExtendedMatrix(blobAndCellProofsList, kzg);
-    return constructDataColumnSidecars(
+      final List<BlobAndCellProofs> blobAndCellProofsList) {
+    final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobAndCellProofsList);
+    return constructDataColumnSidecarsInternal(
         signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
   }
 
@@ -373,8 +368,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>>The data structure for storing cells is implementation-dependent.
    */
-  public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(
-      final List<Blob> blobs, final KZG kzg) {
+  public List<List<MatrixEntry>> computeExtendedMatrixAndProofs(final List<Blob> blobs) {
     return IntStream.range(0, blobs.size())
         .parallel()
         .mapToObj(
@@ -398,7 +392,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<List<MatrixEntry>> computeExtendedMatrix(
-      final List<BlobAndCellProofs> blobAndCellProofsList, final KZG kzg) {
+      final List<BlobAndCellProofs> blobAndCellProofsList) {
     return IntStream.range(0, blobAndCellProofsList.size())
         .parallel()
         .mapToObj(
@@ -444,11 +438,11 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       kzgCommitmentsInclusionProof = computeDataColumnKzgCommitmentsInclusionProof(beaconBlockBody);
     }
 
-    return constructDataColumnSidecars(
+    return constructDataColumnSidecarsInternal(
         signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
   }
 
-  private List<DataColumnSidecar> constructDataColumnSidecars(
+  private List<DataColumnSidecar> constructDataColumnSidecarsInternal(
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final SszList<SszKZGCommitment> sszKZGCommitments,
       final List<Bytes32> kzgCommitmentsInclusionProof,
@@ -493,7 +487,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
   }
 
   public List<DataColumnSidecar> reconstructAllDataColumnSidecars(
-      final Collection<DataColumnSidecar> existingSidecars, final KZG kzg) {
+      final Collection<DataColumnSidecar> existingSidecars) {
     if (existingSidecars.size() < (specConfigFulu.getNumberOfColumns() / 2)) {
       final Optional<DataColumnSidecar> maybeSidecar = existingSidecars.stream().findAny();
       throw new IllegalArgumentException(
@@ -521,12 +515,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         .toList())
             .toList();
     final List<List<MatrixEntry>> blobColumnEntries = transpose(columnBlobEntries);
-    final List<List<MatrixEntry>> extendedMatrix = recoverMatrix(blobColumnEntries, kzg);
+    final List<List<MatrixEntry>> extendedMatrix = recoverMatrix(blobColumnEntries);
     final DataColumnSidecar anyExistingSidecar =
         existingSidecars.stream().findFirst().orElseThrow();
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
         DataColumnSidecarFulu.required(anyExistingSidecar).getSignedBlockHeader();
-    return constructDataColumnSidecars(
+    return constructDataColumnSidecarsInternal(
         signedBeaconBlockHeader,
         anyExistingSidecar.getKzgCommitments(),
         DataColumnSidecarFulu.required(anyExistingSidecar)
@@ -542,8 +536,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
    *
    * <p>The data structure for storing cells is implementation-dependent.
    */
-  private List<List<MatrixEntry>> recoverMatrix(
-      final List<List<MatrixEntry>> partialMatrix, final KZG kzg) {
+  private List<List<MatrixEntry>> recoverMatrix(final List<List<MatrixEntry>> partialMatrix) {
     return IntStream.range(0, partialMatrix.size())
         .parallel()
         .mapToObj(
