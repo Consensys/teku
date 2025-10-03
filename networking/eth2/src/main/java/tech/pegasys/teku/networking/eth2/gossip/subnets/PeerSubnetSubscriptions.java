@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -196,15 +197,27 @@ public class PeerSubnetSubscriptions {
   }
 
   public SszBitvector getAttestationSubnetSubscriptions(final NodeId peerId) {
-    return attestationSubnetSubscriptions.getSubnetSubscriptions(peerId);
+    return getAttestationSubnetSubscriptions(peerId.toBytes());
+  }
+
+  public SszBitvector getAttestationSubnetSubscriptions(final Bytes peerIdBytes) {
+    return attestationSubnetSubscriptions.getSubnetSubscriptions(peerIdBytes);
   }
 
   public SszBitvector getSyncCommitteeSubscriptions(final NodeId peerId) {
-    return syncCommitteeSubnetSubscriptions.getSubnetSubscriptions(peerId);
+    return getSyncCommitteeSubscriptions(peerId.toBytes());
+  }
+
+  public SszBitvector getSyncCommitteeSubscriptions(final Bytes peerIdBytes) {
+    return syncCommitteeSubnetSubscriptions.getSubnetSubscriptions(peerIdBytes);
   }
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptions(final NodeId peerId) {
-    return dataColumnSidecarSubnetSubscriptions.getSubnetSubscriptions(peerId);
+    return getDataColumnSidecarSubnetSubscriptions(peerId.toBytes());
+  }
+
+  public SszBitvector getDataColumnSidecarSubnetSubscriptions(final Bytes peerIdBytes) {
+    return dataColumnSidecarSubnetSubscriptions.getSubnetSubscriptions(peerIdBytes);
   }
 
   public SszBitvector getDataColumnSidecarSubnetSubscriptionsByNodeId(
@@ -267,13 +280,13 @@ public class PeerSubnetSubscriptions {
     private final SszBitvectorSchema<?> subscriptionSchema;
     private final IntSet relevantSubnets;
     private final Int2IntMap subscriberCountBySubnetId;
-    private final Map<NodeId, SszBitvector> subscriptionsByPeer;
+    private final Map<Bytes, SszBitvector> subscriptionsByPeer;
 
     private SubnetSubscriptions(
         final SszBitvectorSchema<?> subscriptionSchema,
         final IntSet relevantSubnets,
         final Int2IntMap subscriberCountBySubnetId,
-        final Map<NodeId, SszBitvector> subscriptionsByPeer) {
+        final Map<Bytes, SszBitvector> subscriptionsByPeer) {
       this.subscriptionSchema = subscriptionSchema;
       this.relevantSubnets = relevantSubnets;
       this.subscriberCountBySubnetId = subscriberCountBySubnetId;
@@ -304,7 +317,7 @@ public class PeerSubnetSubscriptions {
       return subscriberCountBySubnetId.getOrDefault(subnetId, 0);
     }
 
-    public SszBitvector getSubnetSubscriptions(final NodeId peerId) {
+    public SszBitvector getSubnetSubscriptions(final Bytes peerId) {
       return subscriptionsByPeer.getOrDefault(peerId, subscriptionSchema.getDefault());
     }
 
@@ -317,7 +330,7 @@ public class PeerSubnetSubscriptions {
 
       private final IntSet relevantSubnets = new IntOpenHashSet();
       private final Int2IntMap subscriberCountBySubnetId = new Int2IntOpenHashMap();
-      private final Map<NodeId, SszBitvector> subscriptionsByPeer = new HashMap<>();
+      private final Map<Bytes, SszBitvector> subscriptionsByPeer = new HashMap<>();
 
       private Builder(final SszBitvectorSchema<?> subscriptionSchema) {
         this.subscriptionSchema = subscriptionSchema;
@@ -332,7 +345,7 @@ public class PeerSubnetSubscriptions {
         subscriberCountBySubnetId.put(
             subnetId, subscriberCountBySubnetId.getOrDefault(subnetId, 0) + 1);
         subscriptionsByPeer.compute(
-            peer,
+            peer.toBytes(),
             (__, existingVector) ->
                 existingVector == null
                     ? subscriptionSchema.ofBits(subnetId)
