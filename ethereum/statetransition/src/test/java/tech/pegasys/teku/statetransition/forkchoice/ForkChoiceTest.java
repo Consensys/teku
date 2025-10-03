@@ -86,6 +86,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -141,7 +142,9 @@ class ForkChoiceTest {
   }
 
   private void setupWithSpec(final Spec unmockedSpec) {
-    unmockedSpec.initialize((block) -> blobSidecarsAvailabilityChecker, null);
+    unmockedSpec.reinitializeForTesting(
+        (block) -> blobSidecarsAvailabilityChecker,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR);
     // Setting up spec and all dependants
     this.spec = spy(unmockedSpec);
     this.dataStructureUtil = new DataStructureUtil(spec);
