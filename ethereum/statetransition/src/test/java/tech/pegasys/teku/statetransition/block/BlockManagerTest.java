@@ -210,7 +210,7 @@ public class BlockManagerTest {
         .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
     assertThat(blockManager.start()).isCompleted();
     when(blobSidecarManager.createAvailabilityChecker(any()))
-        .thenReturn(AvailabilityChecker.NOOP_BLOBSIDECAR);
+        .thenReturn(AvailabilityChecker.NOOP_BLOB_SIDECAR);
     when(blockValidator.initiateBroadcastValidation(any(), any()))
         .thenReturn(blockBroadcastValidator);
     when(blockBroadcastValidator.getResult()).thenReturn(SafeFuture.completedFuture(SUCCESS));

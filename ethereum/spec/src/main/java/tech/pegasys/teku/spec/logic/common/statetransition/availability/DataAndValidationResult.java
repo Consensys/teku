@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public record DataAndValidationResult<Data>(
     AvailabilityValidationResult validationResult, List<Data> data, Optional<Throwable> cause) {
@@ -79,6 +80,15 @@ public record DataAndValidationResult<Data>(
 
   public boolean isSuccess() {
     return isValid() || isNotRequired();
+  }
+
+  public Optional<List<BlobSidecar>> getDataAsBlobSidecars() {
+    if (data != null && !data.isEmpty() && data.getFirst() instanceof BlobSidecar) {
+      @SuppressWarnings("unchecked")
+      final List<BlobSidecar> blobSidecars = (List<BlobSidecar>) data;
+      return Optional.of(blobSidecars);
+    }
+    return Optional.empty();
   }
 
   public String toLogString() {

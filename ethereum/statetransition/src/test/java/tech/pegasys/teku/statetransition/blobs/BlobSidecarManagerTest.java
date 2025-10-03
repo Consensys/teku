@@ -204,7 +204,7 @@ public class BlobSidecarManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
-        .isEqualTo(AvailabilityChecker.NOOP_BLOBSIDECAR);
+        .isEqualTo(AvailabilityChecker.NOOP_BLOB_SIDECAR);
   }
 
   @Test

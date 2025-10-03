@@ -104,17 +104,21 @@ import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -124,6 +128,7 @@ public class Spec {
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
   private final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent;
+  private volatile boolean initialized = false;
 
   private Spec(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
@@ -137,6 +142,33 @@ public class Spec {
 
     // Setup state transition
     this.stateTransition = new StateTransition(this::atSlot);
+  }
+
+  // This method must be called once after constructing the Spec to initialize any additional
+  // dependencies lazily created during initialization in BeaconChainController
+  public void initialize(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory) {
+    if (initialized) {
+      throw new IllegalStateException("Spec already initialized");
+    }
+    initialized = true;
+
+    specVersions
+        .values()
+        .forEach(
+            specVersion -> {
+              // inject forkChoiceUtil dependencies
+              final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
+              if (forkChoiceUtil instanceof ForkChoiceUtilFulu forkChoiceUtilFulu) {
+                forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
+                    dataColumnSidecarAvailabilityCheckerFactory);
+              }
+              if (forkChoiceUtil instanceof ForkChoiceUtilDeneb forkChoiceUtilDeneb) {
+                forkChoiceUtilDeneb.setBlobSidecarAvailabilityCheckerFactory(
+                    blobSidecarAvailabilityCheckerFactory);
+              }
+            });
   }
 
   static Spec create(

@@ -17,5 +17,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 @FunctionalInterface
 public interface AvailabilityCheckerFactory<T> {
+  @SuppressWarnings("unchecked")
+  AvailabilityCheckerFactory<?> NOOP =
+      (AvailabilityCheckerFactory<Object>)
+          block -> (AvailabilityChecker<Object>) AvailabilityChecker.NOOP;
+
   AvailabilityChecker<T> createAvailabilityChecker(SignedBeaconBlock block);
 }

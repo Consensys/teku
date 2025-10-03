@@ -201,7 +201,7 @@ class ForkChoiceTest {
               SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
     } else {
       when(blobSidecarManager.createAvailabilityChecker(any()))
-          .thenReturn(AvailabilityChecker.NOOP_BLOBSIDECAR);
+          .thenReturn(AvailabilityChecker.NOOP_BLOB_SIDECAR);
     }
   }
 
