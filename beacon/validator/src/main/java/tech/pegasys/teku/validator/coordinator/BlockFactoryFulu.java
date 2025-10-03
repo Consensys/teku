@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -31,12 +30,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class BlockFactoryFulu extends BlockFactoryDeneb {
 
-  private final KZG kzg;
-
-  public BlockFactoryFulu(
-      final Spec spec, final BlockOperationSelectorFactory operationSelector, final KZG kzg) {
+  public BlockFactoryFulu(final Spec spec, final BlockOperationSelectorFactory operationSelector) {
     super(spec, operationSelector);
-    this.kzg = kzg;
   }
 
   // No blob sidecars in Fulu
@@ -48,7 +43,7 @@ public class BlockFactoryFulu extends BlockFactoryDeneb {
   @Override
   public List<DataColumnSidecar> createDataColumnSidecars(
       final SignedBlockContainer blockContainer) {
-    return operationSelector.createDataColumnSidecarsSelector(kzg).apply(blockContainer);
+    return operationSelector.createDataColumnSidecarsSelector().apply(blockContainer);
   }
 
   @Override

@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -104,7 +105,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
               asyncRunner,
               recentChainData,
               executionLayer,
-              kzg,
               dataColumnSidecarPublisher,
               custodyGroupCountManagerSupplier,
               metricsSystem,
@@ -114,6 +114,10 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
 
   @BeforeEach
   public void setup() {
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
     when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(kzg.computeCells(any())).thenReturn(kzgCells);
@@ -137,7 +141,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
                 asyncRunner,
                 recentChainData,
                 executionLayer,
-                kzg,
                 dataColumnSidecarPublisher,
                 custodyGroupCountManagerSupplier,
                 metricsSystem,
@@ -268,7 +271,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             UInt64.valueOf(320),
             FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
             10,
-            kzg,
             dataColumnSidecarPublisher,
             custodyGroupCountManagerSupplier,
             metricsSystem,
@@ -302,7 +304,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             UInt64.valueOf(320),
             FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
             10,
-            kzg,
             dataColumnSidecarPublisher,
             custodyGroupCountManagerSupplier,
             metricsSystem,
@@ -351,7 +352,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             UInt64.valueOf(320),
             FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
             10,
-            kzg,
             dataColumnSidecarPublisher,
             custodyGroupCountManagerSupplier,
             metricsSystem,
@@ -388,7 +388,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             UInt64.valueOf(320),
             FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
             10,
-            kzg,
             dataColumnSidecarPublisher,
             custodyGroupCountManagerSupplier,
             metricsSystem,
@@ -446,7 +445,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             UInt64.valueOf(320),
             FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
             10,
-            kzg,
             dataColumnSidecarPublisher,
             custodyGroupCountManagerSupplier,
             metricsSystem,
@@ -488,7 +486,6 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
             UInt64.valueOf(320),
             FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
             10,
-            kzg,
             dataColumnSidecarPublisher,
             custodyGroupCountManagerSupplier,
             metricsSystem,

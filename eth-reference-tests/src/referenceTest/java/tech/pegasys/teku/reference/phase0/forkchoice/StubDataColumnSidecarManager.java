@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -44,7 +43,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<UInt64> {
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final KZG kzg;
   private DataColumnSidecarGossipValidator validator;
   private final Map<UInt64, List<DataColumnSidecar>> dataColumnSidecarBySlot =
       new ConcurrentHashMap<>();
@@ -60,11 +58,9 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
   public StubDataColumnSidecarManager(
       final Spec spec,
       final RecentChainData recentChainData,
-      final KZG kzg,
       final DataAvailabilitySampler dataAvailabilitySampler) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.kzg = kzg;
     this.dataAvailabilitySampler = dataAvailabilitySampler;
   }
 
@@ -101,7 +97,6 @@ public class StubDataColumnSidecarManager implements AvailabilityCheckerFactory<
                     new ConcurrentHashMap<>(),
                     new GossipValidationHelper(spec, recentChainData),
                     helpers,
-                    kzg,
                     new StubMetricsSystem(),
                     recentChainData.getStore());
             validationResult.complete(validateDataColumnSidecar());

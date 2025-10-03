@@ -17,7 +17,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColu
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -28,13 +27,11 @@ public abstract class AbstractDataColumnSidecarValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final KZG kzg;
   final Peer peer;
 
-  public AbstractDataColumnSidecarValidator(final Peer peer, final Spec spec, final KZG kzg) {
+  public AbstractDataColumnSidecarValidator(final Peer peer, final Spec spec) {
     this.peer = peer;
     this.spec = spec;
-    this.kzg = kzg;
   }
 
   void verifyValidity(final DataColumnSidecar dataColumnSidecar) {
@@ -65,7 +62,7 @@ public abstract class AbstractDataColumnSidecarValidator {
   private boolean verifyDataColumnSidecarKzgProofs(final DataColumnSidecar dataColumnSidecar) {
     try {
       return MiscHelpersFulu.required(spec.atSlot(dataColumnSidecar.getSlot()).miscHelpers())
-          .verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+          .verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     } catch (final Exception ex) {
       LOG.debug(
           "KZG verification failed for DataColumnSidecar {}", dataColumnSidecar.toLogString());
