@@ -84,7 +84,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     api.assertLocalValidatorListing(validatorKeystores.getPublicKeys());
 
     api.assertValidatorGasLimit(
-        validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(45_000_000));
+        validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(60_000_000));
 
     // generate voluntary exit
     api.generateVoluntaryExitAndCheckValidatorIndex(validatorKeystores.getPublicKeys().get(1), 1);
