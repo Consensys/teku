@@ -24,7 +24,20 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecution
 
 public interface AvailabilityChecker<Data> {
 
-  AvailabilityChecker<BlobSidecar> NOOP_BLOBSIDECAR =
+  AvailabilityChecker<?> NOOP =
+      new AvailabilityChecker<>() {
+        @Override
+        public boolean initiateDataAvailabilityCheck() {
+          return true;
+        }
+
+        @Override
+        public SafeFuture<DataAndValidationResult<Object>> getAvailabilityCheckResult() {
+          return notRequiredResultFuture();
+        }
+      };
+
+  AvailabilityChecker<BlobSidecar> NOOP_BLOB_SIDECAR =
       new AvailabilityChecker<>() {
         @Override
         public boolean initiateDataAvailabilityCheck() {

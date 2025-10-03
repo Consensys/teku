@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.generator.AggregateGenerator;
 import tech.pegasys.teku.statetransition.attestation.utils.AggregatingAttestationPoolProfiler;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
@@ -87,7 +86,6 @@ class AttestationManagerIntegrationTest {
           spec,
           new InlineEventThread(),
           recentChainData,
-          BlobSidecarManager.NOOP,
           new NoopForkChoiceNotifier(),
           transitionBlockValidator,
           storageSystem.getMetricsSystem());

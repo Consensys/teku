@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.NoOpKZG;
@@ -110,7 +109,6 @@ public class ChainBuilder {
       new TreeMap<>();
   private final Map<Bytes32, List<DataColumnSidecar>> dataColumnSidecarsByHash = new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
-  private final KZG kzg;
   private final BlobsUtil blobsUtil;
 
   private ChainBuilder(
@@ -122,8 +120,7 @@ public class ChainBuilder {
       final Map<SlotAndBlockRoot, List<DataColumnSidecar>> existingDataColumnSidecars) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
-    this.kzg = NoOpKZG.INSTANCE;
-    this.blobsUtil = new BlobsUtil(spec, kzg);
+    this.blobsUtil = new BlobsUtil(spec, NoOpKZG.INSTANCE);
     this.attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     this.attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     this.proposerSlashingGenerator = new ProposerSlashingGenerator(spec, validatorKeys);
@@ -919,7 +916,7 @@ public class ChainBuilder {
               .toList();
       final List<DataColumnSidecar> dataColumnSidecars =
           miscHelpersFulu.constructDataColumnSidecars(
-              nextBlockAndState.getBlock(), blobAndCellProofsList, kzg);
+              nextBlockAndState.getBlock(), blobAndCellProofsList);
 
       trackDataColumnSidecars(nextBlockAndState.getSlotAndBlockRoot(), dataColumnSidecars);
     }

@@ -22,7 +22,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
@@ -43,10 +42,9 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
       final Peer peer,
       final RpcResponseListener<BlobSidecar> blobSidecarResponseListener,
       final Integer maxBlobsPerBlock,
-      final KZG kzg,
       final UInt64 startSlot,
       final UInt64 count) {
-    super(peer, spec, kzg);
+    super(peer, spec);
     this.blobSidecarResponseListener = blobSidecarResponseListener;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
     this.startSlot = startSlot;

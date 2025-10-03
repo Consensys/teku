@@ -55,7 +55,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -127,7 +126,6 @@ public class EpochTransitionBenchmark {
             spec,
             new InlineEventThread(),
             recentChainData,
-            BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             metricsSystem);

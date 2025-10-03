@@ -19,10 +19,13 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
@@ -364,7 +367,15 @@ public class TestSpecFactory {
   public static Spec create(
       final SpecConfigAndParent<? extends SpecConfig> config,
       final SpecMilestone highestSupportedMilestone) {
-    return Spec.create(config, highestSupportedMilestone);
+    var spec = Spec.create(config, highestSupportedMilestone);
+    var kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
+
+    spec.initialize(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
+    return spec;
   }
 
   private static SpecConfigAndParent<? extends SpecConfig> getAltairSpecConfig(

@@ -122,7 +122,6 @@ public class SyncingNodeManager {
             spec,
             new InlineEventThread(),
             recentChainData,
-            BlobSidecarManager.NOOP,
             new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());

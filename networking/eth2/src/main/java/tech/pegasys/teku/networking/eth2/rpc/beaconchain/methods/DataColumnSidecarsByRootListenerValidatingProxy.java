@@ -17,7 +17,6 @@ import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
@@ -34,14 +33,12 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
       final Peer peer,
       final Spec spec,
       final RpcResponseListener<DataColumnSidecar> listener,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final List<DataColumnsByRootIdentifier> expectedByRootIdentifiers) {
     super(
         peer,
         spec,
-        kzg,
         metricsSystem,
         timeProvider,
         expectedByRootIdentifiers.stream()

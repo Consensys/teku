@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -680,8 +679,8 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  public Function<SignedBlockContainer, List<DataColumnSidecar>> createDataColumnSidecarsSelector(
-      final KZG kzg) {
+  public Function<SignedBlockContainer, List<DataColumnSidecar>>
+      createDataColumnSidecarsSelector() {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
@@ -759,7 +758,7 @@ public class BlockOperationSelectorFactory {
 
       try (MetricsHistogram.Timer ignored = dataColumnSidecarComputationTimeSeconds.startTimer()) {
         return miscHelpersFulu.constructDataColumnSidecars(
-            blockContainer.getSignedBlock(), blobAndCellProofsList, kzg);
+            blockContainer.getSignedBlock(), blobAndCellProofsList);
       } catch (final Throwable t) {
         throw new RuntimeException(t);
       }

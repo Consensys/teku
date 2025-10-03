@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
@@ -101,17 +103,22 @@ import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.registry.SchemaRegistryBuilder;
 
@@ -121,6 +128,7 @@ public class Spec {
   private final ForkSchedule forkSchedule;
   private final StateTransition stateTransition;
   private final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent;
+  private volatile boolean initialized = false;
 
   private Spec(
       final SpecConfigAndParent<? extends SpecConfig> specConfigAndParent,
@@ -134,6 +142,57 @@ public class Spec {
 
     // Setup state transition
     this.stateTransition = new StateTransition(this::atSlot);
+  }
+
+  // This method must be called once after constructing the Spec to initialize any additional
+  // dependencies lazily created during initialization in BeaconChainController
+  public void initialize(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
+    if (initialized) {
+      throw new IllegalStateException("Spec already initialized");
+    }
+    initializeInternal(
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory, kzg);
+  }
+
+  @VisibleForTesting
+  public void reinitializeForTesting(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
+    initializeInternal(
+        blobSidecarAvailabilityCheckerFactory, dataColumnSidecarAvailabilityCheckerFactory, kzg);
+  }
+
+  private void initializeInternal(
+      final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
+      final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
+      final KZG kzg) {
+    initialized = true;
+
+    specVersions
+        .values()
+        .forEach(
+            specVersion -> {
+              // inject forkChoiceUtil dependencies
+              final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
+              if (forkChoiceUtil instanceof ForkChoiceUtilFulu forkChoiceUtilFulu) {
+                forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
+                    dataColumnSidecarAvailabilityCheckerFactory);
+              }
+              if (forkChoiceUtil instanceof ForkChoiceUtilDeneb forkChoiceUtilDeneb) {
+                forkChoiceUtilDeneb.setBlobSidecarAvailabilityCheckerFactory(
+                    blobSidecarAvailabilityCheckerFactory);
+              }
+
+              // inject kzg instance
+              final MiscHelpers miscHelpers = specVersion.miscHelpers();
+              if (miscHelpers instanceof MiscHelpersDeneb miscHelpersDeneb) {
+                miscHelpersDeneb.setKzg(kzg);
+              }
+            });
   }
 
   static Spec create(

@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -109,7 +108,6 @@ public class DataColumnSidecarGossipValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final MiscHelpersFulu miscHelpersFulu;
-  private final KZG kzg;
   private final Counter totalDataColumnSidecarsProcessingRequestsCounter;
   private final Counter totalDataColumnSidecarsProcessingSuccessesCounter;
   private final MetricsHistogram dataColumnSidecarInclusionProofVerificationTimeSeconds;
@@ -120,7 +118,6 @@ public class DataColumnSidecarGossipValidator {
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper validationHelper,
       final MiscHelpersFulu miscHelpersFulu,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
 
@@ -136,7 +133,6 @@ public class DataColumnSidecarGossipValidator {
         invalidBlockRoots,
         validationHelper,
         miscHelpersFulu,
-        kzg,
         metricsSystem,
         timeProvider,
         LimitedSet.createSynchronized(validInfoSize),
@@ -154,7 +150,6 @@ public class DataColumnSidecarGossipValidator {
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
       final MiscHelpersFulu miscHelpersFulu,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
       final Set<SlotProposerIndexAndColumnIndex> receivedValidDataColumnSidecarInfoSet,
@@ -164,7 +159,6 @@ public class DataColumnSidecarGossipValidator {
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
     this.miscHelpersFulu = miscHelpersFulu;
-    this.kzg = kzg;
     this.receivedValidDataColumnSidecarInfoSet = receivedValidDataColumnSidecarInfoSet;
     this.totalDataColumnSidecarsProcessingRequestsCounter =
         metricsSystem.createCounter(
@@ -295,7 +289,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
@@ -390,7 +384,7 @@ public class DataColumnSidecarGossipValidator {
      */
     try (MetricsHistogram.Timer ignored =
         dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar)) {
+      if (!miscHelpersFulu.verifyDataColumnSidecarKzgProofs(dataColumnSidecar)) {
         return completedFuture(reject("DataColumnSidecar does not pass kzg validation"));
       }
     } catch (final Throwable t) {
