@@ -127,6 +127,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
   }
 
+  @Override
   public synchronized void start() {
     if (pendingRequestsChecker != null) {
       return;
@@ -149,6 +150,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             error -> LOG.warn("Failed to cleanup recoveryBySlot structure.", error));
   }
 
+  @Override
   public synchronized void stop() {
     if (recoveryBySlotCleaner != null) {
       recoveryBySlotCleaner.cancel();
