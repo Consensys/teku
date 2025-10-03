@@ -91,8 +91,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
@@ -112,7 +110,6 @@ class ForkChoiceTest {
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
-  private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
 
   @SuppressWarnings("unchecked")
   private final AvailabilityChecker<BlobSidecar> blobSidecarsAvailabilityChecker =
@@ -144,6 +141,7 @@ class ForkChoiceTest {
   }
 
   private void setupWithSpec(final Spec unmockedSpec) {
+    unmockedSpec.initialize((block) -> blobSidecarsAvailabilityChecker, null);
     // Setting up spec and all dependants
     this.spec = spy(unmockedSpec);
     this.dataStructureUtil = new DataStructureUtil(spec);
@@ -163,8 +161,6 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
-            blobSidecarManager,
-            DasSamplerManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -193,15 +189,10 @@ class ForkChoiceTest {
 
     // blobs always available
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      when(blobSidecarManager.createAvailabilityChecker(any()))
-          .thenReturn(blobSidecarsAvailabilityChecker);
       final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
       when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
           .thenReturn(
               SafeFuture.completedFuture(DataAndValidationResult.validResult(blobSidecars)));
-    } else {
-      when(blobSidecarManager.createAvailabilityChecker(any()))
-          .thenReturn(AvailabilityChecker.NOOP_BLOB_SIDECAR);
     }
   }
 
@@ -228,7 +219,6 @@ class ForkChoiceTest {
 
     importBlock(blockAndState);
 
-    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
@@ -245,7 +235,6 @@ class ForkChoiceTest {
     importBlockAndAssertFailure(
         blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
 
-    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
@@ -264,7 +253,6 @@ class ForkChoiceTest {
 
     verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
 
-    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
@@ -282,7 +270,6 @@ class ForkChoiceTest {
 
     verify(blockBroadcastValidator).onConsensusValidationSucceeded();
 
-    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
@@ -365,7 +352,6 @@ class ForkChoiceTest {
 
     importBlock(blockAndState);
 
-    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
     verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
@@ -425,8 +411,6 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
-            BlobSidecarManager.NOOP,
-            DasSamplerManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
