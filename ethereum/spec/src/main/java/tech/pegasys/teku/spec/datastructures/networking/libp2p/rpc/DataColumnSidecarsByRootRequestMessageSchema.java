@@ -24,7 +24,7 @@ public class DataColumnSidecarsByRootRequestMessageSchema
   public DataColumnSidecarsByRootRequestMessageSchema(
       final SpecConfigFulu specConfig,
       final DataColumnsByRootIdentifierSchema byRootIdentifierSchema) {
-    super(byRootIdentifierSchema, specConfig.getMaxRequestDataColumnSidecars());
+    super(byRootIdentifierSchema, specConfig.getMaxRequestBlocksDeneb());
   }
 
   @Override
