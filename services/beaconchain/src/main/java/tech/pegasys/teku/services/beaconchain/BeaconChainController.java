@@ -32,11 +32,9 @@ import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
@@ -113,7 +111,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -235,6 +232,7 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -327,6 +325,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile AttestationManager attestationManager;
   protected volatile SignatureVerificationService signatureVerificationService;
   protected volatile CombinedChainDataClient combinedChainDataClient;
+  protected volatile OperationsReOrgManager operationsReOrgManager;
   protected volatile Eth1DataCache eth1DataCache;
   protected volatile SlotProcessor slotProcessor;
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -824,6 +823,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             combinedChainDataClient,
             UInt64.valueOf(slotsPerEpoch)
                 .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
+
+    final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
+        eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
+
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         new DataColumnSidecarRecoveringCustodyImpl(
             dataColumnSidecarByRootCustody,
@@ -831,10 +834,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             miscHelpersFulu,
             kzg,
-            dataColumnSidecar ->
-                eventChannels
-                    .getPublisher(DataColumnSidecarGossipChannel.class)
-                    .publishDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED),
+            dataColumnSidecarGossipChannel::publishDataColumnSidecar,
             this::getCustodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
             specConfigFulu.getNumberOfCustodyGroups(),
@@ -1003,11 +1003,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initDataColumnSidecarELRecoveryManager()");
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
 
-      final Consumer<List<DataColumnSidecar>> recoveredDataColumnSidecarPublisher =
-          dataColumnSidecars ->
-              eventChannels
-                  .getPublisher(DataColumnSidecarGossipChannel.class)
-                  .publishDataColumnSidecars(dataColumnSidecars, RemoteOrigin.RECOVERED);
+      final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
+          eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
 
       final DataColumnSidecarELRecoveryManager recoveryManager =
           poolFactory.createDataColumnSidecarELRecoveryManager(
@@ -1016,13 +1013,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               kzg,
-              recoveredDataColumnSidecarPublisher,
+              dataColumnSidecarGossipChannel::publishDataColumnSidecars,
               this::getCustodyGroupCountManager,
               metricsSystem,
               timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
-      getDataColumnSidecarCustody()
-          .subscribeToValidDataColumnSidecars(recoveryManager::onNewDataColumnSidecar);
+      dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+          recoveryManager::onNewDataColumnSidecar);
       blockManager.subscribePreImportBlocks(recoveryManager::onNewBlock);
       dataColumnSidecarELRecoveryManager = recoveryManager;
     } else {
@@ -1183,7 +1180,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
+        new CombinedChainDataClient(
+            recentChainData,
+            storageQueryChannel,
+            spec,
+            (slot, blockRoot) ->
+                beaconAsyncRunner.runAsync(
+                    () -> operationsReOrgManager.onLateBlockReorgPreparation(slot, blockRoot)));
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -1574,7 +1577,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
               metricsSystem);
       throttlingCombinedChainDataClient =
           Optional.of(
-              new CombinedChainDataClient(recentChainData, throttlingStorageQueryChannel, spec));
+              new CombinedChainDataClient(
+                  recentChainData,
+                  throttlingStorageQueryChannel,
+                  spec,
+                  LateBlockReorgPreparationHandler.NOOP));
     }
 
     this.p2pNetwork =
@@ -1598,7 +1605,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
+            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960
+            .gossipedExecutionPayloadProcessor(OperationProcessor.noop())
             .gossipedPayloadAttestationMessageProcessor(OperationProcessor.noop())
+            .gossipedExecutionPayloadBidProcessor(OperationProcessor.noop())
             .gossipDasLogger(dasGossipLogger)
             .reqRespDasLogger(dasReqRespLogger)
             .processedAttestationSubscriptionProvider(
@@ -1843,7 +1853,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initOperationsReOrgManager() {
     LOG.debug("BeaconChainController.initOperationsReOrgManager()");
-    OperationsReOrgManager operationsReOrgManager =
+    this.operationsReOrgManager =
         new OperationsReOrgManager(
             proposerSlashingPool,
             attesterSlashingPool,

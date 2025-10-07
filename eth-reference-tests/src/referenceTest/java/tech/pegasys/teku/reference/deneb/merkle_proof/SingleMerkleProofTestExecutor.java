@@ -33,6 +33,7 @@ import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -187,8 +188,10 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
   private SszBytes32Vector createKzgCommitmentsMerkleProofBranchFromData(
       final TestDefinition testDefinition, final List<String> branch) {
     final SszBytes32VectorSchema<?> kzgCommitmentsInclusionProofSchema =
-        SchemaDefinitionsFulu.required(testDefinition.getSpec().getGenesisSchemaDefinitions())
-            .getDataColumnSidecarSchema()
+        DataColumnSidecarSchemaFulu.required(
+                SchemaDefinitionsFulu.required(
+                        testDefinition.getSpec().getGenesisSchemaDefinitions())
+                    .getDataColumnSidecarSchema())
             .getKzgCommitmentsInclusionProofSchema();
     return kzgCommitmentsInclusionProofSchema.createFromElements(
         branch.stream().map(Bytes32::fromHexString).map(SszBytes32::of).toList());

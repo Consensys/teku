@@ -21,10 +21,12 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -63,8 +65,10 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
+      final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadOperationProcessor,
       final OperationProcessor<PayloadAttestationMessage>
           payloadAttestationMessageOperationProcessor,
+      final OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final BlobParameters bpo) {
@@ -87,7 +91,9 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor,
         dataColumnSidecarOperationProcessor,
+        executionPayloadOperationProcessor,
         payloadAttestationMessageOperationProcessor,
+        executionPayloadBidOperationProcessor,
         debugDataDumper,
         dasGossipLogger);
     this.bpo = bpo;

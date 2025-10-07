@@ -25,6 +25,42 @@
     BLS_WITHDRAWAL_PREFIX: Bytes1 = '0x00'
     </spec>
 
+- name: BUILDER_PAYMENT_THRESHOLD_DENOMINATOR
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
+      search: BUILDER_PAYMENT_THRESHOLD_DENOMINATOR =
+  spec: |
+    <spec constant_var="BUILDER_PAYMENT_THRESHOLD_DENOMINATOR" fork="gloas" hash="2b5e020f">
+    BUILDER_PAYMENT_THRESHOLD_DENOMINATOR: uint64 = 10
+    </spec>
+
+- name: BUILDER_PAYMENT_THRESHOLD_NUMERATOR
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigGloas.java
+      search: BUILDER_PAYMENT_THRESHOLD_NUMERATOR =
+  spec: |
+    <spec constant_var="BUILDER_PAYMENT_THRESHOLD_NUMERATOR" fork="gloas" hash="f7d031d3">
+    BUILDER_PAYMENT_THRESHOLD_NUMERATOR: uint64 = 6
+    </spec>
+
+- name: BUILDER_PENDING_WITHDRAWALS_LIMIT
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/gloas.yaml
+      search: "BUILDER_PENDING_WITHDRAWALS_LIMIT:"
+  spec: |
+    <spec constant_var="BUILDER_PENDING_WITHDRAWALS_LIMIT" fork="gloas" hash="a71d297e">
+    BUILDER_PENDING_WITHDRAWALS_LIMIT: uint64 = 2**20
+    </spec>
+
+- name: BUILDER_WITHDRAWAL_PREFIX
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/WithdrawalPrefixes.java
+      search: BUILDER_WITHDRAWAL_PREFIX =
+  spec: |
+    <spec constant_var="BUILDER_WITHDRAWAL_PREFIX" fork="gloas" hash="1094ce21">
+    BUILDER_WITHDRAWAL_PREFIX: Bytes1 = '0x03'
+    </spec>
+
 - name: BYTES_PER_FIELD_ELEMENT
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/config/SpecConfigDeneb.java
@@ -90,6 +126,15 @@
     DOMAIN_BEACON_ATTESTER: DomainType = '0x01000000'
     </spec>
 
+- name: DOMAIN_BEACON_BUILDER
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: BEACON_BUILDER =
+  spec: |
+    <spec constant_var="DOMAIN_BEACON_BUILDER" fork="gloas" hash="31821111">
+    DOMAIN_BEACON_BUILDER: DomainType = '0x1B000000'
+    </spec>
+
 - name: DOMAIN_BEACON_PROPOSER
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
@@ -124,6 +169,15 @@
   spec: |
     <spec constant_var="DOMAIN_DEPOSIT" fork="phase0" hash="eab99f9f">
     DOMAIN_DEPOSIT: DomainType = '0x03000000'
+    </spec>
+
+- name: DOMAIN_PTC_ATTESTER
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/Domain.java
+      search: PTC_ATTESTER =
+  spec: |
+    <spec constant_var="DOMAIN_PTC_ATTESTER" fork="gloas" hash="4feba202">
+    DOMAIN_PTC_ATTESTER: DomainType = '0x0C000000'
     </spec>
 
 - name: DOMAIN_RANDAO
@@ -270,15 +324,6 @@
     PROPOSER_WEIGHT: uint64 = 8
     </spec>
 
-- name: SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY
-  sources:
-    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
-      search: SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY =
-  spec: |
-    <spec constant_var="SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY" fork="bellatrix" hash="87b7dd5b">
-    SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128
-    </spec>
-
 - name: SAFETY_DECAY
   sources:
     - file: ethereum/weaksubjectivity/src/main/java/tech/pegasys/teku/weaksubjectivity/config/WeakSubjectivityConfig.java
@@ -286,6 +331,15 @@
   spec: |
     <spec constant_var="SAFETY_DECAY" fork="phase0" hash="298e03fe">
     SAFETY_DECAY: uint64 = 10
+    </spec>
+
+- name: SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/NetworkConstants.java
+      search: SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY =
+  spec: |
+    <spec constant_var="SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY" fork="bellatrix" hash="87b7dd5b">
+    SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128
     </spec>
 
 - name: SYNC_COMMITTEE_SUBNET_COUNT

@@ -14,12 +14,9 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -42,7 +40,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
@@ -109,34 +107,45 @@ public class SimpleSidecarRetriever
   public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
     final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
-    final List<Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest>> filteredRequests =
-        pendingRequests.entrySet().stream()
-            .filter(request -> request.getKey().equals(dataColumnSlotAndIdentifier))
-            .filter(request -> !request.getValue().result.isDone())
-            .toList();
-    filteredRequests.forEach(requestEntry -> reqRespCompleted(requestEntry.getValue(), sidecar));
+
+    Optional.ofNullable(pendingRequests.get(dataColumnSlotAndIdentifier))
+        .filter(request -> !request.result.isDone())
+        .ifPresent(request -> reqRespCompleted(request, sidecar));
   }
 
-  private List<RequestMatch> matchRequestsAndPeers() {
-    disposeCompletedRequests();
+  private Stream<RequestMatch> matchRequestsAndPeers() {
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()
         .filter(entry -> entry.getValue().activeRpcRequest == null)
         .sorted(Comparator.comparing(entry -> entry.getKey().slot()))
         .flatMap(
             entry -> {
-              RetrieveRequest request = entry.getValue();
+              final RetrieveRequest request = entry.getValue();
               return findBestMatchingPeer(request, ongoingRequestsTracker).stream()
                   .peek(peer -> ongoingRequestsTracker.decreaseAvailableRequests(peer.nodeId))
                   .map(peer -> new RequestMatch(peer, request));
-            })
-        .toList();
+            });
+  }
+
+  private boolean activateMatchedRequest(final RequestMatch match) {
+    if (!match.request.activeRpcRequestSet.compareAndSet(false, true)) {
+      // already activated
+      return false;
+    }
+
+    final SafeFuture<DataColumnSidecar> reqRespPromise =
+        reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
+    match.request.onPeerRequest(match.peer().nodeId);
+    match.request.activeRpcRequest =
+        new ActiveRequest(
+            reqRespPromise.whenComplete((sidecar, err) -> reqRespCompleted(match.request, sidecar)),
+            match.peer);
+    return true;
   }
 
   private Optional<ConnectedPeer> findBestMatchingPeer(
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
-    final Collection<ConnectedPeer> matchingPeers =
-        findMatchingPeers(request, ongoingRequestsTracker);
+    final Stream<ConnectedPeer> matchingPeers = findMatchingPeers(request, ongoingRequestsTracker);
 
     // taking first the peers which were not requested yet, then peers which are less busy
     final Comparator<ConnectedPeer> comparator =
@@ -145,63 +154,57 @@ public class SimpleSidecarRetriever
             .thenComparing(
                 (ConnectedPeer peer) ->
                     ongoingRequestsTracker.getAvailableRequestCount(peer.nodeId));
-    return matchingPeers.stream().max(comparator);
+    return matchingPeers.max(comparator);
   }
 
-  private Collection<ConnectedPeer> findMatchingPeers(
+  private Stream<ConnectedPeer> findMatchingPeers(
       final RetrieveRequest request, final RequestTracker ongoingRequestsTracker) {
     return connectedPeers.values().stream()
         .filter(peer -> peer.isCustodyFor(request.columnId))
-        .filter(peer -> ongoingRequestsTracker.hasAvailableRequests(peer.nodeId))
-        .toList();
+        .filter(peer -> ongoingRequestsTracker.hasAvailableRequests(peer.nodeId));
   }
 
   private void disposeCompletedRequests() {
-    final Iterator<Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest>> pendingIterator =
-        pendingRequests.entrySet().iterator();
-    while (pendingIterator.hasNext()) {
-      final Map.Entry<DataColumnSlotAndIdentifier, RetrieveRequest> pendingEntry =
-          pendingIterator.next();
-      final RetrieveRequest pendingRequest = pendingEntry.getValue();
-      if (pendingRequest.result.isDone()) {
-        pendingIterator.remove();
-        if (pendingRequest.activeRpcRequest != null) {
-          pendingRequest.activeRpcRequest.promise().cancel(true);
-        }
-      }
-    }
+    pendingRequests
+        .entrySet()
+        .removeIf(
+            pendingEntry -> {
+              final RetrieveRequest pendingRequest = pendingEntry.getValue();
+              if (pendingRequest.result.isDone()) {
+                if (pendingRequest.activeRpcRequest != null) {
+                  pendingRequest.activeRpcRequest.promise().cancel(true);
+                }
+                return true;
+              }
+              return false;
+            });
   }
 
   private void nextRound() {
-    final List<RequestMatch> matches = matchRequestsAndPeers();
-    for (final RequestMatch match : matches) {
-      if (match.request.activeRpcRequestSet.compareAndSet(false, true)) {
-        final SafeFuture<DataColumnSidecar> reqRespPromise =
-            reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
-        match.request().onPeerRequest(match.peer().nodeId);
-        match.request.activeRpcRequest =
-            new ActiveRequest(
-                reqRespPromise.whenComplete(
-                    (sidecar, err) -> reqRespCompleted(match.request, sidecar)),
-                match.peer);
-      }
-    }
+    disposeCompletedRequests();
 
-    final long activeRequestCount =
-        pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
-    LOG.trace(
-        "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
-        retrieveCounter,
-        errorCounter,
-        pendingRequests.size(),
-        activeRequestCount,
-        matches.size(),
-        gatherAvailableCustodiesInfo());
+    final long activatedMatches =
+        matchRequestsAndPeers()
+            .map(this::activateMatchedRequest)
+            .filter(activated -> activated)
+            .count();
+
+    if (LOG.isTraceEnabled()) {
+      final long activeRequestCount =
+          pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
+      LOG.trace(
+          "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
+          retrieveCounter,
+          errorCounter,
+          pendingRequests.size(),
+          activeRequestCount,
+          activatedMatches,
+          gatherAvailableCustodiesInfo());
+    }
 
     reqResp.flush();
   }
 
-  @SuppressWarnings("unused")
   private void reqRespCompleted(
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
     if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {

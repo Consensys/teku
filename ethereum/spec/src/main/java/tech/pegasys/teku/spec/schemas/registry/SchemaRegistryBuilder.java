@@ -111,8 +111,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.gloas.DataColumnSidecarSchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
@@ -818,10 +819,15 @@ public class SchemaRegistryBuilder {
         .withCreator(
             FULU,
             (registry, specConfig, schemaName) ->
-                DataColumnSidecarSchema.create(
+                new DataColumnSidecarSchemaFulu(
                     SignedBeaconBlockHeader.SSZ_SCHEMA,
                     registry.get(DATA_COLUMN_SCHEMA),
                     SpecConfigFulu.required(specConfig)))
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new DataColumnSidecarSchemaGloas(
+                    registry.get(DATA_COLUMN_SCHEMA), SpecConfigGloas.required(specConfig)))
         .build();
   }
 
@@ -1017,7 +1023,7 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 SszListSchema.create(
                     registry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA),
-                    BeaconStateSchemaGloas.BUILDER_PENDING_WITHDRAWALS_LIMIT))
+                    SpecConfigGloas.required(specConfig).getBuilderPendingWithdrawalsLimit()))
         .build();
   }
 

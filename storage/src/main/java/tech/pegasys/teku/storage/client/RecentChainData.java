@@ -395,6 +395,11 @@ public abstract class RecentChainData implements StoreUpdateHandler, ValidatorIs
     bestBlockInitialized.complete(null);
   }
 
+  public Optional<SlotAndBlockRoot> findCommonAncestor(
+      final Bytes32 blockRoot1, final Bytes32 blockRoot2) {
+    return store.getForkChoiceStrategy().findCommonAncestor(blockRoot1, blockRoot2);
+  }
+
   private Optional<ReorgContext> computeReorgContext(
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       final Optional<ChainHead> originalChainHead,

@@ -82,10 +82,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -130,7 +132,9 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
   protected OperationProcessor<SignedBlsToExecutionChange>
       gossipedSignedBlsToExecutionChangeProcessor;
+  protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
   protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
+  protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
@@ -424,7 +428,9 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              executionPayloadProcessor,
               payloadAttestationMessageProcessor,
+              executionPayloadBidProcessor,
               debugDataDumper,
               dasGossipLogger);
     };
@@ -479,7 +485,9 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
+              executionPayloadProcessor,
               payloadAttestationMessageProcessor,
+              executionPayloadBidProcessor,
               debugDataDumper,
               dasGossipLogger,
               bpo);
@@ -615,7 +623,9 @@ public class Eth2P2PNetworkBuilder {
         "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
     assertNotNull(
         "gossipedDataColumnSidecarOperationProcessor", dataColumnSidecarOperationProcessor);
+    assertNotNull("gossipedExecutionPayloadProcessor", executionPayloadProcessor);
     assertNotNull("gossipedPayloadAttestationMessageProcessor", payloadAttestationMessageProcessor);
+    assertNotNull("gossipedExecutionPayloadBidProcessor", executionPayloadBidProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
@@ -755,11 +765,25 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
+  public Eth2P2PNetworkBuilder gossipedExecutionPayloadProcessor(
+      final OperationProcessor<SignedExecutionPayloadEnvelope> gossipedExecutionPayloadProcessor) {
+    checkNotNull(gossipedExecutionPayloadProcessor);
+    this.executionPayloadProcessor = gossipedExecutionPayloadProcessor;
+    return this;
+  }
+
   public Eth2P2PNetworkBuilder gossipedPayloadAttestationMessageProcessor(
       final OperationProcessor<PayloadAttestationMessage>
           gossipedPayloadAttestationMessageProcessor) {
     checkNotNull(gossipedPayloadAttestationMessageProcessor);
     this.payloadAttestationMessageProcessor = gossipedPayloadAttestationMessageProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedExecutionPayloadBidProcessor(
+      final OperationProcessor<SignedExecutionPayloadBid> gossipedExecutionPayloadBidProcessor) {
+    checkNotNull(gossipedExecutionPayloadBidProcessor);
+    this.executionPayloadBidProcessor = gossipedExecutionPayloadBidProcessor;
     return this;
   }
 

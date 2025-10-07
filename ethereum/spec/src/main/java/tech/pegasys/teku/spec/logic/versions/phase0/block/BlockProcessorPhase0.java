@@ -18,8 +18,10 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -155,14 +157,20 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processWithdrawals(
-      final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
+      final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in phase0");
   }
 
   @Override
-  public void processWithdrawals(final MutableBeaconState state) {
-    throw new UnsupportedOperationException(
-        "No process_withdrawals with only state as a parameter until Gloas");
+  public void processExecutionPayloadBid(
+      final MutableBeaconState state, final BeaconBlock beaconBlock) {
+    throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
+  }
+
+  @Override
+  public void processPayloadAttestations(
+      final MutableBeaconState state, final SszList<PayloadAttestation> payloadAttestations) {
+    throw new UnsupportedOperationException("No payload attestations until Gloas");
   }
 }
