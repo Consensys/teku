@@ -35,5 +35,7 @@ public class ExecutionPayloadEnvelopesByRootMessageHandler
       final String protocolId,
       final Eth2Peer peer,
       final ExecutionPayloadEnvelopesByRootRequestMessage message,
-      final ResponseCallback<SignedExecutionPayloadEnvelope> responseCallback) {}
+      final ResponseCallback<SignedExecutionPayloadEnvelope> responseCallback) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
 }
