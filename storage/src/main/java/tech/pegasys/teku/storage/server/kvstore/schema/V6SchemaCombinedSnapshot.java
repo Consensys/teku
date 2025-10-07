@@ -101,7 +101,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
             asColumnId(finalizedOffset + 8),
             asColumnId(finalizedOffset + 9),
             asColumnId(finalizedOffset + 10),
-            asColumnId(finalizedOffset + 11));
+            asColumnId(finalizedOffset + 11),
+            asColumnId(finalizedOffset + 16));
   }
 
   public static V6SchemaCombinedSnapshot createV4(final Spec spec) {

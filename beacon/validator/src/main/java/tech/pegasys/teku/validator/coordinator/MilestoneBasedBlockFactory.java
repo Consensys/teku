@@ -55,13 +55,17 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
         Suppliers.memoize(() -> new BlockFactoryDeneb(spec, operationSelector));
     final Supplier<BlockFactoryFulu> blockFactoryFuluSupplier =
         Suppliers.memoize(() -> new BlockFactoryFulu(spec, operationSelector, kzg));
+    final Supplier<BlockFactoryGloas> blockFactoryGloasSupplier =
+        Suppliers.memoize(() -> new BlockFactoryGloas(spec, operationSelector));
 
     // Populate forks factories
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+                registeredFactories.put(milestone, blockFactoryGloasSupplier.get());
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
                 registeredFactories.put(milestone, blockFactoryFuluSupplier.get());
               } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredFactories.put(milestone, blockFactoryDenebSupplier.get());

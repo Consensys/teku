@@ -86,15 +86,15 @@ public class CombinedChainDataClient {
     if (!isChainDataFullyAvailable()) {
       return BLOCK_NOT_AVAILABLE;
     }
-
     // Try to pull root from recent data
-    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
-    if (recentRoot.isPresent()) {
-      return getBlockByBlockRoot(recentRoot.get())
-          .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
-    }
-
-    return historicalChainData.getFinalizedBlockAtSlot(slot);
+    return recentChainData
+        .getBlockRootInEffectBySlot(slot)
+        .map(
+            blockRoot ->
+                getBlockByBlockRoot(blockRoot)
+                    .thenApply(
+                        maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
+        .orElseGet(() -> historicalChainData.getFinalizedBlockAtSlot(slot));
   }
 
   /**
@@ -112,14 +112,14 @@ public class CombinedChainDataClient {
     }
 
     // Try to pull root from recent data
-    final Optional<Bytes32> recentRoot =
-        recentChainData.getBlockRootInEffectBySlot(slot, headBlockRoot);
-    if (recentRoot.isPresent()) {
-      return getBlockByBlockRoot(recentRoot.get())
-          .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
-    }
-
-    return historicalChainData.getFinalizedBlockAtSlot(slot);
+    return recentChainData
+        .getBlockRootInEffectBySlot(slot, headBlockRoot)
+        .map(
+            blockRoot ->
+                getBlockByBlockRoot(blockRoot)
+                    .thenApply(
+                        maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot))))
+        .orElseGet(() -> historicalChainData.getFinalizedBlockAtSlot(slot));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
