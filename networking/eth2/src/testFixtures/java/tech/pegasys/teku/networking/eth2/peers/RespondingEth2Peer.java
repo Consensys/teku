@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -288,6 +289,14 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingDataColumnSidecarRequest(handler);
   }
 
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9974
+  @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
+      final List<Bytes32> beaconBlockRoots,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
   @Override
   public SafeFuture<Void> requestDataColumnSidecarsByRange(
       final UInt64 startSlot,
@@ -305,6 +314,15 @@ public class RespondingEth2Peer implements Eth2Peer {
                     .flatMap(entry -> entry.getValue().stream())
                     .collect(Collectors.toList()));
     return createPendingDataColumnSidecarRequest(handler);
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9974
+  @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

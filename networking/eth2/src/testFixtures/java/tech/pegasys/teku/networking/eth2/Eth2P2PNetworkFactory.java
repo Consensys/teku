@@ -99,6 +99,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -116,6 +118,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCust
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
+import tech.pegasys.teku.storage.api.LateBlockReorgPreparationHandler;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -162,7 +165,9 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<ValidatableSyncCommitteeMessage> syncCommitteeMessageProcessor;
     protected OperationProcessor<SignedBlsToExecutionChange> signedBlsToExecutionChangeProcessor;
     protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
+    protected OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadProcessor;
     protected OperationProcessor<PayloadAttestationMessage> payloadAttestationMessageProcessor;
+    protected OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -222,7 +227,8 @@ public class Eth2P2PNetworkFactory {
         final SubnetSubscriptionService dataColumnSidecarSubnetService =
             new SubnetSubscriptionService();
         final CombinedChainDataClient combinedChainDataClient =
-            new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+            new CombinedChainDataClient(
+                recentChainData, historicalChainData, spec, LateBlockReorgPreparationHandler.NOOP);
         final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider =
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
@@ -543,7 +549,9 @@ public class Eth2P2PNetworkFactory {
                 syncCommitteeMessageProcessor,
                 signedBlsToExecutionChangeProcessor,
                 dataColumnSidecarOperationProcessor,
+                executionPayloadProcessor,
                 payloadAttestationMessageProcessor,
+                executionPayloadBidProcessor,
                 debugDataDumper,
                 DasGossipLogger.NOOP);
       };
@@ -640,8 +648,14 @@ public class Eth2P2PNetworkFactory {
       if (signedBlsToExecutionChangeProcessor == null) {
         signedBlsToExecutionChangeProcessor = OperationProcessor.noop();
       }
+      if (executionPayloadProcessor == null) {
+        executionPayloadProcessor = OperationProcessor.noop();
+      }
       if (payloadAttestationMessageProcessor == null) {
         payloadAttestationMessageProcessor = OperationProcessor.noop();
+      }
+      if (executionPayloadBidProcessor == null) {
+        executionPayloadBidProcessor = OperationProcessor.noop();
       }
     }
 
@@ -772,11 +786,26 @@ public class Eth2P2PNetworkFactory {
       return this;
     }
 
+    public Eth2P2PNetworkBuilder gossipedExecutionPayloadProcessor(
+        final OperationProcessor<SignedExecutionPayloadEnvelope>
+            gossipedExecutionPayloadProcessor) {
+      checkNotNull(gossipedExecutionPayloadProcessor);
+      this.executionPayloadProcessor = gossipedExecutionPayloadProcessor;
+      return this;
+    }
+
     public Eth2P2PNetworkBuilder gossipedPayloadAttestationMessageProcessor(
         final OperationProcessor<PayloadAttestationMessage>
             gossipedPayloadAttestationMessageProcessor) {
       checkNotNull(gossipedPayloadAttestationMessageProcessor);
       this.payloadAttestationMessageProcessor = gossipedPayloadAttestationMessageProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedExecutionPayloadBidProcessor(
+        final OperationProcessor<SignedExecutionPayloadBid> gossipedExecutionPayloadBidProcessor) {
+      checkNotNull(gossipedExecutionPayloadBidProcessor);
+      this.executionPayloadBidProcessor = gossipedExecutionPayloadBidProcessor;
       return this;
     }
 

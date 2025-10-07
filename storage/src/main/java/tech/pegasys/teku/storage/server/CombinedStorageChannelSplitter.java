@@ -34,10 +34,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
-import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
-import tech.pegasys.teku.storage.api.SidecarIdentifier;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -313,10 +311,5 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot() {
     return asyncRunner.runAsync(queryDelegate::getEarliestDataColumnSidecarSlot);
-  }
-
-  @Override
-  public SafeFuture<Optional<SidecarIdentifier>> getSidecarIdentifier(final VersionedHash hash) {
-    return asyncRunner.runAsync(() -> queryDelegate.getSidecarIdentifier(hash));
   }
 }

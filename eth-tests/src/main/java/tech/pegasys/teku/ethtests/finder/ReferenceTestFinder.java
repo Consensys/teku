@@ -73,21 +73,9 @@ public class ReferenceTestFinder {
                         new SszTestFinder("ssz_generic"),
                         new SszTestFinder("ssz_static"),
                         new ShufflingTestFinder(),
-                        // Temporarily adding only specific test types that we support
-                        new PyspecTestFinder(
-                            List.of(
-                                "fork/fork",
-                                "networking/",
-                                "rewards/",
-                                "epoch_processing/",
-                                "operations/withdrawals",
-                                "operations/proposer_slashing",
-                                "operations/execution_payload",
-                                "operations/execution_payload_bid",
-                                "operations/payload_attestation"),
-                            List.of())
+                        new PyspecTestFinder(List.of(), List.of("fork_choice/"))
                         // merkle proof tests are not applicable in Gloas, these will be removed in
-                        // next reference tests release
+                        // the next reference tests release
                         )
                     .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
               }

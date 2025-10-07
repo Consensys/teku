@@ -68,8 +68,6 @@ public interface SchemaCombined extends Schema {
   KvStoreColumn<DataColumnSlotAndIdentifier, Bytes>
       getColumnNonCanonicalSidecarByColumnSlotAndIdentifier();
 
-  KvStoreColumn<Bytes32, Bytes> getColumnSidecarIdentifierByVersionedHash();
-
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
 

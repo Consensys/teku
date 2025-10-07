@@ -248,27 +248,10 @@ public class V4FinalizedKvStoreDao {
     }
   }
 
-  public List<DataColumnSlotAndIdentifier> getNonCanonicalDataColumnIdentifiers(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final Stream<DataColumnSlotAndIdentifier> identifierStream =
-        db.streamKeys(
-            schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(),
-            new DataColumnSlotAndIdentifier(
-                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
-            new DataColumnSlotAndIdentifier(
-                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
-      return identifierStream.toList();
-    }
-  }
-
   public Optional<UInt64> getEarliestAvailableDataColumnSlot() {
     return db.getFirstEntry(schema.getColumnSidecarByColumnSlotAndIdentifier())
         .map(ColumnEntry::getKey)
         .map(DataColumnSlotAndIdentifier::slot);
-  }
-
-  public Optional<Bytes> getSidecarIdentifierData(final Bytes32 versionedHash) {
-    return db.get(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash);
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
@@ -543,16 +526,6 @@ public class V4FinalizedKvStoreDao {
     public void removeNonCanonicalSidecar(final DataColumnSlotAndIdentifier identifier) {
       transaction.delete(
           schema.getColumnNonCanonicalSidecarByColumnSlotAndIdentifier(), identifier);
-    }
-
-    @Override
-    public void addVersionedHash(final Bytes32 versionedHash, final Bytes metadata) {
-      transaction.put(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash, metadata);
-    }
-
-    @Override
-    public void removeVersionedHash(final Bytes32 versionedHash) {
-      transaction.delete(schema.getColumnSidecarIdentifierByVersionedHash(), versionedHash);
     }
 
     @Override

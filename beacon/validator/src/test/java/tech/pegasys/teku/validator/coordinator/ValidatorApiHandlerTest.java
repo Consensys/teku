@@ -473,7 +473,7 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldFailWhenParentBlockIsOptimistic() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
-    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
     when(chainDataClient.isOptimisticBlock(parentRoot)).thenReturn(true);
@@ -495,7 +495,7 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
             blockSlotState,
@@ -546,7 +546,7 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
             blockSlotState,
@@ -591,12 +591,12 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
 
     validatorApiHandler.onBlockProductionPreparationDue(newSlot);
 
-    verify(chainDataClient).getStateForBlockProduction(newSlot, false);
+    verify(chainDataClient).getStateForBlockProduction(eq(newSlot), eq(false), any());
 
     when(blockFactory.createUnsignedBlock(
             blockSlotState,
@@ -613,7 +613,7 @@ class ValidatorApiHandlerTest {
 
     assertThat(result).isCompletedWithValue(Optional.of(blockContainerAndMetaData));
 
-    verify(chainDataClient).getStateForBlockProduction(newSlot, false);
+    verify(chainDataClient).getStateForBlockProduction(eq(newSlot), eq(false), any());
   }
 
   @Test
@@ -984,7 +984,7 @@ class ValidatorApiHandlerTest {
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(newSlot);
 
-    when(chainDataClient.getStateForBlockProduction(newSlot, false))
+    when(chainDataClient.getStateForBlockProduction(eq(newSlot), eq(false), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
             blockSlotState,

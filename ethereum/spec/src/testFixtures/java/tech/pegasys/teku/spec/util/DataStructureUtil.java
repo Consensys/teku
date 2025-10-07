@@ -2411,12 +2411,10 @@ public final class DataStructureUtil {
             randomEth1Address().getWrappedBytes()));
   }
 
-  public VersionedHash randomVersionedHash() {
-    return new VersionedHash(randomBytes32());
-  }
-
   public List<VersionedHash> randomVersionedHashes(final int count) {
-    return IntStream.range(0, count).mapToObj(__ -> randomVersionedHash()).collect(toList());
+    return IntStream.range(0, count)
+        .mapToObj(__ -> new VersionedHash(randomBytes32()))
+        .collect(toList());
   }
 
   public Blob randomValidBlob() {

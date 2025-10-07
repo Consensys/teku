@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
-import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface StorageQueryChannel extends ChannelInterface {
 
@@ -137,6 +136,4 @@ public interface StorageQueryChannel extends ChannelInterface {
       UInt64 startSlot, UInt64 endSlot, UInt64 limit);
 
   SafeFuture<Optional<UInt64>> getEarliestDataColumnSidecarSlot();
-
-  SafeFuture<Optional<SidecarIdentifier>> getSidecarIdentifier(VersionedHash hash);
 }
