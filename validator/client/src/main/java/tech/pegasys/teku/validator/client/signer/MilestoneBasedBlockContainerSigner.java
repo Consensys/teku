@@ -46,7 +46,10 @@ public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner 
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+                // in Gloas, phase0 can be reused
+                registeredSigners.put(milestone, blockContainerSignerPhase0);
+              } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredSigners.put(milestone, blockContainerSignerDeneb.get());
               } else {
                 registeredSigners.put(milestone, blockContainerSignerPhase0);

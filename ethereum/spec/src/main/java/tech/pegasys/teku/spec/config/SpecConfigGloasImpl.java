@@ -15,14 +15,13 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements SpecConfigGloas {
   private final int aggregateDueBps;
   private final int attestationDueBps;
   private final int contributionDueBps;
-  private final UInt64 kzgCommitmentsInclusionProofDepth;
+  private final long builderPendingWithdrawalsLimit;
   private final int maxPayloadAttestations;
   private final int maxRequestPayloads;
   private final int payloadAttestationDueBps;
@@ -34,7 +33,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
       final int aggregateDueBps,
       final int attestationDueBps,
       final int contributionDueBps,
-      final UInt64 kzgCommitmentsInclusionProofDepth,
+      final long builderPendingWithdrawalsLimit,
       final int maxPayloadAttestations,
       final int maxRequestPayloads,
       final int payloadAttestationDueBps,
@@ -44,7 +43,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
     this.aggregateDueBps = aggregateDueBps;
     this.attestationDueBps = attestationDueBps;
     this.contributionDueBps = contributionDueBps;
-    this.kzgCommitmentsInclusionProofDepth = kzgCommitmentsInclusionProofDepth;
+    this.builderPendingWithdrawalsLimit = builderPendingWithdrawalsLimit;
     this.maxPayloadAttestations = maxPayloadAttestations;
     this.maxRequestPayloads = maxRequestPayloads;
     this.ptcSize = ptcSize;
@@ -68,11 +67,6 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   }
 
   @Override
-  public UInt64 getKzgCommitmentsInclusionProofDepth() {
-    return kzgCommitmentsInclusionProofDepth;
-  }
-
-  @Override
   public int getMaxRequestPayloads() {
     return maxRequestPayloads;
   }
@@ -90,6 +84,11 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
   @Override
   public int getMaxPayloadAttestations() {
     return maxPayloadAttestations;
+  }
+
+  @Override
+  public long getBuilderPendingWithdrawalsLimit() {
+    return builderPendingWithdrawalsLimit;
   }
 
   @Override
@@ -124,8 +123,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         && payloadAttestationDueBps == that.payloadAttestationDueBps
         && ptcSize == that.ptcSize
         && syncMessageDueBps == that.syncMessageDueBps
-        && Objects.equals(
-            kzgCommitmentsInclusionProofDepth, that.kzgCommitmentsInclusionProofDepth);
+        && builderPendingWithdrawalsLimit == that.builderPendingWithdrawalsLimit;
   }
 
   @Override
@@ -135,7 +133,7 @@ public class SpecConfigGloasImpl extends DelegatingSpecConfigFulu implements Spe
         aggregateDueBps,
         attestationDueBps,
         contributionDueBps,
-        kzgCommitmentsInclusionProofDepth,
+        builderPendingWithdrawalsLimit,
         maxPayloadAttestations,
         maxRequestPayloads,
         payloadAttestationDueBps,

@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -40,10 +41,10 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContentsWithBlobsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -51,10 +52,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
@@ -72,6 +75,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -82,6 +86,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -147,13 +152,14 @@ public class BlockOperationSelectorFactory {
 
       final SafeFuture<Void> setExecutionDataComplete;
 
+      final SchemaDefinitions schemaDefinitions =
+          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
+
       // In `setExecutionData` the following fields are set:
       // Post-Bellatrix: Execution Payload / Execution Payload Header
       // Post-Deneb: KZG Commitments
+      // Post-Gloas: this section is skipped
       if (bodyBuilder.supportsExecutionPayload()) {
-        final SchemaDefinitions schemaDefinitions =
-            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
-
         setExecutionDataComplete =
             forkChoiceNotifier
                 .getPayloadId(parentRoot, blockSlotState.getSlot())
@@ -222,6 +228,41 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsBlsToExecutionChanges()) {
         bodyBuilder.blsToExecutionChanges(
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
+      }
+
+      // Post-Gloas: Signed Execution Payload Bid and Payload Attestations
+      // TODO-GLOAS: https://github.com/Consensys/teku/issues/9959
+      if (bodyBuilder.supportsSignedExecutionPayloadBid()) {
+        final SchemaDefinitionsGloas schemaDefinitionsGloas =
+            SchemaDefinitionsGloas.required(schemaDefinitions);
+        // fake self building bid used for local interop temporarily
+        final ExecutionPayloadBid bid =
+            schemaDefinitionsGloas
+                .getExecutionPayloadBidSchema()
+                .create(
+                    BeaconStateGloas.required(blockSlotState).getLatestBlockHash(),
+                    blockSlotState.getLatestBlockHeader().getRoot(),
+                    Bytes32.ZERO,
+                    Bytes20.ZERO,
+                    UInt64.ZERO,
+                    UInt64.valueOf(
+                        spec.getBeaconProposerIndex(blockSlotState, blockSlotState.getSlot())),
+                    blockSlotState.getSlot(),
+                    UInt64.ZERO,
+                    // no blobs for local interop temporarily
+                    schemaDefinitionsGloas.getBlobKzgCommitmentsSchema().of().hashTreeRoot());
+        bodyBuilder.signedExecutionPayloadBid(
+            schemaDefinitionsGloas
+                .getSignedExecutionPayloadBidSchema()
+                .create(bid, BLSSignature.infinity()));
+      }
+
+      if (bodyBuilder.supportsPayloadAttestations()) {
+        // no payload attestations used for local interop temporarily
+        bodyBuilder.payloadAttestations(
+            BeaconBlockBodySchemaGloas.required(schemaDefinitions.getBeaconBlockBodySchema())
+                .getPayloadAttestationsSchema()
+                .of());
       }
 
       return setExecutionDataComplete.thenPeek(

@@ -43,7 +43,8 @@ public class ProtoArrayScoreCalculatorTest {
   private final VoteUpdater store = createStoreToManipulateVotes();
 
   private Optional<Integer> getIndex(final Bytes32 root) {
-    return Optional.ofNullable(indices.get(root));
+    final int index = indices.getOrDefault(root, -1);
+    return index >= 0 ? Optional.of(index) : Optional.empty();
   }
 
   @Test

@@ -97,7 +97,7 @@ public class PeerManager implements ConnectionHandler {
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager, peerScoreFunction);
+    final Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager, peerScoreFunction);
     onConnectedPeer(peer);
   }
 

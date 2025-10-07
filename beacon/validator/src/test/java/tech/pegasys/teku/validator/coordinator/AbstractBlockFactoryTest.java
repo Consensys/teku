@@ -44,8 +44,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -219,7 +219,7 @@ public abstract class AbstractBlockFactoryTest {
     when(syncCommitteeContributionPool.createSyncAggregateForBlock(newSlot, bestBlockRoot))
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
-    final UInt256 blockExecutionValue;
+    UInt256 blockExecutionValue;
     final UInt64 blockProposerRewards;
 
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
@@ -268,7 +268,21 @@ public abstract class AbstractBlockFactoryTest {
       assertThat(block.getBody().getOptionalBlsToExecutionChanges()).isEmpty();
     }
 
-    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      // set the execution value to the value from the bid
+      blockExecutionValue =
+          GWEI_TO_WEI.multiply(
+              block
+                  .getBody()
+                  .getOptionalSignedExecutionPayloadBid()
+                  .orElseThrow()
+                  .getMessage()
+                  .getValue()
+                  .longValue());
+      // TODO-GLOAS: add mocked assertions https://github.com/Consensys/teku/issues/9959
+      assertThat(block.getBody().getOptionalSignedExecutionPayloadBid()).isPresent();
+      assertThat(block.getBody().getOptionalPayloadAttestations()).isPresent();
+    } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       assertThat(block.getBody().getOptionalBlobKzgCommitments())
           .hasValueSatisfying(
               blobKzgCommitments ->
@@ -441,7 +455,7 @@ public abstract class AbstractBlockFactoryTest {
             genericState.getSlot(),
             builder ->
                 builder
-                    .parentHash(state.getLatestExecutionPayloadHeader().getBlockHash())
+                    .parentHash(state.getLatestExecutionPayloadHeaderRequired().getBlockHash())
                     .prevRandao(
                         beaconStateAccessors.getRandaoMix(
                             state, beaconStateAccessors.getCurrentEpoch(state)))

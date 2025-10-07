@@ -452,7 +452,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         IndexedAttestationCache.capturing();
 
     final AvailabilityChecker<?> availabilityChecker;
-    if (spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
+      // checking of blob data availability is delayed until the processing of the execution
+      // payload in ePBS
+      availabilityChecker = AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
+    } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       LOG.debug("Created DAS availabilityChecker for slot {}", block.getSlot());
       availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
     } else {
