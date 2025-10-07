@@ -91,16 +91,16 @@ public class BeaconChainMethods {
       beaconBlocksByRange;
   private final Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>>
       blobSidecarsByRoot;
-  private final Optional<
-          Eth2RpcMethod<
-              ExecutionPayloadEnvelopesByRootRequestMessage, SignedExecutionPayloadEnvelope>>
-      executionPayloadEnvelopesByRoot;
   private final Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
       blobSidecarsByRange;
   private final Optional<Eth2RpcMethod<DataColumnSidecarsByRootRequestMessage, DataColumnSidecar>>
       dataColumnSidecarsByRoot;
   private final Optional<Eth2RpcMethod<DataColumnSidecarsByRangeRequestMessage, DataColumnSidecar>>
       dataColumnSidecarsByRange;
+  private final Optional<
+          Eth2RpcMethod<
+              ExecutionPayloadEnvelopesByRootRequestMessage, SignedExecutionPayloadEnvelope>>
+      executionPayloadEnvelopesByRoot;
   private final Optional<
           Eth2RpcMethod<
               ExecutionPayloadEnvelopesByRangeRequestMessage, SignedExecutionPayloadEnvelope>>
