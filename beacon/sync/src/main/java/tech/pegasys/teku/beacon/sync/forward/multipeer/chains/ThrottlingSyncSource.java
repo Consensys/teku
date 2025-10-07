@@ -88,7 +88,7 @@ public class ThrottlingSyncSource implements SyncSource {
             .map(
                 maxExecutionPayloadEnvelopesPerMinute ->
                     RateTracker.create(
-                        maxBlocksPerMinute,
+                        maxExecutionPayloadEnvelopesPerMinute,
                         TIMEOUT_SECONDS,
                         timeProvider,
                         "throttling-execution-payload-envelopes"))
