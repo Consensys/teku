@@ -21,7 +21,6 @@ import java.util.Map;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class StubPeerScorer implements PeerScorer {
 
@@ -30,11 +29,11 @@ public class StubPeerScorer implements PeerScorer {
       SszBitvector syncCommitteeSubnetSubscriptions,
       SszBitvector dataColumnSidecarSubnetSubscriptions) {}
 
-  private final Object2IntMap<NodeId> peerScores = new Object2IntOpenHashMap<>();
+  private final Object2IntMap<PeerId> peerScores = new Object2IntOpenHashMap<>();
   private final Object2IntMap<SubnetSubscriptionsKey> candidateScores =
       new Object2IntOpenHashMap<>();
 
-  public void setScore(final NodeId peerId, final int score) {
+  public void setScore(final PeerId peerId, final int score) {
     peerScores.put(peerId, score);
   }
 
@@ -51,7 +50,7 @@ public class StubPeerScorer implements PeerScorer {
   }
 
   @Override
-  public int scoreExistingPeer(final NodeId peerId) {
+  public int scoreExistingPeer(final PeerId peerId) {
     return peerScores.getOrDefault(peerId, 0);
   }
 

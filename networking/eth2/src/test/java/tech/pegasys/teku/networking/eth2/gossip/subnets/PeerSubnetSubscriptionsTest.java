@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszBitvectorImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
+import tech.pegasys.teku.networking.eth2.peers.PeerId;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -53,9 +55,12 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class PeerSubnetSubscriptionsTest {
-  private static final NodeId PEER1 = new MockNodeId(1);
-  private static final NodeId PEER2 = new MockNodeId(2);
-  private static final NodeId PEER3 = new MockNodeId(3);
+  private static final PeerId EXISTING_PEER1 = PeerId.fromExistingId(new MockNodeId(1));
+  private static final PeerId EXISTING_PEER2 = PeerId.fromExistingId(new MockNodeId(2));
+  private static final PeerId EXISTING_PEER3 = PeerId.fromExistingId(new MockNodeId(3));
+  private static final PeerId CANDIDATE_PEER1 = PeerId.fromCandidateId(new MockNodeId(1).toBytes());
+  private static final PeerId CANDIDATE_PEER2 = PeerId.fromCandidateId(new MockNodeId(2).toBytes());
+  private static final PeerId CANDIDATE_PEER3 = PeerId.fromCandidateId(new MockNodeId(3).toBytes());
   private static final int TARGET_SUBSCRIBER_COUNT = 2;
   public static final int SUBNET_COUNT = 128;
 
@@ -92,6 +97,14 @@ class PeerSubnetSubscriptionsTest {
         .thenReturn(Optional.empty());
   }
 
+  private Set<NodeId> extractNodeIds(final PeerId... peers) {
+    return Arrays.stream(peers)
+        .filter(PeerId::isExisting)
+        .map(PeerId::getExistingId)
+        .flatMap(Optional::stream)
+        .collect(Collectors.toSet());
+  }
+
   @Test
   public void create_shouldSetUpExpectedSubscriptions() {
     // Set up some sync committee subnets we should be participating in
@@ -99,11 +112,11 @@ class PeerSubnetSubscriptionsTest {
 
     final Map<String, Collection<NodeId>> subscribersByTopic =
         ImmutableMap.<String, Collection<NodeId>>builder()
-            .put("attnet_0", Set.of(PEER1, PEER2, PEER3))
-            .put("attnet_1", Set.of(PEER1))
-            .put("attnet_2", Set.of(PEER1, PEER3))
-            .put("syncnet_1", Set.of(PEER2))
-            .put("blocks", Set.of(PEER1, PEER2, PEER3))
+            .put("attnet_0", extractNodeIds(EXISTING_PEER1, EXISTING_PEER2, EXISTING_PEER3))
+            .put("attnet_1", extractNodeIds(EXISTING_PEER1))
+            .put("attnet_2", extractNodeIds(EXISTING_PEER1, EXISTING_PEER3))
+            .put("syncnet_1", extractNodeIds(EXISTING_PEER2))
+            .put("blocks", extractNodeIds(EXISTING_PEER1, EXISTING_PEER2, EXISTING_PEER3))
             .build();
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
@@ -116,18 +129,18 @@ class PeerSubnetSubscriptionsTest {
     assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(1)).isEqualTo(1);
     assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(2)).isEqualTo(0);
 
-    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER1))
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(EXISTING_PEER1))
         .isEqualTo(createAttnetsBitvector(0, 1, 2));
-    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER2))
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(EXISTING_PEER2))
         .isEqualTo(createAttnetsBitvector(0));
-    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER3))
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(EXISTING_PEER3))
         .isEqualTo(createAttnetsBitvector(0, 2));
 
-    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER1))
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(EXISTING_PEER1))
         .isEqualTo(createSyncnetsBitvector());
-    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER2))
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(EXISTING_PEER2))
         .isEqualTo(createSyncnetsBitvector(1));
-    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER3))
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(EXISTING_PEER3))
         .isEqualTo(createSyncnetsBitvector());
   }
 
@@ -138,28 +151,28 @@ class PeerSubnetSubscriptionsTest {
   // but PEER3 has a subnet not covered by PEER1
   public void shouldScoreExistingPeersAccordingToUniqueness() {
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2, 3, 4, 5, 6, 7));
-    final Map<NodeId, SszBitvector> peer2subnets =
-        ImmutableMap.<NodeId, SszBitvector>builder()
-            .put(PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
-            .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
-            .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
+    final Map<PeerId, SszBitvector> peer2subnets =
+        ImmutableMap.<PeerId, SszBitvector>builder()
+            .put(EXISTING_PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
+            .put(EXISTING_PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
+            .put(EXISTING_PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
             .build();
     final Map<String, Collection<NodeId>> subscribersByTopic =
         makeSubscribersByTopic(
             Map.of(
-                0, Set.of(PEER1, PEER2),
-                1, Set.of(PEER1, PEER2),
-                2, Set.of(PEER1, PEER2),
-                3, Set.of(PEER1, PEER2),
-                4, Set.of(PEER1, PEER2, PEER3),
-                5, Set.of(PEER1, PEER2, PEER3),
-                6, Set.of(PEER1, PEER3)));
+                0, extractNodeIds(EXISTING_PEER1, EXISTING_PEER2),
+                1, extractNodeIds(EXISTING_PEER1, EXISTING_PEER2),
+                2, extractNodeIds(EXISTING_PEER1, EXISTING_PEER2),
+                3, extractNodeIds(EXISTING_PEER1, EXISTING_PEER2),
+                4, extractNodeIds(EXISTING_PEER1, EXISTING_PEER2, EXISTING_PEER3),
+                5, extractNodeIds(EXISTING_PEER1, EXISTING_PEER2, EXISTING_PEER3),
+                6, extractNodeIds(EXISTING_PEER1, EXISTING_PEER3)));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
             invocation -> {
-              final NodeId nodeId = new MockNodeId(invocation.getArgument(0));
-              return Optional.ofNullable(peer2subnets.get(nodeId));
+              final PeerId peerId = invocation.getArgument(0);
+              return Optional.ofNullable(peer2subnets.get(peerId));
             });
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
@@ -169,11 +182,13 @@ class PeerSubnetSubscriptionsTest {
     assertThat(
             scorer
                 .selectCandidatePeers(
-                    makeCandidatePeers(List.of(PEER1, PEER2, PEER3), peer2subnets), 2)
+                    makeCandidatePeers(
+                        List.of(CANDIDATE_PEER1, CANDIDATE_PEER2, CANDIDATE_PEER3), peer2subnets),
+                    2)
                 .stream()
-                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .map(candidate -> PeerId.fromCandidateId(candidate.getNodeId()))
                 .toList())
-        .containsExactlyInAnyOrder(PEER1, PEER3);
+        .containsExactlyInAnyOrder(CANDIDATE_PEER1, CANDIDATE_PEER3);
   }
 
   private void verifySetup(
@@ -203,7 +218,8 @@ class PeerSubnetSubscriptionsTest {
     for (Map.Entry<NodeId, int[]> nodeIdEntry : expectedProvidedSubnetCountPerPeer.entrySet()) {
       assertThat(
               subscriptions
-                  .getDataColumnSidecarSubnetSubscriptions(nodeIdEntry.getKey().toBytes())
+                  .getDataColumnSidecarSubnetSubscriptions(
+                      PeerId.fromCandidateId(nodeIdEntry.getKey().toBytes()))
                   .getAllSetBits()
                   .intStream()
                   .boxed()
@@ -224,19 +240,19 @@ class PeerSubnetSubscriptionsTest {
   // -> When setting Max 2, we should select PEER1 and PEER3 as the new peers.
   public void shouldScoreCandidatePeersAccordingToUniqueness1() {
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2, 3, 4, 5, 6, 7));
-    final Map<NodeId, SszBitvector> peer2subnets =
-        ImmutableMap.<NodeId, SszBitvector>builder()
-            .put(PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
-            .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
-            .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
+    final Map<PeerId, SszBitvector> peer2subnets =
+        ImmutableMap.<PeerId, SszBitvector>builder()
+            .put(CANDIDATE_PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
+            .put(CANDIDATE_PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
+            .put(CANDIDATE_PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
             .build();
     final Map<String, Collection<NodeId>> subscribersByTopic = makeSubscribersByTopic(Map.of());
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
             invocation -> {
-              final NodeId nodeId = new MockNodeId(invocation.getArgument(0));
-              return Optional.ofNullable(peer2subnets.get(nodeId));
+              final PeerId peerId = invocation.getArgument(0);
+              return Optional.ofNullable(peer2subnets.get(peerId));
             });
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
@@ -246,42 +262,44 @@ class PeerSubnetSubscriptionsTest {
     assertThat(
             scorer
                 .selectCandidatePeers(
-                    makeCandidatePeers(List.of(PEER1, PEER2, PEER3), peer2subnets), 2)
+                    makeCandidatePeers(
+                        List.of(CANDIDATE_PEER1, CANDIDATE_PEER2, CANDIDATE_PEER3), peer2subnets),
+                    2)
                 .stream()
-                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .map(candidate -> PeerId.fromCandidateId(candidate.getNodeId()))
                 .toList())
-        .containsExactlyInAnyOrder(PEER1, PEER3);
+        .containsExactlyInAnyOrder(CANDIDATE_PEER1, CANDIDATE_PEER3);
   }
 
   @Test
-  // We have an existing PEER1 which provides 6 of the 7 subnets we need. The candidates are
-  // - PEER2 which provides 6 interesting of the 7 subnets, but not the one we currently lack.
-  // - PEER3 which provides only 1 interesting of the 6 subnets, but the one we currently lack.
+  // We have an existing PEER1 which provides 7 of the 8 subnets we need. The candidates are
+  // - PEER2 which provides 6 interesting of the 8 subnets, but not the one we currently lack.
+  // - PEER3 which provides 3 of the 8 subnets, including the one we currently lack.
   // -> When setting MAX 1, we should select PEER3 as the new peer.
   public void shouldScoreCandidatePeersAccordingToUniqueness2() {
     dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2, 3, 4, 5, 6, 7));
-    final Map<NodeId, SszBitvector> peer2subnets =
-        ImmutableMap.<NodeId, SszBitvector>builder()
-            .put(PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
-            .put(PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
-            .put(PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
+    final Map<PeerId, SszBitvector> peer2subnets =
+        ImmutableMap.<PeerId, SszBitvector>builder()
+            .put(EXISTING_PEER1, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5, 6))
+            .put(CANDIDATE_PEER2, sszBitvectorSchema.ofBits(0, 1, 2, 3, 4, 5))
+            .put(CANDIDATE_PEER3, sszBitvectorSchema.ofBits(4, 5, 7))
             .build();
     final Map<String, Collection<NodeId>> subscribersByTopic =
         makeSubscribersByTopic(
             Map.of(
-                0, Set.of(PEER1),
-                1, Set.of(PEER1),
-                2, Set.of(PEER1),
-                3, Set.of(PEER1),
-                4, Set.of(PEER1),
-                5, Set.of(PEER1),
-                6, Set.of(PEER1)));
+                0, extractNodeIds(EXISTING_PEER1),
+                1, extractNodeIds(EXISTING_PEER1),
+                2, extractNodeIds(EXISTING_PEER1),
+                3, extractNodeIds(EXISTING_PEER1),
+                4, extractNodeIds(EXISTING_PEER1),
+                5, extractNodeIds(EXISTING_PEER1),
+                6, extractNodeIds(EXISTING_PEER1)));
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
             invocation -> {
-              final NodeId nodeId = new MockNodeId(invocation.getArgument(0));
-              return Optional.ofNullable(peer2subnets.get(nodeId));
+              final PeerId peerId = invocation.getArgument(0);
+              return Optional.ofNullable(peer2subnets.get(peerId));
             });
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
@@ -290,11 +308,12 @@ class PeerSubnetSubscriptionsTest {
     final PeerScorer scorer = subscriptions.createScorer();
     assertThat(
             scorer
-                .selectCandidatePeers(makeCandidatePeers(List.of(PEER2, PEER3), peer2subnets), 1)
+                .selectCandidatePeers(
+                    makeCandidatePeers(List.of(CANDIDATE_PEER2, CANDIDATE_PEER3), peer2subnets), 1)
                 .stream()
-                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .map(candidate -> PeerId.fromCandidateId(candidate.getNodeId()))
                 .toList())
-        .containsExactlyInAnyOrder(PEER3);
+        .containsExactlyInAnyOrder(CANDIDATE_PEER3);
   }
 
   @Test
@@ -308,11 +327,10 @@ class PeerSubnetSubscriptionsTest {
   public void shouldScoreCandidatePeersInRealWorldScenario() {
     final List<Integer> allSubnets = IntStream.rangeClosed(0, 127).boxed().toList();
     dataColumnSubscriptions.setSubscriptions(allSubnets);
-    final NodeId[] peers = new NodeId[100];
-    final ImmutableMap.Builder<NodeId, SszBitvector> builder =
-        ImmutableMap.<NodeId, SszBitvector>builder();
+    final PeerId[] peers = new PeerId[100];
+    final ImmutableMap.Builder<PeerId, SszBitvector> builder = ImmutableMap.builder();
     for (int i = 0; i < 100; i++) {
-      peers[i] = new MockNodeId(i);
+      peers[i] = PeerId.fromCandidateId(new MockNodeId(i).toBytes());
       if (i < 49) {
         int subnetStart = i / 3 * 8 % 126;
         builder.put(
@@ -336,7 +354,7 @@ class PeerSubnetSubscriptionsTest {
         builder.put(peers[i], sszBitvectorSchema.ofBits(0, 1, 126, 127));
       }
     }
-    final Map<NodeId, SszBitvector> peer2subnets = builder.build();
+    final Map<PeerId, SszBitvector> peer2subnets = builder.build();
     assertThat(peer2subnets.size()).isEqualTo(100);
     final Map<String, Collection<NodeId>> subscribersByTopic =
         makeSubscribersByTopic(Map.of()); // no existing subscribers
@@ -344,8 +362,8 @@ class PeerSubnetSubscriptionsTest {
     when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
         .thenAnswer(
             invocation -> {
-              final NodeId nodeId = new MockNodeId(invocation.getArgument(0));
-              return Optional.ofNullable(peer2subnets.get(nodeId));
+              final PeerId peerId = invocation.getArgument(0);
+              return Optional.ofNullable(peer2subnets.get(peerId));
             });
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
 
@@ -357,7 +375,7 @@ class PeerSubnetSubscriptionsTest {
                 .selectCandidatePeers(
                     makeCandidatePeers(Arrays.stream(peers).toList(), peer2subnets), 50)
                 .stream()
-                .map(candidate -> (NodeId) new MockNodeId(candidate.getNodeId()))
+                .map(candidate -> PeerId.fromCandidateId(candidate.getNodeId()))
                 .toList())
         .containsAll(List.of(peers[98], peers[99]));
   }
@@ -365,28 +383,26 @@ class PeerSubnetSubscriptionsTest {
   @NotNull
   private static Map<String, Collection<NodeId>> makeSubscribersByTopic(
       final Map<Integer, Set<NodeId>> existingSubscribers) {
-    final ImmutableMap.Builder<String, Collection<NodeId>> builder =
-        ImmutableMap.<String, Collection<NodeId>>builder();
+    final ImmutableMap.Builder<String, Collection<NodeId>> builder = ImmutableMap.builder();
     IntStream.range(0, SUBNET_COUNT)
         .forEach(
             i ->
                 builder.put(
                     "data_column_sidecar_" + i,
-                    existingSubscribers.containsKey(i)
-                        ? existingSubscribers.get(i)
-                        : Set.<NodeId>of()));
+                    existingSubscribers.containsKey(i) ? existingSubscribers.get(i) : Set.of()));
 
     return builder.build();
   }
 
   private List<DiscoveryPeer> makeCandidatePeers(
-      final List<NodeId> peerIds, final Map<NodeId, SszBitvector> peer2subnets) {
+      final List<PeerId> peerIds, final Map<PeerId, SszBitvector> peer2subnets) {
     return peerIds.stream()
+        .filter(PeerId::isCandidate)
         .map(
             peerId ->
                 new DiscoveryPeer(
                     dataStructureUtil.randomPublicKeyBytes(),
-                    peerId.toBytes(),
+                    peerId.getCandidateId(),
                     new InetSocketAddress(8888),
                     Optional.empty(),
                     SszBitvectorImpl.ofBits(SszBitvectorSchema.create(128)),
@@ -402,9 +418,9 @@ class PeerSubnetSubscriptionsTest {
 
     assertThat(subscriptions.getSubscriberCountForAttestationSubnet(1)).isEqualTo(0);
     assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(1)).isEqualTo(0);
-    assertThat(subscriptions.getAttestationSubnetSubscriptions(PEER1))
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(EXISTING_PEER1))
         .isEqualTo(createAttnetsBitvector());
-    assertThat(subscriptions.getSyncCommitteeSubscriptions(PEER1))
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(EXISTING_PEER1))
         .isEqualTo(createSyncnetsBitvector());
   }
 

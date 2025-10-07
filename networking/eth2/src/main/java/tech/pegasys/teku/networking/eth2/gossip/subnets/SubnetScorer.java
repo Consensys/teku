@@ -17,16 +17,16 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.IntUnaryOperator;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.networking.eth2.peers.PeerId;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 /** Scores peers higher if they are tracking subnets that are not tracked by other peers. */
 public class SubnetScorer implements PeerScorer {
@@ -45,7 +45,7 @@ public class SubnetScorer implements PeerScorer {
   }
 
   @Override
-  public int scoreExistingPeer(final NodeId peerId) {
+  public int scoreExistingPeer(final PeerId peerId) {
     final SszBitvector attSubscriptions =
         peerSubnetSubscriptions.getAttestationSubnetSubscriptions(peerId);
     final SszBitvector syncCommitteeSubscriptions =
@@ -68,10 +68,26 @@ public class SubnetScorer implements PeerScorer {
 
     List<DiscoveryPeer> selectedPeers = new ArrayList<>();
     List<DiscoveryPeer> remainingPeers = new ArrayList<>(candidates);
+
     while (selectedPeers.size() < maxToSelect) {
+      // By default a comparator does not cache results, but scoring can be expensive so we cache
+      // results here to avoid recomputing scores for the same peer multiple times per selection
+      // round.
+      final Comparator<DiscoveryPeer> cachingComparator =
+          new Comparator<>() {
+            private final Map<DiscoveryPeer, Integer> cache = new HashMap<>();
+
+            @Override
+            public int compare(final DiscoveryPeer a, final DiscoveryPeer b) {
+              int scoreA =
+                  cache.computeIfAbsent(a, peer -> scoreCandidatePeer(peer, subnetChanges));
+              int scoreB =
+                  cache.computeIfAbsent(b, peer -> scoreCandidatePeer(peer, subnetChanges));
+              return Integer.compare(scoreA, scoreB);
+            }
+          };
       Optional<DiscoveryPeer> maybeHighestScoringPeer =
-          remainingPeers.stream()
-              .max(Comparator.comparing(peer -> scoreCandidatePeer(peer, subnetChanges)));
+          remainingPeers.stream().max(cachingComparator);
       if (maybeHighestScoringPeer.isEmpty()) {
         break;
       }
@@ -79,13 +95,14 @@ public class SubnetScorer implements PeerScorer {
       selectedPeers.add(highestScoringPeer);
       remainingPeers.remove(highestScoringPeer);
 
+      PeerId highestScoringPeerId = PeerId.fromCandidateId(highestScoringPeer.getNodeId());
       peerSubnetSubscriptions
-          .getAttestationSubnetSubscriptions(highestScoringPeer.getNodeId())
+          .getAttestationSubnetSubscriptions(highestScoringPeerId)
           .streamAllSetBits()
           .forEach(i -> subnetChanges.increment(SubnetType.ATTESTATION, i));
 
       peerSubnetSubscriptions
-          .getSyncCommitteeSubscriptions(highestScoringPeer.getNodeId())
+          .getSyncCommitteeSubscriptions(highestScoringPeerId)
           .streamAllSetBits()
           .forEach(i -> subnetChanges.increment(SubnetType.SYNC_COMMITTEE, i));
 
@@ -111,7 +128,7 @@ public class SubnetScorer implements PeerScorer {
         candidate,
         cachingCandidate ->
             peerSubnetSubscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
-                UInt256.fromBytes(cachingCandidate.getNodeId()),
+                PeerId.fromCandidateId(cachingCandidate.getNodeId()),
                 cachingCandidate.getDasCustodySubnetCount()));
   }
 

@@ -33,10 +33,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.networking.eth2.peers.PeerId;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -69,16 +69,16 @@ class SubnetScorerTest {
             PeerSubnetSubscriptions.createEmpty(
                 () -> schemaDefinitions,
                 SszBitvectorSchema.create(DATA_COLUMN_SIDECAR_SUBNET_COUNT)));
-    assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
+    assertThat(scorer.scoreExistingPeer(PeerId.fromExistingId(new MockNodeId(1)))).isZero();
   }
 
   @Test
   void shouldScoreExistingPeersOnSubnetsWithFewPeersMoreHighly() {
-    final MockNodeId node1 = new MockNodeId(0);
-    final MockNodeId node2 = new MockNodeId(1);
-    final MockNodeId node3 = new MockNodeId(2);
-    final MockNodeId node4 = new MockNodeId(3);
-    final MockNodeId node5 = new MockNodeId(4);
+    final PeerId node1 = PeerId.fromExistingId(new MockNodeId(0));
+    final PeerId node2 = PeerId.fromExistingId(new MockNodeId(1));
+    final PeerId node3 = PeerId.fromExistingId(new MockNodeId(2));
+    final PeerId node4 = PeerId.fromExistingId(new MockNodeId(3));
+    final PeerId node5 = PeerId.fromExistingId(new MockNodeId(4));
     final SubnetScorer scorer =
         SubnetScorer.create(
             PeerSubnetSubscriptions.builder(
@@ -127,9 +127,9 @@ class SubnetScorerTest {
 
   @Test
   void shouldScoreCandidatePeersOnSubnetsWithFewPeersMoreHighly() {
-    final MockNodeId node1 = new MockNodeId(0);
-    final MockNodeId node2 = new MockNodeId(1);
-    final MockNodeId node3 = new MockNodeId(2);
+    final PeerId node1 = PeerId.fromExistingId(new MockNodeId(0));
+    final PeerId node2 = PeerId.fromExistingId(new MockNodeId(1));
+    final PeerId node3 = PeerId.fromExistingId(new MockNodeId(2));
     final SubnetScorer scorer =
         SubnetScorer.create(
             PeerSubnetSubscriptions.builder(
@@ -179,8 +179,8 @@ class SubnetScorerTest {
 
   @SafeVarargs
   private void assertExistingPeerScores(
-      final PeerScorer scorer, final Map.Entry<NodeId, Integer>... expected) {
-    final Map<NodeId, Integer> actual =
+      final PeerScorer scorer, final Map.Entry<PeerId, Integer>... expected) {
+    final Map<PeerId, Integer> actual =
         Stream.of(expected)
             .map(Map.Entry::getKey)
             .collect(Collectors.toMap(Function.identity(), scorer::scoreExistingPeer));
