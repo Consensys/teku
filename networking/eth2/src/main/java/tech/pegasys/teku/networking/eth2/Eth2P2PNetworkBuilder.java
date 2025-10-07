@@ -629,8 +629,8 @@ public class Eth2P2PNetworkBuilder {
         "gossipedSignedBlsToExecutionChangeProcessor", gossipedSignedBlsToExecutionChangeProcessor);
     assertNotNull(
         "gossipedDataColumnSidecarOperationProcessor", dataColumnSidecarOperationProcessor);
-    // TODO maybe add an assertion here for EP Op Processor?
     assertNotNull("gossipedPayloadAttestationMessageProcessor", payloadAttestationMessageProcessor);
+    assertNotNull("gossipedExecutionProofOperationProcessor", executionProofOperationProcessor);
   }
 
   private void assertNotNull(final String fieldName, final Object fieldValue) {
