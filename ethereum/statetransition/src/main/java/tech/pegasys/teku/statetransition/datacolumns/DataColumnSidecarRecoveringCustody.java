@@ -27,11 +27,6 @@ public interface DataColumnSidecarRecoveringCustody
     extends DataColumnSidecarByRootCustody, DataColumnSidecarCustody, SlotEventsChannel {
   DataColumnSidecarRecoveringCustody NOOP =
       new DataColumnSidecarRecoveringCustody() {
-
-        @Override
-        public void subscribeToValidDataColumnSidecars(
-            DataColumnSidecarManager.ValidDataColumnSidecarsListener sidecarsListener) {}
-
         @Override
         public void onSlot(UInt64 slot) {}
 
@@ -64,7 +59,4 @@ public interface DataColumnSidecarRecoveringCustody
           return SafeFuture.completedFuture(false);
         }
       };
-
-  void subscribeToValidDataColumnSidecars(
-      DataColumnSidecarManager.ValidDataColumnSidecarsListener sidecarsListener);
 }
