@@ -177,6 +177,30 @@ public class BeaconChainMethodsTest {
                         "/eth2/beacon_chain/req/status/2/ssz_snappy"));
   }
 
+  @Test
+  public void shouldCreateExecutionPayloadEnvelopesByRootWithGloasEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalGloas());
+
+    assertThat(methods.executionPayloadEnvelopesByRoot())
+        .hasValueSatisfying(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly(
+                        "/eth2/beacon_chain/req/execution_payload_envelopes_by_root/1/ssz_snappy"));
+  }
+
+  @Test
+  public void shouldCreateExecutionPayloadEnvelopesByRangeWithGloasEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalGloas());
+
+    assertThat(methods.executionPayloadEnvelopesByRange())
+        .hasValueSatisfying(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly(
+                        "/eth2/beacon_chain/req/execution_payload_envelopes_by_range/1/ssz_snappy"));
+  }
+
   private BeaconChainMethods getMethods() {
     return getMethods(TestSpecFactory.createMinimalPhase0());
   }

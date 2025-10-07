@@ -31,6 +31,11 @@ public class BeaconChainMethodIds {
   static final String DATA_COLUMN_SIDECARS_BY_RANGE =
       "/eth2/beacon_chain/req/data_column_sidecars_by_range";
 
+  static final String EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT =
+      "/eth2/beacon_chain/req/execution_payload_envelopes_by_root";
+  static final String EXECUTION_PAYLOAD_ENVELOPES_BY_RANGE =
+      "/eth2/beacon_chain/req/execution_payload_envelopes_by_range";
+
   static final String GET_METADATA = "/eth2/beacon_chain/req/metadata";
   static final String PING = "/eth2/beacon_chain/req/ping";
 
