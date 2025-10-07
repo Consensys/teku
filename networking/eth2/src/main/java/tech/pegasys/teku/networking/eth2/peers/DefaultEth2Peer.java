@@ -184,7 +184,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsFulu.required(
                         spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions())
                     .getDataColumnSidecarsByRootRequestMessageSchema());
-
     this.dataColumnSidecarsByRangeRequestMessageSchema =
         Suppliers.memoize(
             () ->

@@ -51,10 +51,8 @@ public class SyncSourceFactory {
     final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
     final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlockForHighestMilestone();
     final Optional<Integer> maybeMaxBlobSidecarsPerMinute =
-        spec.getMaxBlobsPerBlockForHighestMilestone()
-            .map(
-                maxBlobsPerBlock ->
-                    this.maxBlobSidecarsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
+        maybeMaxBlobsPerBlock.map(
+            maxBlobsPerBlock -> this.maxBlobSidecarsPerMinute - (batchSize * maxBlobsPerBlock) - 1);
     final Optional<Integer> maybeMaxDataColumnSidecarsPerMinute =
         spec.getNumberOfDataColumns()
             .map(dataColumnsPerBlock -> maxBlocksPerMinute * dataColumnsPerBlock);
