@@ -62,6 +62,7 @@ public class ExecutionProofGossipManager implements GossipManager {
         .gossip(executionProof)
         .finish(
             __ -> LOG.trace("{} published successfully", executionProof),
-            error -> LOG.trace("Failed to publish {}, error: {}", executionProof, error.getMessage()));
+            error ->
+                LOG.trace("Failed to publish {}, error: {}", executionProof, error.getMessage()));
   }
 }

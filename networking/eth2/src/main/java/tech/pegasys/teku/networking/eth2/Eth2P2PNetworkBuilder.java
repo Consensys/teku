@@ -220,10 +220,7 @@ public class Eth2P2PNetworkBuilder {
     final GossipEncoding gossipEncoding = config.getGossipEncoding();
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network =
-        buildNetwork(
-            gossipEncoding,
-            syncCommitteeSubnetService,
-            dataColumnSidecarSubnetService);
+        buildNetwork(gossipEncoding, syncCommitteeSubnetService, dataColumnSidecarSubnetService);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
