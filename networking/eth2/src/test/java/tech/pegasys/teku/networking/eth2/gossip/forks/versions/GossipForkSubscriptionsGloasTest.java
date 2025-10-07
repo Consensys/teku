@@ -54,12 +54,10 @@ public class GossipForkSubscriptionsGloasTest {
     gossipForkSubscriptions.addGossipManagers(forkInfo(), forkDigest());
 
     verify(gossipForkSubscriptions, times(13)).addGossipManager(any());
-    verify(gossipForkSubscriptions, times(1))
-        .addGossipManager(any(ExecutionPayloadGossipManager.class));
-    verify(gossipForkSubscriptions, times(1))
+    verify(gossipForkSubscriptions).addGossipManager(any(ExecutionPayloadGossipManager.class));
+    verify(gossipForkSubscriptions)
         .addGossipManager(any(PayloadAttestationMessageGossipManager.class));
-    verify(gossipForkSubscriptions, times(1))
-        .addGossipManager(any(ExecutionPayloadBidGossipManager.class));
+    verify(gossipForkSubscriptions).addGossipManager(any(ExecutionPayloadBidGossipManager.class));
   }
 
   private ForkInfo forkInfo() {
