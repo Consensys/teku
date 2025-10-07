@@ -58,6 +58,7 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
+import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_HEADER_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_SCHEMA;
@@ -168,6 +169,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.fulu.MetadataMessageSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
@@ -284,7 +286,8 @@ public class SchemaRegistryBuilder {
         .addProvider(createSignedExecutionPayloadEnvelopeSchemaProvider())
         .addProvider(createExecutionPayloadAvailabilitySchemaProvider())
         .addProvider(createBuilderPendingPaymentsSchemaProvider())
-        .addProvider(createBuilderPendingWithdrawalsSchemaProvider());
+        .addProvider(createBuilderPendingWithdrawalsSchemaProvider())
+        .addProvider(createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider());
   }
 
   private static SchemaProvider<?> createSingleAttestationSchemaProvider() {
@@ -1024,6 +1027,17 @@ public class SchemaRegistryBuilder {
                 SszListSchema.create(
                     registry.get(BUILDER_PENDING_WITHDRAWAL_SCHEMA),
                     SpecConfigGloas.required(specConfig).getBuilderPendingWithdrawalsLimit()))
+        .build();
+  }
+
+  private static SchemaProvider<?>
+      createExecutionPayloadEnvelopesByRootRequestMessageSchemaProvider() {
+    return providerBuilder(EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA)
+        .withCreator(
+            GLOAS,
+            (registry, specConfig, schemaName) ->
+                new ExecutionPayloadEnvelopesByRootRequestMessageSchema(
+                    SpecConfigGloas.required(specConfig)))
         .build();
   }
 

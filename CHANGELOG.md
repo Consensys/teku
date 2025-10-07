@@ -13,5 +13,6 @@
 ### Additions and Improvements
 
 - Add User-Agent header to requests initiated from the Validator Client with the client identifier and version.
+- Increase Default validator registration Gas Limit 60M for all networks.
 
 ### Bug Fixes
