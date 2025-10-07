@@ -1,13 +1,14 @@
 # Changelog
 
 ## Upcoming Breaking Changes
- - `GOSSIP_MAX_SIZE`, `MAX_CHUNK_SIZE`, `TTFB_TIMEOUT` and `RESP_TIMEOUT` configuration variables will NOT be supported after the Fusaka Mainnet release. These variables should be removed from any custom network configs.
-
+ 
 ## Current Releases
 
 ## Unreleased Changes
 
 ### Breaking Changes
+- `GOSSIP_MAX_SIZE`, `MAX_CHUNK_SIZE`, `TTFB_TIMEOUT` and `RESP_TIMEOUT` configuration variables are no longer exported as they were removed from spec. 
+  Any release compliant with fulu (fusaka) will not require these to be present, but earlier releases may no longer be able to consume this configuration.
 
 ### Additions and Improvements
 
