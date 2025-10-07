@@ -52,6 +52,9 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   public void onContributionCreationDue(final UInt64 slot) {}
 
   @Override
+  public void onPayloadAttestationCreationDue(final UInt64 slot) {}
+
+  @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
