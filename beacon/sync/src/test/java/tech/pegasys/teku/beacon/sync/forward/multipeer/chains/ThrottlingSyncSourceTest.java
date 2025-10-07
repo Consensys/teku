@@ -180,7 +180,7 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
     ignoreFuture(source.requestBlocksByRange(count, count, blocksListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlocksByRange(
@@ -202,6 +202,7 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(source.requestBlobSidecarsByRange(count, count, blobSidecarsListener));
 
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
@@ -227,7 +228,7 @@ class ThrottlingSyncSourceTest {
         source.requestExecutionPayloadEnvelopesByRange(
             count, count, executionPayloadEnvelopesListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestExecutionPayloadEnvelopesByRange(
@@ -249,7 +250,7 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
     ignoreFuture(source.requestBlocksByRange(count, count, blocksListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlocksByRange(
@@ -274,7 +275,7 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(source.requestBlobSidecarsByRange(count, count, blobSidecarsListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
@@ -303,7 +304,7 @@ class ThrottlingSyncSourceTest {
         source.requestExecutionPayloadEnvelopesByRange(
             count, count, executionPayloadEnvelopesListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestExecutionPayloadEnvelopesByRange(
