@@ -223,8 +223,7 @@ public class Eth2P2PNetworkBuilder {
         buildNetwork(
             gossipEncoding,
             syncCommitteeSubnetService,
-            dataColumnSidecarSubnetService,
-            executionProofSubnetService);
+            dataColumnSidecarSubnetService);
 
     final GossipForkManager gossipForkManager = buildGossipForkManager(gossipEncoding, network);
 
@@ -510,8 +509,7 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService,
-      final SubnetSubscriptionService dataColumnSidecarSubnetService,
-      final SubnetSubscriptionService executionProofSubnetService) {
+      final SubnetSubscriptionService dataColumnSidecarSubnetService) {
     final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
         new DefaultReputationManager(

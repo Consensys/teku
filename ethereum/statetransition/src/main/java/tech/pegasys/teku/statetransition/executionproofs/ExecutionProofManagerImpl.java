@@ -47,7 +47,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   public SafeFuture<InternalValidationResult> onExecutionProofGossip(
       final ExecutionProof executionProof, final Optional<UInt64> arrivalTimestamp) {
     LOG.debug("Received execution proof for block {}", executionProof);
-    // TODO fix this as this needs to obtain subnetId from the topic we received the proof from
+    // TODO fix this as this needs to obtain subnetId from the topic we received the proof from?
+    // this is probably a validation that only makes sense for the stub we're doing
     return executionProofGossipValidator.validate(
         executionProof, executionProof.getSubnetId().get());
   }
