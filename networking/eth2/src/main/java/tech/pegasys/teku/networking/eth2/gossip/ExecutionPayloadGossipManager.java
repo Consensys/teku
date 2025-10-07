@@ -22,16 +22,16 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class PayloadAttestationMessageGossipManager
-    extends AbstractGossipManager<PayloadAttestationMessage> {
+public class ExecutionPayloadGossipManager
+    extends AbstractGossipManager<SignedExecutionPayloadEnvelope> {
 
-  public PayloadAttestationMessageGossipManager(
+  public ExecutionPayloadGossipManager(
       final Spec spec,
       final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
@@ -39,12 +39,12 @@ public class PayloadAttestationMessageGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final Bytes4 forkDigest,
-      final OperationProcessor<PayloadAttestationMessage> processor,
+      final OperationProcessor<SignedExecutionPayloadEnvelope> processor,
       final NetworkingSpecConfig networkingConfig,
       final DebugDataDumper debugDataDumper) {
     super(
         recentChainData,
-        GossipTopicName.PAYLOAD_ATTESTATION_MESSAGE,
+        GossipTopicName.EXECUTION_PAYLOAD,
         asyncRunner,
         gossipNetwork,
         gossipEncoding,
@@ -53,16 +53,15 @@ public class PayloadAttestationMessageGossipManager
         processor,
         SchemaDefinitionsGloas.required(
                 spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
-            .getPayloadAttestationMessageSchema(),
-        message -> Optional.of(message.getData().getSlot()),
-        message -> recentChainData.getSpec().computeEpochAtSlot(message.getData().getSlot()),
+            .getSignedExecutionPayloadEnvelopeSchema(),
+        message -> Optional.of(message.getMessage().getSlot()),
+        message -> recentChainData.getSpec().computeEpochAtSlot(message.getMessage().getSlot()),
         networkingConfig,
-        GossipFailureLogger.createSuppressing(
-            GossipTopicName.PAYLOAD_ATTESTATION_MESSAGE.toString()),
+        GossipFailureLogger.createSuppressing(GossipTopicName.EXECUTION_PAYLOAD.toString()),
         debugDataDumper);
   }
 
-  public void publish(final PayloadAttestationMessage message) {
+  public void publish(final SignedExecutionPayloadEnvelope message) {
     publishMessage(message);
   }
 }
