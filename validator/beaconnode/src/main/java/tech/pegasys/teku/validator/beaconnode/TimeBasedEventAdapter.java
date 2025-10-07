@@ -74,7 +74,6 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
         millisPerSlot,
         this::onAggregationDue);
     final SpecMilestone milestone = spec.atSlot(nextSlot).getMilestone();
-    // Altair
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       taskScheduler.scheduleRepeatingEventInMillis(
           nextSlotStartTimeMillis.plus(spec.getSyncMessageDueMillis(nextSlot)),
@@ -85,7 +84,6 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           millisPerSlot,
           this::onContributionCreationDue);
     }
-    // Gloas
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
       taskScheduler.scheduleRepeatingEventInMillis(
           nextSlotStartTimeMillis.plus(spec.getPayloadAttestationDueMillis(nextSlot)),
