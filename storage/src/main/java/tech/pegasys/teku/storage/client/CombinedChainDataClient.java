@@ -52,6 +52,8 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.storage.api.SidecarIdentifier;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -173,6 +175,7 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
+  /** Tries to get canonical blobSidecars if not found, tries non-canonical * */
   public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
     return recentChainData
@@ -234,6 +237,10 @@ public class CombinedChainDataClient {
   private SafeFuture<Optional<DataColumnSidecar>> getDataColumnSidecarByIdentifier(
       final DataColumnSlotAndIdentifier identifier) {
     return historicalChainData.getSidecar(identifier);
+  }
+
+  public SafeFuture<Optional<SidecarIdentifier>> getSidecarIdentifier(final Bytes32 versionedHash) {
+    return historicalChainData.getSidecarIdentifier(new VersionedHash(versionedHash));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
@@ -784,6 +791,11 @@ public class CombinedChainDataClient {
 
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return historicalChainData.getDataColumnIdentifiers(slot);
+  }
+
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return historicalChainData.getNonCanonicalDataColumnIdentifiers(slot);
   }
 
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(

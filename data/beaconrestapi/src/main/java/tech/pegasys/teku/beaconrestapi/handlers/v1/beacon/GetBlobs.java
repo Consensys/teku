@@ -13,14 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOB_INDICES_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH_CONSENSUS_HEADER_TYPE;
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.VERSIONED_HASHES_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
@@ -29,6 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -40,22 +38,23 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.metadata.BlobSidecarsAndMetaData;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.metadata.BlobsAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
-public class GetBlobSidecars extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/blob_sidecars/{block_id}";
+public class GetBlobs extends RestApiEndpoint {
+  public static final String ROUTE = "/eth/v1/beacon/blobs/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlobSidecars(final DataProvider dataProvider, final SchemaDefinitionCache schemaCache) {
+  public GetBlobs(final DataProvider dataProvider, final SchemaDefinitionCache schemaCache) {
     this(dataProvider.getChainDataProvider(), schemaCache);
   }
 
-  public GetBlobSidecars(
+  public GetBlobs(
       final ChainDataProvider chainDataProvider, final SchemaDefinitionCache schemaCache) {
     super(createEndpointMetadata(schemaCache));
     this.chainDataProvider = chainDataProvider;
@@ -63,25 +62,25 @@ public class GetBlobSidecars extends RestApiEndpoint {
 
   private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
     return EndpointMetadata.get(ROUTE)
-        .operationId("getBlobSidecars")
-        .summary("Get blob sidecars")
+        .operationId("getBlobs")
+        .summary("Get blobs")
         .description(
             """
-                Retrieves blob sidecars for a given block id.
-                    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.
-                    If the `indices` parameter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees
-                    for the returned blob sidecars in terms of ordering.
+    Retrieves blobs for a given block id.
+    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.
+    If the `versioned_hashes` parameter is specified, only the blobs for the specified versioned hashes will be returned. Blobs are
+    returned as an ordered list matching the order of their corresponding KZG commitments in the block.
+    After the Fulu fork, only supernodes (which custody all data columns) are required to return blobs. Clients may implement
+    blob reconstruction logic for non-super nodes.
                 """)
-        .deprecated(true)
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
-        .queryListParam(BLOB_INDICES_PARAMETER)
+        .queryListParam(VERSIONED_HASHES_PARAMETER)
         .response(
             SC_OK,
             "Request successful",
             getResponseType(schemaCache),
-            getSszResponseType(),
-            ETH_CONSENSUS_HEADER_TYPE)
+            getSszResponseType(schemaCache))
         .withNotFoundResponse()
         .withChainDataResponses()
         .build();
@@ -89,43 +88,39 @@ public class GetBlobSidecars extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final List<UInt64> indices = request.getQueryParameterList(BLOB_INDICES_PARAMETER);
-    final SafeFuture<Optional<BlobSidecarsAndMetaData>> future =
-        chainDataProvider.getBlobSidecars(request.getPathParameter(PARAMETER_BLOCK_ID), indices);
+    final List<Bytes32> versionedHashes = request.getQueryParameterList(VERSIONED_HASHES_PARAMETER);
+    final SafeFuture<Optional<BlobsAndMetaData>> future =
+        chainDataProvider.getBlobs(request.getPathParameter(PARAMETER_BLOCK_ID), versionedHashes);
     request.respondAsync(
         future.thenApply(
-            maybeBlobSidecars ->
-                maybeBlobSidecars
-                    .map(
-                        blobSidecarsAndMetaData -> {
-                          request.header(
-                              HEADER_CONSENSUS_VERSION,
-                              blobSidecarsAndMetaData.getMilestone().lowerCaseName());
-                          return AsyncApiResponse.respondOk(blobSidecarsAndMetaData);
-                        })
+            maybeBlobsAndMetaData ->
+                maybeBlobsAndMetaData
+                    .map(AsyncApiResponse::respondOk)
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
-  private static SerializableTypeDefinition<BlobSidecarsAndMetaData> getResponseType(
+  private static SerializableTypeDefinition<BlobsAndMetaData> getResponseType(
       final SchemaDefinitionCache schemaCache) {
-    final DeserializableTypeDefinition<BlobSidecar> blobSidecarType =
+    final DeserializableTypeDefinition<Blob> blobType =
         SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
-            .getBlobSidecarSchema()
+            .getBlobSchema()
             .getJsonTypeDefinition();
-    return SerializableTypeDefinition.<BlobSidecarsAndMetaData>object()
-        .name("GetBlobSidecarsResponse")
-        .withField("version", MILESTONE_TYPE, BlobSidecarsAndMetaData::getMilestone)
-        .withField(
-            EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, BlobSidecarsAndMetaData::isExecutionOptimistic)
-        .withField(FINALIZED, BOOLEAN_TYPE, BlobSidecarsAndMetaData::isFinalized)
-        .withField("data", listOf(blobSidecarType), BlobSidecarsAndMetaData::getData)
+    return SerializableTypeDefinition.<BlobsAndMetaData>object()
+        .name("GetBlobsResponse")
+        .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, BlobsAndMetaData::isExecutionOptimistic)
+        .withField(FINALIZED, BOOLEAN_TYPE, BlobsAndMetaData::isFinalized)
+        .withField("data", listOf(blobType), BlobsAndMetaData::getData)
         .build();
   }
 
-  private static ResponseContentTypeDefinition<BlobSidecarsAndMetaData> getSszResponseType() {
-    final OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<BlobSidecarsAndMetaData>
+  private static ResponseContentTypeDefinition<BlobsAndMetaData> getSszResponseType(
+      final SchemaDefinitionCache schemaCache) {
+    final SszListSchema<Blob, ? extends SszList<Blob>> blobsSchema =
+        SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
+            .getBlobsInBlockSchema();
+    final OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<BlobsAndMetaData>
         serializer =
-            (data, out) -> data.getData().forEach(blobSidecar -> blobSidecar.sszSerialize(out));
+            (data, out) -> blobsSchema.createFromElements(data.getData()).sszSerialize(out);
 
     return new OctetStreamResponseContentTypeDefinition<>(serializer, __ -> Collections.emptyMap());
   }
