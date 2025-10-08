@@ -648,20 +648,16 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private Optional<List<BlobSidecar>> extractBlobSidecarsFromValidationResults(
       final DataAndValidationResult<?> dataAndValidationResult, final SignedBeaconBlock block) {
-    final Optional<List<BlobSidecar>> blobSidecars;
     if (dataAndValidationResult.isNotRequired()) {
       // Outside availability window or pre-Deneb
-      blobSidecars = Optional.empty();
+      return Optional.empty();
     } else if (dataAndValidationResult.isValid()) {
       return dataAndValidationResult.getDataAsBlobSidecars();
-    } else {
-      throw new IllegalStateException(
-          String.format(
-              "Unexpected attempt to store invalid sidecars (%s) for block: %s",
-              dataAndValidationResult.data().size(), block.toLogString()));
     }
-
-    return blobSidecars;
+    throw new IllegalStateException(
+        String.format(
+            "Unexpected attempt to store invalid sidecars (%s) for block: %s",
+            dataAndValidationResult.data().size(), block.toLogString()));
   }
 
   /**
