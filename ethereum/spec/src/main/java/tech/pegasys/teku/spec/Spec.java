@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.FULU;
+import static tech.pegasys.teku.spec.SpecMilestone.GLOAS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -52,11 +53,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigGloas;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -241,6 +244,16 @@ public class Spec {
     return Optional.ofNullable(forMilestone(DENEB))
         .map(SpecVersion::getConfig)
         .map(specConfig -> (NetworkingSpecConfigDeneb) specConfig.getNetworkingConfig());
+  }
+
+  /**
+   * Networking config with Gloas constants. Use {@link SpecConfigGloas#required(SpecConfig)} when
+   * you are sure that Gloas is available, otherwise use this method
+   */
+  public Optional<NetworkingSpecConfigGloas> getNetworkingConfigGloas() {
+    return Optional.ofNullable(forMilestone(GLOAS))
+        .map(SpecVersion::getConfig)
+        .map(specConfig -> (NetworkingSpecConfigGloas) specConfig.getNetworkingConfig());
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -566,6 +579,10 @@ public class Spec {
 
   public int getContributionDueMillis(final UInt64 slot) {
     return atSlot(slot).getForkChoiceUtil().getContributionDueMillis();
+  }
+
+  public int getPayloadAttestationDueMillis(final UInt64 slot) {
+    return atSlot(slot).getForkChoiceUtil().getPayloadAttestationDueMillis();
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
