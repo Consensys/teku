@@ -130,19 +130,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsFulu;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundle;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
@@ -827,23 +822,13 @@ public final class DataStructureUtil {
   public ExecutionPayloadAndBlobsBundle randomExecutionPayloadAndBlobsBundle() {
     final SchemaDefinitionsDeneb schemaDefinitionsDeneb = getDenebSchemaDefinitions(randomSlot());
     final ExecutionPayload executionPayload = randomExecutionPayload();
-    final BlobsBundleDeneb blobsBundle = randomBuilderBlobsBundle();
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        randomBuilderBlobsBundle();
 
     final ExecutionPayloadAndBlobsBundleSchema schema =
         schemaDefinitionsDeneb.getExecutionPayloadAndBlobsBundleSchema();
 
     return new ExecutionPayloadAndBlobsBundle(schema, executionPayload, blobsBundle);
-  }
-
-  public ExecutionPayloadAndBlobsCellBundle randomExecutionPayloadAndBlobsCellBundle() {
-    final SchemaDefinitionsFulu schemaDefinitionsFulu = getFuluSchemaDefinitions(randomSlot());
-    final ExecutionPayload executionPayload = randomExecutionPayload();
-    final BlobsBundleFulu blobsBundleFulu = randomBuilderBlobsBundleFulu();
-
-    final ExecutionPayloadAndBlobsCellBundleSchema schema =
-        schemaDefinitionsFulu.getExecutionPayloadAndBlobsCellBundleSchema();
-
-    return new ExecutionPayloadAndBlobsCellBundle(schema, executionPayload, blobsBundleFulu);
   }
 
   private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {
@@ -2523,49 +2508,41 @@ public final class DataStructureUtil {
     return IntStream.range(0, count).mapToObj(__ -> randomBlobIdentifier()).collect(toList());
   }
 
-  public BlobsBundleDeneb randomBuilderBlobsBundle(final int count) {
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
+    return randomBuilderBlobsBundle(randomNumberOfBlobsPerBlock());
+  }
+
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final int count) {
     return randomBuilderBlobsBundle(randomBlobKzgCommitments(count));
   }
 
-  public BlobsBundleDeneb randomBuilderBlobsBundle(final SszList<SszKZGCommitment> commitments) {
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final SszList<SszKZGCommitment> commitments) {
     final UInt64 slot = randomSlot();
-    final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
-    final BlobsBundleSchemaDeneb schema =
-        (BlobsBundleSchemaDeneb) schemaDefinitions.getBlobsBundleSchema();
-
-    return new BlobsBundleDeneb(
-        schema,
+    final BlobsBundleSchema<?> schema = getDenebSchemaDefinitions(slot).getBlobsBundleSchema();
+    return schema.create(
         commitments,
         randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, commitments.size()),
         randomSszList(schema.getBlobsSchema(), this::randomValidBlob, commitments.size()));
   }
 
-  public BlobsBundleFulu randomBuilderBlobsBundleFulu() {
-    return randomBuilderBlobsBundleFulu(randomNumberOfBlobsPerBlock());
-  }
-
-  public BlobsBundleFulu randomBuilderBlobsBundleFulu(final int count) {
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundleFulu(
+      final int count) {
     return randomBuilderBlobsBundleFulu(randomBlobKzgCommitments(count));
   }
 
-  public BlobsBundleFulu randomBuilderBlobsBundleFulu(final SszList<SszKZGCommitment> commitments) {
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundleFulu(
+      final SszList<SszKZGCommitment> commitments) {
     final UInt64 slot = randomSlot();
-    final SchemaDefinitionsFulu schemaDefinitions = getFuluSchemaDefinitions(slot);
-    final BlobsBundleSchemaFulu schema =
-        (BlobsBundleSchemaFulu) schemaDefinitions.getBlobsBundleSchema();
-
-    return new BlobsBundleFulu(
-        schema,
+    final BlobsBundleSchema<?> schema = getFuluSchemaDefinitions(slot).getBlobsBundleSchema();
+    return schema.create(
         commitments,
         randomSszList(
             schema.getProofsSchema(),
             this::randomSszKZGProof,
             (long) commitments.size() * CELLS_PER_EXT_BLOB),
         randomSszList(schema.getBlobsSchema(), this::randomValidBlob, commitments.size()));
-  }
-
-  public BlobsBundleDeneb randomBuilderBlobsBundle() {
-    return randomBuilderBlobsBundle(randomNumberOfBlobsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {

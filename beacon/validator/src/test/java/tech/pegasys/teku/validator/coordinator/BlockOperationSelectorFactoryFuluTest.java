@@ -48,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -331,7 +331,7 @@ class BlockOperationSelectorFactoryFuluTest {
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    final BlobsBundleFulu blobsBundle = dataStructureUtil.randomBuilderBlobsBundleFulu(commitments);
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBuilderBlobsBundleFulu(commitments);
 
     final BlobsCellBundle localFallbackBlobsBundle =
         new BlobsCellBundle(

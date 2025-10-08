@@ -58,8 +58,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -412,7 +410,7 @@ public abstract class AbstractBlockFactoryTest {
     final SignedBlockContainer signedBlockContainer;
 
     if (blinded) {
-      final SszList<SszKZGCommitment> commitments = getCommitmentsFromBuilderPayloadFulu();
+      final SszList<SszKZGCommitment> commitments = getCommitmentsFromBuilderPayload();
       signedBlockContainer =
           dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
     } else {
@@ -501,7 +499,7 @@ public abstract class AbstractBlockFactoryTest {
           SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
       builderPayload =
           schemaDefinitionsFulu
-              .getExecutionPayloadAndBlobsCellBundleSchema()
+              .getExecutionPayloadAndBlobsBundleSchema()
               .create(
                   builderExecutionPayload,
                   dataStructureUtil.randomBuilderBlobsBundleFulu(blobsCount));
@@ -626,14 +624,7 @@ public abstract class AbstractBlockFactoryTest {
   private SszList<SszKZGCommitment> getCommitmentsFromBuilderPayload() {
     return builderPayload
         .flatMap(BuilderPayload::getOptionalBlobsBundle)
-        .map(BlobsBundleDeneb::getCommitments)
-        .orElseThrow(() -> new IllegalStateException("BuilderPayload was not prepared"));
-  }
-
-  private SszList<SszKZGCommitment> getCommitmentsFromBuilderPayloadFulu() {
-    return builderPayload
-        .flatMap(BuilderPayload::getOptionalBlobsCellBundle)
-        .map(BlobsBundleFulu::getCommitments)
+        .map(tech.pegasys.teku.spec.datastructures.builder.BlobsBundle::getCommitments)
         .orElseThrow(() -> new IllegalStateException("BuilderPayload was not prepared"));
   }
 

@@ -58,10 +58,6 @@ public class BlobsCellBundle {
     return blobs;
   }
 
-  public int getNumberOfBlobs() {
-    return blobs.size();
-  }
-
   public String toBriefString() {
     return MoreObjects.toStringHelper(this)
         .add("commitments", commitments.stream().map(KZGCommitment::toAbbreviatedString).toList())

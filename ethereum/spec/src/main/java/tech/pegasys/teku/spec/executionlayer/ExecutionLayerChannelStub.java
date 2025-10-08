@@ -55,10 +55,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndProof;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -117,8 +113,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   // block, payload and blobs tracking
   private Optional<ExecutionPayload> lastBuilderPayloadToBeUnblinded = Optional.empty();
-  private Optional<BlobsBundleDeneb> lastBuilderBlobsBundle = Optional.empty();
-  private Optional<BlobsBundleFulu> lastBuilderBlobsCellBundle = Optional.empty();
+  private Optional<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>
+      lastBuilderBlobsBundle = Optional.empty();
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
   private boolean online = true;
@@ -479,11 +475,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                             blobsCellBundle -> {
                               final SchemaDefinitionsFulu schemaDefinitionsFulu =
                                   SchemaDefinitionsFulu.required(schemaDefinitions);
-                              lastBuilderBlobsCellBundle =
+                              lastBuilderBlobsBundle =
                                   Optional.of(
-                                      ((BlobsBundleSchemaFulu)
-                                              schemaDefinitionsFulu.getBlobsBundleSchema())
-                                          .createFromExecutionBlobsCellBundle(blobsCellBundle));
+                                      schemaDefinitionsFulu
+                                          .getBlobsBundleSchema()
+                                          .create(
+                                              blobsCellBundle.getCommitments(),
+                                              blobsCellBundle.getProofs(),
+                                              blobsCellBundle.getBlobs()));
                               return schemaDefinitionsFulu
                                   .getBlobKzgCommitmentsSchema()
                                   .createFromBlobsCellBundle(blobsCellBundle);
@@ -498,9 +497,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                   SchemaDefinitionsDeneb.required(schemaDefinitions);
                               lastBuilderBlobsBundle =
                                   Optional.of(
-                                      ((BlobsBundleSchemaDeneb)
-                                              schemaDefinitionsDeneb.getBlobsBundleSchema())
-                                          .createFromExecutionBlobsBundle(blobsBundle));
+                                      schemaDefinitionsDeneb
+                                          .getBlobsBundleSchema()
+                                          .create(
+                                              blobsBundle.getCommitments(),
+                                              blobsBundle.getProofs(),
+                                              blobsBundle.getBlobs()));
                               return schemaDefinitionsDeneb
                                   .getBlobKzgCommitmentsSchema()
                                   .createFromBlobsBundle(blobsBundle);
@@ -571,53 +573,28 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         signedBeaconBlock.getRoot(),
         lastBuilderPayloadToBeUnblinded.get().getBlockHash());
 
-    final BuilderPayload builderPayload;
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      builderPayload =
-          lastBuilderBlobsCellBundle
-              // post Deneb
-              .map(
-                  blobsCellBundle -> {
-                    checkState(
-                        signedBeaconBlock
-                                .getMessage()
-                                .getBody()
-                                .getOptionalBlobKzgCommitments()
-                                .orElseThrow()
-                                .size()
-                            == blobsCellBundle.getNumberOfBlobs(),
-                        "provided signed blinded block contains different number of kzg commitments than the expected %s",
-                        blobsCellBundle.getNumberOfBlobs());
-                    return (BuilderPayload)
-                        SchemaDefinitionsFulu.required(schemaDefinitions)
-                            .getExecutionPayloadAndBlobsCellBundleSchema()
-                            .create(lastBuilderPayloadToBeUnblinded.get(), blobsCellBundle);
-                  })
-              .orElseThrow();
-    } else {
-      builderPayload =
-          lastBuilderBlobsBundle
-              // post Deneb
-              .map(
-                  blobsBundle -> {
-                    checkState(
-                        signedBeaconBlock
-                                .getMessage()
-                                .getBody()
-                                .getOptionalBlobKzgCommitments()
-                                .orElseThrow()
-                                .size()
-                            == blobsBundle.getNumberOfBlobs(),
-                        "provided signed blinded block contains different number of kzg commitments than the expected %s",
-                        blobsBundle.getNumberOfBlobs());
-                    return (BuilderPayload)
-                        SchemaDefinitionsDeneb.required(schemaDefinitions)
-                            .getExecutionPayloadAndBlobsBundleSchema()
-                            .create(lastBuilderPayloadToBeUnblinded.get(), blobsBundle);
-                  })
-              // pre Deneb
-              .orElse(lastBuilderPayloadToBeUnblinded.get());
-    }
+    final BuilderPayload builderPayload =
+        lastBuilderBlobsBundle
+            // post Deneb
+            .map(
+                blobsBundle -> {
+                  checkState(
+                      signedBeaconBlock
+                              .getMessage()
+                              .getBody()
+                              .getOptionalBlobKzgCommitments()
+                              .orElseThrow()
+                              .size()
+                          == blobsBundle.getNumberOfBlobs(),
+                      "provided signed blinded block contains different number of kzg commitments than the expected %s",
+                      blobsBundle.getNumberOfBlobs());
+                  return (BuilderPayload)
+                      SchemaDefinitionsDeneb.required(schemaDefinitions)
+                          .getExecutionPayloadAndBlobsBundleSchema()
+                          .create(lastBuilderPayloadToBeUnblinded.get(), blobsBundle);
+                })
+            // pre Deneb
+            .orElse(lastBuilderPayloadToBeUnblinded.get());
 
     return SafeFuture.completedFuture(BuilderPayloadOrFallbackData.create(builderPayload));
   }

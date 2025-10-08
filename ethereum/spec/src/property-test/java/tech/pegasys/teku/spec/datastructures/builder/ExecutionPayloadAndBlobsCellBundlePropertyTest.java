@@ -19,8 +19,6 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundle;
-import tech.pegasys.teku.spec.propertytest.suppliers.builder.ExecutionPayloadAndBlobsCellBundleSupplier;
 
 public class ExecutionPayloadAndBlobsCellBundlePropertyTest {
   @Property(tries = 100)

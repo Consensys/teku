@@ -18,9 +18,8 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -62,12 +61,7 @@ public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer,
   }
 
   @Override
-  default Optional<BlobsBundleDeneb> getOptionalBlobsBundle() {
-    return Optional.empty();
-  }
-
-  @Override
-  default Optional<BlobsBundleFulu> getOptionalBlobsCellBundle() {
+  default Optional<BlobsBundle> getOptionalBlobsBundle() {
     return Optional.empty();
   }
 }
