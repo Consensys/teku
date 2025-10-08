@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -516,6 +517,12 @@ public class ForkChoiceUtil {
 
   public int getProposerReorgCutoffMillis() {
     return getSlotComponentDurationMillis(specConfig.getProposerReorgCutoffBps());
+  }
+
+  // get_payload_attestation_due_ms
+  public int getPayloadAttestationDueMillis() {
+    final SpecConfigGloas configGloas = SpecConfigGloas.required(specConfig);
+    return getSlotComponentDurationMillis(configGloas.getPayloadAttestationDueBps());
   }
 
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
