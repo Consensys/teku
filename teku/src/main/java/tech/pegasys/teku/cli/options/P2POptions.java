@@ -406,6 +406,16 @@ public class P2POptions {
   private boolean allTopicsFilterEnabled = P2PConfig.DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
 
   @Option(
+      names = {"--Xexecution-proof-topics-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable all execution proof topics",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean executionProofTopicEnabled = P2PConfig.DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
+
+  @Option(
       names = {"--Xpeer-request-limit"},
       paramLabel = "<NUMBER>",
       description =
@@ -602,6 +612,7 @@ public class P2POptions {
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
+                  .executionProofTopicEnabled(executionProofTopicEnabled)
                   .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
