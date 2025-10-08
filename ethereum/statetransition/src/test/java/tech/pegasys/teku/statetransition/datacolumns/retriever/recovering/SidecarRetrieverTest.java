@@ -14,6 +14,11 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.CANCELLED;
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.DOWNLOADED;
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.DOWNLOAD_TIMEOUT;
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.RECOVERED;
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.RECOVERY_METRIC_NAME;
 
 import java.time.Duration;
 import java.util.List;
@@ -23,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -61,6 +68,7 @@ public class SidecarRetrieverTest {
       MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   final int columnCount = config.getNumberOfColumns();
   final KZG kzg = KZG.getInstance(false);
+  final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
 
@@ -78,7 +86,8 @@ public class SidecarRetrieverTest {
           RECOVERY_TIMEOUT,
           CHECK_INTERVAL,
           timeProvider,
-          columnCount);
+          columnCount,
+          metricsSystem);
 
   public SidecarRetrieverTest() {
     TrustedSetupLoader.loadTrustedSetupForTests(kzg);
@@ -144,6 +153,7 @@ public class SidecarRetrieverTest {
     final SafeFuture<DataColumnSidecar> res0 = retriever.retrieve(createId(block, 0));
     res0.complete(sidecars.getFirst());
     assertThat(retriever.pendingRequestCount()).isZero();
+    verifyMetrics(0, 0, 1, 0);
   }
 
   @Test
@@ -152,6 +162,8 @@ public class SidecarRetrieverTest {
     final SafeFuture<DataColumnSidecar> res0 = retriever.retrieve(createId(block, 0));
     res0.completeExceptionally(new RuntimeException("ERR"));
     assertThat(retriever.pendingRequestCount()).isZero();
+    stubAsyncRunner.executeQueuedActions();
+    verifyMetrics(1, 0, 0, 0);
   }
 
   @Test
@@ -163,6 +175,7 @@ public class SidecarRetrieverTest {
     assertThat(retriever.getPendingRequestsChecker()).isNull();
     assertThat(retriever.getPendingRequests()).isEmpty();
     assertThat(response).isCancelled();
+    verifyMetrics(1, 1, 0, 0);
   }
 
   @Test
@@ -178,10 +191,44 @@ public class SidecarRetrieverTest {
     stubAsyncRunner.executeQueuedActions();
     assertThat(retriever.pendingRequestCount()).isZero();
     assertThat(response).isCompletedExceptionally();
+    verifyMetrics(1, 1, 0, 0);
+  }
+
+  @Test
+  void createDoesNotIncrementMetrics() {
+    final BeaconBlock block = blockResolver.addBlock(10, 10);
+    final DataColumnSlotAndIdentifier id = createId(block, 0);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    assertThat(response).isNotDone();
+    verifyMetrics(0, 0, 0, 0);
+  }
+
+  @Test
+  void shouldTimeoutAfterExpiryTime() {
+    final BeaconBlock block = blockResolver.addBlock(10, 10);
+    final DataColumnSlotAndIdentifier id = createId(block, 0);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+
+    for (int i = 0; i < 10; i++) {
+      timeProvider.advanceTimeBy(CHECK_INTERVAL);
+      stubAsyncRunner.executeQueuedActions();
+    }
+    verifyMetrics(1, 1, 0, 0);
+    assertThat(response).isCompletedExceptionally();
   }
 
   static DataColumnSlotAndIdentifier createId(final BeaconBlock block, final int colIdx) {
     return new DataColumnSlotAndIdentifier(
         block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
   }
+
+
+
+  private void verifyMetrics(final int cancelledCount, final int downloadTimeout, final int downloadedCount, final int recoveredCount) {
+    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, CANCELLED)).isEqualTo(cancelledCount);
+    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOAD_TIMEOUT)).isEqualTo(downloadTimeout);
+    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOADED)).isEqualTo(downloadedCount);
+    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, RECOVERED)).isEqualTo(recoveredCount);
+  }
+
 }

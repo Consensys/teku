@@ -903,7 +903,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               Duration.ofMinutes(5),
               Duration.ofSeconds(30),
               timeProvider,
-              specConfigFulu.getNumberOfColumns());
+              specConfigFulu.getNumberOfColumns(),
+              metricsSystem);
     } else {
       recoveringSidecarRetriever =
           new RecoveringSidecarRetriever(

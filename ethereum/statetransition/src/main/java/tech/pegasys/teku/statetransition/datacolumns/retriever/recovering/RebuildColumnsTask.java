@@ -123,8 +123,8 @@ class RebuildColumnsTask {
     }
 
     if (sidecarMap.size() >= minimumColumnsForRebuild) {
-      LOG.debug("Determined we have sufficient columns to rebuild columns {}", slotAndBlockRoot);
       isReadyToRebuild = true;
+      LOG.debug("Determined we have sufficient columns to rebuild columns {}", slotAndBlockRoot);
       rebuild();
     } else {
       LOG.trace(
@@ -225,7 +225,8 @@ class RebuildColumnsTask {
     if (done.get()) {
       return true;
     }
-    if (currentTimeMillis.isGreaterThanOrEqualTo(this.timeoutMillis)) {
+    // if the timeout is exceeded and we're not ready to rebuild, then we should cancel the task
+    if (currentTimeMillis.isGreaterThanOrEqualTo(this.timeoutMillis) && !isReadyToRebuild) {
       cancel();
       done.compareAndSet(false, true);
       return true;
