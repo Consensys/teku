@@ -220,12 +220,14 @@ public class Spec {
     return new Spec(specConfigAndParent, specVersions, forkSchedule);
   }
 
-  public KZG getKzg() {
+  public Optional<KZG> getKzg() {
+    if (!initialized) {
+      throw new IllegalStateException("Spec must be initialized to access KZG");
+    }
     return Optional.ofNullable(forMilestone(DENEB))
         .map(SpecVersion::miscHelpers)
         .flatMap(MiscHelpers::toVersionDeneb)
-        .map(MiscHelpersDeneb::getKzg)
-        .orElse(KZG.DISABLED);
+        .map(MiscHelpersDeneb::getKzg);
   }
 
   public SpecVersion forMilestone(final SpecMilestone milestone) {

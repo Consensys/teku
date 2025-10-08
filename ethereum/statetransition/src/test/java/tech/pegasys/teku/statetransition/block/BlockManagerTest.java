@@ -71,7 +71,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -163,7 +163,7 @@ public class BlockManagerTest {
   }
 
   private void setupWithSpec(final Spec spec) {
-    spec.reinitializeForTesting(blobSidecarManager, NOOP_DATACOLUMN_SIDECAR, KZG.DISABLED);
+    spec.reinitializeForTesting(blobSidecarManager, NOOP_DATACOLUMN_SIDECAR, NoOpKZG.INSTANCE);
     this.spec = spec;
     this.dataStructureUtil = new DataStructureUtil(spec);
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
