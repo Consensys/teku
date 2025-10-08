@@ -131,7 +131,7 @@ public class ValidatorLogger {
     if (log.isTraceEnabled() || producedType.equals("block")) {
       log.error(consoleMessage, error);
     } else {
-      log.error(errorString);
+      log.error(consoleMessage);
     }
   }
 
