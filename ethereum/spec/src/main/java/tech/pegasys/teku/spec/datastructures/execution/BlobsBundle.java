@@ -46,7 +46,7 @@ public abstract class BlobsBundle {
   }
 
   public int getNumberOfBlobs() {
-    return getBlobs().size();
+    return blobs.size();
   }
 
   public String toBriefString() {
