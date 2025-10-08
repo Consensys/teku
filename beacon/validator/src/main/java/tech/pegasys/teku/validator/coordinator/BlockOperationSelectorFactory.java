@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
@@ -58,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -383,46 +381,24 @@ public class BlockOperationSelectorFactory {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobKzgCommitmentsSchema();
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
-    if (bodyBuilder.supportsCellProofs()) {
-      if (executionPayloadResult.isFromLocalFlow()) {
-        // local, non-blinded flow
-        blobKzgCommitments =
-            executionPayloadResult
-                .getBlobsCellBundleFutureFromLocalFlow()
-                .orElseThrow()
-                .thenApply(Optional::orElseThrow)
-                .thenApply(blobKzgCommitmentsSchema::createFromBlobsCellBundle);
-      } else {
-        // builder, blinded flow
-        blobKzgCommitments =
-            executionPayloadResult
-                .getBuilderBidOrFallbackDataFuture()
-                .orElseThrow()
-                .thenApply(
-                    builderBidOrFallbackData ->
-                        getBlobKzgCommitmentsFromBuilderFlowFulu(
-                            builderBidOrFallbackData, blobKzgCommitmentsSchema));
-      }
+    if (executionPayloadResult.isFromLocalFlow()) {
+      // local, non-blinded flow
+      blobKzgCommitments =
+          executionPayloadResult
+              .getBlobsBundleFutureFromLocalFlow()
+              .orElseThrow()
+              .thenApply(Optional::orElseThrow)
+              .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
     } else {
-      if (executionPayloadResult.isFromLocalFlow()) {
-        // local, non-blinded flow
-        blobKzgCommitments =
-            executionPayloadResult
-                .getBlobsBundleFutureFromLocalFlow()
-                .orElseThrow()
-                .thenApply(Optional::orElseThrow)
-                .thenApply(blobKzgCommitmentsSchema::createFromBlobsBundle);
-      } else {
-        // builder, blinded flow
-        blobKzgCommitments =
-            executionPayloadResult
-                .getBuilderBidOrFallbackDataFuture()
-                .orElseThrow()
-                .thenApply(
-                    builderBidOrFallbackData ->
-                        getBlobKzgCommitmentsFromBuilderFlow(
-                            builderBidOrFallbackData, blobKzgCommitmentsSchema));
-      }
+      // builder, blinded flow
+      blobKzgCommitments =
+          executionPayloadResult
+              .getBuilderBidOrFallbackDataFuture()
+              .orElseThrow()
+              .thenApply(
+                  builderBidOrFallbackData ->
+                      getBlobKzgCommitmentsFromBuilderFlow(
+                          builderBidOrFallbackData, blobKzgCommitmentsSchema));
     }
 
     return blobKzgCommitments.thenAccept(bodyBuilder::blobKzgCommitments);
@@ -442,23 +418,6 @@ public class BlockOperationSelectorFactory {
                     .getFallbackDataRequired()
                     .getBlobsBundle()
                     .map(blobKzgCommitmentsSchema::createFromBlobsBundle))
-        .orElseThrow();
-  }
-
-  private SszList<SszKZGCommitment> getBlobKzgCommitmentsFromBuilderFlowFulu(
-      final BuilderBidOrFallbackData builderBidOrFallbackData,
-      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
-    return builderBidOrFallbackData
-        .getBuilderBid()
-        // from the builder bid
-        .map(BuilderBid::getOptionalBlobKzgCommitments)
-        // from the local fallback
-        .orElseGet(
-            () ->
-                builderBidOrFallbackData
-                    .getFallbackDataRequired()
-                    .getBlobsCellBundle()
-                    .map(blobKzgCommitmentsSchema::createFromBlobsCellBundle))
         .orElseThrow();
   }
 
@@ -584,56 +543,12 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  public Function<BeaconBlock, SafeFuture<BlobsCellBundle>> createBlobsCellBundleSelector() {
-    return block -> {
-      final UInt64 slot = block.getSlot();
-      final ExecutionPayloadResult executionPayloadResult =
-          executionLayerBlockProductionManager
-              .getCachedPayloadResult(slot)
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "ExecutionPayloadResult hasn't been cached for slot " + slot));
-
-      if (executionPayloadResult.isFromLocalFlow()) {
-        // we performed a non-blinded flow, so the bundle must be in
-        // getBlobsBundleFutureFromNonBlindedFlow
-        return executionPayloadResult
-            .getBlobsCellBundleFutureFromLocalFlow()
-            .orElseThrow()
-            .thenApply(Optional::orElseThrow);
-      } else {
-        // we performed a blinded flow, so the bundle must be in the FallbackData in
-        return executionPayloadResult
-            .getBuilderBidOrFallbackDataFuture()
-            .orElseThrow()
-            .thenApply(
-                builderBidOrFallbackData ->
-                    builderBidOrFallbackData.getFallbackDataRequired().getBlobsCellBundle())
-            .thenApply(Optional::orElseThrow);
-      }
-    };
-  }
-
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
     return blockContainer -> {
-      final Optional<BlobsAndProofs> maybeBlobsAndProofs =
-          getBlobsAndProofs(
-              blockContainer,
-              builderPayloadOrFallbackData -> {
-                final BlobsBundle blobsBundle =
-                    builderPayloadOrFallbackData
-                        .getFallbackDataRequired()
-                        .getBlobsBundle()
-                        .orElseThrow();
-                return new LocalFallbackBlobsAndProofs(
-                    blobsBundle.getBlobs(), blobsBundle.getProofs());
-              });
-
+      final Optional<BlobsAndProofs> maybeBlobsAndProofs = getBlobsAndProofs(blockContainer);
       if (maybeBlobsAndProofs.isEmpty()) {
         return Collections.emptyList();
       }
-
       final BlobsAndProofs blobsAndProofs = maybeBlobsAndProofs.get();
 
       final MiscHelpersDeneb miscHelpersDeneb =
@@ -654,23 +569,10 @@ public class BlockOperationSelectorFactory {
   public Function<SignedBlockContainer, List<DataColumnSidecar>> createDataColumnSidecarsSelector(
       final KZG kzg) {
     return blockContainer -> {
-      final Optional<BlobsAndProofs> maybeBlobsAndProofs =
-          getBlobsAndProofs(
-              blockContainer,
-              builderPayloadOrFallbackData -> {
-                final BlobsCellBundle blobsCellBundle =
-                    builderPayloadOrFallbackData
-                        .getFallbackDataRequired()
-                        .getBlobsCellBundle()
-                        .orElseThrow();
-                return new LocalFallbackBlobsAndProofs(
-                    blobsCellBundle.getBlobs(), blobsCellBundle.getProofs());
-              });
-
+      final Optional<BlobsAndProofs> maybeBlobsAndProofs = getBlobsAndProofs(blockContainer);
       if (maybeBlobsAndProofs.isEmpty()) {
         return Collections.emptyList();
       }
-
       final BlobsAndProofs blobsAndProofs = maybeBlobsAndProofs.get();
 
       final MiscHelpersFulu miscHelpersFulu =
@@ -702,12 +604,7 @@ public class BlockOperationSelectorFactory {
 
   private record BlobsAndProofs(SszList<Blob> blobs, SszList<SszKZGProof> proofs) {}
 
-  private record LocalFallbackBlobsAndProofs(List<Blob> blobs, List<KZGProof> proofs) {}
-
-  private Optional<BlobsAndProofs> getBlobsAndProofs(
-      final SignedBlockContainer blockContainer,
-      final Function<BuilderPayloadOrFallbackData, LocalFallbackBlobsAndProofs>
-          localFallbackBlobsAndProofsRetriever) {
+  private Optional<BlobsAndProofs> getBlobsAndProofs(final SignedBlockContainer blockContainer) {
     final SszList<Blob> blobs;
     final SszList<SszKZGProof> proofs;
 
@@ -723,7 +620,7 @@ public class BlockOperationSelectorFactory {
                       new IllegalStateException(
                           "BuilderPayloadOrFallbackData hasn't been cached for slot " + slot));
 
-      // builder will publish blobs
+      // Builder is responsible for publishing the blobs to the network
       if (builderPayloadOrFallbackData.isEmptySuccessful()) {
         return Optional.empty();
       }
@@ -741,20 +638,17 @@ public class BlockOperationSelectorFactory {
         proofs = blobsBundle.getProofs();
       } else {
         // from the local fallback
-        final LocalFallbackBlobsAndProofs localFallbackBlobsAndProofs =
-            localFallbackBlobsAndProofsRetriever.apply(builderPayloadOrFallbackData);
+        final BlobsBundle blobsBundle =
+            builderPayloadOrFallbackData.getFallbackDataRequired().getBlobsBundle().orElseThrow();
         final BlockContentsWithBlobsSchema<?> blockContentsSchema =
             SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
                 .getBlockContentsSchema();
-        blobs =
-            blockContentsSchema
-                .getBlobsSchema()
-                .createFromElements(localFallbackBlobsAndProofs.blobs);
+        blobs = blockContentsSchema.getBlobsSchema().createFromElements(blobsBundle.getBlobs());
         proofs =
             blockContentsSchema
                 .getKzgProofsSchema()
                 .createFromElements(
-                    localFallbackBlobsAndProofs.proofs.stream().map(SszKZGProof::new).toList());
+                    blobsBundle.getProofs().stream().map(SszKZGProof::new).toList());
       }
     } else {
       blobs = blockContainer.getBlobs().orElseThrow();

@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -387,7 +388,7 @@ class BlockOperationSelectorFactoryDenebTest {
 
     if (useLocalFallback) {
       final BlobsBundle localFallbackBlobsBundle =
-          new BlobsBundle(
+          new BlobsBundleDeneb(
               blobsBundle.getCommitments().stream()
                   .map(SszKZGCommitment::getKZGCommitment)
                   .toList(),

@@ -128,8 +128,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloas;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsFulu;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -149,7 +147,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
@@ -160,6 +157,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ConsolidationRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
@@ -167,6 +165,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.WithdrawalRequest;
+import tech.pegasys.teku.spec.datastructures.execution.versions.fulu.BlobsBundleFulu;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -2549,8 +2548,8 @@ public final class DataStructureUtil {
     return randomBlobsBundle(Optional.empty(), randomSlot());
   }
 
-  public BlobsCellBundle randomBlobsCellBundle() {
-    return randomBlobsCellBundle(Optional.empty(), randomSlot());
+  public BlobsBundle randomBlobsBundleFulu() {
+    return randomBlobsBundleFulu(Optional.empty(), randomSlot());
   }
 
   public SszList<SszKZGProof> randomSszKZGProofs(final int count) {
@@ -2579,7 +2578,7 @@ public final class DataStructureUtil {
             .toList();
     final List<KZGProof> proofs =
         IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
-    return new BlobsBundle(
+    return new BlobsBundleDeneb(
         commitments,
         proofs,
         IntStream.range(0, commitments.size())
@@ -2587,11 +2586,11 @@ public final class DataStructureUtil {
             .collect(toList()));
   }
 
-  public BlobsCellBundle randomBlobsCellBundle(final int count) {
-    return randomBlobsCellBundle(Optional.of(count), randomSlot());
+  public BlobsBundle randomBlobsBundleFulu(final int count) {
+    return randomBlobsBundleFulu(Optional.of(count), randomSlot());
   }
 
-  private BlobsCellBundle randomBlobsCellBundle(final Optional<Integer> count, final UInt64 slot) {
+  private BlobsBundle randomBlobsBundleFulu(final Optional<Integer> count, final UInt64 slot) {
     final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
     final List<KZGCommitment> commitments =
         count.map(this::randomBlobKzgCommitments).orElse(randomBlobKzgCommitments()).stream()
@@ -2601,7 +2600,7 @@ public final class DataStructureUtil {
         IntStream.range(0, commitments.size() * CELLS_PER_EXT_BLOB)
             .mapToObj(__ -> randomKZGProof())
             .collect(toList());
-    return new BlobsCellBundle(
+    return new BlobsBundleFulu(
         commitments,
         proofs,
         IntStream.range(0, commitments.size())
@@ -2629,7 +2628,7 @@ public final class DataStructureUtil {
         .create(signedBeaconBlock, kzgProofs, blobs);
   }
 
-  public SignedBlockContentsDeneb randomSignedBlockContentsDeneb(final BlobsBundle blobsBundle) {
+  public SignedBlockContainer randomSignedBlockContents(final BlobsBundle blobsBundle) {
     final UInt64 slot = randomUInt64();
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
@@ -2637,10 +2636,9 @@ public final class DataStructureUtil {
     final SignedBeaconBlock signedBeaconBlock =
         randomSignedBeaconBlockWithCommitments(
             blobKzgCommitmentsSchema.createFromBlobsBundle(blobsBundle));
-    return (SignedBlockContentsDeneb)
-        getDenebSchemaDefinitions(slot)
-            .getSignedBlockContentsSchema()
-            .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
+    return getDenebSchemaDefinitions(slot)
+        .getSignedBlockContentsSchema()
+        .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 
   public BlockContainer randomBlockContents() {
@@ -2660,21 +2658,6 @@ public final class DataStructureUtil {
     } else {
       return beaconBlock;
     }
-  }
-
-  public SignedBlockContentsFulu randomSignedBlockContentsFulu(
-      final BlobsCellBundle blobsCellBundle) {
-    final UInt64 slot = randomUInt64();
-    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobKzgCommitmentsSchema();
-    final SignedBeaconBlock signedBeaconBlock =
-        randomSignedBeaconBlockWithCommitments(
-            blobKzgCommitmentsSchema.createFromBlobsCellBundle(blobsCellBundle));
-    return (SignedBlockContentsFulu)
-        getFuluSchemaDefinitions(slot)
-            .getSignedBlockContentsSchema()
-            .create(signedBeaconBlock, blobsCellBundle.getProofs(), blobsCellBundle.getBlobs());
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
