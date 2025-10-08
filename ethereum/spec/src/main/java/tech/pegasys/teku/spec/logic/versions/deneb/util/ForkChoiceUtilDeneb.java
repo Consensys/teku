@@ -79,6 +79,11 @@ public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
 
   @Override
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+    final AvailabilityCheckerFactory<BlobSidecar> factory =
+        this.blobSidecarAvailabilityCheckerFactory;
+    if (factory == null) {
+      throw new IllegalStateException("blobSidecarAvailabilityCheckerFactory not initialized");
+    }
     return blobSidecarAvailabilityCheckerFactory.createAvailabilityChecker(block);
   }
 }

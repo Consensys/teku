@@ -44,6 +44,12 @@ public class ForkChoiceUtilFulu extends ForkChoiceUtilDeneb {
 
   @Override
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
-    return dataColumnSidecarAvailabilityCheckerFactory.createAvailabilityChecker(block);
+    final AvailabilityCheckerFactory<UInt64> factory =
+        this.dataColumnSidecarAvailabilityCheckerFactory;
+    if (factory == null) {
+      throw new IllegalStateException(
+          "DataColumnSidecarAvailabilityCheckerFactory not initialized");
+    }
+    return factory.createAvailabilityChecker(block);
   }
 }

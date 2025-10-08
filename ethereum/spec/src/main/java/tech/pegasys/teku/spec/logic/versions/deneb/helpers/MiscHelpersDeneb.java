@@ -57,7 +57,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   private final BlobSidecarSchema blobSidecarSchema;
   private final SpecConfigDeneb specConfigDeneb;
 
-  protected volatile KZG kzg;
+  private volatile KZG kzg;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -71,6 +71,14 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
 
   public void setKzg(final KZG kzg) {
     this.kzg = kzg;
+  }
+
+  public KZG getKzg() {
+    final KZG kzg = this.kzg;
+    if (kzg == null) {
+      throw new IllegalStateException("KZG not set");
+    }
+    return kzg;
   }
 
   public MiscHelpersDeneb(
@@ -99,10 +107,11 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
       return true;
     }
     final boolean result =
-        kzg.verifyBlobKzgProof(
-            blobSidecar.getBlob().getBytes(),
-            blobSidecar.getKZGCommitment(),
-            blobSidecar.getKZGProof());
+        getKzg()
+            .verifyBlobKzgProof(
+                blobSidecar.getBlob().getBytes(),
+                blobSidecar.getKZGCommitment(),
+                blobSidecar.getKZGProof());
 
     if (result) {
       blobSidecar.markKzgAsValidated();
@@ -138,7 +147,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
       return true;
     }
 
-    final boolean result = kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
+    final boolean result = getKzg().verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
 
     if (result) {
       blobSidecars.stream()

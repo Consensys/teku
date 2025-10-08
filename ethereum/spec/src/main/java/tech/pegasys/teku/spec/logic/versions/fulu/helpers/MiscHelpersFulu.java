@@ -273,12 +273,13 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                         new KZGCell(dataColumnSidecar.getColumn().get(rowIndex).getBytes()),
                         dataColumnSidecar.getIndex().intValue()))
             .collect(Collectors.toList());
-    return kzg.verifyCellProofBatch(
-        dataColumnSidecar.getKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList(),
-        cellWithIds,
-        dataColumnSidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList());
+    return getKzg()
+        .verifyCellProofBatch(
+            dataColumnSidecar.getKzgCommitments().stream()
+                .map(SszKZGCommitment::getKZGCommitment)
+                .toList(),
+            cellWithIds,
+            dataColumnSidecar.getKzgProofs().stream().map(SszKZGProof::getKZGProof).toList());
   }
 
   public boolean verifyDataColumnSidecarKzgProofsBatch(
@@ -296,16 +297,17 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                                         dataColumnSidecar.getColumn().get(rowIndex).getBytes()),
                                     dataColumnSidecar.getIndex().intValue())))
             .toList();
-    return kzg.verifyCellProofBatch(
-        dataColumnSidecars.stream()
-            .flatMap(sidecar -> sidecar.getKzgCommitments().stream())
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList(),
-        cellWithIds,
-        dataColumnSidecars.stream()
-            .flatMap(sidecar -> sidecar.getKzgProofs().stream())
-            .map(SszKZGProof::getKZGProof)
-            .toList());
+    return getKzg()
+        .verifyCellProofBatch(
+            dataColumnSidecars.stream()
+                .flatMap(sidecar -> sidecar.getKzgCommitments().stream())
+                .map(SszKZGCommitment::getKZGCommitment)
+                .toList(),
+            cellWithIds,
+            dataColumnSidecars.stream()
+                .flatMap(sidecar -> sidecar.getKzgProofs().stream())
+                .map(SszKZGProof::getKZGProof)
+                .toList());
   }
 
   public boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {
@@ -374,7 +376,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .mapToObj(
             blobIndex -> {
               final List<KZGCellAndProof> kzgCellAndProofs =
-                  kzg.computeCellsAndProofs(blobs.get(blobIndex).getBytes());
+                  getKzg().computeCellsAndProofs(blobs.get(blobIndex).getBytes());
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCellAndProofs.size(); ++cellIndex) {
                 row.add(
@@ -398,7 +400,8 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
         .mapToObj(
             blobIndex -> {
               final BlobAndCellProofs blobAndCellProofs = blobAndCellProofsList.get(blobIndex);
-              final List<KZGCell> kzgCells = kzg.computeCells(blobAndCellProofs.blob().getBytes());
+              final List<KZGCell> kzgCells =
+                  getKzg().computeCells(blobAndCellProofs.blob().getBytes());
               final List<MatrixEntry> row = new ArrayList<>();
               for (int cellIndex = 0; cellIndex < kzgCells.size(); ++cellIndex) {
                 row.add(
@@ -551,7 +554,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
                                   new KZGCellID(entry.getColumnIndex())))
                       .toList();
               final List<KZGCellAndProof> kzgCellAndProofs =
-                  kzg.recoverCellsAndProofs(cellWithColumnIds);
+                  getKzg().recoverCellsAndProofs(cellWithColumnIds);
               return IntStream.range(0, kzgCellAndProofs.size())
                   .mapToObj(
                       kzgCellAndProofIndex ->

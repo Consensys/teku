@@ -43,7 +43,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -120,7 +119,7 @@ public class ChainBuilder {
       final Map<SlotAndBlockRoot, List<DataColumnSidecar>> existingDataColumnSidecars) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
-    this.blobsUtil = new BlobsUtil(spec, NoOpKZG.INSTANCE);
+    this.blobsUtil = new BlobsUtil(spec);
     this.attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     this.attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     this.proposerSlashingGenerator = new ProposerSlashingGenerator(spec, validatorKeys);

@@ -56,9 +56,9 @@ public class BlobsUtil {
   private final Spec spec;
   private final KZG kzg;
 
-  public BlobsUtil(final Spec spec, final KZG kzg) {
+  public BlobsUtil(final Spec spec) {
     this.spec = spec;
-    this.kzg = kzg;
+    this.kzg = spec.getKzg();
   }
 
   public Bytes generateRawBlobTransactionFromKzgCommitments(

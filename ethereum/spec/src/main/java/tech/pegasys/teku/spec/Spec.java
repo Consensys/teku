@@ -220,6 +220,14 @@ public class Spec {
     return new Spec(specConfigAndParent, specVersions, forkSchedule);
   }
 
+  public KZG getKzg() {
+    return Optional.ofNullable(forMilestone(DENEB))
+        .map(SpecVersion::miscHelpers)
+        .flatMap(MiscHelpers::toVersionDeneb)
+        .map(MiscHelpersDeneb::getKzg)
+        .orElse(KZG.DISABLED);
+  }
+
   public SpecVersion forMilestone(final SpecMilestone milestone) {
     return specVersions.get(milestone);
   }
