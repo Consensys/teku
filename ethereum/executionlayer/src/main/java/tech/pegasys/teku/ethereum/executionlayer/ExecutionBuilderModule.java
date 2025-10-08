@@ -37,10 +37,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -536,7 +536,7 @@ public class ExecutionBuilderModule {
         executionPayload.getBlockHash());
   }
 
-  private void logReceivedBuilderBlobsBundle(final BlobsBundleDeneb blobsBundle) {
+  private void logReceivedBuilderBlobsBundle(final BlobsBundle blobsBundle) {
     LOG.info(
         "Received blobs bundle from Builder (Blobs count = {})", blobsBundle.getNumberOfBlobs());
   }

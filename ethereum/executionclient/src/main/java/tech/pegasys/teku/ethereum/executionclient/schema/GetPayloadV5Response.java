@@ -70,7 +70,7 @@ public class GetPayloadV5Response {
     return new GetPayloadResponse(
         executionPayload.asInternalExecutionPayload(executionPayloadSchema),
         blockValue,
-        blobsBundle.asInternalBlobsCellBundle(blobSchema),
+        blobsBundle.asInternalBlobsBundle(blobSchema),
         shouldOverrideBuilder,
         new ExecutionRequestsDataCodec(executionRequestsSchema).decode(executionRequests));
   }
