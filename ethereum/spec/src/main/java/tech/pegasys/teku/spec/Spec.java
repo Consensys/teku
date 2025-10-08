@@ -149,7 +149,7 @@ public class Spec {
 
   // This method must be called once after constructing the Spec to initialize any additional
   // dependencies lazily created during initialization in BeaconChainController
-  public void initialize(
+  public synchronized void initialize(
       final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
       final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
       final KZG kzg) {
@@ -161,7 +161,7 @@ public class Spec {
   }
 
   @VisibleForTesting
-  public void reinitializeForTesting(
+  public synchronized void reinitializeForTesting(
       final AvailabilityCheckerFactory<BlobSidecar> blobSidecarAvailabilityCheckerFactory,
       final AvailabilityCheckerFactory<UInt64> dataColumnSidecarAvailabilityCheckerFactory,
       final KZG kzg) {
