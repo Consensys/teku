@@ -626,14 +626,17 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final List<Bytes> transactions = new ArrayList<>();
     transactions.add(Bytes.fromHexString("0x0edf"));
 
-    transactions.add(generateBlobsAndTransaction(slot, headAndAttrs));
+    final SpecMilestone milestone = spec.atSlot(slot).getMilestone();
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      transactions.add(generateBlobsAndTransaction(slot, headAndAttrs, milestone));
+    }
 
     transactions.add(Bytes.fromHexString("0xedf0"));
     return transactions;
   }
 
   private Bytes generateBlobsAndTransaction(
-      final UInt64 slot, final HeadAndAttributes headAndAttrs) {
+      final UInt64 slot, final HeadAndAttributes headAndAttrs, final SpecMilestone milestone) {
 
     final List<Blob> blobs =
         blobsUtil.generateBlobs(
@@ -642,7 +645,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                 () -> random.nextInt(spec.getMaxBlobsPerBlockAtSlot(slot).orElseThrow() + 1)));
     final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(blobs);
     final BlobsBundle blobsBundle;
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
       // cell proofs
       final List<KZGProof> proofs =
           blobs.stream().flatMap(blob -> blobsUtil.computeKzgCellProofs(blob).stream()).toList();
