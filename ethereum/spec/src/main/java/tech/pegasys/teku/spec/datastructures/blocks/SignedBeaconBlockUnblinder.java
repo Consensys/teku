@@ -27,10 +27,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
  * <p>- Expect {@link #unblind()} to be invoked after either {@link
  * #setExecutionPayloadSupplier(Supplier)} (in Pre-Fulu mode) or {@link
  * #setCompletionSupplier(Supplier)} (in Post-Fulu mode).
- *
- * <p>- Ensure that by the time {@link #unblind()} is called, all necessary data is available—
- * specifically, the blinded block and the corresponding {@link ExecutionPayload}—to construct the
- * unblinded {@link SignedBeaconBlock}.
  */
 public interface SignedBeaconBlockUnblinder {
 
