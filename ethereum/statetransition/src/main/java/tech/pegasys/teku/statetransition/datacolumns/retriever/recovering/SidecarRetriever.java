@@ -93,7 +93,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
     sidecarRecoveryMetric =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-                RECOVERY_METRIC_NAME,
+            RECOVERY_METRIC_NAME,
             "The number of sidecar recovery requests performed",
             "result");
   }
@@ -150,8 +150,10 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
                       recoveryTimeout,
                       recoveryTimeout.dividedBy(2));
               request.getFuture().always(() -> requests.remove(columnId));
-              request.getDownloadFuture().finish((err) -> sidecarRecoveryMetric.labels(DOWNLOAD_TIMEOUT).inc());
-              request.getFuture().finish((err)-> sidecarRecoveryMetric.labels(CANCELLED).inc());
+              request
+                  .getDownloadFuture()
+                  .finish((err) -> sidecarRecoveryMetric.labels(DOWNLOAD_TIMEOUT).inc());
+              request.getFuture().finish((err) -> sidecarRecoveryMetric.labels(CANCELLED).inc());
               request
                   .getFuture()
                   .thenPeek((result) -> sidecarRecoveryMetric.labels(DOWNLOADED).inc());

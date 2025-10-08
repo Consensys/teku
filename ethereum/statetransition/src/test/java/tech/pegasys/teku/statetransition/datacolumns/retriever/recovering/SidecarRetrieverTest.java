@@ -222,13 +222,26 @@ public class SidecarRetrieverTest {
         block.getSlot(), block.getRoot(), UInt64.valueOf(colIdx));
   }
 
-
-
-  private void verifyMetrics(final int cancelledCount, final int downloadTimeout, final int downloadedCount, final int recoveredCount) {
-    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, CANCELLED)).isEqualTo(cancelledCount);
-    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOAD_TIMEOUT)).isEqualTo(downloadTimeout);
-    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOADED)).isEqualTo(downloadedCount);
-    assertThat(metricsSystem.getCounterValue(TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, RECOVERED)).isEqualTo(recoveredCount);
+  private void verifyMetrics(
+      final int cancelledCount,
+      final int downloadTimeout,
+      final int downloadedCount,
+      final int recoveredCount) {
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, CANCELLED))
+        .isEqualTo(cancelledCount);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOAD_TIMEOUT))
+        .isEqualTo(downloadTimeout);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOADED))
+        .isEqualTo(downloadedCount);
+    assertThat(
+            metricsSystem.getCounterValue(
+                TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, RECOVERED))
+        .isEqualTo(recoveredCount);
   }
-
 }
