@@ -215,13 +215,7 @@ class BlockOperationSelectorFactoryFuluTest {
         blobKzgCommitments,
         blockExecutionValue);
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder =
-        new CapturingBeaconBlockBodyBuilder(true) {
-          @Override
-          public Boolean supportsCellProofs() {
-            return true;
-          }
-        };
+    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
     safeJoin(
         factory

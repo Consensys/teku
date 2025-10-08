@@ -30,8 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.CellSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntrySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.BeaconBlockBodyBuilderFulu;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
@@ -74,13 +72,6 @@ public class SchemaDefinitionsFulu extends SchemaDefinitionsElectra {
         SchemaDefinitionsFulu.class,
         schemaDefinitions.getClass());
     return (SchemaDefinitionsFulu) schemaDefinitions;
-  }
-
-  @Override
-  public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
-    return new BeaconBlockBodyBuilderFulu(
-        getBeaconBlockBodySchema().toVersionElectra().orElseThrow(),
-        getBlindedBeaconBlockBodySchema().toBlindedVersionElectra().orElseThrow());
   }
 
   public CellSchema getCellSchema() {
