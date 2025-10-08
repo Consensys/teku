@@ -21,14 +21,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class SignedBeaconBlockUnblinderFulu extends AbstractSignedBeaconBlockUnblinder {
 
   private SafeFuture<Void> completionFuture;
 
   public SignedBeaconBlockUnblinderFulu(
-      final SchemaDefinitionsBellatrix schemaDefinitions,
+      final SchemaDefinitionsFulu schemaDefinitions,
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     super(schemaDefinitions, signedBlindedBeaconBlock);
   }
@@ -54,5 +54,10 @@ public class SignedBeaconBlockUnblinderFulu extends AbstractSignedBeaconBlockUnb
     checkNotNull(completionFuture, "completionFuture must be set");
 
     return completionFuture.thenApply(__ -> Optional.empty());
+  }
+
+  @Override
+  public boolean isVersionFulu() {
+    return true;
   }
 }
