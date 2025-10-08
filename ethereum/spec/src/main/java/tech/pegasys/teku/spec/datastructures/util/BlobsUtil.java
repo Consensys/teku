@@ -27,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCellAndProof;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -75,7 +74,11 @@ public class BlobsUtil {
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final List<Blob> blobs) {
-    return blobs.stream().parallel().map(Blob::getBytes).map(spec.getKzg()::blobToKzgCommitment).toList();
+    return blobs.stream()
+        .parallel()
+        .map(Blob::getBytes)
+        .map(spec.getKzg()::blobToKzgCommitment)
+        .toList();
   }
 
   public KZGProof computeKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
@@ -83,7 +86,9 @@ public class BlobsUtil {
   }
 
   public List<KZGProof> computeKzgCellProofs(final Blob blob) {
-    return spec.getKzg().computeCellsAndProofs(blob.getBytes()).stream().map(KZGCellAndProof::proof).toList();
+    return spec.getKzg().computeCellsAndProofs(blob.getBytes()).stream()
+        .map(KZGCellAndProof::proof)
+        .toList();
   }
 
   public List<KZGProof> computeKzgProofs(
