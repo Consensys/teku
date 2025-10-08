@@ -36,7 +36,7 @@ public class SignedBeaconBlockUnblinderFulu extends AbstractSignedBeaconBlockUnb
   @Override
   public void setExecutionPayloadSupplier(
       final Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
-    throw new RuntimeException("Should not be called for Fulu block");
+    // do nothing
   }
 
   @Override
@@ -54,5 +54,10 @@ public class SignedBeaconBlockUnblinderFulu extends AbstractSignedBeaconBlockUnb
     checkNotNull(completionFuture, "completionFuture must be set");
 
     return completionFuture.thenApply(__ -> Optional.empty());
+  }
+
+  @Override
+  public boolean isVersionFulu() {
+    return true;
   }
 }

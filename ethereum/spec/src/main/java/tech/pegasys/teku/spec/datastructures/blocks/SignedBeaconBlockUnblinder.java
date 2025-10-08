@@ -24,12 +24,16 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
  * <p>- provide via {@link #getSignedBlindedBeaconBlock()} the blinded {@link SignedBeaconBlock} on
  * which we are about to apply the unblinding process
  *
- * <p>- expect {@link #setExecutionPayloadSupplier( Supplier)} to be called, which provides a future
- * retrieving an ExecutionPayload consistent with the ExecutionPayloadHeader included in the Blinded
- * Block
+ * <p>- Pre-Fulu, expect {@link #setExecutionPayloadSupplier( Supplier)} to be called, which
+ * provides a future retrieving an ExecutionPayload consistent with the ExecutionPayloadHeader
+ * included in the Blinded Block
+ *
+ * <p>- Post-Fulu, expect {@link #setCompletionSupplier(Supplier)} to be called, which provides a
+ * future which upon completion means block was successfully send to Builder and no unblinds is
+ * needed (Builder is responsible for publishing)
  *
  * <p>- expect the {@link #unblind()} method to be called after {@link #setExecutionPayloadSupplier(
- * Supplier)}.
+ * Supplier)} or {@link #setCompletionSupplier(Supplier)}.
  *
  * <p>- {@link #unblind()} now has all the information (Blinded Block + ExecutionPayload) to
  * construct the unblinded version of the {@link SignedBeaconBlock}
@@ -45,8 +49,12 @@ public interface SignedBeaconBlockUnblinder {
   SignedBeaconBlock getSignedBlindedBeaconBlock();
 
   /**
-   * For pre-Fulu blocks returns full block. After Fulu if block is built via Builder, sends signed
-   * blinded block to the Builder and if no errors occurs returns `Optional.empty()`
+   * Pre-Fulu, the full block is returned. Post-Fulu if block is built via Builder, signed blinded
+   * block is sent to the Builder and if no errors occurs returns `Optional.empty()`
    */
   SafeFuture<Optional<SignedBeaconBlock>> unblind();
+
+  default boolean isVersionFulu() {
+    return false;
+  }
 }

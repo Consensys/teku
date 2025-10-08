@@ -465,7 +465,8 @@ public class BlockOperationSelectorFactory {
       final SignedBeaconBlock signedBlindedBlock = bodyUnblinder.getSignedBlindedBeaconBlock();
 
       final BeaconBlock block = signedBlindedBlock.getMessage();
-      if (isBlockFromFuluOrLater(signedBlindedBlock)) {
+
+      if (bodyUnblinder.isVersionFulu()) {
         bodyUnblinder.setCompletionSupplier(
             () ->
                 executionLayerBlockProductionManager
@@ -675,10 +676,6 @@ public class BlockOperationSelectorFactory {
       proofs = blockContainer.getKzgProofs().orElseThrow();
     }
     return Optional.of(new BlobsAndProofs(blobs, proofs));
-  }
-
-  private boolean isBlockFromFuluOrLater(final SignedBeaconBlock block) {
-    return spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU);
   }
 
   private void verifyBuilderBlobsBundle(
