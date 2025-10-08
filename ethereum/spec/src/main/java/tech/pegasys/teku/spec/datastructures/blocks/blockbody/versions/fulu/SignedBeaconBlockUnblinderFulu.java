@@ -36,7 +36,7 @@ public class SignedBeaconBlockUnblinderFulu extends AbstractSignedBeaconBlockUnb
   @Override
   public void setExecutionPayloadSupplier(
       final Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
-    // do nothing
+    throw new RuntimeException("Should not be called for Fulu block");
   }
 
   @Override
