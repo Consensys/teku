@@ -552,6 +552,7 @@ public class BlockOperationSelectorFactory {
               blockContainer,
               (numberOfCommitmentsInBlock, blobsBundle) ->
                   numberOfCommitmentsInBlock == blobsBundle.getProofs().size());
+      // Builder is responsible for publishing the blob sidecars to the network
       if (maybeBlobsAndProofs.isEmpty()) {
         return Collections.emptyList();
       }
@@ -581,6 +582,7 @@ public class BlockOperationSelectorFactory {
               (numberOfCommitmentsInBlock, blobsBundle) ->
                   numberOfCommitmentsInBlock * CELLS_PER_EXT_BLOB
                       == blobsBundle.getProofs().size());
+      // Builder is responsible for publishing the data column sidecars to the network
       if (maybeBlobsAndProofs.isEmpty()) {
         return Collections.emptyList();
       }
