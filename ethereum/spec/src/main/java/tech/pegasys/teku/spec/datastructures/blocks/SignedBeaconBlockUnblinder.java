@@ -19,24 +19,18 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 /**
- * Classes implementing this interface MUST:
+ * Implementations of this interface MUST:
  *
- * <p>- provide via {@link #getSignedBlindedBeaconBlock()} the blinded {@link SignedBeaconBlock} on
- * which we are about to apply the unblinding process
+ * <p>- Provide the blinded {@link SignedBeaconBlock} via {@link #getSignedBlindedBeaconBlock()},
+ * which serves as the input for the unblinding process.
  *
- * <p>- Pre-Fulu, expect {@link #setExecutionPayloadSupplier( Supplier)} to be called, which
- * provides a future retrieving an ExecutionPayload consistent with the ExecutionPayloadHeader
- * included in the Blinded Block
+ * <p>- Expect {@link #unblind()} to be invoked after either {@link
+ * #setExecutionPayloadSupplier(Supplier)} (in Pre-Fulu mode) or {@link
+ * #setCompletionSupplier(Supplier)} (in Post-Fulu mode).
  *
- * <p>- Post-Fulu, expect {@link #setCompletionSupplier(Supplier)} to be called, which provides a
- * future which upon completion means block was successfully send to Builder and no unblinds is
- * needed (Builder is responsible for publishing)
- *
- * <p>- expect the {@link #unblind()} method to be called after {@link #setExecutionPayloadSupplier(
- * Supplier)} or {@link #setCompletionSupplier(Supplier)}.
- *
- * <p>- {@link #unblind()} now has all the information (Blinded Block + ExecutionPayload) to
- * construct the unblinded version of the {@link SignedBeaconBlock}
+ * <p>- Ensure that by the time {@link #unblind()} is called, all necessary data is available—
+ * specifically, the blinded block and the corresponding {@link ExecutionPayload}—to construct the
+ * unblinded {@link SignedBeaconBlock}.
  */
 public interface SignedBeaconBlockUnblinder {
 
@@ -49,8 +43,13 @@ public interface SignedBeaconBlockUnblinder {
   SignedBeaconBlock getSignedBlindedBeaconBlock();
 
   /**
-   * Pre-Fulu, the full block is returned. Post-Fulu if block is built via Builder, signed blinded
-   * block is sent to the Builder and if no errors occurs returns `Optional.empty()`
+   * Pre-Fulu: Returns the fully unblinded {@link SignedBeaconBlock} by combining the blinded block
+   * with the corresponding {@link ExecutionPayload} provided via {@link
+   * #setExecutionPayloadSupplier(Supplier)}.
+   *
+   * <p>Post-Fulu: If the block was successfully submitted to the Builder via {@link
+   * #setCompletionSupplier(Supplier)}, the Builder is responsible for publishing the block. In this
+   * case, no unblinding is required and the method returns {@code Optional.empty()}.
    */
   SafeFuture<Optional<SignedBeaconBlock>> unblind();
 

@@ -243,7 +243,7 @@ class BlockOperationSelectorFactoryFuluTest {
   void shouldGetBlobsBundleForLocallyProducedBlocks() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
 
-    final BlobsBundle expectedBlobsBundle = dataStructureUtil.randomBlobsBundleFulu();
+    final BlobsBundle expectedBlobsBundle = dataStructureUtil.randomBlobsBundle();
 
     // the BlobsBundle is stored in the ExecutionPayloadResult
     prepareCachedPayloadResult(
@@ -261,7 +261,7 @@ class BlockOperationSelectorFactoryFuluTest {
   void shouldGetBlobsBundleForLocallyProducedBlocksViaFallback() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
 
-    final BlobsBundle expectedBlobsBundle = dataStructureUtil.randomBlobsBundleFulu();
+    final BlobsBundle expectedBlobsBundle = dataStructureUtil.randomBlobsBundle();
 
     // the BlobsBundle is stored in the header with fallback
     prepareCachedPayloadHeaderWithFallbackResult(
@@ -330,7 +330,7 @@ class BlockOperationSelectorFactoryFuluTest {
 
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-        dataStructureUtil.randomBuilderBlobsBundleFulu(commitments);
+        dataStructureUtil.randomBuilderBlobsBundle(commitments);
 
     final BlobsBundle localFallbackBlobsBundle =
         new BlobsBundleFulu(

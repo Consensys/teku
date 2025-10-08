@@ -54,7 +54,7 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlockContents() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundleFulu(spec, 3);
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
@@ -126,7 +126,7 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateValidDataColumnSidecarsForBlockContents() {
     final int blobsCount = 3;
-    final BlobsBundle blobsBundle = prepareBlobsBundleFulu(spec, blobsCount);
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, blobsCount);
 
     final BlockAndDataColumnSidecars blockAndDataColumnSidecars =
         createBlockAndDataColumnSidecars(false, spec);

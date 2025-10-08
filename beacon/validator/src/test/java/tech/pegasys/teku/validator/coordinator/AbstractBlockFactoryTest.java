@@ -464,13 +464,6 @@ public abstract class AbstractBlockFactoryTest {
     return blobsBundle;
   }
 
-  protected BlobsBundle prepareBlobsBundleFulu(final Spec spec, final int count) {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundleFulu(count);
-    this.blobsBundle = Optional.of(blobsBundle);
-    return blobsBundle;
-  }
-
   protected SszList<SszKZGCommitment> prepareBuilderBlobKzgCommitments(
       final Spec spec, final int count) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -492,8 +485,7 @@ public abstract class AbstractBlockFactoryTest {
           schemaDefinitionsFulu
               .getExecutionPayloadAndBlobsBundleSchema()
               .create(
-                  builderExecutionPayload,
-                  dataStructureUtil.randomBuilderBlobsBundleFulu(blobsCount));
+                  builderExecutionPayload, dataStructureUtil.randomBuilderBlobsBundle(blobsCount));
     } else if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
           SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());

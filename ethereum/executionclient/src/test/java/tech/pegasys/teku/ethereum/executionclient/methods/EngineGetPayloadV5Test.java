@@ -126,7 +126,7 @@ class EngineGetPayloadV5Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundleFulu();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final ExecutionPayload executionPayloadFulu = dataStructureUtil.randomExecutionPayload();
     final ExecutionRequests executionRequests = dataStructureUtil.randomExecutionRequests();
     final List<Bytes> encodedExecutionRequests =

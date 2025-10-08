@@ -2522,34 +2522,11 @@ public final class DataStructureUtil {
     final BlobsBundleSchema<?> schema = getDenebSchemaDefinitions(slot).getBlobsBundleSchema();
     return schema.create(
         commitments,
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, commitments.size()),
-        randomSszList(schema.getBlobsSchema(), this::randomValidBlob, commitments.size()));
-  }
-
-  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundleFulu(
-      final int count) {
-    return randomBuilderBlobsBundleFulu(randomBlobKzgCommitments(count));
-  }
-
-  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundleFulu(
-      final SszList<SszKZGCommitment> commitments) {
-    final UInt64 slot = randomSlot();
-    final BlobsBundleSchema<?> schema = getFuluSchemaDefinitions(slot).getBlobsBundleSchema();
-    return schema.create(
-        commitments,
         randomSszList(
             schema.getProofsSchema(),
             this::randomSszKZGProof,
-            (long) commitments.size() * CELLS_PER_EXT_BLOB),
+            getNumberOfRequiredProofs(slot, commitments.size())),
         randomSszList(schema.getBlobsSchema(), this::randomValidBlob, commitments.size()));
-  }
-
-  public BlobsBundle randomBlobsBundle() {
-    return randomBlobsBundle(Optional.empty(), randomSlot());
-  }
-
-  public BlobsBundle randomBlobsBundleFulu() {
-    return randomBlobsBundleFulu(Optional.empty(), randomSlot());
   }
 
   public SszList<SszKZGProof> randomSszKZGProofs(final int count) {
@@ -2566,6 +2543,10 @@ public final class DataStructureUtil {
         count);
   }
 
+  public BlobsBundle randomBlobsBundle() {
+    return randomBlobsBundle(Optional.empty(), randomSlot());
+  }
+
   public BlobsBundle randomBlobsBundle(final int count) {
     return randomBlobsBundle(Optional.of(count), randomSlot());
   }
@@ -2577,35 +2558,19 @@ public final class DataStructureUtil {
             .map(SszKZGCommitment::getKZGCommitment)
             .toList();
     final List<KZGProof> proofs =
-        IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
-    return new BlobsBundleDeneb(
-        commitments,
-        proofs,
-        IntStream.range(0, commitments.size())
-            .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
-            .collect(toList()));
-  }
-
-  public BlobsBundle randomBlobsBundleFulu(final int count) {
-    return randomBlobsBundleFulu(Optional.of(count), randomSlot());
-  }
-
-  private BlobsBundle randomBlobsBundleFulu(final Optional<Integer> count, final UInt64 slot) {
-    final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
-    final List<KZGCommitment> commitments =
-        count.map(this::randomBlobKzgCommitments).orElse(randomBlobKzgCommitments()).stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList();
-    final List<KZGProof> proofs =
-        IntStream.range(0, commitments.size() * CELLS_PER_EXT_BLOB)
+        IntStream.range(0, getNumberOfRequiredProofs(slot, commitments.size()))
             .mapToObj(__ -> randomKZGProof())
             .collect(toList());
-    return new BlobsBundleFulu(
-        commitments,
-        proofs,
+    final List<Blob> blobs =
         IntStream.range(0, commitments.size())
             .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
-            .collect(toList()));
+            .collect(toList());
+    if (proofs.size() > commitments.size()) {
+      // includes cell proofs
+      return new BlobsBundleFulu(commitments, proofs, blobs);
+    } else {
+      return new BlobsBundleDeneb(commitments, proofs, blobs);
+    }
   }
 
   public SignedBlockContainer randomSignedBlockContents() {
@@ -2619,10 +2584,7 @@ public final class DataStructureUtil {
     final int numberOfBlobs = maybeBlobKzgCommitments.map(SszList::size).orElse(0);
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs =
-        randomKZGProofs(
-            spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)
-                ? numberOfBlobs * CELLS_PER_EXT_BLOB
-                : numberOfBlobs);
+        randomKZGProofs(getNumberOfRequiredProofs(slot, numberOfBlobs));
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
         .create(signedBeaconBlock, kzgProofs, blobs);
@@ -3253,6 +3215,13 @@ public final class DataStructureUtil {
         specConfig ->
             SpecConfigGloas.required(spec.forMilestone(SpecMilestone.GLOAS).getConfig())
                 .getMaxPayloadAttestations());
+  }
+
+  private int getNumberOfRequiredProofs(final UInt64 slot, final int numberOfCommitments) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
+      return numberOfCommitments * CELLS_PER_EXT_BLOB;
+    }
+    return numberOfCommitments;
   }
 
   private Bytes32 computeDepositDomain() {

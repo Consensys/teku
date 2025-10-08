@@ -74,7 +74,7 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
             ExecutionPayloadV3.fromInternalExecutionPayload(
                 dataStructureUtil.randomExecutionPayload()),
             UInt256.MAX_VALUE,
-            BlobsBundleV2.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundleFulu()),
+            BlobsBundleV2.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
             true,
             dataStructureUtil.randomEncodedExecutionRequests());
     final SafeFuture<Response<GetPayloadV5Response>> dummyResponse =
@@ -168,7 +168,7 @@ public class FuluExecutionClientHandlerTest extends ExecutionHandlerClientTest {
         SpecConfigDeneb.required(spec.getGenesisSpecConfig()).getMaxBlobsPerBlock();
     final List<VersionedHash> versionedHashes =
         dataStructureUtil.randomVersionedHashes(maxBlobsPerBlock);
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundleFulu(maxBlobsPerBlock);
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(maxBlobsPerBlock);
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
     final List<BlobAndProofV2> responseData =
         IntStream.range(0, blobsBundle.getBlobs().size())
