@@ -54,11 +54,9 @@ public class BlobsUtil {
               + "0000000000000000000000000000c100000000");
 
   private final Spec spec;
-  private final KZG kzg;
 
   public BlobsUtil(final Spec spec) {
     this.spec = spec;
-    this.kzg = spec.getKzg();
   }
 
   public Bytes generateRawBlobTransactionFromKzgCommitments(
@@ -77,15 +75,15 @@ public class BlobsUtil {
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final List<Blob> blobs) {
-    return blobs.stream().parallel().map(Blob::getBytes).map(kzg::blobToKzgCommitment).toList();
+    return blobs.stream().parallel().map(Blob::getBytes).map(spec.getKzg()::blobToKzgCommitment).toList();
   }
 
   public KZGProof computeKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
-    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
+    return spec.getKzg().computeBlobKzgProof(blob.getBytes(), kzgCommitment);
   }
 
   public List<KZGProof> computeKzgCellProofs(final Blob blob) {
-    return kzg.computeCellsAndProofs(blob.getBytes()).stream().map(KZGCellAndProof::proof).toList();
+    return spec.getKzg().computeCellsAndProofs(blob.getBytes()).stream().map(KZGCellAndProof::proof).toList();
   }
 
   public List<KZGProof> computeKzgProofs(

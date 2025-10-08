@@ -84,6 +84,6 @@ public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
     if (factory == null) {
       throw new IllegalStateException("blobSidecarAvailabilityCheckerFactory not initialized");
     }
-    return blobSidecarAvailabilityCheckerFactory.createAvailabilityChecker(block);
+    return factory.createAvailabilityChecker(block);
   }
 }
