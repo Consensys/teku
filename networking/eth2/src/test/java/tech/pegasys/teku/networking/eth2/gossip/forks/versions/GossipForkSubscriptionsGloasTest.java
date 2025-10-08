@@ -98,6 +98,8 @@ public class GossipForkSubscriptionsGloasTest {
         noopOperationProcessor,
         noopOperationProcessor,
         DebugDataDumper.NOOP,
-        DasGossipLogger.NOOP);
+        DasGossipLogger.NOOP,
+        noopOperationProcessor,
+        false);
   }
 }
