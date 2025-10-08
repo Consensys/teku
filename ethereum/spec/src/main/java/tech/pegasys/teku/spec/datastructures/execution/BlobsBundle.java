@@ -51,11 +51,9 @@ public abstract class BlobsBundle {
 
   public String toBriefString() {
     return MoreObjects.toStringHelper(this)
-        .add(
-            "commitments",
-            getCommitments().stream().map(KZGCommitment::toAbbreviatedString).toList())
-        .add("proofs", getProofs().stream().map(KZGProof::toAbbreviatedString).toList())
-        .add("blobs", getBlobs().stream().map(Blob::toBriefString).toList())
+        .add("commitments", commitments.stream().map(KZGCommitment::toAbbreviatedString).toList())
+        .add("proofs", proofs.stream().map(KZGProof::toAbbreviatedString).toList())
+        .add("blobs", blobs.stream().map(Blob::toBriefString).toList())
         .toString();
   }
 
