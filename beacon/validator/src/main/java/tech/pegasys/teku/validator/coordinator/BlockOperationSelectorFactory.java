@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -615,10 +614,16 @@ public class BlockOperationSelectorFactory {
 
   private record BlobsAndProofs(SszList<Blob> blobs, SszList<SszKZGProof> proofs) {}
 
+  @FunctionalInterface
+  private interface BuilderBlobsBundleProofsVerifier {
+    boolean test(
+        final int numberOfCommitmentsInBlock,
+        final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle);
+  }
+
   private Optional<BlobsAndProofs> getBlobsAndProofs(
       final SignedBlockContainer blockContainer,
-      final BiPredicate<Integer, tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>
-          builderBlobsBundleProofsPredicate) {
+      final BuilderBlobsBundleProofsVerifier builderBlobsBundleProofsVerifier) {
     final SszList<Blob> blobs;
     final SszList<SszKZGProof> proofs;
 
@@ -648,7 +653,7 @@ public class BlockOperationSelectorFactory {
             maybeBuilderPayload.get().getOptionalBlobsBundle().orElseThrow();
         // consistency checks because the BlobsBundle comes from an external source (a builder)
         verifyBuilderBlobsBundle(
-            blobsBundle, blockContainer.getSignedBlock(), builderBlobsBundleProofsPredicate);
+            blobsBundle, blockContainer.getSignedBlock(), builderBlobsBundleProofsVerifier);
         blobs = blobsBundle.getBlobs();
         proofs = blobsBundle.getProofs();
       } else {
@@ -679,15 +684,14 @@ public class BlockOperationSelectorFactory {
   private void verifyBuilderBlobsBundle(
       final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle,
       final SignedBeaconBlock block,
-      final BiPredicate<Integer, tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>
-          builderBlobsBundleProofsPredicate) {
+      final BuilderBlobsBundleProofsVerifier builderBlobsBundleProofsVerifier) {
     final SszList<SszKZGCommitment> blockCommitments =
         block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
     checkState(
         blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
         "Commitments in the builder BlobsBundle don't match the commitments in the block");
     checkState(
-        builderBlobsBundleProofsPredicate.test(blockCommitments.size(), blobsBundle),
+        builderBlobsBundleProofsVerifier.test(blockCommitments.size(), blobsBundle),
         "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
     checkState(
         blockCommitments.size() == blobsBundle.getBlobs().size(),
