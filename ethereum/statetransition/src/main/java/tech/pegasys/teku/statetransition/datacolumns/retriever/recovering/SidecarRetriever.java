@@ -33,24 +33,20 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
-@SuppressWarnings("unused")
 public class SidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarRetriever downloader;
   private final KZG kzg;
   private final MiscHelpersFulu miscHelpersFulu;
-  private final CanonicalBlockResolver blockResolver;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final Duration recoveryTimeout;
   private final Duration recoveryCheckInterval;
-  private final int numberOfColumns;
   private final int numberOfColumnsRequiredToReconstruct;
   private Cancellable pendingRequestsChecker;
 
@@ -70,7 +66,6 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
       final DataColumnSidecarRetriever delegate,
       final KZG kzg,
       final MiscHelpersFulu miscHelpersFulu,
-      final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
       final Duration recoveryTimeout,
@@ -81,13 +76,11 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
     downloader = delegate;
     this.kzg = kzg;
     this.miscHelpersFulu = miscHelpersFulu;
-    this.blockResolver = blockResolver;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
     this.recoveryTimeout = recoveryTimeout;
     this.recoveryCheckInterval = recoveryCheckInterval;
     this.timeProvider = timeProvider;
-    this.numberOfColumns = numberOfColumns;
     // reconstruction of all columns is possible with >= 50% of the column data
     this.numberOfColumnsRequiredToReconstruct = Math.ceilDiv(numberOfColumns, 2);
     sidecarRecoveryMetric =
@@ -137,7 +130,6 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
-    final UInt64 columnIndex = columnId.columnIndex();
     final PendingRecoveryRequest pendingRecoveryRequest =
         requests.computeIfAbsent(
             columnId,

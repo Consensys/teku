@@ -80,7 +80,6 @@ public class SidecarRetrieverTest {
           delegateRetriever,
           kzg,
           miscHelpers,
-          blockResolver,
           dbAccessor,
           stubAsyncRunner,
           RECOVERY_TIMEOUT,

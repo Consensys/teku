@@ -897,7 +897,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               sidecarRetriever,
               kzg,
               miscHelpersFulu,
-              canonicalBlockResolver,
               dbAccessor,
               dasAsyncRunner,
               Duration.ofMinutes(5),
