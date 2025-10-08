@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -65,13 +66,15 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
+      final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadOperationProcessor,
       final OperationProcessor<PayloadAttestationMessage>
           payloadAttestationMessageOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
-      final BlobParameters bpo) {
+      final BlobParameters bpo,
+      final boolean isExecutionProofTopicEnabled) {
     super(
         fork,
         spec,
@@ -95,7 +98,9 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
         payloadAttestationMessageOperationProcessor,
         executionPayloadBidOperationProcessor,
         debugDataDumper,
-        dasGossipLogger);
+        dasGossipLogger,
+        executionProofOperationProcessor,
+        isExecutionProofTopicEnabled);
     this.bpo = bpo;
   }
 
