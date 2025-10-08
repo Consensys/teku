@@ -371,7 +371,7 @@ class BlockOperationSelectorFactoryDenebTest {
     assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
+            "The number of proofs in the builder BlobsBundle is not consistent with the number of commitments in the block");
   }
 
   @ParameterizedTest
