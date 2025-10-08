@@ -692,7 +692,7 @@ public class BlockOperationSelectorFactory {
         "Commitments in the builder BlobsBundle don't match the commitments in the block");
     checkState(
         builderBlobsBundleProofsVerifier.test(blockCommitments.size(), blobsBundle),
-        "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
+        "The number of proofs in the builder BlobsBundle is not consistent with the number of commitments in the block");
     checkState(
         blockCommitments.size() == blobsBundle.getBlobs().size(),
         "The number of blobs in the builder BlobsBundle doesn't match the number of commitments in the block");
