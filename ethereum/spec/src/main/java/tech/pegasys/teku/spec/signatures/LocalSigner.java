@@ -27,9 +27,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -123,25 +120,6 @@ public class LocalSigner implements Signer {
   public SafeFuture<BLSSignature> signValidatorRegistration(
       final ValidatorRegistration validatorRegistration) {
     return sign(signingRootUtil.signingRootForValidatorRegistration(validatorRegistration));
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signExecutionPayloadBid(
-      final ExecutionPayloadBid bid, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForSignExecutionPayloadBid(bid, forkInfo));
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signExecutionPayloadEnvelope(
-      final ExecutionPayloadEnvelope envelope, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForSignExecutionPayloadEnvelope(envelope, forkInfo));
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signPayloadAttestationData(
-      final PayloadAttestationData payloadAttestationData, final ForkInfo forkInfo) {
-    return sign(
-        signingRootUtil.signingRootForSignPayloadAttestationData(payloadAttestationData, forkInfo));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
