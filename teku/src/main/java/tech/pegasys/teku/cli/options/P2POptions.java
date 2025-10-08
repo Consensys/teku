@@ -612,9 +612,9 @@ public class P2POptions {
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
+                  .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
                   .executionProofTopicEnabled(executionProofTopicEnabled)
-                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled)
-                  .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize);
+                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(
