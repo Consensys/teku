@@ -16,7 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,8 +51,8 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   private Cancellable pendingRequestsChecker;
 
   private final Map<DataColumnSlotAndIdentifier, PendingRecoveryRequest> requests =
-      new ConcurrentSkipListMap<>();
-  private final Map<Bytes32, RebuildColumnsTask> rebuildTasks = new ConcurrentSkipListMap<>();
+      new ConcurrentHashMap<>();
+  private final Map<Bytes32, RebuildColumnsTask> rebuildTasks = new ConcurrentHashMap<>();
 
   private final LabelledMetric<Counter> sidecarRecoveryMetric;
 

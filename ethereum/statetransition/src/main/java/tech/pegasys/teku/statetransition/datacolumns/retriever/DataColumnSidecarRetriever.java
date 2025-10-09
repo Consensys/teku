@@ -56,7 +56,7 @@ public interface DataColumnSidecarRetriever {
     }
   }
 
-  default void start() {}
+  void start();
 
-  default void stop() {}
+  void stop();
 }

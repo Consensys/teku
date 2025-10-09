@@ -68,4 +68,10 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
     LOG.debug("onNewValidatedSidecar {}", columnId);
     validatedSidecars.add(sidecar);
   }
+
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
 }

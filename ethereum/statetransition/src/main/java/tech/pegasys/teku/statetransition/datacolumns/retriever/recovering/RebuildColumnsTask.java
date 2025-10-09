@@ -78,9 +78,7 @@ class RebuildColumnsTask {
         pendingRequest.getFuture().complete(sidecar);
         return true;
       } else {
-        // TODO all that i could do at this point would be fail the task, or upstream it could be
-        // added to a new request
-        pendingRequest.getFuture().cancel(true);
+        pendingRequest.cancel();
         LOG.debug(
             "Pending request (slotAndBlock: {}) for column {} was not satisfied by finished rebuild for {}",
             pendingRequest.getSlotAndBlockRoot(),
@@ -104,8 +102,7 @@ class RebuildColumnsTask {
         pendingRequest.getFuture().complete(sidecar);
       }
     } else {
-      // TODO so we didn't match, we'd need to either fail the future or let it be handled upstream
-      pendingRequest.getFuture().cancel(true);
+      pendingRequest.cancel();
       return false;
     }
     checkQueryResult();
@@ -213,10 +210,7 @@ class RebuildColumnsTask {
       return;
     }
     if (done.compareAndSet(false, true)) {
-      tasks.forEach(
-          task -> {
-            task.getFuture().cancel(true);
-          });
+      tasks.forEach(PendingRecoveryRequest::cancel);
       query.cancel(true);
     }
   }
@@ -228,7 +222,6 @@ class RebuildColumnsTask {
     // if the timeout is exceeded and we're not ready to rebuild, then we should cancel the task
     if (currentTimeMillis.isGreaterThanOrEqualTo(this.timeoutMillis) && !isReadyToRebuild) {
       cancel();
-      done.compareAndSet(false, true);
       return true;
     }
     return false;
