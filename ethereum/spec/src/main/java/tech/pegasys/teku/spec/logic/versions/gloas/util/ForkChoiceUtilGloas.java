@@ -35,8 +35,10 @@ public class ForkChoiceUtilGloas extends ForkChoiceUtilFulu {
 
   @Override
   public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
-    // checking of blob data availability is delayed until the processing of the execution
-    // payload in ePBS
+    // TODO(GLOAS): in ePBS, data availability is delayed until the processing of the execution
+    // payload.
+    // We may have a dedicated availability checker for the execution stage.
+    // If it will be the case, this will remain a NOOP
     return AvailabilityChecker.NOOP;
   }
 }
