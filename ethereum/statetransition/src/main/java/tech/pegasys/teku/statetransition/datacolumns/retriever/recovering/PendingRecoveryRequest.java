@@ -121,7 +121,6 @@ class PendingRecoveryRequest {
   }
 
   void complete(final DataColumnSidecar sidecar) {
-    onCompleted();
     future.complete(sidecar);
   }
 
