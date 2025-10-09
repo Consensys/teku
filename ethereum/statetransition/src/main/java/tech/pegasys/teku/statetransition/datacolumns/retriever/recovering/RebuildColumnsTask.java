@@ -75,7 +75,7 @@ class RebuildColumnsTask {
             pendingRequest.getSlotAndBlockRoot(),
             pendingRequest.getIndex());
 
-        pendingRequest.getFuture().complete(sidecar);
+        pendingRequest.complete(sidecar);
         return true;
       } else {
         pendingRequest.cancel();
@@ -88,7 +88,7 @@ class RebuildColumnsTask {
       }
     }
     if (pendingRequest.getBlockRoot().equals(slotAndBlockRoot.getBlockRoot())
-        && !pendingRequest.getFuture().isDone()) {
+        && !pendingRequest.isDone()) {
       // we are possibly downloading to rebuild, so the sidecar may be available
       final DataColumnSidecar sidecar = sidecarMap.get(pendingRequest.getIndex().intValue());
       if (sidecar == null) {
@@ -99,7 +99,7 @@ class RebuildColumnsTask {
             "Pending request (slotAndBlock: {}) for column {} was found while preparing to rebuild",
             pendingRequest.getSlotAndBlockRoot(),
             pendingRequest.getIndex());
-        pendingRequest.getFuture().complete(sidecar);
+        pendingRequest.complete(sidecar);
       }
     } else {
       pendingRequest.cancel();
@@ -158,9 +158,9 @@ class RebuildColumnsTask {
           .forEach(
               sidecar ->
                   tasks.stream()
-                      .filter(task -> !task.getFuture().isDone())
+                      .filter(task -> !task.isDone())
                       .filter(task -> sidecar.getIndex().equals(task.getIndex()))
-                      .forEach(task -> task.getFuture().complete(sidecar)));
+                      .forEach(task -> task.complete(sidecar)));
       reconstructedSidecars.forEach((k, v) -> sidecarMap.putIfAbsent(k.intValue(), v));
       done.compareAndSet(false, true);
       LOG.trace("Rebuilding columns DONE {}", slotAndBlockRoot);

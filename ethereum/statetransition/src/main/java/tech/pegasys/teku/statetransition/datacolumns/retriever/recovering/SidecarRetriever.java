@@ -57,7 +57,6 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   private final LabelledMetric<Counter> sidecarRecoveryMetric;
 
   static final String DOWNLOADED = "DOWNLOADED";
-  static final String DOWNLOAD_TIMEOUT = "DOWNLOAD_TIMEOUT";
   static final String RECOVERED = "RECOVERED";
   static final String CANCELLED = "CANCELLED";
   static final String RECOVERY_METRIC_NAME = "data_column_sidecar_recovery_requests";
@@ -133,24 +132,15 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
     final PendingRecoveryRequest pendingRecoveryRequest =
         requests.computeIfAbsent(
             columnId,
-            __ -> {
-              final PendingRecoveryRequest request =
-                  new PendingRecoveryRequest(
-                      columnId,
-                      downloader.retrieve(columnId),
-                      timeProvider.getTimeInMillis(),
-                      recoveryTimeout,
-                      recoveryTimeout.dividedBy(2));
-              request.getFuture().always(() -> requests.remove(columnId));
-              request
-                  .getDownloadFuture()
-                  .finish((err) -> sidecarRecoveryMetric.labels(DOWNLOAD_TIMEOUT).inc());
-              request.getFuture().finish((err) -> sidecarRecoveryMetric.labels(CANCELLED).inc());
-              request
-                  .getFuture()
-                  .thenPeek((result) -> sidecarRecoveryMetric.labels(DOWNLOADED).inc());
-              return request;
-            });
+            __ ->
+                new PendingRecoveryRequest(
+                    columnId,
+                    downloader.retrieve(columnId),
+                    timeProvider.getTimeInMillis(),
+                    recoveryTimeout,
+                    recoveryTimeout.dividedBy(2),
+                    sidecarRecoveryMetric,
+                    () -> requests.remove(columnId)));
     return pendingRecoveryRequest.getFuture();
   }
 
@@ -211,9 +201,6 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
                   request.getSlot(),
                   request.getBlockRoot());
               rebuildColumnsTask.addTask(request);
-              request
-                  .getFuture()
-                  .thenPeek((ignored) -> sidecarRecoveryMetric.labels(RECOVERED).inc());
             });
     rebuildTasks.entrySet().removeIf(entry -> entry.getValue().isDone(currentTime));
 
