@@ -18,8 +18,12 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 
 import java.time.Duration;
 import java.util.Optional;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,6 +38,9 @@ public class PendingRecoveryRequestTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1_000_000);
   private final DataColumnSidecar sidecar = dataStructureUtil.randomDataColumnSidecar();
+  private static final StubMetricsSystem METRICS = new StubMetricsSystem();
+  private static final LabelledMetric<Counter> METRIC =
+      METRICS.createLabelledCounter(TekuMetricCategory.BEACON, "FOO", "help", "result");
 
   @Test
   void checkTimeout_willNotTimeoutDownloadBeforeTime() {
@@ -164,6 +171,12 @@ public class PendingRecoveryRequestTest {
     final DataColumnSlotAndIdentifier id =
         maybeId.orElse(SidecarRetrieverTest.createId(dataStructureUtil.randomBeaconBlock(), 1));
     return new PendingRecoveryRequest(
-        id, downloadFuture, timeProvider.getTimeInMillis(), RECOVERY_TIMEOUT, DOWNLOAD_TIMEOUT);
+        id,
+        downloadFuture,
+        timeProvider.getTimeInMillis(),
+        RECOVERY_TIMEOUT,
+        DOWNLOAD_TIMEOUT,
+        METRIC,
+        () -> {});
   }
 }

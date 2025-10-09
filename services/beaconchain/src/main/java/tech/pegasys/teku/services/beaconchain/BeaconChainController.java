@@ -363,7 +363,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
-  protected volatile Optional<SidecarRetriever> sidecarRetriever = Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
