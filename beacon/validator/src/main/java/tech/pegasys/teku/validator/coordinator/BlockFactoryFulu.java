@@ -15,28 +15,15 @@ package tech.pegasys.teku.validator.coordinator;
 
 import java.util.Collections;
 import java.util.List;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsFulu;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsCellBundle;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class BlockFactoryFulu extends BlockFactoryDeneb {
 
-  private final KZG kzg;
-
-  public BlockFactoryFulu(
-      final Spec spec, final BlockOperationSelectorFactory operationSelector, final KZG kzg) {
+  public BlockFactoryFulu(final Spec spec, final BlockOperationSelectorFactory operationSelector) {
     super(spec, operationSelector);
-    this.kzg = kzg;
   }
 
   // No blob sidecars in Fulu
@@ -48,27 +35,6 @@ public class BlockFactoryFulu extends BlockFactoryDeneb {
   @Override
   public List<DataColumnSidecar> createDataColumnSidecars(
       final SignedBlockContainer blockContainer) {
-    return operationSelector.createDataColumnSidecarsSelector(kzg).apply(blockContainer);
-  }
-
-  @Override
-  protected SafeFuture<BlockContainer> createBlockContents(final BeaconBlock block) {
-    // The execution BlobsCellBundle has been cached as part of the block creation
-    return operationSelector
-        .createBlobsCellBundleSelector()
-        .apply(block)
-        .thenApply(blobsCellBundle -> createBlockContents(block, blobsCellBundle));
-  }
-
-  private BlockContentsFulu createBlockContents(
-      final BeaconBlock block, final BlobsCellBundle blobsCellBundle) {
-    return getBlockContentsSchema(block.getSlot())
-        .create(block, blobsCellBundle.getProofs(), blobsCellBundle.getBlobs());
-  }
-
-  private BlockContentsSchemaFulu getBlockContentsSchema(final UInt64 slot) {
-    return (BlockContentsSchemaFulu)
-        SchemaDefinitionsFulu.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlockContentsSchema();
+    return operationSelector.createDataColumnSidecarsSelector().apply(blockContainer);
   }
 }

@@ -32,6 +32,7 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 
 public class BlobsBundleV1 {
   @JsonSerialize(contentUsing = BytesSerializer.class)
@@ -66,7 +67,7 @@ public class BlobsBundleV1 {
   }
 
   public BlobsBundle asInternalBlobsBundle(final BlobSchema blobSchema) {
-    return new BlobsBundle(
+    return new BlobsBundleDeneb(
         commitments.stream().map(KZGCommitment::new).toList(),
         proofs.stream().map(KZGProof::new).toList(),
         blobs.stream().map(blobBytes -> new Blob(blobSchema, blobBytes)).toList());

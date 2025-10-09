@@ -20,12 +20,12 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.fulu.BeaconBlockBodyBuilderFulu;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyBuilderElectra;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderFulu {
+public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
 
   private SignedExecutionPayloadBid signedExecutionPayloadBid;
   private SszList<PayloadAttestation> payloadAttestations;

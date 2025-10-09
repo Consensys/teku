@@ -69,7 +69,6 @@ import tech.pegasys.teku.statetransition.MappedOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -193,7 +192,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 spec,
                 new InlineEventThread(),
                 recentChainData,
-                BlobSidecarManager.NOOP,
                 new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(spec, recentChainData),
                 storageSystem.getMetricsSystem());

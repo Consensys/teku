@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -66,16 +65,13 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
-import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
-import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -96,8 +92,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final EventThread forkChoiceExecutor;
   private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
-  private final BlobSidecarManager blobSidecarManager;
-  private final AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final AttestationStateSelector attestationStateSelector;
@@ -119,8 +113,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
-      final BlobSidecarManager blobSidecarManager,
-      final AvailabilityCheckerFactory<UInt64> dasSamplerManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
@@ -130,8 +122,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
-    this.blobSidecarManager = blobSidecarManager;
-    this.dasSamplerManager = dasSamplerManager;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
@@ -158,7 +148,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
-      final BlobSidecarManager blobSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final MetricsSystem metricsSystem) {
@@ -166,8 +155,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         spec,
         forkChoiceExecutor,
         recentChainData,
-        blobSidecarManager,
-        DasSamplerManager.NOOP,
         forkChoiceNotifier,
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
@@ -451,18 +438,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
-    final AvailabilityChecker<?> availabilityChecker;
-    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
-    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)) {
-      // checking of blob data availability is delayed until the processing of the execution
-      // payload in ePBS
-      availabilityChecker = AvailabilityChecker.NOOP_DATACOLUMN_SIDECAR;
-    } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.FULU)) {
-      LOG.debug("Created DAS availabilityChecker for slot {}", block.getSlot());
-      availabilityChecker = dasSamplerManager.createAvailabilityChecker(block);
-    } else {
-      availabilityChecker = blobSidecarManager.createAvailabilityChecker(block);
-    }
+    final AvailabilityChecker<?> availabilityChecker =
+        forkChoiceUtil.createAvailabilityChecker(block);
 
     availabilityChecker.initiateDataAvailabilityCheck();
 
@@ -531,7 +508,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  @SuppressWarnings("unchecked")
   private BlockImportResult importBlockAndState(
       final SignedBeaconBlock block,
       final BeaconState blockSlotState,
@@ -670,28 +646,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return transaction.getProposerBoostRoot().isEmpty();
   }
 
-  @SuppressWarnings("unchecked")
   private Optional<List<BlobSidecar>> extractBlobSidecarsFromValidationResults(
       final DataAndValidationResult<?> dataAndValidationResult, final SignedBeaconBlock block) {
-    final Optional<List<BlobSidecar>> blobSidecars;
     if (dataAndValidationResult.isNotRequired()) {
       // Outside availability window or pre-Deneb
-      blobSidecars = Optional.empty();
+      return Optional.empty();
     } else if (dataAndValidationResult.isValid()) {
-      final List<?> sidecars = dataAndValidationResult.data();
-      if (!sidecars.isEmpty() && sidecars.getFirst() instanceof BlobSidecar) {
-        blobSidecars = Optional.of((List<BlobSidecar>) sidecars);
-      } else {
-        blobSidecars = Optional.empty();
-      }
-    } else {
-      throw new IllegalStateException(
-          String.format(
-              "Unexpected attempt to store invalid sidecars (%s) for block: %s",
-              dataAndValidationResult.data().size(), block.toLogString()));
+      return dataAndValidationResult.getDataAsBlobSidecars();
     }
-
-    return blobSidecars;
+    throw new IllegalStateException(
+        String.format(
+            "Unexpected attempt to store invalid sidecars (%s) for block: %s",
+            dataAndValidationResult.data().size(), block.toLogString()));
   }
 
   /**

@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -62,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundleDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -318,7 +318,8 @@ class BlockOperationSelectorFactoryDenebTest {
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
-    final BlobsBundleDeneb blobsBundle = dataStructureUtil.randomBuilderBlobsBundle(3);
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        dataStructureUtil.randomBuilderBlobsBundle(3);
 
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
@@ -337,7 +338,7 @@ class BlockOperationSelectorFactoryDenebTest {
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
-    final BlobsBundleDeneb blobsBundle =
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
     when(blobsBundle.getBlobs()).thenReturn(dataStructureUtil.randomSszBlobs(2));
 
@@ -358,7 +359,7 @@ class BlockOperationSelectorFactoryDenebTest {
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
-    final BlobsBundleDeneb blobsBundle =
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         spy(dataStructureUtil.randomBuilderBlobsBundle(commitments));
     when(blobsBundle.getProofs()).thenReturn(dataStructureUtil.randomSszKZGProofs(2));
 
@@ -370,7 +371,7 @@ class BlockOperationSelectorFactoryDenebTest {
     assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
-            "The number of proofs in the builder BlobsBundle doesn't match the number of commitments in the block");
+            "The number of proofs in the builder BlobsBundle is not consistent with the number of commitments in the block");
   }
 
   @ParameterizedTest
@@ -382,11 +383,12 @@ class BlockOperationSelectorFactoryDenebTest {
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    final BlobsBundleDeneb blobsBundle = dataStructureUtil.randomBuilderBlobsBundle(commitments);
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        dataStructureUtil.randomBuilderBlobsBundle(commitments);
 
     if (useLocalFallback) {
       final BlobsBundle localFallbackBlobsBundle =
-          new BlobsBundle(
+          new BlobsBundleDeneb(
               blobsBundle.getCommitments().stream()
                   .map(SszKZGCommitment::getKZGCommitment)
                   .toList(),
@@ -492,7 +494,7 @@ class BlockOperationSelectorFactoryDenebTest {
   private void prepareCachedBuilderPayload(
       final UInt64 slot,
       final ExecutionPayload executionPayload,
-      final BlobsBundleDeneb blobsBundle) {
+      final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle) {
     final BuilderPayload builderPayload =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
             .getExecutionPayloadAndBlobsBundleSchema()
