@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
@@ -77,11 +76,6 @@ public class DataColumnSidecarCustodyImpl
 
     public AsyncStream<DataColumnSlotAndIdentifier> streamIncompleteColumns() {
       return AsyncStream.createUnsafe(getIncompleteColumns().iterator());
-    }
-
-    @SuppressWarnings("UnusedMethod")
-    public boolean isComplete() {
-      return canonicalBlockRoot().isPresent() && !isIncomplete();
     }
 
     public boolean isIncomplete() {
@@ -247,10 +241,7 @@ public class DataColumnSidecarCustodyImpl
                           minCustodyPeriodSlotCalculator.getMinCustodyPeriodSlot(
                               currentSlot.get()));
               final Stream<UInt64> slotStream =
-                  Stream.iterate(
-                      firstIncompleteSlot,
-                      slot -> slot.isLessThanOrEqualTo(toSlotIncluded),
-                      UInt64::increment);
+                  UInt64.rangeClosed(firstIncompleteSlot, toSlotIncluded);
               return AsyncStream.createUnsafe(slotStream.iterator())
                   .mapAsync(this::retrieveSlotCustody);
             });
@@ -304,9 +295,8 @@ public class DataColumnSidecarCustodyImpl
                     .filter(
                         block ->
                             block
-                                .getBeaconBlock()
-                                .flatMap(b -> b.getBody().toVersionDeneb())
-                                .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+                                .getBody()
+                                .getOptionalBlobKzgCommitments()
                                 .map(commitments -> !commitments.isEmpty())
                                 .orElse(false))
                     .map(BeaconBlock::getRoot));

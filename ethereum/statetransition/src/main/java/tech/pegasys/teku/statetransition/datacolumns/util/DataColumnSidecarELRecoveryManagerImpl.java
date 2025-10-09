@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns.util;
 
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_EL;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSAL;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
 
@@ -27,8 +28,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -43,7 +44,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -91,9 +91,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayer;
   private final int maxTrackers;
-  private final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher;
+  private final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  private final KZG kzg;
 
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
   private final Counter getBlobsV2RequestsCounter;
@@ -104,6 +103,14 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final Duration localElBlobsFetchingRetryDelay;
   private final int localElBlobsFetchingMaxRetries;
 
+  static final Set<RemoteOrigin> LOCAL_OR_RECOVERED_ORIGINS =
+      Set.of(LOCAL_PROPOSAL, LOCAL_EL, RECOVERED);
+
+  private static boolean isLocalBlockProductionOrRecovered(
+      final Optional<RemoteOrigin> remoteOrigin) {
+    return remoteOrigin.map(LOCAL_OR_RECOVERED_ORIGINS::contains).orElse(false);
+  }
+
   @VisibleForTesting
   public DataColumnSidecarELRecoveryManagerImpl(
       final Spec spec,
@@ -113,8 +120,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers,
-      final KZG kzg,
-      final Consumer<List<DataColumnSidecar>> dataColumnSidecarPublisher,
+      final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
@@ -126,7 +132,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.recentChainData = recentChainData;
     this.executionLayer = executionLayer;
     this.maxTrackers = maxTrackers;
-    this.kzg = kzg;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.localElBlobsFetchingRetryDelay = localElBlobsFetchingRetryDelay;
@@ -158,31 +163,41 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onNewDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
+    if (isLocalBlockProductionOrRecovered(Optional.of(remoteOrigin))) {
+      LOG.debug(
+          "Data from {} with origin {} is not subject to recovery",
+          dataColumnSidecar::toLogString,
+          () -> remoteOrigin);
+      return;
+    }
+
     LOG.debug(
-        "Received data column sidecar {} from {}", dataColumnSidecar.toLogString(), remoteOrigin);
+        "Received data column sidecar {} from {}",
+        dataColumnSidecar::toLogString,
+        () -> remoteOrigin);
+
     if (spec.atSlot(dataColumnSidecar.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
       LOG.debug(
-          "Received data column sidecar {} before FULU. Ignoring.",
-          dataColumnSidecar.toLogString());
+          "Received data column sidecar {} before FULU. Ignoring.", dataColumnSidecar::toLogString);
       return;
     }
     if (recentChainData.containsBlock(dataColumnSidecar.getBeaconBlockRoot())) {
       LOG.debug(
           "Data column sidecar {} is from already imported block. Ignoring.",
-          dataColumnSidecar.toLogString());
+          dataColumnSidecar::toLogString);
       return;
     }
     if (shouldIgnoreItemAtSlot(dataColumnSidecar.getSlot())) {
       LOG.debug(
           "Data column sidecar {} is too old or from the future. Ignoring.",
-          dataColumnSidecar.toLogString());
+          dataColumnSidecar::toLogString);
       return;
     }
 
     final SlotAndBlockRoot slotAndBlockRoot = dataColumnSidecar.getSlotAndBlockRoot();
 
     if (createRecoveryTaskFromDataColumnSidecar(dataColumnSidecar)) {
-      onFirstSeen(slotAndBlockRoot, Optional.of(remoteOrigin));
+      onFirstSeen(slotAndBlockRoot);
     }
   }
 
@@ -243,8 +258,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                   recoveryTask.signedBeaconBlockHeader(),
                   recoveryTask.sszKZGCommitments(),
                   recoveryTask.kzgCommitmentsInclusionProof(),
-                  blobAndCellProofs,
-                  kzg);
+                  blobAndCellProofs);
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
@@ -268,28 +282,44 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
         .addAll(myCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
     LOG.debug(
         "Publishing {} data column sidecars for {}",
-        myCustodySidecars.size(),
-        recoveryTask.getSlotAndBlockRoot());
-    dataColumnSidecarPublisher.accept(myCustodySidecars);
+        myCustodySidecars::size,
+        recoveryTask::getSlotAndBlockRoot);
+    dataColumnSidecarPublisher.accept(myCustodySidecars, LOCAL_EL);
   }
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-    LOG.debug("Received block {} from {}", block.getSlotAndBlockRoot(), remoteOrigin);
-    if (spec.atSlot(block.getSlot()).getMilestone().isLessThan(SpecMilestone.FULU)) {
-      LOG.debug("Received block {} before Fulu. Ignoring.", block.getSlotAndBlockRoot());
+    if (isLocalBlockProductionOrRecovered(remoteOrigin)) {
+      LOG.debug(
+          "Block {} from {} is not subject to recovery",
+          block::getSlotAndBlockRoot,
+          () -> remoteOrigin);
       return;
     }
+    final SpecMilestone milestone = spec.atSlot(block.getSlot()).getMilestone();
+    // TODO-GLOAS: this could still be useful, but ignoring it for the moment since the recovery
+    // task relies on blob kzg commitments
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.GLOAS)
+        || milestone.isLessThan(SpecMilestone.FULU)) {
+      LOG.debug(
+          "Received block {} for {} fork. Ignoring.",
+          block::getSlotAndBlockRoot,
+          milestone::lowerCaseName);
+      return;
+    }
+
+    LOG.debug("Received block {} from {}", block::getSlotAndBlockRoot, () -> remoteOrigin);
+
     if (recentChainData.containsBlock(block.getRoot())) {
-      LOG.debug("Block {} is already imported. Ignoring.", block.getSlotAndBlockRoot());
+      LOG.debug("Block {} is already imported. Ignoring.", block::getSlotAndBlockRoot);
       return;
     }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
-      LOG.debug("Block {} is too old or from the future. Ignoring.", block.getSlotAndBlockRoot());
+      LOG.debug("Block {} is too old or from the future. Ignoring.", block::getSlotAndBlockRoot);
       return;
     }
     if (createRecoveryTaskFromBlock(block)) {
-      onFirstSeen(block.getSlotAndBlockRoot(), remoteOrigin);
+      onFirstSeen(block.getSlotAndBlockRoot());
     }
   }
 
@@ -305,13 +335,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
-    LOG.trace(
-        "Recovery tasks: {}",
-        () -> {
-          final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
-              new HashMap<>(recoveryTasks);
-          return recoveryTasksCopy.toString();
-        });
+    LOG.trace("Recovery tasks: {}", () -> new HashMap<>(recoveryTasks));
   }
 
   @VisibleForTesting
@@ -334,20 +358,8 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     }
   }
 
-  private void onFirstSeen(
-      final SlotAndBlockRoot slotAndBlockRoot, final Optional<RemoteOrigin> remoteOrigin) {
-    LOG.debug(
-        "Data from {} is first seen, checking if recovery is needed",
-        slotAndBlockRoot.getBlockRoot());
-    final boolean isLocalBlockProductionOrRecovered =
-        remoteOrigin.map(ro -> Set.of(LOCAL_PROPOSAL, RECOVERED).contains(ro)).orElse(false);
-    if (isLocalBlockProductionOrRecovered) {
-      LOG.debug(
-          "Data from {} is produced by {}. Recovery is not needed.",
-          slotAndBlockRoot.getBlockRoot(),
-          remoteOrigin);
-      return;
-    }
+  private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
+    LOG.debug("Data from {} is first seen, checking if recovery is needed", slotAndBlockRoot);
 
     asyncRunner
         .runWithRetry(
@@ -420,7 +432,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
               getBlobsV2ResponsesCounter.inc();
               LOG.debug(
                   "Collected all blobSidecars from EL for slot {}, recovering data column sidecars",
-                  slotAndBlockRoot.getSlot());
+                  slotAndBlockRoot::getSlot);
               publishRecoveredDataColumnSidecars(recoveryTask, blobAndCellProofsList);
             });
   }

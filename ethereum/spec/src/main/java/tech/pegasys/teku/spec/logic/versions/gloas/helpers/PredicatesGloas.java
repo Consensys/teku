@@ -39,6 +39,20 @@ public class PredicatesGloas extends PredicatesElectra {
     super(specConfig);
   }
 
+  // Check if ``validator`` has an 0x02 or 0x03 prefixed withdrawal credential.
+  @Override
+  public boolean hasCompoundingWithdrawalCredential(final Validator validator) {
+    return isCompoundingWithdrawalCredential(validator.getWithdrawalCredentials())
+        || isBuilderWithdrawalCredential(validator.getWithdrawalCredentials());
+  }
+
+  /**
+   * is_parent_block_full
+   *
+   * <p>This function returns true if the last committed payload bid was fulfilled with a payload,
+   * this can only happen when both beacon block and payload were present. This function must be
+   * called on a beacon state before processing the execution payload bid in the block.
+   */
   public boolean isParentBlockFull(final BeaconState state) {
     return BeaconStateGloas.required(state)
         .getLatestExecutionPayloadBid()

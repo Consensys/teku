@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 @SuppressWarnings("unchecked")
 class ThrottlingSyncSourceTest {
@@ -42,6 +43,7 @@ class ThrottlingSyncSourceTest {
   private static final int MAX_BLOCKS_PER_MINUTE = 100;
   private static final int MAX_BLOBS_PER_BLOCK = 6;
   private static final int MAX_BLOB_SIDECARS_PER_MINUTE = 100;
+  private static final int MAX_EXECUTION_PAYLOAD_ENVELOPES_PER_MINUTE = 100;
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
@@ -53,6 +55,9 @@ class ThrottlingSyncSourceTest {
   private final RpcResponseListener<BlobSidecar> blobSidecarsListener =
       mock(RpcResponseListener.class);
 
+  private final RpcResponseListener<SignedExecutionPayloadEnvelope>
+      executionPayloadEnvelopesListener = mock(RpcResponseListener.class);
+
   private final ThrottlingSyncSource source =
       new ThrottlingSyncSource(
           asyncRunner,
@@ -61,7 +66,8 @@ class ThrottlingSyncSourceTest {
           MAX_BLOCKS_PER_MINUTE,
           Optional.of(MAX_BLOBS_PER_BLOCK),
           Optional.of(MAX_BLOB_SIDECARS_PER_MINUTE),
-          Optional.empty());
+          Optional.empty(),
+          Optional.of(MAX_EXECUTION_PAYLOAD_ENVELOPES_PER_MINUTE));
 
   @BeforeEach
   void setup() {
@@ -84,6 +90,19 @@ class ThrottlingSyncSourceTest {
                   invocationOnMock.getArgument(2);
               UInt64.range(UInt64.ZERO, count.times(MAX_BLOBS_PER_BLOCK))
                   .forEach(__ -> ignoreFuture(listener.onResponse(mock(BlobSidecar.class))));
+              return SafeFuture.COMPLETE;
+            });
+    when(delegate.requestExecutionPayloadEnvelopesByRange(any(), any(), any()))
+        .thenAnswer(
+            invocationOnMock -> {
+              final UInt64 count = invocationOnMock.getArgument(1);
+              final RpcResponseListenerWithCount<SignedExecutionPayloadEnvelope> listener =
+                  invocationOnMock.getArgument(2);
+              UInt64.range(UInt64.ZERO, count)
+                  .forEach(
+                      __ ->
+                          ignoreFuture(
+                              listener.onResponse(mock(SignedExecutionPayloadEnvelope.class))));
               return SafeFuture.COMPLETE;
             });
   }
@@ -135,12 +154,33 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
+  void shouldRequestExecutionPayloadEnvelopesImmediatelyIfRateLimitNotExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_EXECUTION_PAYLOAD_ENVELOPES_PER_MINUTE - 1);
+    ignoreFuture(
+        source.requestExecutionPayloadEnvelopesByRange(
+            UInt64.ZERO, count, executionPayloadEnvelopesListener));
+    ignoreFuture(
+        source.requestExecutionPayloadEnvelopesByRange(
+            count, count, executionPayloadEnvelopesListener));
+
+    // Both requests happen immediately
+    ignoreFuture(
+        verify(delegate)
+            .requestExecutionPayloadEnvelopesByRange(
+                eq(UInt64.ZERO), eq(count), any(RpcResponseListenerWithCount.class)));
+    ignoreFuture(
+        verify(delegate)
+            .requestExecutionPayloadEnvelopesByRange(
+                eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
+  }
+
+  @Test
   void shouldDelayRequestIfBlockLimitAlreadyExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
     ignoreFuture(source.requestBlocksByRange(count, count, blocksListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlocksByRange(
@@ -162,6 +202,7 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(source.requestBlobSidecarsByRange(count, count, blobSidecarsListener));
 
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
@@ -178,12 +219,38 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
+  void shouldDelayRequestIfExecutionPayloadEnvelopeLimitAlreadyExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_EXECUTION_PAYLOAD_ENVELOPES_PER_MINUTE);
+    ignoreFuture(
+        source.requestExecutionPayloadEnvelopesByRange(
+            UInt64.ZERO, count, executionPayloadEnvelopesListener));
+    ignoreFuture(
+        source.requestExecutionPayloadEnvelopesByRange(
+            count, count, executionPayloadEnvelopesListener));
+
+    // Second request should be delayed
+    ignoreFuture(
+        verify(delegate)
+            .requestExecutionPayloadEnvelopesByRange(
+                eq(UInt64.ZERO), eq(count), any(RpcResponseListenerWithCount.class)));
+    verifyNoMoreInteractions(delegate);
+
+    timeProvider.advanceTimeBySeconds(61);
+    asyncRunner.executeQueuedActions();
+
+    ignoreFuture(
+        verify(delegate)
+            .requestExecutionPayloadEnvelopesByRange(
+                eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
+  }
+
+  @Test
   void shouldContinueDelayingBlocksRequestIfRequestStillExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
     ignoreFuture(source.requestBlocksByRange(count, count, blocksListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlocksByRange(
@@ -208,7 +275,7 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(source.requestBlobSidecarsByRange(count, count, blobSidecarsListener));
 
-    // Both requests happen immediately
+    // Second request should be delayed
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
@@ -224,6 +291,35 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(
         verify(delegate)
             .requestBlobSidecarsByRange(
+                eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
+  }
+
+  @Test
+  void shouldContinueDelayingExecutionPayloadEnvelopesRequestIfRequestStillExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_EXECUTION_PAYLOAD_ENVELOPES_PER_MINUTE);
+    ignoreFuture(
+        source.requestExecutionPayloadEnvelopesByRange(
+            UInt64.ZERO, count, executionPayloadEnvelopesListener));
+    ignoreFuture(
+        source.requestExecutionPayloadEnvelopesByRange(
+            count, count, executionPayloadEnvelopesListener));
+
+    // Second request should be delayed
+    ignoreFuture(
+        verify(delegate)
+            .requestExecutionPayloadEnvelopesByRange(
+                eq(UInt64.ZERO), eq(count), any(RpcResponseListenerWithCount.class)));
+    verifyNoMoreInteractions(delegate);
+
+    timeProvider.advanceTimeBySeconds(30);
+    asyncRunner.executeQueuedActions();
+    verifyNoMoreInteractions(delegate);
+
+    timeProvider.advanceTimeBySeconds(31);
+    asyncRunner.executeQueuedActions();
+    ignoreFuture(
+        verify(delegate)
+            .requestExecutionPayloadEnvelopesByRange(
                 eq(count), eq(count), any(RpcResponseListenerWithCount.class)));
   }
 }

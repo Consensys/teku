@@ -1823,6 +1823,18 @@
         return sync_committee_indices
     </spec>
 
+- name: get_payload_attestation_due_ms#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getPayloadAttestationDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getPayloadAttestationDueMillis(
+  spec: |
+    <spec fn="get_payload_attestation_due_ms" fork="gloas" hash="16f3b9cb">
+    def get_payload_attestation_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(PAYLOAD_ATTESTATION_DUE_BPS)
+    </spec>
+
 - name: get_pending_balance_to_withdraw
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateAccessorsElectra.java

@@ -146,6 +146,9 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     getDutiesForSlot(slot).ifPresent(duties -> duties.onAggregationDue(slot));
   }
 
+  @Override
+  public void onPayloadAttestationCreationDue(final UInt64 slot) {}
+
   private Optional<PendingDuties> getDutiesForSlot(final UInt64 slot) {
     final Optional<SyncCommitteeUtil> maybeUtils = spec.getSyncCommitteeUtil(slot);
     if (maybeUtils.isEmpty()) {

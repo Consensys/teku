@@ -54,14 +54,15 @@ public class SidecarBenchmarkConfig {
       SchemaDefinitionsDeneb.required(spec.atSlot(UInt64.ONE).getSchemaDefinitions())
           .getBlobKzgCommitmentsSchema();
 
-  SidecarBenchmarkConfig(final boolean precompute) {
+  SidecarBenchmarkConfig(final boolean precompute, final boolean useRustLibrary) {
     kzgBenchmark = new KzgInstances(precompute ? 9 : 0);
     kzgCommitments =
         blobs.stream()
             .map(blob -> getKzg(false).blobToKzgCommitment(blob.getBytes()))
             .map(SszKZGCommitment::new)
             .toList();
-    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, getKzg(false));
+    miscHelpersFulu.setKzg(getKzg(useRustLibrary));
+    extendedMatrix = miscHelpersFulu.computeExtendedMatrixAndProofs(blobs);
     signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(
             blobKzgCommitmentsSchema.createFromElements(kzgCommitments));

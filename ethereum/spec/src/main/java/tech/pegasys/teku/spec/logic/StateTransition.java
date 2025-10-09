@@ -15,9 +15,11 @@ package tech.pegasys.teku.spec.logic;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.BitSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -86,7 +88,7 @@ public class StateTransition {
 
   private BeaconState processSlot(final SpecVersion spec, final BeaconState preState) {
     // Cache state root
-    Bytes32 previousStateRoot = preState.hashTreeRoot();
+    final Bytes32 previousStateRoot = preState.hashTreeRoot();
     return preState.updated(
         state -> {
           int index = state.getSlot().mod(spec.getSlotsPerHistoricalRoot()).intValue();
@@ -107,8 +109,25 @@ public class StateTransition {
           }
 
           // Cache block root
-          Bytes32 previousBlockRoot = state.getLatestBlockHeader().hashTreeRoot();
+          final Bytes32 previousBlockRoot = state.getLatestBlockHeader().hashTreeRoot();
           state.getBlockRoots().setElement(index, previousBlockRoot);
+
+          state
+              .toMutableVersionGloas()
+              .ifPresent(
+                  stateGloas -> {
+                    final SszBitvector currentPayloadAvailability =
+                        stateGloas.getExecutionPayloadAvailability();
+                    final BitSet newPayloadAvailability = currentPayloadAvailability.getAsBitSet();
+                    // Unset the next payload availability
+                    final int nextAvailabilityIndex =
+                        state.getSlot().plus(1).mod(spec.getSlotsPerHistoricalRoot()).intValue();
+                    newPayloadAvailability.set(nextAvailabilityIndex, false);
+                    stateGloas.setExecutionPayloadAvailability(
+                        currentPayloadAvailability
+                            .getSchema()
+                            .wrapBitSet(currentPayloadAvailability.size(), newPayloadAvailability));
+                  });
         });
   }
 
