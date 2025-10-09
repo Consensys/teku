@@ -19,8 +19,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
+import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAndParent;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
@@ -367,14 +366,12 @@ public class TestSpecFactory {
   public static Spec create(
       final SpecConfigAndParent<? extends SpecConfig> config,
       final SpecMilestone highestSupportedMilestone) {
-    var spec = Spec.create(config, highestSupportedMilestone);
-    var kzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
+    final Spec spec = Spec.create(config, highestSupportedMilestone);
 
     spec.initialize(
         AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
-        kzg);
+        NoOpKZG.INSTANCE);
     return spec;
   }
 
