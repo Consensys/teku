@@ -104,7 +104,7 @@ class RebuildColumnsTask {
         pendingRequest.getFuture().complete(sidecar);
       }
     } else {
-      // TODO so we didnt match, we'd need to either fail the future or let it be handled upstream
+      // TODO so we didn't match, we'd need to either fail the future or let it be handled upstream
       pendingRequest.getFuture().cancel(true);
       return false;
     }
