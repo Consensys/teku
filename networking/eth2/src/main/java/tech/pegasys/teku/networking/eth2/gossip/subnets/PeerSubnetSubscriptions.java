@@ -27,8 +27,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -43,8 +41,6 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 public class PeerSubnetSubscriptions {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final SubnetSubscriptions attestationSubnetSubscriptions;
   private final SubnetSubscriptions syncCommitteeSubnetSubscriptions;
@@ -78,8 +74,6 @@ public class PeerSubnetSubscriptions {
       final int targetSubnetSubscriberCount,
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
-
-    LOG.info(">>> Creating PeerSubnetSubscriptions");
 
     final SchemaDefinitionsSupplier currentSchemaDefinitions = currentVersion::getSchemaDefinitions;
     final int dataColumnSidecarSubnetCount =
@@ -131,8 +125,6 @@ public class PeerSubnetSubscriptions {
                         .getSubnets()
                         .forEach(
                             columnSubnet -> {
-                              LOG.info(
-                                  ">>> Adding data column subnet {} as relevant", columnSubnet);
                               b.addRelevantSubnet(columnSubnet);
                               subscribersByTopic
                                   .getOrDefault(
@@ -155,8 +147,6 @@ public class PeerSubnetSubscriptions {
       final SettableLabelledGauge subnetPeerCountGauge,
       final PeerSubnetSubscriptions subscriptions,
       final int dataColumnSidecarSubnetCount) {
-    LOG.info(">>> Updating metrics");
-
     streamAllAttestationSubnetIds(currentSchemaDefinitions)
         .forEach(
             subnetId ->
