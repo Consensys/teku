@@ -609,21 +609,21 @@ public class P2POptions {
     return p2pUpperBound;
   }
 
-    private List<String> getStaticPeersList() {
-        final List<String> staticPeers = new ArrayList<>(p2pStaticPeers);
+  private List<String> getStaticPeersList() {
+    final List<String> staticPeers = new ArrayList<>(p2pStaticPeers);
 
-        if (p2pStaticPeersUrl != null) {
-            try {
-                final List<String> peersFromUrl = MultilineEntriesReader.readEntries(p2pStaticPeersUrl);
-                staticPeers.addAll(peersFromUrl);
-            } catch (final Exception e) {
-                throw new InvalidConfigurationException(
-                        "Error reading static peers from " + p2pStaticPeersUrl, e);
-            }
-        }
-
-        return staticPeers;
+    if (p2pStaticPeersUrl != null) {
+      try {
+        final List<String> peersFromUrl = MultilineEntriesReader.readEntries(p2pStaticPeersUrl);
+        staticPeers.addAll(peersFromUrl);
+      } catch (final Exception e) {
+        throw new InvalidConfigurationException(
+            "Error reading static peers from " + p2pStaticPeersUrl, e);
+      }
     }
+
+    return staticPeers;
+  }
 
   private List<String> getBootnodes() {
     final List<String> bootnodes = new ArrayList<>();
