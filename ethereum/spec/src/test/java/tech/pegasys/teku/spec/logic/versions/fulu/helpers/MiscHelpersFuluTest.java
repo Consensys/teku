@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.MatrixEntry;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -389,7 +388,8 @@ public class MiscHelpersFuluTest {
   public void reconstructAllDataColumnSidecars_withInsufficientSidecars_shouldThrowException() {
     // Test with less than half of the sidecars (should fail)
     final int halfSize = sharedOriginalSidecars.size() / 2;
-    final List<DataColumnSidecar> insufficientSidecars = sharedOriginalSidecars.subList(0, halfSize - 1);
+    final List<DataColumnSidecar> insufficientSidecars =
+        sharedOriginalSidecars.subList(0, halfSize - 1);
 
     assertThatThrownBy(
             () -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars, sharedKzg))
