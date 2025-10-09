@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
@@ -534,5 +535,9 @@ public class ForkChoiceUtil {
     final Optional<Bytes32> parentExecutionRoot =
         store.getForkChoiceStrategy().executionBlockHash(block.getParentRoot());
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
+  }
+
+  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+    return AvailabilityChecker.NOOP;
   }
 }

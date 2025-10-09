@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -152,7 +151,6 @@ public class PoolFactory {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
-      final KZG kzg,
       final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetricsSystem metricsSystem,
@@ -165,7 +163,6 @@ public class PoolFactory {
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         EL_RECOVERY_TASKS_LIMIT,
-        kzg,
         dataColumnSidecarPublisher,
         custodyGroupCountManagerSupplier,
         metricsSystem,

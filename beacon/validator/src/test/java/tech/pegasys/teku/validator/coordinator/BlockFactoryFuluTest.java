@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
@@ -174,6 +175,10 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
     when(kzg.computeCells(any()))
         .thenReturn(
             IntStream.range(0, 128).mapToObj(__ -> dataStructureUtil.randomKZGCell()).toList());
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
     return new BlockFactoryFulu(
         spec,
         new BlockOperationSelectorFactory(
@@ -190,7 +195,6 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
             forkChoiceNotifier,
             executionLayer,
             metricsSystem,
-            timeProvider),
-        kzg);
+            timeProvider));
   }
 }

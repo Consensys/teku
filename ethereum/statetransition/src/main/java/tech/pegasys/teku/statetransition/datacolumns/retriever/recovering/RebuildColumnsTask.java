@@ -25,7 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -43,7 +42,6 @@ class RebuildColumnsTask {
   private boolean isReadyToRebuild = false;
   private final MiscHelpersFulu miscHelpers;
   protected final Map<Integer, DataColumnSidecar> sidecarMap = new ConcurrentSkipListMap<>();
-  private final KZG kzg;
   protected final AtomicBoolean done = new AtomicBoolean(false);
 
   RebuildColumnsTask(
@@ -52,14 +50,12 @@ class RebuildColumnsTask {
       final Duration timeout,
       final int minimumColumnsForRebuild,
       final DataColumnSidecarDbAccessor sidecarDB,
-      final MiscHelpersFulu miscHelpers,
-      final KZG kzg) {
+      final MiscHelpersFulu miscHelpers) {
     this.slotAndBlockRoot = slotAndBlockRoot;
     this.timeoutMillis = timestampMillis.plus(timeout.toMillis());
     this.minimumColumnsForRebuild = minimumColumnsForRebuild;
     this.sidecarDB = sidecarDB;
     this.miscHelpers = miscHelpers;
-    this.kzg = kzg;
     query = SafeFuture.COMPLETE;
   }
 
@@ -148,7 +144,7 @@ class RebuildColumnsTask {
       LOG.trace(
           "Rebuilding columns at {}, {} columns in cache", slotAndBlockRoot, sidecarMap.size());
       final Map<UInt64, DataColumnSidecar> reconstructedSidecars =
-          miscHelpers.reconstructAllDataColumnSidecars(sidecarMap.values(), kzg).stream()
+          miscHelpers.reconstructAllDataColumnSidecars(sidecarMap.values()).stream()
               .collect(
                   Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, Function.identity()));
       LOG.debug(

@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -40,7 +39,6 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarRetriever downloader;
-  private final KZG kzg;
   private final MiscHelpersFulu miscHelpersFulu;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
@@ -63,7 +61,6 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
 
   public SidecarRetriever(
       final DataColumnSidecarRetriever delegate,
-      final KZG kzg,
       final MiscHelpersFulu miscHelpersFulu,
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
@@ -73,7 +70,6 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
       final int numberOfColumns,
       final MetricsSystem metricsSystem) {
     downloader = delegate;
-    this.kzg = kzg;
     this.miscHelpersFulu = miscHelpersFulu;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
@@ -194,8 +190,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
                               recoveryTimeout.dividedBy(2),
                               numberOfColumnsRequiredToReconstruct,
                               sidecarDB,
-                              miscHelpersFulu,
-                              kzg));
+                              miscHelpersFulu));
               LOG.debug(
                   "Rebuilding columns for slot {} root {}",
                   request.getSlot(),

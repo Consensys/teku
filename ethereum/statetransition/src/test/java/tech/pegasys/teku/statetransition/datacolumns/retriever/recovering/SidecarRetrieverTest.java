@@ -31,8 +31,6 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -66,7 +64,7 @@ public class SidecarRetrieverTest {
   final MiscHelpersFulu miscHelpers =
       MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
   final int columnCount = config.getNumberOfColumns();
-  final KZG kzg = KZG.getInstance(false);
+  // final KZG kzg = KZG.getInstance(false);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
@@ -77,7 +75,6 @@ public class SidecarRetrieverTest {
   private final SidecarRetriever retriever =
       new SidecarRetriever(
           delegateRetriever,
-          kzg,
           miscHelpers,
           dbAccessor,
           stubAsyncRunner,
@@ -86,10 +83,6 @@ public class SidecarRetrieverTest {
           timeProvider,
           columnCount,
           metricsSystem);
-
-  public SidecarRetrieverTest() {
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-  }
 
   @BeforeEach
   void setUp() {
@@ -141,9 +134,7 @@ public class SidecarRetrieverTest {
     final BeaconBlock block = blockResolver.addBlock(10, blobCount);
     final List<DataColumnSidecar> sidecars =
         miscHelpers.constructDataColumnSidecarsOld(
-            dataStructureUtil.signedBlock(block),
-            List.of(dataStructureUtil.randomValidBlob()),
-            kzg);
+            dataStructureUtil.signedBlock(block), List.of(dataStructureUtil.randomValidBlob()));
     final List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
     dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
