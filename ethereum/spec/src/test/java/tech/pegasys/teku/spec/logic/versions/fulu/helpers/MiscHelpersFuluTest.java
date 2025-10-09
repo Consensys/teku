@@ -33,6 +33,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -84,6 +85,11 @@ public class MiscHelpersFuluTest {
       SpecConfigFulu.required(spec.getGenesisSpecConfig());
   private final MiscHelpersFulu miscHelpersFulu =
       new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
+
+  // Shared test data for reconstructAllDataColumnSidecars tests
+  private static List<DataColumnSidecar> sharedOriginalSidecars;
+  private static KZG sharedKzg;
+  private static SignedBeaconBlock sharedSignedBeaconBlock;
 
   @ParameterizedTest
   @MethodSource("getComputeForkDigestFuluScenarios")
@@ -260,6 +266,41 @@ public class MiscHelpersFuluTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
+  @BeforeAll
+  static void setUpSharedTestData() {
+    final Spec spec =
+        TestSpecFactory.createMinimalFulu(
+            builder ->
+                builder.fuluBuilder(
+                    fuluBuilder ->
+                        fuluBuilder
+                            .cellsPerExtBlob(128)
+                            .numberOfColumns(128)
+                            .numberOfCustodyGroups(128)
+                            .custodyRequirement(4)
+                            .validatorCustodyRequirement(8)
+                            .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
+                            .samplesPerSlot(16)));
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final MiscHelpersFulu miscHelpersFulu =
+        new MiscHelpersFulu(
+            SpecConfigFulu.required(spec.getGenesisSpecConfig()),
+            new PredicatesElectra(spec.getGenesisSpecConfig()),
+            SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions()));
+
+    // Create test data once for all tests
+    final List<Blob> blobs =
+        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+
+    sharedKzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(sharedKzg);
+    sharedSignedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
+
+    sharedOriginalSidecars =
+        miscHelpersFulu.constructDataColumnSidecarsOld(sharedSignedBeaconBlock, blobs, sharedKzg);
+  }
+
   @ParameterizedTest(name = "{0} validator custody groups required")
   @MethodSource("getValidatorCustodyRequirementFixtures")
   public void testGetValidatorCustodyRequirement(
@@ -332,69 +373,26 @@ public class MiscHelpersFuluTest {
 
   @Test
   public void reconstructAllDataColumnSidecars_withSufficientSidecars_shouldReconstructAll() {
-    // Create test data similar to SidecarBenchmarkConfig
-    final List<Blob> blobs =
-        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
-
-    final KZG kzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix =
-        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-
-    final List<DataColumnSidecar> originalSidecars =
-        miscHelpersFulu.constructDataColumnSidecars(
-            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-
     // Test with more than half of the sidecars (should succeed)
-    final int halfSize = originalSidecars.size() / 2;
+    final int halfSize = sharedOriginalSidecars.size() / 2;
     final List<DataColumnSidecar> partialSidecars =
-        originalSidecars.subList(halfSize, originalSidecars.size());
+        sharedOriginalSidecars.subList(halfSize - 1, sharedOriginalSidecars.size());
 
     final List<DataColumnSidecar> reconstructedSidecars =
-        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, kzg);
+        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, sharedKzg);
 
     // Verify that all sidecars were reconstructed
-    assertThat(reconstructedSidecars).hasSize(originalSidecars.size());
-
-    // Verify that the reconstructed sidecars have the same structure as original
-    for (int i = 0; i < reconstructedSidecars.size(); i++) {
-      final DataColumnSidecar reconstructed = reconstructedSidecars.get(i);
-      final DataColumnSidecar original = originalSidecars.get(i);
-
-      assertThat(reconstructed.getIndex()).isEqualTo(original.getIndex());
-      assertThat(reconstructed.getColumn().size()).isEqualTo(original.getColumn().size());
-      assertThat(reconstructed.getKzgCommitments().size())
-          .isEqualTo(original.getKzgCommitments().size());
-      assertThat(reconstructed.getKzgProofs().size()).isEqualTo(original.getKzgProofs().size());
-      assertThat(reconstructed.getSlot()).isEqualTo(original.getSlot());
-    }
+    assertThat(reconstructedSidecars).isEqualTo(sharedOriginalSidecars);
   }
 
   @Test
   public void reconstructAllDataColumnSidecars_withInsufficientSidecars_shouldThrowException() {
-    // Create test data
-    final List<Blob> blobs =
-        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
-
-    final KZG kzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix =
-        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-
-    final List<DataColumnSidecar> originalSidecars =
-        miscHelpersFulu.constructDataColumnSidecars(
-            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-
     // Test with less than half of the sidecars (should fail)
-    final int halfSize = originalSidecars.size() / 2;
-    final List<DataColumnSidecar> insufficientSidecars = originalSidecars.subList(0, halfSize - 1);
+    final int halfSize = sharedOriginalSidecars.size() / 2;
+    final List<DataColumnSidecar> insufficientSidecars = sharedOriginalSidecars.subList(0, halfSize - 1);
 
     assertThatThrownBy(
-            () -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars, kzg))
+            () -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars, sharedKzg))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             "Number of sidecars must be greater than or equal to the half of column count");
@@ -412,88 +410,41 @@ public class MiscHelpersFuluTest {
 
   @Test
   public void reconstructAllDataColumnSidecars_withExactlyHalfSidecars_shouldSucceed() {
-    // Create test data with even number of sidecars
-    final List<Blob> blobs =
-        IntStream.range(0, 6).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
-
-    final KZG kzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix =
-        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-
-    final List<DataColumnSidecar> originalSidecars =
-        miscHelpersFulu.constructDataColumnSidecars(
-            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-
     // Test with exactly half of the sidecars (should succeed)
-    final int halfSize = originalSidecars.size() / 2;
+    final int halfSize = sharedOriginalSidecars.size() / 2;
     final List<DataColumnSidecar> halfSidecars =
-        originalSidecars.subList(halfSize, originalSidecars.size());
+        sharedOriginalSidecars.subList(halfSize, sharedOriginalSidecars.size());
 
     final List<DataColumnSidecar> reconstructedSidecars =
-        miscHelpersFulu.reconstructAllDataColumnSidecars(halfSidecars, kzg);
+        miscHelpersFulu.reconstructAllDataColumnSidecars(halfSidecars, sharedKzg);
 
     // Verify that all sidecars were reconstructed
-    assertThat(reconstructedSidecars).hasSize(originalSidecars.size());
+    assertThat(reconstructedSidecars).isEqualTo(sharedOriginalSidecars);
   }
 
   @Test
   public void reconstructAllDataColumnSidecars_preservesSidecarOrdering() {
-    // Create test data
-    final List<Blob> blobs =
-        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
-
-    final KZG kzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix =
-        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-
-    final List<DataColumnSidecar> originalSidecars =
-        miscHelpersFulu.constructDataColumnSidecars(
-            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-
     // Test with more than half of the sidecars
-    final int halfSize = originalSidecars.size() / 2;
+    final int halfSize = sharedOriginalSidecars.size() / 2;
     final List<DataColumnSidecar> partialSidecars =
-        originalSidecars.subList(halfSize, originalSidecars.size());
+        sharedOriginalSidecars.subList(halfSize - 1, sharedOriginalSidecars.size());
 
     final List<DataColumnSidecar> reconstructedSidecars =
-        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, kzg);
+        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, sharedKzg);
 
     // Verify that sidecars are ordered by index
-    for (int i = 0; i < reconstructedSidecars.size() - 1; i++) {
-      assertThat(reconstructedSidecars.get(i).getIndex())
-          .isLessThanOrEqualTo(reconstructedSidecars.get(i + 1).getIndex());
+    for (int i = 0; i < reconstructedSidecars.size(); i++) {
+      assertThat(reconstructedSidecars.get(i).getIndex()).isEqualTo(UInt64.valueOf(i));
     }
   }
 
   @Test
-  public void reconstructAllDataColumnSidecars_withSingleSidecar_shouldThrowException() {
-    // Create test data
-    final List<Blob> blobs =
-        IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
+  public void reconstructAllDataColumnSidecars_withAllSidecars_shouldSucceed() {
+    // Test with all sidecars (should succeed)
+    final List<DataColumnSidecar> reconstructedSidecars =
+        miscHelpersFulu.reconstructAllDataColumnSidecars(sharedOriginalSidecars, sharedKzg);
 
-    final KZG kzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    final List<List<MatrixEntry>> extendedMatrix =
-        miscHelpersFulu.computeExtendedMatrixAndProofs(blobs, kzg);
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
-
-    final List<DataColumnSidecar> originalSidecars =
-        miscHelpersFulu.constructDataColumnSidecars(
-            signedBeaconBlock.getMessage(), signedBeaconBlock.asHeader(), extendedMatrix);
-
-    // Test with only one sidecar (should fail)
-    final List<DataColumnSidecar> singleSidecar = List.of(originalSidecars.get(0));
-
-    assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(singleSidecar, kzg))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(
-            "Number of sidecars must be greater than or equal to the half of column count");
+    // Verify that all sidecars were reconstructed
+    assertThat(reconstructedSidecars).isEqualTo(sharedOriginalSidecars);
   }
 }
