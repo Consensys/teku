@@ -85,9 +85,9 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
                 head ->
                     getBlobSidecars(head.getSlotAndBlockRoot(), indices)
                         .thenApply(
-                            blobSideCars ->
+                            blobSidecars ->
                                 addMetaData(
-                                    blobSideCars, head.getSlotAndBlockRoot(), head.isOptimistic())))
+                                    blobSidecars, head.getSlotAndBlockRoot(), head.isOptimistic())))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
@@ -118,9 +118,9 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
                 anchorPoint ->
                     getBlobSidecars(anchorPoint.getSlotAndBlockRoot(), indices)
                         .thenApply(
-                            blobSideCars ->
+                            blobSidecars ->
                                 addMetaData(
-                                    blobSideCars,
+                                    blobSidecars,
                                     anchorPoint.getSlotAndBlockRoot(),
                                     client.isChainHeadOptimistic())))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
