@@ -17,20 +17,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetriever {
+  private static final Logger LOG = LogManager.getLogger();
 
   public record RetrieveRequest(
       DataColumnSlotAndIdentifier columnId, SafeFuture<DataColumnSidecar> future) {}
 
   public List<RetrieveRequest> requests = new ArrayList<>();
   private final Map<DataColumnSlotAndIdentifier, DataColumnSidecar> readySidecars = new HashMap<>();
+  public List<DataColumnSidecar> validatedSidecars = new ArrayList<>();
+  public boolean flushed = false;
 
   public void addReadyColumnSidecar(final DataColumnSidecar sidecar) {
     final DataColumnSlotAndIdentifier colId = DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
+    LOG.debug("ADD sidecar {}", colId);
     readySidecars.put(colId, sidecar);
     requests.stream()
         .filter(req -> req.columnId.equals(colId))
@@ -40,6 +46,7 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
     final RetrieveRequest request = new RetrieveRequest(columnId, new SafeFuture<>());
+    LOG.debug("RETRIEVE sidecar {}", columnId);
     requests.add(request);
     final DataColumnSidecar maybeSidecar = readySidecars.get(columnId);
     if (maybeSidecar != null) {
@@ -49,8 +56,22 @@ public class DataColumnSidecarRetrieverStub implements DataColumnSidecarRetrieve
   }
 
   @Override
-  public void flush() {}
+  public void flush() {
+    LOG.debug("FLUSH");
+    flushed = true;
+  }
 
   @Override
-  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
+  public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
+    final DataColumnSlotAndIdentifier columnId =
+        DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
+    LOG.debug("onNewValidatedSidecar {}", columnId);
+    validatedSidecars.add(sidecar);
+  }
+
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
 }

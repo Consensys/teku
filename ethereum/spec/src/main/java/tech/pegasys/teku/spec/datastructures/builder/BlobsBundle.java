@@ -11,16 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.builder;
+package tech.pegasys.teku.spec.datastructures.builder;
 
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public class ExecutionPayloadAndBlobsBundleSupplier
-    extends DataStructureUtilSupplier<ExecutionPayloadAndBlobsBundle> {
-  public ExecutionPayloadAndBlobsBundleSupplier() {
-    super(DataStructureUtil::randomExecutionPayloadAndBlobsBundle, SpecMilestone.DENEB);
+public interface BlobsBundle extends SszContainer {
+
+  SszList<SszKZGCommitment> getCommitments();
+
+  SszList<SszKZGProof> getProofs();
+
+  SszList<Blob> getBlobs();
+
+  default int getNumberOfBlobs() {
+    return getBlobs().size();
   }
 }
