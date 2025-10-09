@@ -30,14 +30,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -62,7 +60,6 @@ class PeerSubnetSubscriptionsTest {
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final SettableLabelledGauge subnetPeerCountGauge = mock(SettableLabelledGauge.class);
   final Supplier<SpecVersion> currentSpecVersionSupplier = spec::getGenesisSpec;
-  final Supplier<Optional<UInt64>> currentSlotSupplier = Optional::empty;
   private final SchemaDefinitionsSupplier currentSchemaDefinitions =
       spec::getGenesisSchemaDefinitions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
