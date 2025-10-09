@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.CANCELLED;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.DOWNLOADED;
-import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.DOWNLOAD_TIMEOUT;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.RECOVERED;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.RECOVERY_METRIC_NAME;
 
@@ -141,9 +140,13 @@ public class SidecarRetrieverTest {
     dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
 
     final SafeFuture<DataColumnSidecar> res0 = retriever.retrieve(createId(block, 0));
-    res0.complete(sidecars.getFirst());
+
+    // this will add the file to the delegate, which will finish the download task
+    delegateRetriever.addReadyColumnSidecar(sidecars.get(0));
+
     assertThat(retriever.pendingRequestCount()).isZero();
-    verifyMetrics(0, 0, 1, 0);
+    assertThat(res0).isDone();
+    verifyMetrics(0, 1, 0);
   }
 
   @Test
@@ -153,7 +156,7 @@ public class SidecarRetrieverTest {
     res0.completeExceptionally(new RuntimeException("ERR"));
     assertThat(retriever.pendingRequestCount()).isZero();
     stubAsyncRunner.executeQueuedActions();
-    verifyMetrics(1, 0, 0, 0);
+    verifyMetrics(1, 0, 0);
   }
 
   @Test
@@ -165,7 +168,7 @@ public class SidecarRetrieverTest {
     assertThat(retriever.getPendingRequestsChecker()).isNull();
     assertThat(retriever.getPendingRequests()).isEmpty();
     assertThat(response).isCancelled();
-    verifyMetrics(1, 1, 0, 0);
+    verifyMetrics(1, 0, 0);
   }
 
   @Test
@@ -181,7 +184,7 @@ public class SidecarRetrieverTest {
     stubAsyncRunner.executeQueuedActions();
     assertThat(retriever.pendingRequestCount()).isZero();
     assertThat(response).isCompletedExceptionally();
-    verifyMetrics(1, 1, 0, 0);
+    verifyMetrics(1, 0, 0);
   }
 
   @Test
@@ -190,7 +193,7 @@ public class SidecarRetrieverTest {
     final DataColumnSlotAndIdentifier id = createId(block, 0);
     final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
     assertThat(response).isNotDone();
-    verifyMetrics(0, 0, 0, 0);
+    verifyMetrics(0, 0, 0);
   }
 
   @Test
@@ -203,7 +206,7 @@ public class SidecarRetrieverTest {
       timeProvider.advanceTimeBy(CHECK_INTERVAL);
       stubAsyncRunner.executeQueuedActions();
     }
-    verifyMetrics(1, 1, 0, 0);
+    verifyMetrics(1, 0, 0);
     assertThat(response).isCompletedExceptionally();
   }
 
@@ -213,18 +216,11 @@ public class SidecarRetrieverTest {
   }
 
   private void verifyMetrics(
-      final int cancelledCount,
-      final int downloadTimeout,
-      final int downloadedCount,
-      final int recoveredCount) {
+      final int cancelledCount, final int downloadedCount, final int recoveredCount) {
     assertThat(
             metricsSystem.getCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, CANCELLED))
         .isEqualTo(cancelledCount);
-    assertThat(
-            metricsSystem.getCounterValue(
-                TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOAD_TIMEOUT))
-        .isEqualTo(downloadTimeout);
     assertThat(
             metricsSystem.getCounterValue(
                 TekuMetricCategory.BEACON, RECOVERY_METRIC_NAME, DOWNLOADED))

@@ -23,8 +23,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -48,6 +52,9 @@ class RebuildColumnsTaskTest {
       DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   private final PendingRecoveryRequest request = mock(PendingRecoveryRequest.class);
   private final SafeFuture<DataColumnSidecar> future = new SafeFuture<>();
+  private static final StubMetricsSystem METRICS = new StubMetricsSystem();
+  private static final LabelledMetric<Counter> METRIC =
+      METRICS.createLabelledCounter(TekuMetricCategory.BEACON, "FOO", "help", "result");
 
   @Test
   void addTask_acceptsValidPendingRecoveryRequest() {
@@ -267,12 +274,18 @@ class RebuildColumnsTaskTest {
   }
 
   static class PendingRecoveryRequestTestArticle extends PendingRecoveryRequest {
-
     PendingRecoveryRequestTestArticle(
         final SafeFuture<DataColumnSidecar> downloadFuture,
         final DataColumnSlotAndIdentifier columnId,
         final UInt64 timestamp) {
-      super(columnId, downloadFuture, timestamp, RECOVERY_TIMEOUT.dividedBy(2), RECOVERY_TIMEOUT);
+      super(
+          columnId,
+          downloadFuture,
+          timestamp,
+          RECOVERY_TIMEOUT.dividedBy(2),
+          RECOVERY_TIMEOUT,
+          METRIC,
+          () -> {});
     }
 
     PendingRecoveryRequestTestArticle(
@@ -281,7 +294,7 @@ class RebuildColumnsTaskTest {
         final UInt64 timestamp,
         final Duration timeout,
         final Duration downloadTimeout) {
-      super(columnId, downloadFuture, timestamp, timeout, downloadTimeout);
+      super(columnId, downloadFuture, timestamp, timeout, downloadTimeout, METRIC, () -> {});
     }
   }
 

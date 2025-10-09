@@ -13,11 +13,17 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.CANCELLED;
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.DOWNLOADED;
+import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.RECOVERED;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -31,22 +37,36 @@ class PendingRecoveryRequest {
   private final UInt64 downloadTimeoutMillis;
   private final UInt64 taskTimeoutMillis;
   private final SafeFuture<DataColumnSidecar> downloadFuture;
+  private final LabelledMetric<Counter> sidecarRecoveryMetric;
 
   PendingRecoveryRequest(
       final DataColumnSlotAndIdentifier columnId,
       final SafeFuture<DataColumnSidecar> downloadFuture,
       final UInt64 timestamp,
       final Duration timeout,
-      final Duration downloadTimeout) {
+      final Duration downloadTimeout,
+      final LabelledMetric<Counter> sidecarRecoveryMetric,
+      final Runnable alwaysAfter) {
     this.downloadTimeoutMillis = timestamp.plus(downloadTimeout.toMillis());
     this.taskTimeoutMillis = timestamp.plus(timeout.toMillis());
     this.columnnId = columnId;
     this.downloadFuture = downloadFuture;
+    this.sidecarRecoveryMetric = sidecarRecoveryMetric;
 
     downloadFuture
         .thenRun(this::downloadCompleted)
         .exceptionally(this::failedDownload)
         .finishError(LOG);
+
+    future
+        .thenRun(this::onCompleted)
+        .exceptionally(
+            (err) -> {
+              LOG.debug("Failed recovery task for column {}", columnnId, err);
+              sidecarRecoveryMetric.labels(CANCELLED).inc();
+              return null;
+            })
+        .always(alwaysAfter);
   }
 
   private Void failedDownload(final Throwable throwable) {
@@ -54,6 +74,7 @@ class PendingRecoveryRequest {
     return null;
   }
 
+  // needed for the interface but generally should not be referenced
   SafeFuture<DataColumnSidecar> getFuture() {
     return future;
   }
@@ -91,9 +112,25 @@ class PendingRecoveryRequest {
     }
   }
 
+  private void onCompleted() {
+    if (downloadFuture.isCompletedNormally()) {
+      sidecarRecoveryMetric.labels(DOWNLOADED).inc();
+    } else {
+      sidecarRecoveryMetric.labels(RECOVERED).inc();
+    }
+  }
+
+  void complete(final DataColumnSidecar sidecar) {
+    future.complete(sidecar);
+  }
+
   void cancel() {
     downloadFuture.cancel(true);
     future.cancel(true);
+  }
+
+  boolean isDone() {
+    return future.isDone();
   }
 
   private void downloadCompleted() {
