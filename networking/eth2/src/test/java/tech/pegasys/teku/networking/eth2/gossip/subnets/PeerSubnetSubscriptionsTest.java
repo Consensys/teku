@@ -14,8 +14,12 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.base.Supplier;
@@ -26,14 +30,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -41,18 +43,23 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 
 class PeerSubnetSubscriptionsTest {
+  private static final String BEACON_BLOCK_SUBNET_TOPIC = "beacon_block";
+  private static final String ATTESTATION_SUBNET_TOPIC_PREFIX = "attestation_";
+  private static final String SYNC_COMMITTEE_SUBNET_TOPIC_PREFIX = "sync_committee_";
+  private static final String DATA_COLUMN_SIDECAR_SUBNET_TOPIC_PREFIX = "data_column_sidecar_";
+
   private static final NodeId PEER1 = new MockNodeId(1);
   private static final NodeId PEER2 = new MockNodeId(2);
   private static final NodeId PEER3 = new MockNodeId(3);
   private static final int TARGET_SUBSCRIBER_COUNT = 2;
 
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final SettableLabelledGauge subnetPeerCountGauge = mock(SettableLabelledGauge.class);
   final Supplier<SpecVersion> currentSpecVersionSupplier = spec::getGenesisSpec;
-  final Supplier<Optional<UInt64>> currentSlotSupplier = Optional::empty;
   private final SchemaDefinitionsSupplier currentSchemaDefinitions =
       spec::getGenesisSchemaDefinitions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -68,9 +75,12 @@ class PeerSubnetSubscriptionsTest {
   @BeforeEach
   public void setUp() {
     when(attestationTopicProvider.getTopicForSubnet(anyInt()))
-        .thenAnswer(invocation -> "attnet_" + invocation.getArgument(0));
+        .thenAnswer(invocation -> ATTESTATION_SUBNET_TOPIC_PREFIX + invocation.getArgument(0));
     when(syncCommitteeTopicProvider.getTopicForSubnet(anyInt()))
-        .thenAnswer(invocation -> "syncnet_" + invocation.getArgument(0));
+        .thenAnswer(invocation -> SYNC_COMMITTEE_SUBNET_TOPIC_PREFIX + invocation.getArgument(0));
+    when(dataColumnSidecarSubnetTopicProvider.getTopicForSubnet(anyInt()))
+        .thenAnswer(
+            invocation -> DATA_COLUMN_SIDECAR_SUBNET_TOPIC_PREFIX + invocation.getArgument(0));
   }
 
   @Test
@@ -80,11 +90,11 @@ class PeerSubnetSubscriptionsTest {
 
     final Map<String, Collection<NodeId>> subscribersByTopic =
         ImmutableMap.<String, Collection<NodeId>>builder()
-            .put("attnet_0", Set.of(PEER1, PEER2, PEER3))
-            .put("attnet_1", Set.of(PEER1))
-            .put("attnet_2", Set.of(PEER1, PEER3))
-            .put("syncnet_1", Set.of(PEER2))
-            .put("blocks", Set.of(PEER1, PEER2, PEER3))
+            .put(ATTESTATION_SUBNET_TOPIC_PREFIX + "0", Set.of(PEER1, PEER2, PEER3))
+            .put(ATTESTATION_SUBNET_TOPIC_PREFIX + "1", Set.of(PEER1))
+            .put(ATTESTATION_SUBNET_TOPIC_PREFIX + "2", Set.of(PEER1, PEER3))
+            .put(SYNC_COMMITTEE_SUBNET_TOPIC_PREFIX + "1", Set.of(PEER2))
+            .put(BEACON_BLOCK_SUBNET_TOPIC, Set.of(PEER1, PEER2, PEER3))
             .build();
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
@@ -202,6 +212,38 @@ class PeerSubnetSubscriptionsTest {
 
     assertThat(subscriptions.isAttestationSubnetRelevant(attSubnetsCount)).isFalse();
     assertThat(subscriptions.isAttestationSubnetRelevant(attSubnetsCount + 1)).isFalse();
+  }
+
+  @Test
+  public void isDataColumnSidecarSubnetRelevant() {
+    dataColumnSubscriptions.setSubscriptions(IntList.of(1, 2, 3));
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(0)).isFalse();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(1)).isTrue();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(2)).isTrue();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(3)).isTrue();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(4)).isFalse();
+  }
+
+  @Test
+  public void shouldCreatePeerCountPerSubnetMetrics() {
+    createPeerSubnetSubscriptions();
+
+    verify(
+            subnetPeerCountGauge,
+            times(currentSchemaDefinitions.getAttnetsENRFieldSchema().getLength()))
+        .set(anyDouble(), matches(ATTESTATION_SUBNET_TOPIC_PREFIX));
+    verify(
+            subnetPeerCountGauge,
+            times(currentSchemaDefinitions.getSyncnetsENRFieldSchema().getLength()))
+        .set(anyDouble(), matches(SYNC_COMMITTEE_SUBNET_TOPIC_PREFIX));
+    verify(
+            subnetPeerCountGauge,
+            times(
+                SpecConfigFulu.required(spec.getGenesisSpecConfig())
+                    .getDataColumnSidecarSubnetCount()))
+        .set(anyDouble(), matches(DATA_COLUMN_SIDECAR_SUBNET_TOPIC_PREFIX));
   }
 
   private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {
