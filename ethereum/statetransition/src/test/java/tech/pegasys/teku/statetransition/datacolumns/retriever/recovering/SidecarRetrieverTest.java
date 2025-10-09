@@ -149,8 +149,12 @@ public class SidecarRetrieverTest {
     dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
 
     final SafeFuture<DataColumnSidecar> res0 = retriever.retrieve(createId(block, 0));
-    res0.complete(sidecars.getFirst());
+
+    // this will add the file to the delegate, which will finish the download task
+    delegateRetriever.addReadyColumnSidecar(sidecars.get(0));
+
     assertThat(retriever.pendingRequestCount()).isZero();
+    assertThat(res0).isDone();
     verifyMetrics(0, 1, 0);
   }
 

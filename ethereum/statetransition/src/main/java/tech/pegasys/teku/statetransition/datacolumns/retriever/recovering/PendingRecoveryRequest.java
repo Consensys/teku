@@ -113,9 +113,8 @@ class PendingRecoveryRequest {
   }
 
   private void onCompleted() {
-    if (!downloadFuture.isDone()) {
+    if (downloadFuture.isCompletedNormally()) {
       sidecarRecoveryMetric.labels(DOWNLOADED).inc();
-      downloadFuture.cancel(true);
     } else {
       sidecarRecoveryMetric.labels(RECOVERED).inc();
     }
