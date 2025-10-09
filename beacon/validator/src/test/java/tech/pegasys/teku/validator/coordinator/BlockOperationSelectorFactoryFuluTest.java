@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -280,8 +281,12 @@ class BlockOperationSelectorFactoryFuluTest {
     when(kzg.computeCells(any()))
         .thenReturn(
             IntStream.range(0, 128).mapToObj(__ -> dataStructureUtil.randomKZGCell()).toList());
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
     final List<DataColumnSidecar> dataColumnSidecars =
-        factory.createDataColumnSidecarsSelector(kzg).apply(signedBlockContents);
+        factory.createDataColumnSidecarsSelector().apply(signedBlockContents);
 
     final SszList<SszKZGProof> expectedProofs = signedBlockContents.getKzgProofs().orElseThrow();
     final SszList<SszKZGCommitment> expectedCommitments =
@@ -337,8 +342,12 @@ class BlockOperationSelectorFactoryFuluTest {
     when(kzg.computeCells(any()))
         .thenReturn(
             IntStream.range(0, 128).mapToObj(__ -> dataStructureUtil.randomKZGCell()).toList());
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
     final List<DataColumnSidecar> dataColumnSidecars =
-        factory.createDataColumnSidecarsSelector(kzg).apply(signedBlindedBeaconBlock);
+        factory.createDataColumnSidecarsSelector().apply(signedBlindedBeaconBlock);
 
     final SszList<SszKZGProof> expectedProofs = blobsBundle.getProofs();
     final SszList<SszKZGCommitment> expectedCommitments =

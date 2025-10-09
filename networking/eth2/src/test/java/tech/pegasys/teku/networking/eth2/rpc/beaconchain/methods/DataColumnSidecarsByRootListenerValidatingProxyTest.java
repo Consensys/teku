@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidec
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -68,6 +69,10 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
 
   @BeforeEach
   void setUp() {
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(true);
   }
@@ -87,7 +92,11 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             byRootIdentifierSchema.create(block4.getRoot(), ZERO));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
+            peer, spec, listener, metricsSystem, timeProvider, dataColumnIdentifiers);
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -115,7 +124,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         List.of(byRootIdentifierSchema.create(block1.getRoot(), List.of(ZERO, ONE)));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
+            peer, spec, listener, metricsSystem, timeProvider, dataColumnIdentifiers);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -144,7 +153,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
+            peer, spec, listener, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -185,7 +194,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
+            peer, spec, listener, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -209,7 +218,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
+            peer, spec, listener, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(

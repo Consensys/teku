@@ -57,6 +57,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   private final BlobSidecarSchema blobSidecarSchema;
   private final SpecConfigDeneb specConfigDeneb;
 
+  private volatile KZG kzg;
+
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers
         .toVersionDeneb()
@@ -65,6 +67,18 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
                 new IllegalArgumentException(
                     "Expected Deneb misc helpers but got: "
                         + miscHelpers.getClass().getSimpleName()));
+  }
+
+  public void setKzg(final KZG kzg) {
+    this.kzg = kzg;
+  }
+
+  public KZG getKzg() {
+    final KZG kzg = this.kzg;
+    if (kzg == null) {
+      throw new IllegalStateException("KZG not set");
+    }
+    return kzg;
   }
 
   public MiscHelpersDeneb(
@@ -84,20 +98,20 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof">verify_blob_kzg_proof</a>
    * on the given blob sidecar
    *
-   * @param kzg the kzg implementation which will be used for verification
    * @param blobSidecar blob sidecar to verify
    * @return true if blob sidecar is valid
    */
   @Override
-  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
+  public boolean verifyBlobKzgProof(final BlobSidecar blobSidecar) {
     if (blobSidecar.isKzgValidated()) {
       return true;
     }
     final boolean result =
-        kzg.verifyBlobKzgProof(
-            blobSidecar.getBlob().getBytes(),
-            blobSidecar.getKZGCommitment(),
-            blobSidecar.getKZGProof());
+        getKzg()
+            .verifyBlobKzgProof(
+                blobSidecar.getBlob().getBytes(),
+                blobSidecar.getKZGCommitment(),
+                blobSidecar.getKZGProof());
 
     if (result) {
       blobSidecar.markKzgAsValidated();
@@ -111,12 +125,11 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    * href="https://github.com/ethereum/consensus-specs/blob/master/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof_batch">verify_blob_kzg_proof_batch</a>
    * on the given blob sidecars
    *
-   * @param kzg the kzg implementation which will be used for verification
    * @param blobSidecars blob sidecars to verify, can be a partial set
    * @return true if all blob sidecars are valid
    */
   @Override
-  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final List<BlobSidecar> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
     final List<KZGProof> kzgProofs = new ArrayList<>();
@@ -134,7 +147,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
       return true;
     }
 
-    final boolean result = kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
+    final boolean result = getKzg().verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
 
     if (result) {
       blobSidecars.stream()

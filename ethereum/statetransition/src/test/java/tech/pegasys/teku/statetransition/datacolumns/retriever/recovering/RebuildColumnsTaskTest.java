@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -47,7 +46,6 @@ class RebuildColumnsTaskTest {
   private final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
   private final DataColumnSidecarDbAccessor dbAccessor =
       DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
-  private final KZG kzg = mock(KZG.class);
   private final PendingRecoveryRequest request = mock(PendingRecoveryRequest.class);
   private final SafeFuture<DataColumnSidecar> future = new SafeFuture<>();
 
@@ -62,8 +60,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, true);
@@ -84,8 +81,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, false);
@@ -105,8 +101,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, false);
@@ -126,8 +121,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, true);
@@ -149,8 +143,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             2,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final DataColumnSidecar sidecar = mock(DataColumnSidecar.class);
     when(sidecar.getSlot()).thenReturn(slotAndBlockRoot.getSlot());
@@ -178,8 +171,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     // when done and sidecar present
     final DataColumnSidecar sidecar = mock(DataColumnSidecar.class);
@@ -206,8 +198,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, true);
@@ -232,8 +223,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, true);
 
@@ -255,8 +245,7 @@ class RebuildColumnsTaskTest {
             RECOVERY_TIMEOUT,
             1,
             dbAccessor,
-            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
-            kzg);
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, true);
 
@@ -304,16 +293,14 @@ class RebuildColumnsTaskTest {
         final Duration timeout,
         final int minimumColumnsForRebuild,
         final DataColumnSidecarDbAccessor sidecarDB,
-        final MiscHelpersFulu miscHelpers,
-        final KZG kzg) {
+        final MiscHelpersFulu miscHelpers) {
       super(
           slotAndBlockRoot,
           timestampMillis,
           timeout,
           minimumColumnsForRebuild,
           sidecarDB,
-          miscHelpers,
-          kzg);
+          miscHelpers);
     }
 
     AtomicBoolean getDone() {
