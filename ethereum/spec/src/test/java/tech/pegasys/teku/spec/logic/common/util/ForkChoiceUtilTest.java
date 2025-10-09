@@ -297,15 +297,15 @@ class ForkChoiceUtilTest {
 
     final AvailabilityChecker<?> availabilityChecker = util.createAvailabilityChecker(block);
 
-    if (milestone.isLessThan(SpecMilestone.DENEB) || milestone.isGreaterThan(SpecMilestone.FULU)) {
-      assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
-    } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-        && milestone.isLessThan(SpecMilestone.FULU)) {
-      verify(blobSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
-    } else if (milestone.equals(SpecMilestone.FULU)) {
-      verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
-    } else {
-      throw new IllegalStateException("Unexpected milestone " + milestone);
+    switch (milestone) {
+      case PHASE0, ALTAIR, BELLATRIX, CAPELLA ->
+          assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP);
+      case DENEB, ELECTRA ->
+          verify(blobSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
+      case FULU ->
+          verify(dataColumnSidecarAvailabilityCheckerFactory).createAvailabilityChecker(block);
+      case GLOAS -> assertThat(availabilityChecker).isSameAs(AvailabilityChecker.NOOP); // TODO
+      default -> throw new IllegalStateException("Unexpected milestone " + milestone);
     }
   }
 

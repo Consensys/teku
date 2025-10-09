@@ -924,7 +924,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
       recoveringSidecarRetriever =
           new SidecarRetriever(
               sidecarRetriever,
-              kzg,
               miscHelpersFulu,
               dbAccessor,
               dasAsyncRunner,
@@ -938,13 +937,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new RecoveringSidecarRetriever(
               sidecarRetriever,
               miscHelpersFulu,
-            canonicalBlockResolver,
-            dbAccessor,
-            dasAsyncRunner,
-            Duration.ofMinutes(5),
-            Duration.ofSeconds(30),
-            timeProvider,
-            specConfigFulu.getNumberOfColumns());}
+              canonicalBlockResolver,
+              dbAccessor,
+              dasAsyncRunner,
+              Duration.ofMinutes(5),
+              Duration.ofSeconds(30),
+              timeProvider,
+              specConfigFulu.getNumberOfColumns());
+    }
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
