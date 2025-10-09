@@ -70,11 +70,6 @@ public class ExecutionPayloadResult {
         getPayloadResponse -> getPayloadResponse.thenApply(GetPayloadResponse::getBlobsBundle));
   }
 
-  public Optional<SafeFuture<Optional<BlobsCellBundle>>> getBlobsCellBundleFutureFromLocalFlow() {
-    return getPayloadResponseFuture.map(
-        getPayloadResponse -> getPayloadResponse.thenApply(GetPayloadResponse::getBlobsCellBundle));
-  }
-
   public Optional<SafeFuture<Optional<ExecutionRequests>>>
       getExecutionRequestsFutureFromLocalFlow() {
     return getPayloadResponseFuture.map(

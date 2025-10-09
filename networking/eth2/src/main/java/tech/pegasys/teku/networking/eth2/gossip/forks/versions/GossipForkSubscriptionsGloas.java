@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -79,7 +80,9 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
           payloadAttestationMessageOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidOperationProcessor,
       final DebugDataDumper debugDataDumper,
-      final DasGossipLogger dasGossipLogger) {
+      final DasGossipLogger dasGossipLogger,
+      final OperationProcessor<ExecutionProof> executionProcessorOperationProcessor,
+      final boolean isExecutionProofTopicEnabled) {
     super(
         fork,
         spec,
@@ -100,7 +103,9 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         signedBlsToExecutionChangeOperationProcessor,
         dataColumnSidecarOperationProcessor,
         debugDataDumper,
-        dasGossipLogger);
+        dasGossipLogger,
+        executionProcessorOperationProcessor,
+        isExecutionProofTopicEnabled);
     this.executionPayloadProcessor = executionPayloadOperationProcessor;
     this.payloadAttestationMessageProcessor = payloadAttestationMessageOperationProcessor;
     this.executionPayloadBidProcessor = executionPayloadBidOperationProcessor;
