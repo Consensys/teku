@@ -36,7 +36,7 @@ dependencyManagement {
       entry 'javalin-rendering'
     }
 
-    dependency 'io.libp2p:jvm-libp2p:1.2.2-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p:develop'
     dependency 'tech.pegasys:jblst:0.3.15'
     dependency 'io.consensys.protocols:jc-kzg-4844:2.1.5'
     dependency 'io.github.crate-crypto:java-eth-kzg:0.8.0'
@@ -163,7 +163,7 @@ dependencyManagement {
       entry "junit-jupiter"
     }
 
-    dependency 'tech.pegasys.discovery:discovery:25.4.0'
+    dependency 'tech.pegasys.discovery:discovery:develop'
 
     dependencySet(group: 'org.jupnp', version: '3.0.3') {
       entry "org.jupnp"
