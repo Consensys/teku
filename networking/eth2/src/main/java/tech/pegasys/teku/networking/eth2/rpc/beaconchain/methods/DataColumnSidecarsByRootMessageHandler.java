@@ -96,7 +96,7 @@ public class DataColumnSidecarsByRootMessageHandler
     this.totalDataColumnSidecarsRequestedCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.NETWORK,
-            "rpc_data_column_sidecars_by_root_requested_data_column_sidecars_total",
+            "rpc_data_column_sidecars_by_root_requested_sidecars_total",
             "Total number of data column sidecars requested in accepted data column sidecars by root requests from peers");
   }
 
