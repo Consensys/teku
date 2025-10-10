@@ -17,5 +17,5 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @FunctionalInterface
 public interface BlockInProductionProvider {
-  boolean blockInProduction(UInt64 slot);
+  boolean isBlockInProductionAtSlot(UInt64 slot);
 }

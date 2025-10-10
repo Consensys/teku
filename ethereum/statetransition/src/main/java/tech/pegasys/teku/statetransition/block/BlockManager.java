@@ -242,7 +242,7 @@ public class BlockManager extends Service
             .map(
                 currentSlot ->
                     blockSlot.isLessThan(currentSlot)
-                        && blockInProductionProvider.blockInProduction(currentSlot))
+                        && blockInProductionProvider.isBlockInProductionAtSlot(currentSlot))
             .orElse(false);
     if (!blockFromThePastWhileBlockIsInProduction) {
       return blockImport.get();
