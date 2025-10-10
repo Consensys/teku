@@ -797,6 +797,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         validatorIndices, epoch, chainDataProvider.getCurrentEpoch());
   }
 
+  public boolean isBlockInProductionAtSlot(final UInt64 slot) {
+    return blockProductionPreparationContextBySlotCache.containsKey(slot);
+  }
+
   private Optional<SubmitDataError> fromInternalValidationResult(
       final InternalValidationResult internalValidationResult, final int resultIndex) {
     if (!internalValidationResult.isReject()) {
