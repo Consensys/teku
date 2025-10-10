@@ -91,6 +91,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.block.BlockInProductionProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -106,7 +107,7 @@ import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 
-public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel {
+public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel, BlockInProductionProvider {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -795,6 +796,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final List<UInt64> validatorIndices, final UInt64 epoch) {
     return nodeDataProvider.getValidatorLiveness(
         validatorIndices, epoch, chainDataProvider.getCurrentEpoch());
+  }
+
+  @Override
+  public boolean blockInProduction(final UInt64 slot) {
+    return blockProductionPreparationContextBySlotCache.containsKey(slot);
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(

@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -64,6 +68,9 @@ public class BlockManager extends Service
   private final Subscribers<PreImportBlockListener> preImportBlockSubscribers =
       Subscribers.create(true);
 
+  private final AsyncRunner asyncRunner;
+
+  private final BlockInProductionProvider blockInProductionProvider;
   private final Optional<BlockImportMetrics> blockImportMetrics;
 
   public BlockManager(
@@ -76,6 +83,8 @@ public class BlockManager extends Service
       final BlockValidator blockValidator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
+      final BlockInProductionProvider blockInProductionProvider,
+      final AsyncRunner asyncRunner,
       final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
@@ -86,6 +95,8 @@ public class BlockManager extends Service
     this.blockValidator = blockValidator;
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
+    this.blockInProductionProvider = blockInProductionProvider;
+    this.asyncRunner = asyncRunner;
     this.blockImportMetrics = blockImportMetrics;
   }
 
@@ -214,9 +225,19 @@ public class BlockManager extends Service
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block, blockImportPerformance, blockBroadcastValidator, origin)
+                    deferIfBlockInProduction(block.getSlot(), () -> handleBlockImport(block, blockImportPerformance, blockBroadcastValidator, origin)
                     .thenPeek(
-                        result -> lateBlockImportCheck(blockImportPerformance, block, result)));
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result))));
+  }
+
+  private SafeFuture<BlockImportResult> deferIfBlockInProduction(final UInt64 blockSlot, final Supplier<SafeFuture<BlockImportResult>> blockImport) {
+    final boolean blockFromThePastWhileBlockIsInProduction = recentChainData.getCurrentSlot().map(currentSlot ->
+                    blockSlot.isLessThan(currentSlot) &&
+            blockInProductionProvider.blockInProduction(currentSlot)).orElse(false);
+    if (!blockFromThePastWhileBlockIsInProduction) {
+      return blockImport.get();
+    }
+    return asyncRunner.runAfterDelay(blockImport::get, Duration.ofSeconds(2));
   }
 
   private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {
