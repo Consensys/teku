@@ -14,6 +14,7 @@
 
 - Add User-Agent header to requests initiated from the Validator Client with the client identifier and version.
 - Increase Default validator registration Gas Limit 60M for all networks.
-- Rename Fulu metric for data_column_sidecar_by_root RPC request to `network_rpc_data_column_sidecars_by_root_requested_sidecars_total`.  
+- Rename Fulu metric for data_column_sidecar_by_root RPC request to `network_rpc_data_column_sidecars_by_root_requested_sidecars_total`.
+- Add peer count per topic metric for data_column_sidecar subnet.
 
 ### Bug Fixes
