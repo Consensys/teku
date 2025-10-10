@@ -926,8 +926,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               miscHelpersFulu,
               dbAccessor,
               dasAsyncRunner,
-              Duration.ofMinutes(5),
-              Duration.ofSeconds(30),
+              Duration.ofSeconds(60),
+              Duration.ofSeconds(3),
+              Duration.ofSeconds(15),
               timeProvider,
               specConfigFulu.getNumberOfColumns(),
               metricsSystem);
