@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
@@ -155,7 +154,6 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor;
   protected OperationProcessor<ExecutionProof> executionProofOperationProcessor;
   protected StatusMessageFactory statusMessageFactory;
-  protected KZG kzg;
   protected boolean recordMessageArrival;
   protected DebugDataDumper debugDataDumper;
   private DasGossipLogger dasGossipLogger;
@@ -212,7 +210,6 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerBlobSidecarsRateLimit(),
             config.getPeerRequestLimit(),
             spec,
-            kzg,
             discoveryNodeIdExtractor,
             dasTotalCustodyGroupCount,
             dasReqRespLogger);
@@ -867,12 +864,6 @@ public class Eth2P2PNetworkBuilder {
       final StatusMessageFactory statusMessageFactory) {
     checkNotNull(statusMessageFactory);
     this.statusMessageFactory = statusMessageFactory;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder kzg(final KZG kzg) {
-    checkNotNull(kzg);
-    this.kzg = kzg;
     return this;
   }
 

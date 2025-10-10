@@ -113,6 +113,12 @@ public class SimpleSidecarRetriever
         .ifPresent(request -> reqRespCompleted(request, sidecar));
   }
 
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
+
   private Stream<RequestMatch> matchRequestsAndPeers() {
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();
     return pendingRequests.entrySet().stream()

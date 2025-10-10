@@ -19,18 +19,20 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public class BlobsBundleDeneb
     extends Container3<
-        BlobsBundleDeneb, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
+        BlobsBundleDeneb, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>>
+    implements BlobsBundle {
 
   BlobsBundleDeneb(final BlobsBundleSchemaDeneb type, final TreeNode backingTreeNode) {
     super(type, backingTreeNode);
   }
 
-  public BlobsBundleDeneb(
+  BlobsBundleDeneb(
       final BlobsBundleSchemaDeneb schema,
       final SszList<SszKZGCommitment> commitments,
       final SszList<SszKZGProof> proofs,
@@ -48,19 +50,18 @@ public class BlobsBundleDeneb
         proofs.size());
   }
 
+  @Override
   public SszList<SszKZGCommitment> getCommitments() {
     return getField0();
   }
 
+  @Override
   public SszList<SszKZGProof> getProofs() {
     return getField1();
   }
 
+  @Override
   public SszList<Blob> getBlobs() {
     return getField2();
-  }
-
-  public int getNumberOfBlobs() {
-    return getBlobs().size();
   }
 }

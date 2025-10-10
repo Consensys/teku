@@ -35,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
@@ -109,7 +108,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker dataColumnSidecarsRequestTracker;
   private final RateTracker requestTracker;
-  private final KZG kzg;
   private final MetricsSystem metricsSystem;
   private final TimeProvider timeProvider;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
@@ -137,7 +135,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     super(peer);
@@ -151,7 +148,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.dataColumnSidecarsRequestTracker = dataColumnSidecarsRequestTracker;
     this.requestTracker = requestTracker;
-    this.kzg = kzg;
     this.metricsSystem = metricsSystem;
     this.timeProvider = timeProvider;
     this.firstSlotSupportingBlobSidecarsByRange =
@@ -330,7 +326,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new BlobSidecarsByRootRequestMessage(
                         blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
                     new BlobSidecarsByRootListenerValidatingProxy(
-                        this, spec, listener, kzg, blobIdentifiers)))
+                        this, spec, listener, blobIdentifiers)))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
@@ -347,13 +343,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new DataColumnSidecarsByRootRequestMessage(
                         dataColumnSidecarsByRootRequestMessageSchema.get(), dataColumnIdentifiers),
                     new DataColumnSidecarsByRootListenerValidatingProxy(
-                        this,
-                        spec,
-                        listener,
-                        kzg,
-                        metricsSystem,
-                        timeProvider,
-                        dataColumnIdentifiers)))
+                        this, spec, listener, metricsSystem, timeProvider, dataColumnIdentifiers)))
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRoot"));
   }
 
@@ -412,8 +402,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                           maybeBlobSidecar.ifPresent(
                               blobSidecar -> {
                                 final BlobSidecarsByRootValidator validator =
-                                    new BlobSidecarsByRootValidator(
-                                        this, spec, kzg, blobIdentifiers);
+                                    new BlobSidecarsByRootValidator(this, spec, blobIdentifiers);
                                 validator.validate(blobSidecar);
                               }));
             })
@@ -468,7 +457,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       this,
                       listener,
                       maxBlobsPerBlock,
-                      kzg,
                       request.getStartSlot(),
                       request.getCount()));
             })
@@ -519,7 +507,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       spec,
                       this,
                       listener,
-                      kzg,
                       metricsSystem,
                       timeProvider,
                       request.getStartSlot(),
