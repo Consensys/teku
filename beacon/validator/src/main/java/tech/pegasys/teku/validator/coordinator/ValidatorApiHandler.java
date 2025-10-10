@@ -107,7 +107,8 @@ import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 
-public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel, BlockInProductionProvider {
+public class ValidatorApiHandler
+    implements ValidatorApiChannel, SlotEventsChannel, BlockInProductionProvider {
 
   private static final Logger LOG = LogManager.getLogger();
 

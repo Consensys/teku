@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -225,15 +224,26 @@ public class BlockManager extends Service
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                    deferIfBlockInProduction(block.getSlot(), () -> handleBlockImport(block, blockImportPerformance, blockBroadcastValidator, origin)
-                    .thenPeek(
-                        result -> lateBlockImportCheck(blockImportPerformance, block, result))));
+                deferIfBlockInProduction(
+                    block.getSlot(),
+                    () ->
+                        handleBlockImport(
+                                block, blockImportPerformance, blockBroadcastValidator, origin)
+                            .thenPeek(
+                                result ->
+                                    lateBlockImportCheck(blockImportPerformance, block, result))));
   }
 
-  private SafeFuture<BlockImportResult> deferIfBlockInProduction(final UInt64 blockSlot, final Supplier<SafeFuture<BlockImportResult>> blockImport) {
-    final boolean blockFromThePastWhileBlockIsInProduction = recentChainData.getCurrentSlot().map(currentSlot ->
-                    blockSlot.isLessThan(currentSlot) &&
-            blockInProductionProvider.blockInProduction(currentSlot)).orElse(false);
+  private SafeFuture<BlockImportResult> deferIfBlockInProduction(
+      final UInt64 blockSlot, final Supplier<SafeFuture<BlockImportResult>> blockImport) {
+    final boolean blockFromThePastWhileBlockIsInProduction =
+        recentChainData
+            .getCurrentSlot()
+            .map(
+                currentSlot ->
+                    blockSlot.isLessThan(currentSlot)
+                        && blockInProductionProvider.blockInProduction(currentSlot))
+            .orElse(false);
     if (!blockFromThePastWhileBlockIsInProduction) {
       return blockImport.get();
     }
