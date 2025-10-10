@@ -69,7 +69,7 @@ class DataColumnSidecarsByRootRequestMessageTest {
           final DataColumnSidecarsByRootRequestMessageSchema schema =
               SchemaDefinitionsFulu.required(spec.forMilestone(milestone).getSchemaDefinitions())
                   .getDataColumnSidecarsByRootRequestMessageSchema();
-          assertThat(schema.getMaxLength()).isGreaterThanOrEqualTo(maxRequestBlocksDeneb);
+          assertThat(schema.getMaxLength()).isEqualTo(maxRequestBlocksDeneb);
         });
   }
 
