@@ -19,12 +19,15 @@ import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,7 +44,8 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.datacolumns.util.StringifyUtil;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
-public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckpointChannel {
+public class DasSamplerBasic
+    implements DataAvailabilitySampler, FinalizedCheckpointChannel, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -51,6 +55,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
   private final CurrentSlotProvider currentSlotProvider;
   private final DataColumnSidecarDbAccessor db;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final Map<UInt64, Set<DataColumnSlotAndIdentifier>> recentlySampledColumnsBySlot =
+      new ConcurrentHashMap<>();
 
   public DasSamplerBasic(
       final Spec spec,
@@ -95,6 +101,23 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
         .thenApply(list -> list.stream().flatMap(Optional::stream).toList());
   }
 
+  public void onNewValidatedDataColumnSidecar(
+      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
+    if (isMySampling(dataColumnSidecar.getIndex())) {
+      LOG.info(
+          "caching sampling {} - origin: {}",
+          DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar),
+          remoteOrigin);
+      recentlySampledColumnsBySlot
+          .computeIfAbsent(dataColumnSidecar.getSlot(), k -> ConcurrentHashMap.newKeySet())
+          .add(DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar));
+    }
+  }
+
+  private boolean isMySampling(final UInt64 columnIndex) {
+    return custodyGroupCountManagerSupplier.get().getSamplingColumnIndices().contains(columnIndex);
+  }
+
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(
       final UInt64 slot, final Bytes32 blockRoot) {
@@ -108,20 +131,56 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
         slot,
         blockRoot);
 
+    final Set<DataColumnSlotAndIdentifier> recentlySampledColumnsForSlot =
+        recentlySampledColumnsBySlot.getOrDefault(slot, Set.of());
+
+    final Set<DataColumnSlotAndIdentifier> missingColumnsFromRecentlySeen =
+        Sets.difference(requiredColumnIdentifiers, recentlySampledColumnsForSlot);
+
+    if (missingColumnsFromRecentlySeen.isEmpty()) {
+      LOG.info("All seen slot: {} root: {}", slot, blockRoot);
+      return SafeFuture.completedFuture(
+          requiredColumnIdentifiers.stream()
+              .map(DataColumnSlotAndIdentifier::columnIndex)
+              .toList());
+    }
+
+    // TODO, we can check in custody only what we custody, not what is required for sampling
     final SafeFuture<List<DataColumnSlotAndIdentifier>> columnsInCustodyFuture =
         maybeHasColumnsInCustody(requiredColumnIdentifiers);
 
     return columnsInCustodyFuture.thenCompose(
         columnsInCustodyList -> {
-          final Set<DataColumnSlotAndIdentifier> columnsInCustody =
+          final Set<DataColumnSlotAndIdentifier> columnsInCustodyUnionRecentlySampled =
               new HashSet<>(columnsInCustodyList);
+          columnsInCustodyUnionRecentlySampled.addAll(
+              recentlySampledColumnsBySlot.getOrDefault(slot, Set.of()));
+
+          LOG.info(
+              "sampledAndCustody: {} slot: {} root: {}",
+              columnsInCustodyUnionRecentlySampled.stream()
+                  .map(DataColumnSlotAndIdentifier::columnIndex)
+                  .sorted()
+                  .toList(),
+              slot,
+              blockRoot);
 
           final Set<DataColumnSlotAndIdentifier> missingColumns =
-              Sets.difference(requiredColumnIdentifiers, columnsInCustody);
+              Sets.difference(requiredColumnIdentifiers, columnsInCustodyUnionRecentlySampled);
+
+          LOG.info(
+              "missing: {} slot: {} root: {}",
+              missingColumns.stream()
+                  .map(DataColumnSlotAndIdentifier::columnIndex)
+                  .sorted()
+                  .toList(),
+              slot,
+              blockRoot);
 
           if (LOG.isDebugEnabled()) {
             final List<Integer> existingColumnIndices =
-                Sets.intersection(requiredColumnIdentifiers, columnsInCustody).stream()
+                Sets.intersection(requiredColumnIdentifiers, columnsInCustodyUnionRecentlySampled)
+                    .stream()
                     .map(it -> it.columnIndex().intValue())
                     .sorted()
                     .toList();
@@ -215,5 +274,10 @@ public class DasSamplerBasic implements DataAvailabilitySampler, FinalizedCheckp
                 LOG.error(
                     String.format("Failed to update incomplete sampler slot on %s", checkpoint),
                     ex));
+  }
+
+  @Override
+  public void onSlot(final UInt64 slot) {
+    recentlySampledColumnsBySlot.keySet().removeIf(slotKey -> slotKey.isLessThan(slot.minus(64)));
   }
 }
