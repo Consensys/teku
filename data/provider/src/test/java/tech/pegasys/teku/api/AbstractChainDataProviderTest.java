@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
+import tech.pegasys.teku.api.blobselector.BlobSelectorFactory;
 import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.datacolumnselector.DataColumnSidecarSelectorFactory;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -59,6 +61,7 @@ public abstract class AbstractChainDataProviderTest {
   protected CombinedChainDataClient combinedChainDataClient;
   protected BlockSelectorFactory blockSelectorFactory;
   protected BlobSidecarSelectorFactory blobSidecarSelectorFactory;
+  protected BlobSelectorFactory blobSelectorFactory;
   protected DataColumnSidecarSelectorFactory dataColumnSidecarSelectorFactory;
   protected StateSelectorFactory stateSelectorFactory;
   protected BeaconState beaconStateInternal;
@@ -69,6 +72,8 @@ public abstract class AbstractChainDataProviderTest {
       mock(CombinedChainDataClient.class);
   protected final BlobSidecarReconstructionProvider mockBlobSidecarReconstructionProvider =
       mock(BlobSidecarReconstructionProvider.class);
+  protected final BlobReconstructionProvider mockBlobReconstructionProvider =
+      mock(BlobReconstructionProvider.class);
 
   protected abstract Spec getSpec();
 
@@ -112,6 +117,10 @@ public abstract class AbstractChainDataProviderTest {
         spy(
             new BlobSidecarSelectorFactory(
                 spec, mockCombinedChainDataClient, mockBlobSidecarReconstructionProvider));
+    this.blobSelectorFactory =
+        spy(
+            new BlobSelectorFactory(
+                spec, mockCombinedChainDataClient, mockBlobReconstructionProvider));
     this.dataColumnSidecarSelectorFactory =
         spy(new DataColumnSidecarSelectorFactory(spec, mockCombinedChainDataClient));
     final ChainDataProvider provider =
@@ -122,6 +131,7 @@ public abstract class AbstractChainDataProviderTest {
             blockSelectorFactory,
             stateSelectorFactory,
             blobSidecarSelectorFactory,
+            blobSelectorFactory,
             dataColumnSidecarSelectorFactory,
             rewardCalculatorMock);
 

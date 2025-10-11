@@ -32,6 +32,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -119,6 +120,7 @@ public class DataProvider {
     private boolean isLivenessTrackingEnabled = true;
     private IntSupplier rejectedExecutionSupplier;
     private BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
+    private BlobReconstructionProvider blobReconstructionProvider;
     private DataColumnSidecarManager dataColumnSidecarManager;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
@@ -227,6 +229,12 @@ public class DataProvider {
       return this;
     }
 
+    public Builder blobReconstructionProvider(
+        final BlobReconstructionProvider blobReconstructionProvider) {
+      this.blobReconstructionProvider = blobReconstructionProvider;
+      return this;
+    }
+
     public Builder dataColumnSidecarManager(
         final DataColumnSidecarManager dataColumnSidecarManager) {
       this.dataColumnSidecarManager = dataColumnSidecarManager;
@@ -259,7 +267,8 @@ public class DataProvider {
               recentChainData,
               combinedChainDataClient,
               rewardCalculator,
-              blobSidecarReconstructionProvider);
+              blobSidecarReconstructionProvider,
+              blobReconstructionProvider);
       final SyncDataProvider syncDataProvider =
           new SyncDataProvider(syncService, rejectedExecutionSupplier);
       final ValidatorDataProvider validatorDataProvider =
