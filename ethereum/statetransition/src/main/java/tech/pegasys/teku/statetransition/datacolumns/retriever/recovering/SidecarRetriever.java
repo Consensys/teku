@@ -38,12 +38,13 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 public class SidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final DataColumnSidecarRetriever downloader;
+  private final DataColumnSidecarRetriever delegate;
   private final MiscHelpersFulu miscHelpersFulu;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final Duration recoveryTimeout;
+  private final Duration downloadTimeout;
   private final Duration recoveryCheckInterval;
   private final int numberOfColumnsRequiredToReconstruct;
   private Cancellable pendingRequestsChecker;
@@ -65,15 +66,17 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
       final Duration recoveryTimeout,
+      final Duration downloadTimeout,
       final Duration recoveryCheckInterval,
       final TimeProvider timeProvider,
       final int numberOfColumns,
       final MetricsSystem metricsSystem) {
-    downloader = delegate;
+    this.delegate = delegate;
     this.miscHelpersFulu = miscHelpersFulu;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
     this.recoveryTimeout = recoveryTimeout;
+    this.downloadTimeout = downloadTimeout;
     this.recoveryCheckInterval = recoveryCheckInterval;
     this.timeProvider = timeProvider;
     // reconstruction of all columns is possible with >= 50% of the column data
@@ -131,10 +134,10 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
             __ ->
                 new PendingRecoveryRequest(
                     columnId,
-                    downloader.retrieve(columnId),
+                    delegate.retrieve(columnId),
                     timeProvider.getTimeInMillis(),
                     recoveryTimeout,
-                    recoveryTimeout.dividedBy(2),
+                    downloadTimeout,
                     sidecarRecoveryMetric,
                     () -> requests.remove(columnId)));
     return pendingRecoveryRequest.getFuture();
@@ -142,12 +145,14 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
 
   @Override
   public void flush() {
-    downloader.flush();
+    delegate.flush();
   }
 
   @Override
   public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
-    downloader.onNewValidatedSidecar(sidecar);
+    LOG.trace(
+        "new validated sidecar ({}), index {}", sidecar.getSlotAndBlockRoot(), sidecar.getIndex());
+    delegate.onNewValidatedSidecar(sidecar);
   }
 
   @VisibleForTesting
@@ -183,18 +188,19 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
               final RebuildColumnsTask rebuildColumnsTask =
                   rebuildTasks.computeIfAbsent(
                       request.getBlockRoot(),
-                      __ ->
-                          new RebuildColumnsTask(
-                              request.getSlotAndBlockRoot(),
-                              currentTime,
-                              recoveryTimeout.dividedBy(2),
-                              numberOfColumnsRequiredToReconstruct,
-                              sidecarDB,
-                              miscHelpersFulu));
-              LOG.debug(
-                  "Rebuilding columns for slot {} root {}",
-                  request.getSlot(),
-                  request.getBlockRoot());
+                      __ -> {
+                        LOG.debug(
+                            "Rebuilding columns for slot {} root {}",
+                            request.getSlot(),
+                            request.getBlockRoot());
+                        return new RebuildColumnsTask(
+                            request.getSlotAndBlockRoot(),
+                            currentTime,
+                            recoveryTimeout.minus(downloadTimeout),
+                            numberOfColumnsRequiredToReconstruct,
+                            sidecarDB,
+                            miscHelpersFulu);
+                      });
               rebuildColumnsTask.addTask(request);
             });
     rebuildTasks.entrySet().removeIf(entry -> entry.getValue().isDone(currentTime));

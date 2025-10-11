@@ -18,7 +18,9 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.RECOVERED;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import java.time.Duration;
+import java.util.concurrent.CancellationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -62,7 +64,10 @@ class PendingRecoveryRequest {
         .thenRun(this::onCompleted)
         .exceptionally(
             (err) -> {
-              LOG.debug("Failed recovery task for column {}", columnnId, err);
+              final Throwable cause = Throwables.getRootCause(err);
+              if (!(cause instanceof CancellationException)) {
+                LOG.debug("Failed recovery task for column {}", columnnId, err);
+              }
               sidecarRecoveryMetric.labels(CANCELLED).inc();
               return null;
             })
@@ -70,7 +75,10 @@ class PendingRecoveryRequest {
   }
 
   private Void failedDownload(final Throwable throwable) {
-    LOG.debug("Failed downloading column {}", columnnId, throwable);
+    final Throwable cause = Throwables.getRootCause(throwable);
+    if (!(cause instanceof CancellationException)) {
+      LOG.debug("Failed downloading column {}", columnnId, throwable);
+    }
     return null;
   }
 

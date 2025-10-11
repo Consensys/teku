@@ -79,6 +79,7 @@ public class SidecarRetrieverTest {
           dbAccessor,
           stubAsyncRunner,
           RECOVERY_TIMEOUT,
+          RECOVERY_TIMEOUT.dividedBy(2),
           CHECK_INTERVAL,
           timeProvider,
           columnCount,
