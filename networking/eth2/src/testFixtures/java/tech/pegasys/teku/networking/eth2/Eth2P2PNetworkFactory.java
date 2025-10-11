@@ -269,7 +269,6 @@ public class Eth2P2PNetworkFactory {
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 __ -> Optional.of(discoveryNodeId),
-                custodyGroupCountFuture,
                 DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
@@ -392,7 +391,7 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            SafeFuture.completedFuture(0),
+            SafeFuture.completedFuture(__ -> {}),
             config.isAllTopicsFilterEnabled());
       }
     }

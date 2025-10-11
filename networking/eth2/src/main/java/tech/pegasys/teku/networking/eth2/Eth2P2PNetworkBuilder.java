@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
@@ -158,7 +160,7 @@ public class Eth2P2PNetworkBuilder {
   protected DebugDataDumper debugDataDumper;
   private DasGossipLogger dasGossipLogger;
   private DasReqRespLogger dasReqRespLogger;
-  private SafeFuture<Integer> initCustodyGroupCount;
+  private SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -205,7 +207,6 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRequestLimit(),
             spec,
             discoveryNodeIdExtractor,
-            initCustodyGroupCount,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -234,7 +235,7 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
-        initCustodyGroupCount,
+        custodyGroupCountObserver,
         config.isAllTopicsFilterEnabled());
   }
 
@@ -881,9 +882,9 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder initTotalCustodyGroupCount(
-      final SafeFuture<Integer> initTotalCustodyGroupCount) {
-    this.initCustodyGroupCount = initTotalCustodyGroupCount;
+  public Eth2P2PNetworkBuilder custodyGroupCountObserver(
+      final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver) {
+    this.custodyGroupCountObserver = custodyGroupCountObserver;
     return this;
   }
 }

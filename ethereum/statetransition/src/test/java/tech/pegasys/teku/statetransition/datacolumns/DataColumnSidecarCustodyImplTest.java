@@ -93,7 +93,7 @@ public class DataColumnSidecarCustodyImplTest {
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManagerSupplier,
-            SafeFuture.completedFuture(groupCount));
+            SafeFuture.completedFuture(observer -> observer.onValueChanged(groupCount)));
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
             List.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
@@ -109,7 +109,7 @@ public class DataColumnSidecarCustodyImplTest {
             dbAccessorMock,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManagerSupplier,
-            SafeFuture.completedFuture(initialGroupCount));
+            SafeFuture.completedFuture(observer -> observer.onValueChanged(initialGroupCount)));
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(updatedGroupCount);
   }
 
@@ -180,7 +180,7 @@ public class DataColumnSidecarCustodyImplTest {
             sidecarDb,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManagerSupplier,
-            SafeFuture.completedFuture(groupCount));
+            SafeFuture.completedFuture(observer -> observer.onValueChanged(groupCount)));
 
     final SafeFuture<Optional<Bytes32>> futureResult = custody.getBlockRootWithBlobs(ONE);
     verifyNoMoreInteractions(sidecarDb);
@@ -201,7 +201,7 @@ public class DataColumnSidecarCustodyImplTest {
             sidecarDb,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManagerSupplier,
-            SafeFuture.completedFuture(groupCount));
+            SafeFuture.completedFuture(observer -> observer.onValueChanged(groupCount)));
 
     final SafeFuture<Optional<Bytes32>> futureResult = custody.getBlockRootWithBlobs(ONE);
 
@@ -236,7 +236,7 @@ public class DataColumnSidecarCustodyImplTest {
             sidecarDb,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManagerSupplier,
-            SafeFuture.completedFuture(2));
+            SafeFuture.completedFuture(observer -> observer.onValueChanged(2)));
 
     SafeFuture<DataColumnSidecarCustodyImpl.SlotCustody> future = custody.retrieveSlotCustody(ONE);
     verify(sidecarDb).getColumnIdentifiers(ONE);

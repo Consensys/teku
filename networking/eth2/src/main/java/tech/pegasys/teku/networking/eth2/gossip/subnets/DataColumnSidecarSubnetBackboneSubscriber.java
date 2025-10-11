@@ -18,18 +18,18 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
-public class DataColumnSidecarSubnetBackboneSubscriber
-    implements SlotEventsChannel, CustodyGroupCountChannel {
+public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth2P2PNetwork eth2P2PNetwork;
@@ -44,22 +44,14 @@ public class DataColumnSidecarSubnetBackboneSubscriber
       final Spec spec,
       final Eth2P2PNetwork eth2P2PNetwork,
       final UInt256 nodeId,
-      final SafeFuture<Integer> samplingGroupCountFuture) {
+      final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountObserver) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    samplingGroupCountFuture
-        .thenPeek(samplingGroupCount -> totalGroupCount.compareAndSet(0, samplingGroupCount))
+    samplingGroupCountObserver
+        .thenPeek(valueObserverConsumer -> valueObserverConsumer.accept(totalGroupCount::set))
         .finishDebug(LOG);
   }
-
-  @Override
-  public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
-    totalGroupCount.set(samplingGroupCount);
-  }
-
-  @Override
-  public void onCustodyGroupCountSynced(final int groupCount) {}
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
 

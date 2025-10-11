@@ -457,7 +457,7 @@ public class ActiveEth2P2PNetworkTest {
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider,
-        SafeFuture.completedFuture(0),
+        SafeFuture.completedFuture(__ -> {}),
         true);
   }
 }

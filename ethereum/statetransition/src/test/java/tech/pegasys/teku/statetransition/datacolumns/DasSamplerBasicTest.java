@@ -44,7 +44,6 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -64,7 +63,6 @@ public class DasSamplerBasicTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
 
   private ProposersDataManager proposersDataManager;
-  private CustodyGroupCountChannel custodyGroupCountChannel;
   private CombinedChainDataClient combinedChainDataClient;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
 
@@ -75,7 +73,6 @@ public class DasSamplerBasicTest {
     currentSlotProvider = mock(CurrentSlotProvider.class);
     db = mock(DataColumnSidecarDbAccessor.class);
     proposersDataManager = mock(ProposersDataManager.class);
-    custodyGroupCountChannel = mock(CustodyGroupCountChannel.class);
     combinedChainDataClient = mock(CombinedChainDataClient.class);
   }
 
@@ -118,12 +115,9 @@ public class DasSamplerBasicTest {
         new CustodyGroupCountManagerImpl(
             SPEC,
             proposersDataManager,
-            custodyGroupCountChannel,
             combinedChainDataClient,
             configuredCustodyCount,
             dataStructureUtil.randomUInt256(),
-            new SafeFuture<>(),
-            new SafeFuture<>(),
             metricsSystem);
     final DasSamplerBasic sampler =
         new DasSamplerBasic(
