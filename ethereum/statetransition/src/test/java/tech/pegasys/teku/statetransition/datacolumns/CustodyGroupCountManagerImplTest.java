@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -47,8 +46,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class CustodyGroupCountManagerImplTest {
 
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
-  private final CustodyGroupCountChannel custodyGroupCountChannel =
-      mock(CustodyGroupCountChannel.class);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -81,7 +78,6 @@ public class CustodyGroupCountManagerImplTest {
             spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
-            custodyGroupCountChannel,
             combinedChainDataClient,
             custodyCount,
             dataStructureUtil.randomUInt256(),
@@ -109,7 +105,6 @@ public class CustodyGroupCountManagerImplTest {
             spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
-            custodyGroupCountChannel,
             combinedChainDataClient,
             custodyCount,
             dataStructureUtil.randomUInt256(),
@@ -136,7 +131,6 @@ public class CustodyGroupCountManagerImplTest {
             spec.getGenesisSpecConfig().toVersionFulu().orElseThrow(),
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow(),
             proposersDataManager,
-            custodyGroupCountChannel,
             combinedChainDataClient,
             custodyCount,
             dataStructureUtil.randomUInt256(),
@@ -229,7 +223,6 @@ public class CustodyGroupCountManagerImplTest {
             specConfigFulu,
             miscHelpersFulu,
             proposersDataManager,
-            custodyGroupCountChannel,
             combinedChainDataClient,
             defaultCustodyRequirement,
             dataStructureUtil.randomUInt256(),

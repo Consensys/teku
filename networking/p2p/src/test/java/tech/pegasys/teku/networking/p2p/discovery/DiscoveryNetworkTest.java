@@ -346,7 +346,7 @@ class DiscoveryNetworkTest {
   @ParameterizedTest
   @MethodSource("getCgcFixtures")
   public void cgcIsCorrectlyEncoded(final String hexString, final Integer cgc) {
-    discoveryNetwork.setDASTotalCustodySubnetCount(cgc);
+    discoveryNetwork.setDASTotalCustodyGroupCount(cgc);
     verify(discoveryService)
         .updateCustomENRField(DAS_CUSTODY_GROUP_COUNT_ENR_FIELD, Bytes.fromHexString(hexString));
   }

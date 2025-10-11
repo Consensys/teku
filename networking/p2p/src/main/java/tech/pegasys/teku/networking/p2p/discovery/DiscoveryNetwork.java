@@ -143,10 +143,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             .sszSerialize());
   }
 
-  public void setDASTotalCustodySubnetCount(final int count) {
+  public void setDASTotalCustodyGroupCount(final int count) {
     if (count < 0) {
       throw new IllegalArgumentException(
-          String.format("Custody subnet count should be a positive number, but was %s", count));
+          String.format("Custody group count should be a positive number, but was %s", count));
     }
     LOG.debug("Setting cgc in ENR to: {}", count);
     discoveryService.updateCustomENRField(

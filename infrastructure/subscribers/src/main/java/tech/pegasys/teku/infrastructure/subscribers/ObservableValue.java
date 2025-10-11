@@ -116,6 +116,25 @@ public class ObservableValue<C> {
     iterator.forEachRemaining(l -> notify(l, c));
   }
 
+  /**
+   * Gets the old value and sets a new one and notifies each subscriber
+   *
+   * @param c the non-null value
+   * @return old value, Optional.empty() if none
+   */
+  public Optional<C> getAndSet(final C c) {
+    Iterator<Subscription<C>> iterator;
+    final C oldValue;
+    synchronized (this) {
+      oldValue = curValue;
+      curValue = c;
+      iterator = subscriptions.iterator();
+    }
+
+    iterator.forEachRemaining(l -> notify(l, c));
+    return Optional.ofNullable(oldValue);
+  }
+
   private void notify(final Subscription<C> subscription, final C value) {
     try {
       subscription.getSubscriber().onValueChanged(value);
