@@ -54,6 +54,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   private volatile boolean genesisInitialized = false;
 
+  // TODO: test that safefuture was set
   public CustodyGroupCountManagerImpl(
       final Spec spec,
       final ProposersDataManager proposersDataManager,
@@ -61,6 +62,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       final CombinedChainDataClient combinedChainDataClient,
       final int initCustodyGroupCount,
       final UInt256 nodeId,
+      final SafeFuture<Integer> custodyGroupCountFuture,
+      final SafeFuture<Integer> samplingGroupCountFuture,
       final MetricsSystem metricsSystem) {
     this(
         spec,
@@ -71,6 +74,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
         combinedChainDataClient,
         initCustodyGroupCount,
         nodeId,
+        custodyGroupCountFuture,
+        samplingGroupCountFuture,
         metricsSystem);
   }
 
@@ -84,6 +89,8 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       final CombinedChainDataClient combinedChainDataClient,
       final int initCustodyGroupCount,
       final UInt256 nodeId,
+      final SafeFuture<Integer> custodyGroupCountFuture,
+      final SafeFuture<Integer> samplingGroupCountFuture,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.specConfigFulu = specConfigFulu;
@@ -107,10 +114,18 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
         combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
       LOG.info("Persisting initial custody group count to {}", initCustodyGroupCount);
-      updateCustodyGroupCount(initCustodyGroupCount, maybeCustodyCount);
+      updateCustodyGroupCount(
+          initCustodyGroupCount,
+          maybeCustodyCount,
+          Optional.of(custodyGroupCountFuture),
+          Optional.of(samplingGroupCountFuture));
     } else {
       LOG.info("Using custody group count {} from store", maybeCustodyCount.get());
-      updateCustodyGroupCount(maybeCustodyCount.get(), maybeCustodyCount);
+      updateCustodyGroupCount(
+          maybeCustodyCount.get(),
+          maybeCustodyCount,
+          Optional.of(custodyGroupCountFuture),
+          Optional.of(samplingGroupCountFuture));
     }
 
     this.custodyGroupSyncedCount = new AtomicInteger(0);
@@ -244,6 +259,15 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   private void updateCustodyGroupCount(
       final int newCustodyGroupCount, final Optional<Integer> maybeCustodyGroupCount) {
+    updateCustodyGroupCount(
+        newCustodyGroupCount, maybeCustodyGroupCount, Optional.empty(), Optional.empty());
+  }
+
+  private void updateCustodyGroupCount(
+      final int newCustodyGroupCount,
+      final Optional<Integer> maybeCustodyGroupCount,
+      final Optional<SafeFuture<Integer>> custodyGroupCountFuture,
+      final Optional<SafeFuture<Integer>> samplingGroupCountFuture) {
     if (maybeCustodyGroupCount.isEmpty() || maybeCustodyGroupCount.get() < newCustodyGroupCount) {
       LOG.debug(
           "Custody group count updated from {} to {}.",
@@ -252,10 +276,14 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
     if (custodyGroupCount.get() >= newCustodyGroupCount) {
+      custodyGroupCountFuture.ifPresent(fut -> fut.complete(getCustodyGroupCount()));
+      samplingGroupCountFuture.ifPresent(fut -> fut.complete(getSamplingGroupCount()));
       return;
     }
     custodyGroupCount.set(newCustodyGroupCount);
     custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
+    custodyGroupCountFuture.ifPresent(fut -> fut.complete(newCustodyGroupCount));
+    samplingGroupCountFuture.ifPresent(fut -> fut.complete(getSamplingGroupCount()));
     custodyGroupCountGauge.set(newCustodyGroupCount);
     isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
   }

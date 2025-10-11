@@ -240,12 +240,12 @@ public class Eth2P2PNetworkFactory {
           rpcEncoding =
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
-        final Optional<UInt64> dasTotalCustodySubnetCount =
-            spec.isMilestoneSupported(SpecMilestone.FULU)
-                ? Optional.of(
-                    UInt64.valueOf(
-                        config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
-                : Optional.empty();
+
+        final SafeFuture<Integer> custodyGroupCountFuture = new SafeFuture<>();
+        if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+          custodyGroupCountFuture.complete(
+              config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
+        }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
@@ -269,7 +269,7 @@ public class Eth2P2PNetworkFactory {
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 __ -> Optional.of(discoveryNodeId),
-                dasTotalCustodySubnetCount,
+                custodyGroupCountFuture,
                 DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
@@ -392,7 +392,7 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            0,
+            SafeFuture.completedFuture(0),
             config.isAllTopicsFilterEnabled());
       }
     }

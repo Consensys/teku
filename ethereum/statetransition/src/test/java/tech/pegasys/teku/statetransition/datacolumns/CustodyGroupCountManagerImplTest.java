@@ -85,6 +85,8 @@ public class CustodyGroupCountManagerImplTest {
             combinedChainDataClient,
             custodyCount,
             dataStructureUtil.randomUInt256(),
+            new SafeFuture<>(),
+            new SafeFuture<>(),
             metricsSystem);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(custodyCount);
@@ -113,6 +115,8 @@ public class CustodyGroupCountManagerImplTest {
             combinedChainDataClient,
             custodyCount,
             dataStructureUtil.randomUInt256(),
+            new SafeFuture<>(),
+            new SafeFuture<>(),
             metricsSystem);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(custodyCount);
@@ -140,6 +144,8 @@ public class CustodyGroupCountManagerImplTest {
             combinedChainDataClient,
             custodyCount,
             dataStructureUtil.randomUInt256(),
+            new SafeFuture<>(),
+            new SafeFuture<>(),
             metricsSystem);
 
     reset(combinedChainDataClient);
@@ -233,6 +239,8 @@ public class CustodyGroupCountManagerImplTest {
             combinedChainDataClient,
             defaultCustodyRequirement,
             dataStructureUtil.randomUInt256(),
+            new SafeFuture<>(),
+            new SafeFuture<>(),
             metricsSystem);
 
     when(combinedChainDataClient.getCustodyGroupCount())

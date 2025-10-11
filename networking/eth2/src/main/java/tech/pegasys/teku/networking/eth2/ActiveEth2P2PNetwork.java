@@ -76,7 +76,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final SubnetSubscriptionService executionProofSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
-  private final int dasTotalCustodySubnetCount;
+  private final SafeFuture<Integer> custodyGroupCountFuture;
 
   private final GossipForkManager gossipForkManager;
 
@@ -103,7 +103,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
-      final int dasTotalCustodySubnetCount,
+      final SafeFuture<Integer> custodyGroupCountFuture,
       final boolean allTopicsFilterEnabled) {
     super(discoveryNetwork);
     this.spec = spec;
@@ -120,7 +120,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.dataColumnSidecarSubnetService = dataColumnSidecarSubnetService;
     this.executionProofSubnetService = executionProofSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
-    this.dasTotalCustodySubnetCount = dasTotalCustodySubnetCount;
+    this.custodyGroupCountFuture = custodyGroupCountFuture;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
@@ -181,8 +181,14 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
-      discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
+      custodyGroupCountFuture
+          .thenPeek(
+              custodyGroupCount -> {
+                // TODO: info?
+                LOG.info("Using custody sidecar group count: {}", custodyGroupCount);
+                discoveryNetwork.setDASTotalCustodyGroupCount(custodyGroupCount);
+              })
+          .finishDebug(LOG);
       recentChainData
           .getNextForkDigest(currentEpoch)
           .ifPresent(discoveryNetwork::setNextForkDigest);

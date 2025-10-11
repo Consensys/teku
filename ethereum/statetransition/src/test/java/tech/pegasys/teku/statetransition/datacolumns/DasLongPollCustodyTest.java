@@ -68,7 +68,7 @@ public class DasLongPollCustodyTest {
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
           custodyGroupCountManagerSupplier,
-          groupCount);
+          SafeFuture.completedFuture(groupCount));
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
   private final Duration currentSlotTimeout = ofSeconds(3);

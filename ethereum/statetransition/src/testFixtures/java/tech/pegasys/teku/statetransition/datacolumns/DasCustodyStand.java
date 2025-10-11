@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -106,7 +107,7 @@ public class DasCustodyStand {
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             () -> custodyGroupCountManager,
-            totalCustodyGroupCount);
+            SafeFuture.completedFuture(totalCustodyGroupCount));
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 

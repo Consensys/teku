@@ -122,6 +122,8 @@ public class DasSamplerBasicTest {
             combinedChainDataClient,
             configuredCustodyCount,
             dataStructureUtil.randomUInt256(),
+            new SafeFuture<>(),
+            new SafeFuture<>(),
             metricsSystem);
     final DasSamplerBasic sampler =
         new DasSamplerBasic(

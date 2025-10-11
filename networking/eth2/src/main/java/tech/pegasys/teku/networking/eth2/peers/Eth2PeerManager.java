@@ -132,10 +132,15 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int peerRequestLimit,
       final Spec spec,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
-      final Optional<UInt64> custodyGroupCount,
+      final SafeFuture<Integer> initCustodyGroupCountFuture,
       final DasReqRespLogger dasLogger) {
 
-    custodyGroupCount.ifPresent(metadataMessagesFactory::updateCustodyGroupCount);
+    initCustodyGroupCountFuture
+        .thenPeek(
+            initCustodyGroupCount ->
+                metadataMessagesFactory.updateCustodyGroupCount(
+                    UInt64.valueOf(initCustodyGroupCount)))
+        .finishDebug(LOG);
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(

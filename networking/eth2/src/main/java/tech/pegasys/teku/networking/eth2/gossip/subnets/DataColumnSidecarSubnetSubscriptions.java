@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscriptions {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
@@ -81,6 +84,7 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final String topicName = GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId);
+    LOG.info("Creating topic handler for dataColumnSidecar subnet {}", subnetId);
     return DataColumnSidecarTopicHandler.createHandler(
         recentChainData,
         asyncRunner,
