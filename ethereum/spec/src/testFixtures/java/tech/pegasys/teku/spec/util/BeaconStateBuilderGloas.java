@@ -272,7 +272,8 @@ public class BeaconStateBuilderGloas
     this.proposerLookahead =
         dataStructureUtil.randomSszUInt64Vector(
             schema.getProposerLookaheadSchema(),
-            schema.getProposerLookaheadSchema().getMaxLength());
+            schema.getProposerLookaheadSchema().getMaxLength(),
+            () -> dataStructureUtil.randomUInt64(defaultValidatorCount));
 
     this.latestExecutionPayloadBid = dataStructureUtil.randomExecutionPayloadBid();
     this.executionPayloadAvailability =

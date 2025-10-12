@@ -196,6 +196,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayer,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider));
   }

@@ -44,7 +44,9 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -58,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderPayloadOrFallbackData;
@@ -78,6 +81,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -87,9 +91,11 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -112,6 +118,8 @@ public abstract class AbstractBlockFactoryTest {
   protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final ExecutionLayerBlockProductionManager executionLayer =
       mock(ExecutionLayerBlockProductionManager.class);
+  protected final ExecutionPayloadBidManager executionPayloadBidManager =
+      mock(ExecutionPayloadBidManager.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final DepositProvider depositProvider = mock(DepositProvider.class);
@@ -122,6 +130,7 @@ public abstract class AbstractBlockFactoryTest {
   // execution context
   protected ExecutionPayload executionPayload = null;
   protected Optional<BlobsBundle> blobsBundle = Optional.empty();
+  protected ExecutionPayloadBid executionPayloadBid = null;
 
   // builder context
   protected ExecutionPayloadHeader executionPayloadHeader = null;
@@ -275,8 +284,11 @@ public abstract class AbstractBlockFactoryTest {
                   .getMessage()
                   .getValue()
                   .longValue());
-      // TODO-GLOAS: add mocked assertions https://github.com/Consensys/teku/issues/9959
-      assertThat(block.getBody().getOptionalSignedExecutionPayloadBid()).isPresent();
+      assertThat(block.getBody().getOptionalSignedExecutionPayloadBid())
+          .hasValueSatisfying(
+              signedBid -> assertThat(signedBid.getMessage()).isEqualTo(executionPayloadBid));
+      // TODO-GLOAS: add assertions for payload attestations
+      // https://github.com/Consensys/teku/issues/9959
       assertThat(block.getBody().getOptionalPayloadAttestations()).isPresent();
     } else if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       assertThat(block.getBody().getOptionalBlobKzgCommitments())
@@ -435,16 +447,22 @@ public abstract class AbstractBlockFactoryTest {
 
   protected void prepareValidPayload(final Spec spec, final BeaconState genericState) {
     final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
-    final MiscHelpers miscHelpers = spec.atSlot(state.getSlot()).miscHelpers();
-    final BeaconStateAccessors beaconStateAccessors =
-        spec.atSlot(state.getSlot()).beaconStateAccessors();
+    final SpecVersion specVersion = spec.atSlot(state.getSlot());
+    final MiscHelpers miscHelpers = specVersion.miscHelpers();
+    final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     executionPayload =
         dataStructureUtil.randomExecutionPayload(
             genericState.getSlot(),
             builder ->
                 builder
-                    .parentHash(state.getLatestExecutionPayloadHeaderRequired().getBlockHash())
+                    .parentHash(
+                        state
+                            .toVersionGloas()
+                            .map(BeaconStateGloas::getLatestBlockHash)
+                            .orElseGet(
+                                () ->
+                                    state.getLatestExecutionPayloadHeaderRequired().getBlockHash()))
                     .prevRandao(
                         beaconStateAccessors.getRandaoMix(
                             state, beaconStateAccessors.getCurrentEpoch(state)))
@@ -561,6 +579,44 @@ public abstract class AbstractBlockFactoryTest {
                       SafeFuture.completedFuture(BuilderBidOrFallbackData.create(builderBid)));
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
+            });
+    // simulate a bid
+    when(executionPayloadBidManager.getBidForBlock(any(), any(), any()))
+        .thenAnswer(
+            args -> {
+              final BeaconStateGloas state = BeaconStateGloas.required(args.getArgument(0));
+              final SafeFuture<GetPayloadResponse> getPayloadResponseFuture = args.getArgument(1);
+              // verify we pass the correct future to the bid manager
+              assertThat(getPayloadResponseFuture)
+                  .isEqualTo(
+                      cachedExecutionPayloadResult.getPayloadResponseFutureFromLocalFlowRequired());
+              final UInt64 slot = state.getSlot();
+              final SchemaDefinitionsGloas schemaDefinitions =
+                  SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
+              final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+                  schemaDefinitions.getBlobKzgCommitmentsSchema();
+              this.executionPayloadBid =
+                  schemaDefinitions
+                      .getExecutionPayloadBidSchema()
+                      .create(
+                          executionPayload.getParentHash(),
+                          state.getLatestBlockHeader().getRoot(),
+                          executionPayload.getBlockHash(),
+                          executionPayload.getFeeRecipient(),
+                          executionPayload.getGasLimit(),
+                          // self-built for simplification
+                          UInt64.valueOf(spec.getBeaconProposerIndex(state, slot)),
+                          slot,
+                          ZERO,
+                          blobsBundle
+                              .map(blobKzgCommitmentsSchema::createFromBlobsBundle)
+                              .orElse(blobKzgCommitmentsSchema.of())
+                              .hashTreeRoot());
+              return SafeFuture.completedFuture(
+                  Optional.of(
+                      schemaDefinitions
+                          .getSignedExecutionPayloadBidSchema()
+                          .create(executionPayloadBid, BLSSignature.infinity())));
             });
     // simulate caching of the payload result
     when(executionLayer.getCachedPayloadResult(any()))
