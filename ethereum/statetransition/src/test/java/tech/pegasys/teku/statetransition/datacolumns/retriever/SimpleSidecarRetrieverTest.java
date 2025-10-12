@@ -37,8 +37,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -120,6 +120,7 @@ public class SimpleSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void sanityTest() {
     final TestPeer custodyPeerMissingData =
         new TestPeer(stubAsyncRunner, custodyNodeIds.next(), Duration.ofMillis(100));
@@ -131,7 +132,7 @@ public class SimpleSidecarRetrieverTest {
     final List<Blob> blobs = Stream.generate(dataStructureUtil::randomValidBlob).limit(1).toList();
     final BeaconBlock block = blockResolver.addBlock(10, 1);
     final List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
     final DataColumnSidecar sidecar0 = sidecars.get(columnIndex.intValue());
 
     final DataColumnSlotAndIdentifier id0 = createId(block, columnIndex.intValue());

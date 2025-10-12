@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 
@@ -112,6 +112,12 @@ public class SimpleSidecarRetriever
         .filter(request -> !request.result.isDone())
         .ifPresent(request -> reqRespCompleted(request, sidecar));
   }
+
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
 
   private Stream<RequestMatch> matchRequestsAndPeers() {
     final RequestTracker ongoingRequestsTracker = createFromCurrentPendingRequests();

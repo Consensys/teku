@@ -16,7 +16,7 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
@@ -33,11 +33,10 @@ public interface DataColumnSidecarELRecoveryManager extends SlotEventsChannel {
 
         @Override
         public void onNewDataColumnSidecar(
-            DataColumnSidecar dataColumnSidecar, RemoteOrigin remoteOrigin) {}
+            final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {}
       };
 
-  void onNewDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin);
+  void onNewDataColumnSidecar(DataColumnSidecar dataColumnSidecar, RemoteOrigin remoteOrigin);
 
   void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
 }

@@ -20,6 +20,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -31,8 +32,8 @@ public class PayloadAttestationMessageGossipManager
     extends AbstractGossipManager<PayloadAttestationMessage> {
 
   public PayloadAttestationMessageGossipManager(
+      final Spec spec,
       final RecentChainData recentChainData,
-      final SchemaDefinitionsGloas schemaDefinitions,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
@@ -50,7 +51,9 @@ public class PayloadAttestationMessageGossipManager
         forkInfo,
         forkDigest,
         processor,
-        schemaDefinitions.getPayloadAttestationMessageSchema(),
+        SchemaDefinitionsGloas.required(
+                spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
+            .getPayloadAttestationMessageSchema(),
         message -> Optional.of(message.getData().getSlot()),
         message -> recentChainData.getSpec().computeEpochAtSlot(message.getData().getSlot()),
         networkingConfig,

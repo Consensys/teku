@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
@@ -518,6 +520,12 @@ public class ForkChoiceUtil {
     return getSlotComponentDurationMillis(specConfig.getProposerReorgCutoffBps());
   }
 
+  // get_payload_attestation_due_ms
+  public int getPayloadAttestationDueMillis() {
+    final SpecConfigGloas configGloas = SpecConfigGloas.required(specConfig);
+    return getSlotComponentDurationMillis(configGloas.getPayloadAttestationDueBps());
+  }
+
   private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
     // post-Bellatrix: always true
     final BeaconBlockBody body = block.getMessage().getBody();
@@ -527,5 +535,9 @@ public class ForkChoiceUtil {
     final Optional<Bytes32> parentExecutionRoot =
         store.getForkChoiceStrategy().executionBlockHash(block.getParentRoot());
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
+  }
+
+  public AvailabilityChecker<?> createAvailabilityChecker(final SignedBeaconBlock block) {
+    return AvailabilityChecker.NOOP;
   }
 }

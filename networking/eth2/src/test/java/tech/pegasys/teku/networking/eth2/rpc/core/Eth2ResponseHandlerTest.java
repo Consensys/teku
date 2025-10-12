@@ -30,6 +30,7 @@ public class Eth2ResponseHandlerTest {
   private final RuntimeException error = new RuntimeException("oops");
 
   @Test
+  @SuppressWarnings("deprecation")
   public void expectMultipleResponses_successful() {
     final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =
@@ -52,7 +53,7 @@ public class Eth2ResponseHandlerTest {
     final IntList responsesReceived = new IntArrayList();
     final Eth2RpcResponseHandler<Integer, Void> handler =
         Eth2RpcResponseHandler.expectMultipleResponses(
-            RpcResponseListener.from(responsesReceived::add));
+            RpcResponseListener.from(i -> responsesReceived.add((int) i)));
 
     assertThat(handler.onResponse(1)).isCompleted();
     assertThat(handler.onResponse(2)).isCompleted();

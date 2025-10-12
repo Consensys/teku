@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -134,17 +135,17 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
-    final Optional<UInt64> maybeProposerReward =
-        processAttestationProposerReward(state, attestation, indexedAttestationProvider);
-
-    maybeProposerReward.ifPresent(
-        proposerReward -> {
-          final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
-          beaconStateMutators.increaseProposerBalance(state, proposerIndex, proposerReward);
-        });
+    final AttestationProcessingResult result =
+        calculateAttestationProcessingResult(state, attestation, indexedAttestationProvider);
+    consumeAttestationProcessingResult(attestation.getData(), result, genericState);
   }
 
-  public Optional<UInt64> processAttestationProposerReward(
+  public record AttestationProcessingResult(
+      Optional<UInt64> proposerReward,
+      boolean currentEpochTarget,
+      UInt64 builderPaymentWeightDelta) {}
+
+  public AttestationProcessingResult calculateAttestationProcessingResult(
       final MutableBeaconStateAltair state,
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
@@ -163,6 +164,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     } else {
       epochParticipation = state.getPreviousEpochParticipation();
     }
+    // track the weight for pending builder payment
+    UInt64 builderPaymentWeightDelta = UInt64.ZERO;
 
     UInt64 proposerRewardNumerator = UInt64.ZERO;
     final SszUInt64List attestingIndices =
@@ -196,8 +199,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_SOURCE_FLAG_INDEX),
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_TARGET_FLAG_INDEX),
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_HEAD_FLAG_INDEX));
+
+        builderPaymentWeightDelta =
+            updateBuilderPaymentWeight(builderPaymentWeightDelta, data, index, state);
       }
     }
+
+    Optional<UInt64> proposerReward = Optional.empty();
 
     if (!proposerRewardNumerator.isZero()) {
       final UInt64 proposerRewardDenominator =
@@ -205,11 +213,31 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
               .minus(PROPOSER_WEIGHT)
               .times(WEIGHT_DENOMINATOR)
               .dividedBy(PROPOSER_WEIGHT);
-      final UInt64 proposerReward = proposerRewardNumerator.dividedBy(proposerRewardDenominator);
-      return Optional.of(proposerReward);
+      proposerReward = Optional.of(proposerRewardNumerator.dividedBy(proposerRewardDenominator));
     }
 
-    return Optional.empty();
+    return new AttestationProcessingResult(
+        proposerReward, forCurrentEpoch, builderPaymentWeightDelta);
+  }
+
+  protected UInt64 updateBuilderPaymentWeight(
+      final UInt64 builderPaymentWeightDelta,
+      final AttestationData data,
+      final int attestingIndex,
+      final BeaconState state) {
+    // NO-OP
+    return builderPaymentWeightDelta;
+  }
+
+  protected void consumeAttestationProcessingResult(
+      final AttestationData data,
+      final AttestationProcessingResult result,
+      final MutableBeaconState state) {
+    result.proposerReward.ifPresent(
+        delta -> {
+          final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
+          beaconStateMutators.increaseProposerBalance(state, proposerIndex, delta);
+        });
   }
 
   @Override
@@ -332,6 +360,20 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState state, final Optional<ExecutionPayloadSummary> payloadSummary)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in Altair");
+  }
+
+  @Override
+  public void processExecutionPayloadBid(
+      final MutableBeaconState state, final BeaconBlock beaconBlock)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No process_execution_payload_bid until Gloas");
+  }
+
+  @Override
+  public void processPayloadAttestations(
+      final MutableBeaconState state, final SszList<PayloadAttestation> payloadAttestations)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No payload attestations until Gloas");
   }
 
   public static boolean eth2FastAggregateVerify(

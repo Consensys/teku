@@ -365,8 +365,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   .thenCompose(
                       ignored ->
                           combinedChainDataClient.getStateForBlockProduction(
-                              keySlot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
-                  .thenPeek(__ -> productionPerformance.getStateAtSlot());
+                              keySlot,
+                              forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
+                              productionPerformance::lateBlockReorgPreparationCompleted))
+                  .thenPeek(__ -> productionPerformance.getState());
 
           return new BlockProductionPreparationContext(state, productionPerformance);
         });

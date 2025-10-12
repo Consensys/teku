@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloas;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -56,10 +55,6 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   SszListSchema<Deposit, ?> getDepositsSchema();
 
   SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
-
-  default SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema() {
-    throw new UnsupportedOperationException("PayloadAttestations not supported until Gloas");
-  }
 
   default Optional<BeaconBlockBodySchemaAltair<?>> toVersionAltair() {
     return Optional.empty();

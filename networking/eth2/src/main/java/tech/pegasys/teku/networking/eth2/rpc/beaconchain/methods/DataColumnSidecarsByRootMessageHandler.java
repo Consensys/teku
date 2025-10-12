@@ -38,9 +38,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
@@ -53,9 +51,8 @@ import tech.pegasys.teku.statetransition.datacolumns.log.rpc.ReqRespResponseLogg
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
- * <a
- * href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface.md#datacolumnsidecarsbyroot-v1">DataColumnSidecarsByRoot
- * v1</a>
+ * <a href="https://github.com/ethereum/consensus-specs/blob/master/specs/fulu/p2p-interface
+ * .md#datacolumnsidecarsbyroot-v1">DataColumnSidecarsByRoot v1</a>
  */
 public class DataColumnSidecarsByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<
@@ -71,7 +68,6 @@ public class DataColumnSidecarsByRootMessageHandler
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalDataColumnSidecarsRequestedCounter;
   private final DasReqRespLogger dasLogger;
-  private final SpecConfigFulu specConfigFulu;
 
   public DataColumnSidecarsByRootMessageHandler(
       final Spec spec,
@@ -85,8 +81,6 @@ public class DataColumnSidecarsByRootMessageHandler
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.dataColumnSidecarCustodySupplier = dataColumnSidecarCustodySupplier;
     this.dasLogger = dasLogger;
-    this.specConfigFulu =
-        SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
     this.requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -96,8 +90,9 @@ public class DataColumnSidecarsByRootMessageHandler
     this.totalDataColumnSidecarsRequestedCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.NETWORK,
-            "rpc_data_column_sidecars_by_root_requested_data_column_sidecars_total",
-            "Total number of data column sidecars requested in accepted data column sidecars by root requests from peers");
+            "rpc_data_column_sidecars_by_root_requested_sidecars_total",
+            "Total number of data column sidecars requested in accepted data column sidecars by root requests from "
+                + "peers");
   }
 
   private SafeFuture<Boolean> validateAndMaybeRespond(
@@ -110,22 +105,6 @@ public class DataColumnSidecarsByRootMessageHandler
                 maybeSidecar
                     .map(sideCar -> callback.respond(sideCar).thenApply(___ -> true))
                     .orElse(SafeFuture.completedFuture(false)));
-  }
-
-  @Override
-  public Optional<RpcException> validateRequest(
-      final String protocolId, final DataColumnSidecarsByRootRequestMessage request) {
-    final int maxRequestIdentifiers = specConfigFulu.getMaxRequestBlocksDeneb();
-    if (request.size() > maxRequestIdentifiers) {
-      requestCounter.labels("count_too_big").inc();
-      return Optional.of(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              String.format(
-                  "Only a maximum of %d by root identifiers are allowed per request",
-                  maxRequestIdentifiers)));
-    }
-    return Optional.empty();
   }
 
   @Override

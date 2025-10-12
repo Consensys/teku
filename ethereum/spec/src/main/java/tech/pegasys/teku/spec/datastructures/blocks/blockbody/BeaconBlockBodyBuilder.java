@@ -82,10 +82,6 @@ public interface BeaconBlockBodyBuilder {
 
   BeaconBlockBodyBuilder executionRequests(ExecutionRequests executionRequests);
 
-  default Boolean supportsCellProofs() {
-    return false;
-  }
-
   default Boolean supportsSignedExecutionPayloadBid() {
     return false;
   }

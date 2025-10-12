@@ -58,6 +58,7 @@ public class P2PConfig {
   // queries to 3
   public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 3;
   public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 500;
+  public static final boolean DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED = false;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -80,6 +81,8 @@ public class P2PConfig {
   private final boolean batchVerifyStrictThreadLimitEnabled;
   private final boolean isGossipBlobsAfterBlockEnabled;
   private final boolean allTopicsFilterEnabled;
+  private final boolean reworkedSidecarRecoveryEnabled;
+  private final boolean executionProofTopicEnabled;
 
   private P2PConfig(
       final Spec spec,
@@ -100,7 +103,9 @@ public class P2PConfig {
       final int batchVerifyMaxBatchSize,
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
-      final boolean isGossipBlobsAfterBlockEnabled) {
+      final boolean isGossipBlobsAfterBlockEnabled,
+      final boolean reworkedSidecarRecoveryEnabled,
+      final boolean executionProofTopicEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -121,6 +126,8 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
+    this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
+    this.executionProofTopicEnabled = executionProofTopicEnabled;
   }
 
   public static Builder builder() {
@@ -208,8 +215,16 @@ public class P2PConfig {
     return allTopicsFilterEnabled;
   }
 
+  public boolean isExecutionProofTopicEnabled() {
+    return executionProofTopicEnabled;
+  }
+
   public boolean isGossipBlobsAfterBlockEnabled() {
     return isGossipBlobsAfterBlockEnabled;
+  }
+
+  public boolean isReworkedSidecarRecoveryEnabled() {
+    return reworkedSidecarRecoveryEnabled;
   }
 
   public static class Builder {
@@ -237,6 +252,8 @@ public class P2PConfig {
     private int floodPublishMaxMessageSizeThreshold =
         DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
+    private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
+    private boolean reworkedSidecarRecoveryEnabled = false;
 
     private Builder() {}
 
@@ -292,7 +309,9 @@ public class P2PConfig {
           batchVerifyMaxBatchSize,
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
-          gossipBlobsAfterBlockEnabled);
+          gossipBlobsAfterBlockEnabled,
+          reworkedSidecarRecoveryEnabled,
+          executionProofTopicEnabled);
     }
 
     private void validate() {
@@ -443,6 +462,16 @@ public class P2PConfig {
 
     public Builder allTopicsFilterEnabled(final boolean allTopicsFilterEnabled) {
       this.allTopicsFilterEnabled = allTopicsFilterEnabled;
+      return this;
+    }
+
+    public Builder executionProofTopicEnabled(final boolean executionProofTopicEnabled) {
+      this.executionProofTopicEnabled = executionProofTopicEnabled;
+      return this;
+    }
+
+    public Builder reworkedSidecarRecoveryEnabled(final boolean reworkedSidecarRecoveryEnabled) {
+      this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
       return this;
     }
   }
