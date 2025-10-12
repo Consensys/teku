@@ -42,6 +42,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -55,13 +56,16 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 
 public class MiscHelpersFuluTest {
 
-  private final Spec spec =
+  private static final Spec SPEC =
       TestSpecFactory.createMinimalFulu(
           builder ->
               builder.fuluBuilder(
@@ -74,17 +78,27 @@ public class MiscHelpersFuluTest {
                           .validatorCustodyRequirement(8)
                           .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .samplesPerSlot(16)));
-  private final SpecConfig specConfig = spec.atSlot(ZERO).getConfig();
+  
+  static {
+    // Initialize KZG and reinitialize spec with real KZG
+    final KZG kzg = KZG.getInstance(false);
+    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
+    SPEC.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
+  }
+  
+  private final SpecConfig specConfig = SPEC.atSlot(ZERO).getConfig();
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
-      SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
+      SchemaDefinitionsFulu.required(SPEC.getGenesisSchemaDefinitions());
   private final SpecConfigFulu specConfigFulu =
-      SpecConfigFulu.required(spec.getGenesisSpecConfig());
+      SpecConfigFulu.required(SPEC.getGenesisSpecConfig());
   private final MiscHelpersFulu miscHelpersFulu =
-      spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow();
+      MiscHelpersFulu.required(SPEC.forMilestone(SpecMilestone.FULU).miscHelpers());
 
   // Shared test data for reconstructAllDataColumnSidecars tests
   private static List<DataColumnSidecar> sharedOriginalSidecars;
-  private static KZG sharedKzg;
   private static SignedBeaconBlock sharedSignedBeaconBlock;
 
   @ParameterizedTest
@@ -99,7 +113,7 @@ public class MiscHelpersFuluTest {
 
   @Test
   public void shouldRejectDataColumnSideCarWhenIndexTooBig() {
-    final int numberOfColumns = spec.getNumberOfDataColumns().orElseThrow();
+    final int numberOfColumns = SPEC.getNumberOfDataColumns().orElseThrow();
     final DataColumnSidecar invalidIndex =
         dataStructureUtil.randomDataColumnSidecar(
             dataStructureUtil.randomSignedBeaconBlockHeader(),
@@ -172,7 +186,7 @@ public class MiscHelpersFuluTest {
         .thenReturn(true);
     final MiscHelpersFulu miscHelpersFuluWithMockPredicates =
         new MiscHelpersFulu(specConfigFulu, predicatesMock, schemaDefinitionsFulu);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
     final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
         SchemaDefinitionsFulu.required(schemaDefinitionsFulu).getDataColumnSidecarSchema();
     final DataColumnSidecar dataColumnSidecar =
@@ -260,41 +274,26 @@ public class MiscHelpersFuluTest {
         .isFalse();
   }
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
 
   @BeforeAll
   static void setUpSharedTestData() {
-    final Spec spec =
-        TestSpecFactory.createMinimalFulu(
-            builder ->
-                builder.fuluBuilder(
-                    fuluBuilder ->
-                        fuluBuilder
-                            .cellsPerExtBlob(128)
-                            .numberOfColumns(128)
-                            .numberOfCustodyGroups(128)
-                            .custodyRequirement(4)
-                            .validatorCustodyRequirement(8)
-                            .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
-                            .samplesPerSlot(16)));
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
     final MiscHelpersFulu miscHelpersFulu =
-        new MiscHelpersFulu(
-            SpecConfigFulu.required(spec.getGenesisSpecConfig()),
-            new PredicatesElectra(spec.getGenesisSpecConfig()),
-            SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions()));
+        MiscHelpersFulu.required(SPEC.forMilestone(SpecMilestone.FULU).miscHelpers());
 
     // Create test data once for all tests
     final List<Blob> blobs =
         IntStream.range(0, 4).mapToObj(__ -> dataStructureUtil.randomValidBlob()).toList();
 
-    sharedKzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(sharedKzg);
     sharedSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(blobs.size());
 
     sharedOriginalSidecars =
-        miscHelpersFulu.constructDataColumnSidecarsOld(sharedSignedBeaconBlock, blobs, sharedKzg);
+        miscHelpersFulu.constructDataColumnSidecars(
+            sharedSignedBeaconBlock.getMessage(), 
+            sharedSignedBeaconBlock.asHeader(), 
+            miscHelpersFulu.computeExtendedMatrixAndProofs(blobs));
   }
 
   @ParameterizedTest(name = "{0} validator custody groups required")
@@ -321,11 +320,11 @@ public class MiscHelpersFuluTest {
 
   @Test
   public void computeProposerIndices_returnsListWithSlotsPerEpochSize() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
     final BeaconState state = dataStructureUtil.randomBeaconState();
     final UInt64 epoch = UInt64.ONE;
     final Bytes32 epochSeed = Bytes32.random();
-    final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
+    final int slotsPerEpoch = SPEC.getGenesisSpecConfig().getSlotsPerEpoch();
     final List<Integer> activeValidatorIndices = IntStream.range(0, 10).boxed().toList();
 
     final IntList activeValidatorIndicesIntList =
@@ -371,7 +370,7 @@ public class MiscHelpersFuluTest {
         sharedOriginalSidecars.subList(halfSize - 1, sharedOriginalSidecars.size());
 
     final List<DataColumnSidecar> reconstructedSidecars =
-        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, sharedKzg);
+        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars);
 
     // Verify that all sidecars were reconstructed
     assertThat(reconstructedSidecars).isEqualTo(sharedOriginalSidecars);
@@ -385,7 +384,7 @@ public class MiscHelpersFuluTest {
         sharedOriginalSidecars.subList(0, halfSize - 1);
 
     assertThatThrownBy(
-            () -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars, sharedKzg))
+            () -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             "Number of sidecars must be greater than or equal to the half of column count");
@@ -393,9 +392,7 @@ public class MiscHelpersFuluTest {
 
   @Test
   public void reconstructAllDataColumnSidecars_withEmptyCollection_shouldThrowException() {
-    final KZG kzg = KZG.getInstance(false);
-
-    assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(List.of(), kzg))
+    assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(List.of()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             "Number of sidecars must be greater than or equal to the half of column count");
@@ -409,7 +406,7 @@ public class MiscHelpersFuluTest {
         sharedOriginalSidecars.subList(halfSize, sharedOriginalSidecars.size());
 
     final List<DataColumnSidecar> reconstructedSidecars =
-        miscHelpersFulu.reconstructAllDataColumnSidecars(halfSidecars, sharedKzg);
+        miscHelpersFulu.reconstructAllDataColumnSidecars(halfSidecars);
 
     // Verify that all sidecars were reconstructed
     assertThat(reconstructedSidecars).isEqualTo(sharedOriginalSidecars);
@@ -423,11 +420,11 @@ public class MiscHelpersFuluTest {
         sharedOriginalSidecars.subList(halfSize - 1, sharedOriginalSidecars.size());
 
     final List<DataColumnSidecar> reconstructedSidecars =
-        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars, sharedKzg);
+        miscHelpersFulu.reconstructAllDataColumnSidecars(partialSidecars);
 
     // Verify that sidecars are ordered by index
     for (int i = 0; i < reconstructedSidecars.size(); i++) {
-      assertThat(reconstructedSidecars.get(i).getIndex()).isEqualTo(UInt64.valueOf(i));
+      assertThat(reconstructedSidecars.get(i).getIndex().intValue()).isEqualTo(i);
     }
   }
 
@@ -435,7 +432,7 @@ public class MiscHelpersFuluTest {
   public void reconstructAllDataColumnSidecars_withAllSidecars_shouldSucceed() {
     // Test with all sidecars (should succeed)
     final List<DataColumnSidecar> reconstructedSidecars =
-        miscHelpersFulu.reconstructAllDataColumnSidecars(sharedOriginalSidecars, sharedKzg);
+        miscHelpersFulu.reconstructAllDataColumnSidecars(sharedOriginalSidecars);
 
     // Verify that all sidecars were reconstructed
     assertThat(reconstructedSidecars).isEqualTo(sharedOriginalSidecars);
