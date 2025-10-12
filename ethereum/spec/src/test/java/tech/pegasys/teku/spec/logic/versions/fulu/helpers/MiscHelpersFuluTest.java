@@ -41,6 +41,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -60,8 +62,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 
 public class MiscHelpersFuluTest {
 
@@ -78,7 +78,7 @@ public class MiscHelpersFuluTest {
                           .validatorCustodyRequirement(8)
                           .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .samplesPerSlot(16)));
-  
+
   static {
     // Initialize KZG and reinitialize spec with real KZG
     final KZG kzg = KZG.getInstance(false);
@@ -88,7 +88,7 @@ public class MiscHelpersFuluTest {
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
         kzg);
   }
-  
+
   private final SpecConfig specConfig = SPEC.atSlot(ZERO).getConfig();
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
       SchemaDefinitionsFulu.required(SPEC.getGenesisSchemaDefinitions());
@@ -291,8 +291,8 @@ public class MiscHelpersFuluTest {
 
     sharedOriginalSidecars =
         miscHelpersFulu.constructDataColumnSidecars(
-            sharedSignedBeaconBlock.getMessage(), 
-            sharedSignedBeaconBlock.asHeader(), 
+            sharedSignedBeaconBlock.getMessage(),
+            sharedSignedBeaconBlock.asHeader(),
             miscHelpersFulu.computeExtendedMatrixAndProofs(blobs));
   }
 
@@ -383,8 +383,7 @@ public class MiscHelpersFuluTest {
     final List<DataColumnSidecar> insufficientSidecars =
         sharedOriginalSidecars.subList(0, halfSize - 1);
 
-    assertThatThrownBy(
-            () -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars))
+    assertThatThrownBy(() -> miscHelpersFulu.reconstructAllDataColumnSidecars(insufficientSidecars))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             "Number of sidecars must be greater than or equal to the half of column count");
