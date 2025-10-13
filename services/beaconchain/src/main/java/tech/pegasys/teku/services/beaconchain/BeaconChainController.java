@@ -702,7 +702,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new ExecutionProofManagerImpl(
               executionProofGossipValidator,
               executionProofGenerator,
-              executionProofGossipChannel::publishExecutionProofs,
+              executionProofGossipChannel::publishExecutionProof,
               zkConfig.getStatelessMinProofsRequired());
 
     } else {
@@ -1264,17 +1264,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             forkChoiceExecutor,
             recentChainData,
-            blobSidecarManager,
-            dasSamplerManager,
-            executionProofManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             debugDataDumper,
-            metricsSystem,
-            beaconConfig.zkChainConfiguration().isStatelessValidationEnabled());
+            metricsSystem);
     forkChoiceTrigger =
         new ForkChoiceTrigger(
             forkChoice,
