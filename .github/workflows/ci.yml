@@ -26,9 +26,16 @@ name: ci
 # gha-runner-scale-set-ubuntu-22.04-amd64-xxl = 32 , 128G 
 
 
+
 on:
   push:
-    branches: [ gha ]
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       include_hash_in_docker:
@@ -80,7 +87,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Prepare
-        uses: ./.github/actions/prepare
+        uses: ./.github/actions/prepare-windows
       - name: Build
         shell: powershell
         run: |
@@ -242,7 +249,7 @@ jobs:
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-large"
 
   unitTestsReport:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: unitTests
     if: always()
     steps:
@@ -291,7 +298,7 @@ jobs:
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
 
   propertyTestsReport:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: propertyTests
     if: always()
     steps:
@@ -309,13 +316,13 @@ jobs:
       assemble_output_run_id: ${{ github.run_id }}
       stage_name: Acceptance Tests
       stage_key: acceptance
-      gradle_task: acceptanceTest --tests tech.pegasys.teku.test.acceptance.ValidatorClientServiceAcceptanceTest
+      gradle_task: acceptanceTest
       src_pattern: "*/src/acceptance-test/java/*"
       src_root: "src/acceptance-test/java"
       runner: "ubuntu-latest-128"
 
   acceptanceTestsReport:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: acceptanceTests
     if: always()
     steps:
@@ -470,7 +477,7 @@ jobs:
           retention-days: 1
 
   referenceTestsReport:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: referenceTests
     if: always()
     steps:
@@ -479,29 +486,6 @@ jobs:
         if: always()
         with:
           stage_key: reference
-
-  # ========== GLOBAL TEST REPORTS ROLL-UP ==========
-  collatedTestsReport:
-    runs-on: ubuntu-latest
-    needs:
-      - unitTests
-      - propertyTests
-      - acceptanceTests
-    if: always()
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          path: reports
-      - name: All Tests (Combined)
-        uses: dorny/test-reporter@v1
-        with:
-          name: All Tests (Unit + Property + Integration + Acceptance)
-          path: "reports/**/TEST-*.xml"
-          reporter: java-junit
-          list-tests: failed
-          list-suites: failed
-          only-summary: true
 
   # DockerTags
   # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21
