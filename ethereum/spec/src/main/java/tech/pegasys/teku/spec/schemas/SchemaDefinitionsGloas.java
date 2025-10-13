@@ -33,7 +33,14 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodyBuilderGloas;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
@@ -99,10 +106,34 @@ public class SchemaDefinitionsGloas extends SchemaDefinitionsFulu {
   }
 
   @Override
+  public BeaconBlockSchema getBlindedBeaconBlockSchema() {
+    return getBeaconBlockSchema();
+  }
+
+  @Override
+  public BeaconBlockBodySchema<?> getBlindedBeaconBlockBodySchema() {
+    return getBeaconBlockBodySchema();
+  }
+
+  @Override
+  public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
+    return getSignedBeaconBlockSchema();
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
+    return getBeaconBlockSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
+    return getSignedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
+  @Override
   public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
     return new BeaconBlockBodyBuilderGloas(
-        getBeaconBlockBodySchema().toVersionGloas().orElseThrow(),
-        getBlindedBeaconBlockBodySchema().toBlindedVersionGloas().orElseThrow());
+        getBeaconBlockBodySchema().toVersionGloas().orElseThrow());
   }
 
   public BuilderPendingPaymentSchema getBuilderPendingPaymentSchema() {
