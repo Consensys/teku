@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.config.SpecConfigElectra.UNSET_DEPOSIT_REQU
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -46,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.fulu.MutableBeaconStateFulu;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
@@ -155,16 +155,10 @@ public class GenesisGenerator {
       final BeaconStateAccessorsFulu accessorsFulu =
           BeaconStateAccessorsFulu.required(genesisSpec.beaconStateAccessors());
 
-      final List<Integer> proposerLookaheadList = new ArrayList<>();
-      proposerLookaheadList.addAll(
-          accessorsFulu.getBeaconProposerIndices(
-              state.toVersionElectra().orElseThrow(), GENESIS_EPOCH));
-      proposerLookaheadList.addAll(
-          accessorsFulu.getBeaconProposerIndices(
-              state.toVersionElectra().orElseThrow(), GENESIS_EPOCH.increment()));
-
+      final MiscHelpersFulu helpersFulu = genesisSpec.miscHelpers().toVersionFulu().orElseThrow();
       final List<UInt64> proposerLookahead =
-          proposerLookaheadList.stream().map(UInt64::valueOf).toList();
+          helpersFulu.initializeProposerLookahead(
+              state.toVersionElectra().orElseThrow(), accessorsFulu);
 
       MutableBeaconStateFulu.required(state)
           .setProposerLookahead(
