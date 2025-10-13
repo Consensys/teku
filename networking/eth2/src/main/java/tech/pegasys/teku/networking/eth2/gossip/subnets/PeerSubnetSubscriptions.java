@@ -76,8 +76,6 @@ public class PeerSubnetSubscriptions {
       final SubnetSubscriptionService syncCommitteeSubnetService,
       final DataColumnSidecarSubnetTopicProvider dataColumnSidecarSubnetTopicProvider,
       final SubnetSubscriptionService dataColumnSidecarSubnetService,
-      final ExecutionProofSubnetTopicProvider executionProofSubnetTopicProvider,
-      final SubnetSubscriptionService executionProofSubnetService,
       final int targetSubnetSubscriberCount,
       final SettableLabelledGauge subnetPeerCountGauge) {
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
@@ -142,20 +140,6 @@ public class PeerSubnetSubscriptions {
                                           columnSubnet),
                                       Collections.emptySet())
                                   .forEach(subscriber -> b.addSubscriber(columnSubnet, subscriber));
-                            }))
-            .executionProofSubnetSubscriptions(
-                b ->
-                    executionProofSubnetService
-                        .getSubnets()
-                        .forEach(
-                            execSubnet -> {
-                              b.addRelevantSubnet(execSubnet);
-                              subscribersByTopic
-                                  .getOrDefault(
-                                      executionProofSubnetTopicProvider.getTopicForSubnet(
-                                          execSubnet),
-                                      Collections.emptySet())
-                                  .forEach(subscriber -> b.addSubscriber(execSubnet, subscriber));
                             }))
             .build();
     updateMetrics(

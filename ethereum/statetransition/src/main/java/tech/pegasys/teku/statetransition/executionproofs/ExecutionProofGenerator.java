@@ -18,5 +18,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 
 public interface ExecutionProofGenerator {
-  SafeFuture<ExecutionProof> generateExecutionProof(SignedBlockContainer blockContainer, int subnetId);
+  SafeFuture<ExecutionProof> generateExecutionProof(
+      SignedBlockContainer blockContainer, int subnetId);
 }

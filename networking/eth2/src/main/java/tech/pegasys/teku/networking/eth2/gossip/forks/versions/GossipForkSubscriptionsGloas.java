@@ -106,9 +106,6 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
         dasGossipLogger,
         executionProcessorOperationProcessor,
         isExecutionProofTopicEnabled);
-        dasGossipLogger,
-        executionProcessorOperationProcessor,
-        isExecutionProofTopicEnabled);
     this.executionPayloadProcessor = executionPayloadOperationProcessor;
     this.payloadAttestationMessageProcessor = payloadAttestationMessageOperationProcessor;
     this.executionPayloadBidProcessor = executionPayloadBidOperationProcessor;

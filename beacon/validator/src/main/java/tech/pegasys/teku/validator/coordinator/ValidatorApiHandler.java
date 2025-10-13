@@ -713,7 +713,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     // TODO maybe generate proofs and publish them here
     boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
 
-
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
@@ -729,24 +728,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               return SendSignedBlockResult.rejected(reason);
             })
         .alwaysRun(blockPublishingPerformance::complete)
-        .alwaysRun(()-> generateAndPublishExecutionProofs(maybeBlindedBlockContainer, isLocallyCreated));
+        .alwaysRun(
+            () -> generateAndPublishExecutionProofs(maybeBlindedBlockContainer, isLocallyCreated));
   }
 
-  private void generateAndPublishExecutionProofs(final SignedBlockContainer maybeBlindedBlockContainer, final boolean isLocallyCreated) {
-      if (isLocallyCreated && executionProofManager.isPresent() && isProofGenerationEnabled) {
-          executionProofManager
-                  .get()
-                  .generateExecutionProof(maybeBlindedBlockContainer)
-                  .finish(
-                          () ->
-                                  LOG.info(
-                                          "proofs generated for block {}",
-                                          maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()),
-                          error ->
-                                  LOG.error(
-                                          "Failed to generate execution proofs for block {}",
-                                          maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()));
-      }
+  private void generateAndPublishExecutionProofs(
+      final SignedBlockContainer maybeBlindedBlockContainer, final boolean isLocallyCreated) {
+    if (isLocallyCreated && executionProofManager.isPresent() && isProofGenerationEnabled) {
+      executionProofManager
+          .get()
+          .generateProofs(maybeBlindedBlockContainer)
+          .finish(
+              () ->
+                  LOG.info(
+                      "proofs generated for block {}",
+                      maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()),
+              error ->
+                  LOG.error(
+                      "Failed to generate execution proofs for block {}",
+                      maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()));
+    }
   }
 
   @Override
