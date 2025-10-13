@@ -36,8 +36,12 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
 
   @Test
   void shouldCreateBlock() {
+    prepareBlobsBundle(spec, 3);
+
     final BlockContainer blockContainer =
-        assertBlockCreated(1, spec, false, state -> {}, false).blockContainer();
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
+            .blockContainer();
+
     assertThat(blockContainer).isInstanceOf(BeaconBlock.class);
     assertThat(blockContainer.getBlock().getBody()).isInstanceOf(BeaconBlockBodyGloas.class);
   }
@@ -78,6 +82,7 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayer,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider));
   }

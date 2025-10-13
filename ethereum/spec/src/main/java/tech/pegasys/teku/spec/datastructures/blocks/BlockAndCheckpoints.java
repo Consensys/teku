@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public class BlockAndCheckpoints implements BeaconBlockSummary {
@@ -90,7 +91,10 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
   }
 
   public Optional<Bytes32> getExecutionBlockHash() {
-    return getExecutionPayload().map(ExecutionPayload::getBlockHash);
+    return getExecutionPayload()
+        .map(ExecutionPayload::getBlockHash)
+        // Gloas
+        .or(() -> getSignedExecutionPayloadBid().map(bid -> bid.getMessage().getBlockHash()));
   }
 
   @Override
@@ -121,5 +125,9 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
 
   private Optional<ExecutionPayload> getExecutionPayload() {
     return block.getMessage().getBody().getOptionalExecutionPayload();
+  }
+
+  private Optional<SignedExecutionPayloadBid> getSignedExecutionPayloadBid() {
+    return block.getMessage().getBody().getOptionalSignedExecutionPayloadBid();
   }
 }
