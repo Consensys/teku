@@ -31,9 +31,8 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
   private SszList<PayloadAttestation> payloadAttestations;
 
   public BeaconBlockBodyBuilderGloas(
-      final BeaconBlockBodySchema<? extends BeaconBlockBodyGloas> schema,
-      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyGloas> blindedSchema) {
-    super(schema, blindedSchema);
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyGloas> schema) {
+    super(schema, null);
   }
 
   @Override
@@ -97,31 +96,12 @@ public class BeaconBlockBodyBuilderGloas extends BeaconBlockBodyBuilderElectra {
   @Override
   protected Boolean isBlinded() {
     // in ePBS always build non-blinded blocks, since the "blinded" concept has been dropped
-    // this method is adapted only for testing purposes
-    return schema == null && blindedSchema != null;
+    return false;
   }
 
   @Override
   public BeaconBlockBody build() {
     validate();
-    if (isBlinded()) {
-      final BlindedBeaconBlockBodySchemaGloasImpl schema =
-          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaGloasImpl.class);
-      return new BlindedBeaconBlockBodyGloasImpl(
-          schema,
-          new SszSignature(randaoReveal),
-          eth1Data,
-          SszBytes32.of(graffiti),
-          proposerSlashings,
-          attesterSlashings,
-          attestations,
-          deposits,
-          voluntaryExits,
-          syncAggregate,
-          getBlsToExecutionChanges(),
-          signedExecutionPayloadBid,
-          payloadAttestations);
-    }
     final BeaconBlockBodySchemaGloasImpl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaGloasImpl.class);
     return new BeaconBlockBodyGloasImpl(
