@@ -15,11 +15,11 @@ package tech.pegasys.teku.statetransition.execution;
 
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatAbbreviatedHashRoot;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -83,23 +82,18 @@ public class DefaultExecutionPayloadBidManager implements ExecutionPayloadBidMan
     final SchemaDefinitionsGloas schemaDefinitions =
         SchemaDefinitionsGloas.required(spec.atSlot(slot).getSchemaDefinitions());
     final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
+    final Bytes32 blobKzgCommitmentsRoot =
+        schemaDefinitions
+            .getBlobKzgCommitmentsSchema()
+            .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow())
+            .hashTreeRoot();
+    // proposer is the builder
+    final UInt64 builderIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, slot));
     final ExecutionPayloadBid bid =
         schemaDefinitions
             .getExecutionPayloadBidSchema()
-            .create(
-                BeaconStateGloas.required(state).getLatestBlockHash(),
-                state.getLatestBlockHeader().getRoot(),
-                executionPayload.getBlockHash(),
-                executionPayload.getFeeRecipient(),
-                executionPayload.getGasLimit(),
-                // proposer is the builder
-                UInt64.valueOf(spec.getBeaconProposerIndex(state, slot)),
-                slot,
-                ZERO,
-                schemaDefinitions
-                    .getBlobKzgCommitmentsSchema()
-                    .createFromBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow())
-                    .hashTreeRoot());
+            .createLocalSelfBuiltBid(
+                builderIndex, slot, state, executionPayload, blobKzgCommitmentsRoot);
     // Using G2_POINT_AT_INFINITY as signature for self-builds
     return schemaDefinitions
         .getSignedExecutionPayloadBidSchema()

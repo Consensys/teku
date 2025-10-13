@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -62,7 +61,7 @@ public class DefaultExecutionPayloadBidManagerTest {
     final GetPayloadResponse getPayloadResponse =
         new GetPayloadResponse(
             executionPayload,
-            UInt256.valueOf(42),
+            UInt256.valueOf(1000000000000L),
             blobsBundle,
             false,
             dataStructureUtil.randomExecutionRequests());
@@ -80,22 +79,23 @@ public class DefaultExecutionPayloadBidManagerTest {
 
     final ExecutionPayloadBid bid = signedBid.getMessage();
 
-    assertThat(bid.getParentBlockHash())
-        .isEqualTo(BeaconStateGloas.required(state).getLatestBlockHash());
-    assertThat(bid.getParentBlockRoot()).isEqualTo(state.getLatestBlockHeader().getRoot());
-    assertThat(bid.getBlockHash()).isEqualTo(executionPayload.getBlockHash());
-    assertThat(bid.getGasLimit()).isEqualTo(executionPayload.getGasLimit());
-    assertThat(bid.getBuilderIndex().intValue())
-        .isEqualTo(spec.getBeaconProposerIndex(state, state.getSlot()));
-    assertThat(bid.getSlot()).isEqualTo(state.getSlot());
-    assertThat(bid.getBlobKzgCommitmentsRoot())
-        .isEqualTo(
-            schemaDefinitions
-                .getBlobKzgCommitmentsSchema()
-                .createFromBlobsBundle(blobsBundle)
-                .hashTreeRoot());
-    assertThat(bid.getValue()).isEqualTo(UInt64.ZERO);
-    assertThat(bid.getFeeRecipient())
-        .isEqualTo(Eth1Address.fromBytes(executionPayload.getFeeRecipient().getWrappedBytes()));
+    final UInt64 expectedBuilderIndex =
+        UInt64.valueOf(spec.getBeaconProposerIndex(state, state.getSlot()));
+    final Bytes32 expectedBlobKzgCommitmentsRoot =
+        schemaDefinitions
+            .getBlobKzgCommitmentsSchema()
+            .createFromBlobsBundle(blobsBundle)
+            .hashTreeRoot();
+    final ExecutionPayloadBid expectedBid =
+        schemaDefinitions
+            .getExecutionPayloadBidSchema()
+            .createLocalSelfBuiltBid(
+                expectedBuilderIndex,
+                state.getSlot(),
+                state,
+                executionPayload,
+                expectedBlobKzgCommitmentsRoot);
+
+    assertThat(bid).isEqualTo(expectedBid);
   }
 }
