@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.fulu.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import org.junit.jupiter.api.Disabled;
@@ -59,6 +60,35 @@ public class BeaconStateAccessorsFuluTest {
             stateAccessorsFulu.getBeaconProposerIndices(
                 blockAndState.getState(), UInt64.valueOf(3)))
         .isEqualTo(proposerLookahead.subList(8, 16));
+  }
+
+  @Test
+  void computeProposerEpoch_currentEpoch() {
+    storageSystem.chainUpdater().initializeGenesis();
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
+    assertThat(
+            stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState(), UInt64.valueOf(16)))
+        .isEqualTo(0);
+  }
+
+  @Test
+  void computeProposerEpoch_nextEpoch() {
+    storageSystem.chainUpdater().initializeGenesis();
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
+    assertThat(
+            stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState(), UInt64.valueOf(25)))
+        .isEqualTo(2);
+  }
+
+  @Test
+  void computeProposerEpoch_futureEpoch() {
+    storageSystem.chainUpdater().initializeGenesis();
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
+    assertThatThrownBy(
+            () ->
+                stateAccessorsFulu.getBeaconProposerIndex(
+                    blockAndState.getState(), UInt64.valueOf(33)))
+        .hasMessageContaining("out of range");
   }
 
   @Test
