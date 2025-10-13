@@ -35,8 +35,7 @@ import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
@@ -53,7 +52,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarRetriever delegate;
-  private final KZG kzg;
   private final MiscHelpersFulu miscHelpersFulu;
   private final CanonicalBlockResolver blockResolver;
   private final DataColumnSidecarDbAccessor sidecarDB;
@@ -80,7 +78,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
 
   public RecoveringSidecarRetriever(
       final DataColumnSidecarRetriever delegate,
-      final KZG kzg,
       final MiscHelpersFulu miscHelpersFulu,
       final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor sidecarDB,
@@ -90,7 +87,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       final TimeProvider timeProvider,
       final int numberOfColumns) {
     this.delegate = delegate;
-    this.kzg = kzg;
     this.miscHelpersFulu = miscHelpersFulu;
     this.blockResolver = blockResolver;
     this.sidecarDB = sidecarDB;
@@ -127,6 +123,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
   }
 
+  @Override
   public synchronized void start() {
     if (pendingRequestsChecker != null) {
       return;
@@ -149,6 +146,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             error -> LOG.warn("Failed to cleanup recoveryBySlot structure.", error));
   }
 
+  @Override
   public synchronized void stop() {
     if (recoveryBySlotCleaner != null) {
       recoveryBySlotCleaner.cancel();
@@ -262,7 +260,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
             entry.cancel();
           }
         };
-    final RecoveryEntry recoveryEntry = new RecoveryEntry(block, cleanup, kzg, miscHelpersFulu);
+    final RecoveryEntry recoveryEntry = new RecoveryEntry(block, cleanup, miscHelpersFulu);
     LOG.trace(
         "Recovery: new RecoveryEntry for slot {} and block {} ",
         recoveryEntry.slot,
@@ -308,7 +306,6 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private class RecoveryEntry {
     private final Bytes32 blockRoot;
     private final UInt64 slot;
-    private final KZG kzg;
     private final MiscHelpersFulu miscHelpers;
     private final Consumer<UInt64> taskCleaner;
 
@@ -325,11 +322,9 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     RecoveryEntry(
         final BeaconBlock block,
         final Consumer<UInt64> taskCleaner,
-        final KZG kzg,
         final MiscHelpersFulu miscHelpersFulu) {
       this.blockRoot = block.getRoot();
       this.slot = block.getSlot();
-      this.kzg = kzg;
       this.miscHelpers = miscHelpersFulu;
       this.taskCleaner = taskCleaner;
     }
@@ -343,7 +338,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
     }
 
     void addSidecar(final DataColumnSidecar sidecar) {
-      if (!cancelled && sidecar.getBlockRoot().equals(blockRoot)) {
+      if (!cancelled && sidecar.getBeaconBlockRoot().equals(blockRoot)) {
         existingSidecarsByColIdx.put(sidecar.getIndex(), sidecar);
         // attempt to complete any pending requests immediately
         final List<SafeFuture<DataColumnSidecar>> responses =
@@ -462,9 +457,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
           slot,
           existingSidecarsByColIdx.size());
       final Map<UInt64, DataColumnSidecar> reconstructedSidecars =
-          miscHelpers
-              .reconstructAllDataColumnSidecars(existingSidecarsByColIdx.values(), kzg)
-              .stream()
+          miscHelpers.reconstructAllDataColumnSidecars(existingSidecarsByColIdx.values()).stream()
               .collect(
                   Collectors.toUnmodifiableMap(DataColumnSidecar::getIndex, Function.identity()));
       existingSidecarsByColIdx.putAll(reconstructedSidecars);

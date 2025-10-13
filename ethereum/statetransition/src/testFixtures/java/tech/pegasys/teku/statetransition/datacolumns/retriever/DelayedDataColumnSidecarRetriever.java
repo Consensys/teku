@@ -17,7 +17,7 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.datacolumns.util.CancelableFuture;
 
@@ -54,4 +54,10 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
 
   @Override
   public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
+
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
 }

@@ -67,18 +67,17 @@ public class ReferenceTestFinder {
               // This is temporary and should be removed once we are up-to-date with Gloas specs
               // (see https://github.com/Consensys/teku-internal/issues/221)
               if (fork.equals(TestFork.GLOAS)) {
-                // TODO: temporary until new version of reference tests is released
-                // https://github.com/Consensys/teku/issues/9915
-                return Stream.empty();
-                //                return Stream.of(
-                //                        new SszTestFinder("ssz_generic"),
-                //                        new SszTestFinder("ssz_static"),
-                //                        // Temporarily adding only specific test types that we
-                // support
-                //                        new PyspecTestFinder("fork/fork", "networking/",
-                // "rewards/"))
-                //                    .flatMap(unchecked(finder -> finder.findTests(fork, spec,
-                // testsPath)));
+                return Stream.of(
+                        new BlsTestFinder(),
+                        new KzgTestFinder(),
+                        new SszTestFinder("ssz_generic"),
+                        new SszTestFinder("ssz_static"),
+                        new ShufflingTestFinder(),
+                        new PyspecTestFinder(List.of(), List.of("fork_choice/"))
+                        // merkle proof tests are not applicable in Gloas, these will be removed in
+                        // the next reference tests release
+                        )
+                    .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
               }
 
               return Stream.of(

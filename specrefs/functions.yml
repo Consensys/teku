@@ -755,6 +755,18 @@
         return bls.Sign(privkey, signing_root)
     </spec>
 
+- name: get_aggregate_due_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getAggregateDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getAggregateDueMillis(
+  spec: |
+    <spec fn="get_aggregate_due_ms" fork="phase0" hash="0e8d370d">
+    def get_aggregate_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(AGGREGATE_DUE_BPS)
+    </spec>
+
 - name: get_ancestor
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
@@ -798,6 +810,18 @@
             else:
                 penalties[index] += get_base_reward(state, index)
         return rewards, penalties
+    </spec>
+
+- name: get_attestation_due_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getAttestationDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getAttestationDueMillis(
+  spec: |
+    <spec fn="get_attestation_due_ms" fork="phase0" hash="d3b17e38">
+    def get_attestation_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
     </spec>
 
 - name: get_attestation_participation_flag_indices#altair
@@ -1194,6 +1218,18 @@
         )
         signing_root = compute_signing_root(contribution_and_proof, domain)
         return bls.Sign(privkey, signing_root)
+    </spec>
+
+- name: get_contribution_due_ms#altair
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getContributionDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getContributionDueMillis(
+  spec: |
+    <spec fn="get_contribution_due_ms" fork="altair" hash="e647c2b1">
+    def get_contribution_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(CONTRIBUTION_DUE_BPS)
     </spec>
 
 - name: get_current_epoch
@@ -1787,6 +1823,18 @@
         return sync_committee_indices
     </spec>
 
+- name: get_payload_attestation_due_ms#gloas
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getPayloadAttestationDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getPayloadAttestationDueMillis(
+  spec: |
+    <spec fn="get_payload_attestation_due_ms" fork="gloas" hash="16f3b9cb">
+    def get_payload_attestation_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(PAYLOAD_ATTESTATION_DUE_BPS)
+    </spec>
+
 - name: get_pending_balance_to_withdraw
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/electra/helpers/BeaconStateAccessorsElectra.java
@@ -1869,6 +1917,18 @@
             return parent_root
         else:
             return head_root
+    </spec>
+
+- name: get_proposer_reorg_cutoff_ms#phase0
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getProposerReorgCutoffMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getProposerReorgCutoffMillis(
+  spec: |
+    <spec fn="get_proposer_reorg_cutoff_ms" fork="phase0" hash="20263733">
+    def get_proposer_reorg_cutoff_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(PROPOSER_REORG_CUTOFF_BPS)
     </spec>
 
 - name: get_proposer_reward
@@ -1961,6 +2021,18 @@
             state, get_previous_epoch(state)
         )
         return get_attestation_component_deltas(state, matching_source_attestations)
+    </spec>
+
+- name: get_sync_message_due_ms#altair
+  sources:
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/Spec.java
+      search: public int getSyncMessageDueMillis(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/util/ForkChoiceUtil.java
+      search: public int getSyncMessageDueMillis(
+  spec: |
+    <spec fn="get_sync_message_due_ms" fork="altair" hash="4d86dced">
+    def get_sync_message_due_ms(epoch: Epoch) -> uint64:
+        return get_slot_component_duration_ms(SYNC_MESSAGE_DUE_BPS)
     </spec>
 
 - name: get_target_deltas
@@ -2607,7 +2679,7 @@
 - name: is_in_inactivity_leak
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/helpers/BeaconStateAccessors.java
-      search:  public boolean isInactivityLeak(final BeaconState state)
+      search: public boolean isInactivityLeak(final BeaconState state)
   spec: |
     <spec fn="is_in_inactivity_leak" fork="phase0" hash="e95b1146">
     def is_in_inactivity_leak(state: BeaconState) -> bool:
@@ -2704,11 +2776,12 @@
     - file: storage/src/main/java/tech/pegasys/teku/storage/client/LateBlockReorgLogic.java
       search: public boolean isProposingOnTime(
   spec: |
-    <spec fn="is_proposing_on_time" fork="phase0" hash="cadfde05">
+    <spec fn="is_proposing_on_time" fork="phase0" hash="dc5256b4">
     def is_proposing_on_time(store: Store) -> bool:
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        proposer_reorg_cutoff_ms = get_slot_component_duration_ms(PROPOSER_REORG_CUTOFF_BPS)
+        epoch = get_current_store_epoch(store)
+        proposer_reorg_cutoff_ms = get_proposer_reorg_cutoff_ms(epoch)
         return time_into_slot_ms <= proposer_reorg_cutoff_ms
     </spec>
 
@@ -2998,7 +3071,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="phase0" hash="0bd081f0">
+    <spec fn="on_block" fork="phase0" hash="aff24b59">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         block = signed_block.message
         # Parent block must be known
@@ -3031,7 +3104,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3053,7 +3127,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="bellatrix" hash="cceac63a">
+    <spec fn="on_block" fork="bellatrix" hash="a3193d92">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3097,7 +3171,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3119,7 +3194,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="capella" hash="b051b7c6">
+    <spec fn="on_block" fork="capella" hash="560056ad">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3155,7 +3230,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3177,7 +3253,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="deneb" hash="1f48df4d">
+    <spec fn="on_block" fork="deneb" hash="9565acee">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3218,7 +3294,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3240,7 +3317,7 @@
     - file: ethereum/statetransition/src/main/java/tech/pegasys/teku/statetransition/forkchoice/ForkChoice.java
       search: private SafeFuture<BlockImportResult> onBlock(
   spec: |
-    <spec fn="on_block" fork="fulu" hash="a27a9edb">
+    <spec fn="on_block" fork="fulu" hash="4f955de9">
     def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
         """
         Run ``on_block`` upon receiving a new block.
@@ -3281,7 +3358,8 @@
         # Add block timeliness to the store
         seconds_since_genesis = store.time - store.genesis_time
         time_into_slot_ms = seconds_to_milliseconds(seconds_since_genesis) % SLOT_DURATION_MS
-        attestation_threshold_ms = get_slot_component_duration_ms(ATTESTATION_DUE_BPS)
+        epoch = get_current_store_epoch(store)
+        attestation_threshold_ms = get_attestation_due_ms(epoch)
         is_before_attesting_interval = time_into_slot_ms < attestation_threshold_ms
         is_timely = get_current_slot(store) == block.slot and is_before_attesting_interval
         store.block_timeliness[hash_tree_root(block)] = is_timely
@@ -3316,9 +3394,9 @@
 
 - name: process_attestation#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/block/BlockProcessorPhase0.java
-    search: protected void processAttestation(
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/operations/validation/AttestationDataValidatorPhase0.java
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/block/BlockProcessorPhase0.java
+      search: protected void processAttestation(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/operations/validation/AttestationDataValidatorPhase0.java
   spec: |
     <spec fn="process_attestation" fork="phase0" hash="6ac78cd0">
     def process_attestation(state: BeaconState, attestation: Attestation) -> None:
@@ -3509,9 +3587,9 @@
 
 - name: process_attester_slashing
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: public void processAttesterSlashings\s*\([^,]+,[^,]+\)\s*throws
-    regex: true
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processAttesterSlashings\s*\([^,]+,[^,]+\)\s*throws
+      regex: true
   spec: |
     <spec fn="process_attester_slashing" fork="phase0" hash="e47f6e1e">
     def process_attester_slashing(state: BeaconState, attester_slashing: AttesterSlashing) -> None:
@@ -3532,8 +3610,8 @@
 
 - name: process_block#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: protected void processBlock(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: protected void processBlock(
   spec: |
     <spec fn="process_block" fork="phase0" hash="188d4c44">
     def process_block(state: BeaconState, block: BeaconBlock) -> None:
@@ -3616,8 +3694,8 @@
 
 - name: process_block_header
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: public void processBlockHeader(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processBlockHeader(
   spec: |
     <spec fn="process_block_header" fork="phase0" hash="e782040b">
     def process_block_header(state: BeaconState, block: BeaconBlock) -> None:
@@ -3756,8 +3834,8 @@
 
 - name: process_deposit#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: public void processDeposit(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processDeposit(
   spec: |
     <spec fn="process_deposit" fork="phase0" hash="ee6b3afe">
     def process_deposit(state: BeaconState, deposit: Deposit) -> None:
@@ -3838,8 +3916,8 @@
 
 - name: process_effective_balance_updates#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processEffectiveBalanceUpdates(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processEffectiveBalanceUpdates(
   spec: |
     <spec fn="process_effective_balance_updates" fork="phase0" hash="678d0327">
     def process_effective_balance_updates(state: BeaconState) -> None:
@@ -3904,8 +3982,8 @@
 
 - name: process_eth1_data
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: protected void processEth1Data(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: protected void processEth1Data(
   spec: |
     <spec fn="process_eth1_data" fork="phase0" hash="a320a108">
     def process_eth1_data(state: BeaconState, body: BeaconBlockBody) -> None:
@@ -3919,8 +3997,8 @@
 
 - name: process_eth1_data_reset
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processEth1DataReset(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processEth1DataReset(
   spec: |
     <spec fn="process_eth1_data_reset" fork="phase0" hash="c777739e">
     def process_eth1_data_reset(state: BeaconState) -> None:
@@ -4088,8 +4166,8 @@
 
 - name: process_historical_roots_update
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processHistoricalRootsUpdate(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processHistoricalRootsUpdate(
   spec: |
     <spec fn="process_historical_roots_update" fork="phase0" hash="4cda7ad5">
     def process_historical_roots_update(state: BeaconState) -> None:
@@ -4147,8 +4225,8 @@
 
 - name: process_justification_and_finalization#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processJustificationAndFinalization(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processJustificationAndFinalization(
   spec: |
     <spec fn="process_justification_and_finalization" fork="phase0" hash="4a2b2108">
     def process_justification_and_finalization(state: BeaconState) -> None:
@@ -4168,8 +4246,8 @@
 
 - name: process_operations#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: protected void processOperationsNoValidation(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: protected void processOperationsNoValidation(
   spec: |
     <spec fn="process_operations" fork="phase0" hash="eb7114df">
     def process_operations(state: BeaconState, body: BeaconBlockBody) -> None:
@@ -4268,8 +4346,8 @@
 
 - name: process_participation_record_updates
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/EpochProcessorPhase0.java
-    search: public void processParticipationUpdates(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/phase0/statetransition/epoch/EpochProcessorPhase0.java
+      search: public void processParticipationUpdates(
   spec: |
     <spec fn="process_participation_record_updates" fork="phase0" hash="6a203574">
     def process_participation_record_updates(state: BeaconState) -> None:
@@ -4400,8 +4478,8 @@
 
 - name: process_proposer_slashing
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: public void processProposerSlashings(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processProposerSlashings(
   spec: |
     <spec fn="process_proposer_slashing" fork="phase0" hash="279ec199">
     def process_proposer_slashing(state: BeaconState, proposer_slashing: ProposerSlashing) -> None:
@@ -4447,8 +4525,8 @@
 
 - name: process_randao_mixes_reset
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processRandaoMixesReset(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processRandaoMixesReset(
   spec: |
     <spec fn="process_randao_mixes_reset" fork="phase0" hash="0faaabf3">
     def process_randao_mixes_reset(state: BeaconState) -> None:
@@ -4462,8 +4540,8 @@
 
 - name: process_registry_updates#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processRegistryUpdates(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processRegistryUpdates(
   spec: |
     <spec fn="process_registry_updates" fork="phase0" hash="3adacc1e">
     def process_registry_updates(state: BeaconState) -> None:
@@ -4521,8 +4599,8 @@
 
 - name: process_rewards_and_penalties#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processRewardsAndPenalties(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processRewardsAndPenalties(
   spec: |
     <spec fn="process_rewards_and_penalties" fork="phase0" hash="93779fdb">
     def process_rewards_and_penalties(state: BeaconState) -> None:
@@ -4538,8 +4616,8 @@
 
 - name: process_slashings#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processSlashings(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processSlashings(
   spec: |
     <spec fn="process_slashings" fork="phase0" hash="a18a9045">
     def process_slashings(state: BeaconState) -> None:
@@ -4592,8 +4670,8 @@
 
 - name: process_slashings_reset
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
-    search: public void processSlashingsReset(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/statetransition/epoch/AbstractEpochProcessor.java
+      search: public void processSlashingsReset(
   spec: |
     <spec fn="process_slashings_reset" fork="phase0" hash="a82fb03c">
     def process_slashings_reset(state: BeaconState) -> None:
@@ -4696,8 +4774,8 @@
 
 - name: process_voluntary_exit#phase0
   sources:
-  - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
-    search: public void processVoluntaryExits(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/common/block/AbstractBlockProcessor.java
+      search: public void processVoluntaryExits(
   spec: |
     <spec fn="process_voluntary_exit" fork="phase0" hash="d867310e">
     def process_voluntary_exit(state: BeaconState, signed_voluntary_exit: SignedVoluntaryExit) -> None:
@@ -5198,8 +5276,8 @@
 
 - name: upgrade_to_altair
   sources:
-   - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/forktransition/AltairStateUpgrade.java
-     search: public BeaconStateAltair upgrade(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/altair/forktransition/AltairStateUpgrade.java
+      search: public BeaconStateAltair upgrade(
   spec: |
     <spec fn="upgrade_to_altair" fork="altair" hash="4f858ca3">
     def upgrade_to_altair(pre: phase0.BeaconState) -> BeaconState:
@@ -5248,8 +5326,8 @@
 
 - name: upgrade_to_bellatrix
   sources:
-   - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/forktransition/BellatrixStateUpgrade.java
-     search: public BeaconStateBellatrix upgrade(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/bellatrix/forktransition/BellatrixStateUpgrade.java
+      search: public BeaconStateBellatrix upgrade(
   spec: |
     <spec fn="upgrade_to_bellatrix" fork="bellatrix" hash="73a0a7ba">
     def upgrade_to_bellatrix(pre: altair.BeaconState) -> BeaconState:
@@ -5293,8 +5371,8 @@
 
 - name: upgrade_to_capella
   sources:
-   - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/forktransition/CapellaStateUpgrade.java
-     search: public BeaconStateCapella upgrade(
+    - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/capella/forktransition/CapellaStateUpgrade.java
+      search: public BeaconStateCapella upgrade(
   spec: |
     <spec fn="upgrade_to_capella" fork="capella" hash="673c74f0">
     def upgrade_to_capella(pre: bellatrix.BeaconState) -> BeaconState:

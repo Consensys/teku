@@ -1,5 +1,5 @@
 {
-  "title" : "DataColumnSidecar",
+  "title" : "DataColumnSidecarFulu",
   "type" : "object",
   "required" : [ "index", "column", "kzg_commitments", "kzg_proofs", "signed_block_header", "kzg_commitments_inclusion_proof" ],
   "properties" : {

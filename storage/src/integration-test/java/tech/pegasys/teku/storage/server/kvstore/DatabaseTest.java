@@ -65,8 +65,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -2522,6 +2522,86 @@ public class DatabaseTest {
     database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
     try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
         database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+  }
+
+  @TestTemplate
+  public void pruneAllSidecars_pruneNonCanonical(final DatabaseContext context) throws IOException {
+    setupWithSpec(TestSpecFactory.createMinimalFulu());
+    initialize(context);
+
+    final SignedBeaconBlockHeader blockHeader1 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(ONE);
+    final DataColumnSidecar block1Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader1, ZERO);
+    final DataColumnSlotAndIdentifier block1Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar0);
+    final DataColumnSidecar block1Sidecar1 =
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), ONE);
+    final DataColumnSlotAndIdentifier block1Column1 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar1);
+    final DataColumnSidecar block1Sidecar2 =
+        dataStructureUtil.randomDataColumnSidecar(
+            blockHeader1, block1Sidecar0.getKzgCommitments(), UInt64.valueOf(2));
+    final DataColumnSlotAndIdentifier block1Column2 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block1Sidecar2);
+
+    final SignedBeaconBlockHeader blockHeader2 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(100));
+    final DataColumnSidecar block2Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader2, ZERO);
+    final DataColumnSlotAndIdentifier block2Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block2Sidecar0);
+    final SignedBeaconBlockHeader blockHeader3 =
+        dataStructureUtil.randomSignedBeaconBlockHeader(
+            blockHeader1.getMessage().getSlot().plus(200));
+    final DataColumnSidecar block3Sidecar0 =
+        dataStructureUtil.randomDataColumnSidecar(blockHeader3, ZERO);
+    final DataColumnSlotAndIdentifier block3Column0 =
+        DataColumnSlotAndIdentifier.fromDataColumn(block3Sidecar0);
+
+    database.addSidecar(block1Sidecar0);
+    database.addSidecar(block1Sidecar1);
+    database.addSidecar(block1Sidecar2);
+    database.addNonCanonicalSidecar(block2Sidecar0);
+    database.addNonCanonicalSidecar(block3Sidecar0);
+
+    // not pruned yet should contain all sidecars
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(block1Column0, block1Column1, block1Column2);
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList())
+          .containsExactly(block2Column0, block3Column0);
+    }
+
+    // prune sidecars passing 1 as the limit should prune sidecars from the first 2 slots that it
+    // can find, one canonical and one non-canonical, limit is passed separately.
+    // So leaving only the sidecar from block header 3
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 1);
+
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).containsExactly(block3Column0);
+    }
+
+    database.pruneAllSidecars(block3Sidecar0.getSlot(), 2);
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
+      assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
+    }
+    try (final Stream<DataColumnSlotAndIdentifier> dataColumnIdentifiersStream =
+        database.streamNonCanonicalDataColumnIdentifiers(ZERO, block3Sidecar0.getSlot())) {
       assertThat(dataColumnIdentifiersStream.toList()).isEmpty();
     }
   }

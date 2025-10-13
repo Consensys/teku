@@ -33,7 +33,8 @@ public class ExecutionProofGossipValidator {
 
   public static ExecutionProofGossipValidator create() {
     return new ExecutionProofGossipValidator(
-        LimitedSet.createSynchronized((int)MAX_EXECUTION_PROOF_SUBNETS));
+        // max subnets * 2 epochs * slots per epoch 32 based on mainnet for now
+        LimitedSet.createSynchronized(MAX_EXECUTION_PROOF_SUBNETS.intValue() * 64));
   }
 
   public ExecutionProofGossipValidator(final Set<ExecutionProof> receivedValidExecutionProofSet) {
@@ -44,34 +45,38 @@ public class ExecutionProofGossipValidator {
   public SafeFuture<InternalValidationResult> validate(
       final ExecutionProof executionProof, final UInt64 subnetId) {
 
-  if(!executionProof.getVersion().get().equals(UInt64.ONE)){
-      LOG.trace(
-              "ExecutionProof for block root {} has unsupported version {}",
-              executionProof.getBlockRoot(), executionProof.getVersion());
-      return SafeFuture.completedFuture(InternalValidationResult.reject("Unsupported version"));
-  }
+      if(!executionProof.getVersion().get().equals(UInt64.ONE)){
+          LOG.trace(
+                  "ExecutionProof for block root {} has unsupported version {}",
+                  executionProof.getBlockRoot(), executionProof.getVersion());
+          return SafeFuture.completedFuture(InternalValidationResult.reject("Unsupported version"));
+      }
 
-    if (executionProof.getSubnetId().longValue() != subnetId.longValue()) {
-      LOG.trace(
-          "ExecutionProof for block root {} does not match the gossip subnetId",
-          executionProof.getBlockRoot());
-      return SafeFuture.completedFuture(InternalValidationResult.reject("SubnetId mismatch"));
-    }
+      // TODO need to check for other validations done in the prototype and spec
+      if (!executionProof.getSubnetId().get().equals(subnetId)) {
+          LOG.trace(
+                  "ExecutionProof for block root {} / block hash {} does not match the gossip subnetId",
+                  executionProof.getBlockRoot(),
+                  executionProof.getBlockHash());
+          return SafeFuture.completedFuture(InternalValidationResult.reject("SubnetId mismatch"));
+      }
 
-    if (receivedValidExecutionProofSet.contains(executionProof)) {
       // Already seen and valid
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
-    }
+      if (receivedValidExecutionProofSet.contains(executionProof)) {
+          LOG.trace("Received duplicate execution proof {}", executionProof);
+          return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      }
 
-    // some of the todos in the LH prototype apply to us atm
-    // TODO: Add timing validation based on slot
-    // TODO: Add block existence validation
+      // some of the todos in the LH prototype apply to us atm
+      // TODO: Add timing validation based on slot
+      // TODO: Add block existence validation
 
-    // Validated the execution proof
-    LOG.trace(
-        "Received and validated execution proof for block root {}", executionProof.getBlockRoot());
-    receivedValidExecutionProofSet.add(executionProof);
-    return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+      // Validated the execution proof
+      LOG.trace(
+              "Received and validated execution proof for block root {}, block hash {}",
+              executionProof.getBlockRoot(),
+              executionProof.getBlockHash());
+      receivedValidExecutionProofSet.add(executionProof);
+      return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
   }
-
 }

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -39,12 +38,13 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -55,7 +55,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
       SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
   final DataColumnsByRootIdentifierSchema byRootIdentifierSchema =
       schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema();
-  final DataColumnSidecarSchema sidecarSchema = schemaDefinitionsFulu.getDataColumnSidecarSchema();
+  final DataColumnSidecarSchema<?> sidecarSchema =
+      schemaDefinitionsFulu.getDataColumnSidecarSchema();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private DataColumnSidecarsByRootListenerValidatingProxy listenerWrapper;
   private final Eth2Peer peer = mock(Eth2Peer.class);
@@ -68,6 +69,10 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
 
   @BeforeEach
   void setUp() {
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyCellProofBatch(any(), any(), any())).thenReturn(true);
   }
@@ -87,7 +92,11 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
             byRootIdentifierSchema.create(block4.getRoot(), ZERO));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
+            peer, spec, listener, metricsSystem, timeProvider, dataColumnIdentifiers);
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
 
     final DataColumnSidecar dataColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -115,7 +124,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         List.of(byRootIdentifierSchema.create(block1.getRoot(), List.of(ZERO, ONE)));
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, dataColumnIdentifiers);
+            peer, spec, listener, metricsSystem, timeProvider, dataColumnIdentifiers);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -144,19 +153,27 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
+            peer, spec, listener, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
             block1, dataColumnIdentifier.getColumns().getFirst());
     final DataColumnSidecar dataColumnSidecarModified =
         sidecarSchema.create(
-            dataColumnSidecar.getIndex(),
-            dataColumnSidecar.getDataColumn(),
-            Collections.emptyList(), // replacing to empty commitments
-            dataColumnSidecar.getSszKZGProofs().stream().map(SszKZGProof::getKZGProof).toList(),
-            dataColumnSidecar.getSignedBeaconBlockHeader(),
-            dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed());
+            builder ->
+                builder
+                    .index(dataColumnSidecar.getIndex())
+                    .column(dataColumnSidecar.getColumn())
+                    // replacing to empty commitments
+                    .kzgCommitments(sidecarSchema.getKzgCommitmentsSchema().of())
+                    .kzgProofs(dataColumnSidecar.getKzgProofs())
+                    .signedBlockHeader(
+                        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
+                    .kzgCommitmentsInclusionProof(
+                        DataColumnSidecarFulu.required(dataColumnSidecar)
+                            .getKzgCommitmentsInclusionProof()
+                            .asListUnboxed())
+                    .beaconBlockRoot(dataColumnSidecar.getBeaconBlockRoot()));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecarModified);
     assertThat(result).isCompletedExceptionally();
@@ -177,7 +194,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
+            peer, spec, listener, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -201,21 +218,28 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
     listenerWrapper =
         new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
+            peer, spec, listener, metricsSystem, timeProvider, List.of(dataColumnIdentifier));
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
             block1, dataColumnIdentifier.getColumns().getFirst());
     final DataColumnSidecar dataColumnSidecarModified =
         sidecarSchema.create(
-            dataColumnSidecar.getIndex(),
-            dataColumnSidecar.getDataColumn(),
-            dataColumnSidecar.getSszKZGCommitments(),
-            dataColumnSidecar.getSszKZGProofs(),
-            dataColumnSidecar.getSignedBeaconBlockHeader(),
-            dataColumnSidecar.getKzgCommitmentsInclusionProof().asListUnboxed().stream()
-                .map(Bytes32::not) // modify inclusion proof list
-                .toList());
+            builder ->
+                builder
+                    .index(dataColumnSidecar.getIndex())
+                    .column(dataColumnSidecar.getColumn())
+                    .kzgCommitments(dataColumnSidecar.getKzgCommitments())
+                    .kzgProofs(dataColumnSidecar.getKzgProofs())
+                    .signedBlockHeader(
+                        DataColumnSidecarFulu.required(dataColumnSidecar).getSignedBlockHeader())
+                    .kzgCommitmentsInclusionProof(
+                        DataColumnSidecarFulu.required(dataColumnSidecar)
+                            .getKzgCommitmentsInclusionProof()
+                            .asListUnboxed()
+                            .stream()
+                            .map(Bytes32::not) // modify inclusion proof list
+                            .toList()));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecarModified);
     assertThat(result).isCompletedExceptionally();

@@ -15,8 +15,10 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 
 public interface BlindedBeaconBlockBodySchemaGloas<T extends BlindedBeaconBlockBodyGloas>
     extends BlindedBeaconBlockBodySchemaElectra<T> {
@@ -28,4 +30,6 @@ public interface BlindedBeaconBlockBodySchemaGloas<T extends BlindedBeaconBlockB
         schema.getClass());
     return (BlindedBeaconBlockBodySchemaGloas<?>) schema;
   }
+
+  SszListSchema<PayloadAttestation, ?> getPayloadAttestationsSchema();
 }

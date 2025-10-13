@@ -13,13 +13,10 @@
 
 package tech.pegasys.teku.storage.api;
 
-import static tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue.isQueueIsFullException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -28,8 +25,8 @@ import tech.pegasys.teku.infrastructure.async.TaskQueue;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -58,16 +55,6 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
             TekuMetricCategory.STORAGE,
             "throttling_storage_query_queue_size",
             "throttling_storage_query_rejected");
-  }
-
-  public static <T> Optional<T> ignoreQueueIsFullException(final Throwable error) {
-    if (isQueueIsFullException(error)) {
-      return Optional.empty();
-    }
-    if (error instanceof RuntimeException exception) {
-      throw exception;
-    }
-    throw new CompletionException(error);
   }
 
   @Override

@@ -46,8 +46,8 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -70,7 +70,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecovering
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
-import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -153,17 +152,15 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // and fetching from the config would break when not in fulu
             () -> DasCustodyStand.createCustodyGroupCountManager(4, 8));
     final StubDataColumnSidecarManager dataColumnSidecarManager =
-        new StubDataColumnSidecarManager(spec, recentChainData, kzg, dasSampler);
+        new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
     // executor
+    spec.reinitializeForTesting(blobSidecarManager, dataColumnSidecarManager, kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
-            blobSidecarManager,
-            dataColumnSidecarManager,
-            ExecutionProofManager.NOOP,
             new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

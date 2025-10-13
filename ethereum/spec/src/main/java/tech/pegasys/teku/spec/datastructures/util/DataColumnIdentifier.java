@@ -15,10 +15,10 @@ package tech.pegasys.teku.spec.datastructures.util;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 
 public record DataColumnIdentifier(Bytes32 blockRoot, UInt64 columnIndex) {
   public static DataColumnIdentifier createFromSidecar(final DataColumnSidecar sidecar) {
-    return new DataColumnIdentifier(sidecar.getBlockRoot(), sidecar.getIndex());
+    return new DataColumnIdentifier(sidecar.getBeaconBlockRoot(), sidecar.getIndex());
   }
 }

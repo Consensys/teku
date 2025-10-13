@@ -55,9 +55,9 @@ public class P2PConfig {
   // DEFAULT_BACKGROUND_THREAD_COUNT)
   // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
   // To avoid resource saturation and ensure capacity for other tasks, we limit historical data
-  // queries to 5
-  public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 5;
-  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 100_000;
+  // queries to 3
+  public static final int DEFAULT_HISTORICAL_DATA_MAX_CONCURRENT_QUERIES = 3;
+  public static final int DEFAULT_HISTORICAL_MAX_QUERY_QUEUE_SIZE = 500;
   public static final boolean DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED = false;
 
   private final Spec spec;
@@ -81,6 +81,7 @@ public class P2PConfig {
   private final boolean batchVerifyStrictThreadLimitEnabled;
   private final boolean isGossipBlobsAfterBlockEnabled;
   private final boolean allTopicsFilterEnabled;
+  private final boolean reworkedSidecarRecoveryEnabled;
   private final boolean executionProofTopicEnabled;
 
   private P2PConfig(
@@ -103,6 +104,7 @@ public class P2PConfig {
       final boolean batchVerifyStrictThreadLimitEnabled,
       final boolean allTopicsFilterEnabled,
       final boolean isGossipBlobsAfterBlockEnabled,
+      final boolean reworkedSidecarRecoveryEnabled,
       final boolean executionProofTopicEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
@@ -124,6 +126,7 @@ public class P2PConfig {
     this.networkingSpecConfig = spec.getNetworkingConfig();
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
+    this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
   }
 
@@ -220,6 +223,10 @@ public class P2PConfig {
     return isGossipBlobsAfterBlockEnabled;
   }
 
+  public boolean isReworkedSidecarRecoveryEnabled() {
+    return reworkedSidecarRecoveryEnabled;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -246,6 +253,7 @@ public class P2PConfig {
         DEFAULT_FLOOD_PUBLISH_MAX_MESSAGE_SIZE_THRESHOLD;
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
     private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
+    private boolean reworkedSidecarRecoveryEnabled = false;
 
     private Builder() {}
 
@@ -302,6 +310,7 @@ public class P2PConfig {
           batchVerifyStrictThreadLimitEnabled,
           allTopicsFilterEnabled,
           gossipBlobsAfterBlockEnabled,
+          reworkedSidecarRecoveryEnabled,
           executionProofTopicEnabled);
     }
 
@@ -458,6 +467,11 @@ public class P2PConfig {
 
     public Builder executionProofTopicEnabled(final boolean executionProofTopicEnabled) {
       this.executionProofTopicEnabled = executionProofTopicEnabled;
+      return this;
+    }
+
+    public Builder reworkedSidecarRecoveryEnabled(final boolean reworkedSidecarRecoveryEnabled) {
+      this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
       return this;
     }
   }

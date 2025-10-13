@@ -142,6 +142,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processParticipationUpdates(state);
     processSyncCommitteeUpdates(state);
     processProposerLookahead(state);
+    processBuilderPendingPayments(state);
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
       loggerThrottler.invoke(

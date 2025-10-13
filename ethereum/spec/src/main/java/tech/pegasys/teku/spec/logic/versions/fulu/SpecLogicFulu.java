@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequestsDataCodec;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
+import tech.pegasys.teku.spec.logic.common.execution.ExecutionPayloadProcessor;
 import tech.pegasys.teku.spec.logic.common.execution.ExecutionRequestsProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -37,7 +38,6 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutato
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.electra.execution.ExecutionRequestsProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessorsElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateMutatorsElectra;
@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BeaconStateAccessorsFu
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.statetransition.epoch.EpochProcessorFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.util.BlindBlockUtilFulu;
+import tech.pegasys.teku.spec.logic.versions.fulu.util.ForkChoiceUtilFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 
 public class SpecLogicFulu extends AbstractSpecLogic {
@@ -197,7 +198,7 @@ public class SpecLogicFulu extends AbstractSpecLogic {
             executionRequestsDataCodec,
             executionRequestsProcessor);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtilDeneb(
+        new ForkChoiceUtilFulu(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
@@ -254,5 +255,10 @@ public class SpecLogicFulu extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionRequestsProcessor> getExecutionRequestsProcessor() {
     return executionRequestsProcessor;
+  }
+
+  @Override
+  public Optional<ExecutionPayloadProcessor> getExecutionPayloadProcessor() {
+    return Optional.empty();
   }
 }

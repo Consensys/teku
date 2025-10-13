@@ -246,7 +246,7 @@ class Eth2GossipTopicFilterTest {
   @TestTemplate
   void shouldNotConsiderExecutionProofSubnetsRelevantByDefault() {
     assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
-    for (int i = 0; i < MAX_EXECUTION_PROOF_SUBNETS; i++) {
+    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getExecutionProofSubnetTopicName(i))))
           .isFalse();
     }
@@ -258,7 +258,7 @@ class Eth2GossipTopicFilterTest {
         P2PConfig.builder().specProvider(spec).executionProofTopicEnabled(true).build();
     filter = new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec, p2pConfigOverwritten);
     assumeThat(nextSpecMilestone).isEqualTo(ELECTRA);
-    for (int i = 0; i < MAX_EXECUTION_PROOF_SUBNETS; i++) {
+    for (int i = 0; i < Constants.MAX_EXECUTION_PROOF_SUBNETS.intValue(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getExecutionProofSubnetTopicName(i))))
           .isTrue();
     }

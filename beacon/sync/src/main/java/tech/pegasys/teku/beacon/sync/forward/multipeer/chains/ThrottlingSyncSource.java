@@ -29,9 +29,10 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -46,6 +47,7 @@ public class ThrottlingSyncSource implements SyncSource {
   private final Optional<Integer> maybeMaxBlobsPerBlock;
   private final RateTracker blobSidecarsRateTracker;
   private final RateTracker dataColumnSidecarsRateTracker;
+  private final RateTracker executionPayloadEnvelopesRateTracker;
 
   public ThrottlingSyncSource(
       final AsyncRunner asyncRunner,
@@ -54,7 +56,8 @@ public class ThrottlingSyncSource implements SyncSource {
       final int maxBlocksPerMinute,
       final Optional<Integer> maybeMaxBlobsPerBlock,
       final Optional<Integer> maybeMaxBlobSidecarsPerMinute,
-      final Optional<Integer> maybeMaxDataColumnSidecarsPerMinute) {
+      final Optional<Integer> maybeMaxDataColumnSidecarsPerMinute,
+      final Optional<Integer> maybeMaxExecutionPayloadEnvelopesPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
     this.blocksRateTracker =
@@ -79,6 +82,16 @@ public class ThrottlingSyncSource implements SyncSource {
                         TIMEOUT_SECONDS,
                         timeProvider,
                         "throttling-columns"))
+            .orElse(RateTracker.NOOP);
+    this.executionPayloadEnvelopesRateTracker =
+        maybeMaxExecutionPayloadEnvelopesPerMinute
+            .map(
+                maxExecutionPayloadEnvelopesPerMinute ->
+                    RateTracker.create(
+                        maxExecutionPayloadEnvelopesPerMinute,
+                        TIMEOUT_SECONDS,
+                        timeProvider,
+                        "throttling-execution-payload-envelopes"))
             .orElse(RateTracker.NOOP);
   }
 
@@ -159,6 +172,38 @@ public class ThrottlingSyncSource implements SyncSource {
           () -> requestDataColumnSidecarsByRange(startSlot, count, columns, listener),
           PEER_REQUEST_DELAY);
     }
+  }
+
+  @Override
+  public SafeFuture<Void> requestExecutionPayloadEnvelopesByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<SignedExecutionPayloadEnvelope> listener) {
+    return executionPayloadEnvelopesRateTracker
+        .generateRequestKey(count.longValue())
+        .map(
+            requestKey -> {
+              LOG.debug("Sending request for {} execution payload envelopes", count);
+              final RpcResponseListenerWithCount<SignedExecutionPayloadEnvelope> listenerWithCount =
+                  new RpcResponseListenerWithCount<>(listener);
+              return delegate
+                  .requestExecutionPayloadEnvelopesByRange(startSlot, count, listenerWithCount)
+                  .alwaysRun(
+                      () ->
+                          // adjust for slots with NO execution payload envelopes
+                          executionPayloadEnvelopesRateTracker.adjustRequestObjectCount(
+                              requestKey, listenerWithCount.count.get()));
+            })
+        .orElseGet(
+            () -> {
+              LOG.debug(
+                  "Rate limiting request for {} execution payload envelopes. Retry in {} seconds",
+                  count,
+                  PEER_REQUEST_DELAY.toSeconds());
+              return asyncRunner.runAfterDelay(
+                  () -> requestExecutionPayloadEnvelopesByRange(startSlot, count, listener),
+                  PEER_REQUEST_DELAY);
+            });
   }
 
   @Override

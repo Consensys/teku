@@ -54,7 +54,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
   private final Subscribers<ValidExecutionProofListener> receivedExecutionProofSubscribers =
       Subscribers.create(true);
-  private final Map<Bytes32, Set<ExecutionProof>> validatedExecutionProofsByBlockRoot =
+
+    private final Map<Bytes32, Set<ExecutionProof>> validatedExecutionProofsByBlockRoot =
       new ConcurrentHashMap<>();
     private final Consumer<ExecutionProof> onCreatedProof;
     private final int minProofsRequired;
@@ -76,7 +77,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   @Override
   public void onExecutionProofPublish(
       final ExecutionProof executionProof, final RemoteOrigin remoteOrigin) {
-    // TODO
+    LOG.trace("Published execution proof {}", executionProof);
   }
 
   @Override

@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -89,7 +89,6 @@ public class RecoveringSidecarRetrieverTest {
     recoverRetriever =
         new RecoveringSidecarRetriever(
             delegateRetriever,
-            kzg,
             miscHelpers,
             blockResolver,
             dbAccessor,
@@ -103,6 +102,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void sanityTest() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -111,7 +111,7 @@ public class RecoveringSidecarRetrieverTest {
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
 
     List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
@@ -172,6 +172,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void succeededAndFailedRetrievalShouldBeImmediatelyRemovedFromPendingPromises() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -180,7 +181,7 @@ public class RecoveringSidecarRetrieverTest {
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
 
     List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
@@ -204,6 +205,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void testMoreThanOneBlockWithBlobsOnSameSlot() {
     int blobCount = 1;
     int columnsInDbCount = 13;
@@ -212,14 +214,14 @@ public class RecoveringSidecarRetrieverTest {
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block_10_0 = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars_10_0 =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block_10_0), blobs_10_0, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block_10_0), blobs_10_0);
     sidecars_10_0.forEach(sidecar -> assertThat(db.addSidecar(sidecar)).isDone());
 
     List<Blob> blobs_10_1 =
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block_10_1 = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars_10_1 =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block_10_1), blobs_10_1, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block_10_1), blobs_10_1);
     sidecars_10_1.stream()
         .limit(columnsInDbCount)
         .forEach(sidecar -> assertThat(db.addSidecar(sidecar)).isDone());
@@ -249,6 +251,7 @@ public class RecoveringSidecarRetrieverTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   void cancellingRequestShouldStopRecovery() {
     int blobCount = 3;
     int columnsInDbCount = 3;
@@ -257,7 +260,7 @@ public class RecoveringSidecarRetrieverTest {
         Stream.generate(dataStructureUtil::randomValidBlob).limit(blobCount).toList();
     BeaconBlock block = blockResolver.addBlock(10, blobCount);
     List<DataColumnSidecar> sidecars =
-        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs, kzg);
+        miscHelpers.constructDataColumnSidecarsOld(createSigned(block), blobs);
 
     List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
