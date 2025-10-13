@@ -50,11 +50,13 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
   private static final Logger LOG = LogManager.getLogger();
   static final Spec SPEC = TestSpecFactory.createMinimalFulu();
 
+  private RecentChainData recentChainData;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
@@ -70,6 +72,7 @@ public class DasSamplerBasicTest {
 
   @BeforeEach
   public void setUp() {
+    recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
@@ -125,7 +128,8 @@ public class DasSamplerBasicTest {
             metricsSystem);
     final DasSamplerBasic sampler =
         new DasSamplerBasic(
-            SPEC, currentSlotProvider, db, custody, retriever, () -> custodyGroupCountManager);
+            SPEC, currentSlotProvider, db, custody, retriever, () -> custodyGroupCountManager,
+                recentChainData);
 
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
 
