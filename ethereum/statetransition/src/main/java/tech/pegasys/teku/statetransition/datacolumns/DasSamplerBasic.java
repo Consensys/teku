@@ -127,10 +127,12 @@ public class DasSamplerBasic
                 DataColumnSamplingTracker.create(
                     slot, blockRoot, custodyGroupCountManagerSupplier.get()));
 
-    SafeFuture.collectAll(tracker.getMissingColumns().stream().map(retriever::retrieve))
+    final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumns();
+
+    SafeFuture.collectAll(missingColumns.stream().map(retriever::retrieve))
         .thenAccept(
             retrievedColumns -> {
-              if (retrievedColumns.size() == tracker.getMissingColumns().size()) {
+              if (retrievedColumns.size() == missingColumns.size()) {
                 LOG.info(
                     "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                     retrievedColumns.size(),
@@ -139,14 +141,15 @@ public class DasSamplerBasic
                     blockRoot);
 
                 retrievedColumns.stream()
+                    .peek(
+                        sidecar ->
+                            tracker.add(
+                                DataColumnSlotAndIdentifier.fromDataColumn(sidecar),
+                                RemoteOrigin.RPC))
                     .map(
-                        sidecar -> {
-                          tracker.add(
-                              DataColumnSlotAndIdentifier.fromDataColumn(sidecar),
-                              RemoteOrigin.RPC);
-                          return custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
-                        })
-                    .forEach(updateFuture -> updateFuture.finishStackTrace());
+                        sidecar ->
+                            custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC))
+                    .forEach(updateFuture -> updateFuture.finishError(LOG));
               } else {
                 throw new IllegalStateException(
                     String.format(
@@ -251,7 +254,12 @@ public class DasSamplerBasic
     public void add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
       if (slot.equals(columnIdentifier.slot()) && blockRoot.equals(columnIdentifier.blockRoot())) {
         LOG.debug("Adding column {} to sampling tracker", columnIdentifier);
-        missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
+        final boolean removed =
+            missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
+        if (!removed) {
+          LOG.info(
+              "Column {} was already marked as received, origin: {}", columnIdentifier, origin);
+        }
         if (missingColumns.isEmpty()) {
           LOG.info(
               "Sampling complete for slot {} root {} via column received via {}",
