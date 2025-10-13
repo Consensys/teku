@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_KZG_COMMITMENTS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BUILDER_INDEX;
@@ -33,6 +34,9 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 
 public class ExecutionPayloadBidSchema
     extends ContainerSchema9<
@@ -89,7 +93,23 @@ public class ExecutionPayloadBidSchema
     return new ExecutionPayloadBid(this, node);
   }
 
-  public int getBlobKzgCommitmentsRootGeneralizedIndex() {
-    return (int) getChildGeneralizedIndex(getFieldIndex(BLOB_KZG_COMMITMENTS_ROOT));
+  public ExecutionPayloadBid createLocalSelfBuiltBid(
+      final UInt64 builderIndex,
+      final UInt64 slot,
+      final BeaconState state,
+      final ExecutionPayload executionPayload,
+      final Bytes32 blobKzgCommitmentsRoot) {
+    return new ExecutionPayloadBid(
+        this,
+        BeaconStateGloas.required(state).getLatestBlockHash(),
+        state.getLatestBlockHeader().getRoot(),
+        executionPayload.getBlockHash(),
+        executionPayload.getFeeRecipient(),
+        executionPayload.getGasLimit(),
+        builderIndex,
+        slot,
+        // amount must be zero for self-build blocks
+        ZERO,
+        blobKzgCommitmentsRoot);
   }
 }

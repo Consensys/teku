@@ -48,9 +48,7 @@
       }, {
         "$ref" : "#/components/schemas/BlockContentsFulu"
       }, {
-        "$ref" : "#/components/schemas/BlockContentsGloas"
-      }, {
-        "$ref" : "#/components/schemas/BlindedBeaconBlockGloas"
+        "$ref" : "#/components/schemas/BeaconBlockGloas"
       } ]
     }
   }
