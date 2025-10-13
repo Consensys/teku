@@ -128,8 +128,13 @@ public class DasSamplerBasicTest {
             metricsSystem);
     final DasSamplerBasic sampler =
         new DasSamplerBasic(
-            SPEC, currentSlotProvider, db, custody, retriever, () -> custodyGroupCountManager,
-                recentChainData);
+            SPEC,
+            currentSlotProvider,
+            db,
+            custody,
+            retriever,
+            () -> custodyGroupCountManager,
+            recentChainData);
 
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
 
