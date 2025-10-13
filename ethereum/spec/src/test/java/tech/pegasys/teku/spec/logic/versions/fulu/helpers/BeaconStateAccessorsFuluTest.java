@@ -63,6 +63,24 @@ public class BeaconStateAccessorsFuluTest {
   }
 
   @Test
+  @Disabled
+  void getProposerIndices_genesisEpoch() {
+    storageSystem.chainUpdater().initializeGenesis();
+    storageSystem.getChainHead();
+    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
+    final List<Integer> proposerLookahead =
+        getProposerLookaheadFromState(blockAndState.getState().toVersionFulu().orElseThrow());
+    assertThat(
+            stateAccessorsFulu.getBeaconProposerIndices(
+                blockAndState.getState(), UInt64.valueOf(0)))
+        .isEqualTo(proposerLookahead.subList(0, 8));
+    assertThat(
+            stateAccessorsFulu.getBeaconProposerIndices(
+                blockAndState.getState(), UInt64.valueOf(1)))
+        .isEqualTo(proposerLookahead.subList(8, 16));
+  }
+
+  @Test
   void computeProposerEpoch_currentEpoch() {
     storageSystem.chainUpdater().initializeGenesis();
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
@@ -89,24 +107,6 @@ public class BeaconStateAccessorsFuluTest {
                 stateAccessorsFulu.getBeaconProposerIndex(
                     blockAndState.getState(), UInt64.valueOf(33)))
         .hasMessageContaining("out of range");
-  }
-
-  @Test
-  @Disabled
-  void getProposerIndices_genesisEpoch() {
-    storageSystem.chainUpdater().initializeGenesis();
-    storageSystem.getChainHead();
-    final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
-    final List<Integer> proposerLookahead =
-        getProposerLookaheadFromState(blockAndState.getState().toVersionFulu().orElseThrow());
-    assertThat(
-            stateAccessorsFulu.getBeaconProposerIndices(
-                blockAndState.getState(), UInt64.valueOf(0)))
-        .isEqualTo(proposerLookahead.subList(0, 8));
-    assertThat(
-            stateAccessorsFulu.getBeaconProposerIndices(
-                blockAndState.getState(), UInt64.valueOf(1)))
-        .isEqualTo(proposerLookahead.subList(8, 16));
   }
 
   private List<Integer> getProposerLookaheadFromState(final BeaconStateFulu beaconStateFulu) {
