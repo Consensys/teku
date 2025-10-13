@@ -304,7 +304,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final UInt64 slot, final UInt64 builderIndex) {
     return countOptionalDataRequest(
         delegate.createUnsignedExecutionPayload(slot, builderIndex),
-        BeaconNodeRequestLabels.GET_UNSIGNED_EXECUTION_PAYLOAD_METHOD);
+        BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_METHOD);
   }
 
   @Override
