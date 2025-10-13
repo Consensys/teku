@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -72,6 +74,8 @@ public class ActiveEth2P2PNetworkTest {
   private final Eth2PeerManager peerManager = mock(Eth2PeerManager.class);
   private final GossipForkManager gossipForkManager = mock(GossipForkManager.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
+  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver =
+      SafeFuture.completedFuture(observer -> observer.onValueChanged(0));
 
   // Real dependencies
   private final SubnetSubscriptionService attestationSubnetService =
@@ -457,7 +461,7 @@ public class ActiveEth2P2PNetworkTest {
         gossipEncoding,
         gossipConfigurator,
         processedAttestationSubscriptionProvider,
-        SafeFuture.completedFuture(__ -> {}),
+        custodyGroupCountObserver,
         true);
   }
 }
