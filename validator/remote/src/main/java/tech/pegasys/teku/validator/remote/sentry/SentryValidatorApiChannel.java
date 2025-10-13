@@ -36,6 +36,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -238,5 +242,37 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
       final List<SyncCommitteeSelectionProof> requests) {
     return dutiesProviderChannel.getSyncCommitteeSelectionProof(requests);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .createUnsignedExecutionPayloadBid(slot, builderIndex);
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .sendSignedExecutionPayloadBid(signedExecutionPayloadBid);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
+      final UInt64 slot, final UInt64 builderIndex) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .createUnsignedExecutionPayload(slot, builderIndex);
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .sendSignedExecutionPayload(signedExecutionPayload);
   }
 }
