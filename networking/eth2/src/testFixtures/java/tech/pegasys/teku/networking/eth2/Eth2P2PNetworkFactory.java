@@ -391,7 +391,7 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            SafeFuture.completedFuture(observer -> observer.onValueChanged(0)),
+            SafeFuture.completedFuture(observer -> observer.onValueChanged(4)),
             config.isAllTopicsFilterEnabled());
       }
     }
