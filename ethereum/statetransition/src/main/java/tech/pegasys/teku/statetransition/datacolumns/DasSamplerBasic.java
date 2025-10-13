@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasic
     implements DataAvailabilitySampler, FinalizedCheckpointChannel, SlotEventsChannel {
@@ -53,16 +55,21 @@ public class DasSamplerBasic
   private final CurrentSlotProvider currentSlotProvider;
   private final DataColumnSidecarDbAccessor db;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  private final NavigableMap<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsBySlot =
-      new ConcurrentSkipListMap<>();
+  private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsBySlot =
+      new ConcurrentHashMap<>();
+  private final RecentChainData recentChainData;
+
+
+  private volatile UInt64 lastFinalizedSlot = UInt64.ZERO;
 
   public DasSamplerBasic(
-      final Spec spec,
-      final CurrentSlotProvider currentSlotProvider,
-      final DataColumnSidecarDbAccessor db,
-      final DataColumnSidecarCustody custody,
-      final DataColumnSidecarRetriever retriever,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier) {
+          final Spec spec,
+          final CurrentSlotProvider currentSlotProvider,
+          final DataColumnSidecarDbAccessor db,
+          final DataColumnSidecarCustody custody,
+          final DataColumnSidecarRetriever retriever,
+          final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+          final RecentChainData recentChainData) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
     checkNotNull(db);
@@ -73,6 +80,7 @@ public class DasSamplerBasic
     this.custody = custody;
     this.retriever = retriever;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.recentChainData = recentChainData;
   }
 
   private int getColumnCount(final UInt64 slot) {
@@ -134,130 +142,43 @@ public class DasSamplerBasic
   public SafeFuture<List<UInt64>> checkDataAvailability(
       final UInt64 slot, final Bytes32 blockRoot) {
 
-    final DataColumnSamplingTracker tracker = recentlySampledColumnsBySlot.get(blockRoot);
-    if (tracker == null) {
-      throw new IllegalStateException(
-          "No sampling tracker for slot: " + slot + " root: " + blockRoot);
-    }
+    final DataColumnSamplingTracker tracker = recentlySampledColumnsBySlot.computeIfAbsent(
+            blockRoot,
+            k ->
+                    DataColumnSamplingTracker.create(
+                            slot, blockRoot, custodyGroupCountManagerSupplier.get()));
 
-    tracker.getMissingColumns().forEach(retriever::retrieve);
+
+    SafeFuture.collectAll(tracker.getMissingColumns().stream().map(retriever::retrieve))
+        .thenAccept(
+            retrievedColumns -> {
+              if (retrievedColumns.size() == tracker.getMissingColumns().size()) {
+                LOG.info(
+                    "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
+                    retrievedColumns.size(),
+                    tracker.samplingRequirement.size(),
+                    slot,
+                    blockRoot);
+
+                retrievedColumns.stream()
+                    .map(sidecar -> {
+                      tracker.add(DataColumnSlotAndIdentifier.fromDataColumn(sidecar));
+                      return custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
+                    })
+                    .forEach(updateFuture -> updateFuture.finishStackTrace());
+              } else {
+                throw new IllegalStateException(
+                    String.format(
+                        "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
+                        retrievedColumns.size(),
+                        tracker.getMissingColumns().size(),
+                        slot,
+                        blockRoot,
+                        tracker.samplingRequirement.size()));
+              }
+            }).finishError(LOG);
 
     return tracker.completionFuture;
-
-    //    final Set<DataColumnSlotAndIdentifier> requiredColumnIdentifiers =
-    //        new HashSet<>(calculateSamplingColumnIds(slot, blockRoot));
-    //
-    //    LOG.debug(
-    //        "checkDataAvailability(): checking {} columns for block {} ({})",
-    //        requiredColumnIdentifiers.size(),
-    //        slot,
-    //        blockRoot);
-    //
-    //    final Set<DataColumnSlotAndIdentifier> recentlySampledColumnsForSlot =
-    //        recentlySampledColumnsBySlot.getOrDefault(slot, Set.of());
-    //
-    //    final Set<DataColumnSlotAndIdentifier> missingColumnsFromRecentlySeen =
-    //        Sets.difference(requiredColumnIdentifiers, recentlySampledColumnsForSlot);
-    //
-    //    if (missingColumnsFromRecentlySeen.isEmpty()) {
-    //      LOG.info("All seen slot: {} root: {}", slot, blockRoot);
-    //      return SafeFuture.completedFuture(
-    //          requiredColumnIdentifiers.stream()
-    //              .map(DataColumnSlotAndIdentifier::columnIndex)
-    //              .toList());
-    //    }
-    //
-    //    // TODO, we can check in custody only what we custody, not what is required for sampling
-    //    final SafeFuture<List<DataColumnSlotAndIdentifier>> columnsInCustodyFuture =
-    //        maybeHasColumnsInCustody(requiredColumnIdentifiers);
-    //
-    //    return columnsInCustodyFuture.thenCompose(
-    //        columnsInCustodyList -> {
-    //          final Set<DataColumnSlotAndIdentifier> columnsInCustodyUnionRecentlySampled =
-    //              new HashSet<>(columnsInCustodyList);
-    //          columnsInCustodyUnionRecentlySampled.addAll(
-    //              recentlySampledColumnsBySlot.getOrDefault(slot, Set.of()));
-    //
-    //          LOG.info(
-    //              "sampledAndCustody: {} slot: {} root: {}",
-    //              columnsInCustodyUnionRecentlySampled.stream()
-    //                  .map(DataColumnSlotAndIdentifier::columnIndex)
-    //                  .sorted()
-    //                  .toList(),
-    //              slot,
-    //              blockRoot);
-    //
-    //          final Set<DataColumnSlotAndIdentifier> missingColumns =
-    //              Sets.difference(requiredColumnIdentifiers,
-    // columnsInCustodyUnionRecentlySampled);
-    //
-    //          LOG.info(
-    //              "missing: {} slot: {} root: {}",
-    //              missingColumns.stream()
-    //                  .map(DataColumnSlotAndIdentifier::columnIndex)
-    //                  .sorted()
-    //                  .toList(),
-    //              slot,
-    //              blockRoot);
-    //
-    //          if (LOG.isDebugEnabled()) {
-    //            final List<Integer> existingColumnIndices =
-    //                Sets.intersection(requiredColumnIdentifiers,
-    // columnsInCustodyUnionRecentlySampled)
-    //                    .stream()
-    //                    .map(it -> it.columnIndex().intValue())
-    //                    .sorted()
-    //                    .toList();
-    //
-    //            LOG.debug(
-    //                "checkDataAvailability(): got {} (of {}) columns from custody (or received by
-    // Gossip) for block {} ({}), columns: {}",
-    //                existingColumnIndices.size(),
-    //                requiredColumnIdentifiers.size(),
-    //                slot,
-    //                blockRoot,
-    //                StringifyUtil.columnIndicesToString(existingColumnIndices,
-    // getColumnCount(slot)));
-    //          }
-    //
-    //          final SafeFuture<List<DataColumnSidecar>> columnsRetrievedFuture =
-    //              SafeFuture.collectAll(missingColumns.stream().map(retriever::retrieve))
-    //                  .thenPeek(
-    //                      retrievedColumns -> {
-    //                        if (retrievedColumns.size() == missingColumns.size()) {
-    //                          LOG.debug(
-    //                              "checkDataAvailability(): retrieved remaining {} (of {}) columns
-    // via Req/Resp for block {} ({})",
-    //                              retrievedColumns.size(),
-    //                              requiredColumnIdentifiers.size(),
-    //                              slot,
-    //                              blockRoot);
-    //
-    //                          retrievedColumns.stream()
-    //                              .map(
-    //                                  sidecar ->
-    //                                      custody.onNewValidatedDataColumnSidecar(
-    //                                          sidecar, RemoteOrigin.RPC))
-    //                              .forEach(updateFuture -> updateFuture.finishStackTrace());
-    //                        } else {
-    //                          throw new IllegalStateException(
-    //                              String.format(
-    //                                  "Retrieved only(%d) out of %d missing columns for slot %s
-    // (%s) with %d required columns",
-    //                                  retrievedColumns.size(),
-    //                                  missingColumns.size(),
-    //                                  slot,
-    //                                  blockRoot,
-    //                                  requiredColumnIdentifiers.size()));
-    //                        }
-    //                      });
-    //
-    //          return columnsRetrievedFuture.thenApply(
-    //              __ ->
-    //                  requiredColumnIdentifiers.stream()
-    //                      .map(DataColumnSlotAndIdentifier::columnIndex)
-    //                      .toList());
-    //        });
   }
 
   @Override
@@ -302,13 +223,15 @@ public class DasSamplerBasic
                 LOG.error(
                     String.format("Failed to update incomplete sampler slot on %s", checkpoint),
                     ex));
+    lastFinalizedSlot = spec.computeStartSlotAtEpoch(checkpoint.getEpoch());
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
+    final UInt64 localLastFinalizedSlot = lastFinalizedSlot;
     recentlySampledColumnsBySlot
         .values()
-        .removeIf(tracker -> tracker.slot.isLessThan(slot.minus(64)));
+        .removeIf(tracker -> tracker.completionFuture.isDone() || tracker.slot.isLessThanOrEqualTo(localLastFinalizedSlot) || recentChainData.containsBlock(tracker.blockRoot));
   }
 
   private record DataColumnSamplingTracker(
@@ -330,9 +253,13 @@ public class DasSamplerBasic
 
     public void add(final DataColumnSlotAndIdentifier columnIdentifier) {
       if (slot.equals(columnIdentifier.slot()) && blockRoot.equals(columnIdentifier.blockRoot())) {
-        samplingRequirement.removeIf(idx -> idx == columnIdentifier.columnIndex());
-        if (samplingRequirement.isEmpty()) {
+        LOG.info("Adding column {} to sampling tracker", columnIdentifier);
+        missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
+        if (missingColumns.isEmpty()) {
+            LOG.info("Sampling complete for slot {} root {}", slot, blockRoot);
           completionFuture.complete(samplingRequirement);
+        } else {
+            LOG.info("Sampling still pending for slot {} root {}, remaining columns: {}", slot, blockRoot, missingColumns);
         }
       }
     }
