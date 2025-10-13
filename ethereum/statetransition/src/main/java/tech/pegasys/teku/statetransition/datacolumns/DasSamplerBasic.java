@@ -78,13 +78,6 @@ public class DasSamplerBasic
     this.recentChainData = recentChainData;
   }
 
-  private SafeFuture<Optional<DataColumnSlotAndIdentifier>> checkColumnInCustody(
-      final DataColumnSlotAndIdentifier columnIdentifier) {
-    return custody
-        .hasCustodyDataColumnSidecar(columnIdentifier)
-        .thenApply(hasColumn -> hasColumn ? Optional.of(columnIdentifier) : Optional.empty());
-  }
-
   public void onNewValidatedDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
     LOG.debug(
@@ -129,7 +122,8 @@ public class DasSamplerBasic
 
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumns();
 
-    SafeFuture.collectAll(missingColumns.stream().map(retriever::retrieve))
+    SafeFuture.collectAll(
+            missingColumns.stream().map(id -> retrieveColumnWithSamplingAndCustody(id, tracker)))
         .thenAccept(
             retrievedColumns -> {
               if (retrievedColumns.size() == missingColumns.size()) {
@@ -139,17 +133,6 @@ public class DasSamplerBasic
                     tracker.samplingRequirement.size(),
                     slot,
                     blockRoot);
-
-                retrievedColumns.stream()
-                    .peek(
-                        sidecar ->
-                            tracker.add(
-                                DataColumnSlotAndIdentifier.fromDataColumn(sidecar),
-                                RemoteOrigin.RPC))
-                    .map(
-                        sidecar ->
-                            custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC))
-                    .forEach(updateFuture -> updateFuture.finishError(LOG));
               } else {
                 throw new IllegalStateException(
                     String.format(
@@ -164,6 +147,17 @@ public class DasSamplerBasic
         .finishError(LOG);
 
     return tracker.completionFuture;
+  }
+
+  private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
+      final DataColumnSlotAndIdentifier id, final DataColumnSamplingTracker tracker) {
+    return retriever
+        .retrieve(id)
+        .thenPeek(
+            sidecar -> {
+              tracker.add(id, RemoteOrigin.RPC);
+              custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC).finishError(LOG);
+            });
   }
 
   @Override
@@ -259,12 +253,15 @@ public class DasSamplerBasic
         if (!removed) {
           LOG.info(
               "Column {} was already marked as received, origin: {}", columnIdentifier, origin);
+          return;
         }
+
         if (missingColumns.isEmpty()) {
           LOG.info(
-              "Sampling complete for slot {} root {} via column received via {}",
+              "Sampling complete for slot {} root {} via column {} received via {}",
               slot,
               blockRoot,
+              columnIdentifier.columnIndex(),
               origin);
           completionFuture.complete(samplingRequirement);
         } else {
