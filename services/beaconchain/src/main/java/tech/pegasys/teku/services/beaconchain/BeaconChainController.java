@@ -1008,7 +1008,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
             this::getCustodyGroupCountManager,
-                recentChainData);
+            recentChainData);
     LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
     eventChannels.subscribe(SlotEventsChannel.class, dasSampler);

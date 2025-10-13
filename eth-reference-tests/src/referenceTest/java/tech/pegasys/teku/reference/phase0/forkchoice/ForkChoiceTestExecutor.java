@@ -151,7 +151,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             // using a const for the custody group count here, the test doesn't care
             // and fetching from the config would break when not in fulu
             () -> DasCustodyStand.createCustodyGroupCountManager(4, 8),
-                recentChainData);
+            recentChainData);
     final StubDataColumnSidecarManager dataColumnSidecarManager =
         new StubDataColumnSidecarManager(spec, recentChainData, dasSampler);
     // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
