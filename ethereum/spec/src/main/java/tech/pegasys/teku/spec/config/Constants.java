@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.time.Duration;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Constants {
 
