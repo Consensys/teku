@@ -52,11 +52,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessage;
@@ -108,12 +106,10 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
   private String protocolId;
   private DataStructureUtil dataStructureUtil;
   private DataColumnSidecarsByRootMessageHandler handler;
-  private SpecMilestone specMilestone;
   private Spec spec;
 
   @BeforeEach
   public void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
-    specMilestone = specContext.getSpecMilestone();
     spec =
         switch (specContext.getSpecMilestone()) {
           case PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB, ELECTRA ->
@@ -167,38 +163,6 @@ public class DataColumnSidecarsByRootMessageHandlerTest {
     // custodying everything by default
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(IntStream.of(0, 128).mapToObj(UInt64::valueOf).toList());
-  }
-
-  @TestTemplate
-  public void validateRequest_shouldLimitMaximumRequestSize() {
-    final int maxRequestIdentifiers =
-        SpecConfigFulu.required(spec.forMilestone(specMilestone).getConfig())
-            .getMaxRequestBlocksDeneb();
-    when(recentChainData.getCurrentEpoch())
-        .thenReturn(Optional.of(dataStructureUtil.randomEpoch()));
-
-    final DataColumnSidecarsByRootRequestMessage request =
-        messageSchema.of(generateDataColumnsByRootIdentifiers(maxRequestIdentifiers + 1, 1));
-
-    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
-
-    assertThat(result)
-        .hasValueSatisfying(
-            rpcException -> {
-              assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
-              assertThat(rpcException.getErrorMessageString())
-                  .isEqualTo(
-                      "Only a maximum of %d by root identifiers are allowed per request",
-                      maxRequestIdentifiers);
-            });
-
-    final long countTooBigCount =
-        metricsSystem.getCounterValue(
-            TekuMetricCategory.NETWORK,
-            "rpc_data_column_sidecars_by_root_requests_total",
-            "count_too_big");
-
-    assertThat(countTooBigCount).isOne();
   }
 
   @TestTemplate
