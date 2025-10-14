@@ -89,8 +89,8 @@ public class TestDefinition {
         blsSignatureVerificationEnabled ? BLSSignatureVerifier.SIMPLE : BLSSignatureVerifier.NO_OP;
     final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier =
         blsSignatureVerificationEnabled
-            ? () -> BatchSignatureVerifier.NO_OP
-            : BatchSignatureVerifierImpl::new;
+            ? BatchSignatureVerifierImpl::new
+            : () -> BatchSignatureVerifier.NO_OP;
     spec =
         TestSpecFactory.create(
             milestone,
