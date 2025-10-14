@@ -88,7 +88,7 @@ class RebuildColumnsTask {
       // we are possibly downloading to rebuild, so the sidecar may be available
       final DataColumnSidecar sidecar = sidecarMap.get(pendingRequest.getIndex().intValue());
       if (sidecar == null) {
-        LOG.debug(
+        LOG.trace(
             "Pending request for column {} added to rebuild for (slotAndBlock: {})",
             pendingRequest.getIndex(),
             pendingRequest.getSlotAndBlockRoot());

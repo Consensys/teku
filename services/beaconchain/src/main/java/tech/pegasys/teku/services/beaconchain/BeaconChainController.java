@@ -939,11 +939,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
               miscHelpersFulu,
               dbAccessor,
               dasAsyncRunner,
-              Duration.ofSeconds(60),
-              Duration.ofSeconds(3),
+              Duration.ofSeconds(120),
+              Duration.ofSeconds(14),
               Duration.ofSeconds(15),
               timeProvider,
               specConfigFulu.getNumberOfColumns(),
+              custodyGroupCountManagerRef,
               metricsSystem);
     } else {
       recoveringSidecarRetriever =

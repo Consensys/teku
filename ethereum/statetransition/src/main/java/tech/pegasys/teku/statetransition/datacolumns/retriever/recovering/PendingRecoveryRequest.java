@@ -111,11 +111,11 @@ class PendingRecoveryRequest {
   void checkTimeout(final UInt64 currentTimeMillis) {
     if (currentTimeMillis.isGreaterThanOrEqualTo(downloadTimeoutMillis)
         && !downloadFuture.isDone()) {
-      LOG.debug("Cancelling download of {} due to timeout", columnnId);
+      LOG.trace("Cancelling download of {} due to timeout", columnnId);
       downloadFuture.cancel(true);
     }
     if (currentTimeMillis.isGreaterThanOrEqualTo(taskTimeoutMillis) && !future.isDone()) {
-      LOG.debug("Cancelling task {} due to timeout", columnnId);
+      LOG.trace("Cancelling task {} due to timeout", columnnId);
       future.cancel(true);
     }
   }
