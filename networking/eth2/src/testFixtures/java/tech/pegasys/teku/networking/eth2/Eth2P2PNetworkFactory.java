@@ -29,6 +29,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -92,6 +94,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -247,13 +250,35 @@ public class Eth2P2PNetworkFactory {
               config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
         }
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
+
+        // Fulu custody configuration setup
+        final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver =
+            new SafeFuture<>();
+        final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedObserver =
+            new SafeFuture<>();
+        if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+          final SpecConfigFulu specConfigFulu =
+              SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
+          custodyGroupCountObserver.complete(
+              observer -> observer.onValueChanged(specConfigFulu.getCustodyRequirement()));
+          custodyGroupCountSyncedObserver.complete(
+              observer -> observer.onValueChanged(specConfigFulu.getCustodyRequirement()));
+        }
+        final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+        // Copied from BeaconChainController#initP2PNetwork() as it is missed from network tests
+        custodyGroupCountSyncedObserver.thenPeek(
+            valueObserverConsumer ->
+                valueObserverConsumer.accept(
+                    newValue ->
+                        metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(newValue))));
+
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
                 () -> DataColumnSidecarByRootCustody.NOOP,
                 () -> CustodyGroupCountManager.NOOP,
-                new MetadataMessagesFactory(),
+                metadataMessagesFactory,
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -391,7 +416,7 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            SafeFuture.completedFuture(observer -> observer.onValueChanged(4)),
+            custodyGroupCountObserver,
             config.isAllTopicsFilterEnabled());
       }
     }
