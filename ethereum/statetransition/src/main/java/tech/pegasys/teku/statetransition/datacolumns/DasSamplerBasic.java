@@ -78,6 +78,18 @@ public class DasSamplerBasic
     this.recentChainData = recentChainData;
   }
 
+  @Override
+  public void onAlreadyKnownDataColumn(
+      final DataColumnSlotAndIdentifier columnId, final RemoteOrigin remoteOrigin) {
+    recentlySampledColumnsBySlot
+        .computeIfAbsent(
+            columnId.blockRoot(),
+            k ->
+                DataColumnSamplingTracker.create(
+                    columnId.slot(), columnId.blockRoot(), custodyGroupCountManagerSupplier.get()))
+        .add(columnId, remoteOrigin);
+  }
+
   public void onNewValidatedDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
     LOG.debug(
@@ -148,6 +160,8 @@ public class DasSamplerBasic
 
     return tracker.completionFuture;
   }
+
+  // TODO: verify custody does not write sidecars multiple times on DB
 
   private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
       final DataColumnSlotAndIdentifier id, final DataColumnSamplingTracker tracker) {
@@ -251,7 +265,7 @@ public class DasSamplerBasic
         final boolean removed =
             missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
         if (!removed) {
-          LOG.info(
+          LOG.debug(
               "Column {} was already marked as received, origin: {}", columnIdentifier, origin);
           return;
         }
