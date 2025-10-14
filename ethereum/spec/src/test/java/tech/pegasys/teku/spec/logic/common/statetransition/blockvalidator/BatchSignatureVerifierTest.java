@@ -34,7 +34,7 @@ public class BatchSignatureVerifierTest {
 
   @Test
   public void shouldRaiseExceptionIfNoValidPublicKeys() {
-    BatchSignatureVerifier verifier = new BatchSignatureVerifier();
+    BatchSignatureVerifier verifier = new BatchSignatureVerifierImpl();
 
     verifier.verify(
         List.of(BLSPublicKey.empty()),
@@ -46,7 +46,7 @@ public class BatchSignatureVerifierTest {
 
   @Test
   public void shouldRaiseExceptionIfNoSuppliedPublicKeys() {
-    BatchSignatureVerifier verifier = new BatchSignatureVerifier();
+    BatchSignatureVerifier verifier = new BatchSignatureVerifierImpl();
 
     assertThatThrownBy(
             () ->
@@ -59,7 +59,7 @@ public class BatchSignatureVerifierTest {
 
   @Test
   public void testParallel() throws Exception {
-    BatchSignatureVerifier verifier = new BatchSignatureVerifier();
+    BatchSignatureVerifierImpl verifier = new BatchSignatureVerifierImpl();
 
     BLSPublicKey publicKey = BLSTestUtil.randomPublicKey(42);
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
@@ -96,7 +96,7 @@ public class BatchSignatureVerifierTest {
 
   @Test
   void shouldBeValidWhenNothingVerified() {
-    final BatchSignatureVerifier verifier = new BatchSignatureVerifier();
+    final BatchSignatureVerifier verifier = new BatchSignatureVerifierImpl();
     assertThat(verifier.batchVerify()).isTrue();
   }
 }
