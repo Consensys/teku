@@ -266,11 +266,14 @@ public class Eth2P2PNetworkFactory {
         }
         final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
         // Copied from BeaconChainController#initP2PNetwork() as it is missed from network tests
-        custodyGroupCountSyncedObserver.thenPeek(
-            valueObserverConsumer ->
-                valueObserverConsumer.accept(
-                    newValue ->
-                        metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(newValue))));
+        custodyGroupCountSyncedObserver
+            .thenPeek(
+                valueObserverConsumer ->
+                    valueObserverConsumer.accept(
+                        newValue ->
+                            metadataMessagesFactory.updateCustodyGroupCount(
+                                UInt64.valueOf(newValue))))
+            .finishError(LOG);
 
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
