@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +26,6 @@ import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -78,7 +76,6 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final SubnetSubscriptionService executionProofSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
-  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver;
 
   private final GossipForkManager gossipForkManager;
 
@@ -105,7 +102,6 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
-      final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver,
       final boolean allTopicsFilterEnabled) {
     super(discoveryNetwork);
     this.spec = spec;
@@ -122,7 +118,6 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.dataColumnSidecarSubnetService = dataColumnSidecarSubnetService;
     this.executionProofSubnetService = executionProofSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
-    this.custodyGroupCountObserver = custodyGroupCountObserver;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
@@ -183,17 +178,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      custodyGroupCountObserver
-          .thenPeek(
-              valueObserverConsumer -> {
-                valueObserverConsumer.accept(
-                    newValue -> {
-                      // TODO: info?
-                      LOG.info("Using custody sidecar group count: {}", newValue);
-                      discoveryNetwork.setDASTotalCustodyGroupCount(newValue);
-                    });
-              })
-          .finishDebug(LOG);
+      ;
       recentChainData
           .getNextForkDigest(currentEpoch)
           .ifPresent(discoveryNetwork::setNextForkDigest);

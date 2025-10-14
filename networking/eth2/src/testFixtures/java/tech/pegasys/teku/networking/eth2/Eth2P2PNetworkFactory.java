@@ -252,24 +252,20 @@ public class Eth2P2PNetworkFactory {
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
 
         // Fulu custody configuration setup
-        final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver =
-            new SafeFuture<>();
-        final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedObserver =
+        final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedProvider =
             new SafeFuture<>();
         if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
           final SpecConfigFulu specConfigFulu =
               SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-          custodyGroupCountObserver.complete(
-              observer -> observer.onValueChanged(specConfigFulu.getCustodyRequirement()));
-          custodyGroupCountSyncedObserver.complete(
+          custodyGroupCountSyncedProvider.complete(
               observer -> observer.onValueChanged(specConfigFulu.getCustodyRequirement()));
         }
         final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
         // Copied from BeaconChainController#initP2PNetwork() as it is missed from network tests
-        custodyGroupCountSyncedObserver
+        custodyGroupCountSyncedProvider
             .thenPeek(
-                valueObserverConsumer ->
-                    valueObserverConsumer.accept(
+                onValueChanged ->
+                    onValueChanged.accept(
                         newValue ->
                             metadataMessagesFactory.updateCustodyGroupCount(
                                 UInt64.valueOf(newValue))))
@@ -419,7 +415,6 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            custodyGroupCountObserver,
             config.isAllTopicsFilterEnabled());
       }
     }

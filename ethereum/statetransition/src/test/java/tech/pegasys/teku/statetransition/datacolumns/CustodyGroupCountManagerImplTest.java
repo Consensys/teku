@@ -28,10 +28,13 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -188,6 +191,83 @@ public class CustodyGroupCountManagerImplTest {
         .containsAll(custodyGroupCountManager.getCustodyColumnIndices());
     assertThat(metricsSystem.getGauge(TekuMetricCategory.BEACON, "custody_groups").getValue())
         .isEqualTo(10);
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void subscriptionsEarlyInit() throws Exception {
+    // Similar to BeaconChainController setup
+    final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver =
+        new SafeFuture<>();
+    final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedObserver =
+        new SafeFuture<>();
+    final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountObserver =
+        new SafeFuture<>();
+
+    final CountDownLatch allSubscriptionsPerformedWell = new CountDownLatch(3);
+    custodyGroupCountObserver.thenPeek(
+        observer ->
+            observer.accept(
+                value -> {
+                  assertThat(value).isEqualTo(4);
+                  allSubscriptionsPerformedWell.countDown();
+                }));
+    custodyGroupCountSyncedObserver.thenPeek(
+        observer ->
+            observer.accept(
+                value -> {
+                  assertThat(value).isEqualTo(2);
+                  allSubscriptionsPerformedWell.countDown();
+                }));
+    samplingGroupCountObserver.thenPeek(
+        observer ->
+            observer.accept(
+                value -> {
+                  assertThat(value).isEqualTo(8);
+                  allSubscriptionsPerformedWell.countDown();
+                }));
+
+    setUpManager(4, 8, 8);
+    custodyGroupCountObserver.complete(custodyGroupCountManager::subscribeCustodyGroupCount);
+    custodyGroupCountSyncedObserver.complete(
+        custodyGroupCountManager::subscribeCustodyGroupSyncedCount);
+    samplingGroupCountObserver.complete(custodyGroupCountManager::subscribeSamplingGroupCount);
+
+    // custodyGroupCountSyncedObserver remaining, everything else was pushed on start
+    assertThat(allSubscriptionsPerformedWell.getCount()).isEqualTo(1);
+
+    custodyGroupCountManager.setCustodyGroupSyncedCount(2);
+    allSubscriptionsPerformedWell.await();
+  }
+
+  @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void subscriptionObserveValueChanges() throws Exception {
+    final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedObserver =
+        new SafeFuture<>();
+
+    final CountDownLatch allChangesAsserted = new CountDownLatch(3);
+
+    custodyGroupCountSyncedObserver.thenPeek(
+        observer ->
+            observer.accept(
+                value -> {
+                  // we start from count 3, so we expect 1, 2, 3 as input
+                  assertThat(value).isEqualTo(4 - allChangesAsserted.getCount());
+                  allChangesAsserted.countDown();
+                }));
+
+    setUpManager(4, 8, 8);
+    custodyGroupCountSyncedObserver.complete(
+        custodyGroupCountManager::subscribeCustodyGroupSyncedCount);
+
+    // custodyGroupCountSyncedObserver was not triggered yet
+    assertThat(allChangesAsserted.getCount()).isEqualTo(3);
+
+    custodyGroupCountManager.setCustodyGroupSyncedCount(1);
+    custodyGroupCountManager.setCustodyGroupSyncedCount(2);
+    custodyGroupCountManager.setCustodyGroupSyncedCount(3);
+    allChangesAsserted.await();
   }
 
   private void setUpManager(

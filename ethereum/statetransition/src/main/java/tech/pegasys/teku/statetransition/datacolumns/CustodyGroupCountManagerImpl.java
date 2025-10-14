@@ -115,15 +115,16 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (isMaxCustodyGroups) {
-      return;
-    }
-
     final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
     final Map<UInt64, PreparedProposerInfo> preparedValidators =
         proposersDataManager.getPreparedProposerInfo();
 
+    // we need to check detectGenesisInitialization even if isMaxCustodyGroups
     if (detectGenesisInitialization(currentEpoch, preparedValidators)) {
+      return;
+    }
+
+    if (isMaxCustodyGroups) {
       return;
     }
 

@@ -107,7 +107,7 @@ public class ObservableValue<C> {
    * @param c the non-null value
    */
   public void set(final C c) {
-    Iterator<Subscription<C>> iterator;
+    final Iterator<Subscription<C>> iterator;
     synchronized (this) {
       curValue = c;
       iterator = subscriptions.iterator();
@@ -123,7 +123,7 @@ public class ObservableValue<C> {
    * @return old value, Optional.empty() if none
    */
   public Optional<C> getAndSet(final C c) {
-    Iterator<Subscription<C>> iterator;
+    final Iterator<Subscription<C>> iterator;
     final C oldValue;
     synchronized (this) {
       oldValue = curValue;

@@ -62,20 +62,17 @@ public interface CustodyGroupCountManager {
 
   List<UInt64> getCustodyColumnIndices();
 
-  // TODO: test
-  void subscribeCustodyGroupCount(final ValueObserver<Integer> subscriber);
+  void subscribeCustodyGroupCount(ValueObserver<Integer> subscriber);
 
   int getSamplingGroupCount();
 
   List<UInt64> getSamplingColumnIndices();
 
-  // TODO: test
-  void subscribeSamplingGroupCount(final ValueObserver<Integer> subscriber);
+  void subscribeSamplingGroupCount(ValueObserver<Integer> subscriber);
 
   int getCustodyGroupSyncedCount();
 
-  // TODO: test
-  void subscribeCustodyGroupSyncedCount(final ValueObserver<Integer> subscriber);
+  void subscribeCustodyGroupSyncedCount(ValueObserver<Integer> subscriber);
 
   void setCustodyGroupSyncedCount(int custodyGroupSyncedCount);
 }

@@ -84,7 +84,6 @@ public class DataColumnSidecarSubnetSubscriptions extends CommitteeSubnetSubscri
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final String topicName = GossipTopicName.getDataColumnSidecarSubnetTopicName(subnetId);
-    LOG.info("Creating topic handler for dataColumnSidecar subnet {}", subnetId);
     return DataColumnSidecarTopicHandler.createHandler(
         recentChainData,
         asyncRunner,

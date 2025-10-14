@@ -315,11 +315,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   private final AsyncRunner operationPoolAsyncRunner;
   private final AsyncRunner dasAsyncRunner;
-  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver =
+  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountProvider =
       new SafeFuture<>();
-  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedObserver =
+  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedProvider =
       new SafeFuture<>();
-  private final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountObserver =
+  private final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountProvider =
       new SafeFuture<>();
   protected final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
       new AtomicReference<>(CustodyGroupCountManager.NOOP);
@@ -846,7 +846,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             this::getCustodyGroupCountManager,
-            custodyGroupCountObserver);
+            custodyGroupCountProvider);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
@@ -1007,10 +1007,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, custodyGroupCountManager);
     this.custodyGroupCountManagerRef.set(custodyGroupCountManager);
-    custodyGroupCountObserver.complete(custodyGroupCountManager::subscribeCustodyGroupCount);
-    custodyGroupCountSyncedObserver.complete(
+    // init custody values providers
+    custodyGroupCountProvider.complete(custodyGroupCountManager::subscribeCustodyGroupCount);
+    custodyGroupCountSyncedProvider.complete(
         custodyGroupCountManager::subscribeCustodyGroupSyncedCount);
-    samplingGroupCountObserver.complete(custodyGroupCountManager::subscribeSamplingGroupCount);
+    samplingGroupCountProvider.complete(custodyGroupCountManager::subscribeSamplingGroupCount);
   }
 
   protected void initMergeMonitors() {
@@ -1363,7 +1364,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
     DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
-            spec, p2pNetwork, nodeId, samplingGroupCountObserver);
+            spec, p2pNetwork, nodeId, samplingGroupCountProvider);
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
   }
@@ -1614,10 +1615,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     PortAvailability.checkPortsAvailable(
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(), maybeUdpPort);
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
-    custodyGroupCountSyncedObserver
+    custodyGroupCountSyncedProvider
         .thenPeek(
-            valueObserverConsumer ->
-                valueObserverConsumer.accept(
+            onValueChanged ->
+                onValueChanged.accept(
                     newValue ->
                         metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(newValue))))
         .finishDebug(LOG);
@@ -1671,7 +1672,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
             .reqRespDasLogger(dasReqRespLogger)
-            .custodyGroupCountObserver(custodyGroupCountObserver)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .metricsSystem(metricsSystem)
@@ -1696,10 +1696,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
-    custodyGroupCountSyncedObserver
+    custodyGroupCountSyncedProvider
         .thenPeek(
-            valueObserverConsumer ->
-                valueObserverConsumer.accept(
+            onValueChanged ->
+                onValueChanged.accept(
                     newCgc ->
                         p2pNetwork
                             .getDiscoveryNetwork()

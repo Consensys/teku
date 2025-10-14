@@ -44,12 +44,12 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
       final Spec spec,
       final Eth2P2PNetwork eth2P2PNetwork,
       final UInt256 nodeId,
-      final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountObserver) {
+      final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountProvider) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    samplingGroupCountObserver
-        .thenPeek(valueObserverConsumer -> valueObserverConsumer.accept(totalGroupCount::set))
+    samplingGroupCountProvider
+        .thenPeek(onValueChange -> onValueChange.accept(totalGroupCount::set))
         .finishDebug(LOG);
   }
 
