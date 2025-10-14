@@ -21,14 +21,17 @@ runs:
       run: |
         tree reports/
 
+    # https://github.com/dorny/test-reporter
     - name: Test Reporter
-      uses: dorny/test-reporter@v1
+      uses: dorny/test-reporter@v2
       env:
         NODE_OPTIONS: "--max_old_space_size=4096"      
       with:
         name: Combined ${{inputs.stage_key}} tests
         path: "reports/${{inputs.stage_key}}/**/TEST-*.xml"
         reporter: java-junit
-        only-summary: true
-        list-tests: failed
-        list-suites: true
+        only-summary: 'false'
+        list-tests: 'failed'
+        list-suites: 'failed'
+        use-actions-summary: 'true'
+        # all/none/failed
