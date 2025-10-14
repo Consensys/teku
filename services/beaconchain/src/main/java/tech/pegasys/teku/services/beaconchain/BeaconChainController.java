@@ -913,7 +913,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new DataColumnReqRespBatchingImpl(
             loggingByRangeReqResp,
             loggingByRootReqResp,
-            () -> spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch().increment()),
+            () -> spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment(),
             schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema());
 
     final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
