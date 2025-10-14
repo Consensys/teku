@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
@@ -57,6 +59,13 @@ public class ExecutionPayloadResult {
 
   public ExecutionPayloadContext getExecutionPayloadContext() {
     return executionPayloadContext;
+  }
+
+  public SafeFuture<GetPayloadResponse> getPayloadResponseFutureFromLocalFlowRequired() {
+    checkState(
+        getPayloadResponseFuture.isPresent(),
+        "GetPayloadResponse from local flow has been requested but it's not present");
+    return getPayloadResponseFuture.get();
   }
 
   public Optional<SafeFuture<ExecutionPayload>> getExecutionPayloadFutureFromLocalFlow() {

@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -36,8 +38,12 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
 
   @Test
   void shouldCreateBlock() {
+    prepareBlobsBundle(spec, 3);
+
     final BlockContainer blockContainer =
-        assertBlockCreated(1, spec, false, state -> {}, false).blockContainer();
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
+            .blockContainer();
+
     assertThat(blockContainer).isInstanceOf(BeaconBlock.class);
     assertThat(blockContainer.getBlock().getBody()).isInstanceOf(BeaconBlockBodyGloas.class);
   }
@@ -49,9 +55,11 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
     assertThat(unblindedSignedBlock).isEqualTo(signedBlock);
   }
 
+  // this theoretically will never happen, but testing throwing the exception
   @Test
   void unblindSignedBlock_shouldFailIfBlockIsBlinded() {
-    final SignedBeaconBlock signedBlindedBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
+    final SignedBeaconBlock signedBlindedBlock = mock(SignedBeaconBlock.class);
+    when(signedBlindedBlock.isBlinded()).thenReturn(true);
     final BlockFactory blockFactory = createBlockFactory(spec);
     assertThatThrownBy(
             () ->
@@ -78,6 +86,7 @@ public class BlockFactoryGloasTest extends AbstractBlockFactoryTest {
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayer,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider));
   }

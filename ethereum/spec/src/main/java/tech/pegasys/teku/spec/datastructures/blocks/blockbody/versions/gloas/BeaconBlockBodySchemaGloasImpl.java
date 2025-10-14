@@ -147,7 +147,7 @@ public class BeaconBlockBodySchemaGloasImpl
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
       final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
-    final BeaconBlockBodyBuilderGloas builder = new BeaconBlockBodyBuilderGloas(this, null);
+    final BeaconBlockBodyBuilderGloas builder = new BeaconBlockBodyBuilderGloas(this);
     return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 

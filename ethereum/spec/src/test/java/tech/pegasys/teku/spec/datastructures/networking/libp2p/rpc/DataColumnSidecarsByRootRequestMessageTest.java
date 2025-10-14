@@ -65,11 +65,11 @@ class DataColumnSidecarsByRootRequestMessageTest {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
           final SpecConfig config = spec.forMilestone(milestone).getConfig();
           final SpecConfigFulu specConfigFulu = SpecConfigFulu.required(config);
-          final int maxRequestDataColumnSidecars = specConfigFulu.getMaxRequestDataColumnSidecars();
+          final int maxRequestBlocksDeneb = specConfigFulu.getMaxRequestBlocksDeneb();
           final DataColumnSidecarsByRootRequestMessageSchema schema =
               SchemaDefinitionsFulu.required(spec.forMilestone(milestone).getSchemaDefinitions())
                   .getDataColumnSidecarsByRootRequestMessageSchema();
-          assertThat(schema.getMaxLength()).isGreaterThanOrEqualTo(maxRequestDataColumnSidecars);
+          assertThat(schema.getMaxLength()).isEqualTo(maxRequestBlocksDeneb);
         });
   }
 

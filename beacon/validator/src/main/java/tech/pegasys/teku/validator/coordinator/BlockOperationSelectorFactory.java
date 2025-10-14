@@ -32,7 +32,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -54,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobAndCellProofs;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BuilderBidOrFallbackData;
@@ -63,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionRequests;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -71,7 +70,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.versions.electra.PendingPartialWithdrawal;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -81,10 +79,10 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
@@ -102,6 +100,7 @@ public class BlockOperationSelectorFactory {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
+  private final ExecutionPayloadBidManager executionPayloadBidManager;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -116,6 +115,7 @@ public class BlockOperationSelectorFactory {
       final GraffitiBuilder graffitiBuilder,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
+      final ExecutionPayloadBidManager executionPayloadBidManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     this.spec = spec;
@@ -130,6 +130,7 @@ public class BlockOperationSelectorFactory {
     this.graffitiBuilder = graffitiBuilder;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
+    this.executionPayloadBidManager = executionPayloadBidManager;
     this.dataColumnSidecarComputationTimeSeconds =
         DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM.apply(metricsSystem, timeProvider);
   }
@@ -145,10 +146,10 @@ public class BlockOperationSelectorFactory {
     return bodyBuilder -> {
       blockProductionPerformance.beaconBlockBodyPreparationStarted();
 
-      final SafeFuture<Void> setExecutionDataComplete;
-
       final SchemaDefinitions schemaDefinitions =
           spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
+
+      final SafeFuture<Void> setExecutionDataComplete;
 
       // In `setExecutionData` the following fields are set:
       // Post-Bellatrix: Execution Payload / Execution Payload Header
@@ -169,6 +170,25 @@ public class BlockOperationSelectorFactory {
                             blockProductionPerformance));
       } else {
         setExecutionDataComplete = COMPLETE;
+      }
+
+      final SafeFuture<Void> setExecutionPayloadBidComplete;
+
+      // Post-Gloas: Signed Execution Payload Bid
+      if (bodyBuilder.supportsSignedExecutionPayloadBid()) {
+        setExecutionPayloadBidComplete =
+            forkChoiceNotifier
+                .getPayloadId(parentRoot, blockSlotState.getSlot())
+                .thenCompose(
+                    executionPayloadContext ->
+                        setExecutionPayloadBid(
+                            executionPayloadContext,
+                            bodyBuilder,
+                            blockSlotState,
+                            blockProductionPerformance));
+
+      } else {
+        setExecutionPayloadBidComplete = COMPLETE;
       }
 
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
@@ -225,34 +245,9 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-      // Post-Gloas: Signed Execution Payload Bid and Payload Attestations
-      // TODO-GLOAS: https://github.com/Consensys/teku/issues/9959
-      if (bodyBuilder.supportsSignedExecutionPayloadBid()) {
-        final SchemaDefinitionsGloas schemaDefinitionsGloas =
-            SchemaDefinitionsGloas.required(schemaDefinitions);
-        // fake self building bid used for local interop temporarily
-        final ExecutionPayloadBid bid =
-            schemaDefinitionsGloas
-                .getExecutionPayloadBidSchema()
-                .create(
-                    BeaconStateGloas.required(blockSlotState).getLatestBlockHash(),
-                    blockSlotState.getLatestBlockHeader().getRoot(),
-                    Bytes32.ZERO,
-                    Bytes20.ZERO,
-                    UInt64.ZERO,
-                    UInt64.valueOf(
-                        spec.getBeaconProposerIndex(blockSlotState, blockSlotState.getSlot())),
-                    blockSlotState.getSlot(),
-                    UInt64.ZERO,
-                    // no blobs for local interop temporarily
-                    schemaDefinitionsGloas.getBlobKzgCommitmentsSchema().of().hashTreeRoot());
-        bodyBuilder.signedExecutionPayloadBid(
-            schemaDefinitionsGloas
-                .getSignedExecutionPayloadBidSchema()
-                .create(bid, BLSSignature.infinity()));
-      }
-
+      // Post-Gloas: Payload Attestations
       if (bodyBuilder.supportsPayloadAttestations()) {
+        // TODO-GLOAS: https://github.com/Consensys/teku/issues/9959
         // no payload attestations used for local interop temporarily
         bodyBuilder.payloadAttestations(
             BeaconBlockBodySchemaGloas.required(schemaDefinitions.getBeaconBlockBodySchema())
@@ -260,8 +255,8 @@ public class BlockOperationSelectorFactory {
                 .of());
       }
 
-      return setExecutionDataComplete.thenPeek(
-          __ -> blockProductionPerformance.beaconBlockBodyPrepared());
+      return SafeFuture.allOfFailFast(setExecutionDataComplete, setExecutionPayloadBidComplete)
+          .thenPeek(__ -> blockProductionPerformance.beaconBlockBodyPrepared());
     };
   }
 
@@ -456,6 +451,37 @@ public class BlockOperationSelectorFactory {
         // from the local fallback
         .or(() -> builderBidOrFallbackData.getFallbackDataRequired().getExecutionRequests())
         .orElseThrow();
+  }
+
+  private SafeFuture<Void> setExecutionPayloadBid(
+      final Optional<ExecutionPayloadContext> executionPayloadContext,
+      final BeaconBlockBodyBuilder bodyBuilder,
+      final BeaconState blockSlotState,
+      final BlockProductionPerformance blockProductionPerformance) {
+    checkState(
+        executionPayloadContext.isPresent(),
+        "ExecutionPayloadContext is not provided for production of post-merge block at slot "
+            + blockSlotState.getSlot());
+    final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
+        executionLayerBlockProductionManager
+            .initiateBlockProduction(
+                executionPayloadContext.get(),
+                blockSlotState,
+                // builder flow (mev-boost) is disabled for local self-built bids
+                false,
+                Optional.empty(),
+                blockProductionPerformance)
+            .getPayloadResponseFutureFromLocalFlowRequired();
+    return executionPayloadBidManager
+        .getBidForBlock(blockSlotState, getPayloadResponseFuture, blockProductionPerformance)
+        .thenAccept(
+            signedBid -> {
+              checkState(
+                  signedBid.isPresent(),
+                  "No execution payload bid has been prepared for production of block at slot "
+                      + blockSlotState.getSlot());
+              bodyBuilder.signedExecutionPayloadBid(signedBid.get());
+            });
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector(

@@ -194,6 +194,7 @@ public class BlockFactoryFuluTest extends AbstractBlockFactoryTest {
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayer,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider));
   }

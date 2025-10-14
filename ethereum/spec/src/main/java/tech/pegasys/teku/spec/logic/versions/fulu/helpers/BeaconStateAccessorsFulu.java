@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
 public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
   private final SpecConfigFulu configFulu;
+  private final MiscHelpersFulu miscHelpersFulu;
 
   public BeaconStateAccessorsFulu(
       final SpecConfig config,
@@ -37,6 +38,21 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
       final MiscHelpersFulu miscHelpers) {
     super(SpecConfigFulu.required(config), predicatesElectra, miscHelpers);
     configFulu = config.toVersionFulu().orElseThrow();
+    this.miscHelpersFulu = miscHelpers;
+  }
+
+  @Override
+  protected void validateStateCanCalculateProposerIndexAtSlot(
+      final BeaconState state, final UInt64 requestedSlot) {
+    final UInt64 epoch = miscHelpersFulu.computeEpochAtSlot(requestedSlot);
+    final UInt64 stateEpoch = getCurrentEpoch(state);
+    checkArgument(
+        epoch.equals(stateEpoch) || stateEpoch.increment().equals(epoch),
+        "Cannot compute proposer index, as the state supplied is out of range of the requested slot. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
+        requestedSlot,
+        epoch,
+        state.getSlot(),
+        stateEpoch);
   }
 
   @Override
