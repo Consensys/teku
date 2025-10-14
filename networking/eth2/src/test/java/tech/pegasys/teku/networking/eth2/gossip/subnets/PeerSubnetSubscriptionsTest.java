@@ -14,12 +14,13 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.net.InetSocketAddress;
@@ -32,11 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszBitvectorImpl;
@@ -502,6 +505,264 @@ class PeerSubnetSubscriptionsTest {
 
     assertThat(subscriptions.isAttestationSubnetRelevant(attSubnetsCount)).isFalse();
     assertThat(subscriptions.isAttestationSubnetRelevant(attSubnetsCount + 1)).isFalse();
+  }
+
+  @Test
+  public void builder_shouldThrowExceptionForNegativeTargetSubscriberCount() {
+    assertThatThrownBy(
+            () ->
+                PeerSubnetSubscriptions.builder(currentSchemaDefinitions, sszBitvectorSchema)
+                    .targetSubnetSubscriberCount(-1)
+                    .build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("Invalid targetSubnetSubscriberCount: -1");
+  }
+
+  @Test
+  public void create_shouldHandleNullGossipNetworkSubscribers() {
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(null);
+
+    assertThatThrownBy(this::createPeerSubnetSubscriptions)
+        .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  public void create_shouldHandleEmptySubscribersByTopic() {
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(Collections.emptyMap());
+
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(0)).isZero();
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(0)).isZero();
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(0)).isZero();
+  }
+
+  @Test
+  public void shouldHandleDataColumnSidecarSubnetSubscriptions() {
+    dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2));
+
+    final Map<String, Collection<NodeId>> subscribersByTopic =
+        ImmutableMap.<String, Collection<NodeId>>builder()
+            .put("data_column_sidecar_0", extractNodeIds(EXISTING_PEER1, EXISTING_PEER2))
+            .put("data_column_sidecar_1", extractNodeIds(EXISTING_PEER1))
+            .put("data_column_sidecar_2", extractNodeIds(EXISTING_PEER3))
+            .build();
+
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+    when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
+        .thenReturn(Optional.of(sszBitvectorSchema.ofBits(0, 1)));
+
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(0)).isEqualTo(2);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(1)).isEqualTo(1);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(2)).isEqualTo(1);
+
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(0)).isTrue();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(1)).isTrue();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(2)).isTrue();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(3)).isFalse();
+  }
+
+  @Test
+  public void getDataColumnSidecarSubnetSubscriptionsByNodeId_shouldUseCalculator() {
+    final SszBitvector expectedSubnets = sszBitvectorSchema.ofBits(5, 10, 15);
+    when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
+        .thenReturn(Optional.of(expectedSubnets));
+
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    final SszBitvector result =
+        subscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
+            CANDIDATE_PEER1, Optional.of(8));
+
+    assertThat(result).isEqualTo(expectedSubnets);
+    verify(nodeIdToDataColumnSidecarSubnetsCalculator)
+        .calculateSubnets(CANDIDATE_PEER1, Optional.of(8));
+  }
+
+  @Test
+  public void getDataColumnSidecarSubnetSubscriptionsByNodeId_shouldReturnDefaultWhenEmpty() {
+    when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
+        .thenReturn(Optional.empty());
+
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    final SszBitvector result =
+        subscriptions.getDataColumnSidecarSubnetSubscriptionsByNodeId(
+            CANDIDATE_PEER1, Optional.empty());
+
+    assertThat(result).isEqualTo(sszBitvectorSchema.getDefault());
+  }
+
+  @Test
+  public void create_shouldUpdateMetricsCorrectly() {
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
+
+    final Map<String, Collection<NodeId>> subscribersByTopic =
+        ImmutableMap.<String, Collection<NodeId>>builder()
+            .put("attnet_0", extractNodeIds(EXISTING_PEER1, EXISTING_PEER2))
+            .put("attnet_1", extractNodeIds(EXISTING_PEER1))
+            .put("syncnet_0", extractNodeIds(EXISTING_PEER2))
+            .put("syncnet_1", extractNodeIds(EXISTING_PEER1, EXISTING_PEER3))
+            .build();
+
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+
+    createPeerSubnetSubscriptions();
+
+    verify(subnetPeerCountGauge).set(2, "attestation_0");
+    verify(subnetPeerCountGauge).set(1, "attestation_1");
+    verify(subnetPeerCountGauge).set(1, "sync_committee_0");
+    verify(subnetPeerCountGauge).set(2, "sync_committee_1");
+
+    // Verify default values are set for unsubscribed subnets
+    final int attSubnetsCount = currentSchemaDefinitions.getAttnetsENRFieldSchema().getLength();
+    for (int i = 2; i < attSubnetsCount; i++) {
+      verify(subnetPeerCountGauge).set(0, "attestation_" + i);
+    }
+  }
+
+  @Test
+  public void shouldHandleAllSubnetTypesSimultaneously() {
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1));
+    dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1, 2));
+
+    final Map<PeerId, SszBitvector> peer2subnets =
+        ImmutableMap.<PeerId, SszBitvector>builder()
+            .put(EXISTING_PEER1, sszBitvectorSchema.ofBits(0))
+            .put(EXISTING_PEER2, sszBitvectorSchema.ofBits(1))
+            .put(EXISTING_PEER3, sszBitvectorSchema.ofBits(2))
+            .build();
+
+    final Map<String, Collection<NodeId>> subscribersByTopic =
+        ImmutableMap.<String, Collection<NodeId>>builder()
+            .put("attnet_0", extractNodeIds(EXISTING_PEER1))
+            .put("attnet_1", extractNodeIds(EXISTING_PEER2))
+            .put("syncnet_0", extractNodeIds(EXISTING_PEER1))
+            .put("syncnet_1", extractNodeIds(EXISTING_PEER2))
+            .put("data_column_sidecar_0", extractNodeIds(EXISTING_PEER1))
+            .put("data_column_sidecar_1", extractNodeIds(EXISTING_PEER2))
+            .put("data_column_sidecar_2", extractNodeIds(EXISTING_PEER3))
+            .build();
+
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+    when(nodeIdToDataColumnSidecarSubnetsCalculator.calculateSubnets(any(), any()))
+        .thenAnswer(
+            invocation -> {
+              final PeerId peerId = invocation.getArgument(0);
+              return Optional.ofNullable(peer2subnets.get(peerId));
+            });
+
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    // Test all subnet types
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(0)).isEqualTo(1);
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(0)).isEqualTo(1);
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(0)).isEqualTo(1);
+
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(EXISTING_PEER1))
+        .isEqualTo(createAttnetsBitvector(0));
+    assertThat(subscriptions.getSyncCommitteeSubscriptions(EXISTING_PEER1))
+        .isEqualTo(createSyncnetsBitvector(0));
+    assertThat(subscriptions.getDataColumnSidecarSubnetSubscriptions(EXISTING_PEER1))
+        .isEqualTo(sszBitvectorSchema.ofBits(0));
+  }
+
+  @Test
+  public void builder_shouldHandleEmptySubscriptions() {
+    final PeerSubnetSubscriptions subscriptions =
+        PeerSubnetSubscriptions.builder(currentSchemaDefinitions, sszBitvectorSchema)
+            .attestationSubnetSubscriptions(b -> {})
+            .syncCommitteeSubnetSubscriptions(b -> {})
+            .dataColumnSidecarSubnetSubscriptions(b -> {})
+            .nodeIdToDataColumnSidecarSubnetsCalculator(
+                NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+            .build();
+
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(0)).isZero();
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(0)).isZero();
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(0)).isZero();
+  }
+
+  @Test
+  public void builder_shouldAllowChainedSubscriberAdditions() {
+    final PeerSubnetSubscriptions subscriptions =
+        PeerSubnetSubscriptions.builder(currentSchemaDefinitions, sszBitvectorSchema)
+            .attestationSubnetSubscriptions(
+                b ->
+                    b.addRelevantSubnet(0)
+                        .addSubscriber(0, EXISTING_PEER1)
+                        .addSubscriber(0, EXISTING_PEER2)
+                        .addRelevantSubnet(1)
+                        .addSubscriber(1, EXISTING_PEER1))
+            .nodeIdToDataColumnSidecarSubnetsCalculator(
+                NodeIdToDataColumnSidecarSubnetsCalculator.NOOP)
+            .build();
+
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(0)).isEqualTo(2);
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(1)).isEqualTo(1);
+
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(EXISTING_PEER1))
+        .isEqualTo(createAttnetsBitvector(0, 1));
+    assertThat(subscriptions.getAttestationSubnetSubscriptions(EXISTING_PEER2))
+        .isEqualTo(createAttnetsBitvector(0));
+  }
+
+  @Test
+  public void getSubscribersRequired_shouldHandleComplexMixedScenarios() {
+    syncnetSubscriptions.setSubscriptions(IntList.of(0, 1, 2)); // 3 sync subnets
+    dataColumnSubscriptions.setSubscriptions(IntList.of(0, 1)); // 2 data column subnets
+
+    // Attestation subnets: well covered (target + 1)
+    // Sync committee subnets: 1 has enough, others are empty
+    // Data column subnets: both are empty
+    final Map<String, Collection<NodeId>> subscribersByTopic = new HashMap<>();
+
+    // All attestation subnets have enough subscribers
+    for (int i = 0; i < currentSchemaDefinitions.getAttnetsENRFieldSchema().getLength(); i++) {
+      final List<NodeId> subscribers =
+          IntStream.range(0, TARGET_SUBSCRIBER_COUNT + 1)
+              .mapToObj(MockNodeId::new)
+              .collect(Collectors.toList());
+      subscribersByTopic.put("attnet_" + i, subscribers);
+    }
+
+    // Only sync subnet 0 has enough subscribers
+    subscribersByTopic.put(
+        "syncnet_0",
+        IntStream.range(0, TARGET_SUBSCRIBER_COUNT)
+            .mapToObj(MockNodeId::new)
+            .collect(Collectors.toList()));
+    subscribersByTopic.put("syncnet_1", Collections.emptyList());
+    subscribersByTopic.put("syncnet_2", Collections.emptyList());
+
+    // Data column subnets are empty
+    subscribersByTopic.put("data_column_sidecar_0", Collections.emptyList());
+    subscribersByTopic.put("data_column_sidecar_1", Collections.emptyList());
+
+    when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
+
+    final PeerSubnetSubscriptions subscriptions = createPeerSubnetSubscriptions();
+
+    // Should need TARGET_SUBSCRIBER_COUNT peers because data column subnets are empty (min = 0)
+    assertThat(subscriptions.getSubscribersRequired()).isEqualTo(TARGET_SUBSCRIBER_COUNT);
+  }
+
+  @Test
+  public void createEmpty_shouldCreateEmptySubscriptions() {
+    final PeerSubnetSubscriptions subscriptions =
+        PeerSubnetSubscriptions.createEmpty(currentSchemaDefinitions, sszBitvectorSchema);
+
+    assertThat(subscriptions.getSubscriberCountForAttestationSubnet(0)).isZero();
+    assertThat(subscriptions.getSubscriberCountForSyncCommitteeSubnet(0)).isZero();
+    assertThat(subscriptions.getSubscriberCountForDataColumnSidecarSubnet(0)).isZero();
+
+    assertThat(subscriptions.isAttestationSubnetRelevant(0)).isFalse();
+    assertThat(subscriptions.isSyncCommitteeSubnetRelevant(0)).isFalse();
+    assertThat(subscriptions.isDataColumnSidecarSubnetRelevant(0)).isFalse();
+
+    assertThat(subscriptions.getSubscribersRequired()).isZero();
   }
 
   private PeerSubnetSubscriptions createPeerSubnetSubscriptions() {
