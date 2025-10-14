@@ -28,7 +28,7 @@ public interface ExecutionPayloadFactory {
         @Override
         public SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
             final UInt64 builderIndex, final BeaconBlockAndState blockAndState) {
-          return new SafeFuture<>();
+          return SafeFuture.completedFuture(null);
         }
 
         @Override

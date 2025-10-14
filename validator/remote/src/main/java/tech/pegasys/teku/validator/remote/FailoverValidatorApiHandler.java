@@ -356,8 +356,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   /**
-   * TODO-GLOAS: we need logic similar to {@link #blindedBlockCreatorCache} to call only the beacon
-   * node which created the bid
+   * TODO-GLOAS: https://github.com/Consensys/teku/issues/10008 we need logic similar to {@link
+   * #blindedBlockCreatorCache} to call only the beacon node which created the bid
    */
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
