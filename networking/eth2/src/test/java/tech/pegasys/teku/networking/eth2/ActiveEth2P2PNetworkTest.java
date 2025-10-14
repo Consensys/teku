@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -162,7 +161,6 @@ public class ActiveEth2P2PNetworkTest {
     network.onEpoch(UInt64.ONE);
     asyncRunner.executeDueActions();
     verify(discoveryNetwork).updateGossipTopicScoring(any());
-    verify(discoveryNetwork).setDASTotalCustodyGroupCount(anyInt());
     verify(discoveryNetwork).setNextForkDigest(altairForkDigest);
     verifyNoMoreInteractions(discoveryNetwork);
 
