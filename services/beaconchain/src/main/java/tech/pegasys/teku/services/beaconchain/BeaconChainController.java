@@ -193,6 +193,9 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
+import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -366,6 +369,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
+  protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionProofManager executionProofManager;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
@@ -649,6 +653,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
+    initExecutionPayloadBidManager();
     initSyncCommitteePools();
     initP2PNetwork();
     initCustodyGroupCountManager();
@@ -795,6 +800,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
           dataColumnSidecarManager::onDataColumnSidecarPublish);
     } else {
       dataColumnSidecarManager = DataColumnSidecarManager.NOOP;
+    }
+  }
+
+  protected void initExecutionPayloadBidManager() {
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      executionPayloadBidManager = new DefaultExecutionPayloadBidManager(spec);
+    } else {
+      executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
   }
 
@@ -1390,6 +1403,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayerBlockProductionManager,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
@@ -1652,7 +1666,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960
             .gossipedExecutionPayloadProcessor(OperationProcessor.noop())
             .gossipedPayloadAttestationMessageProcessor(OperationProcessor.noop())
-            .gossipedExecutionPayloadBidProcessor(OperationProcessor.noop())
+            .gossipedExecutionPayloadBidProcessor(
+                (signedBid, arrivalTimestamp) ->
+                    executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
             .reqRespDasLogger(dasReqRespLogger)
             .custodyGroupCountObserver(custodyGroupCountObserver)
