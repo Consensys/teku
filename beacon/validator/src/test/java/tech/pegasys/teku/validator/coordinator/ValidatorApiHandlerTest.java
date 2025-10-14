@@ -1322,17 +1322,17 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedExecutionPayload_shouldPublish() {
+  public void publishSignedExecutionPayload_shouldPublish() {
     final SignedExecutionPayloadEnvelope signedExecutionPayload =
         dataStructureUtil.randomSignedExecutionPayloadEnvelope(5);
-    when(executionPayloadPublisher.sendSignedExecutionPayload(eq(signedExecutionPayload)))
+    when(executionPayloadPublisher.publishSignedExecutionPayload(eq(signedExecutionPayload)))
         .thenReturn(SafeFuture.COMPLETE);
     final SafeFuture<Void> result =
-        validatorApiHandler.sendSignedExecutionPayload(signedExecutionPayload);
+        validatorApiHandler.publishSignedExecutionPayload(signedExecutionPayload);
 
     assertThat(result).isCompleted();
 
-    verify(executionPayloadPublisher).sendSignedExecutionPayload(signedExecutionPayload);
+    verify(executionPayloadPublisher).publishSignedExecutionPayload(signedExecutionPayload);
   }
 
   private boolean validatorIsLive(

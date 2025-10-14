@@ -210,7 +210,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<Void> sendSignedExecutionPayloadBid(
+        public SafeFuture<Void> publishSignedExecutionPayloadBid(
             final SignedExecutionPayloadBid signedExecutionPayloadBid) {
           return SafeFuture.COMPLETE;
         }
@@ -222,7 +222,7 @@ public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface
         }
 
         @Override
-        public SafeFuture<Void> sendSignedExecutionPayload(
+        public SafeFuture<Void> publishSignedExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload) {
           return SafeFuture.COMPLETE;
         }

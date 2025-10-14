@@ -830,7 +830,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayloadBid(
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
     throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
@@ -858,7 +858,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                     "Unable to produce execution payload for slot {} and block {} because parent has optimistically validated payload",
                     slot,
                     blockAndState.getRoot().toUnprefixedHexString());
-                throw new NodeSyncingException();
+                return NodeSyncingException.failedFuture();
               }
               return executionPayloadFactory
                   .createUnsignedExecutionPayload(builderIndex, blockAndState)
@@ -867,9 +867,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayload(
+  public SafeFuture<Void> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    return executionPayloadPublisher.sendSignedExecutionPayload(signedExecutionPayload);
+    return executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload);
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(

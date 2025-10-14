@@ -348,10 +348,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayloadBid(
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
     return relayRequest(
-        apiChannel -> apiChannel.sendSignedExecutionPayloadBid(signedExecutionPayloadBid),
+        apiChannel -> apiChannel.publishSignedExecutionPayloadBid(signedExecutionPayloadBid),
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_BID_METHOD);
   }
 
@@ -368,10 +368,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayload(
+  public SafeFuture<Void> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return relayRequest(
-        apiChannel -> apiChannel.sendSignedExecutionPayload(signedExecutionPayload),
+        apiChannel -> apiChannel.publishSignedExecutionPayload(signedExecutionPayload),
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
   }
 

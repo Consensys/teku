@@ -22,12 +22,12 @@ public interface ExecutionPayloadPublisher {
   ExecutionPayloadPublisher NOOP =
       new ExecutionPayloadPublisher() {
         @Override
-        public SafeFuture<Void> sendSignedExecutionPayload(
+        public SafeFuture<Void> publishSignedExecutionPayload(
             final SignedExecutionPayloadEnvelope signedExecutionPayload) {
           return SafeFuture.COMPLETE;
         }
       };
 
-  SafeFuture<Void> sendSignedExecutionPayload(
+  SafeFuture<Void> publishSignedExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload);
 }

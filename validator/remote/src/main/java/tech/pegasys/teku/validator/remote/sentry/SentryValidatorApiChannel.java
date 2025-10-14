@@ -253,11 +253,11 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayloadBid(
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .sendSignedExecutionPayloadBid(signedExecutionPayloadBid);
+        .publishSignedExecutionPayloadBid(signedExecutionPayloadBid);
   }
 
   @Override
@@ -269,10 +269,10 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayload(
+  public SafeFuture<Void> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .sendSignedExecutionPayload(signedExecutionPayload);
+        .publishSignedExecutionPayload(signedExecutionPayload);
   }
 }

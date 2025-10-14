@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecution
 public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher {
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayload(
+  public SafeFuture<Void> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     throw new UnsupportedOperationException("Not yet implemented");
   }

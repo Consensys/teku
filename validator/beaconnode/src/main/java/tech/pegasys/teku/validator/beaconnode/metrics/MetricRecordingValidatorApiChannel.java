@@ -292,10 +292,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayloadBid(
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
       final SignedExecutionPayloadBid signedExecutionPayloadBid) {
     return countDataRequest(
-        delegate.sendSignedExecutionPayloadBid(signedExecutionPayloadBid),
+        delegate.publishSignedExecutionPayloadBid(signedExecutionPayloadBid),
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_BID_METHOD);
   }
 
@@ -308,10 +308,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> sendSignedExecutionPayload(
+  public SafeFuture<Void> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
     return countDataRequest(
-        delegate.sendSignedExecutionPayload(signedExecutionPayload),
+        delegate.publishSignedExecutionPayload(signedExecutionPayload),
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
   }
 

@@ -31,12 +31,12 @@ public interface BuilderApiChannel {
   SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
       UInt64 slot, UInt64 builderIndex);
 
-  SafeFuture<Void> sendSignedExecutionPayloadBid(
+  SafeFuture<Void> publishSignedExecutionPayloadBid(
       SignedExecutionPayloadBid signedExecutionPayloadBid);
 
   SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
       UInt64 slot, UInt64 builderIndex);
 
-  SafeFuture<Void> sendSignedExecutionPayload(
+  SafeFuture<Void> publishSignedExecutionPayload(
       SignedExecutionPayloadEnvelope signedExecutionPayload);
 }
