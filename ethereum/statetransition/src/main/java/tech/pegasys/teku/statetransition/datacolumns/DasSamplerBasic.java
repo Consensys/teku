@@ -131,7 +131,11 @@ public class DasSamplerBasic
                     slot, blockRoot, custodyGroupCountManagerSupplier.get()));
 
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumns();
-    LOG.info("Missing columns for slot {} root {}: {}", slot, blockRoot, missingColumns.size());
+    LOG.info(
+        "checkDataAvailability(): missing columns for slot {} root {}: {}",
+        slot,
+        blockRoot,
+        missingColumns.size());
 
     SafeFuture.collectAll(
             missingColumns.stream().map(id -> retrieveColumnWithSamplingAndCustody(id, tracker)))
@@ -168,8 +172,11 @@ public class DasSamplerBasic
         .retrieve(id)
         .thenPeek(
             sidecar -> {
-              tracker.add(id, RemoteOrigin.RPC);
-              custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC).finishError(LOG);
+              if (tracker.add(id, RemoteOrigin.RPC)) {
+                // send to custody only if it was added to the tracker
+                // (i.e. not received from other sources in the meantime)
+                custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC).finishError(LOG);
+              }
             });
   }
 
@@ -258,33 +265,38 @@ public class DasSamplerBasic
           slot, blockRoot, samplingRequirement, missingColumns, new SafeFuture<>());
     }
 
-    public void add(final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
-      if (slot.equals(columnIdentifier.slot()) && blockRoot.equals(columnIdentifier.blockRoot())) {
-        LOG.debug("Adding column {} to sampling tracker", columnIdentifier);
-        final boolean removed =
-            missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
-        if (!removed) {
-          LOG.debug(
-              "Column {} was already marked as received, origin: {}", columnIdentifier, origin);
-          return;
-        }
-
-        if (missingColumns.isEmpty()) {
-          LOG.info(
-              "Sampling complete for slot {} root {} via column {} received via {}",
-              slot,
-              blockRoot,
-              columnIdentifier.columnIndex(),
-              origin);
-          completionFuture.complete(samplingRequirement);
-        } else {
-          LOG.debug(
-              "Sampling still pending for slot {} root {}, remaining columns: {}",
-              slot,
-              blockRoot,
-              missingColumns);
-        }
+    public boolean add(
+        final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
+      if (!slot.equals(columnIdentifier.slot())
+          || !blockRoot.equals(columnIdentifier.blockRoot())) {
+        return false;
       }
+
+      LOG.debug("Adding column {} to sampling tracker", columnIdentifier);
+      final boolean removed =
+          missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
+      if (!removed) {
+        LOG.debug("Column {} was already marked as received, origin: {}", columnIdentifier, origin);
+        return false;
+      }
+
+      if (missingColumns.isEmpty()) {
+        LOG.info(
+            "Sampling complete for slot {} root {} via column {} received via {}",
+            slot,
+            blockRoot,
+            columnIdentifier.columnIndex(),
+            origin);
+        completionFuture.complete(samplingRequirement);
+      } else {
+        LOG.debug(
+            "Sampling still pending for slot {} root {}, remaining columns: {}",
+            slot,
+            blockRoot,
+            missingColumns);
+      }
+
+      return true;
     }
 
     private List<DataColumnSlotAndIdentifier> getMissingColumns() {
