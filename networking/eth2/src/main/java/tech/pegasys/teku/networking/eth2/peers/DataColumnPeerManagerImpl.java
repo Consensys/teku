@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStreamPublisher;
@@ -61,6 +62,8 @@ public class DataColumnPeerManagerImpl
     listeners.subscribe(listener);
   }
 
+  // static final private Map<UInt256, Integer> RESPONSE_TIMES_PER_PEER = new ConcurrentHashMap<>();
+
   @Override
   public AsyncStream<DataColumnSidecar> requestDataColumnSidecarsByRoot(
       final UInt256 nodeId, final List<DataColumnsByRootIdentifier> byRootIdentifiers) {
@@ -70,9 +73,28 @@ public class DataColumnPeerManagerImpl
     if (eth2Peer == null) {
       ret.onError(new DataColumnReqResp.DasPeerDisconnectedException());
     } else {
+      var start = System.nanoTime();
       eth2Peer
           .requestDataColumnSidecarsByRoot(byRootIdentifiers, ret::onNext)
-          .finish(__ -> ret.onComplete(), ret::onError);
+          .finish(
+              __ -> {
+                var time = (System.nanoTime() - start) / 1_000_000;
+                var columns =
+                    byRootIdentifiers.stream()
+                        .reduce(0, (a, b) -> a + b.getColumns().size(), Integer::sum);
+                System.out.println(
+                    "DataColumnSidecar byRoot response time: "
+                        + time
+                        + " ms for peer "
+                        + nodeId
+                        + " - average per column ("
+                        + columns
+                        + "): "
+                        + time / columns
+                        + " ms");
+                ret.onComplete();
+              },
+              ret::onError);
     }
     return ret;
   }
@@ -89,10 +111,37 @@ public class DataColumnPeerManagerImpl
     if (eth2Peer == null) {
       ret.onError(new DataColumnReqResp.DasPeerDisconnectedException());
     } else {
+      var start = System.nanoTime();
+      var count = new AtomicInteger(0);
       eth2Peer
           .requestDataColumnSidecarsByRange(
-              startSlot, UInt64.valueOf(slotCount), columnIndices, ret::onNext)
-          .finish(__ -> ret.onComplete(), ret::onError);
+              startSlot,
+              UInt64.valueOf(slotCount),
+              columnIndices,
+              r -> {
+                count.incrementAndGet();
+                return ret.onNext(r);
+              })
+          .finish(
+              __ -> {
+                var time = (System.nanoTime() - start) / 1_000_000;
+                var localCount = count.get();
+                var range = startSlot + " to " + startSlot.plus(slotCount);
+                System.out.println(
+                    "DataColumnSidecar byRange ("
+                        + range
+                        + ") response time: "
+                        + time
+                        + " ms for peer "
+                        + nodeId
+                        + " - average per column ("
+                        + localCount
+                        + "): "
+                        + (localCount != 0 ? time / localCount : "N/A")
+                        + " ms");
+                ret.onComplete();
+              },
+              ret::onError);
     }
     return ret;
   }
