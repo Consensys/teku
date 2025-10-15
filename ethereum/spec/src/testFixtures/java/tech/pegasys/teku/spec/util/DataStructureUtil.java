@@ -145,6 +145,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -3093,6 +3094,10 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope() {
+    return randomExecutionPayloadEnvelope(randomSlot());
+  }
+
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
@@ -3100,9 +3105,15 @@ public final class DataStructureUtil {
             randomExecutionRequests(),
             randomBuilderIndex(),
             randomBytes32(),
-            randomSlot(),
+            slot,
             randomBlobKzgCommitments(),
             randomBytes32());
+  }
+
+  public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope(final long slot) {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadEnvelopeSchema()
+        .create(randomExecutionPayloadEnvelope(UInt64.valueOf(slot)), randomSignature());
   }
 
   public ExecutionProof randomExecutionProof() {
