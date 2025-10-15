@@ -270,6 +270,8 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactoryGloas;
 import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
@@ -282,6 +284,8 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisherGloas;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -695,11 +699,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // TODO: We will eventually need the Gossip in the EP Manager for publishing the proofs we
     // produce?
     // comment for now this will be used in the future
-
-    final ExecutionProofGossipChannel executionProofGossipChannel =
-        eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
-
     if (zkConfig.statelessValidationEnabled()) {
+      final ExecutionProofGossipChannel executionProofGossipChannel =
+                eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
       final ExecutionProofGossipValidator executionProofGossipValidator =
           ExecutionProofGossipValidator.create();
       final SpecVersion specVersionElectra = spec.forMilestone(SpecMilestone.ELECTRA);
@@ -1489,6 +1491,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
+    final ExecutionPayloadFactory executionPayloadFactory;
+    final ExecutionPayloadPublisher executionPayloadPublisher;
+
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      executionPayloadFactory = new ExecutionPayloadFactoryGloas();
+      executionPayloadPublisher = new ExecutionPayloadPublisherGloas();
+    } else {
+      executionPayloadFactory = ExecutionPayloadFactory.NOOP;
+      executionPayloadPublisher = ExecutionPayloadPublisher.NOOP;
+    }
+
     this.validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(
@@ -1515,6 +1528,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
+            blockPublisher,
+            executionPayloadFactory,
+            executionPayloadPublisher);
             blockPublisher,
             executionProofManager);
     eventChannels
