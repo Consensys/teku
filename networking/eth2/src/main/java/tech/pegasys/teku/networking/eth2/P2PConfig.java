@@ -51,8 +51,8 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
   public static final int DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT = 0;
-  public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 120_000;
-  public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 14_000;
+  public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 180_000;
+  public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 40_000;
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
   // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
