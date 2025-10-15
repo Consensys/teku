@@ -46,6 +46,7 @@ public interface GossipForkSubscriptions {
   SafeFuture<Void> publishBlock(SignedBeaconBlock block);
 
   default SafeFuture<Void> publishBlobSidecar(final BlobSidecar blobSidecar) {
+    // since Deneb
     return SafeFuture.COMPLETE;
   }
 
@@ -93,16 +94,17 @@ public interface GossipForkSubscriptions {
     // since Fulu
   }
 
-  default void publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
-    // since Gloas
-  }
-
   default void subscribeToExecutionProofSubnet(final int subnetId) {
     // since Electra
   }
 
   default void unsubscribeFromExecutionProofSubnet(final int subnetId) {
     // since Electra
+  }
+
+  default SafeFuture<Void> publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
+    // since Gloas
+    return SafeFuture.COMPLETE;
   }
 
   default void publishPayloadAttestationMessage(final PayloadAttestationMessage message) {

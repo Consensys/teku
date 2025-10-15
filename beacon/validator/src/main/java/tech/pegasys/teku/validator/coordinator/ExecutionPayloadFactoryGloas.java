@@ -33,8 +33,8 @@ public class ExecutionPayloadFactoryGloas implements ExecutionPayloadFactory {
   }
 
   @Override
-  public List<DataColumnSidecar> createDataColumnSidecars(
+  public SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 }

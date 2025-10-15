@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadBidGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipManager;
@@ -168,8 +169,8 @@ public class GossipForkSubscriptionsGloas extends GossipForkSubscriptionsFulu {
   }
 
   @Override
-  public void publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
-    executionPayloadGossipManager.publish(message);
+  public SafeFuture<Void> publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
+    return executionPayloadGossipManager.publish(message);
   }
 
   @Override

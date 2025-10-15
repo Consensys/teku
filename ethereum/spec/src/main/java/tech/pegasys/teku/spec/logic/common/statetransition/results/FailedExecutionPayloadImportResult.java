@@ -13,15 +13,16 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.results;
 
-import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
-class FailedBlockImportResult implements BlockImportResult {
+class FailedExecutionPayloadImportResult implements ExecutionPayloadImportResult {
+
   private final FailureReason failureReason;
   private final Optional<Throwable> cause;
 
-  FailedBlockImportResult(final FailureReason failureReason, final Optional<Throwable> cause) {
+  FailedExecutionPayloadImportResult(
+      final FailureReason failureReason, final Optional<Throwable> cause) {
     this.failureReason = failureReason;
     this.cause = cause;
   }
@@ -32,7 +33,7 @@ class FailedBlockImportResult implements BlockImportResult {
   }
 
   @Override
-  public SignedBeaconBlock getBlock() {
+  public SignedExecutionPayloadEnvelope getExecutionPayload() {
     return null;
   }
 
@@ -44,24 +45,5 @@ class FailedBlockImportResult implements BlockImportResult {
   @Override
   public Optional<Throwable> getFailureCause() {
     return cause;
-  }
-
-  @Override
-  public boolean hasFailedExecutingExecutionPayload() {
-    return failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION
-        || failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
-  }
-
-  @Override
-  public boolean isDataNotAvailable() {
-    return failureReason == FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("failureReason", failureReason)
-        .add("cause", cause)
-        .toString();
   }
 }
