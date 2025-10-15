@@ -51,6 +51,8 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
   public static final int DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT = 0;
+  public static final int DEFAULT_RECOVERY_TIMEOUT_MS = 120_000;
+  public static final int DEFAULT_DOWNLOAD_TIMEOUT_MS = 14_000;
   // RocksDB is configured with 6 background jobs and threads (DEFAULT_MAX_BACKGROUND_JOBS and
   // DEFAULT_BACKGROUND_THREAD_COUNT)
   // The storage query channel allows up to 10 parallel queries (STORAGE_QUERY_CHANNEL_PARALLELISM)
@@ -81,6 +83,8 @@ public class P2PConfig {
   private final boolean batchVerifyStrictThreadLimitEnabled;
   private final boolean isGossipBlobsAfterBlockEnabled;
   private final boolean allTopicsFilterEnabled;
+  private final int reworkedSidecarRecoveryTimeout;
+  private final int reworkedSidecarDownloadTimeout;
   private final boolean reworkedSidecarRecoveryEnabled;
   private final boolean executionProofTopicEnabled;
 
@@ -105,6 +109,8 @@ public class P2PConfig {
       final boolean allTopicsFilterEnabled,
       final boolean isGossipBlobsAfterBlockEnabled,
       final boolean reworkedSidecarRecoveryEnabled,
+      final int reworkedSidecarRecoveryTimeout,
+      final int reworkedSidecarDownloadTimeout,
       final boolean executionProofTopicEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
@@ -127,6 +133,8 @@ public class P2PConfig {
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
     this.isGossipBlobsAfterBlockEnabled = isGossipBlobsAfterBlockEnabled;
     this.reworkedSidecarRecoveryEnabled = reworkedSidecarRecoveryEnabled;
+    this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
+    this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
     this.executionProofTopicEnabled = executionProofTopicEnabled;
   }
 
@@ -227,6 +235,14 @@ public class P2PConfig {
     return reworkedSidecarRecoveryEnabled;
   }
 
+  public int getReworkedSidecarRecoveryTimeout() {
+    return reworkedSidecarRecoveryTimeout;
+  }
+
+  public int getReworkedSidecarDownloadTimeout() {
+    return reworkedSidecarDownloadTimeout;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -254,6 +270,8 @@ public class P2PConfig {
     private boolean gossipBlobsAfterBlockEnabled = DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED;
     private boolean executionProofTopicEnabled = DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
     private boolean reworkedSidecarRecoveryEnabled = false;
+    private Integer reworkedSidecarRecoveryTimeout = DEFAULT_RECOVERY_TIMEOUT_MS;
+    private Integer reworkedSidecarDownloadTimeout = DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
     private Builder() {}
 
@@ -311,6 +329,8 @@ public class P2PConfig {
           allTopicsFilterEnabled,
           gossipBlobsAfterBlockEnabled,
           reworkedSidecarRecoveryEnabled,
+          reworkedSidecarRecoveryTimeout,
+          reworkedSidecarDownloadTimeout,
           executionProofTopicEnabled);
     }
 
@@ -467,6 +487,16 @@ public class P2PConfig {
 
     public Builder executionProofTopicEnabled(final boolean executionProofTopicEnabled) {
       this.executionProofTopicEnabled = executionProofTopicEnabled;
+      return this;
+    }
+
+    public Builder reworkedSidecarRecoveryTimeout(final Integer reworkedSidecarRecoveryTimeout) {
+      this.reworkedSidecarRecoveryTimeout = reworkedSidecarRecoveryTimeout;
+      return this;
+    }
+
+    public Builder reworkedSidecarDownloadTimeout(final Integer reworkedSidecarDownloadTimeout) {
+      this.reworkedSidecarDownloadTimeout = reworkedSidecarDownloadTimeout;
       return this;
     }
 

@@ -84,6 +84,11 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
     this.recoveryCheckInterval = recoveryCheckInterval;
     this.timeProvider = timeProvider;
     this.custodyGroupCountManagerRef = custodyGroupCountManagerRef;
+
+    LOG.debug(
+        "Download timeout {} ms, recovery timeout {} seconds}",
+        downloadTimeout.toMillis(),
+        recoveryTimeout.toSeconds());
     // reconstruction of all columns is possible with >= 50% of the column data
     this.numberOfColumnsRequiredToReconstruct = Math.ceilDiv(numberOfColumns, 2);
     sidecarRecoveryMetric =
