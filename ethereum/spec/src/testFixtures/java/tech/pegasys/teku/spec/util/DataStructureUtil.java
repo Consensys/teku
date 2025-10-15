@@ -127,7 +127,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloas;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
@@ -146,6 +145,7 @@ import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestat
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationData;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -1474,8 +1474,7 @@ public final class DataStructureUtil {
               if (builder.supportsPayloadAttestations()) {
                 builder.payloadAttestations(
                     randomSszList(
-                        BlindedBeaconBlockBodySchemaGloas.required(schema)
-                            .getPayloadAttestationsSchema(),
+                        BeaconBlockBodySchemaGloas.required(schema).getPayloadAttestationsSchema(),
                         this::randomPayloadAttestation,
                         getMaxPayloadAttestations()));
               }
@@ -2570,9 +2569,13 @@ public final class DataStructureUtil {
 
   public SignedBlockContainer randomSignedBlockContents(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
-    final Optional<SszList<SszKZGCommitment>> maybeBlobKzgCommitments =
-        signedBeaconBlock.getMessage().getBody().getOptionalBlobKzgCommitments();
-    final int numberOfBlobs = maybeBlobKzgCommitments.map(SszList::size).orElse(0);
+    final int numberOfBlobs =
+        signedBeaconBlock
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow()
+            .size();
     final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
     final List<KZGProof> kzgProofs =
         randomKZGProofs(getNumberOfRequiredProofs(slot, numberOfBlobs));
@@ -2600,17 +2603,13 @@ public final class DataStructureUtil {
 
   public BlockContainer randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
-    if (beaconBlock.getBody().getOptionalBlobKzgCommitments().isPresent()) {
-      final int numberOfBlobs =
-          beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
-      final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
-      final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
-      return getDenebSchemaDefinitions(slot)
-          .getBlockContentsSchema()
-          .create(beaconBlock, kzgProofs, blobs);
-    } else {
-      return beaconBlock;
-    }
+    final int numberOfBlobs =
+        beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
+    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
+    return getDenebSchemaDefinitions(slot)
+        .getBlockContentsSchema()
+        .create(beaconBlock, kzgProofs, blobs);
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
@@ -3095,6 +3094,10 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope() {
+    return randomExecutionPayloadEnvelope(randomSlot());
+  }
+
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
@@ -3102,9 +3105,15 @@ public final class DataStructureUtil {
             randomExecutionRequests(),
             randomBuilderIndex(),
             randomBytes32(),
-            randomSlot(),
+            slot,
             randomBlobKzgCommitments(),
             randomBytes32());
+  }
+
+  public SignedExecutionPayloadEnvelope randomSignedExecutionPayloadEnvelope(final long slot) {
+    return getGloasSchemaDefinitions()
+        .getSignedExecutionPayloadEnvelopeSchema()
+        .create(randomExecutionPayloadEnvelope(UInt64.valueOf(slot)), randomSignature());
   }
 
   public ExecutionProof randomExecutionProof() {
