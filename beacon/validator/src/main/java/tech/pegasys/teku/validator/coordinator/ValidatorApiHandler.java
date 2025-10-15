@@ -730,6 +730,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
             __ -> generateAndPublishExecutionProofs(maybeBlindedBlockContainer, isLocallyCreated));
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void generateAndPublishExecutionProofs(
       final SignedBlockContainer maybeBlindedBlockContainer, final boolean isLocallyCreated) {
     if (isLocallyCreated) {

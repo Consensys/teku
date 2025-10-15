@@ -417,7 +417,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth2NetworkConfig.getAsyncP2pMaxThreads(),
             eth2NetworkConfig.getAsyncP2pMaxQueue());
     this.executionProofAsyncRunner =
-        beaconConfig.zkChainConfiguration().isStatelessValidationEnabled()
+        beaconConfig.zkChainConfiguration().statelessValidationEnabled()
             ? Optional.ofNullable(serviceConfig.createAsyncRunner("executionproof", 1))
             : Optional.empty();
     this.operationPoolAsyncRunner = serviceConfig.createAsyncRunner("operationPoolUpdater", 1);
@@ -699,7 +699,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionProofGossipChannel executionProofGossipChannel =
         eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
 
-    if (zkConfig.isStatelessValidationEnabled()) {
+    if (zkConfig.statelessValidationEnabled()) {
       final ExecutionProofGossipValidator executionProofGossipValidator =
           ExecutionProofGossipValidator.create();
       final SpecVersion specVersionElectra = spec.forMilestone(SpecMilestone.ELECTRA);

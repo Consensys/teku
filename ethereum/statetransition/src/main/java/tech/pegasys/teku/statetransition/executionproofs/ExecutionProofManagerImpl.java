@@ -145,7 +145,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
           validatedExecutionProofsByBlockRoot.get(block.getRoot()).stream().toList();
       LOG.debug(
           "Found {} previously validated proofs for block {}", proofs.size(), block.getRoot());
-      if (proofs.size() >= zkConfig.getStatelessMinProofsRequired()) {
+      if (proofs.size() >= zkConfig.statelessMinProofsRequired()) {
         return DataAndValidationResult.validResult(proofs);
       } else {
         return DataAndValidationResult.invalidResult(proofs);
@@ -159,7 +159,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   @Override
   public SafeFuture<Void> generateProofs(final SignedBlockContainer blockContainer) {
 
-    if (!zkConfig.isGenerateExecutionProofsEnabled()) {
+    if (!zkConfig.generateExecutionProofsEnabled()) {
       SafeFuture.completedFuture(null);
     }
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
