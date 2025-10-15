@@ -41,13 +41,13 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
   public SafeFuture<ExecutionProof> generateExecutionProof(
       final SignedBlockContainer blockContainer, final int subnetId) {
 
-      LOG.info("Current thread {}: ", Thread.currentThread().getName());
-      try {
-          Thread.sleep(2000);
-      } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-      }
-      final ExecutionPayload executionPayload = getExecutionPayload(blockContainer);
+    LOG.info("Current thread {}: ", Thread.currentThread().getName());
+    try {
+      Thread.sleep(2000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    final ExecutionPayload executionPayload = getExecutionPayload(blockContainer);
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
     final Bytes32 blockHash = executionPayload.getBlockHash();
     final Bytes dummyWitness =

@@ -416,9 +416,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "p2p",
             eth2NetworkConfig.getAsyncP2pMaxThreads(),
             eth2NetworkConfig.getAsyncP2pMaxQueue());
-      this.executionProofAsyncRunner = beaconConfig.zkChainConfiguration().isStatelessValidationEnabled() ?
-              Optional.ofNullable(serviceConfig.createAsyncRunner(
-                      "executionproof", 1)): Optional.empty();
+    this.executionProofAsyncRunner =
+        beaconConfig.zkChainConfiguration().isStatelessValidationEnabled()
+            ? Optional.ofNullable(serviceConfig.createAsyncRunner("executionproof", 1))
+            : Optional.empty();
     this.operationPoolAsyncRunner = serviceConfig.createAsyncRunner("operationPoolUpdater", 1);
     // there are several operations that may be performed in the das runner, so it has more threads,
     // larger default size. das runner should be separate to the operation pool runner as it's a
@@ -707,14 +708,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final ExecutionProofGenerator executionProofGenerator =
           new ExecutionProofGeneratorImpl(schemaDefinitionsElectra);
 
-
       executionProofManager =
           new ExecutionProofManagerImpl(
               executionProofGossipValidator,
               executionProofGenerator,
               executionProofGossipChannel::publishExecutionProof,
               zkConfig.getStatelessMinProofsRequired(),
-                  executionProofAsyncRunner.get());
+              executionProofAsyncRunner.get());
 
     } else {
       executionProofManager = ExecutionProofManager.NOOP;

@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -151,29 +150,29 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final boolean isProofGenerationEnabled;
 
   public ValidatorApiHandler(
-          final ChainDataProvider chainDataProvider,
-          final NodeDataProvider nodeDataProvider,
-          final NetworkDataProvider networkDataProvider,
-          final CombinedChainDataClient combinedChainDataClient,
-          final SyncStateProvider syncStateProvider,
-          final BlockFactory blockFactory,
-          final AggregatingAttestationPool attestationPool,
-          final AttestationManager attestationManager,
-          final AttestationTopicSubscriber attestationTopicSubscriber,
-          final ActiveValidatorTracker activeValidatorTracker,
-          final DutyMetrics dutyMetrics,
-          final PerformanceTracker performanceTracker,
-          final Spec spec,
-          final ForkChoiceTrigger forkChoiceTrigger,
-          final ProposersDataManager proposersDataManager,
-          final SyncCommitteeMessagePool syncCommitteeMessagePool,
-          final SyncCommitteeContributionPool syncCommitteeContributionPool,
-          final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-          final BlockProductionAndPublishingPerformanceFactory
+      final ChainDataProvider chainDataProvider,
+      final NodeDataProvider nodeDataProvider,
+      final NetworkDataProvider networkDataProvider,
+      final CombinedChainDataClient combinedChainDataClient,
+      final SyncStateProvider syncStateProvider,
+      final BlockFactory blockFactory,
+      final AggregatingAttestationPool attestationPool,
+      final AttestationManager attestationManager,
+      final AttestationTopicSubscriber attestationTopicSubscriber,
+      final ActiveValidatorTracker activeValidatorTracker,
+      final DutyMetrics dutyMetrics,
+      final PerformanceTracker performanceTracker,
+      final Spec spec,
+      final ForkChoiceTrigger forkChoiceTrigger,
+      final ProposersDataManager proposersDataManager,
+      final SyncCommitteeMessagePool syncCommitteeMessagePool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
+      final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
+      final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-          final BlockPublisher blockPublisher,
-          final Optional<ExecutionProofManager> executionProofManager,
-          final boolean isProofGenerationEnabled) {
+      final BlockPublisher blockPublisher,
+      final Optional<ExecutionProofManager> executionProofManager,
+      final boolean isProofGenerationEnabled) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -730,7 +729,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               return SendSignedBlockResult.rejected(reason);
             })
         .alwaysRun(blockPublishingPerformance::complete)
-        .thenPeek( __ -> generateAndPublishExecutionProofs(maybeBlindedBlockContainer, isLocallyCreated));
+        .thenPeek(
+            __ -> generateAndPublishExecutionProofs(maybeBlindedBlockContainer, isLocallyCreated));
   }
 
   private void generateAndPublishExecutionProofs(
