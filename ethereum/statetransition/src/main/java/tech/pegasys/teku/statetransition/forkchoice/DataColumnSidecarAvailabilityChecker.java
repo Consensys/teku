@@ -58,23 +58,26 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
         LOG.debug(
             "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
       }
-      default -> {
-        dataAvailabilitySampler
-            .checkDataAvailability(block.getSlot(), block.getRoot())
-            .finish(
-                sampleIndices -> {
-                  validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
-                },
-                throwable ->
-                    validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
-        dataAvailabilitySampler.flush();
-      }
+      default -> {}
     }
     return true;
   }
 
   @Override
   public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
+    if (validationResult.isDone()) {
+      return validationResult;
+    }
+
+    dataAvailabilitySampler
+        .checkDataAvailability(block.getSlot(), block.getRoot())
+        .finish(
+            sampleIndices -> {
+              validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
+            },
+            throwable ->
+                validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
+    dataAvailabilitySampler.flush();
     return validationResult;
   }
 }
