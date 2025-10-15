@@ -51,7 +51,7 @@ public class DasSamplerBasic
   private final CurrentSlotProvider currentSlotProvider;
   private final DataColumnSidecarDbAccessor db;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsBySlot =
+  private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>();
   private final RecentChainData recentChainData;
 
@@ -81,7 +81,7 @@ public class DasSamplerBasic
   @Override
   public void onAlreadyKnownDataColumn(
       final DataColumnSlotAndIdentifier columnId, final RemoteOrigin remoteOrigin) {
-    recentlySampledColumnsBySlot
+    recentlySampledColumnsByRoot
         .computeIfAbsent(
             columnId.blockRoot(),
             k ->
@@ -92,12 +92,10 @@ public class DasSamplerBasic
 
   public void onNewValidatedDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
-    LOG.debug(
-        "sampling data column {} - origin: {}",
-        () -> DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar),
-        () -> remoteOrigin);
+    LOG.info(
+        "sampling data column {} - origin: {}", dataColumnSidecar::toLogString, () -> remoteOrigin);
 
-    recentlySampledColumnsBySlot
+    recentlySampledColumnsByRoot
         .computeIfAbsent(
             dataColumnSidecar.getBeaconBlockRoot(),
             k ->
@@ -113,7 +111,7 @@ public class DasSamplerBasic
     LOG.info("sampling for block {} - origin: {}", block.toLogString(), remoteOrigin);
 
     if (checkSamplingEligibility(block) == SamplingEligibilityStatus.REQUIRED) {
-      recentlySampledColumnsBySlot.computeIfAbsent(
+      recentlySampledColumnsByRoot.computeIfAbsent(
           block.getRoot(),
           k ->
               DataColumnSamplingTracker.create(
@@ -126,13 +124,14 @@ public class DasSamplerBasic
       final UInt64 slot, final Bytes32 blockRoot) {
 
     final DataColumnSamplingTracker tracker =
-        recentlySampledColumnsBySlot.computeIfAbsent(
+        recentlySampledColumnsByRoot.computeIfAbsent(
             blockRoot,
             k ->
                 DataColumnSamplingTracker.create(
                     slot, blockRoot, custodyGroupCountManagerSupplier.get()));
 
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumns();
+    LOG.info("Missing columns for slot {} root {}: {}", slot, blockRoot, missingColumns.size());
 
     SafeFuture.collectAll(
             missingColumns.stream().map(id -> retrieveColumnWithSamplingAndCustody(id, tracker)))
@@ -222,7 +221,7 @@ public class DasSamplerBasic
   @Override
   public void onSlot(final UInt64 slot) {
     final UInt64 localLastFinalizedSlot = lastFinalizedSlot;
-    recentlySampledColumnsBySlot
+    recentlySampledColumnsByRoot
         .values()
         .removeIf(
             tracker -> {
