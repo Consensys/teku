@@ -1530,8 +1530,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionPerformanceFactory,
             blockPublisher,
             executionPayloadFactory,
-            executionPayloadPublisher);
-            blockPublisher,
+            executionPayloadPublisher,
             executionProofManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
