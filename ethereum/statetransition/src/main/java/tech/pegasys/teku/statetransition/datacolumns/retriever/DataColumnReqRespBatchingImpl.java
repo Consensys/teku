@@ -105,6 +105,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
     final UInt64 firstNonFinalizedSlot =
         spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch()).increment();
+    LOG.info("First non-finalized slot is {}", firstNonFinalizedSlot);
     final List<ByRangeRequest> byRangeRequests =
         generateByRangeRequests(nodeRequests, firstNonFinalizedSlot);
     final List<ByRootRequest> byRootRequests =

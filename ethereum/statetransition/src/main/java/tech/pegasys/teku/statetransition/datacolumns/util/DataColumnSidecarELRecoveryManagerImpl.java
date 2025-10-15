@@ -289,6 +289,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   @Override
   public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
+    LOG.info("New block {} origin: {}", block.toLogString(), remoteOrigin);
     if (isLocalBlockProductionOrRecovered(remoteOrigin)) {
       LOG.debug(
           "Block {} from {} is not subject to recovery",
