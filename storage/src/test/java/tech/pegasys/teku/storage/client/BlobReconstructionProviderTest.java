@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-// TODO
 public class BlobReconstructionProviderTest {
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
   private final Spec spec = TestSpecFactory.createMinimalFulu();
