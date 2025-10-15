@@ -733,9 +733,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private void generateAndPublishExecutionProofs(
       final SignedBlockContainer maybeBlindedBlockContainer, final boolean isLocallyCreated) {
     if (isLocallyCreated && executionProofManager.isPresent()) {
-      executionProofManager
-          .get()
-          .generateProofs(maybeBlindedBlockContainer);
+      executionProofManager.get().generateProofs(maybeBlindedBlockContainer);
     }
   }
 

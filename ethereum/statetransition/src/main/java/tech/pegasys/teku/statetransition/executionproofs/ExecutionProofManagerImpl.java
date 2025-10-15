@@ -159,7 +159,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   @Override
   public SafeFuture<Void> generateProofs(final SignedBlockContainer blockContainer) {
 
-    if(!zkConfig.isGenerateExecutionProofsEnabled()){
+    if (!zkConfig.isGenerateExecutionProofsEnabled()) {
       SafeFuture.completedFuture(null);
     }
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
