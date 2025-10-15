@@ -191,6 +191,10 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnReqResp
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
+import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
+import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -262,6 +266,8 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactoryGloas;
 import tech.pegasys.teku.validator.coordinator.FutureBlockProductionPreparationTrigger;
 import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
@@ -274,6 +280,8 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisherGloas;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -358,9 +366,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
+  protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionProofManager executionProofManager;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
-  protected volatile Optional<RecoveringSidecarRetriever> recoveringSidecarRetriever =
+  protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
   protected volatile DataAvailabilitySampler dataAvailabilitySampler;
@@ -483,7 +492,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
                   dasCustodySync.ifPresent(DasCustodySync::start);
-                  recoveringSidecarRetriever.ifPresent(RecoveringSidecarRetriever::start);
+                  recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::start);
                 }))
         .finish(
             error -> {
@@ -520,7 +529,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
                   dasCustodySync.ifPresent(DasCustodySync::stop);
-                  recoveringSidecarRetriever.ifPresent(RecoveringSidecarRetriever::stop);
+                  recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::stop);
                 }))
         .thenRun(forkChoiceExecutor::stop);
   }
@@ -582,6 +591,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         .thenRun(this::initAll)
         .thenRun(
             () -> {
+              // complete spec initialization
+              spec.initialize(blobSidecarManager, dasSamplerManager, kzg);
+
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               recentChainData.subscribeBestBlockInitialized(this::startServices);
             })
@@ -638,6 +650,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGenesisHandler();
     initAttestationManager();
     initBlockManager();
+    initExecutionPayloadBidManager();
     initSyncCommitteePools();
     initP2PNetwork();
     initCustodyGroupCountManager();
@@ -739,14 +752,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
           MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
       blobSidecarValidator =
           BlobSidecarGossipValidator.create(
-              spec, invalidBlockRoots, gossipValidationHelper, miscHelpers, kzg);
+              spec, invalidBlockRoots, gossipValidationHelper, miscHelpers);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
               spec,
               recentChainData,
               blockBlobSidecarsTrackersPool,
               blobSidecarValidator,
-              kzg,
               futureBlobSidecars,
               invalidBlobSidecarRoots);
       eventChannels.subscribe(SlotEventsChannel.class, blobSidecarManagerImpl);
@@ -760,7 +772,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   private void initDasSamplerManager() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
       LOG.info("Activated DAS Sampler Manager for Fulu");
-      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, kzg, spec);
+      this.dasSamplerManager = new DasSamplerManager(() -> dataAvailabilitySampler, spec);
     } else {
       LOG.info("Using NOOP DAS Sampler Manager");
       this.dasSamplerManager = DasSamplerManager.NOOP;
@@ -775,7 +787,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               invalidBlockRoots,
               gossipValidationHelper,
               MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
-              kzg,
               metricsSystem,
               timeProvider);
       dataColumnSidecarManager =
@@ -786,6 +797,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
           dataColumnSidecarManager::onDataColumnSidecarPublish);
     } else {
       dataColumnSidecarManager = DataColumnSidecarManager.NOOP;
+    }
+  }
+
+  protected void initExecutionPayloadBidManager() {
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      executionPayloadBidManager = new DefaultExecutionPayloadBidManager(spec);
+    } else {
+      executionPayloadBidManager = ExecutionPayloadBidManager.NOOP;
     }
   }
 
@@ -862,7 +881,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasAsyncRunner,
             spec,
             miscHelpersFulu,
-            kzg,
             dataColumnSidecarGossipChannel::publishDataColumnSidecar,
             this::getCustodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
@@ -917,18 +935,32 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasAsyncRunner,
             Duration.ofSeconds(1));
 
-    final RecoveringSidecarRetriever recoveringSidecarRetriever =
-        new RecoveringSidecarRetriever(
-            sidecarRetriever,
-            kzg,
-            miscHelpersFulu,
-            canonicalBlockResolver,
-            dbAccessor,
-            dasAsyncRunner,
-            Duration.ofMinutes(5),
-            Duration.ofSeconds(30),
-            timeProvider,
-            specConfigFulu.getNumberOfColumns());
+    final DataColumnSidecarRetriever recoveringSidecarRetriever;
+    if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
+      recoveringSidecarRetriever =
+          new SidecarRetriever(
+              sidecarRetriever,
+              miscHelpersFulu,
+              dbAccessor,
+              dasAsyncRunner,
+              Duration.ofMinutes(5),
+              Duration.ofSeconds(30),
+              timeProvider,
+              specConfigFulu.getNumberOfColumns(),
+              metricsSystem);
+    } else {
+      recoveringSidecarRetriever =
+          new RecoveringSidecarRetriever(
+              sidecarRetriever,
+              miscHelpersFulu,
+              canonicalBlockResolver,
+              dbAccessor,
+              dasAsyncRunner,
+              Duration.ofMinutes(5),
+              Duration.ofSeconds(30),
+              timeProvider,
+              specConfigFulu.getNumberOfColumns());
+    }
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
@@ -1041,7 +1073,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               beaconAsyncRunner,
               recentChainData,
               executionLayer,
-              kzg,
               dataColumnSidecarGossipChannel::publishDataColumnSidecars,
               this::getCustodyGroupCountManager,
               metricsSystem,
@@ -1234,8 +1265,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             forkChoiceExecutor,
             recentChainData,
-            blobSidecarManager,
-            dasSamplerManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -1382,9 +1411,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayerBlockProductionManager,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider);
-    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector, kzg);
+    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -1440,6 +1470,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dutyMetrics,
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
+    final ExecutionPayloadFactory executionPayloadFactory;
+    final ExecutionPayloadPublisher executionPayloadPublisher;
+
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      executionPayloadFactory = new ExecutionPayloadFactoryGloas();
+      executionPayloadPublisher = new ExecutionPayloadPublisherGloas();
+    } else {
+      executionPayloadFactory = ExecutionPayloadFactory.NOOP;
+      executionPayloadPublisher = ExecutionPayloadPublisher.NOOP;
+    }
+
     this.validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(
@@ -1466,7 +1507,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
-            blockPublisher);
+            blockPublisher,
+            executionPayloadFactory,
+            executionPayloadPublisher);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)
@@ -1638,7 +1681,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960
             .gossipedExecutionPayloadProcessor(OperationProcessor.noop())
             .gossipedPayloadAttestationMessageProcessor(OperationProcessor.noop())
-            .gossipedExecutionPayloadBidProcessor(OperationProcessor.noop())
+            .gossipedExecutionPayloadBidProcessor(
+                (signedBid, arrivalTimestamp) ->
+                    executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))
             .gossipDasLogger(dasGossipLogger)
             .reqRespDasLogger(dasReqRespLogger)
             .processedAttestationSubscriptionProvider(
@@ -1649,7 +1694,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .keyValueStore(keyValueStore)
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
-            .kzg(kzg)
             .recordMessageArrival(true)
             .p2pDebugDataDumper(debugDataDumper)
             .build();

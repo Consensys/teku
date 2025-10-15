@@ -219,6 +219,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
             graffitiBuilder,
             forkChoiceNotifier,
             executionLayer,
+            executionPayloadBidManager,
             metricsSystem,
             timeProvider));
   }

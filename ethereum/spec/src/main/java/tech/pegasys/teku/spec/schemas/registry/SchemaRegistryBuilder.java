@@ -55,7 +55,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SI
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DATA_COLUMN_SIDECAR_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.DEPOSIT_REQUEST_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA;
-import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_AVAILABILITY_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_BID_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA;
@@ -128,20 +127,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bli
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectraImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloasImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BlindedBeaconBlockBodySchemaGloasImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.BlockContentsSchemaFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.fulu.SignedBlockContentsSchemaFulu;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BlobsBundleSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.electra.BuilderBidSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.BlobsBundleSchemaFulu;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBidSchema;
@@ -271,7 +268,6 @@ public class SchemaRegistryBuilder {
         .addProvider(createProposerLookaheadSchemaProvider())
         .addProvider(createDataColumnSidecarsByRootRequestMessageSchemaProvider())
         .addProvider(createDataColumnSidecarsByRangeRequestMessageSchemaProvider())
-        .addProvider(createExecutionPayloadAndBlobsCellBundleSchemaProvider())
 
         // GLOAS
         .addProvider(createBuilderPendingWithdrawalSchemaProvider())
@@ -410,15 +406,6 @@ public class SchemaRegistryBuilder {
         .build();
   }
 
-  private static SchemaProvider<?> createExecutionPayloadAndBlobsCellBundleSchemaProvider() {
-    return providerBuilder(EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA)
-        .withCreator(
-            FULU,
-            (registry, specConfig, schemaName) ->
-                new ExecutionPayloadAndBlobsCellBundleSchema(registry))
-        .build();
-  }
-
   private static SchemaProvider<?> createBeaconStateSchemaProvider() {
     return providerBuilder(BEACON_STATE_SCHEMA)
         .withCreator(
@@ -522,11 +509,6 @@ public class SchemaRegistryBuilder {
             (registry, specConfig, schemaName) ->
                 BlindedBeaconBlockBodySchemaElectraImpl.create(
                     SpecConfigElectra.required(specConfig), schemaName, registry))
-        .withCreator(
-            GLOAS,
-            (registry, specConfig, schemaName) ->
-                BlindedBeaconBlockBodySchemaGloasImpl.create(
-                    SpecConfigGloas.required(specConfig), schemaName, registry))
         .build();
   }
 

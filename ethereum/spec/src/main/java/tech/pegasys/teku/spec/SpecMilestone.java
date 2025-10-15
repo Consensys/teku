@@ -56,6 +56,14 @@ public enum SpecMilestone {
     return compareTo(other) < 0;
   }
 
+  /**
+   * Returns true if this milestone is in the [{@code start}, {@code end}] range (start included,
+   * end included).
+   */
+  public boolean isBetween(final SpecMilestone start, final SpecMilestone end) {
+    return isGreaterThanOrEqualTo(start) && isLessThanOrEqualTo(end);
+  }
+
   /** Returns the milestone prior to this milestone */
   @SuppressWarnings("EnumOrdinal")
   public SpecMilestone getPreviousMilestone() {

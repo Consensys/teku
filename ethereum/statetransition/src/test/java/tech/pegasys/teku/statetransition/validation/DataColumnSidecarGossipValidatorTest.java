@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -52,7 +51,6 @@ public class DataColumnSidecarGossipValidatorTest {
   private final Map<Bytes32, BlockImportResult> invalidBlocks = new HashMap<>();
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
   private final MiscHelpersFulu miscHelpersFulu = mock(MiscHelpersFulu.class);
-  private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystemStub = new StubMetricsSystem();
   private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
   private DataStructureUtil dataStructureUtil;
@@ -78,7 +76,6 @@ public class DataColumnSidecarGossipValidatorTest {
             invalidBlocks,
             gossipValidationHelper,
             miscHelpersFulu,
-            kzg,
             metricsSystemStub,
             stubTimeProvider);
 
@@ -112,7 +109,7 @@ public class DataColumnSidecarGossipValidatorTest {
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), eq(proposerIndex), any(), eq(postState)))
         .thenReturn(true);
-    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(), any(DataColumnSidecar.class)))
+    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(DataColumnSidecar.class)))
         .thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecarInclusionProof(any())).thenReturn(true);
     when(miscHelpersFulu.verifyDataColumnSidecar(any())).thenReturn(true);
@@ -217,7 +214,7 @@ public class DataColumnSidecarGossipValidatorTest {
 
   @TestTemplate
   void shouldRejectIfKzgVerificationFailed() {
-    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(), any(DataColumnSidecar.class)))
+    when(miscHelpersFulu.verifyDataColumnSidecarKzgProofs(any(DataColumnSidecar.class)))
         .thenReturn(false);
 
     SafeFutureAssert.assertThatSafeFuture(validator.validate(dataColumnSidecar))
@@ -269,7 +266,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper)
@@ -281,7 +278,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     verify(miscHelpersFulu, never()).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu, never()).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu, never()).verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
@@ -294,7 +291,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecar);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper)
@@ -310,7 +307,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecar0);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecar0);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecar0);
     verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
     verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
     verify(gossipValidationHelper, never())
@@ -343,7 +340,7 @@ public class DataColumnSidecarGossipValidatorTest {
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
 
     verify(miscHelpersFulu).verifyDataColumnSidecarInclusionProof(dataColumnSidecarNew);
-    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(kzg, dataColumnSidecarNew);
+    verify(miscHelpersFulu).verifyDataColumnSidecarKzgProofs(dataColumnSidecarNew);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
   }
 
@@ -361,7 +358,6 @@ public class DataColumnSidecarGossipValidatorTest {
             invalidBlocks,
             gossipValidationHelper,
             miscHelpersFulu,
-            kzg,
             metricsSystemStub,
             stubTimeProvider);
     // Accept everything

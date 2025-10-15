@@ -55,4 +55,8 @@ public interface DataColumnSidecarRetriever {
               + maybeCanonicalBlock.map(BeaconBlock::getRoot));
     }
   }
+
+  void start();
+
+  void stop();
 }
