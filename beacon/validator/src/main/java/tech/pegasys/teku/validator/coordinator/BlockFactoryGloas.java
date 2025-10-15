@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import com.google.common.base.Preconditions;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
@@ -39,18 +40,22 @@ public class BlockFactoryGloas extends BlockFactoryPhase0 {
       final BeaconBlockAndState blockAndState) {
     final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
     final BeaconBlock block = blockAndState.getBlock();
+    final UInt256 blockExecutionValue = slotCaches.getBlockExecutionValue();
     return new BlockContainerAndMetaData(
         block,
         spec.atSlot(blockAndState.getSlot()).getMilestone(),
-        // use value from the bid for the execution_payload_value field (TBD)
-        GWEI_TO_WEI.multiply(
-            block
-                .getBody()
-                .getOptionalSignedExecutionPayloadBid()
-                .orElseThrow()
-                .getMessage()
-                .getValue()
-                .longValue()),
+        blockExecutionValue.isZero()
+            // use value from the bid for the execution_payload_value field if not set in the cache
+            // (TBD)
+            ? GWEI_TO_WEI.multiply(
+                block
+                    .getBody()
+                    .getOptionalSignedExecutionPayloadBid()
+                    .orElseThrow()
+                    .getMessage()
+                    .getValue()
+                    .longValue())
+            : blockExecutionValue,
         GWEI_TO_WEI.multiply(slotCaches.getBlockProposerRewards().longValue()));
   }
 
