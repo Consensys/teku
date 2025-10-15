@@ -3098,6 +3098,11 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
+    return randomExecutionPayloadEnvelope(slot, randomBlobKzgCommitments());
+  }
+
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(
+      final UInt64 slot, final SszList<SszKZGCommitment> kzgCommitments) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
@@ -3106,7 +3111,7 @@ public final class DataStructureUtil {
             randomBuilderIndex(),
             randomBytes32(),
             slot,
-            randomBlobKzgCommitments(),
+            kzgCommitments,
             randomBytes32());
   }
 
