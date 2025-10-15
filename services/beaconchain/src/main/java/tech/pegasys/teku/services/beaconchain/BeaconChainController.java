@@ -713,7 +713,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionProofGossipValidator,
               executionProofGenerator,
               executionProofGossipChannel::publishExecutionProof,
-              zkConfig,
+              zkConfig.generateExecutionProofsEnabled(),
+              zkConfig.statelessMinProofsRequired(),
               executionProofAsyncRunner.get());
 
     } else {
