@@ -713,7 +713,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionProofGossipValidator,
               executionProofGenerator,
               executionProofGossipChannel::publishExecutionProof,
-              zkConfig.getStatelessMinProofsRequired(),
+              zkConfig,
               executionProofAsyncRunner.get());
 
     } else {
@@ -1515,8 +1515,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager,
             blockProductionPerformanceFactory,
             blockPublisher,
-            Optional.of(executionProofManager),
-            beaconConfig.zkChainConfiguration().isGenerateExecutionProofsEnabled());
+            Optional.of(executionProofManager));
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)

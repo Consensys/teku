@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
@@ -50,7 +51,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private final Map<Bytes32, Set<ExecutionProof>> validatedExecutionProofsByBlockRoot =
       new ConcurrentHashMap<>();
   private final Consumer<ExecutionProof> onCreatedProof;
-  private final int minProofsRequired;
+  private final ZkChainConfiguration zkConfig;
   private static final Logger LOG = LogManager.getLogger();
   private final int attemptsToGetProof = 3;
   final ExecutionProofGenerator executionProofGenerator;
@@ -60,11 +61,11 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       final ExecutionProofGossipValidator executionProofGossipValidator,
       final ExecutionProofGenerator executionProofGenerator,
       final Consumer<ExecutionProof> onCreatedProof,
-      final int minProofsRequired,
+      final ZkChainConfiguration zkConfig,
       final AsyncRunner asyncRunner) {
     this.executionProofGossipValidator = executionProofGossipValidator;
     this.onCreatedProof = onCreatedProof;
-    this.minProofsRequired = minProofsRequired;
+    this.zkConfig = zkConfig;
     this.executionProofGenerator = executionProofGenerator;
     this.asyncRunner = asyncRunner;
   }
@@ -144,7 +145,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
           validatedExecutionProofsByBlockRoot.get(block.getRoot()).stream().toList();
       LOG.debug(
           "Found {} previously validated proofs for block {}", proofs.size(), block.getRoot());
-      if (proofs.size() >= minProofsRequired) {
+      if (proofs.size() >= zkConfig.getStatelessMinProofsRequired()) {
         return DataAndValidationResult.validResult(proofs);
       } else {
         return DataAndValidationResult.invalidResult(proofs);
@@ -157,6 +158,10 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public SafeFuture<Void> generateProofs(final SignedBlockContainer blockContainer) {
+
+    if(!zkConfig.isGenerateExecutionProofsEnabled()){
+      SafeFuture.completedFuture(null);
+    }
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
 
     asyncRunner.runAsync(

@@ -147,7 +147,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
   private final Optional<ExecutionProofManager> executionProofManager;
-  private final boolean isProofGenerationEnabled;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -171,8 +170,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
-      final Optional<ExecutionProofManager> executionProofManager,
-      final boolean isProofGenerationEnabled) {
+      final Optional<ExecutionProofManager> executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -196,7 +194,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.blockPublisher = blockPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     this.executionProofManager = executionProofManager;
-    this.isProofGenerationEnabled = isProofGenerationEnabled;
   }
 
   @Override
@@ -735,19 +732,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
 
   private void generateAndPublishExecutionProofs(
       final SignedBlockContainer maybeBlindedBlockContainer, final boolean isLocallyCreated) {
-    if (isLocallyCreated && executionProofManager.isPresent() && isProofGenerationEnabled) {
+    if (isLocallyCreated && executionProofManager.isPresent()) {
       executionProofManager
           .get()
-          .generateProofs(maybeBlindedBlockContainer)
-          .finish(
-              () ->
-                  LOG.info(
-                      "proofs generated for block {}",
-                      maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()),
-              error ->
-                  LOG.error(
-                      "Failed to generate execution proofs for block {}",
-                      maybeBlindedBlockContainer.getSignedBlock().getMessage().getSlot()));
+          .generateProofs(maybeBlindedBlockContainer);
     }
   }
 
