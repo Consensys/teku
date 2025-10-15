@@ -146,7 +146,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final BlockPublisher blockPublisher;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
-  private final Optional<ExecutionProofManager> executionProofManager;
+  private final ExecutionProofManager executionProofManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -170,7 +170,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
-      final Optional<ExecutionProofManager> executionProofManager) {
+      final ExecutionProofManager executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
