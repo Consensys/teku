@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -101,6 +101,8 @@ public class DasCustodyStand {
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
     this.custodyGroupCountManager =
         createCustodyGroupCountManager(totalCustodyGroupCount, samplingGroupCount);
+    final FutureValueObserver<Integer> custodyGroupCountProvider = new FutureValueObserver<>();
+    custodyGroupCountProvider.complete(c -> c.onValueChanged(totalCustodyGroupCount));
     this.custody =
         new DataColumnSidecarCustodyImpl(
             spec,
@@ -108,8 +110,7 @@ public class DasCustodyStand {
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             () -> custodyGroupCountManager,
-            SafeFuture.completedFuture(
-                observer -> observer.onValueChanged(totalCustodyGroupCount)));
+            custodyGroupCountProvider);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 

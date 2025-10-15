@@ -23,9 +23,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -47,7 +49,7 @@ public class DasLongPollCustodyTest {
   final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
 
-  final Spec spec = TestSpecFactory.createMinimalFulu();
+  static final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
   final Duration dbDelay = ofMillis(5);
   final DelayedDasDb delayedDb = new DelayedDasDb(db, stubAsyncRunner, dbDelay);
@@ -57,9 +59,10 @@ public class DasLongPollCustodyTest {
   final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
   final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier =
       () -> custodyGroupCountManager;
-  final SpecConfigFulu config =
+  static final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-  final int groupCount = config.getNumberOfCustodyGroups();
+  static final int groupCount = config.getNumberOfCustodyGroups();
+  static final FutureValueObserver<Integer> custodyGroupCountProvider = new FutureValueObserver<>();
 
   final DataColumnSidecarCustodyImpl custodyImpl =
       new DataColumnSidecarCustodyImpl(
@@ -68,7 +71,7 @@ public class DasLongPollCustodyTest {
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
           custodyGroupCountManagerSupplier,
-          SafeFuture.completedFuture(observer -> observer.onValueChanged(groupCount)));
+          custodyGroupCountProvider);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
   private final Duration currentSlotTimeout = ofSeconds(3);
@@ -96,6 +99,11 @@ public class DasLongPollCustodyTest {
       stubTimeProvider.advanceTimeBy(ofMillis(1));
       stubAsyncRunner.executeDueActionsRepeatedly();
     }
+  }
+
+  @BeforeAll
+  public static void setup() {
+    custodyGroupCountProvider.complete(consumer -> consumer.onValueChanged(groupCount));
   }
 
   @Test

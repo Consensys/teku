@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,7 +32,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
-import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -102,7 +101,7 @@ public class DataColumnSidecarCustodyImpl
       final DataColumnSidecarDbAccessor db,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
-      final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountObserver) {
+      final FutureValueObserver<Integer> custodyGroupCountProvider) {
     checkNotNull(spec);
     checkNotNull(blockResolver);
     checkNotNull(minCustodyPeriodSlotCalculator);
@@ -113,10 +112,7 @@ public class DataColumnSidecarCustodyImpl
     this.blockResolver = blockResolver;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
-    custodyGroupCountObserver
-        .thenPeek(
-            valueObserverConsumer -> valueObserverConsumer.accept(totalCustodyGroupCount::set))
-        .finishDebug(LOG);
+    custodyGroupCountProvider.subscribe(totalCustodyGroupCount::set);
     LOG.debug(
         "Initialized DataColumnSidecar Custody with custody group count {}",
         totalCustodyGroupCount);

@@ -18,19 +18,14 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 
 public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
@@ -44,13 +39,11 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
       final Spec spec,
       final Eth2P2PNetwork eth2P2PNetwork,
       final UInt256 nodeId,
-      final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountProvider) {
+      final FutureValueObserver<Integer> samplingGroupCountProvider) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    samplingGroupCountProvider
-        .thenPeek(onValueChange -> onValueChange.accept(totalGroupCount::set))
-        .finishDebug(LOG);
+    samplingGroupCountProvider.subscribe(totalGroupCount::set);
   }
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {

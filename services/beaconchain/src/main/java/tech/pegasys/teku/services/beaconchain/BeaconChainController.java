@@ -35,7 +35,6 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
@@ -72,12 +71,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
@@ -315,12 +314,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   private final AsyncRunner operationPoolAsyncRunner;
   private final AsyncRunner dasAsyncRunner;
-  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountProvider =
-      new SafeFuture<>();
-  private final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedProvider =
-      new SafeFuture<>();
-  private final SafeFuture<Consumer<ValueObserver<Integer>>> samplingGroupCountProvider =
-      new SafeFuture<>();
+  private final FutureValueObserver<Integer> custodyGroupCountProvider =
+      new FutureValueObserver<>();
+  private final FutureValueObserver<Integer> custodyGroupCountSyncedProvider =
+      new FutureValueObserver<>();
+  private final FutureValueObserver<Integer> samplingGroupCountProvider =
+      new FutureValueObserver<>();
+
   protected final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
       new AtomicReference<>(CustodyGroupCountManager.NOOP);
   protected final AtomicReference<DataColumnSidecarRecoveringCustody> dataColumnSidecarCustodyRef =
@@ -1615,13 +1615,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     PortAvailability.checkPortsAvailable(
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(), maybeUdpPort);
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
-    custodyGroupCountSyncedProvider
-        .thenPeek(
-            onValueChanged ->
-                onValueChanged.accept(
-                    newValue ->
-                        metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(newValue))))
-        .finishDebug(LOG);
+    custodyGroupCountSyncedProvider.subscribe(
+        newValue -> metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(newValue)));
 
     // Using a throttled historical query retrieval when handling RPC requests to avoid
     // overwhelming the node in case of various DDOS attacks
@@ -1696,17 +1691,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
-    custodyGroupCountSyncedProvider
-        .thenPeek(
-            onValueChanged ->
-                onValueChanged.accept(
-                    newCgc ->
-                        p2pNetwork
-                            .getDiscoveryNetwork()
-                            .ifPresent(
-                                discoveryNetwork ->
-                                    discoveryNetwork.setDASTotalCustodyGroupCount(newCgc))))
-        .finishDebug(LOG);
+    custodyGroupCountSyncedProvider.subscribe(
+        newValue ->
+            p2pNetwork
+                .getDiscoveryNetwork()
+                .ifPresent(
+                    discoveryNetwork -> discoveryNetwork.setDASTotalCustodyGroupCount(newValue)));
     this.nodeId =
         p2pNetwork
             .getDiscoveryNodeId()
