@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.epbs.versions.gloas;
 
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -44,5 +45,10 @@ public class SignedExecutionPayloadEnvelope
   @Override
   public SignedExecutionPayloadEnvelopeSchema getSchema() {
     return (SignedExecutionPayloadEnvelopeSchema) super.getSchema();
+  }
+
+  public String toLogString() {
+    return LogFormatter.formatExecutionPayload(
+        getMessage().getSlot(), getMessage().getBeaconBlockRoot(), getMessage().getBuilderIndex());
   }
 }
