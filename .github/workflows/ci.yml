@@ -254,7 +254,7 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/junit-reports
+      - uses: ./.github/actions/collate-junit-reports
         if: always()        
         with:
           stage_key: unit
@@ -279,7 +279,7 @@ jobs:
         run: |
           ./gradlew integrationTest
       - name: Test results 
-        uses: ./.github/actions/test-results
+        uses: ./.github/actions/collate-test-results
         if: always()        
         with:
           stage_key: 'integration'
@@ -303,7 +303,7 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/junit-reports
+      - uses: ./.github/actions/collate-junit-reports
         if: always()        
         with:
           stage_key: property
@@ -327,7 +327,7 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/junit-reports
+      - uses: ./.github/actions/collate-junit-reports
         if: always()        
         with:
           stage_key: acceptance
@@ -482,7 +482,7 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/junit-reports
+      - uses: ./.github/actions/collate-junit-reports
         if: always()
         with:
           stage_key: reference
