@@ -93,16 +93,16 @@ public interface GossipForkSubscriptions {
     // since Fulu
   }
 
-  default void publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
-    // since Gloas
-  }
-
   default void subscribeToExecutionProofSubnet(final int subnetId) {
     // since Electra
   }
 
   default void unsubscribeFromExecutionProofSubnet(final int subnetId) {
     // since Electra
+  }
+
+  default void publishExecutionPayload(final SignedExecutionPayloadEnvelope message) {
+    // since Gloas
   }
 
   default void publishPayloadAttestationMessage(final PayloadAttestationMessage message) {
