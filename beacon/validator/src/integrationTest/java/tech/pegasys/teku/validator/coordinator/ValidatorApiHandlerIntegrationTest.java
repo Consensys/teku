@@ -79,6 +79,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
 @TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.DENEB})
@@ -114,6 +115,10 @@ public class ValidatorApiHandlerIntegrationTest {
   private final NetworkDataProvider networkDataProvider = mock(NetworkDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  private final ExecutionPayloadFactory executionPayloadFactory =
+      mock(ExecutionPayloadFactory.class);
+  private final ExecutionPayloadPublisher executionPayloadPublisher =
+      mock(ExecutionPayloadPublisher.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
@@ -203,7 +208,9 @@ public class ValidatorApiHandlerIntegrationTest {
                 blobSidecarGossipChannel,
                 dataColumnSidecarGossipChannel,
                 dutyMetrics,
-                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED));
+                P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
+            executionPayloadFactory,
+            executionPayloadPublisher);
   }
 
   @TestTemplate

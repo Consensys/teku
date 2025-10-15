@@ -29,22 +29,18 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessor
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
 public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
-  private final SpecConfigFulu configFulu;
-  private final MiscHelpersFulu miscHelpersFulu;
 
   public BeaconStateAccessorsFulu(
       final SpecConfig config,
       final PredicatesElectra predicatesElectra,
       final MiscHelpersFulu miscHelpers) {
     super(SpecConfigFulu.required(config), predicatesElectra, miscHelpers);
-    configFulu = config.toVersionFulu().orElseThrow();
-    this.miscHelpersFulu = miscHelpers;
   }
 
   @Override
   protected void validateStateCanCalculateProposerIndexAtSlot(
       final BeaconState state, final UInt64 requestedSlot) {
-    final UInt64 epoch = miscHelpersFulu.computeEpochAtSlot(requestedSlot);
+    final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
     final UInt64 stateEpoch = getCurrentEpoch(state);
     checkArgument(
         epoch.equals(stateEpoch) || stateEpoch.increment().equals(epoch),
@@ -58,7 +54,7 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
   @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
-    final int lookaheadIndex = requestedSlot.mod(configFulu.getSlotsPerEpoch()).intValue();
+    final int lookaheadIndex = requestedSlot.mod(config.getSlotsPerEpoch()).intValue();
     return BeaconStateFulu.required(state)
         .getProposerLookahead()
         .get(lookaheadIndex)
