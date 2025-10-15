@@ -54,4 +54,10 @@ public class DelayedDataColumnSidecarRetriever implements DataColumnSidecarRetri
 
   @Override
   public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {}
+
+  @Override
+  public void start() {}
+
+  @Override
+  public void stop() {}
 }

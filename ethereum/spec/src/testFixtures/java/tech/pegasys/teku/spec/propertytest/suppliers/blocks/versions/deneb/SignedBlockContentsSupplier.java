@@ -21,6 +21,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class SignedBlockContentsSupplier extends DataStructureUtilSupplier<SignedBlockContainer> {
 
   public SignedBlockContentsSupplier() {
-    super(DataStructureUtil::randomSignedBlockContents, SpecMilestone.DENEB);
+    super(DataStructureUtil::randomSignedBlockContents, SpecMilestone.DENEB, SpecMilestone.FULU);
   }
 }

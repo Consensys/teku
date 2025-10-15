@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.NoOpKZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -94,7 +93,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
           stubAsyncRunner,
           spec,
           miscHelpersFulu,
-          NoOpKZG.INSTANCE,
           dataColumnSidecarPublisher,
           () ->
               createCustodyGroupCountManager(
@@ -119,7 +117,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
             stubAsyncRunner,
             spec,
             miscHelpersFulu,
-            NoOpKZG.INSTANCE,
             dataColumnSidecarPublisher,
             () -> createCustodyGroupCountManager(0, config.getSamplesPerSlot()),
             config.getNumberOfColumns(),
@@ -140,7 +137,6 @@ public class DataColumnSidecarRecoveringCustodyTest {
             stubAsyncRunner,
             spec,
             miscHelpersFulu,
-            NoOpKZG.INSTANCE,
             dataColumnSidecarPublisher,
             () -> CustodyGroupCountManager.NOOP,
             config.getNumberOfColumns(),
@@ -168,12 +164,12 @@ public class DataColumnSidecarRecoveringCustodyTest {
         .limit(70)
         .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeQueuedActions();
     stubAsyncRunner.executeQueuedActions();
 
-    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection(), any());
+    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection());
 
     columnIndices
         .get()
@@ -255,13 +251,13 @@ public class DataColumnSidecarRecoveringCustodyTest {
         .limit(70)
         .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(2);
     stubAsyncRunner.executeDueActionsRepeatedly();
 
-    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection(), any());
+    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection());
 
     // post reconstructed
     verify(delegate, times(58)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
@@ -283,7 +279,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
         .limit(63)
         .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection()))
         .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(1);
@@ -296,7 +292,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
 
     stubAsyncRunner.executeDueActionsRepeatedly();
 
-    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection(), any());
+    verify(miscHelpersFulu).reconstructAllDataColumnSidecars(anyCollection());
 
     // post reconstructed
     verify(delegate, times(64)).onNewValidatedDataColumnSidecar(any(), eq(RemoteOrigin.RECOVERED));
@@ -315,7 +311,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
     assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
     custody.scheduleRecoveryTask(task);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection()))
         .thenReturn(Collections.emptyList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     assertThat(task.recoveryStarted()).isTrue();
@@ -333,7 +329,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
     assertThat(stubAsyncRunner.hasDelayedActions()).isFalse();
     custody.scheduleRecoveryTask(task);
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
-    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection(), any()))
+    when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection()))
         .thenThrow(new RuntimeException("Simulated exception"));
     stubAsyncRunner.executeDueActionsRepeatedly();
     assertThat(task.recoveryStarted()).isFalse();

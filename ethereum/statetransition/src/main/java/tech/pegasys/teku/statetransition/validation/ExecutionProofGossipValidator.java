@@ -31,7 +31,7 @@ public class ExecutionProofGossipValidator {
   public static ExecutionProofGossipValidator create() {
     return new ExecutionProofGossipValidator(
         // max subnets * 2 epochs * slots per epoch 32 based on mainnet for now
-        LimitedSet.createSynchronized(MAX_EXECUTION_PROOF_SUBNETS.intValue() * 64));
+        LimitedSet.createSynchronized((int) MAX_EXECUTION_PROOF_SUBNETS * 64));
   }
 
   public ExecutionProofGossipValidator(final Set<ExecutionProof> receivedValidExecutionProofSet) {

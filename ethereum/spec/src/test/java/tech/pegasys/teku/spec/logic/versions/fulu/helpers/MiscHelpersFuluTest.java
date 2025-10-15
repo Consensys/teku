@@ -39,8 +39,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.BlobScheduleEntry;
@@ -73,13 +71,12 @@ public class MiscHelpersFuluTest {
                           .balancePerAdditionalCustodyGroup(UInt64.valueOf(32000000000L))
                           .samplesPerSlot(16)));
   private final SpecConfig specConfig = spec.atSlot(ZERO).getConfig();
-  private final PredicatesElectra predicates = new PredicatesElectra(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions());
   private final SpecConfigFulu specConfigFulu =
       SpecConfigFulu.required(spec.getGenesisSpecConfig());
   private final MiscHelpersFulu miscHelpersFulu =
-      new MiscHelpersFulu(specConfigFulu, predicates, schemaDefinitionsFulu);
+      spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow();
 
   @ParameterizedTest
   @MethodSource("getComputeForkDigestFuluScenarios")
@@ -299,14 +296,10 @@ public class MiscHelpersFuluTest {
 
   @Test
   public void verifyKzgProofExampleFromDevnet() throws Exception {
-    final KZG kzg = KZG.getInstance(false);
-    TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-
     final byte[] sidecarSsz =
         Resources.toByteArray(Resources.getResource(MiscHelpersFuluTest.class, "sidecar.ssz"));
     assertThat(
             miscHelpersFulu.verifyDataColumnSidecarKzgProofs(
-                kzg,
                 schemaDefinitionsFulu
                     .getDataColumnSidecarSchema()
                     .sszDeserialize(Bytes.wrap(sidecarSsz))))
