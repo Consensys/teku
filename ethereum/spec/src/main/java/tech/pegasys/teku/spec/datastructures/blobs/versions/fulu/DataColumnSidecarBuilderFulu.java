@@ -86,6 +86,12 @@ public class DataColumnSidecarBuilderFulu implements DataColumnSidecarBuilder {
   }
 
   @Override
+  public DataColumnSidecarBuilder slot(final UInt64 slot) {
+    // NO-OP for Fulu
+    return this;
+  }
+
+  @Override
   public DataColumnSidecar build() {
     validate();
     return new DataColumnSidecarFulu(
