@@ -234,6 +234,7 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
 
   public boolean verifyDataColumnSidecar(final DataColumnSidecar dataColumnSidecar) {
     final int numberOfColumns = specConfigFulu.getNumberOfColumns();
+    final UInt64 epoch = computeEpochAtSlot(dataColumnSidecar.getSlot());
 
     if (!dataColumnSidecar.getIndex().isLessThan(numberOfColumns)) {
       LOG.trace(
@@ -244,6 +245,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     }
     if (dataColumnSidecar.getKzgCommitments().isEmpty()) {
       LOG.trace("DataColumnSidecar has no kzg commitments");
+      return false;
+    }
+
+    if (dataColumnSidecar.getKzgCommitments().size()
+        > getBlobParameters(epoch).maxBlobsPerBlock()) {
+      LOG.trace(
+          "DataColumnSidecar has too many commitments when compared to the BPO for epoch {}",
+          epoch);
       return false;
     }
     if (dataColumnSidecar.getColumn().size() != dataColumnSidecar.getKzgCommitments().size()) {
