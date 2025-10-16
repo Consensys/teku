@@ -44,7 +44,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
@@ -946,10 +945,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
               miscHelpersFulu,
               dbAccessor,
               dasAsyncRunner,
-              Duration.ofMinutes(5),
-              Duration.ofSeconds(30),
+              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
+              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
+              Duration.ofSeconds(15),
               timeProvider,
               specConfigFulu.getNumberOfColumns(),
+              custodyGroupCountManagerRef,
               metricsSystem);
     } else {
       recoveringSidecarRetriever =
@@ -1492,13 +1493,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     this.validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(
-                spec,
-                recentChainData,
-                combinedChainDataClient,
-                rewardCalculator,
-                blobSidecarReconstructionProvider,
-                blobReconstructionProvider),
+            dataProvider.getChainDataProvider(),
             dataProvider.getNodeDataProvider(),
             dataProvider.getNetworkDataProvider(),
             combinedChainDataClient,

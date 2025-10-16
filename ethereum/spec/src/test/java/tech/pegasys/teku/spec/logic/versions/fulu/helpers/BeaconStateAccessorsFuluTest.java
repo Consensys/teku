@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BeaconStateAccessorsFuluTest {
+
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final PredicatesElectra predicatesElectra =
       new PredicatesElectra(spec.getGenesisSpecConfig());
@@ -66,7 +69,7 @@ public class BeaconStateAccessorsFuluTest {
   @Disabled
   void getProposerIndices_genesisEpoch() {
     storageSystem.chainUpdater().initializeGenesis();
-    storageSystem.getChainHead();
+
     final StateAndBlockSummary blockAndState = storageSystem.getChainHead();
     final List<Integer> proposerLookahead =
         getProposerLookaheadFromState(blockAndState.getState().toVersionFulu().orElseThrow());
@@ -81,7 +84,7 @@ public class BeaconStateAccessorsFuluTest {
   }
 
   @Test
-  void computeProposerEpoch_currentEpoch() {
+  void getBeaconProposerIndex_currentEpoch() {
     storageSystem.chainUpdater().initializeGenesis();
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
     assertThat(
@@ -89,24 +92,17 @@ public class BeaconStateAccessorsFuluTest {
         .isEqualTo(0);
   }
 
-  @Test
-  void computeProposerEpoch_nextEpoch() {
-    storageSystem.chainUpdater().initializeGenesis();
-    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
-    assertThat(
-            stateAccessorsFulu.getBeaconProposerIndex(blockAndState.getState(), UInt64.valueOf(25)))
-        .isEqualTo(2);
-  }
-
-  @Test
-  void computeProposerEpoch_futureEpoch() {
+  @ParameterizedTest
+  @ValueSource(ints = {8, 25, 33})
+  void getBeaconProposerIndex_shouldThrowIfNotCurrentEpoch(final int slot) {
     storageSystem.chainUpdater().initializeGenesis();
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain(16);
     assertThatThrownBy(
             () ->
                 stateAccessorsFulu.getBeaconProposerIndex(
-                    blockAndState.getState(), UInt64.valueOf(33)))
-        .hasMessageContaining("out of range");
+                    blockAndState.getState(), UInt64.valueOf(slot)))
+        .hasMessageContaining(
+            "get_beacon_proposer_index is only used for requesting a slot in the current epoch");
   }
 
   private List<Integer> getProposerLookaheadFromState(final BeaconStateFulu beaconStateFulu) {

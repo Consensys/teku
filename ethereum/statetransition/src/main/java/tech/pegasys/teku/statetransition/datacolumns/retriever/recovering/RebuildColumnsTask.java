@@ -38,8 +38,8 @@ class RebuildColumnsTask {
   private final UInt64 timeoutMillis;
   private final int minimumColumnsForRebuild;
   private final DataColumnSidecarDbAccessor sidecarDB;
-  private SafeFuture<Void> query;
-  private boolean isReadyToRebuild = false;
+  protected SafeFuture<Void> query;
+  protected boolean isReadyToRebuild = false;
   private final MiscHelpersFulu miscHelpers;
   protected final Map<Integer, DataColumnSidecar> sidecarMap = new ConcurrentSkipListMap<>();
   protected final AtomicBoolean done = new AtomicBoolean(false);
@@ -88,6 +88,10 @@ class RebuildColumnsTask {
       // we are possibly downloading to rebuild, so the sidecar may be available
       final DataColumnSidecar sidecar = sidecarMap.get(pendingRequest.getIndex().intValue());
       if (sidecar == null) {
+        LOG.trace(
+            "Pending request for column {} added to rebuild for (slotAndBlock: {})",
+            pendingRequest.getIndex(),
+            pendingRequest.getSlotAndBlockRoot());
         tasks.add(pendingRequest);
       } else {
         // we've already got the required data for this specific request, so can complete it
@@ -117,11 +121,10 @@ class RebuildColumnsTask {
 
     if (sidecarMap.size() >= minimumColumnsForRebuild) {
       isReadyToRebuild = true;
-      LOG.debug("Determined we have sufficient columns to rebuild columns {}", slotAndBlockRoot);
+      LOG.debug("Determined we have sufficient columns to rebuild columns at {}", slotAndBlockRoot);
       rebuild();
     } else {
-      LOG.trace(
-          "Running slot query for columns at {}, {} in cache", slotAndBlockRoot, sidecarMap.size());
+      LOG.trace("Running slot query for columns at {}", slotAndBlockRoot);
       query =
           sidecarDB
               .getColumnIdentifiers(slotAndBlockRoot)
@@ -141,7 +144,7 @@ class RebuildColumnsTask {
   // called from checkQueryResult if there were sufficient columns
   private void rebuild() {
     if (!done.get()) {
-      LOG.trace(
+      LOG.debug(
           "Rebuilding columns at {}, {} columns in cache", slotAndBlockRoot, sidecarMap.size());
       final Map<UInt64, DataColumnSidecar> reconstructedSidecars =
           miscHelpers.reconstructAllDataColumnSidecars(sidecarMap.values()).stream()
@@ -159,17 +162,23 @@ class RebuildColumnsTask {
                       .forEach(task -> task.complete(sidecar)));
       reconstructedSidecars.forEach((k, v) -> sidecarMap.putIfAbsent(k.intValue(), v));
       done.compareAndSet(false, true);
-      LOG.trace("Rebuilding columns DONE {}", slotAndBlockRoot);
+      LOG.debug("Rebuilding columns DONE {}", slotAndBlockRoot);
     } else {
       LOG.trace("Called rebuild while rebuild task was marked done already.");
     }
   }
 
   // chained from checkQueryResult
-  private void fetchColumnsFromStorage(
+  protected void fetchColumnsFromStorage(
       final List<DataColumnSlotAndIdentifier> dataColumnSlotAndIdentifiers) {
     if (dataColumnSlotAndIdentifiers.isEmpty()) {
       LOG.trace("Found no data columns for {}", slotAndBlockRoot);
+      return;
+    } else if (dataColumnSlotAndIdentifiers.size() < minimumColumnsForRebuild) {
+      LOG.trace(
+          "Found {} columns cached, which is insufficient for a rebuild at {}",
+          dataColumnSlotAndIdentifiers.size(),
+          slotAndBlockRoot);
       return;
     }
     LOG.trace(
@@ -178,14 +187,14 @@ class RebuildColumnsTask {
         dataColumnSlotAndIdentifiers.size());
     for (DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier : dataColumnSlotAndIdentifiers) {
       if (!sidecarMap.containsKey(dataColumnSlotAndIdentifier.columnIndex().intValue())) {
-        LOG.trace("attempting to fetch column {}", dataColumnSlotAndIdentifier);
+        LOG.debug("attempting to fetch column {}", dataColumnSlotAndIdentifier);
         sidecarDB
             .getSidecar(dataColumnSlotAndIdentifier)
             .thenAccept(
                 maybeSidecar ->
                     maybeSidecar.ifPresentOrElse(
                         sidecar -> {
-                          LOG.trace(
+                          LOG.debug(
                               "root {} rebuild - found sidecar {}",
                               slotAndBlockRoot.getBlockRoot(),
                               dataColumnSlotAndIdentifier.columnIndex().intValue());
