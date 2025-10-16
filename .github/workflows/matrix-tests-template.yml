@@ -99,27 +99,6 @@ jobs:
           echo "Prepared arguments for Gradle (${{ inputs.stage_name }}): $GRADLE_ARGS"
           echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
 
-          # 2) Contiguous Range Split
-          # TOTAL=$(echo "$CLASSNAMES" | wc -l)
-          # PER_SHARD=$(( (TOTAL + TOTAL_SHARDS - 1) / TOTAL_SHARDS ))
-          # START=$(( SHARD_INDEX * PER_SHARD + 1 ))
-          # END=$(( START + PER_SHARD - 1 ))
-          # echo "Total test classes: $TOTAL"
-          # echo "Classes per shard: $PER_SHARD"
-          # echo "Running lines $START to $END"
-          # CLASSES_FOR_SHARD=$(echo "$CLASSNAMES" | sed -n "${START},${END}p")
-          # if [ -z "$CLASSES_FOR_SHARD" ]; then
-          #   echo "⚠️ No classes for this shard."
-          #   exit 0
-          # fi
-          # echo "Running acceptance tests for classes:"
-          # echo "$CLASSES_FOR_SHARD"
-          # # Format Gradle arguments like CircleCI’s `GRADLE_ARGS`
-          # GRADLE_ARGS=$(echo "$CLASSES_FOR_SHARD" | awk '{print "--tests",$1}')
-          # echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
-          # # Run Gradle acceptance tests for this shard
-          # # ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} $GRADLE_ARGS
-
       - name: Run ${{ inputs.stage_name }} (shard)
         if: steps.shard.outputs.args != ''
         run: |
