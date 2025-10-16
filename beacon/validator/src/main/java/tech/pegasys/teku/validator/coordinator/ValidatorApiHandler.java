@@ -742,7 +742,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
         .thenPeek(
             __ -> {
               if (isLocallyCreated) {
-                executionProofManager.generateProofs(maybeBlindedBlockContainer).finish(error -> LOG.debug("failed to generate execution proofs", error));
+                executionProofManager
+                    .generateProofs(maybeBlindedBlockContainer)
+                    .finish(error -> LOG.debug("failed to generate execution proofs", error));
               }
             });
   }
