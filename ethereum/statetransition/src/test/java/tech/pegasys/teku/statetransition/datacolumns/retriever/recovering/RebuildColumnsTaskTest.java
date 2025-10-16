@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -22,7 +23,9 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.junit.jupiter.api.Test;
@@ -263,6 +266,85 @@ class RebuildColumnsTaskTest {
     assertThat(pendingRequest.getFuture()).isCancelled();
   }
 
+  @Test
+  void checkQueryResult_readyToRebuild() {
+    final UInt64 timestampMillis = timeProvider.getTimeInMillis();
+    final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot(UInt64.ZERO);
+    final DataColumnSidecarDbAccessor dbAccessor = mock(DataColumnSidecarDbAccessor.class);
+    final RebuildColumnsTaskTestArticle task =
+        new RebuildColumnsTaskTestArticle(
+            slotAndBlockRoot,
+            timestampMillis,
+            RECOVERY_TIMEOUT,
+            1,
+            dbAccessor,
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
+
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> future = new SafeFuture<>();
+    when(dbAccessor.getColumnIdentifiers(slotAndBlockRoot)).thenReturn(future);
+    when(dbAccessor.getSidecar(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomDataColumnSidecar())));
+    final List<DataColumnSlotAndIdentifier> data =
+        IntStream.range(0, 64)
+            .mapToObj(
+                i ->
+                    new DataColumnSlotAndIdentifier(
+                        slotAndBlockRoot.getSlot(),
+                        slotAndBlockRoot.getBlockRoot(),
+                        UInt64.valueOf(i)))
+            .toList();
+    // start query
+    task.checkQueryResult();
+    // the subsequent fetch that's run
+    future.complete(data);
+    // second run we'll determine the query is done, and we're ready to rebuild
+    task.checkQueryResult();
+
+    assertThat(task.isReadyToRebuild()).isTrue();
+    assertThat(task.getSidecarMap().size()).isEqualTo(64);
+  }
+
+  @Test
+  void checkQueryResult_notReadyToRebuild() {
+    final UInt64 timestampMillis = timeProvider.getTimeInMillis();
+    final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot(UInt64.ZERO);
+    final DataColumnSidecarDbAccessor dbAccessor = mock(DataColumnSidecarDbAccessor.class);
+    final RebuildColumnsTaskTestArticle task =
+        new RebuildColumnsTaskTestArticle(
+            slotAndBlockRoot,
+            timestampMillis,
+            RECOVERY_TIMEOUT,
+            1,
+            dbAccessor,
+            spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
+
+    final SafeFuture<List<DataColumnSlotAndIdentifier>> future = new SafeFuture<>();
+    when(dbAccessor.getColumnIdentifiers(slotAndBlockRoot))
+        .thenReturn(future)
+        .thenReturn(new SafeFuture<>());
+    final List<DataColumnSlotAndIdentifier> data =
+        IntStream.range(0, 63)
+            .mapToObj(
+                i ->
+                    new DataColumnSlotAndIdentifier(
+                        slotAndBlockRoot.getSlot(),
+                        slotAndBlockRoot.getBlockRoot(),
+                        UInt64.valueOf(i)))
+            .toList();
+    // start query
+    task.checkQueryResult();
+    // the subsequent fetch that's run
+    future.complete(data);
+    // second run we'll determine the query is done, but  we didn't find sufficient columns
+    task.checkQueryResult();
+
+    assertThat(task.isReadyToRebuild()).isFalse();
+    assertThat(task.getSidecarMap()).isEmpty();
+    assertThat(task.getDone()).isFalse();
+    assertThat(task.getQuery()).isNotDone();
+  }
+
   final PendingRecoveryRequestTestArticle createPendingRecovery(
       final SlotAndBlockRoot slotAndBlockRoot, final UInt64 column, final boolean isMatchingRoot) {
     final DataColumnSlotAndIdentifier columnId =
@@ -314,6 +396,14 @@ class RebuildColumnsTaskTest {
           minimumColumnsForRebuild,
           sidecarDB,
           miscHelpers);
+    }
+
+    boolean isReadyToRebuild() {
+      return isReadyToRebuild;
+    }
+
+    SafeFuture<Void> getQuery() {
+      return query;
     }
 
     AtomicBoolean getDone() {
