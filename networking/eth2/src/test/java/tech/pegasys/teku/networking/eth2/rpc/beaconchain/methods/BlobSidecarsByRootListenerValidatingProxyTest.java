@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
@@ -72,6 +73,10 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         };
     dataStructureUtil = new DataStructureUtil(spec);
     currentForkFirstSlot = spec.computeStartSlotAtEpoch(currentForkEpoch);
+    spec.reinitializeForTesting(
+        AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
+        AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
+        kzg);
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
   }
@@ -95,7 +100,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
             new BlobIdentifier(block3.getRoot(), UInt64.ZERO),
             new BlobIdentifier(block4.getRoot(), UInt64.ZERO));
     listenerWrapper =
-        new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
+        new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, blobIdentifiers);
 
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
@@ -126,7 +131,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
             new BlobIdentifier(block1.getRoot(), UInt64.ZERO),
             new BlobIdentifier(block1.getRoot(), UInt64.ONE));
     listenerWrapper =
-        new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
+        new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, blobIdentifiers);
 
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
@@ -158,7 +163,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
             block1.getRoot(), spec.computeStartSlotAtEpoch(currentForkEpoch.minus(1)));
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, List.of(blobIdentifier));
+            peer, spec, listener, List.of(blobIdentifier));
 
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);
@@ -183,7 +188,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
             block1.getRoot(), spec.computeStartSlotAtEpoch(currentForkEpoch.minus(1)));
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(
-            peer, spec, listener, kzg, List.of(blobIdentifier));
+            peer, spec, listener, List.of(blobIdentifier));
 
     final BlobSidecar blobSidecar1_0 =
         dataStructureUtil.randomBlobSidecarWithValidInclusionProofForBlock(block1, 0);

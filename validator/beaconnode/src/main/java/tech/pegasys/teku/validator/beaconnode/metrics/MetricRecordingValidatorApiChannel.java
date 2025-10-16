@@ -46,6 +46,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -266,7 +270,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
       final List<BeaconCommitteeSelectionProof> requests) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.getBeaconCommitteeSelectionProof(requests),
         BeaconNodeRequestLabels.BEACON_COMMITTEE_SELECTIONS);
   }
@@ -274,9 +278,41 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
       final List<SyncCommitteeSelectionProof> requests) {
-    return countDataRequest(
+    return countOptionalDataRequest(
         delegate.getSyncCommitteeSelectionProof(requests),
         BeaconNodeRequestLabels.SYNC_COMMITTEE_SELECTIONS);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
+    return countOptionalDataRequest(
+        delegate.createUnsignedExecutionPayloadBid(slot, builderIndex),
+        BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_BID_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    return countDataRequest(
+        delegate.publishSignedExecutionPayloadBid(signedExecutionPayloadBid),
+        BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_BID_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
+      final UInt64 slot, final UInt64 builderIndex) {
+    return countOptionalDataRequest(
+        delegate.createUnsignedExecutionPayload(slot, builderIndex),
+        BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return countDataRequest(
+        delegate.publishSignedExecutionPayload(signedExecutionPayload),
+        BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_METHOD);
   }
 
   private <T> SafeFuture<T> countDataRequest(

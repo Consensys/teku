@@ -13,51 +13,59 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadBidGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.PayloadAttestationMessageGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-class GossipForkSubscriptionsGloasTest {
+public class GossipForkSubscriptionsGloasTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalGloas();
+  private final Spec spec = TestSpecFactory.createMainnetGloas();
   private final Fork fork = spec.getForkSchedule().getFork(UInt64.ZERO);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
-  public void shouldPublishPayloadAttestationMessageIfGossipManagerIsPresent() {
+  public void shouldAddRequiredGossipManagers() {
     final GossipForkSubscriptionsGloas gossipForkSubscriptions =
-        createGossipForkSubscriptionGloas();
+        spy(createGossipForkSubscriptionGloas());
 
-    // the actual gossip manager is created within the class, we are injecting a mock here to test
-    // the isPresent() logic
-    final PayloadAttestationMessageGossipManager payloadAttestationMessageGossipManager =
-        mock(PayloadAttestationMessageGossipManager.class);
-    gossipForkSubscriptions.setPayloadAttestationMessageGossipManager(
-        Optional.of(payloadAttestationMessageGossipManager));
+    gossipForkSubscriptions.addGossipManagers(forkInfo(), forkDigest());
 
-    final PayloadAttestationMessage message = dataStructureUtil.randomPayloadAttestationMessage();
-    gossipForkSubscriptions.publishPayloadAttestationMessage(message);
+    verify(gossipForkSubscriptions, times(13)).addGossipManager(any());
+    verify(gossipForkSubscriptions).addGossipManager(any(ExecutionPayloadGossipManager.class));
+    verify(gossipForkSubscriptions)
+        .addGossipManager(any(PayloadAttestationMessageGossipManager.class));
+    verify(gossipForkSubscriptions).addGossipManager(any(ExecutionPayloadBidGossipManager.class));
+  }
 
-    verify(payloadAttestationMessageGossipManager).publish(eq(message));
+  private ForkInfo forkInfo() {
+    return new ForkInfo(fork, dataStructureUtil.randomBytes32());
+  }
+
+  private Bytes4 forkDigest() {
+    return dataStructureUtil.randomBytes4();
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -87,7 +95,11 @@ class GossipForkSubscriptionsGloasTest {
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
+        noopOperationProcessor,
+        noopOperationProcessor,
         DebugDataDumper.NOOP,
-        DasGossipLogger.NOOP);
+        DasGossipLogger.NOOP,
+        noopOperationProcessor,
+        false);
   }
 }

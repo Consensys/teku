@@ -14,6 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE_ALL_SUBNETS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_DOWNLOAD_TIMEOUT_MS;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_RECOVERY_TIMEOUT_MS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND_ALL_SUBNETS;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
@@ -327,6 +329,34 @@ public class P2POptions {
       SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOB_SIDECARS_PER_MINUTE;
 
   @Option(
+      names = {"--Xp2p-reworked-sidecar-recovery-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean reworkedSidecarRecoveryEnabled = false;
+
+  @Option(
+      names = {"--Xp2p-reworked-sidecar-cancel-timeout-ms"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "1",
+      hidden = true)
+  private Integer sidecarCancelTimeoutMs = DEFAULT_RECOVERY_TIMEOUT_MS;
+
+  @Option(
+      names = {"--Xp2p-reworked-sidecar-download-timeout-ms"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "",
+      arity = "1",
+      hidden = true)
+  private Integer sidecarDownloadTimeoutMs = DEFAULT_DOWNLOAD_TIMEOUT_MS;
+
+  @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -394,6 +424,16 @@ public class P2POptions {
       hidden = true,
       fallbackValue = "true")
   private boolean allTopicsFilterEnabled = P2PConfig.DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
+
+  @Option(
+      names = {"--Xexecution-proof-topics-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable all execution proof topics",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean executionProofTopicEnabled = P2PConfig.DEFAULT_EXECUTION_PROOF_GOSSIP_ENABLED;
 
   @Option(
       names = {"--Xpeer-request-limit"},
@@ -592,7 +632,11 @@ public class P2POptions {
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
-                  .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize);
+                  .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
+                  .executionProofTopicEnabled(executionProofTopicEnabled)
+                  .reworkedSidecarRecoveryTimeout(sidecarCancelTimeoutMs)
+                  .reworkedSidecarDownloadTimeout(sidecarDownloadTimeoutMs)
+                  .reworkedSidecarRecoveryEnabled(reworkedSidecarRecoveryEnabled);
               batchVerifyQueueCapacity.ifPresent(b::batchVerifyQueueCapacity);
             })
         .discovery(

@@ -45,9 +45,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.ExecutionPayloadAndBlobsBundleSchema;
-import tech.pegasys.teku.spec.datastructures.builder.versions.fulu.ExecutionPayloadAndBlobsCellBundleSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPayment;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingPaymentSchema;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.BuilderPendingWithdrawal;
@@ -75,6 +74,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.ExecutionPayloadEnvelopesByRootRequestMessage.ExecutionPayloadEnvelopesByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.status.StatusMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof.AggregateAndProofSchema;
@@ -194,9 +194,6 @@ public class SchemaTypes {
   public static final SchemaId<ExecutionPayloadAndBlobsBundleSchema>
       EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA =
           create("EXECUTION_PAYLOAD_AND_BLOBS_BUNDLE_SCHEMA");
-  public static final SchemaId<ExecutionPayloadAndBlobsCellBundleSchema>
-      EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA =
-          create("EXECUTION_PAYLOAD_AND_BLOBS_CELL_BUNDLE_SCHEMA");
   public static final SchemaId<DepositRequestSchema> DEPOSIT_REQUEST_SCHEMA =
       create("DEPOSIT_REQUEST_SCHEMA");
   public static final SchemaId<WithdrawalRequestSchema> WITHDRAWAL_REQUEST_SCHEMA =
@@ -255,6 +252,9 @@ public class SchemaTypes {
       BUILDER_PENDING_PAYMENTS_SCHEMA = create("BUILDER_PENDING_PAYMENTS_SCHEMA");
   public static final SchemaId<SszListSchema<BuilderPendingWithdrawal, ?>>
       BUILDER_PENDING_WITHDRAWALS_SCHEMA = create("BUILDER_PENDING_WITHDRAWALS_SCHEMA");
+  public static final SchemaId<ExecutionPayloadEnvelopesByRootRequestMessageSchema>
+      EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA =
+          create("EXECUTION_PAYLOAD_ENVELOPES_BY_ROOT_REQUEST_MESSAGE_SCHEMA");
 
   private SchemaTypes() {
     // Prevent instantiation

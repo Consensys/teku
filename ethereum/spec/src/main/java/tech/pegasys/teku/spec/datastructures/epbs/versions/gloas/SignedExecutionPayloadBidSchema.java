@@ -17,7 +17,6 @@ import static tech.pegasys.teku.spec.schemas.registry.SchemaTypes.EXECUTION_PAYL
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
@@ -41,15 +40,5 @@ public class SignedExecutionPayloadBidSchema
   @Override
   public SignedExecutionPayloadBid createFromBackingNode(final TreeNode node) {
     return new SignedExecutionPayloadBid(this, node);
-  }
-
-  public ExecutionPayloadBidSchema getMessageSchema() {
-    return (ExecutionPayloadBidSchema) getChildSchema(getFieldIndex("message"));
-  }
-
-  public long getBlobKzgCommitmentsRootGeneralizedIndex() {
-    return GIndexUtil.gIdxCompose(
-        getChildGeneralizedIndex(getFieldIndex("message")),
-        getMessageSchema().getBlobKzgCommitmentsRootGeneralizedIndex());
   }
 }

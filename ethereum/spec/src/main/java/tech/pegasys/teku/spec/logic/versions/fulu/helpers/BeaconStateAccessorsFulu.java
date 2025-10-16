@@ -29,20 +29,18 @@ import tech.pegasys.teku.spec.logic.versions.electra.helpers.BeaconStateAccessor
 import tech.pegasys.teku.spec.logic.versions.electra.helpers.PredicatesElectra;
 
 public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
-  private final SpecConfigFulu configFulu;
 
   public BeaconStateAccessorsFulu(
       final SpecConfig config,
       final PredicatesElectra predicatesElectra,
       final MiscHelpersFulu miscHelpers) {
     super(SpecConfigFulu.required(config), predicatesElectra, miscHelpers);
-    configFulu = config.toVersionFulu().orElseThrow();
   }
 
   @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
-    final int lookaheadIndex = requestedSlot.mod(configFulu.getSlotsPerEpoch()).intValue();
+    final int lookaheadIndex = requestedSlot.mod(config.getSlotsPerEpoch()).intValue();
     return BeaconStateFulu.required(state)
         .getProposerLookahead()
         .get(lookaheadIndex)

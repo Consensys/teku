@@ -119,6 +119,11 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   }
 
   @Override
+  public void onPayloadAttestationCreationDue(final UInt64 slot) {
+    delegates.forEach(delegate -> delegate.onPayloadAttestationCreationDue(slot));
+  }
+
+  @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {
     delegates.forEach(delegates -> delegates.onAttesterSlashing(attesterSlashing));
     maybeValidatorSlashedAction.ifPresent(

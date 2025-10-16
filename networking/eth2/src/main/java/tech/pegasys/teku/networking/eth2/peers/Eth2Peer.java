@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsByRootIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -57,7 +57,6 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
       final RateTracker requestTracker,
-      final KZG kzg,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     return new DefaultEth2Peer(
@@ -72,7 +71,6 @@ public interface Eth2Peer extends Peer, SyncSource {
         blobSidecarsRequestTracker,
         dataColumnSidecarsRequestTracker,
         requestTracker,
-        kzg,
         metricsSystem,
         timeProvider);
   }
@@ -113,6 +111,9 @@ public interface Eth2Peer extends Peer, SyncSource {
   SafeFuture<Void> requestDataColumnSidecarsByRoot(
       List<DataColumnsByRootIdentifier> dataColumnIdentifiers,
       RpcResponseListener<DataColumnSidecar> listener);
+
+  SafeFuture<Void> requestExecutionPayloadEnvelopesByRoot(
+      List<Bytes32> beaconBlockRoots, RpcResponseListener<SignedExecutionPayloadEnvelope> listener);
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(UInt64 slot);
 

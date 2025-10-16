@@ -44,7 +44,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -94,7 +93,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   private final int maxTrackers;
   private final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  private final KZG kzg;
 
   private final MetricsHistogram dataColumnSidecarComputationTimeSeconds;
   private final Counter getBlobsV2RequestsCounter;
@@ -122,7 +120,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers,
-      final KZG kzg,
       final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final MetricsSystem metricsSystem,
@@ -135,7 +132,6 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     this.recentChainData = recentChainData;
     this.executionLayer = executionLayer;
     this.maxTrackers = maxTrackers;
-    this.kzg = kzg;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
     this.localElBlobsFetchingRetryDelay = localElBlobsFetchingRetryDelay;
@@ -262,8 +258,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
                   recoveryTask.signedBeaconBlockHeader(),
                   recoveryTask.sszKZGCommitments(),
                   recoveryTask.kzgCommitmentsInclusionProof(),
-                  blobAndCellProofs,
-                  kzg);
+                  blobAndCellProofs);
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
@@ -340,13 +335,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
-    LOG.trace(
-        "Recovery tasks: {}",
-        () -> {
-          final HashMap<SlotAndBlockRoot, RecoveryTask> recoveryTasksCopy =
-              new HashMap<>(recoveryTasks);
-          return recoveryTasksCopy.toString();
-        });
+    LOG.trace("Recovery tasks: {}", () -> new HashMap<>(recoveryTasks));
   }
 
   @VisibleForTesting

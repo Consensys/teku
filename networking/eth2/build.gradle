@@ -15,6 +15,7 @@ dependencies {
   implementation project(':infrastructure:ssz')
   implementation project(':storage')
   implementation project(':storage:api')
+  implementation project(':services:zkchain')
   implementation project(':infrastructure:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p'
@@ -40,6 +41,7 @@ dependencies {
   integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
   integrationTestImplementation testFixtures(project(':networking:eth2'))
   integrationTestImplementation testFixtures(project(':infrastructure:events'))
+  integrationTestImplementation testFixtures(project(':infrastructure:kzg'))
 
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
