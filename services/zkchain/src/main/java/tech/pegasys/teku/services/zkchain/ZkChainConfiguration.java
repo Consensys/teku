@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.services.zkchain;
 
+import java.time.Duration;
+
 public record ZkChainConfiguration(
-    boolean statelessValidationEnabled,
-    boolean generateExecutionProofsEnabled,
-    int statelessMinProofsRequired) {
+        boolean statelessValidationEnabled,
+        boolean generateExecutionProofsEnabled,
+        int statelessMinProofsRequired,
+        Duration proofDelayDurationInMs) {
 
   public static final boolean DEFAULT_STATELESS_VALIDATION_ENABLED = false;
   public static final boolean DEFAULT_GENERATE_EXECUTION_PROOFS_ENABLED = false;
   public static final int DEFAULT_STATELESS_MIN_PROOFS_REQUIRED = 1;
+  public static final Duration DEFAULT_PROOF_GENERATION_DELAY = Duration.ofMillis(2000);
 
   public static Builder builder() {
     return new Builder();
@@ -31,6 +35,7 @@ public record ZkChainConfiguration(
     private boolean statelessValidationEnabled = DEFAULT_STATELESS_VALIDATION_ENABLED;
     private boolean generateExecutionProofsEnabled = DEFAULT_GENERATE_EXECUTION_PROOFS_ENABLED;
     private int statelessMinProofsRequired = DEFAULT_STATELESS_MIN_PROOFS_REQUIRED;
+    private Duration proofDelayDurationInMs = DEFAULT_PROOF_GENERATION_DELAY;
 
     public Builder() {}
 
@@ -52,13 +57,18 @@ public record ZkChainConfiguration(
       return this;
     }
 
+    public Builder proofDelayDurationInMs(final Duration proofDelayDurationInMs) {
+        this.proofDelayDurationInMs = proofDelayDurationInMs;
+        return this;
+    }
+
     public ZkChainConfiguration build() {
       if (generateExecutionProofsEnabled && !statelessValidationEnabled) {
         throw new IllegalStateException(
             "Can't generate execution proofs when stateless validation isn't enabled");
       }
       return new ZkChainConfiguration(
-          statelessValidationEnabled, generateExecutionProofsEnabled, statelessMinProofsRequired);
+          statelessValidationEnabled, generateExecutionProofsEnabled, statelessMinProofsRequired, proofDelayDurationInMs);
     }
   }
 }

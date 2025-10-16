@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.executionproofs;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private static final Logger LOG = LogManager.getLogger();
   private final int attemptsToGetProof = 3;
   private final ExecutionProofGenerator executionProofGenerator;
-  private final AsyncRunner asyncRunner;
+    private final Duration proofGenerationDelay;
+    private final AsyncRunner asyncRunner;
   private final boolean isProofGenerationEnabled;
   private final int minProofsRequired;
 
@@ -64,13 +66,15 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       final Consumer<ExecutionProof> onCreatedProof,
       final boolean isProofGenerationEnabled,
       final int minProofsRequired,
+      final Duration proofGenerationDelay,
       final AsyncRunner asyncRunner) {
     this.executionProofGossipValidator = executionProofGossipValidator;
     this.onCreatedProof = onCreatedProof;
     this.isProofGenerationEnabled = isProofGenerationEnabled;
     this.minProofsRequired = minProofsRequired;
     this.executionProofGenerator = executionProofGenerator;
-    this.asyncRunner = asyncRunner;
+      this.proofGenerationDelay = proofGenerationDelay;
+      this.asyncRunner = asyncRunner;
   }
 
   @Override
@@ -175,7 +179,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                   .forEach(
                       subnetIndex -> {
                         executionProofGenerator
-                            .generateExecutionProof(blockContainer, subnetIndex)
+                            .generateExecutionProof(blockContainer, subnetIndex, proofGenerationDelay)
                             .finish(
                                 proof -> {
                                   LOG.trace("Generated proof for subnet {}", proof.getSubnetId());

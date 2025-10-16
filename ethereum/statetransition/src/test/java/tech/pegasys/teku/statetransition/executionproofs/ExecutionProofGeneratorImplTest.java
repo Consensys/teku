@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.executionproofs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
@@ -40,8 +41,8 @@ class ExecutionProofGeneratorImplTest {
     int subnetA = 1;
     int subnetB = 2;
 
-    ExecutionProof proofA = generator.generateExecutionProof(block, subnetA).get();
-    ExecutionProof proofB = generator.generateExecutionProof(block, subnetB).get();
+    ExecutionProof proofA = generator.generateExecutionProof(block, subnetA, Duration.ofMillis(0)).get();
+    ExecutionProof proofB = generator.generateExecutionProof(block, subnetB, Duration.ofMillis(0)).get();
 
     assertNotNull(proofA);
     assertNotNull(proofB);
