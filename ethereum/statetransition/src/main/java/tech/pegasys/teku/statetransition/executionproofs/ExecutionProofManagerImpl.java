@@ -176,12 +176,18 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                       subnetIndex -> {
                         executionProofGenerator
                             .generateExecutionProof(blockContainer, subnetIndex)
-                            .thenAccept(
+                            .finish(
                                 proof -> {
-                                  generatedProofs.add(proof);
                                   LOG.trace("Generated proof for subnet {}", proof.getSubnetId());
+                                  generatedProofs.add(proof);
                                   onCreatedProof.accept(proof);
-                                });
+                                },
+                                error ->
+                                    LOG.error(
+                                        "Failed to generate proof for block {} subnet {}",
+                                        blockRoot,
+                                        subnetIndex,
+                                        error));
                         validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
                       });
             })
