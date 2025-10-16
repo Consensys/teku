@@ -53,7 +53,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
   private static final Logger LOG = LogManager.getLogger();
   private final int attemptsToGetProof = 3;
-  final ExecutionProofGenerator executionProofGenerator;
+  private final ExecutionProofGenerator executionProofGenerator;
   private final AsyncRunner asyncRunner;
   private final boolean isProofGenerationEnabled;
   private final int minProofsRequired;
@@ -158,38 +158,37 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     }
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public SafeFuture<Void> generateProofs(final SignedBlockContainer blockContainer) {
 
     if (!isProofGenerationEnabled) {
-      SafeFuture.completedFuture(null);
+      return SafeFuture.completedFuture(null);
     }
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
 
-    asyncRunner.runAsync(
-        () -> {
-          LOG.info("Generating execution proofs for block {}", blockRoot);
-          final Set<ExecutionProof> generatedProofs = new HashSet<>();
-          // Generate proofs for all subnets
-          IntStream.range(0, (int) MAX_EXECUTION_PROOF_SUBNETS)
-              .forEach(
-                  subnetIndex -> {
-                    executionProofGenerator
-                        .generateExecutionProof(blockContainer, subnetIndex)
-                        .thenAccept(
-                            proof -> {
-                              generatedProofs.add(proof);
-                              LOG.info("Generated proof for subnet {}", proof.getSubnetId());
-                              onCreatedProof.accept(proof);
-                              LOG.debug(
-                                  "Generated execution proof for block {}: {}",
-                                  blockRoot,
-                                  generatedProofs);
-                            });
-                    validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
-                  });
-        });
+    asyncRunner
+        .runAsync(
+            () -> {
+              final Set<ExecutionProof> generatedProofs = new HashSet<>();
+              // Generate proofs for all subnets
+              IntStream.range(0, (int) MAX_EXECUTION_PROOF_SUBNETS)
+                  .forEach(
+                      subnetIndex -> {
+                        executionProofGenerator
+                            .generateExecutionProof(blockContainer, subnetIndex)
+                            .thenAccept(
+                                proof -> {
+                                  generatedProofs.add(proof);
+                                  LOG.trace("Generated proof for subnet {}", proof.getSubnetId());
+                                  onCreatedProof.accept(proof);
+                                });
+                        validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
+                      });
+            })
+        .finish(
+            () -> LOG.debug("Completed generating execution proofs for block {}", blockRoot),
+            error ->
+                LOG.error("Failed to generate execution proofs for block {}", blockRoot, error));
 
     return SafeFuture.completedFuture(null);
   }
