@@ -16,5 +16,6 @@
 - Increase Default validator registration Gas Limit 60M for all networks.
 - Rename Fulu metric for data_column_sidecar_by_root RPC request to `network_rpc_data_column_sidecars_by_root_requested_sidecars_total`.
 - Add peer count per topic metric for data_column_sidecar subnet.
+- Add [Get Blob Sidecars](https://ethereum.github.io/beacon-APIs/#/Beacon/getBlobs) (`/eth/v1/beacon/blobs/{block_id}`) Beacon API method.
 
 ### Bug Fixes
