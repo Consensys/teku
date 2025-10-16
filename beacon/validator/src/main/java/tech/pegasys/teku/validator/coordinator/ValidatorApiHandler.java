@@ -740,15 +740,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
             })
         .alwaysRun(blockPublishingPerformance::complete)
         .thenPeek(
-            __ -> generateAndPublishExecutionProofs(maybeBlindedBlockContainer, isLocallyCreated));
-  }
-
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private void generateAndPublishExecutionProofs(
-      final SignedBlockContainer maybeBlindedBlockContainer, final boolean isLocallyCreated) {
-    if (isLocallyCreated) {
-      executionProofManager.generateProofs(maybeBlindedBlockContainer);
-    }
+            __ -> {
+              if (isLocallyCreated) {
+                executionProofManager.generateProofs(maybeBlindedBlockContainer);
+              }
+            });
   }
 
   @Override
