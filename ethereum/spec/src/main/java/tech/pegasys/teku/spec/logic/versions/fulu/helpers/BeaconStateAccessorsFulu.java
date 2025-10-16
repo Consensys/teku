@@ -38,20 +38,6 @@ public class BeaconStateAccessorsFulu extends BeaconStateAccessorsElectra {
   }
 
   @Override
-  protected void validateStateCanCalculateProposerIndexAtSlot(
-      final BeaconState state, final UInt64 requestedSlot) {
-    final UInt64 epoch = miscHelpers.computeEpochAtSlot(requestedSlot);
-    final UInt64 stateEpoch = getCurrentEpoch(state);
-    checkArgument(
-        epoch.equals(stateEpoch) || stateEpoch.increment().equals(epoch),
-        "Cannot compute proposer index, as the state supplied is out of range of the requested slot. Requested slot %s (in epoch %s), state slot %s (in epoch %s)",
-        requestedSlot,
-        epoch,
-        state.getSlot(),
-        stateEpoch);
-  }
-
-  @Override
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
     final int lookaheadIndex = requestedSlot.mod(config.getSlotsPerEpoch()).intValue();
