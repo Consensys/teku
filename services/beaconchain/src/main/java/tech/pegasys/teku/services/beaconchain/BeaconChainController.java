@@ -701,7 +701,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // comment for now this will be used in the future
     if (zkConfig.statelessValidationEnabled()) {
       final ExecutionProofGossipChannel executionProofGossipChannel =
-                eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
+          eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
       final ExecutionProofGossipValidator executionProofGossipValidator =
           ExecutionProofGossipValidator.create();
       final SpecVersion specVersionElectra = spec.forMilestone(SpecMilestone.ELECTRA);
