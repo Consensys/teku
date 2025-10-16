@@ -290,16 +290,16 @@ jobs:
       src_root: "src/property-test/java"
       runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
 
-  # propertyTestsReport:
-  #   runs-on: ubuntu-24.04
-  #   needs: propertyTests
-  #   if: always()
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: ./.github/actions/collate-junit-reports
-  #       if: always()        
-  #       with:
-  #         stage_key: property
+  propertyTestsReport:
+    runs-on: ubuntu-24.04
+    needs: propertyTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: property
 
   acceptanceTests:
     needs: assemble
@@ -314,16 +314,16 @@ jobs:
       src_root: "src/acceptance-test/java"
       runner: "ubuntu-latest-128"
 
-  # acceptanceTestsReport:
-  #   runs-on: ubuntu-24.04
-  #   needs: acceptanceTests
-  #   if: always()
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: ./.github/actions/collate-junit-reports
-  #       if: always()        
-  #       with:
-  #         stage_key: acceptance
+  acceptanceTestsReport:
+    runs-on: ubuntu-24.04
+    needs: acceptanceTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: acceptance
 
   # referenceTestsPrep:
   #   needs: assemble

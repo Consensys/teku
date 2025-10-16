@@ -87,50 +87,43 @@ jobs:
             | sed 's@/@.@g' \
             | sed 's/.\{5\}$//' \
             | sort )
-
-          # # 2) Modulo split
-          # CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
-          #   | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
-
-          # if [ -z "$CLASSES_FOR_SHARD" ]; then
-          #   echo "args=" >> "$GITHUB_OUTPUT"
-          #   exit 0
-          # fi
-
-          # # 3) Build --tests args
-          # GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
-          # echo "Prepared arguments for Gradle (${{ inputs.stage_name }}): $GRADLE_ARGS"
-          # echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
-
-          TOTAL=$(echo "$CLASSNAMES" | wc -l)
-          PER_SHARD=$(( (TOTAL + TOTAL_SHARDS - 1) / TOTAL_SHARDS ))
-          START=$(( SHARD_INDEX * PER_SHARD + 1 ))
-          END=$(( START + PER_SHARD - 1 ))
-
-          echo "Total test classes: $TOTAL"
-          echo "Classes per shard: $PER_SHARD"
-          echo "Running lines $START to $END"
-
-          CLASSES_FOR_SHARD=$(echo "$CLASSNAMES" | sed -n "${START},${END}p")
-
+          # 2) Modulo split i.e (NR-1) % shards == shard
+          CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
+            | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
           if [ -z "$CLASSES_FOR_SHARD" ]; then
-            echo "⚠️ No classes for this shard."
+            echo "args=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # 3) Build --tests args
+          GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
+          echo "Prepared arguments for Gradle (${{ inputs.stage_name }}): $GRADLE_ARGS"
+          echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
 
-          echo "Running acceptance tests for classes:"
-          echo "$CLASSES_FOR_SHARD"
+          # 2) Contiguous Range Split
+          # TOTAL=$(echo "$CLASSNAMES" | wc -l)
+          # PER_SHARD=$(( (TOTAL + TOTAL_SHARDS - 1) / TOTAL_SHARDS ))
+          # START=$(( SHARD_INDEX * PER_SHARD + 1 ))
+          # END=$(( START + PER_SHARD - 1 ))
+          # echo "Total test classes: $TOTAL"
+          # echo "Classes per shard: $PER_SHARD"
+          # echo "Running lines $START to $END"
+          # CLASSES_FOR_SHARD=$(echo "$CLASSNAMES" | sed -n "${START},${END}p")
+          # if [ -z "$CLASSES_FOR_SHARD" ]; then
+          #   echo "⚠️ No classes for this shard."
+          #   exit 0
+          # fi
+          # echo "Running acceptance tests for classes:"
+          # echo "$CLASSES_FOR_SHARD"
+          # # Format Gradle arguments like CircleCI’s `GRADLE_ARGS`
+          # GRADLE_ARGS=$(echo "$CLASSES_FOR_SHARD" | awk '{print "--tests",$1}')
+          # echo "args=$GRADLE_ARGS" >> "$GITHUB_OUTPUT"
+          # # Run Gradle acceptance tests for this shard
+          # # ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} $GRADLE_ARGS
 
-          # 2. Format Gradle arguments like CircleCI’s `GRADLE_ARGS`
-          GRADLE_ARGS=$(echo "$CLASSES_FOR_SHARD" | awk '{print "--tests",$1}')
-
-          # 3. Run Gradle acceptance tests for this shard
-          ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} $GRADLE_ARGS
-
-      # - name: Run ${{ inputs.stage_name }} (shard)
-      #   if: steps.shard.outputs.args != ''
-      #   run: |
-      #     ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
+      - name: Run ${{ inputs.stage_name }} (shard)
+        if: steps.shard.outputs.args != ''
+        run: |
+          ./gradlew --no-daemon --parallel --info ${{ inputs.gradle_task }} ${{ steps.shard.outputs.args }}
 
       - name: Upload JUnit XML + HTML for ${{ inputs.stage_name }}
         if: always()
