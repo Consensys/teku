@@ -964,10 +964,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
               miscHelpersFulu,
               dbAccessor,
               dasAsyncRunner,
-              Duration.ofMinutes(5),
-              Duration.ofSeconds(30),
+              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
+              Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
+              Duration.ofSeconds(15),
               timeProvider,
               specConfigFulu.getNumberOfColumns(),
+              custodyGroupCountManagerRef,
               metricsSystem);
     } else {
       recoveringSidecarRetriever =
