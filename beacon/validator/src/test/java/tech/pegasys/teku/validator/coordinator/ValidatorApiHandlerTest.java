@@ -109,6 +109,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -138,6 +139,7 @@ class ValidatorApiHandlerTest {
       mock(AttestationTopicSubscriber.class);
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final BlockPublisher blockPublisher = mock(BlockPublisher.class);
+  private final ExecutionProofManager executionProofManager = ExecutionProofManager.NOOP;
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -200,7 +202,8 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             executionPayloadFactory,
-            executionPayloadPublisher);
+            executionPayloadPublisher,
+            executionProofManager);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
@@ -454,7 +457,8 @@ class ValidatorApiHandlerTest {
             blockProductionPerformanceFactory,
             blockPublisher,
             executionPayloadFactory,
-            executionPayloadPublisher);
+            executionPayloadPublisher,
+            executionProofManager);
     dataStructureUtil = new DataStructureUtil(spec);
     // Best state is still in Phase0
     final BeaconState state =

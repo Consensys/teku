@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
+import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -79,6 +80,7 @@ public class AbstractMigratedBeaconHandlerWithChainDataProviderTest
             recentChainData,
             combinedChainDataClient,
             new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec)),
-            mock(BlobSidecarReconstructionProvider.class));
+            mock(BlobSidecarReconstructionProvider.class),
+            mock(BlobReconstructionProvider.class));
   }
 }

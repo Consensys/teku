@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
@@ -36,19 +37,25 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.DataColumnsBy
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DataColumnReqRespBatchingImplTest {
   final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  final RecentChainData recentChainData = mock(RecentChainData.class);
   final BatchDataColumnsByRangeReqResp byRangehRpc = mock(BatchDataColumnsByRangeReqResp.class);
   final BatchDataColumnsByRootReqResp byRootRpc = mock(BatchDataColumnsByRootReqResp.class);
-  final UInt64 firstNonFinalizedSlot = UInt64.valueOf(8);
   final DataColumnsByRootIdentifierSchema byRootSchema =
       SchemaDefinitionsFulu.required(spec.getGenesisSchemaDefinitions())
           .getDataColumnsByRootIdentifierSchema();
   final DataColumnReqRespBatchingImpl dataColumnReqResp =
       new DataColumnReqRespBatchingImpl(
-          byRangehRpc, byRootRpc, () -> firstNonFinalizedSlot, byRootSchema);
+          spec, recentChainData, byRangehRpc, byRootRpc, byRootSchema);
+
+  @BeforeEach
+  public void setUp() {
+    when(recentChainData.getFinalizedEpoch()).thenReturn(ONE);
+  }
 
   @Test
   @SuppressWarnings("JavaCase")
