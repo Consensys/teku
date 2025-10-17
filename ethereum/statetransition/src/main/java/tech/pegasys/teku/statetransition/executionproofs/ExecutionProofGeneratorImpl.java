@@ -44,12 +44,13 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
       final int subnetId,
       final Duration proofGenerationDelay) {
 
-    LOG.info("Current thread {}: ", Thread.currentThread().getName());
+    //delay to simulate proof generation time
     try {
       Thread.sleep(proofGenerationDelay);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
+
     final ExecutionPayload executionPayload = getExecutionPayload(blockContainer);
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
     final Bytes32 blockHash = executionPayload.getBlockHash();
