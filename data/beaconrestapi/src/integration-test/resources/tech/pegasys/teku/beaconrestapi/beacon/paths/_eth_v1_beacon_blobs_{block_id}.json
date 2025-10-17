@@ -1,0 +1,92 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getBlobs",
+    "summary" : "Get blobs",
+    "description" : "Retrieves blobs for a given block id.\nDepending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\nIf the `versioned_hashes` parameter is specified, only the blobs for the specified versioned hashes will be returned. Blobs are\nreturned as an ordered list matching the order of their corresponding KZG commitments in the block.\nAfter the Fulu fork, only supernodes (which custody all data columns) are required to return blobs. Clients may implement\nblob reconstruction logic for non-super nodes.\n",
+    "parameters" : [ {
+      "name" : "block_id",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
+        "example" : "head"
+      }
+    }, {
+      "name" : "versioned_hashes",
+      "in" : "query",
+      "schema" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string",
+          "description" : "Array of versioned hashes for blobs to request for in the specified block. Returns all blobs in the block if not specified.",
+          "example" : "0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2",
+          "format" : "byte"
+        }
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetBlobsResponse"
+            }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Service unavailable",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "204" : {
+        "description" : "Data is unavailable because the chain has not yet reached genesis",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
