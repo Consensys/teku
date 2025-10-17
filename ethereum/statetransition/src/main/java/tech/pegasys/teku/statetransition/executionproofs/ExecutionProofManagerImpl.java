@@ -133,12 +133,6 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       if (result.isValid()) {
         return SafeFuture.completedFuture(result);
       }
-      try {
-        Thread.sleep(100L);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
-      }
     }
     LOG.debug("Checking proofs for block {}", block.getRoot());
 
