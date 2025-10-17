@@ -178,7 +178,6 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      ;
       recentChainData
           .getNextForkDigest(currentEpoch)
           .ifPresent(discoveryNetwork::setNextForkDigest);

@@ -30,7 +30,7 @@ public class FutureValueObserver<C> {
 
   public void subscribe(final ValueObserver<C> onValueChange) {
     subscriptionConsumerFuture
-        .thenPeek(consumer -> consumer.accept(onValueChange))
+        .thenAccept(consumer -> consumer.accept(onValueChange))
         .finishDebug(LOG);
   }
 }

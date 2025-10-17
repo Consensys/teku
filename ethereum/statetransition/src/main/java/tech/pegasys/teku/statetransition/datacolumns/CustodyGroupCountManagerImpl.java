@@ -38,7 +38,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyGroupCountManager {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int INITIAL_VALUE = -1;
   private final ObservableValue<Integer> custodyGroupCount = new ObservableValue<>(true);
   private final ObservableValue<Integer> samplingGroupCount = new ObservableValue<>(true);
   private final ObservableValue<Integer> custodyGroupSyncedCount = new ObservableValue<>(true);
@@ -204,7 +203,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getCustodyGroupCount() {
-    return custodyGroupCount.get().orElse(INITIAL_VALUE);
+    return custodyGroupCount.get().orElseThrow();
   }
 
   @Override
@@ -219,7 +218,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getSamplingGroupCount() {
-    return samplingGroupCount.get().orElse(INITIAL_VALUE);
+    return samplingGroupCount.get().orElseThrow();
   }
 
   @Override

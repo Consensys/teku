@@ -29,7 +29,6 @@ import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -42,10 +41,10 @@ import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -252,8 +251,8 @@ public class Eth2P2PNetworkFactory {
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
 
         // Fulu custody configuration setup
-        final SafeFuture<Consumer<ValueObserver<Integer>>> custodyGroupCountSyncedProvider =
-            new SafeFuture<>();
+        final FutureValueObserver<Integer> custodyGroupCountSyncedProvider =
+            new FutureValueObserver<>();
         if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
           final SpecConfigFulu specConfigFulu =
               SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
@@ -262,14 +261,8 @@ public class Eth2P2PNetworkFactory {
         }
         final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
         // Copied from BeaconChainController#initP2PNetwork() as it is missed from network tests
-        custodyGroupCountSyncedProvider
-            .thenPeek(
-                onValueChanged ->
-                    onValueChanged.accept(
-                        newValue ->
-                            metadataMessagesFactory.updateCustodyGroupCount(
-                                UInt64.valueOf(newValue))))
-            .finishError(LOG);
+        custodyGroupCountSyncedProvider.subscribe(
+            value -> metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(value)));
 
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
