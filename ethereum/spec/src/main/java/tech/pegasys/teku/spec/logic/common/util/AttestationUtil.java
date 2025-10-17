@@ -145,7 +145,8 @@ public abstract class AttestationUtil {
 
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork, final BeaconState state, final ValidatableAttestation attestation) {
-    return isValidIndexedAttestation(fork, state, attestation, BLSSignatureVerifier.SIMPLE);
+    return isValidIndexedAttestation(
+        fork, state, attestation, specConfig.getBLSSignatureVerifier());
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
@@ -215,7 +216,8 @@ public abstract class AttestationUtil {
    */
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork, final BeaconState state, final IndexedAttestation indexedAttestation) {
-    return isValidIndexedAttestation(fork, state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+    return isValidIndexedAttestation(
+        fork, state, indexedAttestation, specConfig.getBLSSignatureVerifier());
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(

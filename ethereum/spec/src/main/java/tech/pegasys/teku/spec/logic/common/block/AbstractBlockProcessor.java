@@ -134,7 +134,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
-    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    final BatchSignatureVerifier signatureVerifier = specConfig.createBatchSignatureVerifier();
     final BeaconState result =
         processAndValidateBlock(
             signedBlock,

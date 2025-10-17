@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.datacolumns.retriever.recovering;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.CANCELLED;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.DOWNLOADED;
 import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever.RECOVERED;
@@ -21,6 +23,7 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
@@ -58,6 +62,7 @@ public class SidecarRetrieverTest {
   final DataColumnSidecarDbAccessor dbAccessor =
       DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
+  final CustodyGroupCountManager custodyManager = mock(CustodyGroupCountManager.class);
 
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
@@ -79,9 +84,11 @@ public class SidecarRetrieverTest {
           dbAccessor,
           stubAsyncRunner,
           RECOVERY_TIMEOUT,
+          RECOVERY_TIMEOUT.dividedBy(2),
           CHECK_INTERVAL,
           timeProvider,
           columnCount,
+          new AtomicReference<>(custodyManager),
           metricsSystem);
 
   @BeforeEach
@@ -102,6 +109,28 @@ public class SidecarRetrieverTest {
     assertThat(retriever.getPendingRequestsChecker().isCancelled()).isFalse();
     retriever.stop();
     assertThat(retriever.getPendingRequestsChecker()).isNull();
+  }
+
+  @Test
+  void shouldCancelAfterDownloadTimeoutWhenNotRebuilding() {
+    when(custodyManager.getCustodyGroupCount()).thenReturn(8);
+    final BeaconBlock block = blockResolver.addBlock(10, 10);
+    final DataColumnSlotAndIdentifier id = createId(block, 0);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    timeProvider.advanceTimeBy(RECOVERY_TIMEOUT.dividedBy(2));
+    stubAsyncRunner.executeQueuedActions();
+    assertThat(response.isDone()).isTrue();
+  }
+
+  @Test
+  void shouldInitiateRebuildIfCustodyAllColumnsAndDownloadingTimesOut() {
+    when(custodyManager.getCustodyGroupCount()).thenReturn(128);
+    final BeaconBlock block = blockResolver.addBlock(10, 10);
+    final DataColumnSlotAndIdentifier id = createId(block, 0);
+    final SafeFuture<DataColumnSidecar> response = retriever.retrieve(id);
+    timeProvider.advanceTimeBy(RECOVERY_TIMEOUT.dividedBy(2));
+    stubAsyncRunner.executeQueuedActions();
+    assertThat(response.isDone()).isFalse();
   }
 
   @Test

@@ -178,6 +178,7 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
+  /** Tries to get canonical blobSidecars if not found, tries non-canonical * */
   public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
     return recentChainData
@@ -806,6 +807,11 @@ public class CombinedChainDataClient {
 
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return historicalChainData.getDataColumnIdentifiers(slot);
+  }
+
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return historicalChainData.getNonCanonicalDataColumnIdentifiers(slot);
   }
 
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(

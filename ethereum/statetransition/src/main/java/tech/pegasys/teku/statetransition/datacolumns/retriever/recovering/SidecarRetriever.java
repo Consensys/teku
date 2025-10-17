@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,21 +33,24 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
 public class SidecarRetriever implements DataColumnSidecarRetriever {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final DataColumnSidecarRetriever downloader;
+  private final DataColumnSidecarRetriever delegate;
   private final MiscHelpersFulu miscHelpersFulu;
   private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final Duration recoveryTimeout;
+  private final Duration downloadTimeout;
   private final Duration recoveryCheckInterval;
   private final int numberOfColumnsRequiredToReconstruct;
   private Cancellable pendingRequestsChecker;
+  private final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef;
 
   private final Map<DataColumnSlotAndIdentifier, PendingRecoveryRequest> requests =
       new ConcurrentHashMap<>();
@@ -65,17 +69,25 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
       final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
       final Duration recoveryTimeout,
+      final Duration downloadTimeout,
       final Duration recoveryCheckInterval,
       final TimeProvider timeProvider,
       final int numberOfColumns,
+      final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef,
       final MetricsSystem metricsSystem) {
-    downloader = delegate;
+    this.delegate = delegate;
     this.miscHelpersFulu = miscHelpersFulu;
     this.sidecarDB = sidecarDB;
     this.asyncRunner = asyncRunner;
     this.recoveryTimeout = recoveryTimeout;
+    this.downloadTimeout = downloadTimeout;
     this.recoveryCheckInterval = recoveryCheckInterval;
     this.timeProvider = timeProvider;
+    this.custodyGroupCountManagerRef = custodyGroupCountManagerRef;
+    LOG.debug(
+        "Download timeout {} ms, recovery timeout {} seconds",
+        downloadTimeout.toMillis(),
+        recoveryTimeout.toSeconds());
     // reconstruction of all columns is possible with >= 50% of the column data
     this.numberOfColumnsRequiredToReconstruct = Math.ceilDiv(numberOfColumns, 2);
     sidecarRecoveryMetric =
@@ -131,10 +143,10 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
             __ ->
                 new PendingRecoveryRequest(
                     columnId,
-                    downloader.retrieve(columnId),
+                    delegate.retrieve(columnId),
                     timeProvider.getTimeInMillis(),
                     recoveryTimeout,
-                    recoveryTimeout.dividedBy(2),
+                    downloadTimeout,
                     sidecarRecoveryMetric,
                     () -> requests.remove(columnId)));
     return pendingRecoveryRequest.getFuture();
@@ -142,12 +154,14 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
 
   @Override
   public void flush() {
-    downloader.flush();
+    delegate.flush();
   }
 
   @Override
   public void onNewValidatedSidecar(final DataColumnSidecar sidecar) {
-    downloader.onNewValidatedSidecar(sidecar);
+    LOG.trace(
+        "new validated sidecar ({}), index {}", sidecar.getSlotAndBlockRoot(), sidecar.getIndex());
+    delegate.onNewValidatedSidecar(sidecar);
   }
 
   @VisibleForTesting
@@ -180,22 +194,32 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
         .filter(PendingRecoveryRequest::isFailedDownloading)
         .forEach(
             request -> {
-              final RebuildColumnsTask rebuildColumnsTask =
-                  rebuildTasks.computeIfAbsent(
-                      request.getBlockRoot(),
-                      __ ->
-                          new RebuildColumnsTask(
+              if (custodyGroupCountManagerRef.get().getCustodyGroupCount() == 128) {
+                final RebuildColumnsTask rebuildColumnsTask =
+                    rebuildTasks.computeIfAbsent(
+                        request.getBlockRoot(),
+                        __ -> {
+                          LOG.debug(
+                              "Rebuilding columns for slot {} root {}",
+                              request.getSlot(),
+                              request.getBlockRoot());
+                          return new RebuildColumnsTask(
                               request.getSlotAndBlockRoot(),
                               currentTime,
-                              recoveryTimeout.dividedBy(2),
+                              recoveryTimeout.minus(downloadTimeout),
                               numberOfColumnsRequiredToReconstruct,
                               sidecarDB,
-                              miscHelpersFulu));
-              LOG.debug(
-                  "Rebuilding columns for slot {} root {}",
-                  request.getSlot(),
-                  request.getBlockRoot());
-              rebuildColumnsTask.addTask(request);
+                              miscHelpersFulu);
+                        });
+                rebuildColumnsTask.addTask(request);
+              } else {
+                LOG.debug(
+                    "Custody group count {} is not viable to reconstruct for slot {} root {}",
+                    custodyGroupCountManagerRef.get().getCustodyGroupCount(),
+                    request.getSlot(),
+                    request.getBlockRoot());
+                request.cancel();
+              }
             });
     rebuildTasks.entrySet().removeIf(entry -> entry.getValue().isDone(currentTime));
 

@@ -66,11 +66,11 @@ public class GossipForkSubscriptionsGloasBpo extends GossipForkSubscriptionsGloa
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor,
       final OperationProcessor<DataColumnSidecar> dataColumnSidecarOperationProcessor,
-      final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadEnvelope> executionPayloadOperationProcessor,
       final OperationProcessor<PayloadAttestationMessage>
           payloadAttestationMessageOperationProcessor,
       final OperationProcessor<SignedExecutionPayloadBid> executionPayloadBidOperationProcessor,
+      final OperationProcessor<ExecutionProof> executionProofOperationProcessor,
       final DebugDataDumper debugDataDumper,
       final DasGossipLogger dasGossipLogger,
       final BlobParameters bpo,

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -20,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionProofSchema
     extends ContainerSchema5<
@@ -39,8 +42,6 @@ public class ExecutionProofSchema
         namedSchema("proof_data", SszByteListSchema.create(MAX_PROOF_DATA_SIZE)));
   }
 
-  static final ExecutionProofSchema SSZ_SCHEMA = new ExecutionProofSchema();
-
   public ExecutionProof create(
       final SszBytes32 blockRoot,
       final SszBytes32 blockHash,
@@ -48,6 +49,20 @@ public class ExecutionProofSchema
       final SszUInt64 version,
       final SszByteList proofData) {
     return new ExecutionProof(this, blockRoot, blockHash, subnetId, version, proofData);
+  }
+
+  public ExecutionProof create(
+      final Bytes32 blockRoot,
+      final Bytes32 blockHash,
+      final UInt64 subnetId,
+      final UInt64 version,
+      final Bytes proofData) {
+    return create(
+        SszBytes32.of(blockRoot),
+        SszBytes32.of(blockHash),
+        SszUInt64.of(subnetId),
+        SszUInt64.of(version),
+        getProofDataSchema().fromBytes(proofData));
   }
 
   @Override
