@@ -165,11 +165,10 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       return SafeFuture.completedFuture(null);
     }
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
-
+    final Set<ExecutionProof> generatedProofs = new HashSet<>();
     asyncRunner
         .runAsync(
             () -> {
-              final Set<ExecutionProof> generatedProofs = new HashSet<>();
               // Generate proofs for all subnets
               IntStream.range(0, (int) MAX_EXECUTION_PROOF_SUBNETS)
                   .forEach(
@@ -188,11 +187,13 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                                         blockRoot,
                                         subnetIndex,
                                         error));
-                        validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
                       });
             })
         .finish(
-            () -> LOG.debug("Completed generating execution proofs for block {}", blockRoot),
+            () -> {
+                validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
+                LOG.debug("Completed generating execution proofs for block {}", blockRoot);
+            },
             error ->
                 LOG.error("Failed to generate execution proofs for block {}", blockRoot, error));
 
