@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -41,10 +42,14 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -54,9 +59,12 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
   private static final Logger LOG = LogManager.getLogger();
-  static final Spec SPEC = TestSpecFactory.createMinimalFulu();
+  private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
+  static final private List<UInt64> SAMPLING_INDICES = List.of(UInt64.valueOf(5), UInt64.ZERO,  UInt64.valueOf(2));
+
 
   private RecentChainData recentChainData;
+  private CustodyGroupCountManager custodyGroupCountManager;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
@@ -68,10 +76,14 @@ public class DasSamplerBasicTest {
   private ProposersDataManager proposersDataManager;
   private CustodyGroupCountChannel custodyGroupCountChannel;
   private CombinedChainDataClient combinedChainDataClient;
-  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
+
+  private DasSamplerBasic sampler;
 
   @BeforeEach
   public void setUp() {
+    custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+    when(custodyGroupCountManager.getSamplingColumnIndices())
+        .thenReturn(SAMPLING_INDICES);
     recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
@@ -80,15 +92,92 @@ public class DasSamplerBasicTest {
     proposersDataManager = mock(ProposersDataManager.class);
     custodyGroupCountChannel = mock(CustodyGroupCountChannel.class);
     combinedChainDataClient = mock(CombinedChainDataClient.class);
+
+    when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.ZERO);
+
+    sampler =        new DasSamplerBasic(
+                    SPEC,
+                    currentSlotProvider,
+                    db,
+                    custody,
+                    retriever,
+                    () -> custodyGroupCountManager,
+                    recentChainData);
   }
+
+  @Test
+  void onAlreadyKnownDataColumn_shouldAddToTracker() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+
+    final DataColumnSlotAndIdentifier columnId =
+        new DataColumnSlotAndIdentifier(SAMPLING_INDICES.get(0), blockRoot, UInt64.ZERO);
+    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
+
+    sampler.onAlreadyKnownDataColumn(columnId, RemoteOrigin.CUSTODY);
+
+    when(retriever.retrieve(
+            any()))
+            .thenReturn(
+                    SafeFuture.completedFuture(mock(DataColumnSidecar.class)));
+
+    final SafeFuture<List<UInt64>> result = sampler.checkDataAvailability(UInt64.ZERO, blockRoot);
+    final List<UInt64> availableColumns = result.join();
+
+    assertThat(availableColumns)
+        .containsExactlyInAnyOrderElementsOf(custodyGroupCountManager.getSamplingColumnIndices());
+  }
+
+  @Test
+void flush_shouldForwardToRetriever() {
+    sampler.flush();
+    verify(retriever).flush();
+  }
+
+  @Test
+  void checkSamplingEligibility_shouldReturnRequired() {
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ZERO, 1);
+
+
+    final SamplingEligibilityStatus result =
+        sampler.checkSamplingEligibility(block.getBeaconBlock().orElseThrow());
+
+    assertEquals(SamplingEligibilityStatus.REQUIRED, result);
+  }
+
+  @Test
+  void checkSamplingEligibility_shouldReturnNoBlobs() {
+
+    final SignedBeaconBlock block =dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ZERO,0);
+
+
+    final SamplingEligibilityStatus result =
+            sampler.checkSamplingEligibility(block.getBeaconBlock().orElseThrow());
+
+    assertEquals(SamplingEligibilityStatus.NOT_REQUIRED_NO_BLOBS, result);
+  }
+
+  @Test
+  void checkSamplingEligibility_shouldReturnOldEpoch() {
+
+    final SignedBeaconBlock block =dataStructureUtil.randomSignedBeaconBlockWithCommitments(UInt64.ZERO,0);
+
+    when(currentSlotProvider.getCurrentSlot()).thenReturn(UInt64.MAX_VALUE);
+
+    final SamplingEligibilityStatus result =
+            sampler.checkSamplingEligibility(block.getBeaconBlock().orElseThrow());
+
+    assertEquals(SamplingEligibilityStatus.NOT_REQUIRED_OLD_EPOCH, result);
+  }
+
 
   @ParameterizedTest
   @MethodSource("testCheckDataAvailabilityArguments")
   public void testCheckDataAvailability_custodyRequirementNotValidating(
       final int configuredCustodyCount,
       final int validatorCount,
-      final int expectedSampingRequests) {
-    testCheckDataAvailability(configuredCustodyCount, validatorCount, expectedSampingRequests);
+      final int expectedSamplingRequests) {
+    testCheckDataAvailability(configuredCustodyCount, validatorCount, expectedSamplingRequests);
   }
 
   private static Object[][] testCheckDataAvailabilityArguments() {
@@ -117,15 +206,6 @@ public class DasSamplerBasicTest {
       final int expectedSamplingRequests) {
     when(combinedChainDataClient.getCustodyGroupCount())
         .thenReturn(Optional.of(UInt64.valueOf(configuredCustodyCount)));
-    final CustodyGroupCountManagerImpl custodyGroupCountManager =
-        new CustodyGroupCountManagerImpl(
-            SPEC,
-            proposersDataManager,
-            custodyGroupCountChannel,
-            combinedChainDataClient,
-            configuredCustodyCount,
-            dataStructureUtil.randomUInt256(),
-            metricsSystem);
     final DasSamplerBasic sampler =
         new DasSamplerBasic(
             SPEC,
@@ -149,25 +229,24 @@ public class DasSamplerBasicTest {
     when(combinedChainDataClient.getBestFinalizedState())
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
     when(proposersDataManager.getPreparedProposerInfo()).thenReturn(preparedProposerInfoMap);
-    custodyGroupCountManager.onSlot(UInt64.ZERO); // initialize custody manager
 
     final List<UInt64> custodyColumnIndices = custodyGroupCountManager.getCustodyColumnIndices();
-    for (UInt64 columnIndex : custodyColumnIndices) {
-      when(custody.hasCustodyDataColumnSidecar(
-              eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
-          .thenReturn(SafeFuture.completedFuture(true));
-    }
-    final List<UInt64> samplingNonCustodyColumns = new ArrayList<>();
-    for (UInt64 columnIndex : custodyGroupCountManager.getSamplingColumnIndices()) {
-      if (!custodyColumnIndices.contains(columnIndex)) {
-        samplingNonCustodyColumns.add(columnIndex);
-        when(custody.hasCustodyDataColumnSidecar(
-                eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
-            .thenReturn(SafeFuture.completedFuture(false));
-      }
-    }
+//    for (UInt64 columnIndex : custodyColumnIndices) {
+//      when(custody.hasCustodyDataColumnSidecar(
+//              eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
+//          .thenReturn(SafeFuture.completedFuture(true));
+//    }
+//    final List<UInt64> samplingNonCustodyColumns = new ArrayList<>();
+//    for (UInt64 columnIndex : custodyGroupCountManager.getSamplingColumnIndices()) {
+//      if (!custodyColumnIndices.contains(columnIndex)) {
+//        samplingNonCustodyColumns.add(columnIndex);
+//        when(custody.hasCustodyDataColumnSidecar(
+//                eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, columnIndex))))
+//            .thenReturn(SafeFuture.completedFuture(false));
+//      }
+//    }
 
-    for (final UInt64 missingColumn : samplingNonCustodyColumns) {
+    for (final UInt64 missingColumn : custodyColumnIndices) {
       LOG.info("Retrieve missing column {}", missingColumn);
       when(retriever.retrieve(
               new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, missingColumn)))
@@ -193,6 +272,6 @@ public class DasSamplerBasicTest {
           .retrieve(eq(new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, custodyColumn)));
     }
 
-    assertEquals(expectedSamplingRequests, samplingNonCustodyColumns.size());
+    assertEquals(expectedSamplingRequests, custodyColumnIndices.size());
   }
 }

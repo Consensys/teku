@@ -17,8 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +39,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasic
-    implements DataAvailabilitySampler, FinalizedCheckpointChannel, SlotEventsChannel {
+    implements DataAvailabilitySampler, SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final DataColumnSidecarCustody custody;
@@ -54,8 +52,6 @@ public class DasSamplerBasic
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>();
   private final RecentChainData recentChainData;
-
-  private volatile UInt64 lastFinalizedSlot = UInt64.ZERO;
 
   public DasSamplerBasic(
       final Spec spec,
@@ -106,19 +102,6 @@ public class DasSamplerBasic
         .add(DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar), remoteOrigin);
   }
 
-  public void onNewBlock(final BeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
-
-    LOG.info("sampling for block {} - origin: {}", block.toLogString(), remoteOrigin);
-
-    if (checkSamplingEligibility(block) == SamplingEligibilityStatus.REQUIRED) {
-      recentlySampledColumnsByRoot.computeIfAbsent(
-          block.getRoot(),
-          k ->
-              DataColumnSamplingTracker.create(
-                  block.getSlot(), block.getRoot(), custodyGroupCountManagerSupplier.get()));
-    }
-  }
-
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(
       final UInt64 slot, final Bytes32 blockRoot) {
@@ -130,7 +113,7 @@ public class DasSamplerBasic
                 DataColumnSamplingTracker.create(
                     slot, blockRoot, custodyGroupCountManagerSupplier.get()));
 
-    final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumns();
+    final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumnIdentifiers();
     LOG.info(
         "checkDataAvailability(): missing columns for slot {} root {}: {}",
         slot,
@@ -145,7 +128,7 @@ public class DasSamplerBasic
                 LOG.info(
                     "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                     retrievedColumns.size(),
-                    tracker.samplingRequirement.size(),
+                    tracker.samplingRequirement().size(),
                     slot,
                     blockRoot);
               } else {
@@ -153,15 +136,15 @@ public class DasSamplerBasic
                     String.format(
                         "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
                         retrievedColumns.size(),
-                        tracker.getMissingColumns().size(),
+                        tracker.getMissingColumnIdentifiers().size(),
                         slot,
                         blockRoot,
-                        tracker.samplingRequirement.size()));
+                        tracker.samplingRequirement().size()));
               }
             })
         .finishError(LOG);
 
-    return tracker.completionFuture;
+    return tracker.completionFuture();
   }
 
   // TODO: verify custody does not write sidecars multiple times on DB
@@ -211,35 +194,20 @@ public class DasSamplerBasic
   }
 
   @Override
-  public void onNewFinalizedCheckpoint(
-      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    db.getFirstSamplerIncompleteSlot()
-        .thenCompose(
-            maybeSlot ->
-                maybeSlot.map(db::setFirstSamplerIncompleteSlot).orElse(SafeFuture.COMPLETE))
-        .finish(
-            ex ->
-                LOG.error(
-                    String.format("Failed to update incomplete sampler slot on %s", checkpoint),
-                    ex));
-    lastFinalizedSlot = spec.computeStartSlotAtEpoch(checkpoint.getEpoch());
-  }
-
-  @Override
   public void onSlot(final UInt64 slot) {
-    final UInt64 localLastFinalizedSlot = lastFinalizedSlot;
+    final UInt64 localLastFinalizedSlot = spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch().increment());
     recentlySampledColumnsByRoot
         .values()
         .removeIf(
             tracker -> {
-              if (tracker.completionFuture.isDone()) {
+              if (tracker.completionFuture().isDone()) {
                 return true;
               }
-              if (tracker.slot.isLessThanOrEqualTo(localLastFinalizedSlot)
-                  || recentChainData.containsBlock(tracker.blockRoot)) {
+              if (tracker.slot().isLessThanOrEqualTo(localLastFinalizedSlot)
+                  || recentChainData.containsBlock(tracker.blockRoot())) {
 
                 // make sure the future releases any pending waiters
-                tracker.completionFuture.completeExceptionally(
+                tracker.completionFuture().completeExceptionally(
                     new RuntimeException("DAS sampling expired"));
                 return true;
               }
@@ -248,61 +216,4 @@ public class DasSamplerBasic
             });
   }
 
-  private record DataColumnSamplingTracker(
-      UInt64 slot,
-      Bytes32 blockRoot,
-      List<UInt64> samplingRequirement,
-      Set<UInt64> missingColumns,
-      SafeFuture<List<UInt64>> completionFuture) {
-    static DataColumnSamplingTracker create(
-        final UInt64 slot,
-        final Bytes32 blockRoot,
-        final CustodyGroupCountManager custodyGroupCountManager) {
-      final List<UInt64> samplingRequirement = custodyGroupCountManager.getSamplingColumnIndices();
-      final Set<UInt64> missingColumns = ConcurrentHashMap.newKeySet(samplingRequirement.size());
-      missingColumns.addAll(samplingRequirement);
-      return new DataColumnSamplingTracker(
-          slot, blockRoot, samplingRequirement, missingColumns, new SafeFuture<>());
-    }
-
-    public boolean add(
-        final DataColumnSlotAndIdentifier columnIdentifier, final RemoteOrigin origin) {
-      if (!slot.equals(columnIdentifier.slot())
-          || !blockRoot.equals(columnIdentifier.blockRoot())) {
-        return false;
-      }
-
-      LOG.debug("Adding column {} to sampling tracker", columnIdentifier);
-      final boolean removed =
-          missingColumns.removeIf(idx -> idx.equals(columnIdentifier.columnIndex()));
-      if (!removed) {
-        LOG.debug("Column {} was already marked as received, origin: {}", columnIdentifier, origin);
-        return false;
-      }
-
-      if (missingColumns.isEmpty()) {
-        LOG.info(
-            "Sampling complete for slot {} root {} via column {} received via {}",
-            slot,
-            blockRoot,
-            columnIdentifier.columnIndex(),
-            origin);
-        completionFuture.complete(samplingRequirement);
-      } else {
-        LOG.debug(
-            "Sampling still pending for slot {} root {}, remaining columns: {}",
-            slot,
-            blockRoot,
-            missingColumns);
-      }
-
-      return true;
-    }
-
-    private List<DataColumnSlotAndIdentifier> getMissingColumns() {
-      return missingColumns.stream()
-          .map(idx -> new DataColumnSlotAndIdentifier(slot, blockRoot, idx))
-          .toList();
-    }
-  }
 }
