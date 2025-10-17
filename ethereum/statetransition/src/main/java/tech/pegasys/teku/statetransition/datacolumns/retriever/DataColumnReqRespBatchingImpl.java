@@ -46,7 +46,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   // 64 slots * 128 columns at max = 8192, half of MAX_REQUEST_DATA_COLUMN_SIDECARS
   private static final int MAX_BATCH_SIZE = 64;
 
-  private Spec spec;
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final BatchDataColumnsByRangeReqResp byRangeRpc;
   private final BatchDataColumnsByRootReqResp byRootRpc;
