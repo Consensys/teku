@@ -266,6 +266,9 @@ public class DasSamplerBasicTest {
   void onSlot_shouldPruneTrackers() {
     final UInt64 finalizedEpoch = UInt64.valueOf(1);
     final Bytes32 importedBlockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 lastFinalizedSlot = UInt64.valueOf(8);
+    final UInt64 firstNonFinalizedSlot = UInt64.valueOf(9);
+
     when(recentChainData.getFinalizedEpoch()).thenReturn(finalizedEpoch);
     when(recentChainData.containsBlock(any())).thenReturn(false);
     when(recentChainData.containsBlock(importedBlockRoot)).thenReturn(true);
@@ -276,17 +279,17 @@ public class DasSamplerBasicTest {
     final SafeFuture<List<UInt64>> trackerForFinalizedSlotFuture = new SafeFuture<>();
     final DataColumnSamplingTracker trackerForFinalizedSlot = mock(DataColumnSamplingTracker.class);
     when(trackerForFinalizedSlot.completionFuture()).thenReturn(trackerForFinalizedSlotFuture);
-    when(trackerForFinalizedSlot.slot()).thenReturn(UInt64.ZERO);
+    when(trackerForFinalizedSlot.slot()).thenReturn(lastFinalizedSlot);
 
     final SafeFuture<List<UInt64>> trackerForImportedBlockFuture = new SafeFuture<>();
     final DataColumnSamplingTracker trackerForImportedBlock = mock(DataColumnSamplingTracker.class);
     when(trackerForImportedBlock.completionFuture()).thenReturn(trackerForImportedBlockFuture);
-    when(trackerForImportedBlock.slot()).thenReturn(UInt64.MAX_VALUE);
+    when(trackerForImportedBlock.slot()).thenReturn(firstNonFinalizedSlot);
     when(trackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
 
     final DataColumnSamplingTracker expectedToRemainTracker = mock(DataColumnSamplingTracker.class);
     when(expectedToRemainTracker.completionFuture()).thenReturn(new SafeFuture<>());
-    when(expectedToRemainTracker.slot()).thenReturn(UInt64.MAX_VALUE);
+    when(expectedToRemainTracker.slot()).thenReturn(firstNonFinalizedSlot);
     when(expectedToRemainTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
 
     sampler
