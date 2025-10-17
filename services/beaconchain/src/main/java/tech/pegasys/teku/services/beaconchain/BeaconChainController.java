@@ -84,6 +84,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -131,6 +132,7 @@ import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -194,6 +196,8 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.Sideca
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGeneratorImpl;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -310,6 +314,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile SlotEventsChannel slotEventsChannelPublisher;
   protected volatile ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
   protected volatile AsyncRunner networkAsyncRunner;
+  protected volatile Optional<AsyncRunner> executionProofAsyncRunner;
   protected volatile AsyncRunnerFactory asyncRunnerFactory;
   protected volatile AsyncRunner eventAsyncRunner;
   protected volatile Path beaconDataDirectory;
@@ -416,6 +421,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "p2p",
             eth2NetworkConfig.getAsyncP2pMaxThreads(),
             eth2NetworkConfig.getAsyncP2pMaxQueue());
+    this.executionProofAsyncRunner =
+        beaconConfig.zkChainConfiguration().statelessValidationEnabled()
+            ? Optional.ofNullable(serviceConfig.createAsyncRunner("executionproof", 1))
+            : Optional.empty();
     this.operationPoolAsyncRunner = serviceConfig.createAsyncRunner("operationPoolUpdater", 1);
     // there are several operations that may be performed in the das runner, so it has more threads,
     // larger default size. das runner should be separate to the operation pool runner as it's a
@@ -692,13 +701,25 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // TODO: We will eventually need the Gossip in the EP Manager for publishing the proofs we
     // produce?
     // comment for now this will be used in the future
-    //      final ExecutionProofGossipChannel executionProofGossipChannel =
-    //      eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
-    if (zkConfig.isStatelessValidationEnabled()) {
+    if (zkConfig.statelessValidationEnabled()) {
+      final ExecutionProofGossipChannel executionProofGossipChannel =
+          eventChannels.getPublisher(ExecutionProofGossipChannel.class, networkAsyncRunner);
       final ExecutionProofGossipValidator executionProofGossipValidator =
           ExecutionProofGossipValidator.create();
+      final SpecVersion specVersionElectra = spec.forMilestone(SpecMilestone.ELECTRA);
+      final SchemaDefinitionsElectra schemaDefinitionsElectra =
+          SchemaDefinitionsElectra.required(specVersionElectra.getSchemaDefinitions());
+      final ExecutionProofGenerator executionProofGenerator =
+          new ExecutionProofGeneratorImpl(schemaDefinitionsElectra);
 
-      executionProofManager = new ExecutionProofManagerImpl(executionProofGossipValidator);
+      executionProofManager =
+          new ExecutionProofManagerImpl(
+              executionProofGossipValidator,
+              executionProofGenerator,
+              executionProofGossipChannel::publishExecutionProof,
+              zkConfig.generateExecutionProofsEnabled(),
+              zkConfig.statelessMinProofsRequired(),
+              executionProofAsyncRunner.get());
 
     } else {
       executionProofManager = ExecutionProofManager.NOOP;
@@ -917,9 +938,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final DataColumnReqResp dasRpc =
         new DataColumnReqRespBatchingImpl(
+            spec,
+            recentChainData,
             loggingByRangeReqResp,
             loggingByRootReqResp,
-            () -> spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch().increment()),
             schemaDefinitionsFulu.getDataColumnsByRootIdentifierSchema());
 
     final MetadataDasPeerCustodyTracker peerCustodyTracker = new MetadataDasPeerCustodyTracker();
@@ -1514,7 +1536,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionPerformanceFactory,
             blockPublisher,
             executionPayloadFactory,
-            executionPayloadPublisher);
+            executionPayloadPublisher,
+            executionProofManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)
@@ -1674,7 +1697,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedDataColumnSidecarOperationProcessor(
                 dataColumnSidecarManager::onDataColumnSidecarGossip)
-            .gossipedExecutionProofOperationProcessor(executionProofManager::onExecutionProofGossip)
+            .gossipedExecutionProofOperationProcessor(
+                executionProofManager::onReceivedExecutionProofGossip)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)

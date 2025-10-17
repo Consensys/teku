@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 public class ExecutionProofGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
+  // TODO maybe change this to be a map of block/proof in the future
   private final Set<ExecutionProof> receivedValidExecutionProofSet;
 
   public static ExecutionProofGossipValidator create() {
@@ -42,6 +43,14 @@ public class ExecutionProofGossipValidator {
   public SafeFuture<InternalValidationResult> validate(
       final ExecutionProof executionProof, final UInt64 subnetId) {
 
+    if (!executionProof.getVersion().get().equals(UInt64.ONE)) {
+      LOG.trace(
+          "ExecutionProof for block root {} has unsupported version {}",
+          executionProof.getBlockRoot(),
+          executionProof.getVersion());
+      return SafeFuture.completedFuture(InternalValidationResult.reject("Unsupported version"));
+    }
+
     // TODO need to check for other validations done in the prototype and spec
     if (!executionProof.getSubnetId().get().equals(subnetId)) {
       LOG.trace(
@@ -56,6 +65,10 @@ public class ExecutionProofGossipValidator {
       LOG.trace("Received duplicate execution proof {}", executionProof);
       return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
+
+    // some of the todos in the LH prototype apply to us atm
+    // TODO: Add timing validation based on slot
+    // TODO: Add block existence validation
 
     // Validated the execution proof
     LOG.trace(
