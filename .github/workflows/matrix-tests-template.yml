@@ -62,8 +62,10 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
 
+      # only acceptance tests need the docker login
       - name: Login to dockerhub
         uses: docker/login-action@v3
+        if: ${{ inputs.stage_key == 'acceptance' }}
         with:
           username: ${{ secrets.DOCKER_USER_RO }}
           password: ${{ secrets.DOCKER_PASSWORD_RO }}
