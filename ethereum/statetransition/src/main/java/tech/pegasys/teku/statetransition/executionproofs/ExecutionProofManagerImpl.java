@@ -55,8 +55,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private static final Logger LOG = LogManager.getLogger();
   private final int attemptsToGetProof = 3;
   private final ExecutionProofGenerator executionProofGenerator;
-    private final Duration proofGenerationDelay;
-    private final AsyncRunner asyncRunner;
+  private final Duration proofGenerationDelay;
+  private final AsyncRunner asyncRunner;
   private final boolean isProofGenerationEnabled;
   private final int minProofsRequired;
 
@@ -73,8 +73,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     this.isProofGenerationEnabled = isProofGenerationEnabled;
     this.minProofsRequired = minProofsRequired;
     this.executionProofGenerator = executionProofGenerator;
-      this.proofGenerationDelay = proofGenerationDelay;
-      this.asyncRunner = asyncRunner;
+    this.proofGenerationDelay = proofGenerationDelay;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
@@ -179,7 +179,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                   .forEach(
                       subnetIndex -> {
                         executionProofGenerator
-                            .generateExecutionProof(blockContainer, subnetIndex, proofGenerationDelay)
+                            .generateExecutionProof(
+                                blockContainer, subnetIndex, proofGenerationDelay)
                             .finish(
                                 proof -> {
                                   LOG.trace("Generated proof for subnet {}", proof.getSubnetId());

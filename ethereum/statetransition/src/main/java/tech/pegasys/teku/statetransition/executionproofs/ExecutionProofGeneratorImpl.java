@@ -40,7 +40,9 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
 
   @Override
   public SafeFuture<ExecutionProof> generateExecutionProof(
-      final SignedBlockContainer blockContainer, final int subnetId, final Duration proofGenerationDelay) {
+      final SignedBlockContainer blockContainer,
+      final int subnetId,
+      final Duration proofGenerationDelay) {
 
     LOG.info("Current thread {}: ", Thread.currentThread().getName());
     try {

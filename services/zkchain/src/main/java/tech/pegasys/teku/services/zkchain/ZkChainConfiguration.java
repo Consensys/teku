@@ -16,10 +16,10 @@ package tech.pegasys.teku.services.zkchain;
 import java.time.Duration;
 
 public record ZkChainConfiguration(
-        boolean statelessValidationEnabled,
-        boolean generateExecutionProofsEnabled,
-        int statelessMinProofsRequired,
-        Duration proofDelayDurationInMs) {
+    boolean statelessValidationEnabled,
+    boolean generateExecutionProofsEnabled,
+    int statelessMinProofsRequired,
+    Duration proofDelayDurationInMs) {
 
   public static final boolean DEFAULT_STATELESS_VALIDATION_ENABLED = false;
   public static final boolean DEFAULT_GENERATE_EXECUTION_PROOFS_ENABLED = false;
@@ -58,8 +58,8 @@ public record ZkChainConfiguration(
     }
 
     public Builder proofDelayDurationInMs(final Duration proofDelayDurationInMs) {
-        this.proofDelayDurationInMs = proofDelayDurationInMs;
-        return this;
+      this.proofDelayDurationInMs = proofDelayDurationInMs;
+      return this;
     }
 
     public ZkChainConfiguration build() {
@@ -68,7 +68,10 @@ public record ZkChainConfiguration(
             "Can't generate execution proofs when stateless validation isn't enabled");
       }
       return new ZkChainConfiguration(
-          statelessValidationEnabled, generateExecutionProofsEnabled, statelessMinProofsRequired, proofDelayDurationInMs);
+          statelessValidationEnabled,
+          generateExecutionProofsEnabled,
+          statelessMinProofsRequired,
+          proofDelayDurationInMs);
     }
   }
 }

@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.time.Duration;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.zkchain.ZkChainConfiguration;
-
-import java.time.Duration;
 
 public class ZkChainOptions {
   @CommandLine.Option(
@@ -50,15 +49,14 @@ public class ZkChainOptions {
   private int statelessMinProofsRequired =
       ZkChainConfiguration.DEFAULT_STATELESS_MIN_PROOFS_REQUIRED;
 
-    @CommandLine.Option(
-            hidden = true,
-            names = {"--Xstateless-proofs-generation-delay"},
-            paramLabel = "<DURATION>",
-            description =
-                    "Proof generation artificial delay in miliseconds.",
-            arity = "1")
-    private long statelessProofGenerationDelay =
-            ZkChainConfiguration.DEFAULT_PROOF_GENERATION_DELAY.toMillis();
+  @CommandLine.Option(
+      hidden = true,
+      names = {"--Xstateless-proofs-generation-delay"},
+      paramLabel = "<DURATION>",
+      description = "Proof generation artificial delay in miliseconds.",
+      arity = "1")
+  private long statelessProofGenerationDelay =
+      ZkChainConfiguration.DEFAULT_PROOF_GENERATION_DELAY.toMillis();
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.zkchain(

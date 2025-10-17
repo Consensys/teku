@@ -41,8 +41,10 @@ class ExecutionProofGeneratorImplTest {
     int subnetA = 1;
     int subnetB = 2;
 
-    ExecutionProof proofA = generator.generateExecutionProof(block, subnetA, Duration.ofMillis(0)).get();
-    ExecutionProof proofB = generator.generateExecutionProof(block, subnetB, Duration.ofMillis(0)).get();
+    ExecutionProof proofA =
+        generator.generateExecutionProof(block, subnetA, Duration.ofMillis(0)).get();
+    ExecutionProof proofB =
+        generator.generateExecutionProof(block, subnetB, Duration.ofMillis(0)).get();
 
     assertNotNull(proofA);
     assertNotNull(proofB);

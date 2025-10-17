@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.statetransition.executionproofs;
 
+import java.time.Duration;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
-
-import java.time.Duration;
 
 public interface ExecutionProofGenerator {
   SafeFuture<ExecutionProof> generateExecutionProof(
