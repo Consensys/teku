@@ -27,8 +27,6 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +46,6 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecar
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
-  private static final Logger LOG = LogManager.getLogger();
   private static final Spec SPEC = TestSpecFactory.createMinimalFulu();
   private static final List<UInt64> SAMPLING_INDICES =
       List.of(UInt64.valueOf(5), UInt64.ZERO, UInt64.valueOf(2));

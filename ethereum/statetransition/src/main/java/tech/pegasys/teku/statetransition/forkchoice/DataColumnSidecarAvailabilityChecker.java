@@ -69,15 +69,17 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
       return validationResult;
     }
 
-    dataAvailabilitySampler
-        .checkDataAvailability(block.getSlot(), block.getRoot())
-        .finish(
-            sampleIndices -> {
-              validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
-            },
-            throwable ->
-                validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
-    dataAvailabilitySampler.flush();
-    return validationResult;
+    synchronized (this) {
+      dataAvailabilitySampler
+          .checkDataAvailability(block.getSlot(), block.getRoot())
+          .finish(
+              sampleIndices -> {
+                validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
+              },
+              throwable ->
+                  validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
+      dataAvailabilitySampler.flush();
+      return validationResult;
+    }
   }
 }
