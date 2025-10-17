@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,6 +29,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
 
   private final DataAvailabilitySampler dataAvailabilitySampler;
   private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
+  private final AtomicBoolean inflightResult = new AtomicBoolean(false);
   final Spec spec;
 
   private final SignedBeaconBlock block;
@@ -69,7 +71,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
       return validationResult;
     }
 
-    synchronized (this) {
+    if (inflightResult.compareAndSet(false, true)) {
       dataAvailabilitySampler
           .checkDataAvailability(block.getSlot(), block.getRoot())
           .finish(
@@ -79,7 +81,8 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
               throwable ->
                   validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
       dataAvailabilitySampler.flush();
-      return validationResult;
     }
+
+    return validationResult;
   }
 }

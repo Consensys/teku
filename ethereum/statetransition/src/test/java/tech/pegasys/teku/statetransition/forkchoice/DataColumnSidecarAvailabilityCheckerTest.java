@@ -108,4 +108,27 @@ class DataColumnSidecarAvailabilityCheckerTest {
     assertThat(checker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.validResult(listOfIndices));
   }
+
+  @Test
+  void shouldNotCallSamplerMultipleTimesWhenGetAvailabilityCheckResultCalledMultipleTimes() {
+    when(das.checkSamplingEligibility(block.getMessage()))
+        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
+    when(das.checkDataAvailability(any(), any())).thenReturn(new SafeFuture<>());
+    assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
+
+    // do not call check yet
+    verify(das, never()).checkDataAvailability(any(), any());
+
+    final SafeFuture<DataAndValidationResult<UInt64>> result1 =
+        checker.getAvailabilityCheckResult();
+
+    verify(das).checkDataAvailability(any(), any());
+
+    final SafeFuture<DataAndValidationResult<UInt64>> result2 =
+        checker.getAvailabilityCheckResult();
+
+    // still only called once
+    verify(das).checkDataAvailability(any(), any());
+    assertThat(result1).isSameAs(result2);
+  }
 }
