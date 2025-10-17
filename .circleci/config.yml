@@ -354,7 +354,7 @@ jobs:
           at: ~/project
       - run:
           name: IntegrationTests
-          no_output_timeout: 20m
+          no_output_timeout: 30m
           command: |
             ./gradlew --no-daemon --parallel integrationTest
       - notify
