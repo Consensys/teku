@@ -97,6 +97,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -154,6 +155,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final ExecutionPayloadPublisher executionPayloadPublisher;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
+  private final ExecutionProofManager executionProofManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -178,7 +180,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
           blockProductionAndPublishingPerformanceFactory,
       final BlockPublisher blockPublisher,
       final ExecutionPayloadFactory executionPayloadFactory,
-      final ExecutionPayloadPublisher executionPayloadPublisher) {
+      final ExecutionPayloadPublisher executionPayloadPublisher,
+      final ExecutionProofManager executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -203,6 +206,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.executionPayloadFactory = executionPayloadFactory;
     this.executionPayloadPublisher = executionPayloadPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
+    this.executionProofManager = executionProofManager;
   }
 
   @Override
@@ -715,12 +719,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final BlockPublishingPerformance blockPublishingPerformance =
         blockProductionAndPublishingPerformanceFactory.createForPublishing(
             maybeBlindedBlockContainer.getSlot());
+
+    final boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
+
+    LOG.info("stating to publish block at slot {}", maybeBlindedBlockContainer.getSlot());
+
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
             // do only EQUIVOCATION validation when GOSSIP validation has been requested and the
             // block has been locally created
-            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(maybeBlindedBlockContainer)
+            broadcastValidationLevel == GOSSIP && isLocallyCreated
                 ? EQUIVOCATION
                 : broadcastValidationLevel,
             blockPublishingPerformance)
@@ -729,7 +738,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               final String reason = getRootCauseMessage(ex);
               return SendSignedBlockResult.rejected(reason);
             })
-        .alwaysRun(blockPublishingPerformance::complete);
+        .alwaysRun(blockPublishingPerformance::complete)
+        .thenPeek(
+            __ -> {
+              if (isLocallyCreated) {
+                executionProofManager
+                    .generateProofs(maybeBlindedBlockContainer)
+                    .finish(error -> LOG.debug("failed to generate execution proofs", error));
+              }
+            });
   }
 
   @Override
