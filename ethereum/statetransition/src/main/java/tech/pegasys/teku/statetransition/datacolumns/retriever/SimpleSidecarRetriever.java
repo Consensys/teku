@@ -113,23 +113,8 @@ public class SimpleSidecarRetriever
         .ifPresent(request -> reqRespCompleted(request, sidecar));
   }
 
-  private static final Map<UInt256, Integer> PEER_SELECTION_COUNTER = new ConcurrentHashMap<>();
-
   @Override
-  public void start() {
-    asyncRunner.runWithFixedDelay(
-        () -> {
-          LOG.info("pending requests: {}", pendingRequests.size());
-          LOG.info(
-              "peer selection counts: {}",
-              PEER_SELECTION_COUNTER.entrySet().stream()
-                  .sorted(Comparator.comparingInt(Map.Entry::getValue))
-                  .toList()
-                  .reversed());
-        },
-        Duration.ofSeconds(20),
-        err -> LOG.debug("Unexpected error", err));
-  }
+  public void start() {}
 
   @Override
   public void stop() {}
@@ -354,7 +339,6 @@ public class SimpleSidecarRetriever
     }
 
     void decreaseAvailableRequests(final UInt256 nodeId) {
-      PEER_SELECTION_COUNTER.compute(nodeId, (__, cnt) -> cnt == null ? 1 : cnt + 1);
       pendingRequestsCount.compute(nodeId, (__, cnt) -> cnt == null ? 1 : cnt + 1);
     }
   }
