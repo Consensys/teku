@@ -116,7 +116,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
                     String.format(
                         "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
                         retrievedColumns.size(),
-                        tracker.getMissingColumnIdentifiers().size(),
+                        missingColumns.size(),
                         slot,
                         blockRoot,
                         tracker.samplingRequirement().size()));
