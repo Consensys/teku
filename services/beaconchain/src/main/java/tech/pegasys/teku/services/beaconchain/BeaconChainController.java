@@ -1004,19 +1004,25 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new DasSamplerBasic(
             spec,
             currentSlotProvider,
-            dbAccessor,
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
-            this::getCustodyGroupCountManager);
+            this::getCustodyGroupCountManager,
+            recentChainData);
     LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
+    eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        dasSampler::onNewValidatedDataColumnSidecar);
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }
 
   protected void initDasSyncPreSampler() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
+      final DasPreSampler dasPreSampler =
+          new DasPreSampler(
+              this.dataAvailabilitySampler,
+              this.dataColumnSidecarCustodyRef.get(),
+              this::getCustodyGroupCountManager);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
     }
   }
