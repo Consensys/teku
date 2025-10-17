@@ -53,4 +53,10 @@ public class LogFormatter {
         "DataColumnSidecar[block %s (%s), index %s, 1st cell %s, commitments %s, proofs %s]",
         formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitmentsSize, kzgProofsSize);
   }
+
+  public static String formatExecutionPayload(
+      final UInt64 slot, final Bytes32 blockRoot, final UInt64 builderIndex) {
+    return String.format(
+        "%s (block root: %s, builder index: %s)", slot, formatHashRoot(blockRoot), builderIndex);
+  }
 }
