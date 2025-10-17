@@ -57,7 +57,7 @@ record DataColumnSamplingTracker(
     }
 
     if (missingColumns.isEmpty()) {
-      LOG.info(
+      LOG.debug(
           "Sampling complete for slot {} root {} via column {} received via {}",
           slot,
           blockRoot,
