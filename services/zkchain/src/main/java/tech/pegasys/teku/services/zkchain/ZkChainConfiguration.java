@@ -24,7 +24,7 @@ public record ZkChainConfiguration(
   public static final boolean DEFAULT_STATELESS_VALIDATION_ENABLED = false;
   public static final boolean DEFAULT_GENERATE_EXECUTION_PROOFS_ENABLED = false;
   public static final int DEFAULT_STATELESS_MIN_PROOFS_REQUIRED = 1;
-  public static final Duration DEFAULT_PROOF_GENERATION_DELAY = Duration.ofMillis(2000);
+  public static final Duration DEFAULT_PROOF_GENERATION_DELAY = Duration.ofSeconds(2);
 
   public static Builder builder() {
     return new Builder();

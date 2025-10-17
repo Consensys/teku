@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 
+import java.time.Duration;
+
 class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
@@ -43,6 +45,7 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.zkChainConfiguration().statelessMinProofsRequired()).isEqualTo(2);
   }
 
+
   @Test
   public void statelessMinProofsRequired_receivesDefaultValue() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
@@ -60,4 +63,18 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.zkChainConfiguration().generateExecutionProofsEnabled()).isFalse();
   }
+
+    @Test
+    public void statelessProofGenerationDelay_receivesDefaultValue() {
+        final TekuConfiguration config = getTekuConfigurationFromArguments();
+        assertThat(config.zkChainConfiguration().proofDelayDurationInMs()).isEqualTo(Duration.ofSeconds(2));
+    }
+
+    @Test
+    public void statelessProofGenerationDelay_receivesCorrectValue() {
+        final TekuConfiguration config =
+                getTekuConfigurationFromArguments("--Xstateless-proofs-generation-delay=3000");
+        assertThat(config.zkChainConfiguration().proofDelayDurationInMs()).isEqualTo(Duration.ofSeconds(3));
+    }
+
 }
