@@ -80,7 +80,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   public void onNewValidatedDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
-    LOG.info(
+    LOG.debug(
         "sampling data column {} - origin: {}", dataColumnSidecar::toLogString, () -> remoteOrigin);
 
     getOrCreateTracker(dataColumnSidecar.getSlot(), dataColumnSidecar.getBeaconBlockRoot())
@@ -94,7 +94,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumnIdentifiers();
-    LOG.info(
+    LOG.debug(
         "checkDataAvailability(): missing columns for slot {} root {}: {}",
         slot,
         blockRoot,
@@ -105,7 +105,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
         .thenAccept(
             retrievedColumns -> {
               if (retrievedColumns.size() == missingColumns.size()) {
-                LOG.info(
+                LOG.debug(
                     "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
                     retrievedColumns.size(),
                     tracker.samplingRequirement().size(),
