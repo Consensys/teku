@@ -37,6 +37,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -49,7 +53,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
-public interface ValidatorApiChannel extends ChannelInterface {
+public interface ValidatorApiChannel extends BuilderApiChannel, ChannelInterface {
   ValidatorApiChannel NO_OP =
       new ValidatorApiChannel() {
         @Override
@@ -197,6 +201,30 @@ public interface ValidatorApiChannel extends ChannelInterface {
         public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>>
             getSyncCommitteeSelectionProof(final List<SyncCommitteeSelectionProof> requests) {
           return SafeFuture.completedFuture(Optional.of(requests));
+        }
+
+        @Override
+        public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
+            final UInt64 slot, final UInt64 builderIndex) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Void> publishSignedExecutionPayloadBid(
+            final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+          return SafeFuture.COMPLETE;
+        }
+
+        @Override
+        public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
+            final UInt64 slot, final UInt64 builderIndex) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Void> publishSignedExecutionPayload(
+            final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+          return SafeFuture.COMPLETE;
         }
       };
 

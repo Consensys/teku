@@ -25,7 +25,7 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
   public void statelessValidationEnabled_true() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--Xstateless-validation-enabled=true");
-    assertThat(config.zkChainConfiguration().isStatelessValidationEnabled()).isTrue();
+    assertThat(config.zkChainConfiguration().statelessValidationEnabled()).isTrue();
   }
 
   @Test
@@ -33,31 +33,31 @@ class ZkChainOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
             "--Xstateless-validation-enabled=true", "--Xgenerate-execution-proofs-enabled=true");
-    assertThat(config.zkChainConfiguration().isGenerateExecutionProofsEnabled()).isTrue();
+    assertThat(config.zkChainConfiguration().generateExecutionProofsEnabled()).isTrue();
   }
 
   @Test
   public void statelessMinProofsRequired_receivesCorrectValue() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--Xstateless-min-proofs-required=2");
-    assertThat(config.zkChainConfiguration().getStatelessMinProofsRequired()).isEqualTo(2);
+    assertThat(config.zkChainConfiguration().statelessMinProofsRequired()).isEqualTo(2);
   }
 
   @Test
   public void statelessMinProofsRequired_receivesDefaultValue() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.zkChainConfiguration().getStatelessMinProofsRequired()).isEqualTo(1);
+    assertThat(config.zkChainConfiguration().statelessMinProofsRequired()).isEqualTo(1);
   }
 
   @Test
   public void statelessValidationEnabled_isDisabledByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.zkChainConfiguration().isStatelessValidationEnabled()).isFalse();
+    assertThat(config.zkChainConfiguration().statelessValidationEnabled()).isFalse();
   }
 
   @Test
   public void generateExecutionProofsEnabled_isDisabledByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.zkChainConfiguration().isGenerateExecutionProofsEnabled()).isFalse();
+    assertThat(config.zkChainConfiguration().generateExecutionProofsEnabled()).isFalse();
   }
 }

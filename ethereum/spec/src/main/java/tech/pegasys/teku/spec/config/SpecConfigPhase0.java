@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.WithdrawalPrefixes;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
@@ -125,6 +127,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final UInt64 maxPerEpochActivationExitChurnLimit;
 
   private final BLSSignatureVerifier blsSignatureVerifier;
+  private final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier;
 
   // altair fork
   private final Bytes4 altairForkVersion;
@@ -225,6 +228,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int aggregateDueBps,
       final int proposerReorgCutoffBps,
       final BLSSignatureVerifier blsSignatureVerifier,
+      final Supplier<BatchSignatureVerifier> batchSignatureVerifierSupplier,
       final Bytes4 altairForkVersion,
       final UInt64 altairForkEpoch,
       final Bytes4 bellatrixForkVersion,
@@ -324,6 +328,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.gloasForkVersion = gloasForkVersion;
     this.gloasForkEpoch = gloasForkEpoch;
     this.blsSignatureVerifier = blsSignatureVerifier;
+    this.batchSignatureVerifierSupplier = batchSignatureVerifierSupplier;
   }
 
   @Override
@@ -774,6 +779,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public BLSSignatureVerifier getBLSSignatureVerifier() {
     return blsSignatureVerifier;
+  }
+
+  @Override
+  public BatchSignatureVerifier createBatchSignatureVerifier() {
+    return batchSignatureVerifierSupplier.get();
   }
 
   @Override

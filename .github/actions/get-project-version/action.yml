@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+name: 'java-get-project-version'
+description: 'java-get-project-version'
+
+outputs:
+  publish-version:
+    description: 'The publish version of the build'
+    value: ${{ steps.checks-version.outputs.publish-version }}
+  specific-version:
+    description: 'The specific version of the build'
+    value: ${{ steps.checks-version.outputs.specific-version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: get the project version to use in build & docker
+      id: checks-version
+      shell: bash      
+      run:  |
+        # Calculate version
+        output=$(./gradlew -q buildPrintVersion)
+        # Extract specific-version and publish-version from the output
+        specific_version=$(echo "$output" | grep -oP 'specific-version=\K.*')
+        publish_version=$(echo "$output" | grep -oP 'publish-version=\K.*')
+        # Set the outputs
+        echo "specific-version=$specific_version" >> $GITHUB_OUTPUT
+        echo "publish-version=$publish_version" >> $GITHUB_OUTPUT
