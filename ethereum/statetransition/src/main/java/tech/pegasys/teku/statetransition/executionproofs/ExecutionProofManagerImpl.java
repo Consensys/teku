@@ -165,7 +165,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       return SafeFuture.completedFuture(null);
     }
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
-    final Set<ExecutionProof> generatedProofs = new HashSet<>();
+
     asyncRunner
         .runAsync(
             () -> {
@@ -178,7 +178,10 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                             .finish(
                                 proof -> {
                                   LOG.trace("Generated proof for subnet {}", proof.getSubnetId());
-                                  generatedProofs.add(proof);
+                                    validatedExecutionProofsByBlockRoot
+                                            .computeIfAbsent(
+                                                    proof.getBlockRoot().get(), k -> ConcurrentHashMap.newKeySet())
+                                            .add(proof);
                                   onCreatedProof.accept(proof);
                                 },
                                 error ->
@@ -190,10 +193,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                       });
             })
         .finish(
-            () -> {
-              validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
-              LOG.debug("Completed generating execution proofs for block {}", blockRoot);
-            },
+            () -> LOG.debug("Completed generating execution proofs for block {}", blockRoot),
             error ->
                 LOG.error("Failed to generate execution proofs for block {}", blockRoot, error));
 
