@@ -959,8 +959,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dasAsyncRunner,
             Duration.ofSeconds(1));
 
-    sidecarRetriever.start();
-
     final DataColumnSidecarRetriever recoveringSidecarRetriever;
     if (beaconConfig.p2pConfig().isReworkedSidecarRecoveryEnabled()) {
       recoveringSidecarRetriever =
@@ -1021,11 +1019,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDasSyncPreSampler() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DasPreSampler dasPreSampler =
-          new DasPreSampler(
-              this.dataAvailabilitySampler,
-              this.dataColumnSidecarCustodyRef.get(),
-              this.custodyGroupCountManagerRef::get);
+      final DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
     }
   }
