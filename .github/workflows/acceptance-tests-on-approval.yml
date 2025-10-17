@@ -1,0 +1,81 @@
+
+# This workflow runs when a PR review is submitted and marked as “approved”.
+name: acceptance-tests-on-approval
+
+on:
+  pull_request_review:
+    types: [submitted]
+  
+# if a new commit is made, cancel this run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_TOOL_OPTIONS: -Xmx4096m
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
+
+jobs:
+  acceptanceTestsPrep:
+    # ensure it's only for PRs targeting master and approved
+    if: >
+      github.event_name == 'pull_request_review' &&
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.base.ref == 'master' 
+    runs-on: ubuntu-24.04
+    outputs:
+      run_id: ${{ steps.find.outputs.run_id }}
+    steps:
+      - name: Find latest CI run for this PR
+        id: find
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prs = context.payload.pull_request;
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci.yml', // name of the pr's ci workflow 
+              event: 'pull_request',
+              head_sha: prs.head.sha
+            });
+            if (!runs.data.workflow_runs.length) {
+              core.setFailed('No CI workflow runs found for this PR.');
+            } else {
+              core.setOutput('run_id', runs.data.workflow_runs[0].id);
+            }
+
+  acceptanceTests:
+    # ensure it's only for PRs targeting master and approved
+    if: >
+      github.event_name == 'pull_request_review' &&
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.base.ref == 'master' 
+    needs: acceptanceTestsPrep
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit
+    with:
+      assemble_output_run_id: ${{ steps.find.outputs.run_id }}
+      stage_name: Acceptance Tests
+      stage_key: acceptance
+      gradle_task: acceptanceTest
+      src_pattern: "*/src/acceptance-test/java/*"
+      src_root: "src/acceptance-test/java"
+      runner: "ubuntu-latest-128"
+
+  acceptanceTestsReport:
+    # ensure it's only for PRs targeting master and approved
+    if: >
+      always() &&
+      github.event_name == 'pull_request_review' &&
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.base.ref == 'master'  
+    runs-on: ubuntu-24.04
+    needs: acceptanceTests
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: acceptance
