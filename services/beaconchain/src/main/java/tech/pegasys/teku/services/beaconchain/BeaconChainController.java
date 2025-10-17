@@ -1017,7 +1017,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDasSyncPreSampler() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
+      final DasPreSampler dasPreSampler =
+          new DasPreSampler(
+              this.dataAvailabilitySampler,
+              this.dataColumnSidecarCustodyRef.get(),
+              this::getCustodyGroupCountManager);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
     }
   }

@@ -132,6 +132,7 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldCallRetrieverForMissingColumnsAndCallCustodyOnRetrieval() {
     final SignedBeaconBlockHeader block = dataStructureUtil.randomSignedBeaconBlockHeader();
     final SlotAndBlockRoot slotAndBlockRoot =
@@ -194,6 +195,7 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void shouldHandleMultipleTrackersFromMultipleEntrypoints() {
     final DataColumnSlotAndIdentifier source1 =
         new DataColumnSlotAndIdentifier(
