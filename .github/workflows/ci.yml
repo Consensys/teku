@@ -36,6 +36,8 @@ on:
   pull_request:
     branches:
       - master
+  merge_group:
+    types: [checks_requested]      
   workflow_dispatch:
     inputs:
       include_hash_in_docker:
@@ -307,7 +309,9 @@ jobs:
           stage_key: property
 
   acceptanceTests:
-    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    if: |
+      github.event_name == 'merge_group' ||
+      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     needs: assemble
     uses: ./.github/workflows/matrix-tests-template.yml
     secrets: inherit
@@ -321,7 +325,9 @@ jobs:
       runner: "ubuntu-latest-128"
 
   acceptanceTestsReport:
-    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    if: |
+      github.event_name == 'merge_group' ||
+      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-24.04
     needs: acceptanceTests
     if: always()
