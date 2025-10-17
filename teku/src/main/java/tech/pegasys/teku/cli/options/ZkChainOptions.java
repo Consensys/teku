@@ -53,7 +53,7 @@ public class ZkChainOptions {
       hidden = true,
       names = {"--Xstateless-proofs-generation-delay"},
       paramLabel = "<DURATION>",
-      description = "Proof generation artificial delay in miliseconds.",
+      description = "Proof generation artificial delay in milliseconds.",
       arity = "1")
   private long statelessProofGenerationDelay =
       ZkChainConfiguration.DEFAULT_PROOF_GENERATION_DELAY.toMillis();
