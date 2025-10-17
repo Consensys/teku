@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.executionproofs;
 import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

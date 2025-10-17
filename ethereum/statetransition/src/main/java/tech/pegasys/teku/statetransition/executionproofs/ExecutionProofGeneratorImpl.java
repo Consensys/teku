@@ -44,7 +44,7 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
       final int subnetId,
       final Duration proofGenerationDelay) {
 
-    //delay to simulate proof generation time
+    // delay to simulate proof generation time
     try {
       Thread.sleep(proofGenerationDelay);
     } catch (InterruptedException e) {
