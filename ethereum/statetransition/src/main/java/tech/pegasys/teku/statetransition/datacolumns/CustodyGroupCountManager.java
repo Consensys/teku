@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface CustodyGroupCountManager {
@@ -23,6 +24,9 @@ public interface CustodyGroupCountManager {
         public int getCustodyGroupCount() {
           return 0;
         }
+
+        @Override
+        public void subscribeCustodyGroupCount(final ValueObserver<Integer> subscriber) {}
 
         @Override
         public List<UInt64> getCustodyColumnIndices() {
@@ -35,6 +39,9 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
+        public void subscribeSamplingGroupCount(final ValueObserver<Integer> subscriber) {}
+
+        @Override
         public List<UInt64> getSamplingColumnIndices() {
           return List.of();
         }
@@ -45,6 +52,9 @@ public interface CustodyGroupCountManager {
         }
 
         @Override
+        public void subscribeCustodyGroupSyncedCount(final ValueObserver<Integer> subscriber) {}
+
+        @Override
         public void setCustodyGroupSyncedCount(int custodyGroupSyncedCount) {}
       };
 
@@ -52,11 +62,17 @@ public interface CustodyGroupCountManager {
 
   List<UInt64> getCustodyColumnIndices();
 
+  void subscribeCustodyGroupCount(ValueObserver<Integer> subscriber);
+
   int getSamplingGroupCount();
 
   List<UInt64> getSamplingColumnIndices();
 
+  void subscribeSamplingGroupCount(ValueObserver<Integer> subscriber);
+
   int getCustodyGroupSyncedCount();
+
+  void subscribeCustodyGroupSyncedCount(ValueObserver<Integer> subscriber);
 
   void setCustodyGroupSyncedCount(int custodyGroupSyncedCount);
 }

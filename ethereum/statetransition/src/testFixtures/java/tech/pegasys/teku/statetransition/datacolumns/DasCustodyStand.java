@@ -26,6 +26,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -99,6 +101,8 @@ public class DasCustodyStand {
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
     this.custodyGroupCountManager =
         createCustodyGroupCountManager(totalCustodyGroupCount, samplingGroupCount);
+    final FutureValueObserver<Integer> custodyGroupCountProvider = new FutureValueObserver<>();
+    custodyGroupCountProvider.complete(c -> c.onValueChanged(totalCustodyGroupCount));
     this.custody =
         new DataColumnSidecarCustodyImpl(
             spec,
@@ -106,7 +110,7 @@ public class DasCustodyStand {
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             () -> custodyGroupCountManager,
-            totalCustodyGroupCount);
+            custodyGroupCountProvider);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 
@@ -260,6 +264,11 @@ public class DasCustodyStand {
       }
 
       @Override
+      public void subscribeCustodyGroupCount(final ValueObserver<Integer> subscriber) {
+        subscriber.onValueChanged(custodyGroupCount);
+      }
+
+      @Override
       public List<UInt64> getCustodyColumnIndices() {
         return IntStream.range(0, custodyGroupCount).mapToObj(UInt64::valueOf).toList();
       }
@@ -270,6 +279,11 @@ public class DasCustodyStand {
       }
 
       @Override
+      public void subscribeSamplingGroupCount(final ValueObserver<Integer> subscriber) {
+        subscriber.onValueChanged(sampleGroupCount);
+      }
+
+      @Override
       public List<UInt64> getSamplingColumnIndices() {
         return IntStream.range(0, sampleGroupCount).mapToObj(UInt64::valueOf).toList();
       }
@@ -277,6 +291,11 @@ public class DasCustodyStand {
       @Override
       public int getCustodyGroupSyncedCount() {
         return 0;
+      }
+
+      @Override
+      public void subscribeCustodyGroupSyncedCount(final ValueObserver<Integer> subscriber) {
+        subscriber.onValueChanged(0);
       }
 
       @Override
