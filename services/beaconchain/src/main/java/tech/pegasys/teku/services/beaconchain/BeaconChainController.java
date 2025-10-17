@@ -1003,7 +1003,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new DasSamplerBasic(
             spec,
             currentSlotProvider,
-            dbAccessor,
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
             this::getCustodyGroupCountManager,

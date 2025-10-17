@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -45,7 +44,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private final Spec spec;
   private final CurrentSlotProvider currentSlotProvider;
-  private final DataColumnSidecarDbAccessor db;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>();
@@ -54,18 +52,15 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   public DasSamplerBasic(
       final Spec spec,
       final CurrentSlotProvider currentSlotProvider,
-      final DataColumnSidecarDbAccessor db,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final RecentChainData recentChainData) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
-    checkNotNull(db);
     checkNotNull(custody);
     checkNotNull(retriever);
     this.spec = spec;
-    this.db = db;
     this.custody = custody;
     this.retriever = retriever;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;

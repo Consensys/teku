@@ -35,9 +35,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -46,10 +44,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler.SamplingEligibilityStatus;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
-import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasicTest {
@@ -63,13 +58,7 @@ public class DasSamplerBasicTest {
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
-  private DataColumnSidecarDbAccessor db;
-  static final SpecConfigFulu SPEC_CONFIG_FULU =
-      SpecConfigFulu.required(SPEC.forMilestone(SpecMilestone.FULU).getConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, SPEC);
-
-  private ProposersDataManager proposersDataManager;
-  private CombinedChainDataClient combinedChainDataClient;
 
   private DasSamplerBasic sampler;
 
@@ -81,9 +70,6 @@ public class DasSamplerBasicTest {
     custody = mock(DataColumnSidecarCustody.class);
     retriever = mock(DataColumnSidecarRetriever.class);
     currentSlotProvider = mock(CurrentSlotProvider.class);
-    db = mock(DataColumnSidecarDbAccessor.class);
-    proposersDataManager = mock(ProposersDataManager.class);
-    combinedChainDataClient = mock(CombinedChainDataClient.class);
 
     when(retriever.retrieve(any()))
         .thenReturn(SafeFuture.completedFuture(mock(DataColumnSidecar.class)));
@@ -95,7 +81,6 @@ public class DasSamplerBasicTest {
         new DasSamplerBasic(
             SPEC,
             currentSlotProvider,
-            db,
             custody,
             retriever,
             () -> custodyGroupCountManager,
@@ -300,17 +285,23 @@ public class DasSamplerBasicTest {
     when(trackerForImportedBlock.slot()).thenReturn(UInt64.MAX_VALUE);
     when(trackerForImportedBlock.blockRoot()).thenReturn(importedBlockRoot);
 
-
     final DataColumnSamplingTracker expectedToRemainTracker = mock(DataColumnSamplingTracker.class);
     when(expectedToRemainTracker.completionFuture()).thenReturn(new SafeFuture<>());
     when(expectedToRemainTracker.slot()).thenReturn(UInt64.MAX_VALUE);
     when(expectedToRemainTracker.blockRoot()).thenReturn(dataStructureUtil.randomBytes32());
 
-
-    sampler.getRecentlySampledColumnsByRoot().put(dataStructureUtil.randomBytes32(), completedTracker);
-    sampler.getRecentlySampledColumnsByRoot().put(dataStructureUtil.randomBytes32(), trackerForFinalizedSlot);
-    sampler.getRecentlySampledColumnsByRoot().put(dataStructureUtil.randomBytes32(), trackerForImportedBlock);
-    sampler.getRecentlySampledColumnsByRoot().put(dataStructureUtil.randomBytes32(), expectedToRemainTracker);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), completedTracker);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), trackerForFinalizedSlot);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), trackerForImportedBlock);
+    sampler
+        .getRecentlySampledColumnsByRoot()
+        .put(dataStructureUtil.randomBytes32(), expectedToRemainTracker);
 
     sampler.onSlot(UInt64.valueOf(20));
 
