@@ -103,8 +103,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
 
     // not yet call check yet
-    verify(das,never()).checkDataAvailability(any(), any());
-
+    verify(das, never()).checkDataAvailability(any(), any());
 
     assertThat(checker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.validResult(listOfIndices));
