@@ -51,7 +51,6 @@ jobs:
 
   spotless:
     runs-on: ubuntu-24.04
-    environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -65,7 +64,6 @@ jobs:
 
   moduleChecks:
     runs-on: ubuntu-24.04
-    environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -80,7 +78,6 @@ jobs:
   windowsBuild:
     needs: [spotless, moduleChecks ]
     runs-on: windows-2022
-    environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -110,7 +107,6 @@ jobs:
 
   assemble:
     runs-on: ubuntu-24.04
-    environment: dev
     outputs:
       workflow-run-id: ${{ steps.workflowdetails.outputs.run_id }}
       publish-version: ${{ steps.projectDetails.outputs.publish-version }}
@@ -157,7 +153,6 @@ jobs:
   extractAPISpec:
     needs: assemble
     runs-on: ubuntu-24.04
-    environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -206,7 +201,6 @@ jobs:
   #   #if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
   #   needs: extractAPISpec
   #   runs-on: ubuntu-24.04
-  #   environment: dev
   #   steps:
   #     - name: Checkout
   #       uses: actions/checkout@v5
@@ -262,7 +256,6 @@ jobs:
   integrationTests:
     needs: assemble
     runs-on: ubuntu-latest-128
-    environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -335,7 +328,6 @@ jobs:
   referenceTestsPrep:
     needs: assemble
     runs-on: ubuntu-24.04
-    environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -387,12 +379,11 @@ jobs:
   referenceTests:
     needs: referenceTestsPrep
     runs-on: "gha-runner-scale-set-ubuntu-22.04-amd64-xxl"
-    environment: dev
     strategy:
       fail-fast: false
       matrix:
-        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]   # parallel shards
-        total: [32]
+        shard: [0,1,2,3,4,5,6,7]   # parallel shards
+        total: [8]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -437,13 +428,11 @@ jobs:
         run: |
           SRC_PATTERN="*/src/referenceTest/generated_tests/*Test.java"
           SRC_ROOT="src/referenceTest/generated_tests"
-
           # 1) Collect test classes by pattern = FQNs
           CLASSNAMES=$(find . -type f -name "*.java" -path "$SRC_PATTERN" \
             | sed "s@.*/$SRC_ROOT/@@" \
             | sed 's@/@.@g' \
             | sed 's/.\{5\}$//')
-
           # 2) Modulo split
           CLASSES_FOR_SHARD=$(printf "%s\n" "$CLASSNAMES" \
             | awk -v shards=${{ matrix.total }} -v shard=${{ matrix.shard }} '((NR-1) % shards) == shard')
@@ -452,7 +441,6 @@ jobs:
             echo "args=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           # 3) Build --tests args
           GRADLE_ARGS=$(printf "%s\n" "$CLASSES_FOR_SHARD" | awk '{printf "--tests %s ", $0}')
           echo "Prepared arguments for Gradle (ReferenceTests): $GRADLE_ARGS"

@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 public class ExecutionProofGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
-  // TODO fix this to be a map of block/proof
+  // TODO maybe change this to be a map of block/proof in the future
   private final Set<ExecutionProof> receivedValidExecutionProofSet;
 
   public static ExecutionProofGossipValidator create() {

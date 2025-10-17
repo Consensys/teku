@@ -44,7 +44,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
@@ -250,6 +249,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
+import tech.pegasys.teku.storage.client.BlobReconstructionProvider;
 import tech.pegasys.teku.storage.client.BlobSidecarReconstructionProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -397,6 +397,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected Path debugDataDirectory;
   protected volatile UInt256 nodeId;
   protected volatile BlobSidecarReconstructionProvider blobSidecarReconstructionProvider;
+  protected volatile BlobReconstructionProvider blobReconstructionProvider;
   protected volatile ValidatorApiHandler validatorApiHandler;
 
   public BeaconChainController(
@@ -676,6 +677,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initSlashingEventsSubscriptions();
     initPerformanceTracker();
     initBlobSidecarReconstructionProvider();
+    initBlobReconstructionProvider();
     initDataProvider();
     initValidatorApiHandler();
     initRestAPI();
@@ -1224,6 +1226,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new BlobSidecarReconstructionProvider(combinedChainDataClient, spec);
   }
 
+  protected void initBlobReconstructionProvider() {
+    LOG.debug("BeaconChainController.initBlobReconstructionProvider()");
+    this.blobReconstructionProvider = new BlobReconstructionProvider(combinedChainDataClient, spec);
+  }
+
   protected void initDataProvider() {
     dataProvider =
         DataProvider.builder()
@@ -1232,6 +1239,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .combinedChainDataClient(combinedChainDataClient)
             .rewardCalculator(rewardCalculator)
             .blobSidecarReconstructionProvider(blobSidecarReconstructionProvider)
+            .blobReconstructionProvider(blobReconstructionProvider)
             .p2pNetwork(p2pNetwork)
             .syncService(syncService)
             .validatorApiChannel(
@@ -1505,12 +1513,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     this.validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(
-                spec,
-                recentChainData,
-                combinedChainDataClient,
-                rewardCalculator,
-                blobSidecarReconstructionProvider),
+            dataProvider.getChainDataProvider(),
             dataProvider.getNodeDataProvider(),
             dataProvider.getNetworkDataProvider(),
             combinedChainDataClient,

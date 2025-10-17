@@ -173,7 +173,6 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     asyncRunner
         .runAsync(
             () -> {
-              final Set<ExecutionProof> generatedProofs = new HashSet<>();
               // Generate proofs for all subnets
               IntStream.range(0, (int) MAX_EXECUTION_PROOF_SUBNETS)
                   .forEach(
@@ -184,7 +183,11 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                             .finish(
                                 proof -> {
                                   LOG.trace("Generated proof for subnet {}", proof.getSubnetId());
-                                  generatedProofs.add(proof);
+                                  validatedExecutionProofsByBlockRoot
+                                      .computeIfAbsent(
+                                          proof.getBlockRoot().get(),
+                                          k -> ConcurrentHashMap.newKeySet())
+                                      .add(proof);
                                   onCreatedProof.accept(proof);
                                 },
                                 error ->
@@ -193,7 +196,6 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                                         blockRoot,
                                         subnetIndex,
                                         error));
-                        validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
                       });
             })
         .finish(
