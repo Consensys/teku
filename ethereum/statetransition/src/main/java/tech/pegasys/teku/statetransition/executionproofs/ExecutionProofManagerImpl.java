@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.executionproofs;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -178,10 +177,11 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                             .finish(
                                 proof -> {
                                   LOG.trace("Generated proof for subnet {}", proof.getSubnetId());
-                                    validatedExecutionProofsByBlockRoot
-                                            .computeIfAbsent(
-                                                    proof.getBlockRoot().get(), k -> ConcurrentHashMap.newKeySet())
-                                            .add(proof);
+                                  validatedExecutionProofsByBlockRoot
+                                      .computeIfAbsent(
+                                          proof.getBlockRoot().get(),
+                                          k -> ConcurrentHashMap.newKeySet())
+                                      .add(proof);
                                   onCreatedProof.accept(proof);
                                 },
                                 error ->
