@@ -191,8 +191,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
             })
         .finish(
             () -> {
-                validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
-                LOG.debug("Completed generating execution proofs for block {}", blockRoot);
+              validatedExecutionProofsByBlockRoot.put(blockRoot, generatedProofs);
+              LOG.debug("Completed generating execution proofs for block {}", blockRoot);
             },
             error ->
                 LOG.error("Failed to generate execution proofs for block {}", blockRoot, error));
