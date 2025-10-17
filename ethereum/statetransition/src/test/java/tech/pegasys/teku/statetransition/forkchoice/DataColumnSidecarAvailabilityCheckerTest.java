@@ -102,7 +102,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
         .thenReturn(SafeFuture.completedFuture(listOfIndices));
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
 
-    // not yet call check yet
+    // do not call check yet
     verify(das, never()).checkDataAvailability(any(), any());
 
     assertThat(checker.getAvailabilityCheckResult().get())
