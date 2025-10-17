@@ -96,4 +96,16 @@ public class ExecutionPayloadEnvelope
   public ExecutionPayloadEnvelopeSchema getSchema() {
     return (ExecutionPayloadEnvelopeSchema) super.getSchema();
   }
+
+  public ExecutionPayloadEnvelope copyWithNewStateRoot(final Bytes32 stateRoot) {
+    return new ExecutionPayloadEnvelope(
+        getSchema(),
+        getPayload(),
+        getExecutionRequests(),
+        getBuilderIndex(),
+        getBeaconBlockRoot(),
+        getSlot(),
+        getBlobKzgCommitments(),
+        stateRoot);
+  }
 }

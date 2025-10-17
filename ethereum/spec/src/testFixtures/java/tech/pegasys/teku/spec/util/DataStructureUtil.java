@@ -2707,6 +2707,7 @@ public final class DataStructureUtil {
     private Optional<SignedBeaconBlockHeader> signedBeaconBlockHeader = Optional.empty();
     private Optional<List<Bytes32>> kzgCommitmentsInclusionProof = Optional.empty();
     private Optional<Bytes32> beaconBlockRoot = Optional.empty();
+    private Optional<UInt64> slot = Optional.empty();
 
     public RandomSidecarBuilder index(final UInt64 index) {
       this.index = Optional.of(index);
@@ -2742,6 +2743,11 @@ public final class DataStructureUtil {
 
     public RandomSidecarBuilder beaconBlockRoot(final Bytes32 beaconBlockRoot) {
       this.beaconBlockRoot = Optional.of(beaconBlockRoot);
+      return this;
+    }
+
+    public RandomSidecarBuilder slot(final UInt64 slot) {
+      this.slot = Optional.of(slot);
       return this;
     }
 
@@ -2803,7 +2809,8 @@ public final class DataStructureUtil {
                                   .mapToObj(__ -> randomBytes32())
                                   .toList()))
                   .beaconBlockRoot(
-                      beaconBlockRoot.orElseGet(DataStructureUtil.this::randomBytes32)));
+                      beaconBlockRoot.orElseGet(() -> signedBlockHeader.getMessage().getRoot()))
+                  .slot(slot.orElseGet(() -> signedBlockHeader.getMessage().getSlot())));
     }
   }
 
@@ -3098,6 +3105,11 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(final UInt64 slot) {
+    return randomExecutionPayloadEnvelope(slot, randomBlobKzgCommitments());
+  }
+
+  public ExecutionPayloadEnvelope randomExecutionPayloadEnvelope(
+      final UInt64 slot, final SszList<SszKZGCommitment> kzgCommitments) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadEnvelopeSchema()
         .create(
@@ -3106,7 +3118,7 @@ public final class DataStructureUtil {
             randomBuilderIndex(),
             randomBytes32(),
             slot,
-            randomBlobKzgCommitments(),
+            kzgCommitments,
             randomBytes32());
   }
 

@@ -38,5 +38,7 @@ public interface DataColumnSidecarBuilder {
 
   DataColumnSidecarBuilder beaconBlockRoot(Bytes32 beaconBlockRoot);
 
+  DataColumnSidecarBuilder slot(UInt64 slot);
+
   DataColumnSidecar build();
 }
