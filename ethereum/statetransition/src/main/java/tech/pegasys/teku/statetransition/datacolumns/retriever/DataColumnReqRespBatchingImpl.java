@@ -100,7 +100,6 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
     }
 
     final UInt64 firstNonFinalizedSlot = firstNonFinalizedSlotSupplier.get();
-    LOG.info("First non-finalized slot is {}", firstNonFinalizedSlot);
     final List<ByRangeRequest> byRangeRequests =
         generateByRangeRequests(nodeRequests, firstNonFinalizedSlot);
     final List<ByRootRequest> byRootRequests =
