@@ -2698,7 +2698,7 @@ public final class DataStructureUtil {
     }
   }
 
-  public class RandomSidecarBuilder {
+  public class RandomDataColumnSidecarBuilder {
 
     private Optional<UInt64> index = Optional.empty();
     private Optional<DataColumn> dataColumn = Optional.empty();
@@ -2709,44 +2709,44 @@ public final class DataStructureUtil {
     private Optional<Bytes32> beaconBlockRoot = Optional.empty();
     private Optional<UInt64> slot = Optional.empty();
 
-    public RandomSidecarBuilder index(final UInt64 index) {
+    public RandomDataColumnSidecarBuilder index(final UInt64 index) {
       this.index = Optional.of(index);
       return this;
     }
 
-    public RandomSidecarBuilder dataColumn(final DataColumn dataColumn) {
+    public RandomDataColumnSidecarBuilder dataColumn(final DataColumn dataColumn) {
       this.dataColumn = Optional.of(dataColumn);
       return this;
     }
 
-    public RandomSidecarBuilder kzgCommitments(final List<KZGCommitment> kzgCommitments) {
+    public RandomDataColumnSidecarBuilder kzgCommitments(final List<KZGCommitment> kzgCommitments) {
       this.kzgCommitments = Optional.of(kzgCommitments);
       return this;
     }
 
-    public RandomSidecarBuilder kzgProofs(final List<KZGProof> kzgProofs) {
+    public RandomDataColumnSidecarBuilder kzgProofs(final List<KZGProof> kzgProofs) {
       this.kzgProofs = Optional.of(kzgProofs);
       return this;
     }
 
-    public RandomSidecarBuilder signedBeaconBlockHeader(
+    public RandomDataColumnSidecarBuilder signedBeaconBlockHeader(
         final SignedBeaconBlockHeader signedBeaconBlockHeader) {
       this.signedBeaconBlockHeader = Optional.of(signedBeaconBlockHeader);
       return this;
     }
 
-    public RandomSidecarBuilder kzgCommitmentsInclusionProof(
+    public RandomDataColumnSidecarBuilder kzgCommitmentsInclusionProof(
         final List<Bytes32> kzgCommitmentsInclusionProof) {
       this.kzgCommitmentsInclusionProof = Optional.of(kzgCommitmentsInclusionProof);
       return this;
     }
 
-    public RandomSidecarBuilder beaconBlockRoot(final Bytes32 beaconBlockRoot) {
+    public RandomDataColumnSidecarBuilder beaconBlockRoot(final Bytes32 beaconBlockRoot) {
       this.beaconBlockRoot = Optional.of(beaconBlockRoot);
       return this;
     }
 
-    public RandomSidecarBuilder slot(final UInt64 slot) {
+    public RandomDataColumnSidecarBuilder slot(final UInt64 slot) {
       this.slot = Optional.of(slot);
       return this;
     }
@@ -2830,19 +2830,22 @@ public final class DataStructureUtil {
   }
 
   public DataColumnSidecar randomDataColumnSidecar() {
-    return new RandomSidecarBuilder().build();
+    return new RandomDataColumnSidecarBuilder().build();
   }
 
   public DataColumnSidecar randomDataColumnSidecar(
       final SignedBeaconBlockHeader header, final UInt64 index) {
-    return new RandomSidecarBuilder().signedBeaconBlockHeader(header).index(index).build();
+    return new RandomDataColumnSidecarBuilder()
+        .signedBeaconBlockHeader(header)
+        .index(index)
+        .build();
   }
 
   public DataColumnSidecar randomDataColumnSidecar(
       final SignedBeaconBlockHeader header,
       final SszList<SszKZGCommitment> kzgCommitments,
       final UInt64 index) {
-    return new RandomSidecarBuilder()
+    return new RandomDataColumnSidecarBuilder()
         .signedBeaconBlockHeader(header)
         .kzgCommitments(kzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment).toList())
         .index(index)
@@ -2851,14 +2854,17 @@ public final class DataStructureUtil {
 
   public DataColumnSidecar randomDataColumnSidecar(
       final List<KZGCommitment> kzgCommitments, final DataColumn dataColumn) {
-    return new RandomSidecarBuilder().kzgCommitments(kzgCommitments).dataColumn(dataColumn).build();
+    return new RandomDataColumnSidecarBuilder()
+        .kzgCommitments(kzgCommitments)
+        .dataColumn(dataColumn)
+        .build();
   }
 
   public DataColumnSidecar randomDataColumnSidecar(
       final List<KZGProof> kzgProofs,
       final List<KZGCommitment> kzgCommitments,
       final DataColumn dataColumn) {
-    return new RandomSidecarBuilder()
+    return new RandomDataColumnSidecarBuilder()
         .kzgProofs(kzgProofs)
         .kzgCommitments(kzgCommitments)
         .dataColumn(dataColumn)
@@ -2882,7 +2888,7 @@ public final class DataStructureUtil {
     final List<Bytes32> inclusionProof =
         miscHelpersFulu.computeDataColumnKzgCommitmentsInclusionProof(
             signedBeaconBlock.getBeaconBlock().orElseThrow().getBody());
-    return new RandomSidecarBuilder()
+    return new RandomDataColumnSidecarBuilder()
         .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
         .kzgCommitments(kzgCommitments)
         .kzgCommitmentsInclusionProof(inclusionProof)
