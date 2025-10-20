@@ -40,16 +40,12 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version: '22'       # You can pick a version your project supports
-        cache: 'npm'
-
-    - name: Install junit-to-ctrf
-      run: |
-        npm install -g junit-to-ctrf
 
       # Optional: Convert JUnit XML to CTRF JSON
     - name: Convert JUnit to CTRF
       shell: bash
       run: |
+        npm install -g junit-to-ctrf
         mkdir -p ./ctrf/${{inputs.stage_key}}/
         npx junit-to-ctrf 'reports/${{inputs.stage_key}}/**/TEST-*.xml' -o ./ctrf/${{inputs.stage_key}}/ctrf-report.json
 
