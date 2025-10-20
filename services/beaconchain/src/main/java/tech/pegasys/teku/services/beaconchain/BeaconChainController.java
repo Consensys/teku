@@ -1954,8 +1954,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.onSyncStateChanged(recentChainData.isCloseToInSync(), state.isOptimistic()));
 
     syncService.subscribeToSyncStateChangesAndUpdate(
-            event ->
-                    dataColumnSidecarCustodyRef.get().onSyncingStatusChanged(event.isInSync()));
+        event -> dataColumnSidecarCustodyRef.get().onSyncingStatusChanged(event.isInSync()));
   }
 
   protected void initOperationsReOrgManager() {
