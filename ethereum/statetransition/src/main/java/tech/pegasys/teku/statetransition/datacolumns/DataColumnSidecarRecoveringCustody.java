@@ -61,7 +61,13 @@ public interface DataColumnSidecarRecoveringCustody
 
         @Override
         public void onSyncingStatusChanged(boolean inSync) {}
+
+        @Override
+        public void subscribeToRecoveredColumnSidecar(
+            final RecoveredColumnSidecarSubscriber subscriber) {}
       };
 
   void onSyncingStatusChanged(boolean inSync);
+
+  void subscribeToRecoveredColumnSidecar(RecoveredColumnSidecarSubscriber subscriber);
 }

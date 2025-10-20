@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
+import tech.pegasys.teku.statetransition.datacolumns.RecoveredColumnSidecarSubscriber;
 import tech.pegasys.teku.statetransition.util.AbstractIgnoringFutureHistoricalSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -105,6 +107,11 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   static final Set<RemoteOrigin> LOCAL_OR_RECOVERED_ORIGINS =
       Set.of(LOCAL_PROPOSAL, LOCAL_EL, RECOVERED);
+
+  private final Subscribers<RecoveredColumnSidecarSubscriber> recoveredColumnSidecarSubscribers =
+      Subscribers.create(true);
+
+  private volatile boolean inSync;
 
   private static boolean isLocalBlockProductionOrRecovered(
       final Optional<RemoteOrigin> remoteOrigin) {
@@ -266,25 +273,31 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     final int maxCustodyGroups =
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig())
             .getNumberOfCustodyGroups();
-    final List<DataColumnSidecar> myCustodySidecars;
+    final List<DataColumnSidecar> localCustodySidecars;
     if (samplingGroupCount == maxCustodyGroups) {
-      myCustodySidecars = dataColumnSidecars;
+      localCustodySidecars = dataColumnSidecars;
     } else {
-      final Set<UInt64> myCustodyIndices =
+      final Set<UInt64> localCustodyIndices =
           new HashSet<>(custodyGroupCountManager.getSamplingColumnIndices());
-      myCustodySidecars =
+      localCustodySidecars =
           dataColumnSidecars.stream()
-              .filter(sidecar -> myCustodyIndices.contains(sidecar.getIndex()))
+              .filter(sidecar -> localCustodyIndices.contains(sidecar.getIndex()))
               .toList();
     }
     recoveryTask
         .recoveredColumnIndices()
-        .addAll(myCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
+        .addAll(localCustodySidecars.stream().map(DataColumnSidecar::getIndex).toList());
     LOG.debug(
         "Publishing {} data column sidecars for {}",
-        myCustodySidecars::size,
+        localCustodySidecars::size,
         recoveryTask::getSlotAndBlockRoot);
-    dataColumnSidecarPublisher.accept(myCustodySidecars, LOCAL_EL);
+    if (inSync) {
+      dataColumnSidecarPublisher.accept(localCustodySidecars, LOCAL_EL);
+    }
+    localCustodySidecars.forEach(
+        sidecar ->
+            recoveredColumnSidecarSubscribers.forEach(
+                subscriber -> subscriber.onRecoveredColumnSidecar(sidecar, LOCAL_EL)));
   }
 
   @Override
@@ -333,9 +346,20 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   @Override
+  public void onSyncingStatusChanged(final boolean inSync) {
+    this.inSync = inSync;
+  }
+
+  @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
     LOG.trace("Recovery tasks: {}", () -> new HashMap<>(recoveryTasks));
+  }
+
+  @Override
+  public void subscribeToRecoveredColumnSidecar(
+      final RecoveredColumnSidecarSubscriber sidecarListener) {
+    recoveredColumnSidecarSubscribers.subscribe(sidecarListener);
   }
 
   @VisibleForTesting

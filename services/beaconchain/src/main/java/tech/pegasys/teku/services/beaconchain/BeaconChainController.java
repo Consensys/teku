@@ -670,6 +670,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initDasCustody();
     initDataColumnSidecarELRecoveryManager();
     initDasSyncPreSampler();
+    completeDasClassesPluming();
     initSyncService();
     initSlotProcessor();
     initMetrics();
@@ -819,9 +820,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
       dataColumnSidecarManager =
           new DataColumnSidecarManagerImpl(
               dataColumnSidecarGossipValidator, dasGossipLogger, metricsSystem, timeProvider);
-      eventChannels.subscribe(
-          DataColumnSidecarGossipChannel.class,
-          dataColumnSidecarManager::onDataColumnSidecarPublish);
     } else {
       dataColumnSidecarManager = DataColumnSidecarManager.NOOP;
     }
@@ -918,11 +916,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             timeProvider);
     this.dataColumnSidecarCustodyRef.set(dataColumnSidecarRecoveringCustody);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarRecoveringCustody);
-    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-        (dataColumnSidecar, remoteOrigin) ->
-            dataColumnSidecarRecoveringCustody
-                .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
-                .finishError(LOG));
 
     final DataColumnPeerManagerImpl dasPeerManager = new DataColumnPeerManagerImpl();
     p2pNetwork.subscribeConnect(dasPeerManager);
@@ -985,9 +978,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               timeProvider,
               specConfigFulu.getNumberOfColumns());
     }
-    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-        (dataColumnSidecar, remoteOrigin) ->
-            recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
     final DasCustodySync svc =
         new DasCustodySync(
             dataColumnSidecarRecoveringCustody,
@@ -1044,6 +1034,49 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, manager);
     this.custodyGroupCountManager = manager;
+  }
+
+  protected void completeDasClassesPluming() {
+    final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
+        dataColumnSidecarCustodyRef.get();
+
+    // GOSSIP -> RecoveringCustody
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        (dataColumnSidecar, remoteOrigin) ->
+            dataColumnSidecarRecoveringCustody
+                .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
+                .finishError(LOG));
+
+    // EL Recovery -> RecoveringCustody
+    dataColumnSidecarELRecoveryManager.subscribeToRecoveredColumnSidecar(
+        (dataColumnSidecar, remoteOrigin) ->
+            dataColumnSidecarRecoveringCustody
+                .onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin)
+                .finishError(LOG));
+
+    // GOSSIP -> EL Recovery
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        dataColumnSidecarELRecoveryManager::onNewDataColumnSidecar);
+
+    // RecoveringCustody -> EL Recovery
+    dataColumnSidecarRecoveringCustody.subscribeToRecoveredColumnSidecar(
+        dataColumnSidecarELRecoveryManager::onNewDataColumnSidecar);
+
+    // GOSSIP -> SidecarRetriever
+    recoveringSidecarRetriever.ifPresent(
+        retriever -> {
+          // GOSSIP -> SidecarRetriever
+          dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+              (sidecar, remoteOrigin) -> retriever.onNewValidatedSidecar(sidecar));
+
+          // EL Recovery -> SidecarRetriever
+          dataColumnSidecarELRecoveryManager.subscribeToRecoveredColumnSidecar(
+              (sidecar, remoteOrigin) -> retriever.onNewValidatedSidecar(sidecar));
+
+          // RecoveringCustody -> SidecarRetriever
+          dataColumnSidecarRecoveringCustody.subscribeToRecoveredColumnSidecar(
+              (sidecar, remoteOrigin) -> retriever.onNewValidatedSidecar(sidecar));
+        });
   }
 
   protected void initMergeMonitors() {
@@ -1110,8 +1143,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               metricsSystem,
               timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
-      dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
-          recoveryManager::onNewDataColumnSidecar);
       blockManager.subscribePreImportBlocks(recoveryManager::onNewBlock);
       dataColumnSidecarELRecoveryManager = recoveryManager;
     } else {
@@ -1960,6 +1991,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     syncService.subscribeToSyncStateChangesAndUpdate(
         event -> dataColumnSidecarCustodyRef.get().onSyncingStatusChanged(event.isInSync()));
+
+    syncService.subscribeToSyncStateChangesAndUpdate(
+        event -> dataColumnSidecarELRecoveryManager.onSyncingStatusChanged(event.isInSync()));
   }
 
   protected void initOperationsReOrgManager() {

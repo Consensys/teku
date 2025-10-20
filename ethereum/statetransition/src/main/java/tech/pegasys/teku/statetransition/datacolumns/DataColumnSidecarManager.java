@@ -35,15 +35,9 @@ public interface DataColumnSidecarManager {
         }
 
         @Override
-        public void onDataColumnSidecarPublish(
-            final DataColumnSidecar sidecar, final RemoteOrigin remoteOrigin) {}
-
-        @Override
         public void subscribeToValidDataColumnSidecars(
             final ValidDataColumnSidecarsListener sidecarsListener) {}
       };
-
-  void onDataColumnSidecarPublish(DataColumnSidecar sidecar, RemoteOrigin remoteOrigin);
 
   SafeFuture<InternalValidationResult> onDataColumnSidecarGossip(
       DataColumnSidecar sidecar, Optional<UInt64> arrivalTimestamp);
