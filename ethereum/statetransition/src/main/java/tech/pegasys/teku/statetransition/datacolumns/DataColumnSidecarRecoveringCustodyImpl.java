@@ -69,6 +69,8 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
 
+  private volatile boolean inSync;
+
   public DataColumnSidecarRecoveringCustodyImpl(
       final DataColumnSidecarByRootCustody delegate,
       final AsyncRunner asyncRunner,
@@ -109,6 +111,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 5.0,
               7.5, 10.0
             });
+  }
+
+  @Override
+  public void onSyncingStatusChanged(final boolean inSync) {
+    this.inSync = inSync;
   }
 
   @Override
@@ -240,7 +247,9 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               delegate
                   .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
                   .finishError(LOG);
-              dataColumnSidecarPublisher.accept(dataColumnSidecar, RemoteOrigin.RECOVERED);
+              if(inSync) {
+                dataColumnSidecarPublisher.accept(dataColumnSidecar, RemoteOrigin.RECOVERED);
+              }
             });
     recoveryTask.existingSidecars.clear();
     LOG.debug(
