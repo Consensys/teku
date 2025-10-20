@@ -21,17 +21,47 @@ runs:
       run: |
         tree reports/
 
-    # https://github.com/dorny/test-reporter
-    - name: Test Reporter
-      uses: dorny/test-reporter@v2
-      env:
-        NODE_OPTIONS: "--max_old_space_size=4096"      
+    # # https://github.com/dorny/test-reporter
+    # - name: Test Reporter
+    #   uses: dorny/test-reporter@v2
+    #   env:
+    #     NODE_OPTIONS: "--max_old_space_size=4096"      
+    #   with:
+    #     name: Combined ${{inputs.stage_key}} tests
+    #     path: "reports/${{inputs.stage_key}}/**/TEST-*.xml"
+    #     reporter: java-junit
+    #     only-summary: 'false'
+    #     list-tests: 'failed'
+    #     list-suites: 'failed'
+    #     use-actions-summary: 'true'
+    #     # all/none/failed
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
       with:
-        name: Combined ${{inputs.stage_key}} tests
-        path: "reports/${{inputs.stage_key}}/**/TEST-*.xml"
-        reporter: java-junit
-        only-summary: 'false'
-        list-tests: 'failed'
-        list-suites: 'failed'
-        use-actions-summary: 'true'
-        # all/none/failed
+        node-version: '22'       # You can pick a version your project supports
+        cache: 'npm'
+
+    - name: Install junit-to-ctrf
+      run: |
+        npm install -g junit-to-ctrf
+
+      # Optional: Convert JUnit XML to CTRF JSON
+    - name: Convert JUnit to CTRF
+      shell: bash
+      run: |
+        mkdir -p ./ctrf/${{inputs.stage_key}}/
+        npx junit-to-ctrf 'reports/${{inputs.stage_key}}/**/TEST-*.xml' -o ./ctrf/${{inputs.stage_key}}/ctrf-report.json
+
+    # Publish test report
+    - name: Publish Test Reporter
+      uses: ctrf-io/github-test-reporter@v1
+      with:
+        report-path: './ctrf/${{inputs.stage_key}}/ctrf-report.json'
+        flaky-rate-report: true
+        pull-request: true
+        status-check: true
+        previous-results-report: true
+        max-previous-runs-to-fetch: 10
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
