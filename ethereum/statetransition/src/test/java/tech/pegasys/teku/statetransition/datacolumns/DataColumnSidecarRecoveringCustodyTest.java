@@ -306,17 +306,17 @@ public class DataColumnSidecarRecoveringCustodyTest {
     assertThat(stubAsyncRunner.hasDelayedActions()).isTrue();
 
     final Map<UInt64, DataColumnSidecar> sidecars =
-            columnIndices
-                    .get()
-                    .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
-                    .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
+        columnIndices
+            .get()
+            .map(i -> dataStructureUtil.randomDataColumnSidecar(signedBeaconBlock.asHeader(), i))
+            .collect(Collectors.toMap(DataColumnSidecar::getIndex, sidecar -> sidecar));
     sidecars.values().stream()
-            .skip(30)
-            .limit(70)
-            .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
+        .skip(30)
+        .limit(70)
+        .forEach(sidecar -> custody.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC));
 
     when(miscHelpersFulu.reconstructAllDataColumnSidecars(anyCollection()))
-            .thenReturn(sidecars.values().stream().toList());
+        .thenReturn(sidecars.values().stream().toList());
     stubAsyncRunner.executeDueActionsRepeatedly();
     stubTimeProvider.advanceTimeBySeconds(2);
     stubAsyncRunner.executeDueActionsRepeatedly();

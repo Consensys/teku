@@ -60,8 +60,7 @@ public interface DataColumnSidecarRecoveringCustody
         }
 
         @Override
-        public void onSyncingStatusChanged(boolean inSync) {
-        }
+        public void onSyncingStatusChanged(boolean inSync) {}
       };
 
   void onSyncingStatusChanged(boolean inSync);

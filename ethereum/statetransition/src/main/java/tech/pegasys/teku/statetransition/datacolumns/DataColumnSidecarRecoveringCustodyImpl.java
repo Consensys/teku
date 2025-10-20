@@ -246,7 +246,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
               delegate
                   .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
                   .finishError(LOG);
-              if(inSync) {
+              if (inSync) {
                 dataColumnSidecarPublisher.accept(dataColumnSidecar, RemoteOrigin.RECOVERED);
               }
             });
