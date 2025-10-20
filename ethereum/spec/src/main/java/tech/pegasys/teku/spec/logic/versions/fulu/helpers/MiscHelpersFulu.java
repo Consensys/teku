@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.kzg.KZGCellWithColumnId;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.Cell;
@@ -369,7 +371,12 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
       final List<BlobAndCellProofs> blobAndCellProofsList) {
     final List<List<MatrixEntry>> extendedMatrix = computeExtendedMatrix(blobAndCellProofsList);
     return constructDataColumnSidecarsInternal(
-        signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
+        builder ->
+            builder
+                .signedBlockHeader(signedBeaconBlockHeader)
+                .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof),
+        sszKZGCommitments,
+        extendedMatrix);
   }
 
   /**
@@ -451,13 +458,18 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     }
 
     return constructDataColumnSidecarsInternal(
-        signedBeaconBlockHeader, sszKZGCommitments, kzgCommitmentsInclusionProof, extendedMatrix);
+        builder ->
+            builder
+                .signedBlockHeader(signedBeaconBlockHeader)
+                .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof),
+        sszKZGCommitments,
+        extendedMatrix);
   }
 
-  private List<DataColumnSidecar> constructDataColumnSidecarsInternal(
-      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+  // get_data_column_sidecars
+  protected List<DataColumnSidecar> constructDataColumnSidecarsInternal(
+      final Consumer<DataColumnSidecarBuilder> dataColumnSidecarBuilderModifier,
       final SszList<SszKZGCommitment> sszKZGCommitments,
-      final List<Bytes32> kzgCommitmentsInclusionProof,
       final List<List<MatrixEntry>> extendedMatrix) {
     if (extendedMatrix.isEmpty()) {
       return Collections.emptyList();
@@ -486,14 +498,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
               final DataColumn dataColumn = dataColumnSchema.create(columnCells);
 
               return dataColumnSidecarSchema.create(
-                  builder ->
-                      builder
-                          .index(UInt64.valueOf(cellID))
-                          .column(dataColumn)
-                          .kzgCommitments(sszKZGCommitments)
-                          .kzgProofs(columnProofs)
-                          .signedBlockHeader(signedBeaconBlockHeader)
-                          .kzgCommitmentsInclusionProof(kzgCommitmentsInclusionProof));
+                  builder -> {
+                    builder
+                        .index(UInt64.valueOf(cellID))
+                        .column(dataColumn)
+                        .kzgCommitments(sszKZGCommitments)
+                        .kzgProofs(columnProofs);
+                    dataColumnSidecarBuilderModifier.accept(builder);
+                  });
             })
         .toList();
   }
@@ -533,11 +545,14 @@ public class MiscHelpersFulu extends MiscHelpersElectra {
     final SignedBeaconBlockHeader signedBeaconBlockHeader =
         DataColumnSidecarFulu.required(anyExistingSidecar).getSignedBlockHeader();
     return constructDataColumnSidecarsInternal(
-        signedBeaconBlockHeader,
+        builder ->
+            builder
+                .signedBlockHeader(signedBeaconBlockHeader)
+                .kzgCommitmentsInclusionProof(
+                    DataColumnSidecarFulu.required(anyExistingSidecar)
+                        .getKzgCommitmentsInclusionProof()
+                        .asListUnboxed()),
         anyExistingSidecar.getKzgCommitments(),
-        DataColumnSidecarFulu.required(anyExistingSidecar)
-            .getKzgCommitmentsInclusionProof()
-            .asListUnboxed(),
         extendedMatrix);
   }
 
