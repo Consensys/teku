@@ -18,5 +18,6 @@ public enum RemoteOrigin {
   GOSSIP,
   LOCAL_EL,
   LOCAL_PROPOSAL,
-  RECOVERED
+  RECOVERED,
+  CUSTODY
 }
