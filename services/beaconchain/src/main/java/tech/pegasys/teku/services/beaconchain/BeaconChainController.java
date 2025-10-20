@@ -1529,8 +1529,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
       final ExecutionPayloadGossipChannel executionPayloadGossipChannel =
           eventChannels.getPublisher(ExecutionPayloadGossipChannel.class, beaconAsyncRunner);
-        executionPayloadFactory =
-                new ExecutionPayloadFactoryGloas(spec, executionLayerBlockProductionManager);
+      executionPayloadFactory =
+          new ExecutionPayloadFactoryGloas(spec, executionLayerBlockProductionManager);
       executionPayloadPublisher =
           new ExecutionPayloadPublisherGloas(
               executionPayloadFactory,
