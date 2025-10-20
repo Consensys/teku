@@ -75,16 +75,15 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   @Override
   public void onAlreadyKnownDataColumn(
       final DataColumnSlotAndIdentifier columnId, final RemoteOrigin remoteOrigin) {
+    LOG.debug("Sampler received data column {} - origin: {}", columnId, remoteOrigin);
+
     getOrCreateTracker(columnId.slot(), columnId.blockRoot()).add(columnId, remoteOrigin);
   }
 
   public void onNewValidatedDataColumnSidecar(
       final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
-    LOG.debug(
-        "sampling data column {} - origin: {}", dataColumnSidecar::toLogString, () -> remoteOrigin);
-
-    getOrCreateTracker(dataColumnSidecar.getSlot(), dataColumnSidecar.getBeaconBlockRoot())
-        .add(DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar), remoteOrigin);
+    onAlreadyKnownDataColumn(
+        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar), remoteOrigin);
   }
 
   @Override

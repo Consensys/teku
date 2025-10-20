@@ -29,7 +29,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
 
   private final DataAvailabilitySampler dataAvailabilitySampler;
   private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
-  private final AtomicBoolean inflightResult = new AtomicBoolean(false);
+  private final AtomicBoolean dataAvailabilityCheckExecuted = new AtomicBoolean(false);
   final Spec spec;
 
   private final SignedBeaconBlock block;
@@ -71,7 +71,7 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
       return validationResult;
     }
 
-    if (inflightResult.compareAndSet(false, true)) {
+    if (dataAvailabilityCheckExecuted.compareAndSet(false, true)) {
       dataAvailabilitySampler
           .checkDataAvailability(block.getSlot(), block.getRoot())
           .finish(
