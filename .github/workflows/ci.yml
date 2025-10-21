@@ -472,14 +472,6 @@ jobs:
         with:
           stage_key: reference
 
-  ctrfTestsSummary:
-    runs-on: ubuntu-24.04
-    needs: [ unitTestsReport, propertyTestsReport, acceptanceTestsReport, referenceTestsReport ]
-    if: always()
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/collate-ctrf-summary
-
   # DockerTags
   # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21
   # develop = develop-jdk21
