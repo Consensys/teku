@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
@@ -49,10 +50,11 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
       final RpcResponseListener<DataColumnSidecar> dataColumnSidecarResponseListener,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
       final UInt64 startSlot,
       final UInt64 count,
       final List<UInt64> columns) {
-    super(peer, spec);
+    super(peer, spec, dataColumnSidecarSignatureValidator);
     this.dataColumnSidecarResponseListener = dataColumnSidecarResponseListener;
     this.startSlot = startSlot;
     this.endSlot = startSlot.plus(count).minusMinZero(1);
