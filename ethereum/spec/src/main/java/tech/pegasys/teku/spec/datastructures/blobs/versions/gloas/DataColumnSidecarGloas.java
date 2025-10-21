@@ -75,10 +75,10 @@ public class DataColumnSidecarGloas
     return getField3();
   }
 
+  // TODO-GLOAS: https://github.com/ethereum/consensus-specs/pull/4645
   @Override
   public UInt64 getSlot() {
-    throw new UnsupportedOperationException(
-        "Adding `slot` field to DataColumnSidecar in Gloas is TBD");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

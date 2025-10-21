@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarBuilder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarBuilderFulu;
@@ -50,6 +51,12 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
   @Override
   public DataColumnSidecarBuilder beaconBlockRoot(final Bytes32 beaconBlockRoot) {
     this.beaconBlockRoot = beaconBlockRoot;
+    return this;
+  }
+
+  @Override
+  public DataColumnSidecarBuilder slot(final UInt64 slot) {
+    // TODO-GLOAS: https://github.com/ethereum/consensus-specs/pull/4645
     return this;
   }
 

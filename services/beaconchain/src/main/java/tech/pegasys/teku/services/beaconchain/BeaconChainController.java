@@ -1005,18 +1005,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new DasSamplerBasic(
             spec,
             currentSlotProvider,
-            dbAccessor,
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
-            this::getCustodyGroupCountManager);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, dasSampler);
+            this::getCustodyGroupCountManager,
+            recentChainData);
+    eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
+    dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
+        dasSampler::onNewValidatedDataColumnSidecar);
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }
 
   protected void initDasSyncPreSampler() {
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final DasPreSampler dasPreSampler = new DasPreSampler(this.dataAvailabilitySampler);
+      final DasPreSampler dasPreSampler =
+          new DasPreSampler(
+              this.dataAvailabilitySampler,
+              this.dataColumnSidecarCustodyRef.get(),
+              this::getCustodyGroupCountManager);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
     }
   }
@@ -1503,7 +1509,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionPayloadPublisher executionPayloadPublisher;
 
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
-      executionPayloadFactory = new ExecutionPayloadFactoryGloas();
+      executionPayloadFactory =
+          new ExecutionPayloadFactoryGloas(spec, executionLayerBlockProductionManager);
       executionPayloadPublisher = new ExecutionPayloadPublisherGloas();
     } else {
       executionPayloadFactory = ExecutionPayloadFactory.NOOP;
