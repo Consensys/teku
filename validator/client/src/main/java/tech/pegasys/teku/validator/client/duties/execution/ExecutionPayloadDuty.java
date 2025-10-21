@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client.duties.execution;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -82,19 +81,16 @@ public class ExecutionPayloadDuty implements ExecutionPayloadBidEventsChannel {
       final UInt64 builderIndex) {
     validatorApiChannel
         .createUnsignedExecutionPayload(slot, builderIndex)
-        .thenApply(this::validateExecutionPayload)
+        .thenApply(
+            executionPayload ->
+                executionPayload.orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Node was not syncing but could not create execution payload")))
         .thenCompose(
             executionPayload -> signExecutionPayload(validator, executionPayload, forkInfo))
         .thenCompose(this::publishSignedExecutionPayload)
         .finish(error -> validatorLogger.executionPayloadDutyFailed(slot, builderIndex, error));
-  }
-
-  private ExecutionPayloadEnvelope validateExecutionPayload(
-      final Optional<ExecutionPayloadEnvelope> maybeExecutionPayload) {
-    return maybeExecutionPayload.orElseThrow(
-        () ->
-            new IllegalStateException(
-                "Node was not syncing but could not create execution payload"));
   }
 
   private SafeFuture<SignedExecutionPayloadEnvelope> signExecutionPayload(
