@@ -19,6 +19,12 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 
+/**
+ * ** EXPERIMENTAL **: This class was developed as a Proof of Concept and is not for production use.
+ *
+ * <p>Delays subscription on `ObservableValue` changes until Provider is available. Allows
+ * bootstrapping subscription on updatable value before value Provider existence.
+ */
 public class FutureValueObserver<C> {
   private static final Logger LOG = LogManager.getLogger();
   private final SafeFuture<Consumer<ValueObserver<C>>> subscriptionConsumerFuture =
