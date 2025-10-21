@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.gloas;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
@@ -84,5 +86,10 @@ public class DataColumnSidecarGloas
   @Override
   public Bytes32 getBeaconBlockRoot() {
     return getField4().get();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlockHeader> getMaybeSignedBlockHeader() {
+    return Optional.empty();
   }
 }
