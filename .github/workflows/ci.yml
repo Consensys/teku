@@ -54,61 +54,61 @@ env:
 
 jobs:
 
-  # spotless:
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v5
-  #       with:
-  #         submodules: 'recursive'
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
-  #     - name: Spotless
-  #       run: |
-  #         ./gradlew spotlessCheck
+  spotless:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Spotless
+        run: |
+          ./gradlew spotlessCheck
 
-  # moduleChecks:
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v5
-  #       with:
-  #         submodules: 'recursive'
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
-  #     - name: Check modules
-  #       run: |
-  #         ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
+  moduleChecks:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Check modules
+        run: |
+          ./gradlew checkMavenCoordinateCollisions checkModuleDependencies
 
-  # windowsBuild:
-  #   needs: [spotless, moduleChecks ]
-  #   runs-on: windows-2022
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v5
-  #       with:
-  #         submodules: 'recursive'
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare-windows
-  #     - name: Build
-  #       shell: powershell
-  #       run: |
-  #         $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
-  #         $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
-  #         cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
-  #     - name: Build
-  #       shell: powershell
-  #       run: |
-  #         New-Item -ItemType Directory -Force build\test-results
-  #         Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
-  #     - name: Publish Windows Test Results and Reports
-  #       uses: actions/upload-artifact@v4
-  #       if: always()
-  #       with:
-  #         if-no-files-found: ignore
-  #         retention-days: 7
-  #         path: |
-  #           build/test-results/
+  windowsBuild:
+    needs: [spotless, moduleChecks ]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare-windows
+      - name: Build
+        shell: powershell
+        run: |
+          $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
+          $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.vfs.watch=false"
+          cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
+      - name: Build
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force build\test-results
+          Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+      - name: Publish Windows Test Results and Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            build/test-results/
 
   assemble:
     runs-on: ubuntu-24.04
@@ -258,76 +258,76 @@ jobs:
         with:
           stage_key: unit
 
-  # integrationTests:
-  #   needs: assemble
-  #   runs-on: ubuntu-latest-128
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v5
-  #       with:
-  #         submodules: 'recursive'
-  #     - name: Prepare
-  #       uses: ./.github/actions/prepare
-  #     - name: Download assemble-output
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: assemble-output
-  #         path: ${{ github.workspace }}   
-  #     - name: Integration Tests
-  #       run: |
-  #         ./gradlew integrationTest
-  #     - name: Test results 
-  #       uses: ./.github/actions/collate-test-results
-  #       if: always()        
-  #       with:
-  #         stage_key: 'integration'
+  integrationTests:
+    needs: assemble
+    runs-on: ubuntu-latest-128
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Download assemble-output
+        uses: actions/download-artifact@v4
+        with:
+          name: assemble-output
+          path: ${{ github.workspace }}   
+      - name: Integration Tests
+        run: |
+          ./gradlew integrationTest
+      - name: Test results 
+        uses: ./.github/actions/collate-test-results
+        if: always()        
+        with:
+          stage_key: 'integration'
 
-  # propertyTests:
-  #   needs: assemble
-  #   uses: ./.github/workflows/matrix-tests-template.yml
-  #   secrets: inherit
-  #   with:
-  #     assemble_output_run_id: ${{ github.run_id }}
-  #     stage_name: Property Tests
-  #     stage_key: property
-  #     gradle_task: propertyTest
-  #     src_pattern: "*/src/property-test/java/*"
-  #     src_root: "src/property-test/java"
-  #     runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
+  propertyTests:
+    needs: assemble
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit
+    with:
+      assemble_output_run_id: ${{ github.run_id }}
+      stage_name: Property Tests
+      stage_key: property
+      gradle_task: propertyTest
+      src_pattern: "*/src/property-test/java/*"
+      src_root: "src/property-test/java"
+      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xl"
 
-  # propertyTestsReport:
-  #   runs-on: ubuntu-24.04
-  #   needs: propertyTests
-  #   if: always()
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: ./.github/actions/collate-junit-reports
-  #       if: always()        
-  #       with:
-  #         stage_key: property
+  propertyTestsReport:
+    runs-on: ubuntu-24.04
+    needs: propertyTests
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: property
 
-  # acceptanceTests:
-  #   needs: assemble
-  #   uses: ./.github/workflows/matrix-tests-template.yml
-  #   secrets: inherit
-  #   with:
-  #     assemble_output_run_id: ${{ github.run_id }}
-  #     stage_name: Acceptance Tests
-  #     stage_key: acceptance
-  #     gradle_task: acceptanceTest
-  #     src_pattern: "*/src/acceptance-test/java/*"
-  #     src_root: "src/acceptance-test/java"
-  #     runner: "ubuntu-latest-128"
+  acceptanceTests:
+    needs: assemble
+    uses: ./.github/workflows/matrix-tests-template.yml
+    secrets: inherit
+    with:
+      assemble_output_run_id: ${{ github.run_id }}
+      stage_name: Acceptance Tests
+      stage_key: acceptance
+      gradle_task: acceptanceTest
+      src_pattern: "*/src/acceptance-test/java/*"
+      src_root: "src/acceptance-test/java"
+      runner: "ubuntu-latest-128"
 
-  # acceptanceTestsReport:
-  #   runs-on: ubuntu-24.04
-  #   needs: acceptanceTests
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: ./.github/actions/collate-junit-reports
-  #       if: always()        
-  #       with:
-  #         stage_key: acceptance
+  acceptanceTestsReport:
+    runs-on: ubuntu-24.04
+    needs: acceptanceTests
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-junit-reports
+        if: always()        
+        with:
+          stage_key: acceptance
 
   # referenceTestsPrep:
   #   needs: assemble
@@ -473,6 +473,14 @@ jobs:
   #       if: always()
   #       with:
   #         stage_key: reference
+
+  ctrfTestsSummary:
+    runs-on: ubuntu-24.04
+    needs: [ unitTestsReport, propertyTestsReport, acceptanceTestsReport ]
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/collate-ctrf-summary
 
   # DockerTags
   # everything is a standard develop-jdk24/21; but you also add develop to develop-jdk21

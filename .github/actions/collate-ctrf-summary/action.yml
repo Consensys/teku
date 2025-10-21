@@ -1,0 +1,37 @@
+---
+name: 'ctrf-summary'
+description: 'Composite action to gather all test results'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Gather junit results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ctrf-*
+        path: ctrf/
+        # merge-multiple: true
+
+    - shell: bash
+      run: |
+        tree ctrf/
+    
+    - name: Combine CTRF markdown reports
+      shell: bash
+      run: |
+        echo "# Combined Test Reports" > combined-report.md
+        for dir in ctrf/ctrf-*; do
+          suite=$(basename "$dir" | sed 's/^ctrf-//' | sed 's/-tests$//')
+          echo "" >> combined-report.md
+          echo "## 🔹 ${suite^} Tests" >> combined-report.md
+          if [ -f "$dir/ctrf-report.md" ]; then
+            cat "$dir/ctrf-report.md" >> combined-report.md
+          else
+            echo "_⚠️ No markdown report found for ${suite}_." >> combined-report.md
+          fi
+          echo "" >> combined-report.md
+        done
+
+    - name: Publish combined summary
+      shell: bash
+      run: cat combined-report.md >> $GITHUB_STEP_SUMMARY
