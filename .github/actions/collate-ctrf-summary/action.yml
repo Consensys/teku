@@ -5,7 +5,7 @@ description: 'Composite action to gather all test results'
 runs:
   using: "composite"
   steps:
-    - name: Gather junit results
+    - name: Gather ctrf reports
       uses: actions/download-artifact@v4
       with:
         pattern: ctrf-*
@@ -16,10 +16,13 @@ runs:
       run: |
         tree ctrf/
     
-    - name: Combine CTRF markdown reports
+    - name: Publish combined summary
       shell: bash
       run: |
-        echo "# Combined Test Reports" > combined-report.md
+        echo "#Combined Test Reports" > combined-report.md
+        echo "**Workflow run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> combined-report.md
+        echo "" >> combined-report.md
+
         for dir in ctrf/ctrf-*; do
           suite=$(basename "$dir" | sed 's/^ctrf-//' | sed 's/-tests$//')
           echo "" >> combined-report.md
@@ -32,6 +35,18 @@ runs:
           echo "" >> combined-report.md
         done
 
-    - name: Publish combined summary
-      shell: bash
-      run: cat combined-report.md >> $GITHUB_STEP_SUMMARY
+    # Truncate safely before publishing to summary (GitHub limit = 1024 KB)
+    - name: Publish truncated summary to workflow
+      run: |
+        echo "## Combined Test Summary (truncated to fit 1 MB limit)" > summary.md
+        # keep first ~900 KB to stay below the GitHub summary limit
+        head -c 900000 combined-report.md >> summary.md
+        echo -e "\n\n_📦 Full report available below as downloadable artifact._" >> summary.md
+        cat summary.md >> $GITHUB_STEP_SUMMARY
+
+    # Upload the full Markdown as an artifact
+    - name: Upload full combined test report
+      uses: actions/upload-artifact@v4
+      with:
+        name: full-ctrf-summary
+        path: combined-report.md
