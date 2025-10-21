@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation.block.rules;
+package tech.pegasys.teku.statetransition.validation.block.rules.phase0;
 
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.block.rules.StatefulValidationRule;
 
 public class ProposerSignatureRule implements StatefulValidationRule {
 

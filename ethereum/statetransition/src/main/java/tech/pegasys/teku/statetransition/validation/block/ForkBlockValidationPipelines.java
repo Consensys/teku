@@ -16,21 +16,25 @@ package tech.pegasys.teku.statetransition.validation.block;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
-import tech.pegasys.teku.statetransition.validation.block.rules.BlockFinalizedCheckpointRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.BlockParentSeenRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.BlockParentSlotRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.BlockParentValidRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.EquivocationRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.ExpectedProposerRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.FutureSlotRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.LatestFinalizedSlotRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.ProposerSignatureRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.StatefulValidationRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.bellatrix.ExecutionPayloadTimestampRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.deneb.KzgCommitmentsRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.gloas.ExecutionPayloadBidParentRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockFinalizedCheckpointRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockParentSeenRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockParentSlotRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockParentValidRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.EquivocationRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.ExpectedProposerRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.FutureSlotRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.LatestFinalizedSlotRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.ProposerSignatureRule;
 
 public class ForkBlockValidationPipelines {
   private final Map<SpecMilestone, List<StatelessValidationRule>> statelessPipelines;
@@ -54,12 +58,17 @@ public class ForkBlockValidationPipelines {
     final BlockParentSlotRule blockParentSlotRule = new BlockParentSlotRule(gossipValidationHelper);
     final BlockFinalizedCheckpointRule blockFinalizedCheckpointRule =
         new BlockFinalizedCheckpointRule(gossipValidationHelper);
+    final KzgCommitmentsRule kzgCommitmentsRule = new KzgCommitmentsRule(spec);
+    final ExecutionPayloadBidParentRule executionPayloadBidParentRule =
+        new ExecutionPayloadBidParentRule();
 
     // Stateful rules
     final ProposerSignatureRule proposerSignatureRule =
         new ProposerSignatureRule(spec, gossipValidationHelper);
     final ExpectedProposerRule expectedProposerRule =
         new ExpectedProposerRule(gossipValidationHelper);
+    final ExecutionPayloadTimestampRule executionPayloadTimestampRule =
+        new ExecutionPayloadTimestampRule(spec);
 
     // Phase0 pipelines
     statelessPipelines.put(
@@ -74,6 +83,52 @@ public class ForkBlockValidationPipelines {
             blockFinalizedCheckpointRule));
     statefulPipelines.put(
         SpecMilestone.PHASE0, List.of(expectedProposerRule, proposerSignatureRule));
+
+    // Altair pipelines (same as phase0)
+    statelessPipelines.put(SpecMilestone.ALTAIR, statelessPipelines.get(SpecMilestone.PHASE0));
+    statefulPipelines.put(SpecMilestone.ALTAIR, statefulPipelines.get(SpecMilestone.PHASE0));
+
+    // Bellatrix pipelines
+    statelessPipelines.put(SpecMilestone.BELLATRIX, statelessPipelines.get(SpecMilestone.ALTAIR));
+    statefulPipelines.put(
+        SpecMilestone.BELLATRIX,
+        Stream.concat(
+                statefulPipelines.get(SpecMilestone.ALTAIR).stream(),
+                Stream.of(executionPayloadTimestampRule))
+            .toList());
+
+    // Capella pipelines (same as Bellatrix)
+    statelessPipelines.put(SpecMilestone.CAPELLA, statelessPipelines.get(SpecMilestone.BELLATRIX));
+    statefulPipelines.put(SpecMilestone.CAPELLA, statefulPipelines.get(SpecMilestone.BELLATRIX));
+
+    // Deneb pipelines
+    statelessPipelines.put(
+        SpecMilestone.DENEB,
+        Stream.concat(
+                statelessPipelines.get(SpecMilestone.CAPELLA).stream(),
+                Stream.of(kzgCommitmentsRule))
+            .toList());
+    statefulPipelines.put(SpecMilestone.DENEB, statefulPipelines.get(SpecMilestone.CAPELLA));
+
+    // Electra pipelines (same as Deneb)
+    statelessPipelines.put(SpecMilestone.ELECTRA, statelessPipelines.get(SpecMilestone.DENEB));
+    statefulPipelines.put(SpecMilestone.ELECTRA, statefulPipelines.get(SpecMilestone.DENEB));
+
+    // Fulu pipelines (same as Electra)
+    statelessPipelines.put(SpecMilestone.FULU, statelessPipelines.get(SpecMilestone.ELECTRA));
+    statefulPipelines.put(SpecMilestone.FULU, statefulPipelines.get(SpecMilestone.ELECTRA));
+
+    // Gloas pipelines
+    final List<StatelessValidationRule> gloasStatelessRules =
+        Stream.concat(
+                statelessPipelines.get(SpecMilestone.ELECTRA).stream()
+                    .filter(
+                        statelessValidationRule ->
+                            statelessValidationRule instanceof ExecutionPayloadTimestampRule),
+                Stream.of(executionPayloadBidParentRule))
+            .toList();
+    statelessPipelines.put(SpecMilestone.GLOAS, gloasStatelessRules);
+    statefulPipelines.put(SpecMilestone.GLOAS, statefulPipelines.get(SpecMilestone.ELECTRA));
   }
 
   public List<StatelessValidationRule> getStatelessPipelineFor(final SpecMilestone milestone) {

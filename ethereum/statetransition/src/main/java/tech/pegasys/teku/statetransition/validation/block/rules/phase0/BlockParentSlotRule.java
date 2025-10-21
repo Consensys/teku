@@ -11,38 +11,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation.block.rules;
+package tech.pegasys.teku.statetransition.validation.block.rules.phase0;
 
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
 
-public class ExpectedProposerRule implements StatefulValidationRule {
+public class BlockParentSlotRule implements StatelessValidationRule {
 
   private final GossipValidationHelper gossipValidationHelper;
 
-  public ExpectedProposerRule(final GossipValidationHelper gossipValidationHelper) {
+  public BlockParentSlotRule(final GossipValidationHelper gossipValidationHelper) {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
   /*
-   * [REJECT] The block is proposed by the expected proposer_index for the block's slot in the context
-   * of the current shuffling (defined by parent_root/slot).
-   * If the proposer_index cannot immediately be verified against the expected shuffling,
-   * the block MAY be queued for later processing while proposers for the block's branch are calculated
-   * -- in such a case do not REJECT, instead IGNORE this message.
+   * [REJECT] The block is from a higher slot than its parent.
    */
   @Override
-  public Optional<InternalValidationResult> validate(
-      final SignedBeaconBlock block, final BeaconState parentState) {
-    if (!gossipValidationHelper.isProposerTheExpectedProposer(
-        block.getProposerIndex(), block.getSlot(), parentState)) {
-      return Optional.of(
-          reject("Block proposed by incorrect proposer (%s)", block.getProposerIndex()));
+  public Optional<InternalValidationResult> validate(final SignedBeaconBlock block) {
+    final Optional<UInt64> maybeParentBlockSlot =
+        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
+    final UInt64 parentBlockSlot =
+        maybeParentBlockSlot.orElseThrow(
+            () -> new IllegalStateException("Unable to get parent block slot."));
+    if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
+      return Optional.of(reject("Parent block is after child block."));
     }
     return Optional.empty();
   }

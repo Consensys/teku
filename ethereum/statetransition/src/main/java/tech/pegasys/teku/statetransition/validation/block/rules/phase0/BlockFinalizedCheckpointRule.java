@@ -11,36 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation.block.rules;
+package tech.pegasys.teku.statetransition.validation.block.rules.phase0;
+
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
 
-public class LatestFinalizedSlotRule implements StatelessValidationRule {
-
-  private static final Logger LOG = LogManager.getLogger();
+public class BlockFinalizedCheckpointRule implements StatelessValidationRule {
 
   private final GossipValidationHelper gossipValidationHelper;
 
-  public LatestFinalizedSlotRule(final GossipValidationHelper gossipValidationHelper) {
+  public BlockFinalizedCheckpointRule(final GossipValidationHelper gossipValidationHelper) {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
   /*
-   * [IGNORE] The block is from a slot greater than the latest finalized slot -- i.e. validate that
-   * signed_beacon_block.message.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
-   * (a client MAY choose to validate and store such blocks for additional purposes
-   * -- e.g. slashing detection, archive nodes, etc).
+   * [REJECT] The current finalized_checkpoint is an ancestor of block
+   * -- i.e. get_checkpoint_block(store, block.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root
    */
   @Override
   public Optional<InternalValidationResult> validate(final SignedBeaconBlock block) {
-    if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
-      LOG.trace("BlockValidator: Block is too old. It will be dropped");
-      return Optional.of(InternalValidationResult.IGNORE);
+    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+        block.getSlot(), block.getParentRoot())) {
+      return Optional.of(reject("Block does not descend from finalized checkpoint"));
     }
     return Optional.empty();
   }

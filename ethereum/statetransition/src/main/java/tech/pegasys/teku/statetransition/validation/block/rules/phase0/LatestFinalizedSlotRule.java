@@ -11,38 +11,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation.block.rules;
+package tech.pegasys.teku.statetransition.validation.block.rules.phase0;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
 
-public class BlockParentSeenRule implements StatelessValidationRule {
+public class LatestFinalizedSlotRule implements StatelessValidationRule {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final GossipValidationHelper gossipValidationHelper;
 
-  public BlockParentSeenRule(final GossipValidationHelper gossipValidationHelper) {
+  public LatestFinalizedSlotRule(final GossipValidationHelper gossipValidationHelper) {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
   /*
-   * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)
-   * (a client MAY queue blocks for processing once the parent block is retrieved).
+   * [IGNORE] The block is from a slot greater than the latest finalized slot -- i.e. validate that
+   * signed_beacon_block.message.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
+   * (a client MAY choose to validate and store such blocks for additional purposes
+   * -- e.g. slashing detection, archive nodes, etc).
    */
   @Override
   public Optional<InternalValidationResult> validate(final SignedBeaconBlock block) {
-    final Optional<UInt64> maybeParentBlockSlot =
-        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
-    if (maybeParentBlockSlot.isEmpty()) {
-      LOG.trace(
-          "BlockValidator: Parent block does not exist. It will be saved for future processing");
-      return Optional.of(InternalValidationResult.SAVE_FOR_FUTURE);
+    if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
+      LOG.trace("BlockValidator: Block is too old. It will be dropped");
+      return Optional.of(InternalValidationResult.IGNORE);
     }
     return Optional.empty();
   }

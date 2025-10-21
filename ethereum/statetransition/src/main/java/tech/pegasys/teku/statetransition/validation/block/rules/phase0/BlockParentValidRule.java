@@ -11,36 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation.block.rules;
+package tech.pegasys.teku.statetransition.validation.block.rules.phase0;
 
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
 
-public class BlockParentSlotRule implements StatelessValidationRule {
+public class BlockParentValidRule implements StatelessValidationRule {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final GossipValidationHelper gossipValidationHelper;
 
-  public BlockParentSlotRule(final GossipValidationHelper gossipValidationHelper) {
+  public BlockParentValidRule(final GossipValidationHelper gossipValidationHelper) {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
   /*
-   * [REJECT] The block is from a higher slot than its parent.
+   * [REJECT] The block's parent (defined by block.parent_root) passes validation.
    */
   @Override
   public Optional<InternalValidationResult> validate(final SignedBeaconBlock block) {
-    final Optional<UInt64> maybeParentBlockSlot =
-        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
-    final UInt64 parentBlockSlot =
-        maybeParentBlockSlot.orElseThrow(
-            () -> new IllegalStateException("Unable to get parent block slot."));
-    if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
-      return Optional.of(reject("Parent block is after child block."));
+    if (!gossipValidationHelper.isBlockAvailable(block.getParentRoot())) {
+      LOG.trace("Block parent is not available. It will be saved for future processing");
+      return Optional.of(reject("Block parent is not available"));
     }
     return Optional.empty();
   }
