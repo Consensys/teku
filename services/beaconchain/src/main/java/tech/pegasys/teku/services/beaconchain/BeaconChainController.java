@@ -70,6 +70,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -134,7 +135,6 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -323,6 +323,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   private final AsyncRunner operationPoolAsyncRunner;
   private final AsyncRunner dasAsyncRunner;
+  private final FutureValueObserver<Integer> custodyGroupCountProvider =
+      new FutureValueObserver<>();
+  private final FutureValueObserver<Integer> custodyGroupCountSyncedProvider =
+      new FutureValueObserver<>();
+  private final FutureValueObserver<Integer> samplingGroupCountProvider =
+      new FutureValueObserver<>();
+
   protected final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
       new AtomicReference<>(CustodyGroupCountManager.NOOP);
   protected final AtomicReference<DataColumnSidecarRecoveringCustody> dataColumnSidecarCustodyRef =
@@ -858,12 +865,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
     final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
-    final int totalMyCustodyGroups =
-        beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
-    eventChannels
-        .getPublisher(CustodyGroupCountChannel.class)
-        .onGroupCountUpdate(
-            totalMyCustodyGroups, miscHelpersFulu.getSamplingGroupCount(totalMyCustodyGroups));
 
     final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
@@ -872,7 +873,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             dbAccessor,
             minCustodyPeriodSlotCalculator,
             this::getCustodyGroupCountManager,
-            totalMyCustodyGroups);
+            custodyGroupCountProvider);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
@@ -1008,7 +1009,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             recoveringSidecarRetriever,
             this::getCustodyGroupCountManager,
             recentChainData);
-    LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
     eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dasSampler::onNewValidatedDataColumnSidecar);
@@ -1037,13 +1037,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new CustodyGroupCountManagerImpl(
             spec,
             proposersDataManager,
-            eventChannels.getPublisher(CustodyGroupCountChannel.class),
             combinedChainDataClient,
             totalMyCustodyGroups,
             nodeId,
             metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, custodyGroupCountManager);
     this.custodyGroupCountManagerRef.set(custodyGroupCountManager);
+    // init custody values providers
+    custodyGroupCountProvider.complete(custodyGroupCountManager::subscribeCustodyGroupCount);
+    custodyGroupCountSyncedProvider.complete(
+        custodyGroupCountManager::subscribeCustodyGroupSyncedCount);
+    samplingGroupCountProvider.complete(custodyGroupCountManager::subscribeSamplingGroupCount);
   }
 
   protected void initMergeMonitors() {
@@ -1400,18 +1404,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return;
     }
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
-    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
     DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
-            spec,
-            p2pNetwork,
-            nodeId,
-            MiscHelpersFulu.required(specVersionFulu.miscHelpers())
-                .getSamplingGroupCount(
-                    beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu)));
+            spec, p2pNetwork, nodeId, samplingGroupCountProvider);
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
-    eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);
   }
 
   public void initExecutionLayerBlockProductionManager() {
@@ -1670,7 +1667,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     PortAvailability.checkPortsAvailable(
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(), maybeUdpPort);
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
-    eventChannels.subscribe(CustodyGroupCountChannel.class, metadataMessagesFactory);
+    custodyGroupCountSyncedProvider.subscribe(
+        newValue -> metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(newValue)));
 
     // Using a throttled historical query retrieval when handling RPC requests to avoid
     // overwhelming the node in case of various DDOS attacks
@@ -1746,16 +1744,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
     blsToExecutionChangePool.subscribeOperationAdded(
         new LocalOperationAcceptedFilter<>(p2pNetwork::publishSignedBlsToExecutionChange));
-    eventChannels.subscribe(
-        CustodyGroupCountChannel.class,
-        CustodyGroupCountChannel.createCustodyGroupCountSyncedSubscriber(
-            cgcSynced ->
-                p2pNetwork
-                    .getDiscoveryNetwork()
-                    .ifPresent(
-                        discoveryNetwork ->
-                            discoveryNetwork.setDASTotalCustodySubnetCount(cgcSynced))));
-
+    custodyGroupCountSyncedProvider.subscribe(
+        newValue ->
+            p2pNetwork
+                .getDiscoveryNetwork()
+                .ifPresent(
+                    discoveryNetwork -> discoveryNetwork.setDASTotalCustodyGroupCount(newValue)));
     this.nodeId =
         p2pNetwork
             .getDiscoveryNodeId()
