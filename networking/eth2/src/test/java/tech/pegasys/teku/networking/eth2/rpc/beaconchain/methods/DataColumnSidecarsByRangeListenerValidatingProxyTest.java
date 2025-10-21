@@ -21,7 +21,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.valueOf;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -190,7 +189,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
     final DataColumnSidecar datColumnSidecar1_1 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ONE);
     final DataColumnSidecar datColumnSidecar2_0 =
-        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, valueOf(3));
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, UInt64.valueOf(3));
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_1).join());
