@@ -31,20 +31,28 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class DataColumnSidecarSignatureValidator {
   private final Spec spec;
   private final CombinedChainDataClient chainDataClient;
+  private final BLSSignatureVerifier signatureVerifier;
 
   private final LRUCache<SignedBeaconBlockHeader, SafeFuture<Boolean>>
       cachedSignatureValidationResults;
 
   public DataColumnSidecarSignatureValidator(
-      final Spec spec, final CombinedChainDataClient chainDataClient) {
+      final Spec spec,
+      final CombinedChainDataClient chainDataClient,
+      final BLSSignatureVerifier signatureVerifier) {
     this.spec = spec;
     this.chainDataClient = chainDataClient;
+    this.signatureVerifier = signatureVerifier;
 
-    this.cachedSignatureValidationResults = LRUCache.create(50);
+    // let's cache enough headers so that we can be effective even during syncing,
+    // when we try to download columns for multiple blocks in parallel
+    // signed header is roughly 208 bytes long
+    this.cachedSignatureValidationResults = LRUCache.create(100);
   }
 
   public SafeFuture<Boolean> validateSignature(final DataColumnSidecar sidecar) {
-    Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader = sidecar.getMaybeSignedBlockHeader();
+    final Optional<SignedBeaconBlockHeader> maybeSignedBlockHeader =
+        sidecar.getMaybeSignedBlockHeader();
     if (maybeSignedBlockHeader.isEmpty()) {
       return SafeFuture.completedFuture(true);
     }
@@ -57,10 +65,9 @@ public class DataColumnSidecarSignatureValidator {
             return SafeFuture.failedFuture(new RuntimeException("No beacon state available"));
           }
 
-          UInt64 epoch = spec.computeEpochAtSlot(sidecar.getSlot());
-          UInt64 proposer = signedBlockHeader.getMessage().getProposerIndex();
-
-          Fork fork = spec.getForkSchedule().getFork(epoch);
+          final UInt64 epoch = spec.computeEpochAtSlot(sidecar.getSlot());
+          final UInt64 proposerIndex = signedBlockHeader.getMessage().getProposerIndex();
+          final Fork fork = spec.getForkSchedule().getFork(epoch);
 
           return maybeState
               .get()
@@ -72,10 +79,10 @@ public class DataColumnSidecarSignatureValidator {
                     final Bytes signingRoot =
                         spec.computeSigningRoot(signedBlockHeader.getMessage(), domain);
 
-                    return spec.getValidatorPubKey(state, proposer)
+                    return spec.getValidatorPubKey(state, proposerIndex)
                         .map(
                             pubKey ->
-                                BLSSignatureVerifier.SIMPLE.verify(
+                                signatureVerifier.verify(
                                     pubKey, signingRoot, signedBlockHeader.getSignature()))
                         .orElse(false);
                   });

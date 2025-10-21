@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.valueOf;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +51,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("JavaCase")
-public class DataColumnSidecarsByRootListenerValidatingProxyTest {
+public class DataColumnSidecarsByRangeListenerValidatingProxyTest {
   private final Spec spec = TestSpecFactory.createMainnetFulu();
   private final SchemaDefinitionsFulu schemaDefinitionsFulu =
       SchemaDefinitionsFulu.required(spec.forMilestone(SpecMilestone.FULU).getSchemaDefinitions());
@@ -59,7 +60,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
   final DataColumnSidecarSchema<?> sidecarSchema =
       schemaDefinitionsFulu.getDataColumnSidecarSchema();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private DataColumnSidecarsByRootListenerValidatingProxy listenerWrapper;
+  private DataColumnSidecarsByRangeListenerValidatingProxy listenerWrapper;
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
@@ -88,22 +89,20 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(2));
     final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(3));
     final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(4));
-    final List<DataColumnsByRootIdentifier> dataColumnIdentifiers =
-        List.of(
-            byRootIdentifierSchema.create(block1.getRoot(), List.of(ZERO, ONE)),
-            byRootIdentifierSchema.create(
-                block2.getRoot(), List.of(ZERO, ONE)), // ONE will be missed, shouldn't be fatal
-            byRootIdentifierSchema.create(block3.getRoot(), ZERO),
-            byRootIdentifierSchema.create(block4.getRoot(), ZERO));
+
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
     listenerWrapper =
-        new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer,
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
             spec,
+            peer,
             listener,
             metricsSystem,
             timeProvider,
             signatureValidator,
-            dataColumnIdentifiers);
+            ONE,
+            UInt64.valueOf(4),
+            columns);
     spec.reinitializeForTesting(
         AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,
@@ -128,20 +127,23 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
   }
 
   @Test
-  void blobSidecarIdentifierNotRequested() {
+  void blobSidecarNotInRange() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
-    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(2));
-    final List<DataColumnsByRootIdentifier> dataColumnIdentifiers =
-        List.of(byRootIdentifierSchema.create(block1.getRoot(), List.of(ZERO, ONE)));
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(3));
+
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
     listenerWrapper =
-        new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer,
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
             spec,
+            peer,
             listener,
             metricsSystem,
             timeProvider,
             signatureValidator,
-            dataColumnIdentifiers);
+            ONE,
+            UInt64.valueOf(2),
+            columns);
 
     final DataColumnSidecar datColumnSidecar1_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
@@ -149,6 +151,45 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ONE);
     final DataColumnSidecar datColumnSidecar2_0 =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, ZERO);
+
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_0).join());
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_1).join());
+    final SafeFuture<?> result = listenerWrapper.onResponse(datColumnSidecar2_0);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                .DATA_COLUMN_SIDECAR_SLOT_NOT_IN_RANGE
+                .describe());
+  }
+
+  @Test
+  void blobSidecarIdentifierNotRequested() {
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(2));
+
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
+    listenerWrapper =
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
+            spec,
+            peer,
+            listener,
+            metricsSystem,
+            timeProvider,
+            signatureValidator,
+            ONE,
+            UInt64.valueOf(2),
+            columns);
+
+    final DataColumnSidecar datColumnSidecar1_0 =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
+    final DataColumnSidecar datColumnSidecar1_1 =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ONE);
+    final DataColumnSidecar datColumnSidecar2_0 =
+        dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block2, valueOf(3));
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_0).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(datColumnSidecar1_1).join());
@@ -168,15 +209,20 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final DataColumnsByRootIdentifier dataColumnIdentifier =
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
+
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
     listenerWrapper =
-        new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer,
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
             spec,
+            peer,
             listener,
             metricsSystem,
             timeProvider,
             signatureValidator,
-            List.of(dataColumnIdentifier));
+            ONE,
+            UInt64.valueOf(1),
+            columns);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -214,15 +260,19 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final DataColumnsByRootIdentifier dataColumnIdentifier =
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
     listenerWrapper =
-        new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer,
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
             spec,
+            peer,
             listener,
             metricsSystem,
             timeProvider,
             signatureValidator,
-            List.of(dataColumnIdentifier));
+            ONE,
+            UInt64.valueOf(1),
+            columns);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -244,15 +294,20 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final DataColumnsByRootIdentifier dataColumnIdentifier =
         byRootIdentifierSchema.create(block1.getRoot(), ZERO);
+
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
     listenerWrapper =
-        new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer,
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
             spec,
+            peer,
             listener,
             metricsSystem,
             timeProvider,
             signatureValidator,
-            List.of(dataColumnIdentifier));
+            ONE,
+            UInt64.valueOf(1),
+            columns);
 
     final DataColumnSidecar dataColumnSidecar =
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(
@@ -290,17 +345,19 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
   void dataColumnSidecarsFailsDueToSignatureVerification() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(ONE);
 
-    final List<DataColumnsByRootIdentifier> dataColumnIdentifiers =
-        List.of(byRootIdentifierSchema.create(block1.getRoot(), List.of(ZERO, ONE)));
+    final List<UInt64> columns = List.of(ZERO, ONE);
+
     listenerWrapper =
-        new DataColumnSidecarsByRootListenerValidatingProxy(
-            peer,
+        new DataColumnSidecarsByRangeListenerValidatingProxy(
             spec,
+            peer,
             listener,
             metricsSystem,
             timeProvider,
             signatureValidator,
-            dataColumnIdentifiers);
+            ONE,
+            UInt64.valueOf(1),
+            columns);
     spec.reinitializeForTesting(
         AvailabilityCheckerFactory.NOOP_BLOB_SIDECAR,
         AvailabilityCheckerFactory.NOOP_DATACOLUMN_SIDECAR,

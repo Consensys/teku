@@ -69,40 +69,48 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
   @Override
   public SafeFuture<?> onResponse(final DataColumnSidecar dataColumnSidecar) {
     return SafeFuture.of(
-        () -> {
-          final UInt64 dataColumnSidecarSlot = dataColumnSidecar.getSlot();
-          if (!dataColumnSidecarSlotIsInRange(dataColumnSidecarSlot)) {
-            throw new DataColumnSidecarsResponseInvalidResponseException(
-                peer, DATA_COLUMN_SIDECAR_SLOT_NOT_IN_RANGE);
-          }
+            () -> {
+              final UInt64 dataColumnSidecarSlot = dataColumnSidecar.getSlot();
+              if (!dataColumnSidecarSlotIsInRange(dataColumnSidecarSlot)) {
+                throw new DataColumnSidecarsResponseInvalidResponseException(
+                    peer, DATA_COLUMN_SIDECAR_SLOT_NOT_IN_RANGE);
+              }
 
-          if (!columns.contains(dataColumnSidecar.getIndex())) {
-            throw new DataColumnSidecarsResponseInvalidResponseException(
-                peer, DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
-          }
+              if (!columns.contains(dataColumnSidecar.getIndex())) {
+                throw new DataColumnSidecarsResponseInvalidResponseException(
+                    peer, DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER);
+              }
 
-          verifyValidity(dataColumnSidecar);
-          try (MetricsHistogram.Timer ignored =
-              dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
-            verifyInclusionProof(dataColumnSidecar);
-          } catch (final IOException ioException) {
-            throw new DataColumnSidecarsResponseInvalidResponseException(
-                peer,
-                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                    .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
-          }
-          try (MetricsHistogram.Timer ignored =
-              dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
-            verifyKzgProof(dataColumnSidecar);
-          } catch (final IOException ioException) {
-            throw new DataColumnSidecarsResponseInvalidResponseException(
-                peer,
-                DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
-                    .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
-          }
-
-          return dataColumnSidecarResponseListener.onResponse(dataColumnSidecar);
-        });
+              verifyValidity(dataColumnSidecar);
+              try (MetricsHistogram.Timer ignored =
+                  dataColumnSidecarInclusionProofVerificationTimeSeconds.startTimer()) {
+                verifyInclusionProof(dataColumnSidecar);
+              } catch (final IOException ioException) {
+                throw new DataColumnSidecarsResponseInvalidResponseException(
+                    peer,
+                    DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                        .DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
+              }
+              try (MetricsHistogram.Timer ignored =
+                  dataColumnSidecarKzgBatchVerificationTimeSeconds.startTimer()) {
+                verifyKzgProof(dataColumnSidecar);
+              } catch (final IOException ioException) {
+                throw new DataColumnSidecarsResponseInvalidResponseException(
+                    peer,
+                    DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
+                        .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
+              }
+              return SafeFuture.COMPLETE;
+            })
+        .thenCompose(__ -> verifySignature(dataColumnSidecar))
+        .thenApply(
+            signatureIsValid -> {
+              if (signatureIsValid) {
+                return SafeFuture.COMPLETE;
+              }
+              return SafeFuture.failedFuture(new RuntimeException("Signature is not valid"));
+            })
+        .thenApply(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
   }
 
   private boolean dataColumnSidecarSlotIsInRange(final UInt64 dataColumnSidecarSlot) {
