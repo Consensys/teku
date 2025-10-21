@@ -168,7 +168,7 @@ public class CustodyGroupCountManagerImplTest {
     custodyGroupCountManager.onSlot(UInt64.ZERO);
 
     assertThat(custodyGroupCountManager.getCustodyGroupCount()).isEqualTo(4);
-    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isZero();
+    assertThat(custodyGroupCountManager.getCustodyGroupSyncedCount()).isEqualTo(4);
 
     // prepare a validator
     when(proposersDataManager.getPreparedProposerInfo())

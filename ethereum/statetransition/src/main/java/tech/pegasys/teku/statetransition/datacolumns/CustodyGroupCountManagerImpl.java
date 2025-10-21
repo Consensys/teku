@@ -103,6 +103,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
     this.custodyGroupCountChannel = custodyGroupCountChannel;
+    this.custodyGroupSyncedCount = new AtomicInteger(0);
     final Optional<Integer> maybeCustodyCount =
         combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
@@ -113,7 +114,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       updateCustodyGroupCount(maybeCustodyCount.get(), maybeCustodyCount);
     }
 
-    this.custodyGroupSyncedCount = new AtomicInteger(0);
     this.nodeId = nodeId;
   }
 
@@ -251,8 +251,10 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           newCustodyGroupCount);
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
-
-    custodyGroupCount.set(newCustodyGroupCount);
+    final int oldValue = custodyGroupCount.getAndSet(newCustodyGroupCount);
+    if (oldValue == INITIAL_VALUE) {
+      setCustodyGroupSyncedCount(newCustodyGroupCount);
+    }
     custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
     custodyGroupCountGauge.set(newCustodyGroupCount);
     isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();

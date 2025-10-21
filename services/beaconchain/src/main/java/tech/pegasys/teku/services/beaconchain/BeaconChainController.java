@@ -674,7 +674,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initActiveValidatorTracker();
     initSubnetSubscriber();
     initDataColumnSidecarSubnetBackboneSubscriber();
-    initFuluCustodyEventChannel();
     initSlashingEventsSubscriptions();
     initPerformanceTracker();
     initBlobSidecarReconstructionProvider();
@@ -1020,33 +1019,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               this.dataColumnSidecarCustodyRef.get(),
               this::getCustodyGroupCountManager);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
-
-      final int totalMyCustodyGroups = custodyGroupCountManagerRef.get().getCustodyGroupCount();
-
-      final MiscHelpersFulu miscHelpersFulu =
-          MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
-
-      eventChannels
-          .getPublisher(CustodyGroupCountChannel.class)
-          .onGroupCountUpdate(
-              totalMyCustodyGroups, miscHelpersFulu.getSamplingGroupCount(totalMyCustodyGroups));
-    }
-  }
-
-  // final das initialisation to broadcast the correct custody count
-  protected void initFuluCustodyEventChannel() {
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      final int totalMyCustodyGroups = custodyGroupCountManagerRef.get().getCustodyGroupCount();
-      final MiscHelpersFulu miscHelpersFulu =
-          MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers());
-      final int samplingCount = miscHelpersFulu.getSamplingGroupCount(totalMyCustodyGroups);
-      LOG.info(
-          "Initializing fulu custody group count to {}, sampling count to {}",
-          totalMyCustodyGroups,
-          samplingCount);
-      eventChannels
-          .getPublisher(CustodyGroupCountChannel.class)
-          .onGroupCountUpdate(totalMyCustodyGroups, samplingCount);
     }
   }
 
