@@ -32,15 +32,15 @@ public interface ExecutionPayloadFactory {
         }
 
         @Override
-        public List<DataColumnSidecar> createDataColumnSidecars(
+        public SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
             final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-          return List.of();
+          return SafeFuture.completedFuture(List.of());
         }
       };
 
   SafeFuture<ExecutionPayloadEnvelope> createUnsignedExecutionPayload(
       UInt64 builderIndex, BeaconBlockAndState blockAndState);
 
-  List<DataColumnSidecar> createDataColumnSidecars(
+  SafeFuture<List<DataColumnSidecar>> createDataColumnSidecars(
       SignedExecutionPayloadEnvelope signedExecutionPayload);
 }

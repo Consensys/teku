@@ -259,6 +259,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     // Recovery is not needed for locally produced or recovered data,
     // we will get everything for it in custody w/o reconstruction
     if (remoteOrigin.equals(RemoteOrigin.RPC) || remoteOrigin.equals(RemoteOrigin.GOSSIP)) {
+      LOG.debug(
+          "sidecar: {} {} - remoteOrigin: {}",
+          dataColumnSidecar::getSlotAndBlockRoot,
+          dataColumnSidecar::getIndex,
+          () -> remoteOrigin);
       createOrUpdateRecoveryTaskForDataColumnSidecar(dataColumnSidecar);
     }
     return delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin);

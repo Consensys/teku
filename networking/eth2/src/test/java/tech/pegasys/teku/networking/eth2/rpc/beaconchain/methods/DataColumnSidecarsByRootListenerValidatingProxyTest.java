@@ -172,8 +172,7 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
                     .kzgCommitmentsInclusionProof(
                         DataColumnSidecarFulu.required(dataColumnSidecar)
                             .getKzgCommitmentsInclusionProof()
-                            .asListUnboxed())
-                    .beaconBlockRoot(dataColumnSidecar.getBeaconBlockRoot()));
+                            .asListUnboxed()));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecarModified);
     assertThat(result).isCompletedExceptionally();

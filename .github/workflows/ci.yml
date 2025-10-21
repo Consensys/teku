@@ -43,6 +43,11 @@ on:
         required: false
         default: 'false'  # string "false"
 
+# if a new commit is made, cancel this run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   JAVA_TOOL_OPTIONS: -Xmx4096m
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=4 -Xmx4096m
@@ -255,7 +260,7 @@ jobs:
 
   integrationTests:
     needs: assemble
-    runs-on: ubuntu-latest-128
+    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -312,12 +317,11 @@ jobs:
       gradle_task: acceptanceTest
       src_pattern: "*/src/acceptance-test/java/*"
       src_root: "src/acceptance-test/java"
-      runner: "ubuntu-latest-128"
+      runner: "gha-runner-scale-set-ubuntu-22.04-amd64-xxl"
 
   acceptanceTestsReport:
     runs-on: ubuntu-24.04
     needs: acceptanceTests
-    if: always()
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/collate-junit-reports
@@ -413,11 +417,6 @@ jobs:
           name: reftests
           merge-multiple: true 
           path: ./eth-reference-tests
-      - name: Login to dockerhub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USER_RO }}
-          password: ${{ secrets.DOCKER_PASSWORD_RO }}
       - uses: actions/cache/restore@v4
         with:
           path: eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/
