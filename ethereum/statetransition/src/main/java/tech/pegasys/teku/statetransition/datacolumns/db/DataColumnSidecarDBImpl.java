@@ -91,6 +91,10 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
     private long maxAddedSlot = 0;
 
     private void logOnNewSidecar(final DataColumnSidecar sidecar) {
+      if (!LOG.isDebugEnabled()) {
+        return;
+      }
+
       final int currentAddCounter = addCounter.incrementAndGet();
       final int slot = sidecar.getSlot().intValue();
       final long prevMaxAddedSlot;
@@ -127,6 +131,10 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
 
     private SafeFuture<Void> logNewFirstCustodyIncompleteSlot(
         final Optional<UInt64> maybeCurrentSlot, final UInt64 newSlot) {
+      if (!LOG.isDebugEnabled()) {
+        return SafeFuture.COMPLETE;
+      }
+
       if (maybeCurrentSlot.isEmpty() || !maybeCurrentSlot.get().equals(newSlot)) {
         return getColumnIdentifiers(newSlot)
             .thenCompose(
@@ -156,6 +164,10 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
 
     private void logNewFirstSamplerIncompleteSlot(
         final Optional<UInt64> maybeCurrentSlot, final UInt64 newSlot) {
+      if (!LOG.isDebugEnabled()) {
+        return;
+      }
+
       if (maybeCurrentSlot.isEmpty() || !maybeCurrentSlot.get().equals(newSlot)) {
         LOG.debug(
             "DataColumnSidecarDB: setFirstSamplerIncompleteSlot {} ~> {}",
