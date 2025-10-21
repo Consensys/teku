@@ -35,9 +35,10 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class ValidatorsUtil {
+
   protected final SpecConfig specConfig;
   protected final MiscHelpers miscHelpers;
-  protected final BeaconStateAccessors beaconStateAccessors;
+  private final BeaconStateAccessors beaconStateAccessors;
 
   public ValidatorsUtil(
       final SpecConfig specConfig,
