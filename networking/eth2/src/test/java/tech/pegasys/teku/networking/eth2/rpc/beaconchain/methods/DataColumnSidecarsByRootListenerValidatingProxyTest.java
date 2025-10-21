@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -310,9 +311,14 @@ public class DataColumnSidecarsByRootListenerValidatingProxyTest {
         dataStructureUtil.randomDataColumnSidecarWithInclusionProof(block1, ZERO);
 
     when(signatureValidator.validateSignature(dataColumnSidecar1_0))
-        .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
+        .thenReturn(SafeFuture.completedFuture(false));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(dataColumnSidecar1_0);
     assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(DataColumnSidecarsResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE.describe());
   }
 }

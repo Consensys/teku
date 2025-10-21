@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
@@ -103,12 +104,14 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
               return SafeFuture.COMPLETE;
             })
         .thenCompose(__ -> verifySignature(dataColumnSidecar))
-        .thenApply(
+        .thenCompose(
             signatureIsValid -> {
               if (signatureIsValid) {
                 return SafeFuture.COMPLETE;
               }
-              return SafeFuture.failedFuture(new RuntimeException("Signature is not valid"));
+              return SafeFuture.failedFuture(
+                  new DataColumnSidecarsResponseInvalidResponseException(
+                      peer, InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
             })
         .thenApply(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
   }
