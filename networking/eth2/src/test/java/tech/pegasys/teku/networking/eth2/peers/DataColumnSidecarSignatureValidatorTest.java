@@ -50,17 +50,17 @@ public class DataColumnSidecarSignatureValidatorTest {
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final BLSSignatureVerifier signatureVerifier = mock(BLSSignatureVerifier.class);
 
-  private final UInt64 SLOT = UInt64.valueOf(42);
-  private final UInt64 EPOCH = UInt64.valueOf(2);
-  private final UInt64 PROPOSER_INDEX = UInt64.valueOf(10);
-  private final Bytes32 GENESIS_VALIDATORS_ROOT = dataStructureUtil.randomBytes32();
-  private final Bytes32 DOMAIN = dataStructureUtil.randomBytes32();
-  private final Bytes SIGNING_ROOT = dataStructureUtil.randomBytes32();
-  private final BLSPublicKey PROPOSER_PUB_KEY = dataStructureUtil.randomPublicKey();
+  private final UInt64 slot = UInt64.valueOf(42);
+  private final UInt64 epoch = UInt64.valueOf(2);
+  private final UInt64 proposerIndex = UInt64.valueOf(10);
+  private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
+  private final Bytes32 domain = dataStructureUtil.randomBytes32();
+  private final Bytes signingRoot = dataStructureUtil.randomBytes32();
+  private final BLSPublicKey proposerPubKey = dataStructureUtil.randomPublicKey();
   private final BeaconState state = mock(BeaconState.class);
 
   private final SignedBeaconBlockHeader signedBeaconBlockHeader =
-      dataStructureUtil.randomSignedBeaconBlockHeader(SLOT, PROPOSER_INDEX);
+      dataStructureUtil.randomSignedBeaconBlockHeader(slot, proposerIndex);
 
   private final DataColumnSidecar dataColumnSidecar =
       dataStructureUtil.new RandomDataColumnSidecarBuilder()
@@ -76,20 +76,20 @@ public class DataColumnSidecarSignatureValidatorTest {
     final Fork fork = mock(Fork.class);
 
     when(chainDataClient.getBestState()).thenReturn(Optional.of(SafeFuture.completedFuture(state)));
-    when(state.getGenesisValidatorsRoot()).thenReturn(GENESIS_VALIDATORS_ROOT);
+    when(state.getGenesisValidatorsRoot()).thenReturn(genesisValidatorsRoot);
 
     when(spec.getForkSchedule()).thenReturn(forkSchedule);
-    when(spec.computeEpochAtSlot(SLOT)).thenReturn(EPOCH);
-    when(forkSchedule.getFork(EPOCH)).thenReturn(fork);
-    when(spec.getDomain(Domain.BEACON_PROPOSER, EPOCH, fork, GENESIS_VALIDATORS_ROOT))
-        .thenReturn(DOMAIN);
-    when(spec.getValidatorPubKey(state, PROPOSER_INDEX)).thenReturn(Optional.of(PROPOSER_PUB_KEY));
-    when(spec.computeSigningRoot(signedBeaconBlockHeader.getMessage(), DOMAIN))
-        .thenReturn(SIGNING_ROOT);
+    when(spec.computeEpochAtSlot(slot)).thenReturn(epoch);
+    when(forkSchedule.getFork(epoch)).thenReturn(fork);
+    when(spec.getDomain(Domain.BEACON_PROPOSER, epoch, fork, genesisValidatorsRoot))
+        .thenReturn(domain);
+    when(spec.getValidatorPubKey(state, proposerIndex)).thenReturn(Optional.of(proposerPubKey));
+    when(spec.computeSigningRoot(signedBeaconBlockHeader.getMessage(), domain))
+        .thenReturn(signingRoot);
 
     // valid by default
     when(signatureVerifier.verify(
-            PROPOSER_PUB_KEY, SIGNING_ROOT, signedBeaconBlockHeader.getSignature()))
+            proposerPubKey, signingRoot, signedBeaconBlockHeader.getSignature()))
         .thenReturn(true);
   }
 
@@ -116,7 +116,7 @@ public class DataColumnSidecarSignatureValidatorTest {
   void shouldReturnFalseForInvalidSignature() {
 
     when(signatureVerifier.verify(
-            PROPOSER_PUB_KEY, SIGNING_ROOT, signedBeaconBlockHeader.getSignature()))
+            proposerPubKey, signingRoot, signedBeaconBlockHeader.getSignature()))
         .thenReturn(false);
 
     final SafeFuture<Boolean> result = validator.validateSignature(dataColumnSidecar);
@@ -126,7 +126,7 @@ public class DataColumnSidecarSignatureValidatorTest {
 
   @Test
   void shouldReturnFalseForMissingPublicKey() {
-    when(spec.getValidatorPubKey(state, PROPOSER_INDEX)).thenReturn(Optional.empty());
+    when(spec.getValidatorPubKey(state, proposerIndex)).thenReturn(Optional.empty());
 
     final SafeFuture<Boolean> result = validator.validateSignature(dataColumnSidecar);
 
