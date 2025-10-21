@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -86,21 +87,24 @@ public class DataColumnSidecarCustodyImplTest {
 
   @BeforeEach
   public void setup() {
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(groupCount);
     custody =
         new DataColumnSidecarCustodyImpl(
             spec,
             blockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
-            custodyGroupCountManagerSupplier,
-            groupCount);
+            custodyGroupCountManagerSupplier);
     when(custodyGroupCountManager.getCustodyColumnIndices())
         .thenReturn(
             List.of(UInt64.valueOf(0), UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+    verify(custodyGroupCountManager).getCustodyGroupCount();
+    Mockito.clearInvocations(custodyGroupCountManager);
   }
 
   private void initWithMockDb(final int initialGroupCount, final int updatedGroupCount) {
     final DataColumnSidecarDbAccessor dbAccessorMock = mock(DataColumnSidecarDbAccessor.class);
+    when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(initialGroupCount);
     when(dbAccessorMock.setFirstCustodyIncompleteSlot(any())).thenReturn(SafeFuture.COMPLETE);
     custody =
         new DataColumnSidecarCustodyImpl(
@@ -108,8 +112,7 @@ public class DataColumnSidecarCustodyImplTest {
             blockResolver,
             dbAccessorMock,
             minCustodyPeriodSlotCalculator,
-            custodyGroupCountManagerSupplier,
-            initialGroupCount);
+            custodyGroupCountManagerSupplier);
     when(custodyGroupCountManager.getCustodyGroupCount()).thenReturn(updatedGroupCount);
   }
 
@@ -179,8 +182,7 @@ public class DataColumnSidecarCustodyImplTest {
             resolver,
             sidecarDb,
             minCustodyPeriodSlotCalculator,
-            custodyGroupCountManagerSupplier,
-            groupCount);
+            custodyGroupCountManagerSupplier);
 
     final SafeFuture<Optional<Bytes32>> futureResult = custody.getBlockRootWithBlobs(ONE);
     verifyNoMoreInteractions(sidecarDb);
@@ -200,8 +202,7 @@ public class DataColumnSidecarCustodyImplTest {
             resolver,
             sidecarDb,
             minCustodyPeriodSlotCalculator,
-            custodyGroupCountManagerSupplier,
-            groupCount);
+            custodyGroupCountManagerSupplier);
 
     final SafeFuture<Optional<Bytes32>> futureResult = custody.getBlockRootWithBlobs(ONE);
 
@@ -235,8 +236,7 @@ public class DataColumnSidecarCustodyImplTest {
             resolver,
             sidecarDb,
             minCustodyPeriodSlotCalculator,
-            custodyGroupCountManagerSupplier,
-            2);
+            custodyGroupCountManagerSupplier);
 
     SafeFuture<DataColumnSidecarCustodyImpl.SlotCustody> future = custody.retrieveSlotCustody(ONE);
     verify(sidecarDb).getColumnIdentifiers(ONE);

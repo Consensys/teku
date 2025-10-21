@@ -251,9 +251,7 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           newCustodyGroupCount);
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
-    if (custodyGroupCount.get() >= newCustodyGroupCount) {
-      return;
-    }
+
     custodyGroupCount.set(newCustodyGroupCount);
     custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
     custodyGroupCountGauge.set(newCustodyGroupCount);

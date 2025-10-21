@@ -59,7 +59,6 @@ public class DasLongPollCustodyTest {
       () -> custodyGroupCountManager;
   final SpecConfigFulu config =
       SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-  final int groupCount = config.getNumberOfCustodyGroups();
 
   final DataColumnSidecarCustodyImpl custodyImpl =
       new DataColumnSidecarCustodyImpl(
@@ -67,8 +66,7 @@ public class DasLongPollCustodyTest {
           blockResolver,
           dbAccessor,
           MinCustodyPeriodSlotCalculator.createFromSpec(spec),
-          custodyGroupCountManagerSupplier,
-          groupCount);
+          custodyGroupCountManagerSupplier);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(0, spec);
   private final Duration currentSlotTimeout = ofSeconds(3);
