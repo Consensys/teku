@@ -113,7 +113,7 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                   new DataColumnSidecarsResponseInvalidResponseException(
                       peer, InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
             })
-        .thenApply(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
+        .thenCompose(__ -> dataColumnSidecarResponseListener.onResponse(dataColumnSidecar));
   }
 
   private boolean dataColumnSidecarSlotIsInRange(final UInt64 dataColumnSidecarSlot) {

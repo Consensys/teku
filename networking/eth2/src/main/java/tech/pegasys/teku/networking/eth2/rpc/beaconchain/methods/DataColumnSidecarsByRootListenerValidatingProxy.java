@@ -73,6 +73,6 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
                   new DataColumnSidecarsResponseInvalidResponseException(
                       peer, InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
             })
-        .thenApply(__ -> listener.onResponse(dataColumnSidecar));
+        .thenCompose(__ -> listener.onResponse(dataColumnSidecar));
   }
 }
