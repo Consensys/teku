@@ -557,7 +557,6 @@ application {
   applicationName = "teku"
   getMainClass().set("tech.pegasys.teku.Teku")
   applicationDefaultJvmArgs = [
-      "-Dvertx.disableFileCPResolving=true",
       "-Dteku.home=TEKU_HOME",
       // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
       // happens during shutdown is not logged.

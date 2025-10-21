@@ -19,7 +19,6 @@ dependencies {
 
   implementation 'io.libp2p:jvm-libp2p'
   implementation 'io.netty:netty-handler'
-  implementation 'io.projectreactor:reactor-core'
   implementation 'io.consensys.tuweni:tuweni-units'
   implementation 'io.consensys.tuweni:tuweni-crypto'
   implementation 'tech.pegasys.discovery:discovery'
