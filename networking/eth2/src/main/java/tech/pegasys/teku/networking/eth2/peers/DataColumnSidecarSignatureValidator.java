@@ -33,8 +33,8 @@ public class DataColumnSidecarSignatureValidator {
   private final CombinedChainDataClient chainDataClient;
   private final BLSSignatureVerifier signatureVerifier;
 
-  private final LRUCache<SignedBeaconBlockHeader, SafeFuture<Boolean>>
-      cachedSignatureValidationResults;
+  private final LRUCache<Bytes32, SafeFuture<Boolean>>
+      cachedSignatureValidationResultsBySignedHeaderRoot;
 
   public DataColumnSidecarSignatureValidator(
       final Spec spec,
@@ -46,8 +46,7 @@ public class DataColumnSidecarSignatureValidator {
 
     // let's cache enough headers so that we can be effective even during syncing,
     // when we try to download columns for multiple blocks in parallel
-    // signed header is roughly 208 bytes long
-    this.cachedSignatureValidationResults = LRUCache.create(100);
+    this.cachedSignatureValidationResultsBySignedHeaderRoot = LRUCache.create(100);
   }
 
   public SafeFuture<Boolean> validateSignature(final DataColumnSidecar sidecar) {
@@ -57,9 +56,11 @@ public class DataColumnSidecarSignatureValidator {
       return SafeFuture.completedFuture(true);
     }
 
-    return cachedSignatureValidationResults.get(
-        maybeSignedBlockHeader.get(),
-        signedBlockHeader -> {
+    final SignedBeaconBlockHeader signedBlockHeader = maybeSignedBlockHeader.get();
+
+    return cachedSignatureValidationResultsBySignedHeaderRoot.get(
+        signedBlockHeader.hashTreeRoot(),
+        __ -> {
           final Optional<SafeFuture<BeaconState>> maybeState = chainDataClient.getBestState();
           if (maybeState.isEmpty()) {
             return SafeFuture.failedFuture(new RuntimeException("No beacon state available"));
