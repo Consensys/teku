@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,18 +30,13 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class DataColumnSidecarSignatureValidator {
   private final Spec spec;
   private final CombinedChainDataClient chainDataClient;
-  private final BLSSignatureVerifier signatureVerifier;
-
   private final LRUCache<Bytes32, SafeFuture<Boolean>>
       cachedSignatureValidationResultsBySignedHeaderRoot;
 
   public DataColumnSidecarSignatureValidator(
-      final Spec spec,
-      final CombinedChainDataClient chainDataClient,
-      final BLSSignatureVerifier signatureVerifier) {
+      final Spec spec, final CombinedChainDataClient chainDataClient) {
     this.spec = spec;
     this.chainDataClient = chainDataClient;
-    this.signatureVerifier = signatureVerifier;
 
     // let's cache enough headers so that we can be effective even during syncing,
     // when we try to download columns for multiple blocks in parallel
@@ -83,8 +77,9 @@ public class DataColumnSidecarSignatureValidator {
                     return spec.getValidatorPubKey(state, proposerIndex)
                         .map(
                             pubKey ->
-                                signatureVerifier.verify(
-                                    pubKey, signingRoot, signedBlockHeader.getSignature()))
+                                spec.getSpecConfig(epoch)
+                                    .getBLSSignatureVerifier()
+                                    .verify(pubKey, signingRoot, signedBlockHeader.getSignature()))
                         .orElse(false);
                   });
         });

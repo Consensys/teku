@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.ForkSchedule;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class DataColumnSidecarSignatureValidatorTest {
   private final Spec spec = Mockito.mock(Spec.class);
+  private final SpecConfig specConfig = mock(SpecConfig.class);
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalFulu());
 
@@ -68,7 +71,7 @@ public class DataColumnSidecarSignatureValidatorTest {
           .build();
 
   private final DataColumnSidecarSignatureValidator validator =
-      new DataColumnSidecarSignatureValidator(spec, chainDataClient, signatureVerifier);
+      new DataColumnSidecarSignatureValidator(spec, chainDataClient);
 
   @BeforeEach
   void setUp() {
@@ -87,6 +90,8 @@ public class DataColumnSidecarSignatureValidatorTest {
     when(spec.computeSigningRoot(signedBeaconBlockHeader.getMessage(), domain))
         .thenReturn(signingRoot);
 
+    when(spec.getSpecConfig(any())).thenReturn(specConfig);
+    when(specConfig.getBLSSignatureVerifier()).thenReturn(signatureVerifier);
     // valid by default
     when(signatureVerifier.verify(
             proposerPubKey, signingRoot, signedBeaconBlockHeader.getSignature()))
