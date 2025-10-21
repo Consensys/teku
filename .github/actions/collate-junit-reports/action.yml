@@ -60,7 +60,7 @@ runs:
         update-comment: false
         overwrite-comment: true
         # generate reports
-        suite-folded-report: true
+        suite-folded-report: false
         summary-report: true
         failed-report: true
         flaky-report: true
