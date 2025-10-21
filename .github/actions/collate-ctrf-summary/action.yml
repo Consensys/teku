@@ -37,6 +37,7 @@ runs:
 
     # Truncate safely before publishing to summary (GitHub limit = 1024 KB)
     - name: Publish truncated summary to workflow
+      shell: bash
       run: |
         echo "## Combined Test Summary (truncated to fit 1 MB limit)" > summary.md
         # keep first ~900 KB to stay below the GitHub summary limit
@@ -50,3 +51,4 @@ runs:
       with:
         name: full-ctrf-summary
         path: combined-report.md
+

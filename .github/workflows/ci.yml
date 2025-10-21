@@ -258,7 +258,7 @@ jobs:
 
   integrationTests:
     needs: assemble
-    runs-on: ubuntu-latest-128
+    runs-on: gha-runner-scale-set-ubuntu-22.04-amd64-xxl
     steps:
       - name: Checkout
         uses: actions/checkout@v5

@@ -155,10 +155,11 @@ public class GenesisGenerator {
       final BeaconStateAccessorsFulu accessorsFulu =
           BeaconStateAccessorsFulu.required(genesisSpec.beaconStateAccessors());
 
-      final MiscHelpersFulu helpersFulu = genesisSpec.miscHelpers().toVersionFulu().orElseThrow();
+      final MiscHelpersFulu helpersFulu = MiscHelpersFulu.required(genesisSpec.miscHelpers());
+
       final List<UInt64> proposerLookahead =
           helpersFulu.initializeProposerLookahead(
-              state.toVersionElectra().orElseThrow(), accessorsFulu);
+              BeaconStateElectra.required(state), accessorsFulu);
 
       MutableBeaconStateFulu.required(state)
           .setProposerLookahead(

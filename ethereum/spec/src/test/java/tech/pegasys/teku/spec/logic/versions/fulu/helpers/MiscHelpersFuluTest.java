@@ -42,6 +42,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumn;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.fulu.DataColumnSidecarFulu;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -119,6 +122,22 @@ public class MiscHelpersFuluTest {
             dataStructureUtil.randomSignedBeaconBlockHeader(),
             UInt64.valueOf(numberOfColumns).increment());
     assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidIndex)).isFalse();
+  }
+
+  @Test
+  public void shouldRejectIfKzgCommitmentListIsGreaterThanNumberOfBlobs() {
+    final UInt64 epoch = miscHelpersFulu.computeEpochAtSlot(UInt64.ONE);
+    final int maxBlobsPerBlock = miscHelpersFulu.getBlobParameters(epoch).maxBlobsPerBlock();
+
+    final List<KZGProof> kzgProofs = dataStructureUtil.randomKZGProofs(maxBlobsPerBlock + 1);
+    final List<KZGCommitment> kzgCommitments =
+        dataStructureUtil.randomKZGCommitments(maxBlobsPerBlock + 1);
+    final DataColumn dataColumn =
+        dataStructureUtil.randomDataColumn(UInt64.ONE, maxBlobsPerBlock + 1);
+
+    final DataColumnSidecar invalidDataColumnKzgProofs =
+        dataStructureUtil.randomDataColumnSidecar(kzgProofs, kzgCommitments, dataColumn);
+    assertThat(miscHelpersFulu.verifyDataColumnSidecar(invalidDataColumnKzgProofs)).isFalse();
   }
 
   @Test
