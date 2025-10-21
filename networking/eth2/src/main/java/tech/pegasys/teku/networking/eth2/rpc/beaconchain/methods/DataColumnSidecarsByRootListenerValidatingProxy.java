@@ -61,9 +61,8 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
     return SafeFuture.of(
             () -> {
               validate(dataColumnSidecar);
-              return SafeFuture.COMPLETE;
+              return verifySignature(dataColumnSidecar);
             })
-        .thenCompose(__ -> verifySignature(dataColumnSidecar))
         .thenCompose(
             signatureIsValid -> {
               if (signatureIsValid) {

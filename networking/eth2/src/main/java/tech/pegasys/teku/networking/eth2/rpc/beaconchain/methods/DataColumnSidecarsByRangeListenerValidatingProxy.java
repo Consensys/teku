@@ -101,9 +101,8 @@ public class DataColumnSidecarsByRangeListenerValidatingProxy
                     DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType
                         .DATA_COLUMN_SIDECAR_KZG_VERIFICATION_FAILED);
               }
-              return SafeFuture.COMPLETE;
+              return verifySignature(dataColumnSidecar);
             })
-        .thenCompose(__ -> verifySignature(dataColumnSidecar))
         .thenCompose(
             signatureIsValid -> {
               if (signatureIsValid) {
