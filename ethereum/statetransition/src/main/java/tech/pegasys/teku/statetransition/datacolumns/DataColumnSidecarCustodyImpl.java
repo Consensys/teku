@@ -99,8 +99,7 @@ public class DataColumnSidecarCustodyImpl
       final CanonicalBlockResolver blockResolver,
       final DataColumnSidecarDbAccessor db,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
-      final int totalCustodyGroupCount) {
+      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier) {
     checkNotNull(spec);
     checkNotNull(blockResolver);
     checkNotNull(minCustodyPeriodSlotCalculator);
@@ -111,7 +110,8 @@ public class DataColumnSidecarCustodyImpl
     this.blockResolver = blockResolver;
     this.minCustodyPeriodSlotCalculator = minCustodyPeriodSlotCalculator;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
-    this.totalCustodyGroupCount = new AtomicInteger(totalCustodyGroupCount);
+    this.totalCustodyGroupCount =
+        new AtomicInteger(custodyGroupCountManagerSupplier.get().getCustodyGroupCount());
     LOG.debug(
         "Initialized DataColumnSidecar Custody with custody group count {}",
         totalCustodyGroupCount);
