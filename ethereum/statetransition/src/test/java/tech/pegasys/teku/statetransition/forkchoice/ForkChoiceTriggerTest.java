@@ -116,7 +116,7 @@ class ForkChoiceTriggerTest {
     final CompletableFuture<Void> attestationsDueFuture =
         SafeFuture.runAsync(() -> localTrigger.onAttestationsDueForSlot(UInt64.ONE));
     processHeadFuture.complete(true);
-    
+
     // Wait for the async operation to complete using proper synchronization
     // instead of polling with Thread.sleep which is flaky on Windows
     attestationsDueFuture.get(5, TimeUnit.SECONDS);
