@@ -23,6 +23,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.DEB
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger.WARNING_TIME_MILLIS;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.infrastructure.logging.LogCaptor;
@@ -115,15 +116,10 @@ class ForkChoiceTriggerTest {
     final CompletableFuture<Void> attestationsDueFuture =
         SafeFuture.runAsync(() -> localTrigger.onAttestationsDueForSlot(UInt64.ONE));
     processHeadFuture.complete(true);
-    int i = 0;
-    // shouldn't take 30 x 100ms to complete, but allowing in case
-    while (i++ < 30) {
-      Thread.sleep(100);
-      if (processHeadFuture.isCompletedNormally()) {
-        break;
-      }
-    }
-    attestationsDueFuture.cancel(true);
+    
+    // Wait for the async operation to complete using proper synchronization
+    // instead of polling with Thread.sleep which is flaky on Windows
+    attestationsDueFuture.get(5, TimeUnit.SECONDS);
   }
 
   @Test
