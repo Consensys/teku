@@ -71,7 +71,9 @@ runs:
         previous-results-report: true
         max-previous-runs-to-fetch: 10
         report-order: 'summary-report,failed-report,flaky-report,insights-report,test-report'
-        
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+                
     - name: Upload CTRF artifact
       uses: actions/upload-artifact@v4
       with:
