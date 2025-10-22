@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.Bea
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestation;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.PayloadAttestationMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 // TODO-GLOAS: https://github.com/Consensys/teku/issues/10041
@@ -40,6 +41,10 @@ public class AggregatingPayloadAttestationPool implements PayloadAttestationPool
 
   @Override
   public void onSlot(final UInt64 slot) {}
+
+  @Override
+  public void subscribeOperationAdded(
+      final OperationAddedSubscriber<PayloadAttestationMessage> subscriber) {}
 
   @Override
   public SafeFuture<InternalValidationResult> addLocal(
