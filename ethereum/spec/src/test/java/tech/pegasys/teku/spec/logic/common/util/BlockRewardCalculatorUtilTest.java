@@ -95,7 +95,7 @@ public class BlockRewardCalculatorUtilTest {
     when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
         .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
     when(blockProcessorAltair.calculateAttestationProcessingResult(any(), any(), any()))
-        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), false, UInt64.ZERO));
+        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), 0, UInt64.ZERO));
     final BeaconState preState = data.randomBeaconState();
     final BeaconBlock block =
         data.blockBuilder(preState.getSlot().increment().longValue())
@@ -114,7 +114,7 @@ public class BlockRewardCalculatorUtilTest {
     when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
         .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
     when(blockProcessorAltair.calculateAttestationProcessingResult(any(), any(), any()))
-        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), false, UInt64.ZERO));
+        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), 0, UInt64.ZERO));
     final BeaconState preState = data.randomBeaconState();
     final BeaconBlock block =
         data.blockBuilder(preState.getSlot().increment().longValue())
