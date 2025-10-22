@@ -30,15 +30,12 @@ public class GossipValidationHelper {
 
   private final Spec spec;
   private final RecentChainData recentChainData;
-  private final UInt64 maxOffsetTimeInSeconds;
+  private final int maxOffsetTimeInMillis;
 
   public GossipValidationHelper(final Spec spec, final RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
-    this.maxOffsetTimeInSeconds =
-        UInt64.valueOf(
-            Math.round(
-                (float) spec.getNetworkingConfig().getMaximumGossipClockDisparity() / 1000.0));
+    this.maxOffsetTimeInMillis = spec.getNetworkingConfig().getMaximumGossipClockDisparity();
   }
 
   public boolean isSlotFinalized(final UInt64 slot) {
@@ -49,8 +46,9 @@ public class GossipValidationHelper {
 
   public boolean isSlotFromFuture(final UInt64 slot) {
     final ReadOnlyStore store = recentChainData.getStore();
-    final UInt64 maxTime = store.getTimeSeconds().plus(maxOffsetTimeInSeconds);
-    final UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
+    final UInt64 maxTime = store.getTimeInMillis().plus(maxOffsetTimeInMillis);
+    final UInt64 maxCurrSlot =
+        spec.getCurrentSlotFromTimeMillis(maxTime, store.getGenesisTimeMillis());
     return slot.isGreaterThan(maxCurrSlot);
   }
 
@@ -102,7 +100,7 @@ public class GossipValidationHelper {
     return recentChainData.containsBlock(blockRoot);
   }
 
-  public UInt64 getMaxOffsetTimeInSeconds() {
-    return maxOffsetTimeInSeconds;
+  int getMaxOffsetTimeInMillis() {
+    return maxOffsetTimeInMillis;
   }
 }

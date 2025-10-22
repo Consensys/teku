@@ -41,7 +41,9 @@ public class DataColumnSidecarsResponseInvalidResponseException extends InvalidR
         "Inclusion verification for DataColumnSidecar has failed"),
     DATA_COLUMN_SIDECAR_SLOT_NOT_IN_RANGE("DataColumnSidecar's slot is not within requested range"),
     DATA_COLUMN_SIDECAR_UNEXPECTED_IDENTIFIER(
-        "DataColumnSidecar is not within requested identifiers");
+        "DataColumnSidecar is not within requested identifiers"),
+    DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE(
+        "DataColumnSidecar's beacon block header signature verification failed");
 
     private final String description;
 

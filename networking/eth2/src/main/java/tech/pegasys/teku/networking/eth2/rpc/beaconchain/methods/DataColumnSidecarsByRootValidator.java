@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -39,8 +40,9 @@ public class DataColumnSidecarsByRootValidator extends AbstractDataColumnSidecar
       final Spec spec,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
       final List<DataColumnIdentifier> expectedDataColumnIdentifiers) {
-    super(peer, spec);
+    super(peer, spec, dataColumnSidecarSignatureValidator);
     this.expectedDataColumnIdentifiers = ConcurrentHashMap.newKeySet();
     this.expectedDataColumnIdentifiers.addAll(expectedDataColumnIdentifiers);
     this.dataColumnSidecarInclusionProofVerificationTimeSeconds =

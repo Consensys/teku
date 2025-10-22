@@ -41,8 +41,8 @@ public class BuilderPendingPayment
     return getField1();
   }
 
-  public BuilderPendingPayment copyWithNewWeight(final UInt64 newWeight) {
-    return new BuilderPendingPayment(getSchema(), newWeight, getWithdrawal());
+  public BuilderPendingPayment copyWithNewWeight(final UInt64 weight) {
+    return new BuilderPendingPayment(getSchema(), weight, getWithdrawal());
   }
 
   @Override

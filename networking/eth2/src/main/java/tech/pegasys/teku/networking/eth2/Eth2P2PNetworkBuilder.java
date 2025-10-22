@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
@@ -182,13 +181,6 @@ public class Eth2P2PNetworkBuilder {
       eventChannels.subscribe(SlotEventsChannel.class, statusMessageFactory);
     }
 
-    final Optional<UInt64> dasTotalCustodyGroupCount =
-        spec.isMilestoneSupported(SpecMilestone.FULU)
-            ? Optional.of(
-                UInt64.valueOf(
-                    config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
-            : Optional.empty();
-
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -211,7 +203,6 @@ public class Eth2P2PNetworkBuilder {
             config.getPeerRequestLimit(),
             spec,
             discoveryNodeIdExtractor,
-            dasTotalCustodyGroupCount,
             dasReqRespLogger);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -240,7 +231,6 @@ public class Eth2P2PNetworkBuilder {
         gossipEncoding,
         config.getGossipConfigurator(),
         processedAttestationSubscriptionProvider,
-        dasTotalCustodyGroupCount.orElse(UInt64.ZERO).intValue(),
         config.isAllTopicsFilterEnabled());
   }
 
@@ -494,10 +484,10 @@ public class Eth2P2PNetworkBuilder {
               gossipedSyncCommitteeMessageProcessor,
               gossipedSignedBlsToExecutionChangeProcessor,
               dataColumnSidecarOperationProcessor,
-              executionProofOperationProcessor,
               executionPayloadProcessor,
               payloadAttestationMessageProcessor,
               executionPayloadBidProcessor,
+              executionProofOperationProcessor,
               debugDataDumper,
               dasGossipLogger,
               bpo,
