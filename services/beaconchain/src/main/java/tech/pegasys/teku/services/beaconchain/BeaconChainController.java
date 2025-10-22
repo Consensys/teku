@@ -216,6 +216,7 @@ import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationMessageValidator;
 import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -1299,7 +1300,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initPayloadAttestationPool() {
     LOG.debug("BeaconChainController.initPayloadAttestationPool()");
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
-      payloadAttestationPool = new AggregatingPayloadAttestationPool(spec);
+      final PayloadAttestationMessageValidator validator = new PayloadAttestationMessageValidator();
+      payloadAttestationPool = new AggregatingPayloadAttestationPool(spec, validator);
       eventChannels.subscribe(SlotEventsChannel.class, payloadAttestationPool);
     } else {
       payloadAttestationPool = PayloadAttestationPool.NOOP;
