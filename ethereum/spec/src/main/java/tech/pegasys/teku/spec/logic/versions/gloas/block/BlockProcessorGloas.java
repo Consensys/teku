@@ -274,21 +274,19 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   @Override
   protected void consumeAttestationProcessingResult(
       final AttestationData data,
-      final AttestationProcessingResult attestationProcessingResult,
+      final AttestationProcessingResult result,
       final MutableBeaconState state) {
-    super.consumeAttestationProcessingResult(data, attestationProcessingResult, state);
+    super.consumeAttestationProcessingResult(data, result, state);
     // update builder payment weight
-    final UInt64 weightDelta = attestationProcessingResult.builderPaymentWeightDelta();
+    final UInt64 weightDelta = result.builderPaymentWeightDelta();
     if (!weightDelta.isZero()) {
       final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
       final BuilderPendingPayment payment =
-          stateGloas
-              .getBuilderPendingPayments()
-              .get(attestationProcessingResult.builderPaymentIndex());
+          stateGloas.getBuilderPendingPayments().get(result.builderPaymentIndex());
       stateGloas
           .getBuilderPendingPayments()
           .set(
-              attestationProcessingResult.builderPaymentIndex(),
+              result.builderPaymentIndex(),
               payment.copyWithNewWeight(payment.getWeight().plus(weightDelta)));
     }
   }
