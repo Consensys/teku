@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
@@ -24,6 +26,8 @@ import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
 public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionPayloadFactory executionPayloadFactory;
   private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
@@ -54,14 +58,12 @@ public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher
   private void publishExecutionPayloadAndDataColumnSidecars(
       final SignedExecutionPayloadEnvelope signedExecutionPayload,
       final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture) {
-    executionPayloadGossipChannel
-        .publishExecutionPayload(signedExecutionPayload)
-        .finishStackTrace();
+    executionPayloadGossipChannel.publishExecutionPayload(signedExecutionPayload).finishError(LOG);
     dataColumnSidecarsFuture
         .thenAccept(
             dataColumnSidecars ->
                 dataColumnSidecarGossipChannel.publishDataColumnSidecars(
                     dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL))
-        .finishStackTrace();
+        .finishError(LOG);
   }
 }
