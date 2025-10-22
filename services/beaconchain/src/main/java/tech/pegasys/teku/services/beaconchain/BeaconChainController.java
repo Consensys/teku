@@ -213,6 +213,8 @@ import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
+import tech.pegasys.teku.statetransition.payloadattestation.AggregatingPayloadAttestationPool;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
@@ -361,6 +363,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
+  protected volatile PayloadAttestationPool payloadAttestationPool;
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
@@ -666,6 +669,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initProposerSlashingPool();
     initVoluntaryExitPool();
     initSignedBlsToExecutionChangePool();
+    initPayloadAttestationPool();
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
@@ -1237,6 +1241,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blsToExecutionChangePool::removeAll);
   }
 
+  protected void initPayloadAttestationPool() {
+    LOG.debug("BeaconChainController.initPayloadAttestationPool()");
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      payloadAttestationPool = new AggregatingPayloadAttestationPool(spec);
+      eventChannels.subscribe(SlotEventsChannel.class, payloadAttestationPool);
+    } else {
+      payloadAttestationPool = PayloadAttestationPool.NOOP;
+    }
+  }
+
   protected void initBlobSidecarReconstructionProvider() {
     LOG.debug("BeaconChainController.initBlobSidecarReconstructionProvider()");
     this.blobSidecarReconstructionProvider =
@@ -1437,24 +1451,26 @@ public class BeaconChainController extends Service implements BeaconChainControl
             executionLayer,
             eventChannels.getPublisher(ExecutionClientVersionChannel.class),
             graffitiBuilder.getConsensusClientVersion());
-    final BlockOperationSelectorFactory operationSelector =
-        new BlockOperationSelectorFactory(
+    final BlockFactory blockFactory =
+        new MilestoneBasedBlockFactory(
             spec,
-            attestationPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            blsToExecutionChangePool,
-            syncCommitteeContributionPool,
-            depositProvider,
-            eth1DataCache,
-            graffitiBuilder,
-            forkChoiceNotifier,
-            executionLayerBlockProductionManager,
-            executionPayloadBidManager,
-            metricsSystem,
-            timeProvider);
-    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
+            new BlockOperationSelectorFactory(
+                spec,
+                attestationPool,
+                attesterSlashingPool,
+                proposerSlashingPool,
+                voluntaryExitPool,
+                blsToExecutionChangePool,
+                syncCommitteeContributionPool,
+                payloadAttestationPool,
+                depositProvider,
+                eth1DataCache,
+                graffitiBuilder,
+                forkChoiceNotifier,
+                executionLayerBlockProductionManager,
+                executionPayloadBidManager,
+                metricsSystem,
+                timeProvider));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -1726,8 +1742,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
             .gossipedExecutionPayloadProcessor(
                 executionPayloadManager::validateAndImportExecutionPayload)
-            // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960
-            .gossipedPayloadAttestationMessageProcessor(OperationProcessor.noop())
+            .gossipedPayloadAttestationMessageProcessor(payloadAttestationPool::addRemote)
             .gossipedExecutionPayloadBidProcessor(
                 (signedBid, arrivalTimestamp) ->
                     executionPayloadBidManager.validateAndAddBid(signedBid, RemoteBidOrigin.P2P))

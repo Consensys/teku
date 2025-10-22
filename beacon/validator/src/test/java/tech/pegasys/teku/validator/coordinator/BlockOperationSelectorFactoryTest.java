@@ -89,6 +89,7 @@ import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.payloadattestation.PayloadAttestationPool;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
@@ -156,6 +157,8 @@ class BlockOperationSelectorFactoryTest {
   private final SyncCommitteeContributionPool contributionPool =
       new SyncCommitteeContributionPool(spec, contributionValidator);
 
+  private final PayloadAttestationPool payloadAttestationPool = mock(PayloadAttestationPool.class);
+
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final Bytes32 defaultGraffiti = dataStructureUtil.randomBytes32();
@@ -183,6 +186,7 @@ class BlockOperationSelectorFactoryTest {
           voluntaryExitPool,
           blsToExecutionChangePool,
           contributionPool,
+          payloadAttestationPool,
           depositProvider,
           eth1DataCache,
           graffitiBuilder,
