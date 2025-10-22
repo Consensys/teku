@@ -81,6 +81,7 @@ public class AggregatingPayloadAttestationPool implements PayloadAttestationPool
             });
   }
 
+  @SuppressWarnings("unused")
   private void doAdd(final PayloadAttestationMessage payloadAttestationMessage) {}
 
   @Override
