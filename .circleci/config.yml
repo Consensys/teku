@@ -153,19 +153,6 @@ commands:
       - store_artifacts:
           path: build/test-artifacts
 
-  docker_trust_sign:
-    description: "Sign docker images"
-    steps:
-      - run:
-          name: "Sign Docker images"
-          command: |
-            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
-            # dct signing setup
-            mkdir -p $HOME/.docker/trust/private
-            echo $DCT_KEY | base64 --decode > $HOME/.docker/trust/private/$DCT_HASH.key
-            chmod 600 $HOME/.docker/trust/private/$DCT_HASH.key
-            docker trust key load $HOME/.docker/trust/private/$DCT_HASH.key --name ecosystem
-
   docker_publish_images:
     description: "Upload the docker images"
     steps:
@@ -480,7 +467,6 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
-      - docker_trust_sign
       - docker_publish_images
       - notify
 
@@ -491,7 +477,6 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
-      - docker_trust_sign
       - docker_publish_images
       - notify
 
