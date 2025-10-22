@@ -36,10 +36,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class DebugDataFileDumperTest {
-  final DataStructureUtil dataStructureUtil =
+  private DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 
@@ -172,6 +173,24 @@ class DebugDataFileDumperTest {
         dumper.formatOptionalTimestamp(Optional.empty(), timeProvider);
     assertThat(formattedTimestamp)
         .isEqualTo(formatTimestamp(timeProvider.getTimeInMillis().longValue()));
+  }
+
+  @Test
+  void saveInvalidExecutionPayloadToFile_shouldSaveToFile(@TempDir final Path tempDir) {
+    dataStructureUtil = new DataStructureUtil(TestSpecFactory.createMinimalGloas());
+    final DebugDataFileDumper dumper = new DebugDataFileDumper(tempDir);
+    final SignedExecutionPayloadEnvelope executionPayload =
+        dataStructureUtil.randomSignedExecutionPayloadEnvelope(42);
+    dumper.saveInvalidExecutionPayload(executionPayload, "reason", Optional.of(new Throwable()));
+
+    final String fileName =
+        String.format(
+            "%s_%s_%s.ssz",
+            executionPayload.getSlot(),
+            executionPayload.getMessage().getBeaconBlockRoot().toUnprefixedHexString(),
+            executionPayload.getMessage().getBuilderIndex());
+    final Path expectedFile = tempDir.resolve("invalid_execution_payloads").resolve(fileName);
+    checkBytesSavedToFile(expectedFile, executionPayload.sszSerialize());
   }
 
   private void checkBytesSavedToFile(final Path path, final Bytes expectedBytes) {
