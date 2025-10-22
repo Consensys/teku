@@ -17,6 +17,8 @@ import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColumnSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
@@ -35,12 +37,14 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
       final RpcResponseListener<DataColumnSidecar> listener,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
       final List<DataColumnsByRootIdentifier> expectedByRootIdentifiers) {
     super(
         peer,
         spec,
         metricsSystem,
         timeProvider,
+        dataColumnSidecarSignatureValidator,
         expectedByRootIdentifiers.stream()
             .flatMap(
                 byRootIdentifier ->
@@ -55,9 +59,19 @@ public class DataColumnSidecarsByRootListenerValidatingProxy
   @Override
   public SafeFuture<?> onResponse(final DataColumnSidecar dataColumnSidecar) {
     return SafeFuture.of(
-        () -> {
-          validate(dataColumnSidecar);
-          return listener.onResponse(dataColumnSidecar);
-        });
+            () -> {
+              validate(dataColumnSidecar);
+              return verifySignature(dataColumnSidecar);
+            })
+        .thenCompose(
+            signatureIsValid -> {
+              if (signatureIsValid) {
+                return SafeFuture.COMPLETE;
+              }
+              return SafeFuture.failedFuture(
+                  new DataColumnSidecarsResponseInvalidResponseException(
+                      peer, InvalidResponseType.DATA_COLUMN_SIDECAR_HEADER_INVALID_SIGNATURE));
+            })
+        .thenCompose(__ -> listener.onResponse(dataColumnSidecar));
   }
 }
