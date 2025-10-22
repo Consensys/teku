@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.gloas;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -28,12 +28,13 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 public class DataColumnSidecarGloas
-    extends Container5<
+    extends Container6<
         DataColumnSidecarGloas,
         SszUInt64,
         DataColumn,
         SszList<SszKZGCommitment>,
         SszList<SszKZGProof>,
+        SszUInt64,
         SszBytes32>
     implements DataColumnSidecar {
 
@@ -47,6 +48,7 @@ public class DataColumnSidecarGloas
       final DataColumn column,
       final SszList<SszKZGCommitment> kzgCommitments,
       final SszList<SszKZGProof> kzgProofs,
+      final UInt64 slot,
       final Bytes32 beaconBlockRoot) {
     super(
         schema,
@@ -54,6 +56,7 @@ public class DataColumnSidecarGloas
         column,
         kzgCommitments,
         kzgProofs,
+        SszUInt64.of(slot),
         SszBytes32.of(beaconBlockRoot));
   }
 
@@ -77,15 +80,14 @@ public class DataColumnSidecarGloas
     return getField3();
   }
 
-  // TODO-GLOAS: https://github.com/ethereum/consensus-specs/pull/4645
   @Override
   public UInt64 getSlot() {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return getField4().get();
   }
 
   @Override
   public Bytes32 getBeaconBlockRoot() {
-    return getField4().get();
+    return getField5().get();
   }
 
   @Override

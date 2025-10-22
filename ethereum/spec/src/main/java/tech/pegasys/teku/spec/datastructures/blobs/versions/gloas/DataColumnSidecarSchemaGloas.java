@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.gloas;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -33,12 +33,13 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
 public class DataColumnSidecarSchemaGloas
-    extends ContainerSchema5<
+    extends ContainerSchema6<
         DataColumnSidecarGloas,
         SszUInt64,
         DataColumn,
         SszList<SszKZGCommitment>,
         SszList<SszKZGProof>,
+        SszUInt64,
         SszBytes32>
     implements DataColumnSidecarSchema<DataColumnSidecarGloas> {
 
@@ -56,6 +57,7 @@ public class DataColumnSidecarSchemaGloas
             FIELD_KZG_PROOFS,
             SszListSchema.create(
                 SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
+        namedSchema(FIELD_SLOT, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(FIELD_BEACON_BLOCK_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
   }
 

@@ -20,6 +20,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigGloas;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.BeaconStateGloas;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.MutableBeaconStateGloas;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -210,24 +212,30 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       throw new BlockProcessingException("Bid is not for the right parent block");
     }
 
-    // Record the pending payment
-    final BuilderPendingPayment pendingPayment =
-        schemaDefinitionsGloas
-            .getBuilderPendingPaymentSchema()
-            .create(
-                UInt64.ZERO,
-                schemaDefinitionsGloas
-                    .getBuilderPendingWithdrawalSchema()
-                    .create(bid.getFeeRecipient(), amount, builderIndex, UInt64.ZERO));
+    // Record the pending payment if there is some payment
+    if (amount.isGreaterThan(UInt64.ZERO)) {
+      final BuilderPendingPayment pendingPayment =
+          schemaDefinitionsGloas
+              .getBuilderPendingPaymentSchema()
+              .create(
+                  UInt64.ZERO,
+                  schemaDefinitionsGloas
+                      .getBuilderPendingWithdrawalSchema()
+                      .create(
+                          bid.getFeeRecipient(),
+                          amount,
+                          builderIndex,
+                          SpecConfig.FAR_FUTURE_EPOCH));
 
-    stateGloas
-        .getBuilderPendingPayments()
-        .set(
-            bid.getSlot()
-                .mod(specConfig.getSlotsPerEpoch())
-                .plus(specConfig.getSlotsPerEpoch())
-                .intValue(),
-            pendingPayment);
+      stateGloas
+          .getBuilderPendingPayments()
+          .set(
+              bid.getSlot()
+                  .mod(specConfig.getSlotsPerEpoch())
+                  .plus(specConfig.getSlotsPerEpoch())
+                  .intValue(),
+              pendingPayment);
+    }
 
     // Cache the execution payload bid
     stateGloas.setLatestExecutionPayloadBid(bid);
@@ -273,22 +281,15 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     final UInt64 weightDelta = attestationProcessingResult.builderPaymentWeightDelta();
     if (!weightDelta.isZero()) {
       final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
-      final int builderPaymentIndex;
-      if (attestationProcessingResult.currentEpochTarget()) {
-        builderPaymentIndex =
-            specConfig.getSlotsPerEpoch()
-                + data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
-      } else {
-        builderPaymentIndex = data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
-      }
-      final BuilderPendingPayment currentPendingPayment =
-          stateGloas.getBuilderPendingPayments().get(builderPaymentIndex);
+      final BuilderPendingPayment payment =
+          stateGloas
+              .getBuilderPendingPayments()
+              .get(attestationProcessingResult.builderPaymentIndex());
       stateGloas
           .getBuilderPendingPayments()
           .set(
-              builderPaymentIndex,
-              currentPendingPayment.copyWithNewWeight(
-                  currentPendingPayment.getWeight().plus(weightDelta)));
+              attestationProcessingResult.builderPaymentIndex(),
+              payment.copyWithNewWeight(payment.getWeight().plus(weightDelta)));
     }
   }
 
@@ -296,11 +297,16 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   // This ensures each validator contributes exactly once per slot
   @Override
   protected UInt64 updateBuilderPaymentWeight(
+      final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,
       final int attestingIndex,
       final BeaconState state) {
-    if (beaconStateAccessorsGloas.isAttestationSameSlot(state, data)) {
+    final BuilderPendingPayment payment =
+        BeaconStateGloas.required(state).getBuilderPendingPayments().get(builderPaymentIndex);
+    if (beaconStateAccessorsGloas.isAttestationSameSlot(state, data)
+        // only add to the payment quorum if the payment is not trivial
+        && payment.getWithdrawal().getAmount().isGreaterThan(UInt64.ZERO)) {
       return builderPaymentWeightDelta.plus(
           state.getValidators().get(attestingIndex).getEffectiveBalance());
     } else {

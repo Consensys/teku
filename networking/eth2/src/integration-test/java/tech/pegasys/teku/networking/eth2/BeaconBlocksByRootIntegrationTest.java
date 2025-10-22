@@ -262,8 +262,17 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get)
           .hasCauseInstanceOf(RpcException.class)
-          .hasRootCauseInstanceOf(DeserializationFailedException.class)
-          .hasMessageContaining("Failed to deserialize payload");
+          .satisfiesAnyOf(
+              ex ->
+                  assertThat(ex.getCause())
+                      .isInstanceOf(DeserializationFailedException.class)
+                      .hasMessageContaining("Failed to deserialize payload"),
+              ex ->
+                  assertThat(ex.getCause())
+                      // happens when fields are removed and the ssz length bound of the next fork
+                      // is less than the current one
+                      .isInstanceOf(RpcException.LengthOutOfBoundsException.class)
+                      .hasMessageContaining("Chunk length is not within bounds for expected type"));
     }
   }
 

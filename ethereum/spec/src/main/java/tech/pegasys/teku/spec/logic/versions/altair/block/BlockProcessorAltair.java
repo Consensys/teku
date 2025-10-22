@@ -141,9 +141,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   public record AttestationProcessingResult(
-      Optional<UInt64> proposerReward,
-      boolean currentEpochTarget,
-      UInt64 builderPaymentWeightDelta) {}
+      Optional<UInt64> proposerReward, int builderPaymentIndex, UInt64 builderPaymentWeightDelta) {}
 
   public AttestationProcessingResult calculateAttestationProcessingResult(
       final MutableBeaconStateAltair state,
@@ -157,12 +155,18 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
     // Update epoch participation flags
     final SszMutableList<SszByte> epochParticipation;
+    final int builderPaymentIndex;
+
     final boolean forCurrentEpoch =
         data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state));
     if (forCurrentEpoch) {
       epochParticipation = state.getCurrentEpochParticipation();
+      builderPaymentIndex =
+          specConfig.getSlotsPerEpoch()
+              + data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
     } else {
       epochParticipation = state.getPreviousEpochParticipation();
+      builderPaymentIndex = data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
     }
     // track the weight for pending builder payment
     UInt64 builderPaymentWeightDelta = UInt64.ZERO;
@@ -201,7 +205,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
                 miscHelpersAltair.hasFlag(newParticipationFlags, TIMELY_HEAD_FLAG_INDEX));
 
         builderPaymentWeightDelta =
-            updateBuilderPaymentWeight(builderPaymentWeightDelta, data, index, state);
+            updateBuilderPaymentWeight(
+                builderPaymentIndex, builderPaymentWeightDelta, data, index, state);
       }
     }
 
@@ -217,10 +222,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     }
 
     return new AttestationProcessingResult(
-        proposerReward, forCurrentEpoch, builderPaymentWeightDelta);
+        proposerReward, builderPaymentIndex, builderPaymentWeightDelta);
   }
 
   protected UInt64 updateBuilderPaymentWeight(
+      final int builderPaymentIndex,
       final UInt64 builderPaymentWeightDelta,
       final AttestationData data,
       final int attestingIndex,
