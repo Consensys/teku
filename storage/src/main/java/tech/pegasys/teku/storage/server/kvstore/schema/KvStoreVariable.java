@@ -33,6 +33,10 @@ public class KvStoreVariable<TValue> {
     return new KvStoreVariable<T>(new byte[] {byteId}, serializer);
   }
 
+  public static Bytes asVariableId(final int id) {
+    return Bytes.of(toByteExact(id));
+  }
+
   public Bytes getId() {
     return id;
   }

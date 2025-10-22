@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
-import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
+import static tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable.asVariableId;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_EPOCHS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_SERIALIZER;
@@ -115,7 +115,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
     firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
 
-    deletedVariableIds = List.of(Bytes.of(toByteExact(finalizedOffset + 4)));
+    deletedVariableIds = List.of(asVariableId(finalizedOffset + 5));
   }
 
   @Override
