@@ -161,4 +161,10 @@ public class SchemaHotAdapter implements Schema {
     // No hot db columns have been removed currently
     return Collections.emptyList();
   }
+
+  @Override
+  public Collection<Bytes> getDeletedVariableIds() {
+    // No hot db variables have been removed currently
+    return Collections.emptyList();
+  }
 }

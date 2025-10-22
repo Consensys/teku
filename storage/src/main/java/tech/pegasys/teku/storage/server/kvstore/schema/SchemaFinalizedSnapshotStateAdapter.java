@@ -89,6 +89,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return getVariableMap().values();
   }
 
+  public Collection<Bytes> getDeletedVariableIds() {
+    return snapshotDelegate.getDeletedVariableIds();
+  }
+
   public Collection<Bytes> getDeletedColumnIds() {
     return snapshotDelegate.getDeletedColumnIds();
   }

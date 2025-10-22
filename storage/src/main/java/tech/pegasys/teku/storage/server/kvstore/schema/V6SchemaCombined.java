@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_EPOCHS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_SERIALIZER;
@@ -24,7 +25,10 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTE_TRACKER_SERIALIZER;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -91,6 +95,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   private final KvStoreVariable<UInt64> earliestBlockSlot;
   private final KvStoreVariable<UInt64> firstCustodyIncompleteSlot;
 
+  private final List<Bytes> deletedVariableIds;
+
   protected V6SchemaCombined(final Spec spec, final int finalizedOffset) {
     this.finalizedOffset = finalizedOffset;
     final KvStoreSerializer<SignedBeaconBlock> signedBlockSerializer =
@@ -108,8 +114,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
     earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
     firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
-    // we used `finalizedOffset + 5` in the past, next variable should `finalizedOffset + 6` to
-    // avoid potential dirty data reads
+
+    deletedVariableIds = List.of(Bytes.of(toByteExact(finalizedOffset + 4)));
   }
 
   @Override
@@ -262,5 +268,10 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
         .build();
+  }
+
+  @Override
+  public Collection<Bytes> getDeletedVariableIds() {
+    return deletedVariableIds;
   }
 }
