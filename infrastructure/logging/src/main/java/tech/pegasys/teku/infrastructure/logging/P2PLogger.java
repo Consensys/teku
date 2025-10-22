@@ -70,4 +70,23 @@ public class P2PLogger {
           failureCause.orElse(null));
     }
   }
+
+  public void onInvalidExecutionPayload(
+      final UInt64 slot,
+      final UInt64 builderIndex,
+      final Bytes32 blockRoot,
+      final Bytes executionPayloadSsz,
+      final String failureReason,
+      final Optional<Throwable> failureCause) {
+    if (isIncludeP2pWarnings) {
+      log.warn(
+          "Rejecting invalid execution payload at slot {} with builder {} and block root {} because {}. Full execution payload data: {}",
+          slot,
+          builderIndex,
+          blockRoot,
+          failureReason,
+          executionPayloadSsz,
+          failureCause.orElse(null));
+    }
+  }
 }
