@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 
@@ -29,5 +30,6 @@ public interface OptimisticExecutionPayloadExecutor {
    *     invalidate the payload
    */
   boolean optimisticallyExecute(
-      ExecutionPayloadHeader latestExecutionPayloadHeader, NewPayloadRequest payloadToExecute);
+      Optional<ExecutionPayloadHeader> latestExecutionPayloadHeader,
+      NewPayloadRequest payloadToExecute);
 }
