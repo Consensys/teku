@@ -11,18 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.statetransition.results;
+package tech.pegasys.teku.statetransition.validation;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
-class OptimisticSuccessfulBlockImportResult extends SuccessfulBlockImportResult {
+public class ExecutionPayloadGossipValidator {
 
-  OptimisticSuccessfulBlockImportResult(final SignedBeaconBlock block) {
-    super(block);
-  }
-
-  @Override
-  public boolean isImportedOptimistically() {
-    return true;
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedExecutionPayloadEnvelope signedEnvelope) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 }

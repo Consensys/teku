@@ -13,15 +13,57 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
+import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
+import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
+import tech.pegasys.teku.validator.coordinator.ExecutionPayloadFactory;
 
-// TODO-GLOAS: https://github.com/Consensys/teku/issues/10008
 public class ExecutionPayloadPublisherGloas implements ExecutionPayloadPublisher {
+
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final ExecutionPayloadFactory executionPayloadFactory;
+  private final ExecutionPayloadGossipChannel executionPayloadGossipChannel;
+  private final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel;
+  private final ExecutionPayloadManager executionPayloadManager;
+
+  public ExecutionPayloadPublisherGloas(
+      final ExecutionPayloadFactory executionPayloadFactory,
+      final ExecutionPayloadGossipChannel executionPayloadGossipChannel,
+      final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
+      final ExecutionPayloadManager executionPayloadManager) {
+    this.executionPayloadFactory = executionPayloadFactory;
+    this.executionPayloadGossipChannel = executionPayloadGossipChannel;
+    this.dataColumnSidecarGossipChannel = dataColumnSidecarGossipChannel;
+    this.executionPayloadManager = executionPayloadManager;
+  }
 
   @Override
   public SafeFuture<Void> publishSignedExecutionPayload(
       final SignedExecutionPayloadEnvelope signedExecutionPayload) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    // we publish the execution payload (and data column sidecars) immediately and then import
+    publishExecutionPayloadAndDataColumnSidecars(
+        signedExecutionPayload,
+        executionPayloadFactory.createDataColumnSidecars(signedExecutionPayload));
+    return executionPayloadManager.importExecutionPayload(signedExecutionPayload).toVoid();
+  }
+
+  private void publishExecutionPayloadAndDataColumnSidecars(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload,
+      final SafeFuture<List<DataColumnSidecar>> dataColumnSidecarsFuture) {
+    executionPayloadGossipChannel.publishExecutionPayload(signedExecutionPayload).finishError(LOG);
+    dataColumnSidecarsFuture
+        .thenAccept(
+            dataColumnSidecars ->
+                dataColumnSidecarGossipChannel.publishDataColumnSidecars(
+                    dataColumnSidecars, RemoteOrigin.LOCAL_PROPOSAL))
+        .finishError(LOG);
   }
 }

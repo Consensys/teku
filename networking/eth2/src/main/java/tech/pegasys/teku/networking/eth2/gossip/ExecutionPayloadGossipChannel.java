@@ -11,18 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.common.statetransition.results;
+package tech.pegasys.teku.networking.eth2.gossip;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 
-class OptimisticSuccessfulBlockImportResult extends SuccessfulBlockImportResult {
-
-  OptimisticSuccessfulBlockImportResult(final SignedBeaconBlock block) {
-    super(block);
-  }
-
-  @Override
-  public boolean isImportedOptimistically() {
-    return true;
-  }
+public interface ExecutionPayloadGossipChannel extends ChannelInterface {
+  SafeFuture<Void> publishExecutionPayload(SignedExecutionPayloadEnvelope executionPayload);
 }
