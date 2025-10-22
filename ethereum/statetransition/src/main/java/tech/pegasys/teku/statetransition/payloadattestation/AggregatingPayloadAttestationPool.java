@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.gloas.BeaconBlockBodySchemaGloas;
@@ -27,8 +28,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-// TODO-GLOAS: https://github.com/Consensys/teku/issues/10041
+// TODO-GLOAS: https://github.com/Consensys/teku/issues/10041 implementation + test
 public class AggregatingPayloadAttestationPool implements PayloadAttestationPool {
+
+  private final Subscribers<OperationAddedSubscriber<PayloadAttestationMessage>> subscribers =
+      Subscribers.create(true);
 
   private final Spec spec;
   private final PayloadAttestationMessageValidator validator;
@@ -44,20 +48,40 @@ public class AggregatingPayloadAttestationPool implements PayloadAttestationPool
 
   @Override
   public void subscribeOperationAdded(
-      final OperationAddedSubscriber<PayloadAttestationMessage> subscriber) {}
+      final OperationAddedSubscriber<PayloadAttestationMessage> subscriber) {
+    subscribers.subscribe(subscriber);
+  }
 
   @Override
   public SafeFuture<InternalValidationResult> addLocal(
       final PayloadAttestationMessage payloadAttestationMessage) {
-    return validator.validate(payloadAttestationMessage);
+    return add(payloadAttestationMessage, false);
   }
 
   @Override
   public SafeFuture<InternalValidationResult> addRemote(
       final PayloadAttestationMessage payloadAttestationMessage,
       final Optional<UInt64> arrivalTimestamp) {
-    return validator.validate(payloadAttestationMessage);
+    return add(payloadAttestationMessage, true);
   }
+
+  private SafeFuture<InternalValidationResult> add(
+      final PayloadAttestationMessage payloadAttestationMessage, final boolean fromNetwork) {
+    return validator
+        .validate(payloadAttestationMessage)
+        .thenPeek(
+            result -> {
+              if (result.isAccept()) {
+                subscribers.forEach(
+                    subscriber ->
+                        subscriber.onOperationAdded(
+                            payloadAttestationMessage, result, fromNetwork));
+                doAdd(payloadAttestationMessage);
+              }
+            });
+  }
+
+  private void doAdd(final PayloadAttestationMessage payloadAttestationMessage) {}
 
   @Override
   public SszList<PayloadAttestation> getPayloadAttestationsForBlock(
