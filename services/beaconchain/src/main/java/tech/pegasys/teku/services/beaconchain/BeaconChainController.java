@@ -896,7 +896,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
         new DataColumnSidecarByRootCustodyImpl(
-                dataColumnSidecarCustodyImpl,
+            dataColumnSidecarCustodyImpl,
             combinedChainDataClient,
             UInt64.valueOf(slotsPerEpoch)
                 .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
