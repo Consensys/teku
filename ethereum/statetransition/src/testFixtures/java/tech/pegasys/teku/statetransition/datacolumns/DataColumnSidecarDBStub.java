@@ -29,7 +29,6 @@ import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
 
   private Optional<UInt64> firstCustodyIncompleteSlot = Optional.empty();
-  private Optional<UInt64> firstSamplerIncompleteSlot = Optional.empty();
   private final NavigableMap<DataColumnSlotAndIdentifier, DataColumnSidecar> db = new TreeMap<>();
   private final AtomicLong dbReadCounter = new AtomicLong();
   private final AtomicLong dbWriteCounter = new AtomicLong();
@@ -45,19 +44,6 @@ public class DataColumnSidecarDBStub implements DataColumnSidecarDB {
   public SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot() {
     dbReadCounter.incrementAndGet();
     return SafeFuture.completedFuture(firstCustodyIncompleteSlot);
-  }
-
-  @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    dbWriteCounter.incrementAndGet();
-    this.firstSamplerIncompleteSlot = Optional.of(slot);
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    dbReadCounter.incrementAndGet();
-    return SafeFuture.completedFuture(firstSamplerIncompleteSlot);
   }
 
   @Override

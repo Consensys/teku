@@ -90,7 +90,6 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
   private final KvStoreVariable<UInt64> earliestBlockSlot;
   private final KvStoreVariable<UInt64> firstCustodyIncompleteSlot;
-  private final KvStoreVariable<UInt64> firstSamplerIncompleteSlot;
 
   protected V6SchemaCombined(final Spec spec, final int finalizedOffset) {
     this.finalizedOffset = finalizedOffset;
@@ -109,7 +108,8 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
     earliestBlockSlot = KvStoreVariable.create(finalizedOffset + 3, UINT64_SERIALIZER);
     firstCustodyIncompleteSlot = KvStoreVariable.create(finalizedOffset + 4, UINT64_SERIALIZER);
-    firstSamplerIncompleteSlot = KvStoreVariable.create(finalizedOffset + 5, UINT64_SERIALIZER);
+    // we used `finalizedOffset + 5` in the past, next variable should `finalizedOffset + 6` to
+    // avoid potential dirty data reads
   }
 
   @Override
@@ -223,11 +223,6 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   }
 
   @Override
-  public KvStoreVariable<UInt64> getVariableFirstSamplerIncompleteSlot() {
-    return firstSamplerIncompleteSlot;
-  }
-
-  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
@@ -266,7 +261,6 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("LATEST_CANONICAL_BLOCK_ROOT", getVariableLatestCanonicalBlockRoot())
         .put("CUSTODY_GROUP_COUNT", getVariableCustodyGroupCount())
         .put("FIRST_CUSTODY_INCOMPLETE_SLOT", getVariableFirstCustodyIncompleteSlot())
-        .put("FIRST_SAMPLER_INCOMPLETE_SLOT", getVariableFirstSamplerIncompleteSlot())
         .build();
   }
 }
