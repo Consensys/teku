@@ -293,6 +293,16 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
   }
 
+  @Override
+  protected int getBuilderPaymentIndex(final boolean forCurrentEpoch, final AttestationData data) {
+    if (forCurrentEpoch) {
+      return specConfig.getSlotsPerEpoch()
+          + data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
+    } else {
+      return data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
+    }
+  }
+
   // Add weight for same-slot attestations when any new flag is set
   // This ensures each validator contributes exactly once per slot
   @Override
