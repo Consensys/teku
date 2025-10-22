@@ -30,9 +30,12 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 public class AggregatingPayloadAttestationPool implements PayloadAttestationPool {
 
   private final Spec spec;
+  private final PayloadAttestationMessageValidator validator;
 
-  public AggregatingPayloadAttestationPool(final Spec spec) {
+  public AggregatingPayloadAttestationPool(
+      final Spec spec, final PayloadAttestationMessageValidator validator) {
     this.spec = spec;
+    this.validator = validator;
   }
 
   @Override
@@ -41,14 +44,14 @@ public class AggregatingPayloadAttestationPool implements PayloadAttestationPool
   @Override
   public SafeFuture<InternalValidationResult> addLocal(
       final PayloadAttestationMessage payloadAttestationMessage) {
-    return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+    return validator.validate(payloadAttestationMessage);
   }
 
   @Override
   public SafeFuture<InternalValidationResult> addRemote(
       final PayloadAttestationMessage payloadAttestationMessage,
       final Optional<UInt64> arrivalTimestamp) {
-    return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+    return validator.validate(payloadAttestationMessage);
   }
 
   @Override
