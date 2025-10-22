@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -65,7 +64,7 @@ public class Eth2PeerFactory {
     this.peerRequestLimit = peerRequestLimit;
     this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
     this.dataColumnSidecarSignatureValidator =
-        new DataColumnSidecarSignatureValidator(spec, chainDataClient, BLSSignatureVerifier.SIMPLE);
+        new DataColumnSidecarSignatureValidator(spec, chainDataClient);
   }
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
