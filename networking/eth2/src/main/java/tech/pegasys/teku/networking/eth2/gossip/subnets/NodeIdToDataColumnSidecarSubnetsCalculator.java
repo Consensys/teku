@@ -33,6 +33,8 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
 
   NodeIdToDataColumnSidecarSubnetsCalculator NOOP = (peerId, subnetCount) -> Optional.empty();
 
+  // DataColumnSidecarSubnet calculation currently only works for CandidatePeers, not for existing
+  // peers.
   static NodeIdToDataColumnSidecarSubnetsCalculator create(
       final Spec spec, final Supplier<Optional<UInt64>> currentSlotSupplier) {
 
@@ -47,7 +49,7 @@ public interface NodeIdToDataColumnSidecarSubnetsCalculator {
                     final List<UInt64> subnets =
                         MiscHelpersFulu.required(version.miscHelpers())
                             .computeDataColumnSidecarBackboneSubnets(
-                                peerId.toUInt256(),
+                                peerId.toUInt256().orElseThrow(), // Only for candidate peers
                                 groupCount.orElse(config.getCustodyRequirement()));
                     return Optional.of(
                         SszBitvectorSchema.create(config.getDataColumnSidecarSubnetCount())

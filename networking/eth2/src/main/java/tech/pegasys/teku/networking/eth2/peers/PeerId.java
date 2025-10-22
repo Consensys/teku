@@ -55,12 +55,16 @@ public final class PeerId {
   }
 
   /** Returns canonical bytes representation for equality/hashCode */
-  public Bytes asBytes() {
+  private Bytes asBytes() {
     return isExisting() ? existingId.toBytes() : candidateId;
   }
 
-  public UInt256 toUInt256() {
-    return UInt256.fromBytes(asBytes());
+  /**
+   * Returns the UInt256 representation of the PeerId for candidate peers, or empty if it's an
+   * existing peer.
+   */
+  public Optional<UInt256> toUInt256() {
+    return isExisting() ? Optional.empty() : Optional.of(UInt256.fromBytes(asBytes()));
   }
 
   @Override
