@@ -38,6 +38,7 @@ public class Eth2PeerFactory {
   private final int peerBlobSidecarsRateLimit;
   private final int peerRequestLimit;
   private final DiscoveryNodeIdExtractor discoveryNodeIdExtractor;
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
 
   public Eth2PeerFactory(
       final Spec spec,
@@ -62,6 +63,8 @@ public class Eth2PeerFactory {
     this.peerBlobSidecarsRateLimit = peerBlobSidecarsRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.discoveryNodeIdExtractor = discoveryNodeIdExtractor;
+    this.dataColumnSidecarSignatureValidator =
+        new DataColumnSidecarSignatureValidator(spec, chainDataClient);
   }
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
@@ -73,6 +76,7 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
+        dataColumnSidecarSignatureValidator,
         RateTracker.create(peerBlocksRateLimit, TIME_OUT, timeProvider, "blocks"),
         RateTracker.create(peerBlobSidecarsRateLimit, TIME_OUT, timeProvider, "blobSidecars"),
         RateTracker.create(
