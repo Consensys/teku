@@ -136,14 +136,14 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final AttestationProcessingResult result =
-        calculateAttestationProcessingResult(state, attestation, indexedAttestationProvider);
+        processAttestation(state, attestation, indexedAttestationProvider);
     consumeAttestationProcessingResult(attestation.getData(), result, genericState);
   }
 
   public record AttestationProcessingResult(
       Optional<UInt64> proposerReward, int builderPaymentIndex, UInt64 builderPaymentWeightDelta) {}
 
-  public AttestationProcessingResult calculateAttestationProcessingResult(
+  public AttestationProcessingResult processAttestation(
       final MutableBeaconStateAltair state,
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
