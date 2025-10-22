@@ -272,26 +272,6 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   @Override
-  protected void consumeAttestationProcessingResult(
-      final AttestationData data,
-      final AttestationProcessingResult result,
-      final MutableBeaconState state) {
-    super.consumeAttestationProcessingResult(data, result, state);
-    // update builder payment weight
-    final UInt64 weightDelta = result.builderPaymentWeightDelta();
-    if (!weightDelta.isZero()) {
-      final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
-      final BuilderPendingPayment payment =
-          stateGloas.getBuilderPendingPayments().get(result.builderPaymentIndex());
-      stateGloas
-          .getBuilderPendingPayments()
-          .set(
-              result.builderPaymentIndex(),
-              payment.copyWithNewWeight(payment.getWeight().plus(weightDelta)));
-    }
-  }
-
-  @Override
   protected int getBuilderPaymentIndex(final boolean forCurrentEpoch, final AttestationData data) {
     if (forCurrentEpoch) {
       return specConfig.getSlotsPerEpoch()
@@ -319,6 +299,26 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
           state.getValidators().get(attestingIndex).getEffectiveBalance());
     } else {
       return builderPaymentWeightDelta;
+    }
+  }
+
+  @Override
+  protected void consumeAttestationProcessingResult(
+      final AttestationData data,
+      final AttestationProcessingResult result,
+      final MutableBeaconState state) {
+    super.consumeAttestationProcessingResult(data, result, state);
+    // update builder payment weight
+    final UInt64 weightDelta = result.builderPaymentWeightDelta();
+    if (!weightDelta.isZero()) {
+      final MutableBeaconStateGloas stateGloas = MutableBeaconStateGloas.required(state);
+      final BuilderPendingPayment payment =
+          stateGloas.getBuilderPendingPayments().get(result.builderPaymentIndex());
+      stateGloas
+          .getBuilderPendingPayments()
+          .set(
+              result.builderPaymentIndex(),
+              payment.copyWithNewWeight(payment.getWeight().plus(weightDelta)));
     }
   }
 
