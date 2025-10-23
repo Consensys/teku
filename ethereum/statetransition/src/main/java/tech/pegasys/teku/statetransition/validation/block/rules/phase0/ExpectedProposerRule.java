@@ -22,13 +22,8 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
 
-public class ExpectedProposerRule implements StatefulValidationRule {
-
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public ExpectedProposerRule(final GossipValidationHelper gossipValidationHelper) {
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
+public record ExpectedProposerRule(GossipValidationHelper gossipValidationHelper)
+    implements StatefulValidationRule {
 
   /*
    * [REJECT] The block is proposed by the expected proposer_index for the block's slot in the context

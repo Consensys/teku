@@ -22,13 +22,8 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class BlockParentSlotRule implements StatelessValidationRule {
-
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public BlockParentSlotRule(final GossipValidationHelper gossipValidationHelper) {
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
+public record BlockParentSlotRule(GossipValidationHelper gossipValidationHelper)
+    implements StatelessValidationRule {
 
   /*
    * [REJECT] The block is from a higher slot than its parent.

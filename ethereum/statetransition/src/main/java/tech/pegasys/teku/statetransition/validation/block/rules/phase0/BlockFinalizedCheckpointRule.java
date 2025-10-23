@@ -21,13 +21,8 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class BlockFinalizedCheckpointRule implements StatelessValidationRule {
-
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public BlockFinalizedCheckpointRule(final GossipValidationHelper gossipValidationHelper) {
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
+public record BlockFinalizedCheckpointRule(GossipValidationHelper gossipValidationHelper)
+    implements StatelessValidationRule {
 
   /*
    * [REJECT] The current finalized_checkpoint is an ancestor of block

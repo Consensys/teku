@@ -23,13 +23,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
 
-public class ExecutionPayloadTimestampRule implements StatefulValidationRule {
-
-  private final Spec spec;
-
-  public ExecutionPayloadTimestampRule(final Spec spec) {
-    this.spec = spec;
-  }
+public record ExecutionPayloadTimestampRule(Spec spec) implements StatefulValidationRule {
 
   /*
    * [REJECT] The block's execution payload timestamp is correct with respect to the slot

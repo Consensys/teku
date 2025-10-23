@@ -25,15 +25,9 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class KzgCommitmentsRule implements StatelessValidationRule {
+public record KzgCommitmentsRule(Spec spec) implements StatelessValidationRule {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final Spec spec;
-
-  public KzgCommitmentsRule(final Spec spec) {
-    this.spec = spec;
-  }
 
   /*
    * [REJECT] The length of KZG commitments is less than or equal to the limitation defined in Consensus Layer

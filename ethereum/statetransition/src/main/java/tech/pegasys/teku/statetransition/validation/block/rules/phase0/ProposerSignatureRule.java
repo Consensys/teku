@@ -26,16 +26,8 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
 
-public class ProposerSignatureRule implements StatefulValidationRule {
-
-  private final Spec spec;
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public ProposerSignatureRule(
-      final Spec spec, final GossipValidationHelper gossipValidationHelper) {
-    this.spec = spec;
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
+public record ProposerSignatureRule(Spec spec, GossipValidationHelper gossipValidationHelper)
+    implements StatefulValidationRule {
 
   /*
    * [REJECT] The proposer signature, signed_beacon_block.signature, is valid with respect to the proposer_index pubkey.

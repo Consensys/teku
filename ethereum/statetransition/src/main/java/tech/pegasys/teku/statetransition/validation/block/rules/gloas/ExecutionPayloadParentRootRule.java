@@ -19,7 +19,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class ExecutionPayloadParentRootRule implements StatelessValidationRule {
+public record ExecutionPayloadParentRootRule() implements StatelessValidationRule {
 
   /*
    * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root).

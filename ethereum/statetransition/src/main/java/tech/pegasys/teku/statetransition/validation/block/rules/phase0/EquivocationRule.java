@@ -25,13 +25,8 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 import tech.pegasys.teku.statetransition.validation.block.SlotAndProposerIndex;
 
-public class EquivocationRule implements StatelessValidationRule {
-
-  private final Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots;
-
-  public EquivocationRule(final Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots) {
-    this.receivedValidBlockRoots = receivedValidBlockRoots;
-  }
+public record EquivocationRule(Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots)
+    implements StatelessValidationRule {
 
   /*
    * [IGNORE] The block is the first block with valid signature received for the proposer for the slot, signed_beacon_block.message.slot

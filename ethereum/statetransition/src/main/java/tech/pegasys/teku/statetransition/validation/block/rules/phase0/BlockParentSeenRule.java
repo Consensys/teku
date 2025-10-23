@@ -22,15 +22,10 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class BlockParentSeenRule implements StatelessValidationRule {
+public record BlockParentSeenRule(GossipValidationHelper gossipValidationHelper)
+    implements StatelessValidationRule {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public BlockParentSeenRule(final GossipValidationHelper gossipValidationHelper) {
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
 
   /*
    * [IGNORE] The block's parent (defined by block.parent_root) has been seen (via gossip or non-gossip sources)

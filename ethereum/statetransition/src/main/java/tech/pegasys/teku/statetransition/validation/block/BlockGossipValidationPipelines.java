@@ -48,7 +48,7 @@ public class BlockGossipValidationPipelines {
     this.statelessPipelines = new EnumMap<>(SpecMilestone.class);
     this.statefulPipelines = new EnumMap<>(SpecMilestone.class);
 
-    // Stateless rules
+    // Phase0
     final FutureSlotRule futureSlotRule = new FutureSlotRule(gossipValidationHelper);
     final LatestFinalizedSlotRule latestFinalizedSlotRule =
         new LatestFinalizedSlotRule(gossipValidationHelper);
@@ -59,23 +59,26 @@ public class BlockGossipValidationPipelines {
     final BlockParentSlotRule blockParentSlotRule = new BlockParentSlotRule(gossipValidationHelper);
     final BlockFinalizedCheckpointRule blockFinalizedCheckpointRule =
         new BlockFinalizedCheckpointRule(gossipValidationHelper);
+    final ProposerSignatureRule proposerSignatureRule =
+        new ProposerSignatureRule(spec, gossipValidationHelper);
+    final ExpectedProposerRule expectedProposerRule =
+        new ExpectedProposerRule(gossipValidationHelper);
+
+    // Bellatrix
+    final ExecutionPayloadTimestampRule executionPayloadTimestampRule =
+        new ExecutionPayloadTimestampRule(spec);
+
+    // Deneb
     final KzgCommitmentsRule kzgCommitmentsRule = new KzgCommitmentsRule(spec);
+
+    // Gloas
     final ExecutionPayloadParentRootRule executionPayloadParentRootRule =
         new ExecutionPayloadParentRootRule();
     final ExecutionPayloadParentHashRule executionPayloadParentHashRule =
         new ExecutionPayloadParentHashRule();
 
-    // Stateful rules
-    final ProposerSignatureRule proposerSignatureRule =
-        new ProposerSignatureRule(spec, gossipValidationHelper);
-    final ExpectedProposerRule expectedProposerRule =
-        new ExpectedProposerRule(gossipValidationHelper);
-    final ExecutionPayloadTimestampRule executionPayloadTimestampRule =
-        new ExecutionPayloadTimestampRule(spec);
-
-    // Phase0 pipelines
-    statelessPipelines.put(
-        SpecMilestone.PHASE0,
+    // Phase0 & Altair
+    final List<StatelessValidationRule> phase0StatelessRules =
         List.of(
             futureSlotRule,
             latestFinalizedSlotRule,
@@ -83,61 +86,52 @@ public class BlockGossipValidationPipelines {
             blockParentSeenRule,
             blockParentValidRule,
             blockParentSlotRule,
-            blockFinalizedCheckpointRule));
-    statefulPipelines.put(
-        SpecMilestone.PHASE0, List.of(expectedProposerRule, proposerSignatureRule));
+            blockFinalizedCheckpointRule);
+    final List<StatefulValidationRule> phase0StatefulRules =
+        List.of(expectedProposerRule, proposerSignatureRule);
 
-    // Altair pipelines (same as phase0)
-    statelessPipelines.put(SpecMilestone.ALTAIR, statelessPipelines.get(SpecMilestone.PHASE0));
-    statefulPipelines.put(SpecMilestone.ALTAIR, statefulPipelines.get(SpecMilestone.PHASE0));
+    statelessPipelines.put(SpecMilestone.PHASE0, phase0StatelessRules);
+    statefulPipelines.put(SpecMilestone.PHASE0, phase0StatefulRules);
+    statelessPipelines.put(SpecMilestone.ALTAIR, phase0StatelessRules);
+    statefulPipelines.put(SpecMilestone.ALTAIR, phase0StatefulRules);
 
-    // Bellatrix pipelines
-    statelessPipelines.put(SpecMilestone.BELLATRIX, statelessPipelines.get(SpecMilestone.ALTAIR));
-    statefulPipelines.put(
-        SpecMilestone.BELLATRIX,
-        Stream.concat(
-                statefulPipelines.get(SpecMilestone.ALTAIR).stream(),
-                Stream.of(executionPayloadTimestampRule))
-            .toList());
+    // Bellatrix & Capella
+    final List<StatefulValidationRule> bellatrixStatefulRules =
+        Stream.concat(phase0StatefulRules.stream(), Stream.of(executionPayloadTimestampRule))
+            .toList();
 
-    // Capella pipelines (same as Bellatrix)
-    statelessPipelines.put(SpecMilestone.CAPELLA, statelessPipelines.get(SpecMilestone.BELLATRIX));
-    statefulPipelines.put(SpecMilestone.CAPELLA, statefulPipelines.get(SpecMilestone.BELLATRIX));
+    statelessPipelines.put(SpecMilestone.BELLATRIX, phase0StatelessRules);
+    statefulPipelines.put(SpecMilestone.BELLATRIX, bellatrixStatefulRules);
+    statelessPipelines.put(SpecMilestone.CAPELLA, phase0StatelessRules);
+    statefulPipelines.put(SpecMilestone.CAPELLA, bellatrixStatefulRules);
 
-    // Deneb pipelines
-    statelessPipelines.put(
-        SpecMilestone.DENEB,
-        Stream.concat(
-                statelessPipelines.get(SpecMilestone.CAPELLA).stream(),
-                Stream.of(kzgCommitmentsRule))
-            .toList());
-    statefulPipelines.put(SpecMilestone.DENEB, statefulPipelines.get(SpecMilestone.CAPELLA));
+    // Deneb, Electra & Fulu
+    final List<StatelessValidationRule> denebStatelessRules =
+        Stream.concat(phase0StatelessRules.stream(), Stream.of(kzgCommitmentsRule)).toList();
 
-    // Electra pipelines (same as Deneb)
-    statelessPipelines.put(SpecMilestone.ELECTRA, statelessPipelines.get(SpecMilestone.DENEB));
-    statefulPipelines.put(SpecMilestone.ELECTRA, statefulPipelines.get(SpecMilestone.DENEB));
+    statelessPipelines.put(SpecMilestone.DENEB, denebStatelessRules);
+    statefulPipelines.put(SpecMilestone.DENEB, bellatrixStatefulRules);
+    statelessPipelines.put(SpecMilestone.ELECTRA, denebStatelessRules);
+    statefulPipelines.put(SpecMilestone.ELECTRA, bellatrixStatefulRules);
+    statelessPipelines.put(SpecMilestone.FULU, denebStatelessRules);
+    statefulPipelines.put(SpecMilestone.FULU, bellatrixStatefulRules);
 
-    // Fulu pipelines (same as Electra)
-    statelessPipelines.put(SpecMilestone.FULU, statelessPipelines.get(SpecMilestone.ELECTRA));
-    statefulPipelines.put(SpecMilestone.FULU, statefulPipelines.get(SpecMilestone.ELECTRA));
-
-    // Gloas pipelines
+    // Gloas
     final List<StatelessValidationRule> gloasStatelessRules =
         Stream.concat(
-                statelessPipelines.get(SpecMilestone.ELECTRA).stream()
-                    .filter(
-                        statelessValidationRule ->
-                            statelessValidationRule instanceof ExecutionPayloadTimestampRule
-                                || statelessValidationRule instanceof KzgCommitmentsRule),
+                denebStatelessRules.stream().filter(rule -> !(rule instanceof KzgCommitmentsRule)),
                 Stream.of(executionPayloadParentRootRule))
             .toList();
-    statelessPipelines.put(SpecMilestone.GLOAS, gloasStatelessRules);
-    statefulPipelines.put(
-        SpecMilestone.GLOAS,
+
+    final List<StatefulValidationRule> gloasStatefulRules =
         Stream.concat(
-                statefulPipelines.get(SpecMilestone.ELECTRA).stream(),
+                bellatrixStatefulRules.stream()
+                    .filter(rule -> !(rule instanceof ExecutionPayloadTimestampRule)),
                 Stream.of(executionPayloadParentHashRule))
-            .toList());
+            .toList();
+
+    statelessPipelines.put(SpecMilestone.GLOAS, gloasStatelessRules);
+    statefulPipelines.put(SpecMilestone.GLOAS, gloasStatefulRules);
   }
 
   public List<StatelessValidationRule> getStatelessPipelineFor(final SpecMilestone milestone) {

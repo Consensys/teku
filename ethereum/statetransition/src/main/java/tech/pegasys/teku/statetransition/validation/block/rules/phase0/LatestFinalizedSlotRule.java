@@ -21,15 +21,10 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class LatestFinalizedSlotRule implements StatelessValidationRule {
+public record LatestFinalizedSlotRule(GossipValidationHelper gossipValidationHelper)
+    implements StatelessValidationRule {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public LatestFinalizedSlotRule(final GossipValidationHelper gossipValidationHelper) {
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
 
   /*
    * [IGNORE] The block is from a slot greater than the latest finalized slot -- i.e. validate that

@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.gloas.Be
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
 
-public class ExecutionPayloadParentHashRule implements StatefulValidationRule {
+public record ExecutionPayloadParentHashRule() implements StatefulValidationRule {
 
   /*
    * [REJECT] The block's execution payload parent (defined by bid.parent_block_hash) passes all validation

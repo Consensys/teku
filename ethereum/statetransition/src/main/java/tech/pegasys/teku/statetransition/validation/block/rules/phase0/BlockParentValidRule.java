@@ -23,15 +23,10 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class BlockParentValidRule implements StatelessValidationRule {
+public record BlockParentValidRule(GossipValidationHelper gossipValidationHelper)
+    implements StatelessValidationRule {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public BlockParentValidRule(final GossipValidationHelper gossipValidationHelper) {
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
 
   /*
    * [REJECT] The block's parent (defined by block.parent_root) passes validation.

@@ -21,15 +21,10 @@ import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class FutureSlotRule implements StatelessValidationRule {
+public record FutureSlotRule(GossipValidationHelper gossipValidationHelper)
+    implements StatelessValidationRule {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final GossipValidationHelper gossipValidationHelper;
-
-  public FutureSlotRule(final GossipValidationHelper gossipValidationHelper) {
-    this.gossipValidationHelper = gossipValidationHelper;
-  }
 
   /*
    * [IGNORE] The block is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance)
