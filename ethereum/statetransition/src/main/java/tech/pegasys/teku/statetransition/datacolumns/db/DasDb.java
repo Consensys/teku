@@ -34,17 +34,7 @@ class DasDb extends AbstractDelegatingDasDb {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return delegate.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public SafeFuture<Void> setFirstCustodyIncompleteSlot(final UInt64 slot) {
     return delegate.setFirstCustodyIncompleteSlot(slot);
-  }
-
-  @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    return delegate.setFirstSamplerIncompleteSlot(slot);
   }
 }
