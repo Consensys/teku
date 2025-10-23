@@ -17,15 +17,13 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_ALREADY_SEEN;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_EQUIVOCATION_DETECTED;
 
-import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
-import tech.pegasys.teku.statetransition.validation.block.SlotAndProposerIndex;
+import tech.pegasys.teku.statetransition.validation.block.EquivocationChecker;
 
-public record EquivocationRule(Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots)
+public record EquivocationRule(EquivocationChecker equivocationChecker)
     implements StatelessValidationRule {
 
   /*
@@ -33,22 +31,17 @@ public record EquivocationRule(Map<SlotAndProposerIndex, Bytes32> receivedValidB
    */
   @Override
   public Optional<InternalValidationResult> validate(final SignedBeaconBlock block) {
-    final SlotAndProposerIndex slotAndProposerIndex = new SlotAndProposerIndex(block);
-    final Bytes32 blockRoot = block.getRoot();
-    final Bytes32 previouslySeenRoot = receivedValidBlockRoots.get(slotAndProposerIndex);
-
-    if (previouslySeenRoot == null) {
-      return Optional.empty();
-    }
-
-    if (previouslySeenRoot.equals(blockRoot)) {
-      return Optional.of(
-          ignore(IGNORE_ALREADY_SEEN, "Block is a known duplicate for this slot and proposer."));
-    } else {
-      return Optional.of(
-          ignore(
-              IGNORE_EQUIVOCATION_DETECTED,
-              "Equivocating block detected for this slot and proposer."));
-    }
+    return switch (equivocationChecker.check(block)) {
+      case FIRST_BLOCK_FOR_SLOT_PROPOSER -> Optional.empty();
+      case BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER ->
+          Optional.of(
+              ignore(
+                  IGNORE_ALREADY_SEEN, "Block is a known duplicate for this slot and proposer."));
+      case EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER ->
+          Optional.of(
+              ignore(
+                  IGNORE_EQUIVOCATION_DETECTED,
+                  "Equivocating block detected for this slot and proposer."));
+    };
   }
 }

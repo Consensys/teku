@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
 
@@ -32,19 +33,21 @@ public record ExecutionPayloadTimestampRule(Spec spec) implements StatefulValida
   @Override
   public Optional<InternalValidationResult> validate(
       final SignedBeaconBlock block, final BeaconState parentState) {
-    Optional<ExecutionPayload> executionPayload =
-        block.getMessage().getBody().getOptionalExecutionPayload();
-
-    if (executionPayload.isEmpty()) {
-      return Optional.of(reject("Missing execution payload"));
-    }
-    if (executionPayload
-            .get()
-            .getTimestamp()
-            .compareTo(spec.computeTimeAtSlot(parentState, block.getSlot()))
-        != 0) {
-      return Optional.of(
-          reject("Execution Payload timestamp is not consistence with and block slot time"));
+    final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+    if (miscHelpers.isMergeTransitionComplete(parentState)) {
+      final Optional<ExecutionPayload> executionPayload =
+          block.getMessage().getBody().getOptionalExecutionPayload();
+      if (executionPayload.isEmpty()) {
+        return Optional.of(reject("Missing execution payload"));
+      }
+      if (executionPayload
+              .get()
+              .getTimestamp()
+              .compareTo(spec.computeTimeAtSlot(parentState, block.getSlot()))
+          != 0) {
+        return Optional.of(
+            reject("Execution Payload timestamp is not consistence with and block slot time"));
+      }
     }
     return Optional.empty();
   }

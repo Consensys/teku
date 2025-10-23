@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.block.BlockGossipValidator;
 
 public class BlockValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();

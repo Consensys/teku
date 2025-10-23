@@ -226,7 +226,6 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
-import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
@@ -235,6 +234,8 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.statetransition.validation.block.BlockGossipValidator;
+import tech.pegasys.teku.statetransition.validation.block.EquivocationChecker;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
@@ -1876,7 +1877,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
     final BlockGossipValidator blockGossipValidator =
-        new BlockGossipValidator(spec, gossipValidationHelper, receivedBlockEventsChannelPublisher);
+        new BlockGossipValidator(
+            spec,
+            gossipValidationHelper,
+            receivedBlockEventsChannelPublisher,
+            new EquivocationChecker());
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
     final Optional<BlockImportMetrics> importMetrics =
         beaconConfig.getMetricsConfig().isBlockPerformanceEnabled()

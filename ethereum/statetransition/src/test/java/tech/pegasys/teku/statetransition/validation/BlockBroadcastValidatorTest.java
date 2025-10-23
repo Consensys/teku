@@ -30,6 +30,8 @@ import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidat
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_ALREADY_SEEN;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_EQUIVOCATION_DETECTED;
+import static tech.pegasys.teku.statetransition.validation.block.EquivocationChecker.EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER;
+import static tech.pegasys.teku.statetransition.validation.block.EquivocationChecker.EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -45,7 +47,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
+import tech.pegasys.teku.statetransition.validation.block.BlockGossipValidator;
+import tech.pegasys.teku.statetransition.validation.block.EquivocationChecker;
 
 public class BlockBroadcastValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -61,7 +64,7 @@ public class BlockBroadcastValidatorTest {
   @Test
   public void shouldReturnSuccessWhenValidationIsEquivocationAndBlockIsNotEquivocating() {
     when(blockGossipValidator.performBlockEquivocationCheck(true, block))
-        .thenReturn(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
+        .thenReturn(FIRST_BLOCK_FOR_SLOT_PROPOSER);
 
     prepareBlockBroadcastValidator(EQUIVOCATION);
 
@@ -74,7 +77,7 @@ public class BlockBroadcastValidatorTest {
   @Test
   public void shouldReturnEquivocationFailureWhenValidationIsEquivocationAndBlockIsEquivocating() {
     when(blockGossipValidator.performBlockEquivocationCheck(true, block))
-        .thenReturn(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
+        .thenReturn(EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
 
     prepareBlockBroadcastValidator(EQUIVOCATION);
 
@@ -145,7 +148,7 @@ public class BlockBroadcastValidatorTest {
 
     if (broadcastValidation == EQUIVOCATION) {
       when(blockGossipValidator.performBlockEquivocationCheck(true, block))
-          .thenReturn(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
+          .thenReturn(FIRST_BLOCK_FOR_SLOT_PROPOSER);
       prepareBlockBroadcastValidator(broadcastValidation);
       assertThat(blockBroadcastValidator.getResult())
           .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
@@ -207,9 +210,9 @@ public class BlockBroadcastValidatorTest {
   }
 
   @ParameterizedTest
-  @EnumSource(value = EquivocationCheckResult.class)
+  @EnumSource(value = EquivocationChecker.EquivocationCheckResult.class)
   public void shouldReturnFinalEquivocationFailureOnlyForEquivocatingBlocks(
-      final EquivocationCheckResult equivocationCheckResult) {
+      final EquivocationChecker.EquivocationCheckResult equivocationCheckResult) {
     when(blockGossipValidator.validate(eq(block), eq(false)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
@@ -228,8 +231,7 @@ public class BlockBroadcastValidatorTest {
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(
             result -> {
-              if (equivocationCheckResult.equals(
-                  EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER)) {
+              if (equivocationCheckResult.equals(EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER)) {
                 return result.equals(EQUIVOCATION_FAILURE);
               }
               return result.equals(SUCCESS);

@@ -13,16 +13,11 @@
 
 package tech.pegasys.teku.statetransition.validation.block;
 
-import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
-
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -42,19 +37,19 @@ public class BlockGossipValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final BlockGossipValidationPipelines blockGossipValidationPipelines;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
-
-  private final Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots =
-      LimitedMap.createNonSynchronized(VALID_BLOCK_SET_SIZE);
+  private final EquivocationChecker equivocationChecker;
 
   public BlockGossipValidator(
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
-      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher) {
+      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher,
+      final EquivocationChecker equivocationChecker) {
     this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
     this.receivedBlockEventsChannelPublisher = receivedBlockEventsChannelPublisher;
+    this.equivocationChecker = equivocationChecker;
     this.blockGossipValidationPipelines =
-        new BlockGossipValidationPipelines(spec, gossipValidationHelper, receivedValidBlockRoots);
+        new BlockGossipValidationPipelines(spec, gossipValidationHelper, equivocationChecker);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -104,15 +99,22 @@ public class BlockGossipValidator {
             result -> {
               if (result.isAccept()) {
                 if (markAsReceived) {
-                  markBlockAsSeen(block);
+                  equivocationChecker.markBlockAsSeen(block);
                 }
                 receivedBlockEventsChannelPublisher.onBlockValidated(block);
               }
             });
   }
 
-  private synchronized void markBlockAsSeen(final SignedBeaconBlock block) {
-    final SlotAndProposerIndex slotAndProposerIndex = new SlotAndProposerIndex(block);
-    receivedValidBlockRoots.putIfAbsent(slotAndProposerIndex, block.getRoot());
+  public EquivocationChecker.EquivocationCheckResult performBlockEquivocationCheck(
+      final boolean markAsReceived, final SignedBeaconBlock block) {
+    final EquivocationChecker.EquivocationCheckResult equivocationCheckResult =
+        equivocationChecker.check(block);
+    if (markAsReceived
+        && equivocationCheckResult.equals(
+            EquivocationChecker.EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER)) {
+      equivocationChecker.markBlockAsSeen(block);
+    }
+    return equivocationCheckResult;
   }
 }

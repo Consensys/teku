@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.statetransition.validation.block.EquivocationChecker.EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -38,7 +39,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
-import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
+import tech.pegasys.teku.statetransition.validation.block.BlockGossipValidator;
+import tech.pegasys.teku.statetransition.validation.block.EquivocationChecker;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -56,10 +58,11 @@ public class BlockGossipValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
   private StorageSystem storageSystem;
+  private BlockGossipValidator blockGossipValidator;
+  private EquivocationChecker equivocationChecker;
+
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
       mock(ReceivedBlockEventsChannel.class);
-
-  private BlockGossipValidator blockGossipValidator;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
@@ -67,11 +70,13 @@ public class BlockGossipValidatorTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
+    equivocationChecker = new EquivocationChecker();
     blockGossipValidator =
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(spec, recentChainData),
-            receivedBlockEventsChannelPublisher);
+            receivedBlockEventsChannelPublisher,
+            equivocationChecker);
   }
 
   @TestTemplate
@@ -227,7 +232,8 @@ public class BlockGossipValidatorTest {
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(spec, localRecentChainData),
-            receivedBlockEventsChannelPublisher);
+            receivedBlockEventsChannelPublisher,
+            equivocationChecker);
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
@@ -264,7 +270,8 @@ public class BlockGossipValidatorTest {
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(spec, recentChainData),
-            receivedBlockEventsChannelPublisher);
+            receivedBlockEventsChannelPublisher,
+            equivocationChecker);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
@@ -288,7 +295,8 @@ public class BlockGossipValidatorTest {
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(spec, recentChainData),
-            receivedBlockEventsChannelPublisher);
+            receivedBlockEventsChannelPublisher,
+            equivocationChecker);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
@@ -317,7 +325,7 @@ public class BlockGossipValidatorTest {
 
     assertResultIsAccept(block, blockGossipValidator.validate(block, false));
     assertThat(blockGossipValidator.performBlockEquivocationCheck(true, block))
-        .isEqualByComparingTo(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
+        .isEqualByComparingTo(FIRST_BLOCK_FOR_SLOT_PROPOSER);
   }
 
   @TestTemplate
@@ -348,7 +356,8 @@ public class BlockGossipValidatorTest {
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(spec, recentChainData),
-            receivedBlockEventsChannelPublisher);
+            receivedBlockEventsChannelPublisher,
+            equivocationChecker);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);

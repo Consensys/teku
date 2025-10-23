@@ -26,7 +26,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
+import tech.pegasys.teku.statetransition.validation.block.BlockGossipValidator;
+import tech.pegasys.teku.statetransition.validation.block.EquivocationChecker;
 
 class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   private final BlockGossipValidator blockGossipValidator;
@@ -171,6 +172,6 @@ class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   private boolean isEquivocatingBlock(final SignedBeaconBlock block, final boolean markAsReceived) {
     return blockGossipValidator
         .performBlockEquivocationCheck(markAsReceived, block)
-        .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
+        .equals(EquivocationChecker.EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER);
   }
 }

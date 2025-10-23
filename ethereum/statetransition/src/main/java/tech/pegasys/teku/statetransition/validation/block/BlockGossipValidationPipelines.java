@@ -17,7 +17,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -27,6 +26,7 @@ import tech.pegasys.teku.statetransition.validation.block.rules.bellatrix.Execut
 import tech.pegasys.teku.statetransition.validation.block.rules.deneb.KzgCommitmentsRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.gloas.ExecutionPayloadParentHashRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.gloas.ExecutionPayloadParentRootRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockAlreadyImportedRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockFinalizedCheckpointRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockParentSeenRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockParentSlotRule;
@@ -44,15 +44,17 @@ public class BlockGossipValidationPipelines {
   public BlockGossipValidationPipelines(
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
-      final Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots) {
+      final EquivocationChecker equivocationChecker) {
     this.statelessPipelines = new EnumMap<>(SpecMilestone.class);
     this.statefulPipelines = new EnumMap<>(SpecMilestone.class);
 
     // Phase0
     final FutureSlotRule futureSlotRule = new FutureSlotRule(gossipValidationHelper);
+    final BlockAlreadyImportedRule blockAlreadyImportedRule =
+        new BlockAlreadyImportedRule(gossipValidationHelper);
     final LatestFinalizedSlotRule latestFinalizedSlotRule =
         new LatestFinalizedSlotRule(gossipValidationHelper);
-    final EquivocationRule equivocationRule = new EquivocationRule(receivedValidBlockRoots);
+    final EquivocationRule equivocationRule = new EquivocationRule(equivocationChecker);
     final BlockParentSeenRule blockParentSeenRule = new BlockParentSeenRule(gossipValidationHelper);
     final BlockParentValidRule blockParentValidRule =
         new BlockParentValidRule(gossipValidationHelper);
@@ -81,6 +83,7 @@ public class BlockGossipValidationPipelines {
     final List<StatelessValidationRule> phase0StatelessRules =
         List.of(
             futureSlotRule,
+            blockAlreadyImportedRule,
             latestFinalizedSlotRule,
             equivocationRule,
             blockParentSeenRule,
