@@ -29,8 +29,7 @@ public class KvStoreVariable<TValue> {
   }
 
   public static <T> KvStoreVariable<T> create(final int id, final KvStoreSerializer<T> serializer) {
-    final byte byteId = toByteExact(id);
-    return new KvStoreVariable<T>(new byte[] {byteId}, serializer);
+    return new KvStoreVariable<T>(asVariableId(id).toArray(), serializer);
   }
 
   public static Bytes asVariableId(final int id) {
