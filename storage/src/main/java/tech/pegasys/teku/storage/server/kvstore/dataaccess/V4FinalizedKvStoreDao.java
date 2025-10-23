@@ -205,10 +205,6 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getVariableFirstCustodyIncompleteSlot());
   }
 
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return db.get(schema.getVariableFirstSamplerIncompleteSlot());
-  }
-
   public Optional<Bytes> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     return db.get(schema.getColumnSidecarByColumnSlotAndIdentifier(), identifier);
   }
@@ -492,11 +488,6 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
       transaction.put(schema.getVariableFirstCustodyIncompleteSlot(), slot);
-    }
-
-    @Override
-    public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableFirstSamplerIncompleteSlot(), slot);
     }
 
     @Override
