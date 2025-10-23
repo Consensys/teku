@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatefulValidationRule;
+import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
 
 public class ExecutionPayloadTimestampRule implements StatefulValidationRule {
 

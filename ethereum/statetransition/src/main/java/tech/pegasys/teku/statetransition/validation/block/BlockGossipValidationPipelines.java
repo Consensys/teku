@@ -21,11 +21,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatefulValidationRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
+import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
+import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.bellatrix.ExecutionPayloadTimestampRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.deneb.KzgCommitmentsRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.gloas.ExecutionPayloadBidParentRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.gloas.ExecutionPayloadParentHashRule;
+import tech.pegasys.teku.statetransition.validation.block.rules.gloas.ExecutionPayloadParentRootRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockFinalizedCheckpointRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockParentSeenRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.BlockParentSlotRule;
@@ -36,11 +37,11 @@ import tech.pegasys.teku.statetransition.validation.block.rules.phase0.FutureSlo
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.LatestFinalizedSlotRule;
 import tech.pegasys.teku.statetransition.validation.block.rules.phase0.ProposerSignatureRule;
 
-public class ForkBlockValidationPipelines {
+public class BlockGossipValidationPipelines {
   private final Map<SpecMilestone, List<StatelessValidationRule>> statelessPipelines;
   private final Map<SpecMilestone, List<StatefulValidationRule>> statefulPipelines;
 
-  public ForkBlockValidationPipelines(
+  public BlockGossipValidationPipelines(
       final Spec spec,
       final GossipValidationHelper gossipValidationHelper,
       final Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots) {
@@ -59,8 +60,10 @@ public class ForkBlockValidationPipelines {
     final BlockFinalizedCheckpointRule blockFinalizedCheckpointRule =
         new BlockFinalizedCheckpointRule(gossipValidationHelper);
     final KzgCommitmentsRule kzgCommitmentsRule = new KzgCommitmentsRule(spec);
-    final ExecutionPayloadBidParentRule executionPayloadBidParentRule =
-        new ExecutionPayloadBidParentRule();
+    final ExecutionPayloadParentRootRule executionPayloadParentRootRule =
+        new ExecutionPayloadParentRootRule();
+    final ExecutionPayloadParentHashRule executionPayloadParentHashRule =
+        new ExecutionPayloadParentHashRule();
 
     // Stateful rules
     final ProposerSignatureRule proposerSignatureRule =
@@ -124,11 +127,17 @@ public class ForkBlockValidationPipelines {
                 statelessPipelines.get(SpecMilestone.ELECTRA).stream()
                     .filter(
                         statelessValidationRule ->
-                            statelessValidationRule instanceof ExecutionPayloadTimestampRule),
-                Stream.of(executionPayloadBidParentRule))
+                            statelessValidationRule instanceof ExecutionPayloadTimestampRule
+                                || statelessValidationRule instanceof KzgCommitmentsRule),
+                Stream.of(executionPayloadParentRootRule))
             .toList();
     statelessPipelines.put(SpecMilestone.GLOAS, gloasStatelessRules);
-    statefulPipelines.put(SpecMilestone.GLOAS, statefulPipelines.get(SpecMilestone.ELECTRA));
+    statefulPipelines.put(
+        SpecMilestone.GLOAS,
+        Stream.concat(
+                statefulPipelines.get(SpecMilestone.ELECTRA).stream(),
+                Stream.of(executionPayloadParentHashRule))
+            .toList());
   }
 
   public List<StatelessValidationRule> getStatelessPipelineFor(final SpecMilestone milestone) {

@@ -19,7 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
+import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
 public class BlockFinalizedCheckpointRule implements StatelessValidationRule {
 

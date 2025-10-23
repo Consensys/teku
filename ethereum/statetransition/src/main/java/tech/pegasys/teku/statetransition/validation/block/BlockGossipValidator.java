@@ -31,8 +31,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatefulValidationRule;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
+import tech.pegasys.teku.statetransition.validation.StatefulValidationRule;
+import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
 public class BlockGossipValidator {
 
@@ -40,7 +40,7 @@ public class BlockGossipValidator {
 
   private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
-  private final ForkBlockValidationPipelines forkBlockValidationPipelines;
+  private final BlockGossipValidationPipelines blockGossipValidationPipelines;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
 
   private final Map<SlotAndProposerIndex, Bytes32> receivedValidBlockRoots =
@@ -53,8 +53,8 @@ public class BlockGossipValidator {
     this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
     this.receivedBlockEventsChannelPublisher = receivedBlockEventsChannelPublisher;
-    this.forkBlockValidationPipelines =
-        new ForkBlockValidationPipelines(spec, gossipValidationHelper, receivedValidBlockRoots);
+    this.blockGossipValidationPipelines =
+        new BlockGossipValidationPipelines(spec, gossipValidationHelper, receivedValidBlockRoots);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -65,7 +65,7 @@ public class BlockGossipValidator {
 
     // Execute stateless validation rules
     final List<StatelessValidationRule> statelessPipeline =
-        forkBlockValidationPipelines.getStatelessPipelineFor(specMilestone);
+        blockGossipValidationPipelines.getStatelessPipelineFor(specMilestone);
 
     for (final StatelessValidationRule rule : statelessPipeline) {
       final Optional<InternalValidationResult> result = rule.validate(block);
@@ -90,7 +90,7 @@ public class BlockGossipValidator {
               }
               final BeaconState parentState = maybeParentState.get();
               final List<StatefulValidationRule> statefulPipeline =
-                  forkBlockValidationPipelines.getStatefulPipelineFor(specMilestone);
+                  blockGossipValidationPipelines.getStatefulPipelineFor(specMilestone);
 
               for (final StatefulValidationRule rule : statefulPipeline) {
                 final Optional<InternalValidationResult> result = rule.validate(block, parentState);

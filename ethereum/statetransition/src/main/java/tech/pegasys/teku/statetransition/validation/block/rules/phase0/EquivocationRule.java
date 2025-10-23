@@ -22,8 +22,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 import tech.pegasys.teku.statetransition.validation.block.SlotAndProposerIndex;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
 
 public class EquivocationRule implements StatelessValidationRule {
 

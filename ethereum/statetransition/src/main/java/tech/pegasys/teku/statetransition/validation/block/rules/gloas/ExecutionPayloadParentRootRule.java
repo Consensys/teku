@@ -14,32 +14,30 @@
 package tech.pegasys.teku.statetransition.validation.block.rules.gloas;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.block.rules.StatelessValidationRule;
+import tech.pegasys.teku.statetransition.validation.StatelessValidationRule;
 
-public class ExecutionPayloadBidParentRule implements StatelessValidationRule {
+public class ExecutionPayloadParentRootRule implements StatelessValidationRule {
 
   /*
    * [REJECT] The bid's parent (defined by bid.parent_block_root) equals the block's parent (defined by block.parent_root).
    */
   @Override
   public Optional<InternalValidationResult> validate(final SignedBeaconBlock block) {
-    final SignedExecutionPayloadBid signedExecutionPayloadBid =
+    final Bytes32 executionPayloadBidParentRoot =
         block
             .getMessage()
             .getBody()
             .getOptionalSignedExecutionPayloadBid()
             .orElseThrow(
-                () -> new IllegalStateException("block missing signed execution payload bid"));
-    if (!signedExecutionPayloadBid
-        .getMessage()
-        .getParentBlockRoot()
-        .equals(block.getParentRoot())) {
+                () -> new IllegalStateException("block missing signed execution payload bid"))
+            .getMessage()
+            .getParentBlockRoot();
+    if (!executionPayloadBidParentRoot.equals(block.getParentRoot())) {
       return Optional.of(
-          InternalValidationResult.reject(
-              "Block execution payload bid parent root doesn't correspond to the block parent root"));
+          InternalValidationResult.reject("Execution payload has invalid parent block root"));
     }
 
     return Optional.empty();
