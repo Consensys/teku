@@ -34,9 +34,20 @@ public interface DataColumnSidecarELRecoveryManager extends SlotEventsChannel {
         @Override
         public void onNewDataColumnSidecar(
             final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {}
+
+        @Override
+        public void onSyncingStatusChanged(boolean inSync) {}
+
+        @Override
+        public void subscribeToRecoveredColumnSidecar(
+            RecoveredColumnSidecarSubscriber subscriber) {}
       };
 
   void onNewDataColumnSidecar(DataColumnSidecar dataColumnSidecar, RemoteOrigin remoteOrigin);
 
   void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
+
+  void onSyncingStatusChanged(boolean inSync);
+
+  void subscribeToRecoveredColumnSidecar(RecoveredColumnSidecarSubscriber subscriber);
 }
