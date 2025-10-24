@@ -68,9 +68,10 @@ import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
-import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
+import tech.pegasys.teku.statetransition.validation.block.BlockGossipValidator;
+import tech.pegasys.teku.statetransition.validation.block.EquivocationChecker;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -133,7 +134,8 @@ public class SyncingNodeManager {
         new BlockGossipValidator(
             spec,
             new GossipValidationHelper(spec, recentChainData),
-            receivedBlockEventsChannelPublisher);
+            receivedBlockEventsChannelPublisher,
+            new EquivocationChecker());
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();
