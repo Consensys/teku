@@ -113,10 +113,6 @@
       "moduleLicenseUrl": "https://github.com/libp2p/jvm-libp2p/blob/develop/LICENSE-APACHE"
     },
     {
-      "moduleName": "io.vertx",
-      "moduleLicense": "Apache License, Version 2.0"
-    },
-    {
       "moduleName": "jakarta.activation:jakarta.activation-api",
       "moduleLicense": "Eclipse Distribution License - v 1.0"
     },
