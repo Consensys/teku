@@ -34,8 +34,6 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
-
   @Override
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
@@ -45,8 +43,6 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
   // update
 
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
-
-  SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot);
 
   @Override
   SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);

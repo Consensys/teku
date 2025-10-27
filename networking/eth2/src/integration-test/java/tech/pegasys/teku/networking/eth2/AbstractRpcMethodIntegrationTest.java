@@ -220,8 +220,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
-        // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
-        .filter(specMilestone -> !specMilestone.equals(SpecMilestone.GLOAS))
         .flatMap(
             milestone -> {
               final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
@@ -235,8 +233,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpecTransition() {
     return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
-        // TODO-GLOAS Fix test https://github.com/Consensys/teku/issues/9833
-        .filter(specMilestone -> !specMilestone.equals(SpecMilestone.GLOAS))
         .map(milestone -> Arguments.of(milestone.getPreviousMilestone(), milestone));
   }
 

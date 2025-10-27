@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -147,6 +148,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         (sidecar, __) -> gossipForkManager.publishDataColumnSidecar(sidecar));
     eventChannels.subscribe(
         ExecutionProofGossipChannel.class, gossipForkManager::publishExecutionProof);
+    eventChannels.subscribe(
+        ExecutionPayloadGossipChannel.class, gossipForkManager::publishExecutionPayload);
 
     if (recentChainData.isCloseToInSync()) {
       startGossip();

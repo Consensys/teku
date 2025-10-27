@@ -762,12 +762,19 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarGloas.java
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/datastructures/blobs/versions/gloas/DataColumnSidecarSchemaGloas.java
   spec: |
-    <spec container="DataColumnSidecar" fork="gloas" hash="240a2d70">
+    <spec container="DataColumnSidecar" fork="gloas" hash="8028928b">
     class DataColumnSidecar(Container):
         index: ColumnIndex
         column: List[Cell, MAX_BLOB_COMMITMENTS_PER_BLOCK]
         kzg_commitments: List[KZGCommitment, MAX_BLOB_COMMITMENTS_PER_BLOCK]
         kzg_proofs: List[KZGProof, MAX_BLOB_COMMITMENTS_PER_BLOCK]
+        # [Modified in Gloas:EIP7732]
+        # Removed `signed_block_header`
+        # [Modified in Gloas:EIP7732]
+        # Removed `kzg_commitments_inclusion_proof`
+        # [New in Gloas:EIP7732]
+        slot: Slot
+        # [New in Gloas:EIP7732]
         beacon_block_root: Root
     </spec>
 
