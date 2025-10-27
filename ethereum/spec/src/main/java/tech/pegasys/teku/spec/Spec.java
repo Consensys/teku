@@ -113,7 +113,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -179,20 +178,19 @@ public class Spec {
         .values()
         .forEach(
             specVersion -> {
-              // inject forkChoiceUtil dependencies
-              final ForkChoiceUtil forkChoiceUtil = specVersion.getForkChoiceUtil();
-              if (forkChoiceUtil instanceof ForkChoiceUtilFulu forkChoiceUtilFulu) {
-                forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
-                    dataColumnSidecarAvailabilityCheckerFactory);
-              }
-              if (forkChoiceUtil instanceof ForkChoiceUtilDeneb forkChoiceUtilDeneb) {
-                forkChoiceUtilDeneb.setBlobSidecarAvailabilityCheckerFactory(
-                    blobSidecarAvailabilityCheckerFactory);
+              // inject ForkChoiceUtil dependencies
+              switch (specVersion.getForkChoiceUtil()) {
+                case ForkChoiceUtilFulu forkChoiceUtilFulu ->
+                    forkChoiceUtilFulu.setDataColumnSidecarAvailabilityCheckerFactory(
+                        dataColumnSidecarAvailabilityCheckerFactory);
+                case ForkChoiceUtilDeneb forkChoiceUtilDeneb ->
+                    forkChoiceUtilDeneb.setBlobSidecarAvailabilityCheckerFactory(
+                        blobSidecarAvailabilityCheckerFactory);
+                default -> {}
               }
 
-              // inject kzg instance
-              final MiscHelpers miscHelpers = specVersion.miscHelpers();
-              if (miscHelpers instanceof MiscHelpersDeneb miscHelpersDeneb) {
+              // inject KZG instance
+              if (specVersion.miscHelpers() instanceof MiscHelpersDeneb miscHelpersDeneb) {
                 miscHelpersDeneb.setKzg(kzg);
               }
             });

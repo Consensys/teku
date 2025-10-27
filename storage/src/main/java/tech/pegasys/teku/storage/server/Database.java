@@ -257,8 +257,6 @@ public interface Database extends AutoCloseable {
   // Sidecars
   Optional<UInt64> getFirstCustodyIncompleteSlot();
 
-  Optional<UInt64> getFirstSamplerIncompleteSlot();
-
   Optional<DataColumnSidecar> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   Optional<DataColumnSidecar> getNonCanonicalSidecar(DataColumnSlotAndIdentifier identifier);
@@ -285,8 +283,6 @@ public interface Database extends AutoCloseable {
   Optional<UInt64> getEarliestDataColumnSidecarSlot();
 
   void setFirstCustodyIncompleteSlot(UInt64 slot);
-
-  void setFirstSamplerIncompleteSlot(UInt64 slot);
 
   void addSidecar(DataColumnSidecar sidecar);
 

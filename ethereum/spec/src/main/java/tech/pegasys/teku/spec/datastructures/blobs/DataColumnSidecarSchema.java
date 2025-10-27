@@ -30,6 +30,7 @@ public interface DataColumnSidecarSchema<T extends DataColumnSidecar>
   SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
   SszFieldName FIELD_SIGNED_BLOCK_HEADER = () -> "signed_block_header";
   SszFieldName FIELD_KZG_COMMITMENTS_INCLUSION_PROOF = () -> "kzg_commitments_inclusion_proof";
+  SszFieldName FIELD_SLOT = () -> "slot";
   SszFieldName FIELD_BEACON_BLOCK_ROOT = () -> "beacon_block_root";
 
   @Override

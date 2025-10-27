@@ -122,6 +122,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final Supplier<
           DataColumnSidecarsByRangeRequestMessage.DataColumnSidecarsByRangeRequestMessageSchema>
       dataColumnSidecarsByRangeRequestMessageSchema;
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -131,6 +132,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker dataColumnSidecarsRequestTracker,
@@ -144,6 +146,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.peerChainValidator = peerChainValidator;
+    this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
     this.blockRequestTracker = blockRequestTracker;
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.dataColumnSidecarsRequestTracker = dataColumnSidecarsRequestTracker;
@@ -343,7 +346,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new DataColumnSidecarsByRootRequestMessage(
                         dataColumnSidecarsByRootRequestMessageSchema.get(), dataColumnIdentifiers),
                     new DataColumnSidecarsByRootListenerValidatingProxy(
-                        this, spec, listener, metricsSystem, timeProvider, dataColumnIdentifiers)))
+                        this,
+                        spec,
+                        listener,
+                        metricsSystem,
+                        timeProvider,
+                        dataColumnSidecarSignatureValidator,
+                        dataColumnIdentifiers)))
         .orElse(failWithUnsupportedMethodException("DataColumnSidecarsByRoot"));
   }
 
@@ -509,6 +518,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       listener,
                       metricsSystem,
                       timeProvider,
+                      dataColumnSidecarSignatureValidator,
                       request.getStartSlot(),
                       request.getCount(),
                       request.getColumns()));

@@ -36,6 +36,8 @@ public interface DataColumnSidecarBuilder {
 
   DataColumnSidecarBuilder kzgCommitmentsInclusionProof(List<Bytes32> kzgCommitmentsInclusionProof);
 
+  DataColumnSidecarBuilder slot(UInt64 slot);
+
   DataColumnSidecarBuilder beaconBlockRoot(Bytes32 beaconBlockRoot);
 
   DataColumnSidecar build();

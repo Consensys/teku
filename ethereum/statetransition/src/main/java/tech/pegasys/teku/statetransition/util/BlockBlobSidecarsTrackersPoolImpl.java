@@ -274,6 +274,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
       case RECOVERED ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
+      case CUSTODY -> {} // Not applicable for blocks\blobs
     }
   }
 
@@ -291,6 +292,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
               .inc();
       case RECOVERED ->
           poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE).inc();
+      case CUSTODY -> {} // Not applicable for blocks\blobs
     }
   }
 
@@ -553,6 +555,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                 poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_LOCAL_PROPOSAL_SUBTYPE).inc();
             case RECOVERED ->
                 poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_SUBTYPE).inc();
+            case CUSTODY -> {} // Not applicable for blocks\blobs
           }
         });
   }
@@ -576,6 +579,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                     .labels(COUNTER_BLOCK_TYPE, COUNTER_RECOVERED_DUPLICATE_SUBTYPE)
                     .inc();
             case LOCAL_EL -> {} // only possible for blobs
+            case CUSTODY -> {} // Not applicable for blocks\blobs
           }
         });
   }
