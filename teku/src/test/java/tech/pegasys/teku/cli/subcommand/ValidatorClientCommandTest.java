@@ -137,9 +137,10 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
-        .contains(
-            "Error: --beacon-node-api-endpoints=<ENDPOINT>, --sentry-config-file=<FILE> are "
-                + "mutually exclusive (specify only one)");
+        .contains("Error: ")
+        .contains("--beacon-node-api-endpoints=<ENDPOINT>")
+        .contains("--sentry-config-file=<FILE>")
+        .contains("are mutually exclusive (specify only one)");
   }
 
   @Test
