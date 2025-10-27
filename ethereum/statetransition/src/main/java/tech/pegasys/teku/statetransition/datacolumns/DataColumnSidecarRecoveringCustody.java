@@ -64,10 +64,10 @@ public interface DataColumnSidecarRecoveringCustody
 
         @Override
         public void subscribeToRecoveredColumnSidecar(
-            final RecoveredColumnSidecarSubscriber subscriber) {}
+            final ValidDataColumnSidecarsListener subscriber) {}
       };
 
   void onSyncingStatusChanged(boolean inSync);
 
-  void subscribeToRecoveredColumnSidecar(RecoveredColumnSidecarSubscriber subscriber);
+  void subscribeToRecoveredColumnSidecar(ValidDataColumnSidecarsListener subscriber);
 }

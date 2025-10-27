@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_EL;
+import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.RECOVERED;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
@@ -71,7 +71,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final Counter totalDataAvailabilityReconstructedColumns;
   private final MetricsHistogram dataAvailabilityReconstructionTimeSeconds;
 
-  private final Subscribers<RecoveredColumnSidecarSubscriber> recoveredColumnSidecarSubscribers =
+  private final Subscribers<ValidDataColumnSidecarsListener> recoveredColumnSidecarSubscribers =
       Subscribers.create(true);
 
   private volatile boolean inSync;
@@ -250,13 +250,13 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
         .forEach(
             dataColumnSidecar -> {
               delegate
-                  .onNewValidatedDataColumnSidecar(dataColumnSidecar, RemoteOrigin.RECOVERED)
+                  .onNewValidatedDataColumnSidecar(dataColumnSidecar, RECOVERED)
                   .finishError(LOG);
               if (inSync) {
-                dataColumnSidecarPublisher.accept(dataColumnSidecar, RemoteOrigin.RECOVERED);
+                dataColumnSidecarPublisher.accept(dataColumnSidecar, RECOVERED);
               }
               recoveredColumnSidecarSubscribers.forEach(
-                  subscriber -> subscriber.onRecoveredColumnSidecar(dataColumnSidecar, LOCAL_EL));
+                  subscriber -> subscriber.onNewValidSidecar(dataColumnSidecar, RECOVERED));
             });
     recoveryTask.existingSidecars.clear();
     LOG.debug(
@@ -318,7 +318,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
 
   @Override
   public void subscribeToRecoveredColumnSidecar(
-      final RecoveredColumnSidecarSubscriber sidecarListener) {
+      final ValidDataColumnSidecarsListener sidecarListener) {
     recoveredColumnSidecarSubscribers.subscribe(sidecarListener);
   }
 }

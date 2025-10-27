@@ -16,6 +16,6 @@ package tech.pegasys.teku.statetransition.datacolumns;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
-public interface RecoveredColumnSidecarSubscriber {
-  void onRecoveredColumnSidecar(DataColumnSidecar dataColumnSidecar, RemoteOrigin origin);
+public interface ValidDataColumnSidecarsListener {
+  void onNewValidSidecar(DataColumnSidecar sidecar, RemoteOrigin remoteOrigin);
 }

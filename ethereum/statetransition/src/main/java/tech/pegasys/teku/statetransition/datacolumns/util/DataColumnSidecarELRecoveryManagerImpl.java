@@ -65,7 +65,7 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
-import tech.pegasys.teku.statetransition.datacolumns.RecoveredColumnSidecarSubscriber;
+import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.util.AbstractIgnoringFutureHistoricalSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -108,7 +108,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   static final Set<RemoteOrigin> LOCAL_OR_RECOVERED_ORIGINS =
       Set.of(LOCAL_PROPOSAL, LOCAL_EL, RECOVERED);
 
-  private final Subscribers<RecoveredColumnSidecarSubscriber> recoveredColumnSidecarSubscribers =
+  private final Subscribers<ValidDataColumnSidecarsListener> recoveredColumnSidecarSubscribers =
       Subscribers.create(true);
 
   private volatile boolean inSync;
@@ -297,7 +297,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
     localCustodySidecars.forEach(
         sidecar ->
             recoveredColumnSidecarSubscribers.forEach(
-                subscriber -> subscriber.onRecoveredColumnSidecar(sidecar, LOCAL_EL)));
+                subscriber -> subscriber.onNewValidSidecar(sidecar, LOCAL_EL)));
   }
 
   @Override
@@ -358,7 +358,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
 
   @Override
   public void subscribeToRecoveredColumnSidecar(
-      final RecoveredColumnSidecarSubscriber sidecarListener) {
+      final ValidDataColumnSidecarsListener sidecarListener) {
     recoveredColumnSidecarSubscribers.subscribe(sidecarListener);
   }
 

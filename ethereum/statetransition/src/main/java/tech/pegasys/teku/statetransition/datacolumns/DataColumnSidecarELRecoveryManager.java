@@ -39,8 +39,7 @@ public interface DataColumnSidecarELRecoveryManager extends SlotEventsChannel {
         public void onSyncingStatusChanged(boolean inSync) {}
 
         @Override
-        public void subscribeToRecoveredColumnSidecar(
-            RecoveredColumnSidecarSubscriber subscriber) {}
+        public void subscribeToRecoveredColumnSidecar(ValidDataColumnSidecarsListener subscriber) {}
       };
 
   void onNewDataColumnSidecar(DataColumnSidecar dataColumnSidecar, RemoteOrigin remoteOrigin);
@@ -49,5 +48,5 @@ public interface DataColumnSidecarELRecoveryManager extends SlotEventsChannel {
 
   void onSyncingStatusChanged(boolean inSync);
 
-  void subscribeToRecoveredColumnSidecar(RecoveredColumnSidecarSubscriber subscriber);
+  void subscribeToRecoveredColumnSidecar(ValidDataColumnSidecarsListener subscriber);
 }

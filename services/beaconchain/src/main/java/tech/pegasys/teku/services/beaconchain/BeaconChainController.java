@@ -1058,11 +1058,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dataColumnSidecarELRecoveryManager::onNewDataColumnSidecar);
 
-    // RecoveringCustody -> EL Recovery
-    dataColumnSidecarRecoveringCustody.subscribeToRecoveredColumnSidecar(
-        dataColumnSidecarELRecoveryManager::onNewDataColumnSidecar);
-
-    // GOSSIP -> SidecarRetriever
     recoveringSidecarRetriever.ifPresent(
         retriever -> {
           // GOSSIP -> SidecarRetriever
