@@ -105,7 +105,7 @@ public class DasCustodyStand {
             asyncBlockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
-            () -> custodyGroupCountManager);
+            custodyGroupCountManager);
     subscribeToSlotEvents(this.custody);
     subscribeToFinalizedEvents(this.custody);
 

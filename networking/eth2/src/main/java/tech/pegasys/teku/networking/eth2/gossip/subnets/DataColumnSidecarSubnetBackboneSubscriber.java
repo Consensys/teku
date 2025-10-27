@@ -17,19 +17,21 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 
-public class DataColumnSidecarSubnetBackboneSubscriber
-    implements SlotEventsChannel, CustodyGroupCountChannel {
+public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
+  private static final Logger LOG = LogManager.getLogger();
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
-  private final AtomicInteger totalGroupCount;
+  private final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
@@ -39,24 +41,18 @@ public class DataColumnSidecarSubnetBackboneSubscriber
       final Spec spec,
       final Eth2P2PNetwork eth2P2PNetwork,
       final UInt256 nodeId,
-      final int totalGroupCount) {
+      final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    this.totalGroupCount = new AtomicInteger(totalGroupCount);
+    this.custodyGroupCountManagerRef = custodyGroupCountManagerRef;
+    LOG.debug(
+        "Initial sampling group count value: {}",
+        custodyGroupCountManagerRef.get().getSamplingGroupCount());
   }
-
-  @Override
-  public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
-    totalGroupCount.set(samplingGroupCount);
-  }
-
-  @Override
-  public void onCustodyGroupCountSynced(final int groupCount) {}
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
-
-    IntOpenHashSet newSubscriptionsSet = new IntOpenHashSet(newSubscriptions);
+    final IntOpenHashSet newSubscriptionsSet = new IntOpenHashSet(newSubscriptions);
 
     for (int oldSubnet : currentSubscribedSubnets) {
       if (!newSubscriptionsSet.contains(oldSubnet)) {
@@ -79,16 +75,20 @@ public class DataColumnSidecarSubnetBackboneSubscriber
         .toVersionFulu()
         .ifPresent(
             miscHelpersFulu -> {
-              List<UInt64> subnets =
+              LOG.debug(
+                  "Sampling group count for epoch {}:  {}",
+                  epoch,
+                  custodyGroupCountManagerRef.get().getSamplingGroupCount());
+              final List<UInt64> subnets =
                   miscHelpersFulu.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, totalGroupCount.get());
+                      nodeId, custodyGroupCountManagerRef.get().getSamplingGroupCount());
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }
 
   @Override
   public synchronized void onSlot(final UInt64 slot) {
-    UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
     if (!epoch.equals(lastEpoch)) {
       lastEpoch = epoch;
       onEpoch(epoch);
