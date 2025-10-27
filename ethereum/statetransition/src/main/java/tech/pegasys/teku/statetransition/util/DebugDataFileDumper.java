@@ -76,6 +76,10 @@ public class DebugDataFileDumper implements DebugDataDumper {
         directory.resolve(INVALID_DATA_COLUMN_SIDECARS_DIR),
         INVALID_DATA_COLUMN_SIDECARS_DIR,
         "invalid data column sidecars");
+    createDirectory(
+        directory.resolve(INVALID_EXECUTION_PAYLOAD_DIR),
+        INVALID_EXECUTION_PAYLOAD_DIR,
+        "invalid execution payloads");
   }
 
   @Override
