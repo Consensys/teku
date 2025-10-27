@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -93,7 +92,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -242,35 +240,20 @@ public class Eth2P2PNetworkFactory {
           rpcEncoding =
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
-
-        final SafeFuture<Integer> custodyGroupCountFuture = new SafeFuture<>();
-        if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-          custodyGroupCountFuture.complete(
-              config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU)));
-        }
+        final Optional<UInt64> dasTotalCustodySubnetCount =
+            spec.isMilestoneSupported(SpecMilestone.FULU)
+                ? Optional.of(
+                    UInt64.valueOf(
+                        config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
+                : Optional.empty();
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
-
-        // Fulu custody configuration setup
-        final FutureValueObserver<Integer> custodyGroupCountSyncedProvider =
-            new FutureValueObserver<>();
-        if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-          final SpecConfigFulu specConfigFulu =
-              SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig());
-          custodyGroupCountSyncedProvider.complete(
-              observer -> observer.onValueChanged(specConfigFulu.getCustodyRequirement()));
-        }
-        final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
-        // Copied from BeaconChainController#initP2PNetwork() as it is missed from network tests
-        custodyGroupCountSyncedProvider.subscribe(
-            value -> metadataMessagesFactory.updateCustodyGroupCount(UInt64.valueOf(value)));
-
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
                 combinedChainDataClient,
                 () -> DataColumnSidecarByRootCustody.NOOP,
                 () -> CustodyGroupCountManager.NOOP,
-                metadataMessagesFactory,
+                new MetadataMessagesFactory(),
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -286,6 +269,7 @@ public class Eth2P2PNetworkFactory {
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 __ -> Optional.of(discoveryNodeId),
+                dasTotalCustodySubnetCount,
                 DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
@@ -408,6 +392,7 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
+            0,
             config.isAllTopicsFilterEnabled());
       }
     }
