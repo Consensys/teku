@@ -152,7 +152,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     return new DataColumnSidecarELRecoveryManagerImpl(
@@ -164,7 +164,7 @@ public class PoolFactory {
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         EL_RECOVERY_TASKS_LIMIT,
         dataColumnSidecarPublisher,
-        custodyGroupCountManagerSupplier,
+        custodyGroupCountManager,
         metricsSystem,
         timeProvider,
         EL_BLOBS_FETCHING_DELAY,

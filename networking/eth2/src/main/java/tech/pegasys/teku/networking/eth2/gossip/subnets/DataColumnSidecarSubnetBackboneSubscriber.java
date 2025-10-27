@@ -17,7 +17,6 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -31,7 +30,7 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
   private static final Logger LOG = LogManager.getLogger();
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
-  private final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef;
+  private final CustodyGroupCountManager custodyGroupCountManager;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
@@ -41,14 +40,13 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
       final Spec spec,
       final Eth2P2PNetwork eth2P2PNetwork,
       final UInt256 nodeId,
-      final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef) {
+      final CustodyGroupCountManager custodyGroupCountManager) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    this.custodyGroupCountManagerRef = custodyGroupCountManagerRef;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     LOG.debug(
-        "Initial sampling group count value: {}",
-        custodyGroupCountManagerRef.get().getSamplingGroupCount());
+        "Initial sampling group count value: {}", custodyGroupCountManager.getSamplingGroupCount());
   }
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
@@ -78,10 +76,10 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
               LOG.debug(
                   "Sampling group count for epoch {}:  {}",
                   epoch,
-                  custodyGroupCountManagerRef.get().getSamplingGroupCount());
+                  custodyGroupCountManager.getSamplingGroupCount());
               final List<UInt64> subnets =
                   miscHelpersFulu.computeDataColumnSidecarBackboneSubnets(
-                      nodeId, custodyGroupCountManagerRef.get().getSamplingGroupCount());
+                      nodeId, custodyGroupCountManager.getSamplingGroupCount());
               subscribeToSubnets(subnets.stream().map(UInt64::intValue).toList());
             });
   }
