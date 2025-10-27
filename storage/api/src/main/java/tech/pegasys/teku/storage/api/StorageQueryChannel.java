@@ -121,8 +121,6 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
-
   SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   SafeFuture<Optional<DataColumnSidecar>> getNonCanonicalSidecar(

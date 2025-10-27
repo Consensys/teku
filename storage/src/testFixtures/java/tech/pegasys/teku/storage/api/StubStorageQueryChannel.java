@@ -206,11 +206,6 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return SafeFuture.completedFuture(Optional.empty());
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return SafeFuture.completedFuture(Optional.empty());

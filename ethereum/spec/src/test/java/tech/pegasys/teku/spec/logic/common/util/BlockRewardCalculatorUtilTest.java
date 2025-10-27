@@ -94,8 +94,8 @@ public class BlockRewardCalculatorUtilTest {
     // reward equals the number of attestations
     when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
         .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
-    when(blockProcessorAltair.calculateAttestationProcessingResult(any(), any(), any()))
-        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), false, UInt64.ZERO));
+    when(blockProcessorAltair.processAttestation(any(), any(), any()))
+        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), 0, UInt64.ZERO));
     final BeaconState preState = data.randomBeaconState();
     final BeaconBlock block =
         data.blockBuilder(preState.getSlot().increment().longValue())
@@ -105,16 +105,15 @@ public class BlockRewardCalculatorUtilTest {
     final BlockRewardData reward =
         calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
     assertThat(reward.attestations()).isEqualTo(10L);
-    verify(blockProcessorAltair, times(10))
-        .calculateAttestationProcessingResult(any(), any(), any());
+    verify(blockProcessorAltair, times(10)).processAttestation(any(), any(), any());
   }
 
   @Test
   void getBlockRewardData_shouldOutputRewardData() {
     when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
         .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
-    when(blockProcessorAltair.calculateAttestationProcessingResult(any(), any(), any()))
-        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), false, UInt64.ZERO));
+    when(blockProcessorAltair.processAttestation(any(), any(), any()))
+        .thenReturn(new AttestationProcessingResult(Optional.of(UInt64.ONE), 0, UInt64.ZERO));
     final BeaconState preState = data.randomBeaconState();
     final BeaconBlock block =
         data.blockBuilder(preState.getSlot().increment().longValue())
@@ -135,8 +134,7 @@ public class BlockRewardCalculatorUtilTest {
                 140L,
                 3 * SINGLE_SLASHING_REWARD,
                 2 * SINGLE_SLASHING_REWARD));
-    verify(blockProcessorAltair, times(10))
-        .calculateAttestationProcessingResult(any(), any(), any());
+    verify(blockProcessorAltair, times(10)).processAttestation(any(), any(), any());
   }
 
   @Test

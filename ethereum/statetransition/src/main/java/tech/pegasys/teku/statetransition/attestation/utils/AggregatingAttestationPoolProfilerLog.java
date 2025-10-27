@@ -136,7 +136,7 @@ public class AggregatingAttestationPoolProfilerLog implements AggregatingAttesta
         attestation ->
             rewards.add(
                 blockProcessor
-                    .calculateAttestationProcessingResult(
+                    .processAttestation(
                         mutableBeaconStateAltair, attestation, indexedAttestationProvider)
                     .proposerReward()));
 

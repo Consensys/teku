@@ -2355,18 +2355,6 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  public void setFirstSamplerIncompleteSlot_isOperative(final DatabaseContext context)
-      throws IOException {
-    setupWithSpec(TestSpecFactory.createMinimalFulu());
-    initialize(context);
-    assertThat(database.getFirstSamplerIncompleteSlot().isEmpty()).isTrue();
-
-    final UInt64 incompleteSlot = UInt64.valueOf(123);
-    database.setFirstSamplerIncompleteSlot(UInt64.valueOf(123));
-    assertThat(database.getFirstSamplerIncompleteSlot()).contains(incompleteSlot);
-  }
-
-  @TestTemplate
   public void streamDataColumnIdentifiers_isOperative(final DatabaseContext context)
       throws IOException {
     setupWithSpec(TestSpecFactory.createMinimalFulu());

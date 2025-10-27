@@ -274,11 +274,6 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return asyncRunner.runAsync(queryDelegate::getFirstSamplerIncompleteSlot);
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return asyncRunner.runAsync(() -> queryDelegate.getSidecar(identifier));

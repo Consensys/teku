@@ -480,6 +480,17 @@ jobs:
       - docker_publish_images
       - notify
 
+  manifestDocker:
+    executor: medium_executor
+    steps:
+      - prepare
+      - run:
+          name: Create and publish docker manifest
+          command: |
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
+            ./gradlew --no-daemon --parallel -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> manifestDocker
+      - notify
+
   extractAPISpec:
     executor: medium_executor
     steps:
@@ -673,6 +684,19 @@ workflows:
             - moduleChecks
             - spotless
             - windowsBuild
+          context:
+            - protocols-dockerhub
+      - manifestDocker:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - publishDockerArm64
+            - publishDockerAmd64
           context:
             - protocols-dockerhub
 
