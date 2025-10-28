@@ -742,4 +742,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
       fail("Test setup failed: " + e.getMessage(), e);
     }
   }
+
+  @Test
+  public void dasDisableElRecovery_isFalseByDefault() throws Exception {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+
+    assertThat(tekuConfiguration.p2p().isDasDisableElRecovery()).isFalse();
+  }
+
+  @Test
+  public void dasPublishWithholdColumnsEverySlots_isEmptyByDefault() throws Exception {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+
+    assertThat(tekuConfiguration.p2p().getDasPublishWithholdColumnsEverySlots()).isEmpty();
+  }
 }

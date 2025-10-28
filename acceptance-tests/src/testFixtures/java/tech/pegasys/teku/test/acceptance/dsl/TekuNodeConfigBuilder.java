@@ -642,6 +642,25 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withSubscribeAllCustodySubnetsEnabled() {
+    LOG.debug("p2p-subscribe-all-custody-subnets-enabled: {}", true);
+    configMap.put("p2p-subscribe-all-custody-subnets-enabled", true);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasPublishWithholdColumnsEverySlots(
+      final int dasPublishWithholdColumnsEverySlots) {
+    LOG.debug("Xdas-publish-withhold-columns-every-slots: {}", dasPublishWithholdColumnsEverySlots);
+    configMap.put("Xdas-publish-withhold-columns-every-slots", dasPublishWithholdColumnsEverySlots);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withDasDisableElRecovery() {
+    LOG.debug("Xdas-disable-el-recovery: {}", true);
+    configMap.put("Xdas-disable-el-recovery", true);
+    return this;
+  }
+
   private TekuNodeConfigBuilder withPrivateKey(final PrivKey privKey) throws IOException {
     mustBe(NodeType.BEACON_NODE, NodeType.BOOTNODE);
     this.maybePrivKey = Optional.ofNullable(privKey);

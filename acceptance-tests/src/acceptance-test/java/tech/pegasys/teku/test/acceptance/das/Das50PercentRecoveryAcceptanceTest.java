@@ -17,52 +17,73 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
-public class DasSyncAcceptanceTest extends AcceptanceTestBase {
+public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
   private final int subnetCount = 128;
-  private final int defaultCustodySubnetCount = 4;
-  private final int fuluEpoch = 0;
 
   @Test
-  public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
-    final int secondNodeStartEpoch = fuluEpoch + 1;
-    final int finalCheckEpoch = secondNodeStartEpoch + 2;
+  public void shouldAbleToReconstructDataColumnSidecarsFrom50Percents_whenOnGossip()
+      throws Exception {
     final TekuBeaconNode primaryNode =
         createTekuBeaconNode(
             createConfigBuilder()
                 .withRealNetwork()
-                .withDasExtraCustodyGroupCount(subnetCount - defaultCustodySubnetCount)
+                .withDasExtraCustodyGroupCount(subnetCount / 2)
+                // we don't want to make this test extreme, withhold once and don't repeat
+                .withDasPublishWithholdColumnsEverySlots(9999)
+                // validators custody requirement for 64 validators
+                .withInteropValidators(0, 64)
+                .withDasDisableElRecovery()
                 .build());
 
     primaryNode.start();
-    UInt64 genesisTime = primaryNode.getGenesisTime();
-    final TekuBeaconNode lateJoiningNode =
-        createLateJoiningNode(primaryNode, genesisTime.intValue());
-    primaryNode.waitForEpochAtOrAbove(secondNodeStartEpoch, Duration.ofMinutes(5));
+    final UInt64 genesisTime = primaryNode.getGenesisTime();
 
-    lateJoiningNode.start();
-    lateJoiningNode.waitForGenesis();
-    lateJoiningNode.waitUntilInSyncWith(primaryNode);
-    lateJoiningNode.waitForEpochAtOrAbove(finalCheckEpoch, Duration.ofMinutes(5));
-    lateJoiningNode.waitUntilInSyncWith(primaryNode);
+    final TekuBeaconNode secondaryNode =
+        createTekuBeaconNode(
+            createConfigBuilder()
+                .withRealNetwork()
+                .withGenesisTime(genesisTime.intValue())
+                .withPeers(primaryNode)
+                // supernode
+                .withSubscribeAllCustodySubnetsEnabled()
+                .withInteropValidators(0, 0)
+                .withDasDisableElRecovery()
+                .build());
+
+    secondaryNode.start();
+    // DataColumnSidecars are withheld on primaryNode
+    primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
+    // DataColumnSidecars are reconstructed on secondaryNode
+    secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
+    secondaryNode.waitForNewFinalization();
+
+    final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
 
     int epochSlots = primaryNode.getSpec().slotsPerEpoch(UInt64.ZERO);
-    int endSlot = (finalCheckEpoch + 1) * epochSlots;
-    int firstFuluSlot = fuluEpoch * epochSlots;
+    int endSlot = blockAtHead.getSlot().intValue();
+    int firstFuluSlot =
+        primaryNode
+                .getSpec()
+                .forMilestone(SpecMilestone.FULU)
+                .getConfig()
+                .getFuluForkEpoch()
+                .intValue()
+            * epochSlots;
     int totalColumns =
         IntStream.range(firstFuluSlot, endSlot)
             .mapToObj(UInt64::valueOf)
-            .map(slot -> getAndAssertDasCustody(lateJoiningNode, slot))
+            .map(slot -> getAndAssertDasCustody(secondaryNode, slot))
             .mapToInt(i -> i)
             .sum();
 
@@ -96,17 +117,6 @@ public class DasSyncAcceptanceTest extends AcceptanceTestBase {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private TekuBeaconNode createLateJoiningNode(
-      final TekuBeaconNode primaryNode, final int genesisTime) throws Exception {
-    return createTekuBeaconNode(
-        createConfigBuilder()
-            .withGenesisTime(genesisTime)
-            .withRealNetwork()
-            .withPeers(primaryNode)
-            .withInteropValidators(0, 0)
-            .build());
   }
 
   private TekuNodeConfigBuilder createConfigBuilder() throws Exception {

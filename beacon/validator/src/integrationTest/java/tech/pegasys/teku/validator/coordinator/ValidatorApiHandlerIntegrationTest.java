@@ -26,6 +26,8 @@ import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidatio
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -209,6 +211,8 @@ public class ValidatorApiHandlerIntegrationTest {
                 blobSidecarGossipChannel,
                 dataColumnSidecarGossipChannel,
                 dutyMetrics,
+                new AtomicReference<>(),
+                OptionalInt.empty(),
                 P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
             executionPayloadFactory,
             executionPayloadPublisher,

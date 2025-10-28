@@ -1104,7 +1104,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initDataColumnSidecarELRecoveryManager() {
     LOG.debug("BeaconChainController.initDataColumnSidecarELRecoveryManager()");
-    if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+    if (beaconConfig.p2pConfig().isDasDisableElRecovery()) {
+      LOG.warn(
+          "DataColumnSidecarELRecoveryManager is NOOP: blobs recovery from local EL is disabled.");
+    }
+    if (spec.isMilestoneSupported(SpecMilestone.FULU)
+        && !beaconConfig.p2pConfig().isDasDisableElRecovery()) {
 
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel =
           eventChannels.getPublisher(DataColumnSidecarGossipChannel.class);
@@ -1509,6 +1514,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blobSidecarGossipChannel,
             dataColumnSidecarGossipChannel,
             dutyMetrics,
+            custodyGroupCountManagerRef,
+            beaconConfig.p2pConfig().getDasPublishWithholdColumnsEverySlots(),
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 
     final ExecutionPayloadFactory executionPayloadFactory;

@@ -26,6 +26,7 @@ import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.wit
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import java.io.File;
@@ -657,6 +658,25 @@ public class TekuBeaconNode extends TekuNode {
                   .getJsonTypeDefinition());
       return Optional.of(JsonUtil.parse(result.get(), jsonTypeDefinition));
     }
+  }
+
+  public SignedBeaconBlock getBlockAtHead() throws IOException {
+    final Optional<String> result =
+        httpClient.getOptional(getRestApiUrl(), "/eth/v2/beacon/blocks/head");
+    final String json = result.orElseThrow();
+
+    final JsonNode jsonNode = new ObjectMapper().readTree(json);
+    final long slot = jsonNode.get("data").get("message").get("slot").asLong();
+
+    final DeserializableTypeDefinition<SignedBeaconBlock> jsonTypeDefinition =
+        SharedApiTypes.withDataWrapper(
+            "block",
+            spec.atSlot(UInt64.valueOf(slot))
+                .getSchemaDefinitions()
+                .getSignedBeaconBlockSchema()
+                .getJsonTypeDefinition());
+
+    return JsonUtil.parse(json, jsonTypeDefinition);
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {

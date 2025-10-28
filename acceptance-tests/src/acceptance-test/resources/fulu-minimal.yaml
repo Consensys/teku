@@ -54,7 +54,7 @@ ELECTRA_FORK_VERSION: 0x05000001
 ELECTRA_FORK_EPOCH: 0
 # Fulu
 FULU_FORK_VERSION: 0x06000001
-FULU_FORK_EPOCH: 1
+FULU_FORK_EPOCH: 0
 
 # Time parameters
 # ---------------------------------------------------------------

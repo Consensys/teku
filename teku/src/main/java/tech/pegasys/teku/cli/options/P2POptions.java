@@ -524,6 +524,26 @@ public class P2POptions {
   private int dasExtraCustodyGroupCount = P2PConfig.DEFAULT_DAS_EXTRA_CUSTODY_GROUP_COUNT;
 
   @Option(
+      names = {"--Xdas-publish-withhold-columns-every-slots"},
+      paramLabel = "<NUMBER>",
+      description =
+          "If set will not publish non-custodied DataColumnSidecars on block production once in configured number of slots",
+      arity = "1",
+      hidden = true)
+  private int dasPublishWithholdColumnsEverySlots =
+      P2PConfig.DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS;
+
+  @Option(
+      names = {"--Xdas-disable-el-recovery"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "If set will disable attempts to recover blobs from EL to build DataColumnSidecars",
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean dasDisableElRecovery = P2PConfig.DEFAULT_DAS_DISABLE_EL_RECOVERY;
+
+  @Option(
       names = {"--Xp2p-historical-data-max-concurrent-queries"},
       hidden = true,
       paramLabel = "<NUMBER>",
@@ -631,6 +651,8 @@ public class P2POptions {
                   .floodPublishMaxMessageSizeThreshold(floodPublishMaxMessageSizeThreshold)
                   .gossipBlobsAfterBlockEnabled(gossipBlobsAfterBlockEnabled)
                   .dasExtraCustodyGroupCount(dasExtraCustodyGroupCount)
+                  .dasPublishWithholdColumnsEverySlots(dasPublishWithholdColumnsEverySlots)
+                  .dasDisableElRecovery(dasDisableElRecovery)
                   .historicalDataMaxConcurrentQueries(historicalDataMaxConcurrentQueries)
                   .historicalDataMaxQueryQueueSize(historicalDataMaxQueryQueueSize)
                   .executionProofTopicEnabled(executionProofTopicEnabled)
