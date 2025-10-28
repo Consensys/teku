@@ -162,7 +162,7 @@ public class ActiveEth2P2PNetworkTest {
     network.onEpoch(UInt64.ONE);
     asyncRunner.executeDueActions();
     verify(discoveryNetwork).updateGossipTopicScoring(any());
-    verify(discoveryNetwork).setDASTotalCustodySubnetCount(anyInt());
+    verify(discoveryNetwork).setDASTotalCustodyGroupCount(anyInt());
     verify(discoveryNetwork).setNextForkDigest(altairForkDigest);
     verifyNoMoreInteractions(discoveryNetwork);
 

@@ -1768,7 +1768,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     .getDiscoveryNetwork()
                     .ifPresent(
                         discoveryNetwork ->
-                            discoveryNetwork.setDASTotalCustodySubnetCount(cgcSynced))));
+                            discoveryNetwork.setDASTotalCustodyGroupCount(cgcSynced))));
 
     this.nodeId =
         p2pNetwork
