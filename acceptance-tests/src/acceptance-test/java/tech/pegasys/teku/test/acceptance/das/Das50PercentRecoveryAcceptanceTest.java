@@ -18,8 +18,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -28,8 +36,11 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final int subnetCount = 128;
+  private final AsyncRunnerFactory asyncRunnerFactory =
+      AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new StubMetricsSystem()));
 
   @Test
   public void shouldAbleToReconstructDataColumnSidecarsFrom50Percents_whenOnGossip()
@@ -62,10 +73,25 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     secondaryNode.start();
-    // DataColumnSidecars are withheld on primaryNode
-    primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
-    // DataColumnSidecars are reconstructed on secondaryNode
-    secondaryNode.waitForLogMessageContaining("Data column sidecars recovery finished for block");
+    AsyncRunner test = asyncRunnerFactory.create("test", 2);
+    CountDownLatch latch = new CountDownLatch(2);
+    test.runAsync(
+            () -> {
+              // DataColumnSidecars are withheld on primaryNode
+              primaryNode.waitForLogMessageContaining("non-custodied sidecars at");
+              latch.countDown();
+            })
+        .finishDebug(LOG);
+    test.runAsync(
+            () -> {
+              // DataColumnSidecars are reconstructed on secondaryNode
+              secondaryNode.waitForLogMessageContaining(
+                  "Data column sidecars recovery finished for block");
+              latch.countDown();
+            })
+        .finishDebug(LOG);
+    assertThat(latch.await(2, TimeUnit.MINUTES)).isTrue();
+
     secondaryNode.waitForNewFinalization();
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
