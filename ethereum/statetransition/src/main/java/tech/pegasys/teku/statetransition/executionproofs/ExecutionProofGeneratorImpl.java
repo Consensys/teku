@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.executionproofs;
 
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,14 +40,17 @@ public class ExecutionProofGeneratorImpl implements ExecutionProofGenerator {
 
   @Override
   public SafeFuture<ExecutionProof> generateExecutionProof(
-      final SignedBlockContainer blockContainer, final int subnetId) {
+      final SignedBlockContainer blockContainer,
+      final int subnetId,
+      final Duration proofGenerationDelay) {
 
-    LOG.info("Current thread {}: ", Thread.currentThread().getName());
+    // delay to simulate proof generation time
     try {
-      Thread.sleep(2000);
+      Thread.sleep(proofGenerationDelay);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
+
     final ExecutionPayload executionPayload = getExecutionPayload(blockContainer);
     final Bytes32 blockRoot = blockContainer.getSignedBlock().getRoot();
     final Bytes32 blockHash = executionPayload.getBlockHash();
