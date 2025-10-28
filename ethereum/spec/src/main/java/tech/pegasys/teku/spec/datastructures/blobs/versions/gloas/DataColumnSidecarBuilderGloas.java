@@ -27,6 +27,7 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
 
   private DataColumnSidecarSchemaGloas schema;
 
+  protected UInt64 slot;
   protected Bytes32 beaconBlockRoot;
 
   public DataColumnSidecarBuilderGloas schema(final DataColumnSidecarSchemaGloas schema) {
@@ -49,14 +50,14 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
   }
 
   @Override
-  public DataColumnSidecarBuilder beaconBlockRoot(final Bytes32 beaconBlockRoot) {
-    this.beaconBlockRoot = beaconBlockRoot;
+  public DataColumnSidecarBuilder slot(final UInt64 slot) {
+    this.slot = slot;
     return this;
   }
 
   @Override
-  public DataColumnSidecarBuilder slot(final UInt64 slot) {
-    // TODO-GLOAS: https://github.com/ethereum/consensus-specs/pull/4645
+  public DataColumnSidecarBuilder beaconBlockRoot(final Bytes32 beaconBlockRoot) {
+    this.beaconBlockRoot = beaconBlockRoot;
     return this;
   }
 
@@ -64,7 +65,7 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
   public DataColumnSidecar build() {
     validate();
     return new DataColumnSidecarGloas(
-        schema, index, column, kzgCommitments, kzgProofs, beaconBlockRoot);
+        schema, index, column, kzgCommitments, kzgProofs, slot, beaconBlockRoot);
   }
 
   @Override
@@ -74,6 +75,7 @@ public class DataColumnSidecarBuilderGloas extends DataColumnSidecarBuilderFulu 
     checkNotNull(column, "column must be specified");
     checkNotNull(kzgCommitments, "kzgCommitments must be specified");
     checkNotNull(kzgProofs, "kzgProofs must be specified");
+    checkNotNull(slot, "slot must be specified");
     checkNotNull(beaconBlockRoot, "beaconBlockRoot must be specified");
   }
 }

@@ -26,10 +26,6 @@ public interface DataColumnSidecarDbAccessor extends DataColumnSidecarCoreDB {
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot();
-
   // update
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
-
-  SafeFuture<Void> setFirstSamplerIncompleteSlot(UInt64 slot);
 }

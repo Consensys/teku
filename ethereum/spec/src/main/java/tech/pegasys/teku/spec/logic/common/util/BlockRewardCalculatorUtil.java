@@ -159,7 +159,7 @@ public class BlockRewardCalculatorUtil {
         .map(
             attestation ->
                 blockProcessor
-                    .calculateAttestationProcessingResult(
+                    .processAttestation(
                         mutableBeaconStateAltair, attestation, indexedAttestationProvider)
                     .proposerReward())
         .filter(Optional::isPresent)

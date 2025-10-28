@@ -175,8 +175,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getFirstCustodyIncompleteSlot();
 
-  Optional<UInt64> getFirstSamplerIncompleteSlot();
-
   Optional<Bytes> getSidecar(DataColumnSlotAndIdentifier identifier);
 
   Optional<Bytes> getNonCanonicalSidecar(DataColumnSlotAndIdentifier identifier);
@@ -298,8 +296,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void deleteEarliestBlockSlot();
 
     void setFirstCustodyIncompleteSlot(UInt64 slot);
-
-    void setFirstSamplerIncompleteSlot(UInt64 slot);
 
     void addSidecar(DataColumnSidecar sidecar);
 

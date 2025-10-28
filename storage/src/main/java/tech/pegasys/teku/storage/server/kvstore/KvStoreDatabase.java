@@ -1126,11 +1126,6 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getFirstSamplerIncompleteSlot() {
-    return dao.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public Optional<DataColumnSidecar> getSidecar(final DataColumnSlotAndIdentifier identifier) {
     final Optional<Bytes> maybePayload = dao.getSidecar(identifier);
     return maybePayload.map(payload -> spec.deserializeSidecar(payload, identifier.slot()));
@@ -1166,14 +1161,6 @@ public class KvStoreDatabase implements Database {
   public void setFirstCustodyIncompleteSlot(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.setFirstCustodyIncompleteSlot(slot);
-      updater.commit();
-    }
-  }
-
-  @Override
-  public void setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.setFirstSamplerIncompleteSlot(slot);
       updater.commit();
     }
   }

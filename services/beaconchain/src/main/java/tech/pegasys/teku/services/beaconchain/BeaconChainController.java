@@ -84,6 +84,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
@@ -163,7 +164,6 @@ import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
 import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
-import tech.pegasys.teku.statetransition.datacolumns.DasLongPollCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
@@ -194,8 +194,10 @@ import tech.pegasys.teku.statetransition.datacolumns.retriever.RecoveringSidecar
 import tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.recovering.SidecarRetriever;
 import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadBidManager;
+import tech.pegasys.teku.statetransition.execution.DefaultExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager;
 import tech.pegasys.teku.statetransition.execution.ExecutionPayloadBidManager.RemoteBidOrigin;
+import tech.pegasys.teku.statetransition.execution.ExecutionPayloadManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGenerator;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofGeneratorImpl;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
@@ -229,6 +231,7 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.DataColumnSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.ExecutionPayloadGossipValidator;
 import tech.pegasys.teku.statetransition.validation.ExecutionProofGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -371,6 +374,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile BlobSidecarGossipValidator blobSidecarValidator;
   protected volatile DataColumnSidecarManager dataColumnSidecarManager;
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
+  protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
@@ -660,6 +664,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationManager();
     initBlockManager();
     initExecutionPayloadBidManager();
+    initExecutionPayloadManager();
     initSyncCommitteePools();
     initP2PNetwork();
     initCustodyGroupCountManager();
@@ -718,6 +723,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               executionProofGossipChannel::publishExecutionProof,
               zkConfig.generateExecutionProofsEnabled(),
               zkConfig.statelessMinProofsRequired(),
+              zkConfig.proofDelayDurationInMs(),
               executionProofAsyncRunner.get());
 
     } else {
@@ -830,6 +836,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
+  protected void initExecutionPayloadManager() {
+    if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      final ExecutionPayloadGossipValidator executionPayloadGossipValidator =
+          new ExecutionPayloadGossipValidator();
+      executionPayloadManager =
+          new DefaultExecutionPayloadManager(
+              beaconAsyncRunner, executionPayloadGossipValidator, forkChoice, executionLayer);
+    } else {
+      executionPayloadManager = ExecutionPayloadManager.NOOP;
+    }
+  }
+
   protected void initDasCustody() {
     if (!spec.isMilestoneSupported(SpecMilestone.FULU)) {
       return;
@@ -869,21 +887,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
-    final DasLongPollCustody.GossipWaitTimeoutCalculator gossipWaitTimeoutCalculator =
-        slot -> {
-          Duration slotDuration =
-              Duration.ofSeconds(spec.atSlot(slot).getConfig().getSecondsPerSlot());
-          return slotDuration.dividedBy(3);
-        };
-
-    final DasLongPollCustody dasLongPollCustody =
-        new DasLongPollCustody(
-            dataColumnSidecarCustodyImpl, dasAsyncRunner, gossipWaitTimeoutCalculator);
-    eventChannels.subscribe(SlotEventsChannel.class, dasLongPollCustody);
-
     final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
         new DataColumnSidecarByRootCustodyImpl(
-            dasLongPollCustody,
+            dataColumnSidecarCustodyImpl,
             combinedChainDataClient,
             UInt64.valueOf(slotsPerEpoch)
                 .times(DataColumnSidecarByRootCustodyImpl.DEFAULT_MAX_CACHE_SIZE_EPOCHS));
@@ -1500,9 +1506,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final ExecutionPayloadPublisher executionPayloadPublisher;
 
     if (spec.isMilestoneSupported(SpecMilestone.GLOAS)) {
+      final ExecutionPayloadGossipChannel executionPayloadGossipChannel =
+          eventChannels.getPublisher(ExecutionPayloadGossipChannel.class, beaconAsyncRunner);
       executionPayloadFactory =
           new ExecutionPayloadFactoryGloas(spec, executionLayerBlockProductionManager);
-      executionPayloadPublisher = new ExecutionPayloadPublisherGloas();
+      executionPayloadPublisher =
+          new ExecutionPayloadPublisherGloas(
+              executionPayloadFactory,
+              executionPayloadGossipChannel,
+              dataColumnSidecarGossipChannel,
+              executionPayloadManager);
     } else {
       executionPayloadFactory = ExecutionPayloadFactory.NOOP;
       executionPayloadPublisher = ExecutionPayloadPublisher.NOOP;
@@ -1702,8 +1715,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::addRemote)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::addRemote)
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
+            .gossipedExecutionPayloadProcessor(
+                executionPayloadManager::validateAndImportExecutionPayload)
             // TODO-GLOAS: https://github.com/Consensys/teku/issues/9960
-            .gossipedExecutionPayloadProcessor(OperationProcessor.noop())
             .gossipedPayloadAttestationMessageProcessor(OperationProcessor.noop())
             .gossipedExecutionPayloadBidProcessor(
                 (signedBid, arrivalTimestamp) ->
@@ -1742,7 +1756,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     .getDiscoveryNetwork()
                     .ifPresent(
                         discoveryNetwork ->
-                            discoveryNetwork.setDASTotalCustodySubnetCount(cgcSynced))));
+                            discoveryNetwork.setDASTotalCustodyGroupCount(cgcSynced))));
 
     this.nodeId =
         p2pNetwork

@@ -17,6 +17,8 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.DataColu
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.peers.DataColumnSidecarSignatureValidator;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -27,11 +29,16 @@ public abstract class AbstractDataColumnSidecarValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator;
   final Peer peer;
 
-  public AbstractDataColumnSidecarValidator(final Peer peer, final Spec spec) {
+  public AbstractDataColumnSidecarValidator(
+      final Peer peer,
+      final Spec spec,
+      final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator) {
     this.peer = peer;
     this.spec = spec;
+    this.dataColumnSidecarSignatureValidator = dataColumnSidecarSignatureValidator;
   }
 
   void verifyValidity(final DataColumnSidecar dataColumnSidecar) {
@@ -76,6 +83,10 @@ public abstract class AbstractDataColumnSidecarValidator {
       throw new DataColumnSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.DATA_COLUMN_SIDECAR_INCLUSION_PROOF_VERIFICATION_FAILED);
     }
+  }
+
+  public SafeFuture<Boolean> verifySignature(final DataColumnSidecar dataColumnSidecar) {
+    return dataColumnSidecarSignatureValidator.validateSignature(dataColumnSidecar);
   }
 
   private boolean verifyDataColumnSidecarInclusionProof(final DataColumnSidecar dataColumnSidecar) {

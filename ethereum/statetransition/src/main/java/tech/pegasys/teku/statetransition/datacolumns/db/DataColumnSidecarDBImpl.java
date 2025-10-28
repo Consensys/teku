@@ -46,11 +46,6 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return combinedChainDataClient.getFirstSamplerIncompleteSlot();
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return combinedChainDataClient.getSidecar(identifier);
@@ -68,15 +63,6 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
             maybeCurrentSlot ->
                 detailLogger.logNewFirstCustodyIncompleteSlot(maybeCurrentSlot, slot))
         .thenCompose(__ -> sidecarUpdateChannel.onFirstCustodyIncompleteSlot(slot));
-  }
-
-  @Override
-  public SafeFuture<Void> setFirstSamplerIncompleteSlot(final UInt64 slot) {
-    return getFirstSamplerIncompleteSlot()
-        .thenAccept(
-            maybeCurrentSlot ->
-                detailLogger.logNewFirstSamplerIncompleteSlot(maybeCurrentSlot, slot))
-        .thenCompose(__ -> sidecarUpdateChannel.onFirstSamplerIncompleteSlot(slot));
   }
 
   @Override
@@ -117,14 +103,13 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
                         maybeFirstIncompleteSlot.orElse(UInt64.ONE).safeDecrement());
         SafeFuture.collectAll(prevSlotCount, finalizedSlot)
             .thenPeek(
-                prevSlotCountFinalizedSlot -> {
-                  LOG.debug(
-                      "DataColumnSidecarDB.addSidecar: new slot: {}, prevSlot count: {}, total added: {}, finalizedSlot: {}",
-                      slot,
-                      prevSlotCountFinalizedSlot.get(0),
-                      currentAddCounter,
-                      prevSlotCountFinalizedSlot.get(1));
-                })
+                prevSlotCountFinalizedSlot ->
+                    LOG.debug(
+                        "DataColumnSidecarDB.addSidecar: new slot: {}, prevSlot count: {}, total added: {}, finalizedSlot: {}",
+                        slot,
+                        prevSlotCountFinalizedSlot.get(0),
+                        currentAddCounter,
+                        prevSlotCountFinalizedSlot.get(1)))
             .finishStackTrace();
       }
     }
@@ -159,20 +144,6 @@ class DataColumnSidecarDBImpl implements DataColumnSidecarDB {
                         oldCountNewCount.right()));
       } else {
         return SafeFuture.COMPLETE;
-      }
-    }
-
-    private void logNewFirstSamplerIncompleteSlot(
-        final Optional<UInt64> maybeCurrentSlot, final UInt64 newSlot) {
-      if (!LOG.isDebugEnabled()) {
-        return;
-      }
-
-      if (maybeCurrentSlot.isEmpty() || !maybeCurrentSlot.get().equals(newSlot)) {
-        LOG.debug(
-            "DataColumnSidecarDB: setFirstSamplerIncompleteSlot {} ~> {}",
-            maybeCurrentSlot.map(UInt64::toString).orElse("NA"),
-            newSlot);
       }
     }
   }

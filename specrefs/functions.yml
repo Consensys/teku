@@ -688,9 +688,24 @@
     - file: infrastructure/bls/src/main/java/tech/pegasys/teku/bls/BLSPublicKey.java
       search: public static BLSPublicKey aggregate(
   spec: |
-    <spec fn="eth_aggregate_pubkeys" fork="altair" hash="977edbdb">
+    <spec fn="eth_aggregate_pubkeys" fork="altair" hash="bfb5ddd0">
     def eth_aggregate_pubkeys(pubkeys: Sequence[BLSPubkey]) -> BLSPubkey:
-        return bls.AggregatePKs(pubkeys)
+        """
+        Return the aggregate public key for the public keys in ``pubkeys``.
+
+        Note: the ``+`` operation should be interpreted as elliptic curve point addition, which takes as input
+        elliptic curve points that must be decoded from the input ``BLSPubkey``s.
+        This implementation is for demonstrative purposes only and ignores encoding/decoding concerns.
+        Refer to the BLS signature draft standard for more information.
+        """
+        assert len(pubkeys) > 0
+        # Ensure that the given inputs are valid pubkeys
+        assert all(bls.KeyValidate(pubkey) for pubkey in pubkeys)
+
+        result = copy(pubkeys[0])
+        for pubkey in pubkeys[1:]:
+            result += pubkey
+        return result
     </spec>
 
 - name: eth_fast_aggregate_verify
@@ -2970,12 +2985,12 @@
     - file: ethereum/weaksubjectivity/src/main/java/tech/pegasys/teku/weaksubjectivity/WeakSubjectivityCalculator.java
       search: public boolean isWithinWeakSubjectivityPeriod(
   spec: |
-    <spec fn="is_within_weak_subjectivity_period" fork="phase0" hash="f8a94089">
+    <spec fn="is_within_weak_subjectivity_period" fork="phase0" hash="aef08e82">
     def is_within_weak_subjectivity_period(
         store: Store, ws_state: BeaconState, ws_checkpoint: Checkpoint
     ) -> bool:
         # Clients may choose to validate the input state against the input Weak Subjectivity Checkpoint
-        assert ws_state.latest_block_header.state_root == ws_checkpoint.root
+        assert get_block_root(ws_state, ws_checkpoint.epoch) == ws_checkpoint.root
         assert compute_epoch_at_slot(ws_state.slot) == ws_checkpoint.epoch
 
         ws_period = compute_weak_subjectivity_period(ws_state)
@@ -5775,7 +5790,7 @@
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/logic/versions/fulu/helpers/MiscHelpersFulu.java
       search: public boolean verifyDataColumnSidecar(
   spec: |
-    <spec fn="verify_data_column_sidecar" fork="fulu" hash="509c0986">
+    <spec fn="verify_data_column_sidecar" fork="fulu" hash="1517491f">
     def verify_data_column_sidecar(sidecar: DataColumnSidecar) -> bool:
         """
         Verify if the data column sidecar is valid.
@@ -5786,6 +5801,11 @@
 
         # A sidecar for zero blobs is invalid
         if len(sidecar.kzg_commitments) == 0:
+            return False
+
+        # Check that the sidecar respects the blob limit
+        epoch = compute_epoch_at_slot(sidecar.signed_block_header.message.slot)
+        if len(sidecar.kzg_commitments) > get_blob_parameters(epoch).max_blobs_per_block:
             return False
 
         # The column length must be equal to the number of commitments/proofs
