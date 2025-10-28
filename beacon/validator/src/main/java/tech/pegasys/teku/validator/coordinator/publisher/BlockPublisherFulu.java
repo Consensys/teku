@@ -85,6 +85,9 @@ public class BlockPublisherFulu extends BlockPublisherPhase0 {
       final List<DataColumnSidecar> dataColumnSidecars,
       final BlockPublishingPerformance blockPublishingPerformance) {
     blockPublishingPerformance.dataColumnSidecarsPublishingInitiated();
+    if (dataColumnSidecars.isEmpty()) {
+      return;
+    }
 
     final List<DataColumnSidecar> dataColumnSidecarsToPublish;
     if (mustPublishAll(dataColumnSidecars.getFirst().getSlot())) {
