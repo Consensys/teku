@@ -997,6 +997,11 @@ subprojects {
       exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j-impl")
       exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j2-impl")
     }
+
+    // exclude until we update Besu dependencies (https://github.com/Consensys/teku/issues/10060)
+    configureEach {
+      exclude(group: "io.netty", module: "netty-codec-smtp")
+    }
   }
 
   def jarName = project.name
