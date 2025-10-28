@@ -22,8 +22,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
-public class MetadataMessagesFactory {
+public class MetadataMessagesFactory implements CustodyGroupCountChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
@@ -46,6 +47,16 @@ public class MetadataMessagesFactory {
   public synchronized void updateCustodyGroupCount(final UInt64 custodyGroupCount) {
     this.custodyGroupCount = Optional.of(custodyGroupCount);
     handleUpdate();
+  }
+
+  @Override
+  public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
+    // we don't care until it's synced
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {
+    updateCustodyGroupCount(UInt64.valueOf(groupCount));
   }
 
   private void handleUpdate() {

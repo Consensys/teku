@@ -20,16 +20,16 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.infrastructure.events.FutureValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 
-public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChannel {
-
+public class DataColumnSidecarSubnetBackboneSubscriber
+    implements SlotEventsChannel, CustodyGroupCountChannel {
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final UInt256 nodeId;
-  private final AtomicInteger totalGroupCount = new AtomicInteger(0);
+  private final AtomicInteger totalGroupCount;
   private final Spec spec;
 
   private IntSet currentSubscribedSubnets = IntSet.of();
@@ -39,12 +39,20 @@ public class DataColumnSidecarSubnetBackboneSubscriber implements SlotEventsChan
       final Spec spec,
       final Eth2P2PNetwork eth2P2PNetwork,
       final UInt256 nodeId,
-      final FutureValueObserver<Integer> samplingGroupCountProvider) {
+      final int totalGroupCount) {
     this.spec = spec;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.nodeId = nodeId;
-    samplingGroupCountProvider.subscribe(totalGroupCount::set);
+    this.totalGroupCount = new AtomicInteger(totalGroupCount);
   }
+
+  @Override
+  public void onGroupCountUpdate(final int custodyGroupCount, final int samplingGroupCount) {
+    totalGroupCount.set(samplingGroupCount);
+  }
+
+  @Override
+  public void onCustodyGroupCountSynced(final int groupCount) {}
 
   private void subscribeToSubnets(final Collection<Integer> newSubscriptions) {
 

@@ -490,6 +490,7 @@ jobs:
       - run:
           name: Create and publish docker manifest
           command: |
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> manifestDocker
       - notify
 
