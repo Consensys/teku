@@ -330,7 +330,8 @@ public class P2PConfig {
       if (dasPublishWithholdColumnsEverySlots == DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS) {
         dasPublishWithholdColumnsEverySlotsOptional = OptionalInt.empty();
       } else {
-        dasPublishWithholdColumnsEverySlotsOptional = OptionalInt.of(dasExtraCustodyGroupCount);
+        dasPublishWithholdColumnsEverySlotsOptional =
+            OptionalInt.of(dasPublishWithholdColumnsEverySlots);
       }
 
       return new P2PConfig(
