@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
+import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -88,6 +89,9 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
   @SuppressWarnings("unchecked")
   final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher =
       mock(BiConsumer.class);
+
+  final ValidDataColumnSidecarsListener validDataColumnSidecarsListener =
+      mock(ValidDataColumnSidecarsListener.class);
 
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
   private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
@@ -118,6 +122,9 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(kzg.computeCells(any())).thenReturn(kzgCells);
+    dataColumnSidecarELRecoveryManager.onSyncingStatusChanged(true);
+    dataColumnSidecarELRecoveryManager.subscribeToRecoveredColumnSidecar(
+        validDataColumnSidecarsListener);
     setSlot(currentSlot);
   }
 
@@ -204,6 +211,32 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     verifyNoInteractions(executionLayer);
+    verifyNoInteractions(validDataColumnSidecarsListener);
+  }
+
+  @Test
+  public void shouldNotPublish_whenNotInSync() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    dataColumnSidecarELRecoveryManager.onSyncingStatusChanged(false);
+    dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobAndCellProofs> blobAndCellProofs =
+        blobSidecars.stream()
+            .map(
+                blobSidecar ->
+                    new BlobAndCellProofs(
+                        blobSidecar.getBlob(),
+                        IntStream.range(0, 128)
+                            .mapToObj(__ -> dataStructureUtil.randomKZGProof())
+                            .toList()))
+            .toList();
+    when(executionLayer.engineGetBlobAndCellProofsList(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
+    dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+
+    verifyRecovery(false);
   }
 
   @Test
@@ -227,7 +260,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
         .thenReturn(SafeFuture.completedFuture(blobAndCellProofs));
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
     verify(executionLayer).engineGetBlobAndCellProofsList(any(), any());
-    verifyNoInteractions(dataColumnSidecarPublisher);
+    verifyNoRecovery();
   }
 
   @Test
@@ -251,10 +284,8 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     dataColumnSidecarELRecoveryManager.onNewBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verify(dataColumnSidecarPublisher)
-        .accept(
-            argThat(dataColumnSidecars -> dataColumnSidecars.size() == sampleGroupCount),
-            argThat(origin -> origin == RemoteOrigin.LOCAL_EL));
+
+    verifyRecovery(true);
   }
 
   @Test
@@ -287,7 +318,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
       verify(executionLayer, times(i + 1)).engineGetBlobAndCellProofsList(any(), any());
     }
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verifyNoInteractions(dataColumnSidecarPublisher);
+    verifyNoRecovery();
   }
 
   @Test
@@ -335,7 +366,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
           .engineGetBlobAndCellProofsList(versionedHashes, currentSlot);
     }
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verifyNoInteractions(dataColumnSidecarPublisher);
+    verifyNoRecovery();
   }
 
   @Test
@@ -371,7 +402,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
           .engineGetBlobAndCellProofsList(versionedHashes, currentSlot);
     }
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verifyNoInteractions(dataColumnSidecarPublisher);
+    verifyNoRecovery();
   }
 
   @Test
@@ -429,6 +460,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     asyncRunner.executeQueuedActions();
     verifyNoMoreInteractions(executionLayer);
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    verifyNoRecovery();
   }
 
   @Test
@@ -469,7 +501,7 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
       reset(executionLayer);
     }
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verifyNoInteractions(dataColumnSidecarPublisher);
+    verifyNoRecovery();
   }
 
   @Test
@@ -492,6 +524,9 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     dataColumnSidecarELRecoveryManager.onSlot(currentSlot);
+    dataColumnSidecarELRecoveryManager.onSyncingStatusChanged(true);
+    dataColumnSidecarELRecoveryManager.subscribeToRecoveredColumnSidecar(
+        validDataColumnSidecarsListener);
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
     final List<BlobAndCellProofs> blobAndCellProofs =
         blobSidecars.stream()
@@ -521,10 +556,27 @@ public class DataColumnSidecarELRecoveryManagerImplTest {
     verify(executionLayer, times(2)).engineGetBlobAndCellProofsList(any(), any());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verify(dataColumnSidecarPublisher)
-        .accept(
-            argThat(dataColumnSidecars -> dataColumnSidecars.size() == sampleGroupCount),
-            argThat(origin -> origin == RemoteOrigin.LOCAL_EL));
+
+    verifyRecovery(true);
+  }
+
+  private void verifyNoRecovery() {
+    verifyNoInteractions(dataColumnSidecarPublisher);
+    verifyNoInteractions(validDataColumnSidecarsListener);
+  }
+
+  private void verifyRecovery(final boolean inSync) {
+    if (inSync) {
+      verify(dataColumnSidecarPublisher)
+          .accept(
+              argThat(dataColumnSidecars -> dataColumnSidecars.size() == sampleGroupCount),
+              argThat(origin -> origin == RemoteOrigin.LOCAL_EL));
+    } else {
+      verifyNoInteractions(dataColumnSidecarPublisher);
+    }
+
+    verify(validDataColumnSidecarsListener, times(sampleGroupCount))
+        .onNewValidSidecar(any(), eq(RemoteOrigin.LOCAL_EL));
   }
 
   private List<VersionedHash> getVersionedHashes(
