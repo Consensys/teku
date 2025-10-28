@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.executionproofs;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_EXECUTION_PROOF_SUBNETS;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +54,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private static final Logger LOG = LogManager.getLogger();
   private final int attemptsToGetProof = 3;
   private final ExecutionProofGenerator executionProofGenerator;
+  private final Duration proofGenerationDelay;
   private final AsyncRunner asyncRunner;
   private final boolean isProofGenerationEnabled;
   private final int minProofsRequired;
@@ -63,12 +65,14 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       final Consumer<ExecutionProof> onCreatedProof,
       final boolean isProofGenerationEnabled,
       final int minProofsRequired,
+      final Duration proofGenerationDelay,
       final AsyncRunner asyncRunner) {
     this.executionProofGossipValidator = executionProofGossipValidator;
     this.onCreatedProof = onCreatedProof;
     this.isProofGenerationEnabled = isProofGenerationEnabled;
     this.minProofsRequired = minProofsRequired;
     this.executionProofGenerator = executionProofGenerator;
+    this.proofGenerationDelay = proofGenerationDelay;
     this.asyncRunner = asyncRunner;
   }
 
@@ -128,12 +132,6 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       if (result.isValid()) {
         return SafeFuture.completedFuture(result);
       }
-      try {
-        Thread.sleep(100L);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
-      }
     }
     LOG.debug("Checking proofs for block {}", block.getRoot());
 
@@ -173,7 +171,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
                   .forEach(
                       subnetIndex -> {
                         executionProofGenerator
-                            .generateExecutionProof(blockContainer, subnetIndex)
+                            .generateExecutionProof(
+                                blockContainer, subnetIndex, proofGenerationDelay)
                             .finish(
                                 proof -> {
                                   LOG.trace("Generated proof for subnet {}", proof.getSubnetId());
