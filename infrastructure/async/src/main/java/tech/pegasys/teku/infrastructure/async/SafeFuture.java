@@ -321,6 +321,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     if (error == null) {
       return UNKNOWN_ERROR;
     }
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause.getMessage() == null) {
+      return error.getMessage() != null ? error.getMessage() : UNKNOWN_ERROR;
+    }
     return Throwables.getRootCause(error).getMessage();
   }
 
