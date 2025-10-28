@@ -31,7 +31,7 @@ public class DasSyncAcceptanceTest extends AcceptanceTestBase {
 
   private final int subnetCount = 128;
   private final int defaultCustodySubnetCount = 4;
-  private final int fuluEpoch = 0;
+  private final int fuluEpoch = 1;
 
   @Test
   public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
