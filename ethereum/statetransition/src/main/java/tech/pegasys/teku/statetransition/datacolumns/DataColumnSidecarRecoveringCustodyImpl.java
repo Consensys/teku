@@ -39,7 +39,6 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
@@ -55,7 +54,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final DataColumnSidecarByRootCustody delegate;
   private final AsyncRunner asyncRunner;
   private final MiscHelpersFulu miscHelpers;
-  private final KZG kzg;
   private final Spec spec;
   private final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher;
   private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
@@ -76,7 +74,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final AsyncRunner asyncRunner,
       final Spec spec,
       final MiscHelpersFulu miscHelpers,
-      final KZG kzg,
       final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
       final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
       final int columnCount,
@@ -87,7 +84,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.delegate = delegate;
     this.asyncRunner = asyncRunner;
     this.miscHelpers = miscHelpers;
-    this.kzg = kzg;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
     this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
@@ -231,7 +227,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final Collection<DataColumnSidecar> sidecars,
       final MetricsHistogram.Timer timer) {
     final List<DataColumnSidecar> recoveredSidecars =
-        miscHelpers.reconstructAllDataColumnSidecars(sidecars, kzg);
+        miscHelpers.reconstructAllDataColumnSidecars(sidecars);
     timer.closeUnchecked().run();
 
     final Set<UInt64> existingSidecarsIndices =
@@ -263,6 +259,11 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     // Recovery is not needed for locally produced or recovered data,
     // we will get everything for it in custody w/o reconstruction
     if (remoteOrigin.equals(RemoteOrigin.RPC) || remoteOrigin.equals(RemoteOrigin.GOSSIP)) {
+      LOG.debug(
+          "sidecar: {} {} - remoteOrigin: {}",
+          dataColumnSidecar::getSlotAndBlockRoot,
+          dataColumnSidecar::getIndex,
+          () -> remoteOrigin);
       createOrUpdateRecoveryTaskForDataColumnSidecar(dataColumnSidecar);
     }
     return delegate.onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin);

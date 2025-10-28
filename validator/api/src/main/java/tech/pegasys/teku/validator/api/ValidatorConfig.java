@@ -67,7 +67,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
   public static final boolean DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
-  public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(45_000_000);
+  public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(60_000_000);
   public static final boolean DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
   public static final boolean DEFAULT_ATTESTATIONS_V2_APIS_ENABLED = false;
 

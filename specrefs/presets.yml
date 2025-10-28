@@ -7,6 +7,15 @@
     BASE_REWARD_FACTOR: uint64 = 64
     </spec>
 
+- name: BUILDER_PENDING_WITHDRAWALS_LIMIT
+  sources:
+    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/gloas.yaml
+      search: "BUILDER_PENDING_WITHDRAWALS_LIMIT:"
+  spec: |
+    <spec preset_var="BUILDER_PENDING_WITHDRAWALS_LIMIT" fork="gloas" hash="40b31377">
+    BUILDER_PENDING_WITHDRAWALS_LIMIT: uint64 = 1048576
+    </spec>
+
 - name: BYTES_PER_LOGS_BLOOM
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/bellatrix.yaml

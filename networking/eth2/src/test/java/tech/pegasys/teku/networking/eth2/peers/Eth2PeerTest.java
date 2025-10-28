@@ -31,7 +31,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -69,9 +68,10 @@ class Eth2PeerTest {
   private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker dataColumnSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
-  private final KZG kzg = mock(KZG.class);
   private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
   private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
+      mock(DataColumnSidecarSignatureValidator.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
 
@@ -84,11 +84,11 @@ class Eth2PeerTest {
           statusMessageFactory,
           metadataMessagesFactory,
           peerChainValidator,
+          dataColumnSidecarSignatureValidator,
           blockRateTracker,
           blobSidecarsRateTracker,
           dataColumnSidecarsRateTracker,
           rateTracker,
-          kzg,
           metricsSystem,
           timeProvider);
 

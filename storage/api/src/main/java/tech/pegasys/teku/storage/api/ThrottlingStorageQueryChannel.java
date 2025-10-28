@@ -227,11 +227,6 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return taskQueue.queueTask(delegate::getFirstSamplerIncompleteSlot);
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return taskQueue.queueTask(() -> delegate.getSidecar(identifier));
@@ -246,6 +241,12 @@ public class ThrottlingStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
     return taskQueue.queueTask(() -> delegate.getDataColumnIdentifiers(slot));
+  }
+
+  @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
+    return taskQueue.queueTask(() -> delegate.getNonCanonicalDataColumnIdentifiers(slot));
   }
 
   @Override

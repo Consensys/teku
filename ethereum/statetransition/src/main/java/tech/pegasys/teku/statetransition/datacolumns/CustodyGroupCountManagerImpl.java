@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -26,26 +25,26 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.subscribers.ObservableValue;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyGroupCountManager {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int INITIAL_VALUE = -1;
-  private final AtomicInteger custodyGroupCount = new AtomicInteger(INITIAL_VALUE);
-  private final AtomicInteger custodyGroupSyncedCount;
+  private final ObservableValue<Integer> custodyGroupCount = new ObservableValue<>(true);
+  private final ObservableValue<Integer> samplingGroupCount = new ObservableValue<>(true);
+  private final ObservableValue<Integer> custodyGroupSyncedCount = new ObservableValue<>(true);
   private final Spec spec;
   private final SpecConfigFulu specConfigFulu;
   private final MiscHelpersFulu miscHelpersFulu;
   private final ProposersDataManager proposersDataManager;
-  private final CustodyGroupCountChannel custodyGroupCountChannel;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt256 nodeId;
   private final SettableGauge custodyGroupCountGauge;
@@ -57,7 +56,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   public CustodyGroupCountManagerImpl(
       final Spec spec,
       final ProposersDataManager proposersDataManager,
-      final CustodyGroupCountChannel custodyGroupCountChannel,
       final CombinedChainDataClient combinedChainDataClient,
       final int initCustodyGroupCount,
       final UInt256 nodeId,
@@ -67,7 +65,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
         SpecConfigFulu.required(spec.forMilestone(SpecMilestone.FULU).getConfig()),
         MiscHelpersFulu.required(spec.forMilestone(SpecMilestone.FULU).miscHelpers()),
         proposersDataManager,
-        custodyGroupCountChannel,
         combinedChainDataClient,
         initCustodyGroupCount,
         nodeId,
@@ -80,7 +77,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       final SpecConfigFulu specConfigFulu,
       final MiscHelpersFulu miscHelpersFulu,
       final ProposersDataManager proposersDataManager,
-      final CustodyGroupCountChannel custodyGroupCountChannel,
       final CombinedChainDataClient combinedChainDataClient,
       final int initCustodyGroupCount,
       final UInt256 nodeId,
@@ -102,7 +98,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
             "Total number of custody groups backfilled by a node");
     this.proposersDataManager = proposersDataManager;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.custodyGroupCountChannel = custodyGroupCountChannel;
     final Optional<Integer> maybeCustodyCount =
         combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
@@ -113,21 +108,22 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
       updateCustodyGroupCount(maybeCustodyCount.get(), maybeCustodyCount);
     }
 
-    this.custodyGroupSyncedCount = new AtomicInteger(0);
+    custodyGroupSyncedCount.set(0);
     this.nodeId = nodeId;
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (isMaxCustodyGroups) {
-      return;
-    }
-
     final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
     final Map<UInt64, PreparedProposerInfo> preparedValidators =
         proposersDataManager.getPreparedProposerInfo();
 
+    // we need to check detectGenesisInitialization even if isMaxCustodyGroups
     if (detectGenesisInitialization(currentEpoch, preparedValidators)) {
+      return;
+    }
+
+    if (isMaxCustodyGroups) {
       return;
     }
 
@@ -207,7 +203,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getCustodyGroupCount() {
-    return custodyGroupCount.get();
+    return custodyGroupCount.get().orElseThrow();
+  }
+
+  @Override
+  public void subscribeCustodyGroupCount(final ValueObserver<Integer> subscriber) {
+    custodyGroupCount.subscribe(subscriber);
   }
 
   @Override
@@ -217,7 +218,12 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getSamplingGroupCount() {
-    return miscHelpersFulu.getSamplingGroupCount(custodyGroupCount.get());
+    return samplingGroupCount.get().orElseThrow();
+  }
+
+  @Override
+  public void subscribeSamplingGroupCount(final ValueObserver<Integer> subscriber) {
+    samplingGroupCount.subscribe(subscriber);
   }
 
   @Override
@@ -227,18 +233,23 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
 
   @Override
   public int getCustodyGroupSyncedCount() {
-    return custodyGroupSyncedCount.get();
+    return custodyGroupSyncedCount.get().orElseThrow();
+  }
+
+  @Override
+  public void subscribeCustodyGroupSyncedCount(final ValueObserver<Integer> subscriber) {
+    custodyGroupSyncedCount.subscribe(subscriber);
   }
 
   @Override
   public void setCustodyGroupSyncedCount(final int custodyGroupSyncedCount) {
-    final int oldCustodyGroupSyncedCount =
+    final Optional<Integer> oldCustodyGroupSyncedCount =
         this.custodyGroupSyncedCount.getAndSet(custodyGroupSyncedCount);
-    if (oldCustodyGroupSyncedCount == custodyGroupSyncedCount) {
+    if (oldCustodyGroupSyncedCount.isPresent()
+        && oldCustodyGroupSyncedCount.get() == custodyGroupSyncedCount) {
       return;
     }
     LOG.debug("Synced custody group count updated to {}.", custodyGroupSyncedCount);
-    custodyGroupCountChannel.onCustodyGroupCountSynced(custodyGroupSyncedCount);
     custodyGroupSyncedCountGauge.set(custodyGroupSyncedCount);
   }
 
@@ -251,11 +262,14 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
           newCustodyGroupCount);
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
-    if (custodyGroupCount.get() >= newCustodyGroupCount) {
+    if (custodyGroupCount
+        .get()
+        .map(custodyGroupCountValue -> custodyGroupCountValue >= newCustodyGroupCount)
+        .orElse(false)) {
       return;
     }
     custodyGroupCount.set(newCustodyGroupCount);
-    custodyGroupCountChannel.onGroupCountUpdate(newCustodyGroupCount, getSamplingGroupCount());
+    samplingGroupCount.set(miscHelpersFulu.getSamplingGroupCount(newCustodyGroupCount));
     custodyGroupCountGauge.set(newCustodyGroupCount);
     isMaxCustodyGroups = newCustodyGroupCount == specConfigFulu.getNumberOfCustodyGroups();
   }

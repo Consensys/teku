@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSide
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -30,12 +29,10 @@ public class AbstractBlobSidecarsValidator {
 
   protected final Peer peer;
   protected final Spec spec;
-  protected final KZG kzg;
 
-  public AbstractBlobSidecarsValidator(final Peer peer, final Spec spec, final KZG kzg) {
+  public AbstractBlobSidecarsValidator(final Peer peer, final Spec spec) {
     this.peer = peer;
     this.spec = spec;
-    this.kzg = kzg;
   }
 
   protected void verifyKzg(final BlobSidecar blobSidecar) {
@@ -54,7 +51,7 @@ public class AbstractBlobSidecarsValidator {
 
   private boolean verifyBlobKzgProof(final BlobSidecar blobSidecar) {
     try {
-      return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobKzgProof(kzg, blobSidecar);
+      return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobKzgProof(blobSidecar);
     } catch (final Exception ex) {
       LOG.debug("KZG verification failed for BlobSidecar {}", blobSidecar.toLogString());
       throw new BlobSidecarsResponseInvalidResponseException(

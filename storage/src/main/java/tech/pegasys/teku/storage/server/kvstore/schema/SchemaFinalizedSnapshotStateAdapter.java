@@ -89,6 +89,10 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return getVariableMap().values();
   }
 
+  public Collection<Bytes> getDeletedVariableIds() {
+    return snapshotDelegate.getDeletedVariableIds();
+  }
+
   public Collection<Bytes> getDeletedColumnIds() {
     return snapshotDelegate.getDeletedColumnIds();
   }
@@ -133,10 +137,6 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getVariableFirstCustodyIncompleteSlot();
   }
 
-  public KvStoreVariable<UInt64> getVariableFirstSamplerIncompleteSlot() {
-    return delegate.getVariableFirstSamplerIncompleteSlot();
-  }
-
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return Map.of(
         "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
@@ -146,8 +146,6 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         "EARLIEST_BLOCK_SLOT_AVAILABLE",
         getVariableEarliestBlockSlot(),
         "FIRST_CUSTODY_INCOMPLETE_SLOT",
-        getVariableFirstCustodyIncompleteSlot(),
-        "FIRST_SAMPLER_INCOMPLETE_SLOT",
-        getVariableFirstSamplerIncompleteSlot());
+        getVariableFirstCustodyIncompleteSlot());
   }
 }

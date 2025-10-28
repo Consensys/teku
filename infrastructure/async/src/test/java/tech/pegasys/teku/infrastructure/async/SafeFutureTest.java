@@ -108,6 +108,23 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void shouldThrowableIfMessageWasUnknown() {
+    try (LogCaptor logCaptor = LogCaptor.forClass(SafeFutureTest.class)) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      future.finishError(LOG);
+
+      final Throwable throwable = new IllegalArgumentException("UNKNOWN ERROR");
+      try {
+        future.completeExceptionally(throwable);
+      } catch (final Exception e) {
+        LOG.info("exception");
+      }
+      assertThat(logCaptor.getErrorLogs().getFirst()).contains("UNKNOWN ERROR");
+      assertThat(logCaptor.getThrowable(0)).contains(throwable);
+    }
+  }
+
+  @Test
   public void shouldLogMessageAtWarnLevel() {
     try (LogCaptor logCaptor = LogCaptor.forClass(SafeFutureTest.class)) {
       final SafeFuture<Void> future = new SafeFuture<>();

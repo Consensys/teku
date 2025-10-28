@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
@@ -29,18 +29,16 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
 
   private final DataAvailabilitySampler dataAvailabilitySampler;
   private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
-  final KZG kzg;
+  private final AtomicBoolean dataAvailabilityCheckExecuted = new AtomicBoolean(false);
   final Spec spec;
 
   private final SignedBeaconBlock block;
 
   public DataColumnSidecarAvailabilityChecker(
       final DataAvailabilitySampler dataAvailabilitySampler,
-      final KZG kzg,
       final Spec spec,
       final SignedBeaconBlock block) {
     this.dataAvailabilitySampler = dataAvailabilitySampler;
-    this.kzg = kzg;
     this.spec = spec;
     this.block = block;
   }
@@ -62,23 +60,29 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
         LOG.debug(
             "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
       }
-      default -> {
-        dataAvailabilitySampler
-            .checkDataAvailability(block.getSlot(), block.getRoot())
-            .finish(
-                sampleIndices -> {
-                  validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
-                },
-                throwable ->
-                    validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
-        dataAvailabilitySampler.flush();
-      }
+      default -> {}
     }
     return true;
   }
 
   @Override
   public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
+    if (validationResult.isDone()) {
+      return validationResult;
+    }
+
+    if (dataAvailabilityCheckExecuted.compareAndSet(false, true)) {
+      dataAvailabilitySampler
+          .checkDataAvailability(block.getSlot(), block.getRoot())
+          .finish(
+              sampleIndices -> {
+                validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
+              },
+              throwable ->
+                  validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
+      dataAvailabilitySampler.flush();
+    }
+
     return validationResult;
   }
 }

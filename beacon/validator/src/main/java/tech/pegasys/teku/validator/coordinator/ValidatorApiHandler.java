@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -72,9 +73,14 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -91,6 +97,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -105,6 +112,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.ExecutionPayloadPublisher;
 
 public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChannel {
 
@@ -143,8 +151,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+  private final ExecutionPayloadFactory executionPayloadFactory;
+  private final ExecutionPayloadPublisher executionPayloadPublisher;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
+  private final ExecutionProofManager executionProofManager;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -167,7 +178,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
       final BlockProductionAndPublishingPerformanceFactory
           blockProductionAndPublishingPerformanceFactory,
-      final BlockPublisher blockPublisher) {
+      final BlockPublisher blockPublisher,
+      final ExecutionPayloadFactory executionPayloadFactory,
+      final ExecutionPayloadPublisher executionPayloadPublisher,
+      final ExecutionProofManager executionProofManager) {
     this.blockProductionAndPublishingPerformanceFactory =
         blockProductionAndPublishingPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
@@ -189,7 +203,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
     this.blockPublisher = blockPublisher;
+    this.executionPayloadFactory = executionPayloadFactory;
+    this.executionPayloadPublisher = executionPayloadPublisher;
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
+    this.executionProofManager = executionProofManager;
   }
 
   @Override
@@ -365,8 +382,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                   .thenCompose(
                       ignored ->
                           combinedChainDataClient.getStateForBlockProduction(
-                              keySlot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
-                  .thenPeek(__ -> productionPerformance.getStateAtSlot());
+                              keySlot,
+                              forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled(),
+                              productionPerformance::lateBlockReorgPreparationCompleted))
+                  .thenPeek(__ -> productionPerformance.getState());
 
           return new BlockProductionPreparationContext(state, productionPerformance);
         });
@@ -700,12 +719,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
     final BlockPublishingPerformance blockPublishingPerformance =
         blockProductionAndPublishingPerformanceFactory.createForPublishing(
             maybeBlindedBlockContainer.getSlot());
+
+    final boolean isLocallyCreated = isLocallyCreatedBlock(maybeBlindedBlockContainer);
+
+    LOG.info("stating to publish block at slot {}", maybeBlindedBlockContainer.getSlot());
+
     return blockPublisher
         .sendSignedBlock(
             maybeBlindedBlockContainer,
             // do only EQUIVOCATION validation when GOSSIP validation has been requested and the
             // block has been locally created
-            broadcastValidationLevel == GOSSIP && isLocallyCreatedBlock(maybeBlindedBlockContainer)
+            broadcastValidationLevel == GOSSIP && isLocallyCreated
                 ? EQUIVOCATION
                 : broadcastValidationLevel,
             blockPublishingPerformance)
@@ -714,7 +738,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
               final String reason = getRootCauseMessage(ex);
               return SendSignedBlockResult.rejected(reason);
             })
-        .alwaysRun(blockPublishingPerformance::complete);
+        .alwaysRun(blockPublishingPerformance::complete)
+        .thenPeek(
+            __ -> {
+              if (isLocallyCreated) {
+                executionProofManager
+                    .generateProofs(maybeBlindedBlockContainer)
+                    .finish(error -> LOG.debug("failed to generate execution proofs", error));
+              }
+            });
   }
 
   @Override
@@ -793,6 +825,68 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
       final List<UInt64> validatorIndices, final UInt64 epoch) {
     return nodeDataProvider.getValidatorLiveness(
         validatorIndices, epoch, chainDataProvider.getCurrentEpoch());
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> requests) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  }
+
+  @Override
+  public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> requests) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  }
+
+  // TODO-GLOAS: https://github.com/Consensys/teku/issues/9997 (not required for devnet-0)
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayloadBid(
+      final SignedExecutionPayloadBid signedExecutionPayloadBid) {
+    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
+  }
+
+  @Override
+  public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
+      final UInt64 slot, final UInt64 builderIndex) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    return combinedChainDataClient
+        .getBlockAndStateInEffectAtSlot(slot)
+        .thenCompose(
+            maybeBlockAndState -> {
+              if (maybeBlockAndState.isEmpty()) {
+                return CompletableFuture.completedFuture(Optional.empty());
+              }
+              final BeaconBlockAndState blockAndState = maybeBlockAndState.get();
+              LOG.info(
+                  "Producing unsigned execution payload for slot {} and block {}",
+                  slot,
+                  blockAndState.getRoot());
+              if (combinedChainDataClient.isOptimisticBlock(blockAndState.getParentRoot())) {
+                LOG.warn(
+                    "Unable to produce execution payload for slot {} and block {} because parent has optimistically validated payload",
+                    slot,
+                    blockAndState.getRoot().toUnprefixedHexString());
+                return NodeSyncingException.failedFuture();
+              }
+              return executionPayloadFactory
+                  .createUnsignedExecutionPayload(builderIndex, blockAndState)
+                  .thenApply(Optional::of);
+            });
+  }
+
+  @Override
+  public SafeFuture<Void> publishSignedExecutionPayload(
+      final SignedExecutionPayloadEnvelope signedExecutionPayload) {
+    return executionPayloadPublisher.publishSignedExecutionPayload(signedExecutionPayload);
   }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
@@ -931,18 +1025,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel, SlotEventsChann
                     .getRoot()
                     .equals(signedBlockContainer.getRoot()))
         .orElse(false);
-  }
-
-  @Override
-  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
-      final List<BeaconCommitteeSelectionProof> requests) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
-  }
-
-  @Override
-  public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
-      final List<SyncCommitteeSelectionProof> requests) {
-    throw new UnsupportedOperationException("This method is not implemented by the Beacon Node");
   }
 
   private record BlockProductionPreparationContext(

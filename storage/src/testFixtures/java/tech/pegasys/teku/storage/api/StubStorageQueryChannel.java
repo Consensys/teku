@@ -206,11 +206,6 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return SafeFuture.completedFuture(Optional.empty());
-  }
-
-  @Override
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return SafeFuture.completedFuture(Optional.empty());
@@ -224,6 +219,12 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
 
   @Override
   public SafeFuture<List<DataColumnSlotAndIdentifier>> getDataColumnIdentifiers(final UInt64 slot) {
+    return SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  @Override
+  public SafeFuture<List<DataColumnSlotAndIdentifier>> getNonCanonicalDataColumnIdentifiers(
+      final UInt64 slot) {
     return SafeFuture.completedFuture(Collections.emptyList());
   }
 

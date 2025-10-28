@@ -30,6 +30,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.DataColumnSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionPayloadGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.ExecutionProofGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -72,9 +74,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final SubnetSubscriptionService attestationSubnetService;
   private final SubnetSubscriptionService syncCommitteeSubnetService;
   private final SubnetSubscriptionService dataColumnSidecarSubnetService;
+  private final SubnetSubscriptionService executionProofSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
-  private final int dasTotalCustodySubnetCount;
 
   private final GossipForkManager gossipForkManager;
 
@@ -97,10 +99,10 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,
       final SubnetSubscriptionService dataColumnSidecarSubnetService,
+      final SubnetSubscriptionService executionProofSubnetService,
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
-      final int dasTotalCustodySubnetCount,
       final boolean allTopicsFilterEnabled) {
     super(discoveryNetwork);
     this.spec = spec;
@@ -115,8 +117,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.attestationSubnetService = attestationSubnetService;
     this.syncCommitteeSubnetService = syncCommitteeSubnetService;
     this.dataColumnSidecarSubnetService = dataColumnSidecarSubnetService;
+    this.executionProofSubnetService = executionProofSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
-    this.dasTotalCustodySubnetCount = dasTotalCustodySubnetCount;
     this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
@@ -144,6 +146,11 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     eventChannels.subscribe(
         DataColumnSidecarGossipChannel.class,
         (sidecar, __) -> gossipForkManager.publishDataColumnSidecar(sidecar));
+    eventChannels.subscribe(
+        ExecutionProofGossipChannel.class, gossipForkManager::publishExecutionProof);
+    eventChannels.subscribe(
+        ExecutionPayloadGossipChannel.class, gossipForkManager::publishExecutionPayload);
+
     if (recentChainData.isCloseToInSync()) {
       startGossip();
     }
@@ -174,8 +181,6 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElseThrow();
     if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
-      LOG.info("Using custody sidecar subnets count: {}", dasTotalCustodySubnetCount);
-      discoveryNetwork.setDASTotalCustodySubnetCount(dasTotalCustodySubnetCount);
       recentChainData
           .getNextForkDigest(currentEpoch)
           .ifPresent(discoveryNetwork::setNextForkDigest);
@@ -359,6 +364,18 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   public void unsubscribeFromDataColumnSidecarSubnetId(final int subnetId) {
     gossipForkManager.unsubscribeFromDataColumnSidecarSubnetId(subnetId);
     dataColumnSidecarSubnetService.removeSubscription(subnetId);
+  }
+
+  @Override
+  public void subscribeToExecutionProofSubnetId(final int subnetId) {
+    gossipForkManager.subscribeToExecutionProofSubnetId(subnetId);
+    executionProofSubnetService.addSubscription(subnetId);
+  }
+
+  @Override
+  public void unsubscribeFromExecutionProofSubnetId(final int subnetId) {
+    gossipForkManager.unsubscribeFromExecutionProofSubnetId(subnetId);
+    executionProofSubnetService.removeSubscription(subnetId);
   }
 
   @Override

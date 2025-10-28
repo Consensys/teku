@@ -80,6 +80,12 @@ public class DataColumnSidecarBuilderFulu implements DataColumnSidecarBuilder {
   }
 
   @Override
+  public DataColumnSidecarBuilder slot(final UInt64 slot) {
+    // NO-OP for Fulu
+    return this;
+  }
+
+  @Override
   public DataColumnSidecarBuilder beaconBlockRoot(final Bytes32 beaconBlockRoot) {
     // NO-OP for Fulu
     return this;

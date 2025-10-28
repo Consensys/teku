@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -25,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -33,9 +34,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndV
 import tech.pegasys.teku.statetransition.datacolumns.DataAvailabilitySampler;
 
 class DataColumnSidecarAvailabilityCheckerTest {
-
-  private final KZG kzg = mock(KZG.class);
-
   private final Spec spec = mock(Spec.class);
 
   private final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
@@ -47,7 +45,7 @@ class DataColumnSidecarAvailabilityCheckerTest {
 
   @BeforeEach
   void setup() {
-    checker = new DataColumnSidecarAvailabilityChecker(das, kzg, spec, block);
+    checker = new DataColumnSidecarAvailabilityChecker(das, spec, block);
     when(block.getMessage()).thenReturn(beaconBlock);
   }
 
@@ -103,7 +101,34 @@ class DataColumnSidecarAvailabilityCheckerTest {
     when(das.checkDataAvailability(any(), any()))
         .thenReturn(SafeFuture.completedFuture(listOfIndices));
     assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
+
+    // do not call check yet
+    verify(das, never()).checkDataAvailability(any(), any());
+
     assertThat(checker.getAvailabilityCheckResult().get())
         .isEqualTo(DataAndValidationResult.validResult(listOfIndices));
+  }
+
+  @Test
+  void shouldNotCallSamplerMultipleTimesWhenGetAvailabilityCheckResultCalledMultipleTimes() {
+    when(das.checkSamplingEligibility(block.getMessage()))
+        .thenReturn(DataAvailabilitySampler.SamplingEligibilityStatus.REQUIRED);
+    when(das.checkDataAvailability(any(), any())).thenReturn(new SafeFuture<>());
+    assertThat(checker.initiateDataAvailabilityCheck()).isTrue();
+
+    // do not call check yet
+    verify(das, never()).checkDataAvailability(any(), any());
+
+    final SafeFuture<DataAndValidationResult<UInt64>> result1 =
+        checker.getAvailabilityCheckResult();
+
+    verify(das).checkDataAvailability(any(), any());
+
+    final SafeFuture<DataAndValidationResult<UInt64>> result2 =
+        checker.getAvailabilityCheckResult();
+
+    // still only called once
+    verify(das).checkDataAvailability(any(), any());
+    assertThat(result1).isSameAs(result2);
   }
 }

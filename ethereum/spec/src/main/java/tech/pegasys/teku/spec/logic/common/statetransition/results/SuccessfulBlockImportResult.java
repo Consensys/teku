@@ -18,12 +18,12 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class SuccessfulBlockImportResult implements BlockImportResult {
+class SuccessfulBlockImportResult implements BlockImportResult {
 
   private final SignedBeaconBlock block;
   private boolean blockOnCanonicalChain = false;
 
-  public SuccessfulBlockImportResult(final SignedBeaconBlock block) {
+  SuccessfulBlockImportResult(final SignedBeaconBlock block) {
     this.block = block;
   }
 

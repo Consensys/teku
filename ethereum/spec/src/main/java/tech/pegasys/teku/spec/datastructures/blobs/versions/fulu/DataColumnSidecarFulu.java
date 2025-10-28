@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blobs.versions.fulu;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
@@ -95,6 +96,11 @@ public class DataColumnSidecarFulu
 
   public SignedBeaconBlockHeader getSignedBlockHeader() {
     return getField4();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlockHeader> getMaybeSignedBlockHeader() {
+    return Optional.of(getSignedBlockHeader());
   }
 
   public SszBytes32Vector getKzgCommitmentsInclusionProof() {
