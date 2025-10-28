@@ -670,7 +670,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initDasCustody();
     initDataColumnSidecarELRecoveryManager();
     initDasSyncPreSampler();
-    completeDasClassesPluming();
+    completeDasClassesWireing();
     initSyncService();
     initSlotProcessor();
     initMetrics();
@@ -1036,7 +1036,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.custodyGroupCountManager = manager;
   }
 
-  protected void completeDasClassesPluming() {
+  protected void completeDasClassesWireing() {
     final DataColumnSidecarRecoveringCustody dataColumnSidecarRecoveringCustody =
         dataColumnSidecarCustodyRef.get();
 

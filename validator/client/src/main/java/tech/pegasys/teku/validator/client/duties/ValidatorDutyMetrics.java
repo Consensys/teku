@@ -37,7 +37,7 @@ public class ValidatorDutyMetrics {
   }
 
   // NOTE: we don't use the AutoCloseable in the try block because we are in an async context
-  // if an exception is thrown during the async flow pluming we can accept to lose the data point
+  // if an exception is thrown during the async flow plumbing we can accept to lose the data point
 
   public SafeFuture<DutyResult> performDutyWithMetrics(final Duty duty) {
     final OperationTimer.TimingContext context =
