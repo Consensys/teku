@@ -41,19 +41,7 @@ public interface AvailabilityChecker<Data> {
   AvailabilityChecker<?> NOOP = new NOOP<>();
   AvailabilityChecker<BlobSidecar> NOOP_BLOB_SIDECAR = new NOOP<>();
   AvailabilityChecker<UInt64> NOOP_DATACOLUMN_SIDECAR = new NOOP<>();
-
-  AvailabilityChecker<ExecutionProof> NOOP_EXECUTION_PROOF =
-      new AvailabilityChecker<>() {
-        @Override
-        public boolean initiateDataAvailabilityCheck() {
-          return true;
-        }
-
-        @Override
-        public SafeFuture<DataAndValidationResult<ExecutionProof>> getAvailabilityCheckResult() {
-          return notRequiredResultFuture();
-        }
-      };
+  AvailabilityChecker<ExecutionProof> NOOP_EXECUTION_PROOF = new NOOP<>();
 
   /**
    * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(
