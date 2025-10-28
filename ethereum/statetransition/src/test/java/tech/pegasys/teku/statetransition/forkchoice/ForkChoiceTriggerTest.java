@@ -65,8 +65,8 @@ class ForkChoiceTriggerTest {
     timeProvider.advanceTimeByMillis(2000);
     try (final LogCaptor logCaptor = LogCaptor.forClass(ForkChoiceTrigger.class)) {
       trigger.onAttestationsDueForSlot(UInt64.ONE);
-      assertThat(logCaptor.getErrorLogs())
-          .contains("Failed to wait for fork choice to complete for slot 1");
+      assertThat(logCaptor.getWarnLogs())
+          .anyMatch(log -> log.contains("Timeout waiting for fork choice to complete for slot 1"));
     }
   }
 
