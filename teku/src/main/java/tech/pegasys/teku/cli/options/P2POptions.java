@@ -525,16 +525,17 @@ public class P2POptions {
 
   @Option(
       names = {"--Xdas-publish-withhold-columns-every-slots"},
+      hidden = true,
       paramLabel = "<NUMBER>",
       description =
           "If set will not publish non-custodied DataColumnSidecars on block production once in configured number of slots",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private int dasPublishWithholdColumnsEverySlots =
       P2PConfig.DEFAULT_DAS_PUBLISH_WITHHOLD_COLUMNS_EVERY_SLOTS;
 
   @Option(
       names = {"--Xdas-disable-el-recovery"},
+      hidden = true,
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
