@@ -321,11 +321,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     if (error == null) {
       return UNKNOWN_ERROR;
     }
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause.getMessage() == null) {
-      return error.getMessage() != null ? error.getMessage() : UNKNOWN_ERROR;
+    try {
+      final Throwable rootCause = Throwables.getRootCause(error);
+      if (rootCause.getMessage() == null) {
+        return error.getMessage() != null ? error.getMessage() : UNKNOWN_ERROR;
+      }
+      return Throwables.getRootCause(error).getMessage();
+    } catch (final IllegalArgumentException exception) {
+      return UNKNOWN_ERROR;
     }
-    return Throwables.getRootCause(error).getMessage();
   }
 
   /**
@@ -337,7 +341,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.error(getMessageFromException(error));
+          final String message = getMessageFromException(error);
+          if (message.equals(UNKNOWN_ERROR)) {
+            logger.error(message, error);
+          } else {
+            logger.error(message);
+          }
           return null;
         });
   }
@@ -351,7 +360,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.warn(getMessageFromException(error));
+          final String message = getMessageFromException(error);
+          if (message.equals(UNKNOWN_ERROR)) {
+            logger.warn(message, error);
+          } else {
+            logger.warn(message);
+          }
           return null;
         });
   }
@@ -365,7 +379,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.info(getMessageFromException(error));
+          final String message = getMessageFromException(error);
+          if (message.equals(UNKNOWN_ERROR)) {
+            logger.info(message, error);
+          } else {
+            logger.info(message);
+          }
           return null;
         });
   }
@@ -379,7 +398,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.debug(getMessageFromException(error));
+          final String message = getMessageFromException(error);
+          if (message.equals(UNKNOWN_ERROR)) {
+            logger.debug(message, error);
+          } else {
+            logger.debug(message);
+          }
           return null;
         });
   }
@@ -393,7 +417,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.trace(getMessageFromException(error));
+          final String message = getMessageFromException(error);
+          if (message.equals(UNKNOWN_ERROR)) {
+            logger.trace(message, error);
+          } else {
+            logger.trace(message);
+          }
           return null;
         });
   }
