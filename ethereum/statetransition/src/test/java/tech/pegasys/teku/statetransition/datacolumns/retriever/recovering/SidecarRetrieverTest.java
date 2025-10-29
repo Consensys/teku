@@ -23,7 +23,6 @@ import static tech.pegasys.teku.statetransition.datacolumns.retriever.recovering
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +87,7 @@ public class SidecarRetrieverTest {
           CHECK_INTERVAL,
           timeProvider,
           columnCount,
-          new AtomicReference<>(custodyManager),
+          custodyManager,
           metricsSystem);
 
   @BeforeEach

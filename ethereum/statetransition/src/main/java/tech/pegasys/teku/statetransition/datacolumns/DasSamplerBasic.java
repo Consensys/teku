@@ -19,7 +19,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,7 +43,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
   private final Spec spec;
   private final CurrentSlotProvider currentSlotProvider;
-  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final CustodyGroupCountManager custodyGroupCountManager;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>();
   private final RecentChainData recentChainData;
@@ -54,7 +53,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       final CurrentSlotProvider currentSlotProvider,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final RecentChainData recentChainData) {
     this.currentSlotProvider = currentSlotProvider;
     checkNotNull(spec);
@@ -63,7 +62,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     this.spec = spec;
     this.custody = custody;
     this.retriever = retriever;
-    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.recentChainData = recentChainData;
   }
 
@@ -129,9 +128,7 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
     return recentlySampledColumnsByRoot.computeIfAbsent(
         blockRoot,
-        k ->
-            DataColumnSamplingTracker.create(
-                slot, blockRoot, custodyGroupCountManagerSupplier.get()));
+        k -> DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager));
   }
 
   private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
