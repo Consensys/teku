@@ -1505,7 +1505,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blobSidecarGossipChannel,
             dataColumnSidecarGossipChannel,
             dutyMetrics,
-            custodyGroupCountManagerRef,
+            custodyGroupCountManager,
             beaconConfig.p2pConfig().getDasPublishWithholdColumnsEverySlots(),
             beaconConfig.p2pConfig().isGossipBlobsAfterBlockEnabled());
 

@@ -27,7 +27,6 @@ import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidatio
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -70,6 +69,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -211,7 +211,7 @@ public class ValidatorApiHandlerIntegrationTest {
                 blobSidecarGossipChannel,
                 dataColumnSidecarGossipChannel,
                 dutyMetrics,
-                new AtomicReference<>(),
+                CustodyGroupCountManager.NOOP,
                 OptionalInt.empty(),
                 P2PConfig.DEFAULT_GOSSIP_BLOBS_AFTER_BLOCK_ENABLED),
             executionPayloadFactory,

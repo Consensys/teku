@@ -17,7 +17,6 @@ import com.google.common.base.Suppliers;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.OptionalInt;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockPublishingPerformance;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -52,7 +51,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final DataColumnSidecarGossipChannel dataColumnSidecarGossipChannel,
       final DutyMetrics dutyMetrics,
-      final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final OptionalInt dasPublishWithholdColumnsEverySlots,
       final boolean gossipBlobsAfterBlock) {
     this.spec = spec;
@@ -88,7 +87,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
                     blockGossipChannel,
                     dataColumnSidecarGossipChannel,
                     dutyMetrics,
-                    custodyGroupCountManagerRef.get(),
+                    custodyGroupCountManager,
                     dasPublishWithholdColumnsEverySlots,
                     gossipBlobsAfterBlock));
 
