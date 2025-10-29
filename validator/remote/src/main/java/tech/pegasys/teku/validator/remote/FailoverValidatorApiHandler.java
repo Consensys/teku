@@ -345,7 +345,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
       final UInt64 slot, final UInt64 builderIndex) {
     return tryRequestUntilSuccess(
-C        apiChannel ->
+        apiChannel ->
             apiChannel
                 .createUnsignedExecutionPayloadBid(slot, builderIndex)
                 .thenPeek(
