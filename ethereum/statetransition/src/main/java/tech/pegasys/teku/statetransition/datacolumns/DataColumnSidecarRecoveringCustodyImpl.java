@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,7 +55,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
   private final MiscHelpersFulu miscHelpers;
   private final Spec spec;
   private final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher;
-  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   private final long columnCount;
   private final int recoverColumnCount;
@@ -75,7 +74,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
       final Spec spec,
       final MiscHelpersFulu miscHelpers,
       final BiConsumer<DataColumnSidecar, RemoteOrigin> dataColumnSidecarPublisher,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final int columnCount,
       final int groupCount,
       final Function<UInt64, Duration> slotToRecoveryDelay,
@@ -86,7 +85,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     this.miscHelpers = miscHelpers;
     this.spec = spec;
     this.dataColumnSidecarPublisher = dataColumnSidecarPublisher;
-    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     this.recoveryTasks =
         LimitedMap.createSynchronizedNatural(spec.getGenesisSpec().getSlotsPerEpoch());
     this.slotToRecoveryDelay = slotToRecoveryDelay;
@@ -139,7 +138,7 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
     if (isActiveSuperNode(slot)) {
       return false;
     }
-    if (custodyGroupCountManagerSupplier.get().getCustodyGroupCount() == groupCount) {
+    if (custodyGroupCountManager.getCustodyGroupCount() == groupCount) {
       if (!isSuperNode.get()) {
         LOG.debug(
             "Number of required custody groups reached maximum. Activating super node reconstruction.");

@@ -64,8 +64,15 @@ public class ForkChoiceTrigger {
             duration,
             nodeSlot);
       }
-    } catch (InterruptedException | TimeoutException e) {
-      LOG.error("Failed to wait for fork choice to complete for slot " + nodeSlot, e);
+    } catch (InterruptedException e) {
+      LOG.error("Interrupted while waiting for fork choice to complete for slot " + nodeSlot, e);
+      Thread.currentThread().interrupt();
+    } catch (TimeoutException e) {
+      LOG.warn(
+          "Timeout waiting for fork choice to complete for slot {} (limit: {} ms). Continuing without waiting.",
+          nodeSlot,
+          attestationWaitLimitMillis);
+      // Don't throw exception - continue execution to avoid blocking milestone transitions
     } catch (ExecutionException e) {
       LOG.error("Execution exception waiting for fork choice at slot " + nodeSlot, e);
       throw new RuntimeException(e);
