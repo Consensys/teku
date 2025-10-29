@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
@@ -78,6 +79,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       "remote_beacon_nodes_requests_total";
 
   private final Map<SlotAndBlockRoot, ValidatorApiChannel> blindedBlockCreatorCache =
+      LimitedMap.createSynchronizedLRU(2);
+  private final Map<SlotAndBuilderIndex, ValidatorApiChannel> executionPayloadBidCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -343,7 +346,16 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
       final UInt64 slot, final UInt64 builderIndex) {
     return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.createUnsignedExecutionPayloadBid(slot, builderIndex),
+        apiChannel ->
+            apiChannel
+                .createUnsignedExecutionPayloadBid(slot, builderIndex)
+                .thenPeek(
+                    bid -> {
+                      if (!failoverDelegates.isEmpty() && bid.isPresent()) {
+                        executionPayloadBidCreatorCache.put(
+                            bid.get().getSlotAndBuilderIndex(), apiChannel);
+                      }
+                    }),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_BID_METHOD);
   }
 
@@ -355,13 +367,19 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_BID_METHOD);
   }
 
-  /**
-   * TODO-GLOAS: https://github.com/Consensys/teku/issues/10008 we need logic similar to {@link
-   * #blindedBlockCreatorCache} to call only the beacon node which created the bid
-   */
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
       final UInt64 slot, final UInt64 builderIndex) {
+    final SlotAndBuilderIndex slotAndBuilderIndex = new SlotAndBuilderIndex(slot, builderIndex);
+    if (executionPayloadBidCreatorCache.containsKey(slotAndBuilderIndex)) {
+      LOG.info(
+          "Execution payload for slot {} and builder index {} would be created only by the beacon node which created the bid.",
+          slot,
+          builderIndex);
+      return executionPayloadBidCreatorCache
+          .remove(slotAndBuilderIndex)
+          .createUnsignedExecutionPayload(slot, builderIndex);
+    }
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createUnsignedExecutionPayload(slot, builderIndex),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_METHOD);
