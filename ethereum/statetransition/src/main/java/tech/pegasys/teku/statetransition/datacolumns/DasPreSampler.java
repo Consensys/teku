@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,15 +36,15 @@ public class DasPreSampler {
 
   private final DataAvailabilitySampler sampler;
   private final DataColumnSidecarCustody custody;
-  private final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   public DasPreSampler(
       final DataAvailabilitySampler sampler,
       final DataColumnSidecarCustody custody,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier) {
+      final CustodyGroupCountManager custodyGroupCountManager) {
     this.sampler = sampler;
     this.custody = custody;
-    this.custodyGroupCountManagerSupplier = custodyGroupCountManagerSupplier;
+    this.custodyGroupCountManager = custodyGroupCountManager;
   }
 
   private boolean isSamplingRequired(final SignedBeaconBlock block) {
@@ -99,7 +98,7 @@ public class DasPreSampler {
 
   private List<DataColumnSlotAndIdentifier> calculateSamplingColumnIds(
       final UInt64 slot, final Bytes32 blockRoot) {
-    return custodyGroupCountManagerSupplier.get().getSamplingColumnIndices().stream()
+    return custodyGroupCountManager.getSamplingColumnIndices().stream()
         .map(columnIndex -> new DataColumnSlotAndIdentifier(slot, blockRoot, columnIndex))
         .toList();
   }
