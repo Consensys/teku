@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadBid;
@@ -79,7 +80,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private final Map<SlotAndBlockRoot, ValidatorApiChannel> blindedBlockCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
-  private final Map<UInt64, ValidatorApiChannel> executionPayloadBidCreatorCache =
+  private final Map<SlotAndBuilderIndex, ValidatorApiChannel> executionPayloadBidCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -351,7 +352,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
                 .thenPeek(
                     bid -> {
                       if (!failoverDelegates.isEmpty() && bid.isPresent()) {
-                        executionPayloadBidCreatorCache.put(slot, apiChannel);
+                        executionPayloadBidCreatorCache.put(
+                            new SlotAndBuilderIndex(slot, builderIndex), apiChannel);
                       }
                     }),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_BID_METHOD);
@@ -368,12 +370,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
       final UInt64 slot, final UInt64 builderIndex) {
-    if (executionPayloadBidCreatorCache.containsKey(slot)) {
+    final SlotAndBuilderIndex slotAndBuilderIndex = new SlotAndBuilderIndex(slot, builderIndex);
+    if (executionPayloadBidCreatorCache.containsKey(slotAndBuilderIndex)) {
       LOG.info(
-          "Execution payload for slot {} would be created only by the beacon node which created the bid.",
-          slot);
+          "Execution payload for slot {} and builder index {} would be created only by the beacon node which created the bid.",
+          slot,
+          builderIndex);
       return executionPayloadBidCreatorCache
-          .remove(slot)
+          .remove(slotAndBuilderIndex)
           .createUnsignedExecutionPayload(slot, builderIndex);
     }
     return tryRequestUntilSuccess(
