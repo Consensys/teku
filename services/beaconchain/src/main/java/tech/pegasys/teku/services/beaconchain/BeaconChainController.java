@@ -1002,6 +1002,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dasSampler::onNewValidatedDataColumnSidecar);
+    eventChannels.subscribe(
+            DataColumnSidecarGossipChannel.class,
+            dasSampler::onNewValidatedDataColumnSidecar);
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }

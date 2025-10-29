@@ -91,8 +91,8 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
-    final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumnIdentifiers();
-    LOG.debug(
+    final List<DataColumnSlotAndIdentifier> missingColumns = List.of(); //tracker.getMissingColumnIdentifiers();
+    LOG.info(
         "checkDataAvailability(): missing columns for slot {} root {}: {}",
         slot,
         blockRoot,
