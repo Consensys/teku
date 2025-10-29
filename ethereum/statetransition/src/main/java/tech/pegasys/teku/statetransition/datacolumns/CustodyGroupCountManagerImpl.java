@@ -107,7 +107,6 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
     final Optional<Integer> maybeCustodyCount =
         combinedChainDataClient.getCustodyGroupCount().map(UInt64::intValue);
     if (maybeCustodyCount.isEmpty() || maybeCustodyCount.get() < initCustodyGroupCount) {
-      LOG.info("Persisting initial custody group count to {}", initCustodyGroupCount);
       updateCustodyGroupCount(initCustodyGroupCount, maybeCustodyCount);
     } else {
       LOG.info("Using custody group count {} from store", maybeCustodyCount.get());
@@ -245,10 +244,10 @@ public class CustodyGroupCountManagerImpl implements SlotEventsChannel, CustodyG
   private void updateCustodyGroupCount(
       final int newCustodyGroupCount, final Optional<Integer> maybeCustodyGroupCount) {
     if (maybeCustodyGroupCount.isEmpty() || maybeCustodyGroupCount.get() < newCustodyGroupCount) {
-      LOG.debug(
-          "Custody group count updated from {} to {}.",
-          maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"),
-          newCustodyGroupCount);
+      LOG.info(
+          "Persisting custody group count of {} (old value: {}).",
+          newCustodyGroupCount,
+          maybeCustodyGroupCount.map(Object::toString).orElse("<not set>"));
       combinedChainDataClient.updateCustodyGroupCount(newCustodyGroupCount);
     }
     final int oldValue = custodyGroupCount.getAndSet(newCustodyGroupCount);
