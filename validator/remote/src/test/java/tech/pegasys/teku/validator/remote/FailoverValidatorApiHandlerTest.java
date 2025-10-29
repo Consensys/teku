@@ -87,7 +87,7 @@ import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler.ValidatorA
 
 class FailoverValidatorApiHandlerTest {
 
-  private static final Spec SPEC = TestSpecFactory.createMinimalGloas();
+  private static final Spec SPEC = TestSpecFactory.createMinimalBellatrix();
   private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil(SPEC);
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
@@ -623,10 +623,13 @@ class FailoverValidatorApiHandlerTest {
 
   @Test
   public void executionPayloadIsCreatedByTheBeaconNodeWhichCreatedTheBid() {
-    final UInt64 slot = UInt64.ONE;
-    final UInt64 builderIndex = DATA_STRUCTURE_UTIL.randomBuilderIndex();
+    final Spec spec = TestSpecFactory.createMinimalGloas();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-    final ExecutionPayloadBid bid = DATA_STRUCTURE_UTIL.randomExecutionPayloadBid();
+    final UInt64 slot = UInt64.ONE;
+    final UInt64 builderIndex = dataStructureUtil.randomBuilderIndex();
+
+    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
 
     final ValidatorApiChannelRequest<Optional<ExecutionPayloadBid>> bidCreationRequest =
         apiChannel -> apiChannel.createUnsignedExecutionPayloadBid(slot, builderIndex);
@@ -636,7 +639,7 @@ class FailoverValidatorApiHandlerTest {
 
     SafeFutureAssert.assertThatSafeFuture(bidCreationRequest.run(failoverApiHandler)).isCompleted();
     final ExecutionPayloadEnvelope executionPayloadEnvelope =
-        DATA_STRUCTURE_UTIL.randomExecutionPayloadEnvelope(slot);
+        dataStructureUtil.randomExecutionPayloadEnvelope(slot);
 
     final ValidatorApiChannelRequest<Optional<ExecutionPayloadEnvelope>>
         executionPayloadCreationRequest =
