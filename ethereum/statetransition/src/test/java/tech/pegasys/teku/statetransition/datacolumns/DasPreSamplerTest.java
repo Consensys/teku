@@ -47,7 +47,7 @@ public class DasPreSamplerTest {
       mock(CustodyGroupCountManager.class);
 
   private final DasPreSampler dasPreSampler =
-      new DasPreSampler(sampler, custody, () -> custodyGroupCountManager);
+      new DasPreSampler(sampler, custody, custodyGroupCountManager);
 
   @Test
   void onNewPreImportBlocks_shouldNotSampleWhenEligibilityIsNotRequired() {

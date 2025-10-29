@@ -112,6 +112,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
@@ -236,16 +237,15 @@ public class Eth2P2PNetworkFactory {
             new DataColumnSidecarSubnetTopicProvider(
                 combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
+        final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+        if (spec.isMilestoneSupported(SpecMilestone.FULU)) {
+          eventChannels.subscribe(CustodyGroupCountChannel.class, metadataMessagesFactory);
+        }
+
         if (rpcEncoding == null) {
           rpcEncoding =
               RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxPayloadSize());
         }
-        final Optional<UInt64> dasTotalCustodySubnetCount =
-            spec.isMilestoneSupported(SpecMilestone.FULU)
-                ? Optional.of(
-                    UInt64.valueOf(
-                        config.getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU))))
-                : Optional.empty();
         final UInt256 discoveryNodeId = DISCOVERY_NODE_ID_GENERATOR.next();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
@@ -253,7 +253,7 @@ public class Eth2P2PNetworkFactory {
                 combinedChainDataClient,
                 () -> DataColumnSidecarByRootCustody.NOOP,
                 () -> CustodyGroupCountManager.NOOP,
-                new MetadataMessagesFactory(),
+                metadataMessagesFactory,
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -269,7 +269,6 @@ public class Eth2P2PNetworkFactory {
                 P2PConfig.DEFAULT_PEER_REQUEST_LIMIT,
                 spec,
                 __ -> Optional.of(discoveryNodeId),
-                dasTotalCustodySubnetCount,
                 DasReqRespLogger.NOOP);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
@@ -392,7 +391,6 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider,
-            0,
             config.isAllTopicsFilterEnabled());
       }
     }

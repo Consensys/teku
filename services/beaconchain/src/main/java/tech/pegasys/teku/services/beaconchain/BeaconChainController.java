@@ -323,11 +323,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Path beaconDataDirectory;
   protected volatile WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
   protected volatile AsyncRunnerEventThread forkChoiceExecutor;
+  protected volatile CustodyGroupCountManager custodyGroupCountManager;
 
   private final AsyncRunner operationPoolAsyncRunner;
   private final AsyncRunner dasAsyncRunner;
-  protected final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef =
-      new AtomicReference<>(CustodyGroupCountManager.NOOP);
   protected final AtomicReference<DataColumnSidecarRecoveringCustody> dataColumnSidecarCustodyRef =
       new AtomicReference<>(DataColumnSidecarRecoveringCustody.NOOP);
 
@@ -876,21 +875,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final int minCustodyGroupRequirement = specConfigFulu.getCustodyRequirement();
     final int maxGroups = specConfigFulu.getNumberOfCustodyGroups();
-    final int totalMyCustodyGroups =
-        beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu);
-    eventChannels
-        .getPublisher(CustodyGroupCountChannel.class)
-        .onGroupCountUpdate(
-            totalMyCustodyGroups, miscHelpersFulu.getSamplingGroupCount(totalMyCustodyGroups));
 
+    // note - must be called AFTER custodyGroupCountManager initialized
     final DataColumnSidecarCustodyImpl dataColumnSidecarCustodyImpl =
         new DataColumnSidecarCustodyImpl(
             spec,
             canonicalBlockResolver,
             dbAccessor,
             minCustodyPeriodSlotCalculator,
-            this::getCustodyGroupCountManager,
-            totalMyCustodyGroups);
+            custodyGroupCountManager);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
@@ -911,7 +904,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             miscHelpersFulu,
             dataColumnSidecarGossipChannel::publishDataColumnSidecar,
-            this::getCustodyGroupCountManager,
+            custodyGroupCountManager,
             specConfigFulu.getNumberOfColumns(),
             specConfigFulu.getNumberOfCustodyGroups(),
             slot -> {
@@ -978,7 +971,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               Duration.ofSeconds(15),
               timeProvider,
               specConfigFulu.getNumberOfColumns(),
-              custodyGroupCountManagerRef,
+              custodyGroupCountManager,
               metricsSystem);
     } else {
       recoveringSidecarRetriever =
@@ -1012,9 +1005,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
             currentSlotProvider,
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
-            this::getCustodyGroupCountManager,
+            custodyGroupCountManager,
             recentChainData);
-    LOG.info("DAS Basic Sampler initialized with {} groups to sample", totalMyCustodyGroups);
+    LOG.info(
+        "DAS Basic Sampler initialized with {} groups to sample",
+        custodyGroupCountManager.getSamplingGroupCount());
     eventChannels.subscribe(SlotEventsChannel.class, dasSampler);
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dasSampler::onNewValidatedDataColumnSidecar);
@@ -1028,7 +1023,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new DasPreSampler(
               this.dataAvailabilitySampler,
               this.dataColumnSidecarCustodyRef.get(),
-              this::getCustodyGroupCountManager);
+              custodyGroupCountManager);
       eventChannels.subscribe(SyncPreImportBlockChannel.class, dasPreSampler::onNewPreImportBlocks);
     }
   }
@@ -1039,7 +1034,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     final int totalMyCustodyGroups =
         beaconConfig.p2pConfig().getTotalCustodyGroupCount(spec.forMilestone(SpecMilestone.FULU));
-    final CustodyGroupCountManagerImpl custodyGroupCountManager =
+    final CustodyGroupCountManagerImpl manager =
         new CustodyGroupCountManagerImpl(
             spec,
             proposersDataManager,
@@ -1048,8 +1043,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             totalMyCustodyGroups,
             nodeId,
             metricsSystem);
-    eventChannels.subscribe(SlotEventsChannel.class, custodyGroupCountManager);
-    this.custodyGroupCountManagerRef.set(custodyGroupCountManager);
+    eventChannels.subscribe(SlotEventsChannel.class, manager);
+    this.custodyGroupCountManager = manager;
   }
 
   protected void initMergeMonitors() {
@@ -1112,7 +1107,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               executionLayer,
               dataColumnSidecarGossipChannel::publishDataColumnSidecars,
-              this::getCustodyGroupCountManager,
+              custodyGroupCountManager,
               metricsSystem,
               timeProvider);
       eventChannels.subscribe(SlotEventsChannel.class, recoveryManager);
@@ -1406,18 +1401,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
       return;
     }
     LOG.debug("BeaconChainController.initDataColumnSidecarSubnetBackboneSubscriber");
-    final SpecVersion specVersionFulu = spec.forMilestone(SpecMilestone.FULU);
-    DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
+    final DataColumnSidecarSubnetBackboneSubscriber subnetBackboneSubscriber =
         new DataColumnSidecarSubnetBackboneSubscriber(
-            spec,
-            p2pNetwork,
-            nodeId,
-            MiscHelpersFulu.required(specVersionFulu.miscHelpers())
-                .getSamplingGroupCount(
-                    beaconConfig.p2pConfig().getTotalCustodyGroupCount(specVersionFulu)));
+            spec, p2pNetwork, nodeId, custodyGroupCountManager);
 
     eventChannels.subscribe(SlotEventsChannel.class, subnetBackboneSubscriber);
-    eventChannels.subscribe(CustodyGroupCountChannel.class, subnetBackboneSubscriber);
   }
 
   public void initExecutionLayerBlockProductionManager() {
@@ -1711,7 +1699,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .combinedChainDataClient(
                 throttlingCombinedChainDataClient.orElse(combinedChainDataClient))
             .dataColumnSidecarCustody(this::getDataColumnSidecarCustody)
-            .custodyGroupCountManagerSupplier(this::getCustodyGroupCountManager)
+            .custodyGroupCountManagerSupplier(() -> custodyGroupCountManager)
             .metadataMessagesFactory(metadataMessagesFactory)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
@@ -2049,10 +2037,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
 
     return defaultFeeRecipient;
-  }
-
-  private CustodyGroupCountManager getCustodyGroupCountManager() {
-    return custodyGroupCountManagerRef.get();
   }
 
   private DataColumnSidecarRecoveringCustody getDataColumnSidecarCustody() {

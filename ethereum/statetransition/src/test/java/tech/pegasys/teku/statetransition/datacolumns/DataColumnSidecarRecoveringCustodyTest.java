@@ -94,9 +94,8 @@ public class DataColumnSidecarRecoveringCustodyTest {
           spec,
           miscHelpersFulu,
           dataColumnSidecarPublisher,
-          () ->
-              createCustodyGroupCountManager(
-                  config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
+          createCustodyGroupCountManager(
+              config.getNumberOfCustodyGroups(), config.getSamplesPerSlot()),
           config.getNumberOfColumns(),
           config.getNumberOfCustodyGroups(),
           __ -> Duration.ofSeconds(2),
@@ -118,7 +117,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
             spec,
             miscHelpersFulu,
             dataColumnSidecarPublisher,
-            () -> createCustodyGroupCountManager(0, config.getSamplesPerSlot()),
+            createCustodyGroupCountManager(0, config.getSamplesPerSlot()),
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2),
@@ -138,7 +137,7 @@ public class DataColumnSidecarRecoveringCustodyTest {
             spec,
             miscHelpersFulu,
             dataColumnSidecarPublisher,
-            () -> CustodyGroupCountManager.NOOP,
+            CustodyGroupCountManager.NOOP,
             config.getNumberOfColumns(),
             config.getNumberOfCustodyGroups(),
             __ -> Duration.ofSeconds(2),
