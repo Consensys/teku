@@ -629,7 +629,7 @@ class FailoverValidatorApiHandlerTest {
     final UInt64 slot = UInt64.ONE;
     final UInt64 builderIndex = dataStructureUtil.randomBuilderIndex();
 
-    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid();
+    final ExecutionPayloadBid bid = dataStructureUtil.randomExecutionPayloadBid(slot, builderIndex);
 
     final ValidatorApiChannelRequest<Optional<ExecutionPayloadBid>> bidCreationRequest =
         apiChannel -> apiChannel.createUnsignedExecutionPayloadBid(slot, builderIndex);

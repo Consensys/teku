@@ -353,7 +353,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
                     bid -> {
                       if (!failoverDelegates.isEmpty() && bid.isPresent()) {
                         executionPayloadBidCreatorCache.put(
-                            new SlotAndBuilderIndex(slot, builderIndex), apiChannel);
+                            bid.get().getSlotAndBuilderIndex(), apiChannel);
                       }
                     }),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_BID_METHOD);
