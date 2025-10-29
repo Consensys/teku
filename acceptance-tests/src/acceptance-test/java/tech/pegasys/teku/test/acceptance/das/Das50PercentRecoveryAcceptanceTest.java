@@ -38,10 +38,10 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
         createTekuBeaconNode(
             createConfigBuilder()
                 .withRealNetwork()
+                // interop validators are not count for validator custody
                 .withDasExtraCustodyGroupCount(subnetCount / 2)
                 // we don't want to make this test extreme, withhold once and don't repeat
                 .withDasPublishWithholdColumnsEverySlots(9999)
-                // validators custody requirement for 64 validators
                 .withInteropValidators(0, 64)
                 .withDasDisableElRecovery()
                 .build());
