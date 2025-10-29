@@ -64,13 +64,13 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
 import tech.pegasys.teku.statetransition.datacolumns.ValidDataColumnSidecarsListener;
 import tech.pegasys.teku.statetransition.util.AbstractIgnoringFutureHistoricalSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutureHistoricalSlot
-    implements DataColumnSidecarELRecoveryManager {
+public class DataColumnSidecarELManagerImpl extends AbstractIgnoringFutureHistoricalSlot
+    implements DataColumnSidecarELManager {
   private static final Logger LOG = LogManager.getLogger();
   public static final BiFunction<MetricsSystem, TimeProvider, MetricsHistogram>
       DATA_COLUMN_SIDECAR_COMPUTATION_HISTOGRAM =
@@ -119,7 +119,7 @@ public class DataColumnSidecarELRecoveryManagerImpl extends AbstractIgnoringFutu
   }
 
   @VisibleForTesting
-  public DataColumnSidecarELRecoveryManagerImpl(
+  public DataColumnSidecarELManagerImpl(
       final Spec spec,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,

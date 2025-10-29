@@ -39,8 +39,8 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
-import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl;
+import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELManager;
+import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELManagerImpl;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -146,7 +146,7 @@ public class PoolFactory {
         DEFAULT_MAX_BLOCKS);
   }
 
-  public DataColumnSidecarELRecoveryManager createDataColumnSidecarELRecoveryManager(
+  public DataColumnSidecarELManager createDataColumnSidecarELManager(
       final Spec spec,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
@@ -155,7 +155,7 @@ public class PoolFactory {
       final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
-    return new DataColumnSidecarELRecoveryManagerImpl(
+    return new DataColumnSidecarELManagerImpl(
         spec,
         asyncRunner,
         recentChainData,
