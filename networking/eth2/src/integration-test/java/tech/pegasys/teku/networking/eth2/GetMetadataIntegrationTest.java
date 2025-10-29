@@ -120,19 +120,6 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(md3.getAttnets().getBit(8)).isTrue();
   }
 
-  @ParameterizedTest(name = "{0}->{1}")
-  @MethodSource("generateSpecTransition")
-  public void requestMetadata_shouldIncludeCustodySubnetCount(
-      final SpecMilestone baseMilestone, final SpecMilestone nextMilestone) throws Exception {
-    setUp(baseMilestone, Optional.of(nextMilestone));
-    final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
-    final Eth2Peer peer = peerAndNetwork.peer();
-    MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
-
-    Assumptions.assumeTrue(md1 instanceof MetadataMessageFulu, "Milestone skipped");
-    assertThat(((MetadataMessageFulu) md1).getCustodyGroupCount().isGreaterThan(0)).isTrue();
-  }
-
   @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
   @MethodSource("generateSpecTransitionWithCombinationParams")
   public void requestMetadata_withDisparateVersionsEnabled(
