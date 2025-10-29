@@ -132,7 +132,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final DiscoveryNodeIdExtractor discoveryNodeIdExtractor,
       final DasReqRespLogger dasLogger) {
-
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(

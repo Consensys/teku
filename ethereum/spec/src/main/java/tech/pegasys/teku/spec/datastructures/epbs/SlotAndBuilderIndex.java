@@ -11,14 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.executionproofs;
+package tech.pegasys.teku.spec.datastructures.epbs;
 
-import java.time.Duration;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface ExecutionProofGenerator {
-  SafeFuture<ExecutionProof> generateExecutionProof(
-      SignedBlockContainer blockContainer, int subnetId, Duration proofGenerationDelay);
-}
+public record SlotAndBuilderIndex(UInt64 slot, UInt64 builderIndex) {}

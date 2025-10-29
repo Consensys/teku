@@ -1,4 +1,4 @@
-version: v1.6.0-beta.0
+version: v1.6.0-beta.1
 style: full
 
 specrefs:
@@ -52,6 +52,8 @@ specrefs:
       - LightClientFinalityUpdate
       - LightClientHeader#capella
       - LightClientOptimisticUpdate
+      - LightClientBootstrap#capella
+      - LightClientUpdate#capella
 
       # Not implemented: gloas
       - ForkChoiceNode#gloas
@@ -224,6 +226,7 @@ specrefs:
       - process_slashings#altair
       - process_sync_committee_contributions#altair
       - set_or_append_list#altair
+      - compute_merkle_proof#altair
 
       # Not implemented: bellatrix
       - get_execution_payload#bellatrix
@@ -332,6 +335,6 @@ specrefs:
       - upgrade_to_gloas#gloas
       - validate_merge_block#gloas
       - validate_on_attestation#gloas
-      - verify_data_column_sidecar_inclusion_proof#gloas
+      - verify_data_column_sidecar#gloas
       - verify_execution_payload_bid_signature#gloas
       - verify_execution_payload_envelope_signature#gloas

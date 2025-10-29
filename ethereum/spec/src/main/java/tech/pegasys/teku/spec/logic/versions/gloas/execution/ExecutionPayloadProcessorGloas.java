@@ -228,7 +228,6 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
         .set(paymentIndex, schemaDefinitions.getBuilderPendingPaymentSchema().getDefault());
 
     // Cache the execution payload hash
-    // TODO-GLOAS: https://github.com/Consensys/teku/issues/9936
     final BitSet newExecutionPayloadAvailability =
         stateGloas.getExecutionPayloadAvailability().getAsBitSet();
     final int indexToModify =

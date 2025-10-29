@@ -43,15 +43,6 @@
     BUILDER_PAYMENT_THRESHOLD_NUMERATOR: uint64 = 6
     </spec>
 
-- name: BUILDER_PENDING_WITHDRAWALS_LIMIT
-  sources:
-    - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/presets/mainnet/gloas.yaml
-      search: "BUILDER_PENDING_WITHDRAWALS_LIMIT:"
-  spec: |
-    <spec constant_var="BUILDER_PENDING_WITHDRAWALS_LIMIT" fork="gloas" hash="a71d297e">
-    BUILDER_PENDING_WITHDRAWALS_LIMIT: uint64 = 2**20
-    </spec>
-
 - name: BUILDER_WITHDRAWAL_PREFIX
   sources:
     - file: ethereum/spec/src/main/java/tech/pegasys/teku/spec/constants/WithdrawalPrefixes.java

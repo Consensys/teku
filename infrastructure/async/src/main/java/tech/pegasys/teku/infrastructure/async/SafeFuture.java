@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 
@@ -321,7 +322,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     if (error == null) {
       return UNKNOWN_ERROR;
     }
-    return Throwables.getRootCause(error).getMessage();
+    try {
+      final Throwable rootCause = Throwables.getRootCause(error);
+      if (rootCause.getMessage() == null) {
+        return error.getMessage() != null ? error.getMessage() : UNKNOWN_ERROR;
+      }
+      return Throwables.getRootCause(error).getMessage();
+    } catch (final IllegalArgumentException exception) {
+      return UNKNOWN_ERROR;
+    }
   }
 
   /**
@@ -333,7 +342,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.error(getMessageFromException(error));
+          logWithCause(logger, Level.ERROR, error);
           return null;
         });
   }
@@ -347,7 +356,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.warn(getMessageFromException(error));
+          logWithCause(logger, Level.WARN, error);
           return null;
         });
   }
@@ -361,7 +370,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.info(getMessageFromException(error));
+          logWithCause(logger, Level.INFO, error);
           return null;
         });
   }
@@ -375,7 +384,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.debug(getMessageFromException(error));
+          logWithCause(logger, Level.DEBUG, error);
           return null;
         });
   }
@@ -389,9 +398,18 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final CompletionStage<?> completionStage = this;
     completionStage.exceptionally(
         error -> {
-          logger.trace(getMessageFromException(error));
+          logWithCause(logger, Level.TRACE, error);
           return null;
         });
+  }
+
+  private void logWithCause(final Logger logger, final Level level, final Throwable error) {
+    final String message = getMessageFromException(error);
+    if (message.equals(UNKNOWN_ERROR)) {
+      logger.log(level, message, error);
+    } else {
+      logger.log(level, message);
+    }
   }
 
   public SafeFuture<Void> ignoreCancelException() {

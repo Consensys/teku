@@ -80,7 +80,7 @@ public class DasSamplerBasicTest {
             currentSlotProvider,
             custody,
             retriever,
-            () -> custodyGroupCountManager,
+            custodyGroupCountManager,
             recentChainData);
   }
 
