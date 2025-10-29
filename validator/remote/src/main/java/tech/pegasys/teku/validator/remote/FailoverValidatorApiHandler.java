@@ -79,6 +79,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private final Map<SlotAndBlockRoot, ValidatorApiChannel> blindedBlockCreatorCache =
       LimitedMap.createSynchronizedLRU(2);
+  private final Map<UInt64, ValidatorApiChannel> executionPayloadBidCreatorCache =
+      LimitedMap.createSynchronizedLRU(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
@@ -343,7 +345,15 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<Optional<ExecutionPayloadBid>> createUnsignedExecutionPayloadBid(
       final UInt64 slot, final UInt64 builderIndex) {
     return tryRequestUntilSuccess(
-        apiChannel -> apiChannel.createUnsignedExecutionPayloadBid(slot, builderIndex),
+C        apiChannel ->
+            apiChannel
+                .createUnsignedExecutionPayloadBid(slot, builderIndex)
+                .thenPeek(
+                    bid -> {
+                      if (!failoverDelegates.isEmpty() && bid.isPresent()) {
+                        executionPayloadBidCreatorCache.put(slot, apiChannel);
+                      }
+                    }),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_BID_METHOD);
   }
 
@@ -355,13 +365,17 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         BeaconNodeRequestLabels.PUBLISH_EXECUTION_PAYLOAD_BID_METHOD);
   }
 
-  /**
-   * TODO-GLOAS: https://github.com/Consensys/teku/issues/10008 we need logic similar to {@link
-   * #blindedBlockCreatorCache} to call only the beacon node which created the bid
-   */
   @Override
   public SafeFuture<Optional<ExecutionPayloadEnvelope>> createUnsignedExecutionPayload(
       final UInt64 slot, final UInt64 builderIndex) {
+    if (executionPayloadBidCreatorCache.containsKey(slot)) {
+      LOG.info(
+          "Execution payload for slot {} would be created only by the beacon node which created the bid.",
+          slot);
+      return executionPayloadBidCreatorCache
+          .remove(slot)
+          .createUnsignedExecutionPayload(slot, builderIndex);
+    }
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.createUnsignedExecutionPayload(slot, builderIndex),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_EXECUTION_PAYLOAD_METHOD);

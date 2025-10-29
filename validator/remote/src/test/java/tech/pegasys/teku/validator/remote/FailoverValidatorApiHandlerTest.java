@@ -63,6 +63,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadBid;
+import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.ExecutionPayloadEnvelope;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -85,7 +87,7 @@ import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler.ValidatorA
 
 class FailoverValidatorApiHandlerTest {
 
-  private static final Spec SPEC = TestSpecFactory.createMinimalBellatrix();
+  private static final Spec SPEC = TestSpecFactory.createMinimalGloas();
   private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil(SPEC);
 
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
@@ -617,6 +619,43 @@ class FailoverValidatorApiHandlerTest {
         .sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(failoverApiChannel2, never())
         .sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
+  }
+
+  @Test
+  public void executionPayloadIsCreatedByTheBeaconNodeWhichCreatedTheBid() {
+    final UInt64 slot = UInt64.ONE;
+    final UInt64 builderIndex = DATA_STRUCTURE_UTIL.randomBuilderIndex();
+
+    final ExecutionPayloadBid bid = DATA_STRUCTURE_UTIL.randomExecutionPayloadBid();
+
+    final ValidatorApiChannelRequest<Optional<ExecutionPayloadBid>> bidCreationRequest =
+        apiChannel -> apiChannel.createUnsignedExecutionPayloadBid(slot, builderIndex);
+
+    setupFailures(bidCreationRequest, primaryApiChannel);
+    setupSuccesses(bidCreationRequest, Optional.of(bid), failoverApiChannel1);
+
+    SafeFutureAssert.assertThatSafeFuture(bidCreationRequest.run(failoverApiHandler)).isCompleted();
+    final ExecutionPayloadEnvelope executionPayloadEnvelope =
+        DATA_STRUCTURE_UTIL.randomExecutionPayloadEnvelope(slot);
+
+    final ValidatorApiChannelRequest<Optional<ExecutionPayloadEnvelope>>
+        executionPayloadCreationRequest =
+            apiChannel -> apiChannel.createUnsignedExecutionPayload(slot, builderIndex);
+
+    setupSuccesses(
+        executionPayloadCreationRequest,
+        Optional.of(executionPayloadEnvelope),
+        primaryApiChannel,
+        failoverApiChannel1,
+        failoverApiChannel2);
+
+    SafeFutureAssert.assertThatSafeFuture(executionPayloadCreationRequest.run(failoverApiHandler))
+        .isCompleted();
+
+    verify(failoverApiChannel1).createUnsignedExecutionPayload(slot, builderIndex);
+
+    verify(primaryApiChannel, never()).createUnsignedExecutionPayload(slot, builderIndex);
+    verify(failoverApiChannel2, never()).createUnsignedExecutionPayload(slot, builderIndex);
   }
 
   private <T> void setupSuccesses(
