@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch;
 
 import com.google.common.collect.Iterables;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -89,9 +91,10 @@ public class EpochProcessorGloas extends EpochProcessorFulu {
               }
             });
     final List<BuilderPendingPayment> oldPayments =
-        builderPendingPayments
-            .asList()
-            .subList(specConfig.getSlotsPerEpoch(), builderPendingPayments.size());
+        new ArrayList<>(
+            builderPendingPayments
+                .asList()
+                .subList(specConfig.getSlotsPerEpoch(), builderPendingPayments.size()));
     final List<BuilderPendingPayment> newPayments =
         Collections.nCopies(
             specConfig.getSlotsPerEpoch(),
