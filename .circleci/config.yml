@@ -153,19 +153,6 @@ commands:
       - store_artifacts:
           path: build/test-artifacts
 
-  docker_trust_sign:
-    description: "Sign docker images"
-    steps:
-      - run:
-          name: "Sign Docker images"
-          command: |
-            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
-            # dct signing setup
-            mkdir -p $HOME/.docker/trust/private
-            echo $DCT_KEY | base64 --decode > $HOME/.docker/trust/private/$DCT_HASH.key
-            chmod 600 $HOME/.docker/trust/private/$DCT_HASH.key
-            docker trust key load $HOME/.docker/trust/private/$DCT_HASH.key --name ecosystem
-
   docker_publish_images:
     description: "Upload the docker images"
     steps:
@@ -463,8 +450,11 @@ jobs:
       - run:
           name: Install Python3
           command: |
-            sudo apt update
-            sudo apt install python3 python3-pip python3-venv
+            # Refer to issue https://github.com/git-lfs/git-lfs/issues/6129
+            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            sudo apt-get clean
+            sudo apt-get update
+            sudo apt-get install -y python3 python3-pip python3-venv
       - attach_workspace:
           at: ~/project
       - run:
@@ -480,7 +470,6 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
-      - docker_trust_sign
       - docker_publish_images
       - notify
 
@@ -491,8 +480,18 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
-      - docker_trust_sign
       - docker_publish_images
+      - notify
+
+  manifestDocker:
+    executor: medium_executor
+    steps:
+      - prepare
+      - run:
+          name: Create and publish docker manifest
+          command: |
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
+            ./gradlew --no-daemon --parallel -PincludeCommitHashInDockerTag=<< pipeline.parameters.include_commit_hash_in_docker_tag >> manifestDocker
       - notify
 
   extractAPISpec:
@@ -688,6 +687,19 @@ workflows:
             - moduleChecks
             - spotless
             - windowsBuild
+          context:
+            - protocols-dockerhub
+      - manifestDocker:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - publishDockerArm64
+            - publishDockerAmd64
           context:
             - protocols-dockerhub
 

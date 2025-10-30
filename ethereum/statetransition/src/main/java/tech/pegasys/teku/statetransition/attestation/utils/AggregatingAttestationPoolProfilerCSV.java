@@ -317,7 +317,7 @@ public class AggregatingAttestationPoolProfilerCSV implements AggregatingAttesta
         attestation ->
             rewards.add(
                 blockProcessor
-                    .calculateAttestationProcessingResult(
+                    .processAttestation(
                         mutableBeaconStateAltair, attestation, indexedAttestationProvider)
                     .proposerReward()));
 

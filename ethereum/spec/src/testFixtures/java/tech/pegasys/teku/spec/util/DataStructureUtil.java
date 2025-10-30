@@ -2753,7 +2753,10 @@ public final class DataStructureUtil {
 
     public DataColumnSidecar build() {
       final SignedBeaconBlockHeader signedBlockHeader =
-          signedBeaconBlockHeader.orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader);
+          signedBeaconBlockHeader.orElseGet(
+              () ->
+                  slot.map(DataStructureUtil.this::randomSignedBeaconBlockHeader)
+                      .orElseGet(DataStructureUtil.this::randomSignedBeaconBlockHeader));
       final DataColumnSidecarSchema<?> dataColumnSidecarSchema =
           getFuluSchemaDefinitions(signedBlockHeader.getMessage().getSlot())
               .getDataColumnSidecarSchema();
@@ -3086,6 +3089,11 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadBid randomExecutionPayloadBid() {
+    return randomExecutionPayloadBid(randomSlot(), randomBuilderIndex());
+  }
+
+  public ExecutionPayloadBid randomExecutionPayloadBid(
+      final UInt64 slot, final UInt64 builderIndex) {
     return getGloasSchemaDefinitions()
         .getExecutionPayloadBidSchema()
         .create(
@@ -3094,8 +3102,8 @@ public final class DataStructureUtil {
             randomBytes32(),
             randomEth1Address(),
             randomUInt64(),
-            randomBuilderIndex(),
-            randomSlot(),
+            builderIndex,
+            slot,
             randomUInt64(),
             randomBytes32());
   }

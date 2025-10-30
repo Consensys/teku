@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.epbs.SlotAndBuilderIndex;
 
 public class ExecutionPayloadBid
     extends Container9<
@@ -99,6 +100,10 @@ public class ExecutionPayloadBid
 
   public Bytes32 getBlobKzgCommitmentsRoot() {
     return getField8().get();
+  }
+
+  public SlotAndBuilderIndex getSlotAndBuilderIndex() {
+    return new SlotAndBuilderIndex(getSlot(), getBuilderIndex());
   }
 
   @Override

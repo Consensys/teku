@@ -98,6 +98,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.BlobParameters;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
+import tech.pegasys.teku.statetransition.CustodyGroupCountChannel;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarByRootCustody;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
@@ -121,7 +122,7 @@ public class Eth2P2PNetworkBuilder {
   protected CombinedChainDataClient combinedChainDataClient;
   protected Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
   protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  protected MetadataMessagesFactory metadataMessagesFactory;
+  protected MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
@@ -180,7 +181,9 @@ public class Eth2P2PNetworkBuilder {
       statusMessageFactory = new StatusMessageFactory(spec, combinedChainDataClient);
       eventChannels.subscribe(SlotEventsChannel.class, statusMessageFactory);
     }
-
+    if (metadataMessagesFactory != null && spec.isMilestoneSupported(SpecMilestone.FULU)) {
+      eventChannels.subscribe(CustodyGroupCountChannel.class, metadataMessagesFactory);
+    }
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,

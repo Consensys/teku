@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +49,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   private final Duration recoveryCheckInterval;
   private final int numberOfColumnsRequiredToReconstruct;
   private Cancellable pendingRequestsChecker;
-  private final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef;
+  private final CustodyGroupCountManager custodyGroupCountManager;
 
   private final Map<DataColumnSlotAndIdentifier, PendingRecoveryRequest> requests =
       new ConcurrentHashMap<>();
@@ -73,7 +72,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
       final Duration recoveryCheckInterval,
       final TimeProvider timeProvider,
       final int numberOfColumns,
-      final AtomicReference<CustodyGroupCountManager> custodyGroupCountManagerRef,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem) {
     this.delegate = delegate;
     this.miscHelpersFulu = miscHelpersFulu;
@@ -83,7 +82,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
     this.downloadTimeout = downloadTimeout;
     this.recoveryCheckInterval = recoveryCheckInterval;
     this.timeProvider = timeProvider;
-    this.custodyGroupCountManagerRef = custodyGroupCountManagerRef;
+    this.custodyGroupCountManager = custodyGroupCountManager;
     LOG.debug(
         "Download timeout {} ms, recovery timeout {} seconds",
         downloadTimeout.toMillis(),
@@ -194,7 +193,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
         .filter(PendingRecoveryRequest::isFailedDownloading)
         .forEach(
             request -> {
-              if (custodyGroupCountManagerRef.get().getCustodyGroupCount() == 128) {
+              if (custodyGroupCountManager.getCustodyGroupCount() == 128) {
                 final RebuildColumnsTask rebuildColumnsTask =
                     rebuildTasks.computeIfAbsent(
                         request.getBlockRoot(),
@@ -215,7 +214,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
               } else {
                 LOG.debug(
                     "Custody group count {} is not viable to reconstruct for slot {} root {}",
-                    custodyGroupCountManagerRef.get().getCustodyGroupCount(),
+                    custodyGroupCountManager.getCustodyGroupCount(),
                     request.getSlot(),
                     request.getBlockRoot());
                 request.cancel();

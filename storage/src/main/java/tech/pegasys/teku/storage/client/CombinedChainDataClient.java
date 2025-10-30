@@ -791,10 +791,6 @@ public class CombinedChainDataClient {
     return historicalChainData.getFirstCustodyIncompleteSlot();
   }
 
-  public SafeFuture<Optional<UInt64>> getFirstSamplerIncompleteSlot() {
-    return historicalChainData.getFirstSamplerIncompleteSlot();
-  }
-
   public SafeFuture<Optional<DataColumnSidecar>> getSidecar(
       final DataColumnSlotAndIdentifier identifier) {
     return historicalChainData.getSidecar(identifier);

@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBoundsException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.UnrecognizedContextBytesException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
@@ -249,8 +250,17 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get)
           .hasCauseInstanceOf(RpcException.class)
-          .hasRootCauseInstanceOf(DeserializationFailedException.class)
-          .hasMessageContaining("Failed to deserialize payload");
+          .satisfiesAnyOf(
+              ex ->
+                  assertThat(ex.getCause())
+                      .isInstanceOf(DeserializationFailedException.class)
+                      .hasMessageContaining("Failed to deserialize payload"),
+              ex ->
+                  assertThat(ex.getCause())
+                      // happens when fields are removed and the ssz length bound of the next fork
+                      // is less than the current one
+                      .isInstanceOf(LengthOutOfBoundsException.class)
+                      .hasMessageContaining("Chunk length is not within bounds for expected type"));
     }
   }
 

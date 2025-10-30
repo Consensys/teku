@@ -105,15 +105,17 @@ public class WithdrawalsHelpersGloas extends WithdrawalsHelpersElectra {
         } else {
           withdrawableBalance = UInt64.ZERO;
         }
-        withdrawals.add(
-            schemaDefinitions
-                .getWithdrawalSchema()
-                .create(
-                    withdrawalIndex,
-                    builderIndex,
-                    withdrawal.getFeeRecipient(),
-                    withdrawableBalance));
-        withdrawalIndex = withdrawalIndex.increment();
+        if (withdrawableBalance.isGreaterThan(UInt64.ZERO)) {
+          withdrawals.add(
+              schemaDefinitions
+                  .getWithdrawalSchema()
+                  .create(
+                      withdrawalIndex,
+                      builderIndex,
+                      withdrawal.getFeeRecipient(),
+                      withdrawableBalance));
+          withdrawalIndex = withdrawalIndex.increment();
+        }
       }
       processedBuilderWithdrawalsCount++;
     }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -61,7 +62,7 @@ public class ExecutionPayloadGossipManager
         debugDataDumper);
   }
 
-  public void publish(final SignedExecutionPayloadEnvelope message) {
-    publishMessage(message);
+  public SafeFuture<Void> publish(final SignedExecutionPayloadEnvelope message) {
+    return publishMessageWithFeedback(message);
   }
 }

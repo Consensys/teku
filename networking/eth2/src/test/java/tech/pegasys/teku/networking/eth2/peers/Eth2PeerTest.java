@@ -70,6 +70,8 @@ class Eth2PeerTest {
   private final RateTracker rateTracker = mock(RateTracker.class);
   private final MetricsSystem metricsSystem = mock(MetricsSystem.class);
   private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private final DataColumnSidecarSignatureValidator dataColumnSidecarSignatureValidator =
+      mock(DataColumnSidecarSignatureValidator.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
 
@@ -82,6 +84,7 @@ class Eth2PeerTest {
           statusMessageFactory,
           metadataMessagesFactory,
           peerChainValidator,
+          dataColumnSidecarSignatureValidator,
           blockRateTracker,
           blobSidecarsRateTracker,
           dataColumnSidecarsRateTracker,
