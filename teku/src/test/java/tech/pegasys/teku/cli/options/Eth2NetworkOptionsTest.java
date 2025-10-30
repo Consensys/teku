@@ -39,8 +39,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldEnableDenebByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
-    assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.ELECTRA);
+    assertThat(spec.getForkSchedule().getHighestSupportedMilestone()).isEqualTo(SpecMilestone.FULU);
   }
 
   @Test
