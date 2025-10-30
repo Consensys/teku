@@ -42,8 +42,8 @@ public class AttestationUtilGloas extends AttestationUtilElectra {
   /**
    * is_valid_indexed_payload_attestation
    *
-   * <p>Check if ``indexed_payload_attestation`` is not empty, has sorted and unique indices and has
-   * a valid aggregate signature.
+   * <p>Check if ``indexed_payload_attestation`` is non-empty, has sorted indices, and has a valid
+   * aggregate signature.
    */
   public boolean isValidIndexedPayloadAttestation(
       final BeaconState state, final IndexedPayloadAttestation indexedPayloadAttestation) {

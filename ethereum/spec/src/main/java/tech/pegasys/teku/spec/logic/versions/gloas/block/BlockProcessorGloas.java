@@ -272,8 +272,9 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
   }
 
   @Override
-  protected int getBuilderPaymentIndex(final boolean forCurrentEpoch, final AttestationData data) {
-    if (forCurrentEpoch) {
+  protected int getBuilderPaymentIndex(
+      final boolean currentEpochTarget, final AttestationData data) {
+    if (currentEpochTarget) {
       return specConfig.getSlotsPerEpoch()
           + data.getSlot().mod(specConfig.getSlotsPerEpoch()).intValue();
     } else {
@@ -281,8 +282,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
     }
   }
 
-  // Add weight for same-slot attestations when any new flag is set
-  // This ensures each validator contributes exactly once per slot
+  // Add weight for same-slot attestations when any new flag is set.
+  // This ensures each validator contributes exactly once per slot.
   @Override
   protected UInt64 updateBuilderPaymentWeight(
       final int builderPaymentIndex,
@@ -358,8 +359,8 @@ public class BlockProcessorGloas extends BlockProcessorFulu {
       throws BlockProcessingException {
     // process_payload_attestation
     for (final PayloadAttestation payloadAttestation : payloadAttestations) {
-      // Check that the attestation is for the parent beacon block
       final PayloadAttestationData data = payloadAttestation.getData();
+      // Check that the attestation is for the parent beacon block
       if (!data.getBeaconBlockRoot().equals(state.getLatestBlockHeader().getParentRoot())) {
         throw new BlockProcessingException("Attestation is NOT for the parent beacon block");
       }
