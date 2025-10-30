@@ -55,7 +55,7 @@ public class GetStateProposerLookahead extends RestApiEndpoint {
       final ChainDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
-            .operationId("getPendingProposerLookahead")
+            .operationId("getStateProposerLookahead")
             .summary("Get proposer look ahead from state")
             .description(
                 "Returns proposer lookahead for state with given 'stateId'. Should return 400 if the state retrieved is prior to Fulu.")
