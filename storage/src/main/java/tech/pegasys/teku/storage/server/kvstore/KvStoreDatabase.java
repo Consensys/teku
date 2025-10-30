@@ -1189,10 +1189,10 @@ public class KvStoreDatabase implements Database {
             streamNonCanonicalDataColumnIdentifiers(UInt64.ZERO, tillSlotInclusive)) {
 
       if (pruneDataColumnSidecars(pruneLimit, prunableIdentifiers, false)) {
-        LOG.debug("Pruned reached the limit of {} data column sidecars", pruneLimit);
+        LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
       }
       if (pruneDataColumnSidecars(pruneLimit, prunableNonCanonicalIdentifiers, true)) {
-        LOG.debug("Pruned reached the limit of {} non canonical data column sidecars", pruneLimit);
+        LOG.debug("Non canonical data column sidecars pruning reached the limit of {}", pruneLimit);
       }
     }
   }
