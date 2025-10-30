@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -85,6 +87,9 @@ public class SimpleSidecarRetriever
 
   private void startIfNecessary() {
     if (started.compareAndSet(false, true)) {
+      LoggingConfigurator.setAllLevels(
+          "tech.pegasys.teku.statetransition.datacolumns.retriever.SimpleSidecarRetriever",
+          Level.TRACE);
       asyncRunner.runWithFixedDelay(
           this::nextRound, roundPeriod, err -> LOG.debug("Unexpected error", err));
     }
@@ -108,9 +113,17 @@ public class SimpleSidecarRetriever
     final DataColumnSlotAndIdentifier dataColumnSlotAndIdentifier =
         DataColumnSlotAndIdentifier.fromDataColumn(sidecar);
 
+    LOG.info("SimpleSidecarRetriever.onNewValidatedSidecar({})", dataColumnSlotAndIdentifier);
+
     Optional.ofNullable(pendingRequests.get(dataColumnSlotAndIdentifier))
         .filter(request -> !request.result.isDone())
-        .ifPresent(request -> reqRespCompleted(request, sidecar));
+        .ifPresent(
+            request -> {
+              LOG.info(
+                  "SimpleSidecarRetriever.completing via new validated sidecar {}",
+                  dataColumnSlotAndIdentifier);
+              reqRespCompleted(request, sidecar);
+            });
   }
 
   @Override

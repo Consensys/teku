@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -48,18 +47,22 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
       new ConcurrentHashMap<>();
   private final RecentChainData recentChainData;
 
+  private final AsyncRunner asyncRunner;
+  private final RPCFetchDelayProvider rpcFetchDelayProvider;
+
   public DasSamplerBasic(
       final Spec spec,
       final CurrentSlotProvider currentSlotProvider,
+      final RPCFetchDelayProvider rpcFetchDelayProvider,
+      final AsyncRunner asyncRunner,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final CustodyGroupCountManager custodyGroupCountManager,
       final RecentChainData recentChainData) {
     this.currentSlotProvider = currentSlotProvider;
-    checkNotNull(spec);
-    checkNotNull(custody);
-    checkNotNull(retriever);
+    this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
+    this.asyncRunner = asyncRunner;
     this.custody = custody;
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
@@ -91,36 +94,43 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
-    final List<DataColumnSlotAndIdentifier> missingColumns = List.of(); //tracker.getMissingColumnIdentifiers();
-    LOG.info(
-        "checkDataAvailability(): missing columns for slot {} root {}: {}",
-        slot,
-        blockRoot,
-        missingColumns.size());
+    asyncRunner
+        .getDelayedFuture(rpcFetchDelayProvider.calulate(slot))
+        .always(
+            () -> {
+              final List<DataColumnSlotAndIdentifier> missingColumns =
+                  tracker.getMissingColumnIdentifiers();
+              LOG.info(
+                  "checkDataAvailability(): missing columns for slot {} root {}: {}",
+                  slot,
+                  blockRoot,
+                  missingColumns.size());
 
-    SafeFuture.collectAll(
-            missingColumns.stream().map(id -> retrieveColumnWithSamplingAndCustody(id, tracker)))
-        .thenAccept(
-            retrievedColumns -> {
-              if (retrievedColumns.size() == missingColumns.size()) {
-                LOG.debug(
-                    "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
-                    retrievedColumns.size(),
-                    tracker.samplingRequirement().size(),
-                    slot,
-                    blockRoot);
-              } else {
-                throw new IllegalStateException(
-                    String.format(
-                        "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
-                        retrievedColumns.size(),
-                        missingColumns.size(),
-                        slot,
-                        blockRoot,
-                        tracker.samplingRequirement().size()));
-              }
-            })
-        .finishError(LOG);
+              SafeFuture.collectAll(
+                      missingColumns.stream()
+                          .map(id -> retrieveColumnWithSamplingAndCustody(id, tracker)))
+                  .thenAccept(
+                      retrievedColumns -> {
+                        if (retrievedColumns.size() == missingColumns.size()) {
+                          LOG.debug(
+                              "checkDataAvailability(): retrieved remaining {} (of {}) columns via Req/Resp for block {} ({})",
+                              retrievedColumns.size(),
+                              tracker.samplingRequirement().size(),
+                              slot,
+                              blockRoot);
+                        } else {
+                          throw new IllegalStateException(
+                              String.format(
+                                  "Retrieved only(%d) out of %d missing columns for slot %s (%s) with %d required columns",
+                                  retrievedColumns.size(),
+                                  missingColumns.size(),
+                                  slot,
+                                  blockRoot,
+                                  tracker.samplingRequirement().size()));
+                        }
+                      })
+                  .finishError(LOG);
+            });
 
     return tracker.completionFuture();
   }

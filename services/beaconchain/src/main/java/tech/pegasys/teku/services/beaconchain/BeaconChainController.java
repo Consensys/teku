@@ -176,6 +176,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarManagerImp
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustody;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
+import tech.pegasys.teku.statetransition.datacolumns.RPCFetchDelayProvider;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
@@ -988,10 +989,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
+    final RPCFetchDelayProvider rpcFetchDelayProvider =
+        RPCFetchDelayProvider.create(spec, timeProvider, recentChainData, currentSlotProvider);
+
     final DasSamplerBasic dasSampler =
         new DasSamplerBasic(
             spec,
             currentSlotProvider,
+            rpcFetchDelayProvider,
+            beaconAsyncRunner,
             dataColumnSidecarRecoveringCustody,
             recoveringSidecarRetriever,
             custodyGroupCountManager,
@@ -1003,8 +1009,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         dasSampler::onNewValidatedDataColumnSidecar);
     eventChannels.subscribe(
-            DataColumnSidecarGossipChannel.class,
-            dasSampler::onNewValidatedDataColumnSidecar);
+        DataColumnSidecarGossipChannel.class, dasSampler::onNewValidatedDataColumnSidecar);
+    eventChannels.subscribe(
+        DataColumnSidecarGossipChannel.class,
+        (sidecar, __) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
+
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
   }

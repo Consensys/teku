@@ -252,7 +252,9 @@ public class DataColumnSidecarsByRootMessageHandler
           || rootCause instanceof ClosedChannelException) {
         LOG.trace("Stream closed while sending requested data column sidecars", error);
       } else {
-        LOG.error("Failed to process data column sidecars by root request: {}", ExceptionUtil.getMessageOrSimpleName(error));
+        LOG.error(
+            "Failed to process data column sidecars by root request: {}",
+            ExceptionUtil.getMessageOrSimpleName(error));
       }
       callback.completeWithUnexpectedError(error);
     }
