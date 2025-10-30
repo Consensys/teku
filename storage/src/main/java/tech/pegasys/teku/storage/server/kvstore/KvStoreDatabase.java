@@ -1192,7 +1192,7 @@ public class KvStoreDatabase implements Database {
         LOG.debug("Data column sidecars pruning reached the limit of {}", pruneLimit);
       }
       if (pruneDataColumnSidecars(pruneLimit, prunableNonCanonicalIdentifiers, true)) {
-        LOG.debug("Non canonical data column sidecars pruning reached the limit of {}", pruneLimit);
+        LOG.debug("Non-canonical data column sidecars pruning reached the limit of {}", pruneLimit);
       }
     }
   }
