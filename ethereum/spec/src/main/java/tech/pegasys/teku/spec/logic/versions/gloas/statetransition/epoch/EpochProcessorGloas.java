@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch;
 
 import com.google.common.collect.Iterables;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
