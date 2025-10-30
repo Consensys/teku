@@ -304,28 +304,29 @@ jobs:
         with:
           stage_key: property
 
-  acceptanceTests:
-    needs: assemble
-    uses: ./.github/workflows/matrix-tests-template.yml
-    secrets: inherit
-    with:
-      assemble_output_run_id: ${{ github.run_id }}
-      stage_name: Acceptance Tests
-      stage_key: acceptance
-      gradle_task: acceptanceTest
-      src_pattern: "*/src/acceptance-test/java/*"
-      src_root: "src/acceptance-test/java"
-      runner: "ubuntu-latest-128"
+  # comment these out until we switch from circleci to gha to allow docker to run fine on circleci
+  # acceptanceTests:
+  #   needs: assemble
+  #   uses: ./.github/workflows/matrix-tests-template.yml
+  #   secrets: inherit
+  #   with:
+  #     assemble_output_run_id: ${{ github.run_id }}
+  #     stage_name: Acceptance Tests
+  #     stage_key: acceptance
+  #     gradle_task: acceptanceTest
+  #     src_pattern: "*/src/acceptance-test/java/*"
+  #     src_root: "src/acceptance-test/java"
+  #     runner: "ubuntu-latest-128"
 
-  acceptanceTestsReport:
-    runs-on: ubuntu-24.04
-    needs: acceptanceTests
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/collate-junit-reports
-        if: always()        
-        with:
-          stage_key: acceptance
+  # acceptanceTestsReport:
+  #   runs-on: ubuntu-24.04
+  #   needs: acceptanceTests
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - uses: ./.github/actions/collate-junit-reports
+  #       if: always()        
+  #       with:
+  #         stage_key: acceptance
 
   referenceTestsPrep:
     needs: assemble
