@@ -113,7 +113,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
 
     tekuNode.waitForAllInAnyOrder(
         () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 4"),
-        () -> tekuNode.waitForLogMessageContaining("Persisting initial custody group count to 4"),
+        () -> tekuNode.waitForLogMessageContaining("Persisting custody group count of 4"),
         () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 4"),
         () -> tekuNode.waitForLogMessageContaining("Sampling group count for epoch 1: 8"),
         () -> tekuNode.waitForMilestone(SpecMilestone.FULU));
@@ -159,7 +159,7 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
 
     tekuNode.waitForAllInAnyOrder(
         () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 128"),
-        () -> tekuNode.waitForLogMessageContaining("Persisting initial custody group count to 128"),
+        () -> tekuNode.waitForLogMessageContaining("Persisting custody group count of 128"),
         () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 128"),
         () ->
             tekuNode.waitForLogMessageContaining(
