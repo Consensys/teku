@@ -208,6 +208,10 @@ public class DasGossipBatchLogger implements DasGossipLogger {
   public synchronized void onReceive(
       final DataColumnSidecar sidecar, final InternalValidationResult validationResult) {
     if (needToLogEvent(validationResult.isReject())) {
+      LOG.info(
+          "DataColumnSidecar rejected: {}, reason: {}",
+          sidecar.toLogString(),
+          validationResult.getDescription());
       events.add(
           new ReceiveEvent(timeProvider.getTimeInMillis().longValue(), sidecar, validationResult));
     }
