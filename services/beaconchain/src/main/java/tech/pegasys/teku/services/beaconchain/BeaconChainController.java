@@ -1013,6 +1013,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels.subscribe(
         DataColumnSidecarGossipChannel.class,
         (sidecar, __) -> recoveringSidecarRetriever.onNewValidatedSidecar(sidecar));
+    eventChannels.subscribe(
+        DataColumnSidecarGossipChannel.class,
+        (sidecar, origin) ->
+            dataColumnSidecarRecoveringCustody
+                .onNewValidatedDataColumnSidecar(sidecar, origin)
+                .finishError(LOG));
 
     this.dataAvailabilitySampler = dasSampler;
     this.recoveringSidecarRetriever = Optional.of(recoveringSidecarRetriever);
