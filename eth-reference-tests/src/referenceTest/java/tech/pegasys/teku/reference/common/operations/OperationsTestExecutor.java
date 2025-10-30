@@ -23,10 +23,8 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -181,12 +179,6 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final TestDefinition testDefinition,
       final BeaconState preState)
       throws Exception {
-    // TODO-GLOAS: https://github.com/ethereum/consensus-specs/issues/4545
-    if (testDefinition.getFork().equals(TestFork.GLOAS)
-        && operation.equals(Operation.EXECUTION_PAYLOAD)
-        && !Files.exists(testDefinition.getTestDirectory().resolve("signed_envelope.ssz_snappy"))) {
-      return;
-    }
     final boolean isOperationValid =
         testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists();
     if (isOperationValid) {

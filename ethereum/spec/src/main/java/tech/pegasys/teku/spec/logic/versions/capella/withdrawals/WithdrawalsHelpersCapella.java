@@ -181,6 +181,7 @@ public class WithdrawalsHelpersCapella implements WithdrawalsHelpers {
 
   @Override
   public void processWithdrawals(final MutableBeaconState state) {
+    // Get information about the expected withdrawals
     final ExpectedWithdrawals expectedWithdrawals = getExpectedWithdrawals(state);
     processWithdrawalsUnchecked(
         state,
