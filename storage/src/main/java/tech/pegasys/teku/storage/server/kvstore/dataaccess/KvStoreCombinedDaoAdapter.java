@@ -401,7 +401,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public void close() throws Exception {
     hotDao.close();
-    hotDao.close();
     finalizedDao.close();
   }
 
