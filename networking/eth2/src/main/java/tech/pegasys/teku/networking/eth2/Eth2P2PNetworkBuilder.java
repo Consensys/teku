@@ -122,7 +122,7 @@ public class Eth2P2PNetworkBuilder {
   protected CombinedChainDataClient combinedChainDataClient;
   protected Supplier<? extends DataColumnSidecarByRootCustody> dataColumnSidecarCustodySupplier;
   protected Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier;
-  protected MetadataMessagesFactory metadataMessagesFactory;
+  protected MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
