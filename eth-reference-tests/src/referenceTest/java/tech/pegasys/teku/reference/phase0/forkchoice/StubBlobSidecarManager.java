@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.types.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -47,7 +47,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
     this.kzg = kzg;
   }
 
-  /** Prepare the blobs and proofs for a block provided by the reference test * */
+  /** Prepare the blobs and proofs for a block provided by the reference test. */
   public void prepareBlobsAndProofsForBlock(
       final SignedBeaconBlock block, final List<Blob> blobs, final List<KZGProof> proofs) {
     blobsAndProofsByBlockRoot.put(block.getRoot(), new BlobsAndProofs(blobs, proofs));
