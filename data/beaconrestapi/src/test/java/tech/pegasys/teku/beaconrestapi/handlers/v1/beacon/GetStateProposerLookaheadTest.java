@@ -21,12 +21,14 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
@@ -87,5 +89,15 @@ public class GetStateProposerLookaheadTest
             UTF_8);
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     assertThat(data).isEqualTo(resource);
+  }
+
+  @Test
+  void metadata_shouldHandle200OctetStream() throws IOException {
+    final BeaconStateFulu state = BeaconStateFulu.required(dataStructureUtil.randomBeaconState(32));
+    final ObjectAndMetaData<SszUInt64Vector> responseData =
+        new ObjectAndMetaData<>(
+            state.getProposerLookahead(), SpecMilestone.FULU, false, true, false);
+    final byte[] data = getResponseSszFromMetadata(handler, SC_OK, responseData);
+    assertThat(Bytes.of(data)).isEqualTo(state.getProposerLookahead().sszSerialize());
   }
 }

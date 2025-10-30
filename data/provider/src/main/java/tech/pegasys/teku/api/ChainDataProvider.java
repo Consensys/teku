@@ -824,7 +824,7 @@ public class ChainDataProvider {
 
   Optional<ObjectAndMetaData<SszUInt64Vector>> getProposerLookahead(
       final Optional<StateAndMetaData> maybeStateAndMetadata) {
-    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.FULU, "validator ids");
+    checkMinimumMilestone(maybeStateAndMetadata, SpecMilestone.FULU, "proposer lookahead");
 
     return maybeStateAndMetadata.map(
         stateAndMetaData -> {
