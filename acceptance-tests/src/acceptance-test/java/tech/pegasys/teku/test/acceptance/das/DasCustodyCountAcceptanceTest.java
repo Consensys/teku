@@ -17,8 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.io.Resources;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,7 +43,8 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void shouldSetCorrectCustodyAndSamplingCountOnValidatorNodeAfterRestart() throws Exception {
+  void shouldSetCorrectCustodyAndSamplingCount_onValidatorNodeAfterRestart(
+      @TempDir final Path tempDir) throws Exception {
     final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
     final int genesisTime =
         currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
@@ -50,25 +54,13 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
 
     final ValidatorKeystores validatorKeys =
         createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
-
     final GenesisGenerator.InitialStateData initialStateData =
-        createGenesisGenerator()
-            .network(NETWORK_NAME)
-            .withGenesisTime(genesisTime)
-            .genesisDelaySeconds(0)
-            .withAltairEpoch(UInt64.ZERO)
-            .withBellatrixEpoch(UInt64.ZERO)
-            .withCapellaEpoch(UInt64.ZERO)
-            .withDenebEpoch(UInt64.ZERO)
-            .withElectraEpoch(UInt64.ZERO)
-            .withFuluEpoch(UInt64.ONE)
-            .withTotalTerminalDifficulty(0)
-            .genesisExecutionPayloadHeaderSource(besuNode::createGenesisExecutionPayload)
-            .validatorKeys(validatorKeys)
-            .generate();
+        createInitialState(genesisTime, besuNode, validatorKeys);
 
     final TekuBeaconNode tekuNode =
-        createTekuBeaconNode(beaconNode(genesisTime, besuNode, initialStateData, validatorKeys));
+        createTekuBeaconNode(
+            beaconNode(genesisTime, besuNode, initialStateData, Optional.of(validatorKeys), false));
+    tekuNode.withPersistentStore(tempDir);
     tekuNode.start();
 
     tekuNode.waitForAllInAnyOrder(
@@ -81,6 +73,125 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
         () -> tekuNode.waitForMilestone(SpecMilestone.FULU));
     assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
         .contains(UInt64.valueOf(10));
+
+    tekuNode.stop(false);
+    tekuNode.start();
+
+    tekuNode.waitForAllInAnyOrder(
+        () -> tekuNode.waitForLogMessageContaining("Using custody group count 10 from store"),
+        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 10"),
+        () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 10"),
+        () -> tekuNode.waitForLogMessageContaining("Updating custody group count 10"),
+        () ->
+            tekuNode.waitForLogMessageContaining(
+                "Initialized DataColumnSidecar Custody with custody group count 10"),
+        () -> tekuNode.waitForLogMessageContaining("Initial sampling group count value: 10"));
+    assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
+        .contains(UInt64.valueOf(10));
+  }
+
+  @Test
+  void shouldSetCorrectCustodyAndSamplingCount_onFullNodeAfterRestart(@TempDir final Path tempDir)
+      throws Exception {
+    final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
+    final int genesisTime =
+        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
+
+    final BesuNode besuNode = createBesuNode(genesisTime);
+    besuNode.start();
+
+    final ValidatorKeystores validatorKeys =
+        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+    final GenesisGenerator.InitialStateData initialStateData =
+        createInitialState(genesisTime, besuNode, validatorKeys);
+
+    final TekuBeaconNode tekuNode =
+        createTekuBeaconNode(
+            beaconNode(genesisTime, besuNode, initialStateData, Optional.empty(), false));
+    tekuNode.withPersistentStore(tempDir);
+    tekuNode.start();
+
+    tekuNode.waitForAllInAnyOrder(
+        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 4"),
+        () -> tekuNode.waitForLogMessageContaining("Persisting initial custody group count to 4"),
+        () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 4"),
+        () -> tekuNode.waitForLogMessageContaining("Sampling group count for epoch 1: 8"),
+        () -> tekuNode.waitForMilestone(SpecMilestone.FULU));
+    assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
+        .contains(UInt64.valueOf(4));
+
+    tekuNode.stop(false);
+    tekuNode.start();
+
+    tekuNode.waitForAllInAnyOrder(
+        () -> tekuNode.waitForLogMessageContaining("Using custody group count 4 from store"),
+        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 4"),
+        () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 4"),
+        () -> tekuNode.waitForLogMessageContaining("Updating custody group count 4"),
+        () ->
+            tekuNode.waitForLogMessageContaining(
+                "Initialized DataColumnSidecar Custody with custody group count 4"),
+        () -> tekuNode.waitForLogMessageContaining("Initial sampling group count value: 8"));
+    assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
+        .contains(UInt64.valueOf(4));
+  }
+
+  @Test
+  void shouldSetCorrectCustodyAndSamplingCount_onSuperNodeAfterRestart(@TempDir final Path tempDir)
+      throws Exception {
+    final UInt64 currentTime = new SystemTimeProvider().getTimeInSeconds();
+    final int genesisTime =
+        currentTime.intValue() + 30; // genesis in 30 seconds to give node time to start
+
+    final BesuNode besuNode = createBesuNode(genesisTime);
+    besuNode.start();
+
+    final ValidatorKeystores validatorKeys =
+        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(10, WITHDRAWAL_ADDRESS);
+    final GenesisGenerator.InitialStateData initialStateData =
+        createInitialState(genesisTime, besuNode, validatorKeys);
+
+    final TekuBeaconNode tekuNode =
+        createTekuBeaconNode(
+            beaconNode(genesisTime, besuNode, initialStateData, Optional.of(validatorKeys), true));
+    tekuNode.withPersistentStore(tempDir);
+    tekuNode.start();
+
+    tekuNode.waitForAllInAnyOrder(
+        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 128"),
+        () -> tekuNode.waitForLogMessageContaining("Persisting initial custody group count to 128"),
+        () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 128"),
+        () ->
+            tekuNode.waitForLogMessageContaining(
+                "Initialized DataColumnSidecar Custody with custody group count 128"),
+        () ->
+            tekuNode.waitForLogMessageContaining(
+                "DAS Basic Sampler initialized with 128 groups to sample"),
+        () ->
+            tekuNode.waitForLogMessageContaining(
+                "Number of required custody groups reached maximum. Activating super node reconstruction."),
+        () -> tekuNode.waitForLogMessageContaining("Sampling group count for epoch 1: 128"),
+        () -> tekuNode.waitForMilestone(SpecMilestone.FULU));
+    assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
+        .contains(UInt64.valueOf(128));
+
+    tekuNode.stop(false);
+    tekuNode.start();
+
+    tekuNode.waitForAllInAnyOrder(
+        () -> tekuNode.waitForLogMessageContaining("Using custody group count 128 from store"),
+        () -> tekuNode.waitForLogMessageContaining("Synced custody group count updated to 128"),
+        () -> tekuNode.waitForLogMessageContaining("Setting cgc in ENR to: 128"),
+        () -> tekuNode.waitForLogMessageContaining("Updating custody group count 128"),
+        () ->
+            tekuNode.waitForLogMessageContaining(
+                "Initialized DataColumnSidecar Custody with custody group count 128"),
+        () ->
+            tekuNode.waitForLogMessageContaining(
+                "Number of required custody groups reached maximum. Activating super node reconstruction."),
+        () -> tekuNode.waitForLogMessageContaining("Initial sampling group count value: 128"));
+    assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
+        .contains(UInt64.valueOf(128));
   }
 
   private BesuNode createBesuNode(final int genesisTime) {
@@ -99,15 +210,12 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
         genesisOverrides);
   }
 
-  private static TekuNodeConfig beaconNode(
-      final int genesisTime,
-      final BesuNode besuNode,
-      final GenesisGenerator.InitialStateData initialStateData,
-      final ValidatorKeystores validatorKeys)
-      throws Exception {
-    return TekuNodeConfigBuilder.createBeaconNode()
-        .withInitialState(initialStateData)
-        .withNetwork(NETWORK_NAME)
+  private GenesisGenerator.InitialStateData createInitialState(
+      final int genesisTime, final BesuNode besuNode, final ValidatorKeystores validatorKeys) {
+    return createGenesisGenerator()
+        .network(NETWORK_NAME)
+        .withGenesisTime(genesisTime)
+        .genesisDelaySeconds(0)
         .withAltairEpoch(UInt64.ZERO)
         .withBellatrixEpoch(UInt64.ZERO)
         .withCapellaEpoch(UInt64.ZERO)
@@ -115,14 +223,43 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
         .withElectraEpoch(UInt64.ZERO)
         .withFuluEpoch(UInt64.ONE)
         .withTotalTerminalDifficulty(0)
-        .withGenesisTime(genesisTime)
-        .withExecutionEngine(besuNode)
-        .withJwtSecretFile(JWT_FILE)
-        .withReadOnlyKeystorePath(validatorKeys)
-        .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
-        .withStartupTargetPeerCount(0)
-        .withRealNetwork()
-        .withLogLevel("DEBUG")
-        .build();
+        .genesisExecutionPayloadHeaderSource(besuNode::createGenesisExecutionPayload)
+        .validatorKeys(validatorKeys)
+        .generate();
+  }
+
+  private static TekuNodeConfig beaconNode(
+      final int genesisTime,
+      final BesuNode besuNode,
+      final GenesisGenerator.InitialStateData initialStateData,
+      final Optional<ValidatorKeystores> validatorKeys,
+      final boolean isSuperNode)
+      throws Exception {
+    final TekuNodeConfigBuilder configBuilder =
+        TekuNodeConfigBuilder.createBeaconNode()
+            .withInitialState(initialStateData)
+            .withNetwork(NETWORK_NAME)
+            .withAltairEpoch(UInt64.ZERO)
+            .withBellatrixEpoch(UInt64.ZERO)
+            .withCapellaEpoch(UInt64.ZERO)
+            .withDenebEpoch(UInt64.ZERO)
+            .withElectraEpoch(UInt64.ZERO)
+            .withFuluEpoch(UInt64.ONE)
+            .withTotalTerminalDifficulty(0)
+            .withGenesisTime(genesisTime)
+            .withExecutionEngine(besuNode)
+            .withJwtSecretFile(JWT_FILE)
+            .withValidatorProposerDefaultFeeRecipient("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
+            .withStartupTargetPeerCount(0)
+            .withRealNetwork()
+            .withLogLevel("DEBUG");
+
+    validatorKeys.ifPresent(configBuilder::withReadOnlyKeystorePath);
+
+    if (isSuperNode) {
+      configBuilder.withSubscribeAllCustodySubnetsEnabled();
+    }
+
+    return configBuilder.build();
   }
 }
