@@ -36,9 +36,11 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
+  // Restart scenario will not work on CircleCI, doesn't support writable Docker volume mounts
+  private static final boolean SKIP_RESTART = true;
 
   private static final String NETWORK_NAME = "swift";
-  public static final Eth1Address WITHDRAWAL_ADDRESS =
+  private static final Eth1Address WITHDRAWAL_ADDRESS =
       Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
@@ -60,7 +62,9 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     final TekuBeaconNode tekuNode =
         createTekuBeaconNode(
             beaconNode(genesisTime, besuNode, initialStateData, Optional.of(validatorKeys), false));
-    tekuNode.withPersistentStore(tempDir);
+    if (!SKIP_RESTART) {
+      tekuNode.withPersistentStore(tempDir);
+    }
     tekuNode.start();
 
     tekuNode.waitForAllInAnyOrder(
@@ -74,6 +78,9 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
         .contains(UInt64.valueOf(10));
 
+    if (SKIP_RESTART) {
+      return;
+    }
     tekuNode.stop(false);
     tekuNode.start();
 
@@ -108,7 +115,9 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     final TekuBeaconNode tekuNode =
         createTekuBeaconNode(
             beaconNode(genesisTime, besuNode, initialStateData, Optional.empty(), false));
-    tekuNode.withPersistentStore(tempDir);
+    if (!SKIP_RESTART) {
+      tekuNode.withPersistentStore(tempDir);
+    }
     tekuNode.start();
 
     tekuNode.waitForAllInAnyOrder(
@@ -120,6 +129,9 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
         .contains(UInt64.valueOf(4));
 
+    if (SKIP_RESTART) {
+      return;
+    }
     tekuNode.stop(false);
     tekuNode.start();
 
@@ -154,7 +166,9 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     final TekuBeaconNode tekuNode =
         createTekuBeaconNode(
             beaconNode(genesisTime, besuNode, initialStateData, Optional.of(validatorKeys), true));
-    tekuNode.withPersistentStore(tempDir);
+    if (!SKIP_RESTART) {
+      tekuNode.withPersistentStore(tempDir);
+    }
     tekuNode.start();
 
     tekuNode.waitForAllInAnyOrder(
@@ -175,6 +189,9 @@ public class DasCustodyCountAcceptanceTest extends AcceptanceTestBase {
     assertThat(tekuNode.getMetadataMessage(SpecMilestone.FULU).getOptionalCustodyGroupCount())
         .contains(UInt64.valueOf(128));
 
+    if (SKIP_RESTART) {
+      return;
+    }
     tekuNode.stop(false);
     tekuNode.start();
 
