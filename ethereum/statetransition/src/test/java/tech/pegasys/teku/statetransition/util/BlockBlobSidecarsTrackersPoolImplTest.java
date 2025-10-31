@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.GAUGE_BLOB_SIDECARS_LABEL;
 import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.GAUGE_BLOB_SIDECARS_TRACKERS_LABEL;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -72,7 +74,9 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final UInt64 futureTolerance = UInt64.valueOf(2);
   private final ObservableMetricsSystem metricsSystem =
       new PrometheusMetricsSystem(Set.of(TekuMetricCategory.BEACON), false);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInMillis(0);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
+  private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
   BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool;
@@ -108,7 +112,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                 executionLayer,
                 () -> blobSidecarGossipValidator,
                 blobSidecarPublisher,
-                RPCFetchDelayProvider.NO_DELAY,
+                rpcFetchDelayProvider,
                 historicalTolerance,
                 futureTolerance,
                 maxItems,
@@ -124,6 +128,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
+    when(rpcFetchDelayProvider.calculate(any())).thenReturn(Duration.ZERO);
     setSlot(currentSlot);
   }
 
@@ -749,13 +754,23 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(executionLayer.engineGetBlobAndProofs(any(), any()))
         .thenReturn(SafeFuture.completedFuture(List.of(Optional.empty(), Optional.empty())));
 
+    // RPC delay 1s
+    when(rpcFetchDelayProvider.calculate(currentSlot)).thenReturn(Duration.ofSeconds(1));
+
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.empty());
 
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    verify(rpcFetchDelayProvider).calculate(currentSlot);
 
-    asyncRunner.executeQueuedActions();
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(2);
+
+    asyncRunner.executeDueActions();
 
     verify(executionLayer).engineGetBlobAndProofs(any(), any());
+
+    // let RPC fetch delay expire
+    stubTimeProvider.advanceTimeBySeconds(1);
+
+    asyncRunner.executeDueActions();
 
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
