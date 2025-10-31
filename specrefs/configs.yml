@@ -355,7 +355,8 @@
 - name: MAX_BLOBS_PER_BLOCK
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: "MAX_BLOBS_PER_BLOCK:"
+      search: "^MAX_BLOBS_PER_BLOCK:"
+      regex: true
   spec: |
     <spec config_var="MAX_BLOBS_PER_BLOCK" fork="deneb" hash="3e0b5383">
     MAX_BLOBS_PER_BLOCK: uint64 = 6
