@@ -16,9 +16,9 @@ package tech.pegasys.teku.statetransition.util;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.statetransition.util.PoolFactory.MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
-import static tech.pegasys.teku.statetransition.util.PoolFactory.MIN_WAIT_MILLIS;
-import static tech.pegasys.teku.statetransition.util.PoolFactory.TARGET_WAIT_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
 
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,9 +44,9 @@ public class RPCFetchDelayProviderTest {
           timeProvider,
           recentChainData,
           currentSlotProvider,
-          MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
-          MIN_WAIT_MILLIS,
-          TARGET_WAIT_MILLIS);
+          DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
+          DEFAULT_MIN_WAIT_MILLIS,
+          DEFAULT_TARGET_WAIT_MILLIS);
 
   @BeforeEach
   public void setUp() {
@@ -65,7 +65,7 @@ public class RPCFetchDelayProviderTest {
     final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
     // we can wait the full target
-    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
+    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(DEFAULT_TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
@@ -81,7 +81,7 @@ public class RPCFetchDelayProviderTest {
     final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
     // we can wait the full target
-    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(MIN_WAIT_MILLIS.longValue()));
+    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(DEFAULT_MIN_WAIT_MILLIS.longValue()));
   }
 
   @Test
@@ -96,7 +96,7 @@ public class RPCFetchDelayProviderTest {
     final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
     // we can wait the full target
-    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
+    assertThat(fetchDelay).isEqualTo(Duration.ofMillis(DEFAULT_TARGET_WAIT_MILLIS.longValue()));
   }
 
   @Test
@@ -112,9 +112,9 @@ public class RPCFetchDelayProviderTest {
     final UInt64 blockArrivalTimeMillis =
         startSlotInMillis
             .plus(4_000)
-            .minus(MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS)
+            .minus(DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS)
             .plus(millisecondsIntoAttDueLimit)
-            .minus(TARGET_WAIT_MILLIS);
+            .minus(DEFAULT_TARGET_WAIT_MILLIS);
 
     timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());
 
@@ -125,7 +125,10 @@ public class RPCFetchDelayProviderTest {
     assertThat(fetchDelay)
         .isEqualTo(
             Duration.ofMillis(
-                TARGET_WAIT_MILLIS.minus(millisecondsIntoAttDueLimit).minus(1).longValue()));
+                DEFAULT_TARGET_WAIT_MILLIS
+                    .minus(millisecondsIntoAttDueLimit)
+                    .minus(1)
+                    .longValue()));
   }
 
   @Test

@@ -25,7 +25,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.GAUGE_BLOB_SIDECARS_LABEL;
 import static tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl.GAUGE_BLOB_SIDECARS_TRACKERS_LABEL;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -84,8 +83,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
   private final BlobSidecarGossipValidator blobSidecarGossipValidator =
       mock(BlobSidecarGossipValidator.class);
 
-  private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
-
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final int maxItems = 15;
 
@@ -111,7 +108,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                 executionLayer,
                 () -> blobSidecarGossipValidator,
                 blobSidecarPublisher,
-                rpcFetchDelayProvider,
+                RPCFetchDelayProvider.NO_DELAY,
                 historicalTolerance,
                 futureTolerance,
                 maxItems,
@@ -127,7 +124,6 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
-    when(rpcFetchDelayProvider.calculate(any())).thenReturn(Duration.ZERO);
     setSlot(currentSlot);
   }
 
@@ -1205,7 +1201,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                 executionLayer,
                 () -> blobSidecarGossipValidator,
                 blobSidecarPublisher,
-                rpcFetchDelayProvider,
+                RPCFetchDelayProvider.NO_DELAY,
                 historicalTolerance,
                 futureTolerance,
                 maxItems,
@@ -1232,7 +1228,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
                 executionLayer,
                 () -> blobSidecarGossipValidator,
                 blobSidecarPublisher,
-                rpcFetchDelayProvider,
+                RPCFetchDelayProvider.NO_DELAY,
                 historicalTolerance,
                 futureTolerance,
                 maxItems,

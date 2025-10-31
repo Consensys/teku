@@ -24,6 +24,13 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 @FunctionalInterface
 public interface RPCFetchDelayProvider {
+  // RPC fetching delay timings
+  long DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = 1500L;
+  UInt64 DEFAULT_MIN_WAIT_MILLIS = UInt64.valueOf(500);
+  UInt64 DEFAULT_TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
+
+  RPCFetchDelayProvider NO_DELAY = slot -> Duration.ZERO;
+
   static RPCFetchDelayProvider create(
       final Spec spec,
       final TimeProvider timeProvider,

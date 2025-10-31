@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collections;
@@ -53,11 +57,6 @@ public class PoolFactory {
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
   private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
-
-  // RPC fetching delay timings
-  static final long MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = 1500L;
-  static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
-  static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blockBlobSidecarsTrackersPoolSizeGauge;
@@ -199,22 +198,29 @@ public class PoolFactory {
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
-        createPoolForBlockBlobSidecarsTrackers(spec, timeProvider, recentChainData),
+        createRPCFetchDelayProvider(
+            spec,
+            timeProvider,
+            recentChainData,
+            CurrentSlotProvider.create(spec, recentChainData.getStore())),
         historicalBlockTolerance,
         futureBlockTolerance,
         maxTrackers);
   }
 
-  private RPCFetchDelayProvider createPoolForBlockBlobSidecarsTrackers(
-      final Spec spec, final TimeProvider timeProvider, final RecentChainData recentChainData) {
+  public static RPCFetchDelayProvider createRPCFetchDelayProvider(
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final CurrentSlotProvider currentSlotProvider) {
     return RPCFetchDelayProvider.create(
         spec,
         timeProvider,
         recentChainData,
-        CurrentSlotProvider.create(spec, recentChainData.getStore()),
-        MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
-        MIN_WAIT_MILLIS,
-        TARGET_WAIT_MILLIS);
+        currentSlotProvider,
+        DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
+        DEFAULT_MIN_WAIT_MILLIS,
+        DEFAULT_TARGET_WAIT_MILLIS);
   }
 
   @VisibleForTesting
