@@ -625,6 +625,10 @@ public class TekuBeaconNode extends TekuNode {
 
   private Optional<SignedBeaconBlock> fetchHeadBlock() throws IOException {
     final String blockId = "head";
+    return fetchBlock(blockId);
+  }
+
+  private Optional<SignedBeaconBlock> fetchBlock(final String blockId) throws IOException {
     final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/" + blockId);
     if (result.isEmpty()) {
       return Optional.empty();
@@ -657,6 +661,14 @@ public class TekuBeaconNode extends TekuNode {
                   .getJsonTypeDefinition());
       return Optional.of(JsonUtil.parse(result.get(), jsonTypeDefinition));
     }
+  }
+
+  public SignedBeaconBlock getFinalizedBlock() throws IOException {
+    return fetchBlock("finalized").orElseThrow();
+  }
+
+  public SignedBeaconBlock getHeadBlock() throws IOException {
+    return fetchBlock("head").orElseThrow();
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
