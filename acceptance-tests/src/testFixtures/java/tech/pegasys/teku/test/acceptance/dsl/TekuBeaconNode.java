@@ -659,6 +659,10 @@ public class TekuBeaconNode extends TekuNode {
     }
   }
 
+  public SignedBeaconBlock getBlockAtHead() throws IOException {
+    return fetchHeadBlock().orElseThrow();
+  }
+
   private Optional<BeaconState> fetchHeadState() throws IOException {
     return fetchState("head");
   }
