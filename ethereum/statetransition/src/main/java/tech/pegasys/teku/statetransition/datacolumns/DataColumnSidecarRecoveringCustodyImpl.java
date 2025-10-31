@@ -32,7 +32,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -280,11 +279,6 @@ public class DataColumnSidecarRecoveringCustodyImpl implements DataColumnSidecar
                     new AtomicBoolean(false)));
     task.existingSidecars().put(DataColumnSlotAndIdentifier.fromDataColumn(sidecar), sidecar);
     maybeStartRecovery(task);
-  }
-
-  @Override
-  public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
-    return delegate.retrieveMissingColumns();
   }
 
   @Override

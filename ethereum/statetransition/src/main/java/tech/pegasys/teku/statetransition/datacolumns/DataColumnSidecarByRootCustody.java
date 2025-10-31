@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.datacolumns;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnIdentifier;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
@@ -47,11 +46,6 @@ public interface DataColumnSidecarByRootCustody extends DataColumnSidecarCustody
         public SafeFuture<Void> onNewValidatedDataColumnSidecar(
             final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
           return SafeFuture.COMPLETE;
-        }
-
-        @Override
-        public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
-          return AsyncStream.empty();
         }
       };
 

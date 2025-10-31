@@ -22,7 +22,6 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.stream.AsyncStream;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -75,11 +74,6 @@ public class DataColumnSidecarByRootCustodyImpl
     cache.pruneCaches(dataColumnSidecar.getSlot().minusMinZero(maxCacheSizeInSlots));
     cache.addColumnSlotIdFromSidecar(dataColumnSidecar);
     return custody.onNewValidatedDataColumnSidecar(dataColumnSidecar, remoteOrigin);
-  }
-
-  @Override
-  public AsyncStream<DataColumnSlotAndIdentifier> retrieveMissingColumns() {
-    return custody.retrieveMissingColumns();
   }
 
   @Override
