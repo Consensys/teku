@@ -188,6 +188,17 @@ public class PoolFactory {
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxTrackers) {
+
+    final RPCFetchDelayProvider rpcFetchDelayProvider =
+        RPCFetchDelayProvider.create(
+            spec,
+            timeProvider,
+            recentChainData,
+            CurrentSlotProvider.create(spec, recentChainData.getStore()),
+            DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
+            DEFAULT_MIN_WAIT_MILLIS,
+            DEFAULT_TARGET_WAIT_MILLIS);
+
     return new BlockBlobSidecarsTrackersPoolImpl(
         blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
@@ -198,29 +209,10 @@ public class PoolFactory {
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
-        createRPCFetchDelayProvider(
-            spec,
-            timeProvider,
-            recentChainData,
-            CurrentSlotProvider.create(spec, recentChainData.getStore())),
+        rpcFetchDelayProvider,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxTrackers);
-  }
-
-  public static RPCFetchDelayProvider createRPCFetchDelayProvider(
-      final Spec spec,
-      final TimeProvider timeProvider,
-      final RecentChainData recentChainData,
-      final CurrentSlotProvider currentSlotProvider) {
-    return RPCFetchDelayProvider.create(
-        spec,
-        timeProvider,
-        recentChainData,
-        currentSlotProvider,
-        DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
-        DEFAULT_MIN_WAIT_MILLIS,
-        DEFAULT_TARGET_WAIT_MILLIS);
   }
 
   @VisibleForTesting
