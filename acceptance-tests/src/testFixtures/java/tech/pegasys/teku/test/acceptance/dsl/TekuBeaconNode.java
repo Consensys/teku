@@ -660,22 +660,7 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public SignedBeaconBlock getBlockAtHead() throws IOException {
-    final Optional<String> result =
-        httpClient.getOptional(getRestApiUrl(), "/eth/v2/beacon/blocks/head");
-    final String json = result.orElseThrow();
-
-    final JsonNode jsonNode = OBJECT_MAPPER.readTree(json);
-    final long slot = jsonNode.get("data").get("message").get("slot").asLong();
-
-    final DeserializableTypeDefinition<SignedBeaconBlock> jsonTypeDefinition =
-        SharedApiTypes.withDataWrapper(
-            "block",
-            spec.atSlot(UInt64.valueOf(slot))
-                .getSchemaDefinitions()
-                .getSignedBeaconBlockSchema()
-                .getJsonTypeDefinition());
-
-    return JsonUtil.parse(json, jsonTypeDefinition);
+    return fetchHeadBlock().orElseThrow();
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {

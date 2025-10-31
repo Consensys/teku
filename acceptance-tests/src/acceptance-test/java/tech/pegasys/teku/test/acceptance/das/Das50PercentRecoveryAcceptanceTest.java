@@ -70,24 +70,25 @@ public class Das50PercentRecoveryAcceptanceTest extends AcceptanceTestBase {
 
     final SignedBeaconBlock blockAtHead = secondaryNode.getBlockAtHead();
 
-    int epochSlots = primaryNode.getSpec().slotsPerEpoch(UInt64.ZERO);
-    int endSlot = blockAtHead.getSlot().intValue();
-    int firstFuluSlot =
+    final int endSlot = blockAtHead.getSlot().intValue();
+    final int firstFuluSlot =
         primaryNode
-                .getSpec()
-                .forMilestone(SpecMilestone.FULU)
-                .getConfig()
-                .getFuluForkEpoch()
-                .intValue()
-            * epochSlots;
-    int totalColumns =
+            .getSpec()
+            .computeStartSlotAtEpoch(
+                primaryNode
+                    .getSpec()
+                    .forMilestone(SpecMilestone.FULU)
+                    .getConfig()
+                    .getFuluForkEpoch())
+            .intValue();
+    final int allFuluColumns =
         IntStream.range(firstFuluSlot, endSlot)
             .mapToObj(UInt64::valueOf)
             .map(slot -> getAndAssertDasCustody(secondaryNode, slot))
             .mapToInt(i -> i)
             .sum();
 
-    assertThat(totalColumns).isGreaterThan(0);
+    assertThat(allFuluColumns).isGreaterThan(0);
   }
 
   private int getAndAssertDasCustody(final TekuBeaconNode node, final UInt64 fuluSlot) {
