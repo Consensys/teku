@@ -774,7 +774,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
-
   @VisibleForTesting
   boolean isMilestoneScheduledOrActive(final SpecMilestone milestone) {
     return spec.isMilestoneSupported(milestone)
