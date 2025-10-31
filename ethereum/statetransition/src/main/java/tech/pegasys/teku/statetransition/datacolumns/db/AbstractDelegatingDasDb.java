@@ -21,9 +21,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
 abstract class AbstractDelegatingDasDb implements DataColumnSidecarDB {
-  private final DataColumnSidecarCoreDB delegateDb;
+  private final DataColumnSidecarDB delegateDb;
 
-  public AbstractDelegatingDasDb(final DataColumnSidecarCoreDB delegateDb) {
+  public AbstractDelegatingDasDb(final DataColumnSidecarDB delegateDb) {
     this.delegateDb = delegateDb;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,11 +18,12 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
+public interface DataColumnSidecarDB {
 
   static DataColumnSidecarDB create(
       final CombinedChainDataClient combinedChainDataClient,
@@ -30,20 +31,21 @@ public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
     return new DataColumnSidecarDBImpl(combinedChainDataClient, sidecarUpdateChannel);
   }
 
-  // read
+  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
+
+  SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  @Override
-  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
-
-  @Override
-  SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
-
-  // update
+  default SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(
+      final SlotAndBlockRoot blockId) {
+    return getColumnIdentifiers(blockId.getSlot())
+        .thenApply(
+            ids ->
+                ids.stream().filter(id -> id.blockRoot().equals(blockId.getBlockRoot())).toList());
+  }
 
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
 
-  @Override
   SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);
 }
