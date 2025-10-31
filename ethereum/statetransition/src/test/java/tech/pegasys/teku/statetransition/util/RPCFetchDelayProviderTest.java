@@ -62,7 +62,7 @@ public class RPCFetchDelayProviderTest {
     // blocks arrives at slot start
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.longValue());
 
-    final Duration fetchDelay = rpcFetchDelayProvider.calulate(currentSlot);
+    final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
@@ -78,7 +78,7 @@ public class RPCFetchDelayProviderTest {
     // blocks arrives 200ms before attestation due
     timeProvider.advanceTimeByMillis(startSlotInMillis.plus(3_800).longValue());
 
-    final Duration fetchDelay = rpcFetchDelayProvider.calulate(currentSlot);
+    final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(MIN_WAIT_MILLIS.longValue()));
@@ -93,7 +93,7 @@ public class RPCFetchDelayProviderTest {
     // blocks arrives 1s after attestation due
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.plus(5).longValue());
 
-    final Duration fetchDelay = rpcFetchDelayProvider.calulate(currentSlot);
+    final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
     // we can wait the full target
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(TARGET_WAIT_MILLIS.longValue()));
@@ -118,7 +118,7 @@ public class RPCFetchDelayProviderTest {
 
     timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());
 
-    final Duration fetchDelay = rpcFetchDelayProvider.calulate(currentSlot);
+    final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
     // we can only wait 200ms less than target
     // note the extra 1ms is from the difference of 1/3 slot time vs the 3333 basis points
@@ -130,7 +130,7 @@ public class RPCFetchDelayProviderTest {
 
   @Test
   void calculateRpcFetchDelay_shouldReturnZeroIfSlotIsOld() {
-    final Duration fetchDelay = rpcFetchDelayProvider.calulate(currentSlot.decrement());
+    final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot.decrement());
 
     assertThat(fetchDelay).isEqualTo(Duration.ZERO);
   }

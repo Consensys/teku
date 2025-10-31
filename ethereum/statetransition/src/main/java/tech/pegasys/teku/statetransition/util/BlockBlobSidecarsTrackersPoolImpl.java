@@ -613,7 +613,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
     // delay RPC fetching
     final SafeFuture<Void> rpcFetchDelay =
-        asyncRunner.getDelayedFuture(rpcFetchDelayProvider.calulate(slotAndBlockRoot.getSlot()));
+        asyncRunner.getDelayedFuture(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()));
 
     asyncRunner
         .runAsync(

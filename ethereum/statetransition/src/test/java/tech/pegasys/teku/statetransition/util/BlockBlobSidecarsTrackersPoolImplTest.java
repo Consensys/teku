@@ -127,7 +127,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     when(executionLayer.engineGetBlobAndProofs(any(), eq(currentSlot)))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     when(blobSidecarPublisher.apply(any())).thenReturn(SafeFuture.COMPLETE);
-    when(rpcFetchDelayProvider.calulate(any())).thenReturn(Duration.ZERO);
+    when(rpcFetchDelayProvider.calculate(any())).thenReturn(Duration.ZERO);
     setSlot(currentSlot);
   }
 

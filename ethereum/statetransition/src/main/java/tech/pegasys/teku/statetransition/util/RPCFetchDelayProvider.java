@@ -62,5 +62,5 @@ public interface RPCFetchDelayProvider {
     };
   }
 
-  Duration calulate(UInt64 slot);
+  Duration calculate(UInt64 slot);
 }
