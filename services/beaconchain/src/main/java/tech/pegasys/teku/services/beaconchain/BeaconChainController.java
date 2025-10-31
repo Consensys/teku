@@ -26,6 +26,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.io.IOException;
 import java.net.BindException;
@@ -333,6 +334,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
   protected volatile BlockImporter blockImporter;
 
+  protected volatile Optional<SpecMilestone> currentSpecMilestone;
+
   protected volatile DataProvider dataProvider;
   protected volatile RecentChainData recentChainData;
   protected volatile Eth2P2PNetwork p2pNetwork;
@@ -597,6 +600,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   validateWeakSubjectivityPeriod(client);
                 }
               }
+
+              currentSpecMilestone =
+                  recentChainData.getCurrentSlot().map(spec::atSlot).map(SpecVersion::getMilestone);
               return SafeFuture.completedFuture(client);
             })
         // Init other services
@@ -768,8 +774,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
+
+  @VisibleForTesting
+  boolean isMilestoneScheduledOrActive(final SpecMilestone milestone) {
+    return spec.isMilestoneSupported(milestone)
+        && currentSpecMilestone
+            .map(currentMilestone -> currentMilestone.isLessThanOrEqualTo(milestone))
+            .orElse(true);
+  }
+
   protected void initBlobSidecarManager() {
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (isMilestoneScheduledOrActive(SpecMilestone.DENEB)) {
       final FutureItems<BlobSidecar> futureBlobSidecars =
           FutureItems.create(BlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
 
@@ -1069,7 +1084,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlockBlobSidecarsTrackersPool() {
     LOG.debug("BeaconChainController.initBlockBlobSidecarsTrackersPool()");
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+    if (isMilestoneScheduledOrActive(SpecMilestone.DENEB)) {
       final BlockImportChannel blockImportChannel =
           eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
       final BlobSidecarGossipChannel blobSidecarGossipChannel =

@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
 import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl;
@@ -52,6 +53,11 @@ public class PoolFactory {
   private static final int EL_RECOVERY_TASKS_LIMIT = 10;
   private static final Duration EL_BLOBS_FETCHING_DELAY = Duration.ofMillis(500);
   private static final int EL_BLOBS_FETCHING_MAX_RETRIES = 3;
+
+  // RPC fetching delay timings
+  static final long MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = 1500L;
+  static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
+  static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blockBlobSidecarsTrackersPoolSizeGauge;
@@ -188,27 +194,39 @@ public class PoolFactory {
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
-        timeProvider,
         asyncRunner,
         recentChainData,
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
+        createPoolForBlockBlobSidecarsTrackers(spec, timeProvider, recentChainData),
         historicalBlockTolerance,
         futureBlockTolerance,
         maxTrackers);
+  }
+
+  private RPCFetchDelayProvider createPoolForBlockBlobSidecarsTrackers(
+      final Spec spec, final TimeProvider timeProvider, final RecentChainData recentChainData) {
+    return RPCFetchDelayProvider.create(
+        spec,
+        timeProvider,
+        recentChainData,
+        CurrentSlotProvider.create(spec, recentChainData.getStore()),
+        MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
+        MIN_WAIT_MILLIS,
+        TARGET_WAIT_MILLIS);
   }
 
   @VisibleForTesting
   BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
       final BlockImportChannel blockImportChannel,
       final Spec spec,
-      final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
+      final RPCFetchDelayProvider rpcFetchDelayProvider,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,
@@ -218,12 +236,12 @@ public class PoolFactory {
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
-        timeProvider,
         asyncRunner,
         recentChainData,
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
+        rpcFetchDelayProvider,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,
