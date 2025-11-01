@@ -46,7 +46,6 @@ import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetrieverStub;
 
 public class SidecarRetrieverTest {
@@ -57,9 +56,7 @@ public class SidecarRetrieverTest {
   final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(timeProvider);
   final Spec spec = TestSpecFactory.createMinimalFulu();
-  final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
-  final DataColumnSidecarDbAccessor dbAccessor =
-      DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
+  final DataColumnSidecarDB dataColumnSidecarDB = new DataColumnSidecarDBStub();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
   final CustodyGroupCountManager custodyManager = mock(CustodyGroupCountManager.class);
 
@@ -80,7 +77,7 @@ public class SidecarRetrieverTest {
       new SidecarRetriever(
           delegateRetriever,
           miscHelpers,
-          dbAccessor,
+          dataColumnSidecarDB,
           stubAsyncRunner,
           RECOVERY_TIMEOUT,
           RECOVERY_TIMEOUT.dividedBy(2),
@@ -165,7 +162,8 @@ public class SidecarRetrieverTest {
             dataStructureUtil.signedBlock(block), List.of(dataStructureUtil.randomValidBlob()));
     final List<Integer> dbColumnIndices =
         IntStream.range(10, Integer.MAX_VALUE).limit(columnsInDbCount).boxed().toList();
-    dbColumnIndices.forEach(idx -> assertThat(db.addSidecar(sidecars.get(idx))).isDone());
+    dbColumnIndices.forEach(
+        idx -> assertThat(dataColumnSidecarDB.addSidecar(sidecars.get(idx))).isDone());
 
     final SafeFuture<DataColumnSidecar> res0 = retriever.retrieve(createId(block, 0));
 

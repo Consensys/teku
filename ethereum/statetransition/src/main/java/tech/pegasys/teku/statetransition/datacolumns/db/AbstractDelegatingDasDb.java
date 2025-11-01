@@ -20,10 +20,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 
-abstract class AbstractDelegatingDasDb implements DataColumnSidecarDbAccessor {
-  private final DataColumnSidecarCoreDB delegateDb;
+abstract class AbstractDelegatingDasDb implements DataColumnSidecarDB {
+  private final DataColumnSidecarDB delegateDb;
 
-  public AbstractDelegatingDasDb(final DataColumnSidecarCoreDB delegateDb) {
+  public AbstractDelegatingDasDb(final DataColumnSidecarDB delegateDb) {
     this.delegateDb = delegateDb;
   }
 

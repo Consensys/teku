@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.db.DelayedDasDb;
 import tech.pegasys.teku.statetransition.datacolumns.util.StubAsync;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -57,8 +56,7 @@ public class DasCustodyStand {
   public final CanonicalBlockResolverStub blockResolver;
 
   public final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
-  public final DataColumnSidecarDBStub db;
-  public final DataColumnSidecarDbAccessor dbAccessor;
+  public final DataColumnSidecarDB dataColumnSidecarDB;
   public final CustodyGroupCountManager custodyGroupCountManager;
 
   public final DataColumnSidecarCustodyImpl custody;
@@ -87,27 +85,26 @@ public class DasCustodyStand {
                             this.blockResolver, stubAsync.getStubAsyncRunner(), delay))
             .orElse(this.blockResolver);
     this.minCustodyPeriodSlotCalculator = MinCustodyPeriodSlotCalculator.createFromSpec(spec);
-    this.db = new DataColumnSidecarDBStub();
+    this.dataColumnSidecarDB = new DataColumnSidecarDBStub();
     final DataColumnSidecarDB asyncDb =
         asyncDbDelay
             .map(
                 dbDelay ->
                     (DataColumnSidecarDB)
-                        new DelayedDasDb(this.db, stubAsync.getStubAsyncRunner(), dbDelay))
-            .orElse(this.db);
+                        new DelayedDasDb(
+                            dataColumnSidecarDB, stubAsync.getStubAsyncRunner(), dbDelay))
+            .orElse(dataColumnSidecarDB);
 
-    this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
     this.custodyGroupCountManager =
         createCustodyGroupCountManager(totalCustodyGroupCount, samplingGroupCount);
     this.custody =
         new DataColumnSidecarCustodyImpl(
             spec,
             asyncBlockResolver,
-            dbAccessor,
+            asyncDb,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManager);
     subscribeToSlotEvents(this.custody);
-    subscribeToFinalizedEvents(this.custody);
 
     final DataStructureUtil util = new DataStructureUtil(0, spec);
     final BLSSignature singleSignature = util.randomSignature();

@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
 
 class RebuildColumnsTask {
   private static final Logger LOG = LogManager.getLogger();
@@ -37,7 +37,7 @@ class RebuildColumnsTask {
   private final SlotAndBlockRoot slotAndBlockRoot;
   private final UInt64 timeoutMillis;
   private final int minimumColumnsForRebuild;
-  private final DataColumnSidecarDbAccessor sidecarDB;
+  private final DataColumnSidecarDB sidecarDB;
   protected SafeFuture<Void> query;
   protected boolean isReadyToRebuild = false;
   private final MiscHelpersFulu miscHelpers;
@@ -49,7 +49,7 @@ class RebuildColumnsTask {
       final UInt64 timestampMillis,
       final Duration timeout,
       final int minimumColumnsForRebuild,
-      final DataColumnSidecarDbAccessor sidecarDB,
+      final DataColumnSidecarDB sidecarDB,
       final MiscHelpersFulu miscHelpers) {
     this.slotAndBlockRoot = slotAndBlockRoot;
     this.timeoutMillis = timestampMillis.plus(timeout.toMillis());

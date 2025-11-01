@@ -162,7 +162,6 @@ import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
 import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManagerImpl;
-import tech.pegasys.teku.statetransition.datacolumns.DasCustodySync;
 import tech.pegasys.teku.statetransition.datacolumns.DasPreSampler;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerBasic;
 import tech.pegasys.teku.statetransition.datacolumns.DasSamplerManager;
@@ -177,7 +176,6 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecovering
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -375,7 +373,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
-  protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
   protected volatile AvailabilityCheckerFactory<UInt64> dasSamplerManager;
@@ -503,7 +500,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start);
-                  dasCustodySync.ifPresent(DasCustodySync::start);
                   recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::start);
                 }))
         .finish(
@@ -540,7 +536,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             SafeFuture.fromRunnable(
                 () -> {
                   terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop);
-                  dasCustodySync.ifPresent(DasCustodySync::stop);
                   recoveringSidecarRetriever.ifPresent(DataColumnSidecarRetriever::stop);
                 }))
         .thenRun(forkChoiceExecutor::stop);
@@ -862,8 +857,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DataColumnSidecarDB.create(
             combinedChainDataClient,
             eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
-    final DataColumnSidecarDbAccessor dbAccessor =
-        DataColumnSidecarDbAccessor.builder(sidecarDB).spec(spec).build();
     final CanonicalBlockResolver canonicalBlockResolver =
         slot ->
             combinedChainDataClient
@@ -880,11 +873,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new DataColumnSidecarCustodyImpl(
             spec,
             canonicalBlockResolver,
-            dbAccessor,
+            sidecarDB,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManager);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, dataColumnSidecarCustodyImpl);
 
     final DataColumnSidecarByRootCustody dataColumnSidecarByRootCustody =
         new DataColumnSidecarByRootCustodyImpl(
@@ -963,7 +955,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new SidecarRetriever(
               sidecarRetriever,
               miscHelpersFulu,
-              dbAccessor,
+              sidecarDB,
               dasAsyncRunner,
               Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
               Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
@@ -978,7 +970,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               sidecarRetriever,
               miscHelpersFulu,
               canonicalBlockResolver,
-              dbAccessor,
+              sidecarDB,
               dasAsyncRunner,
               Duration.ofMinutes(5),
               Duration.ofSeconds(30),
@@ -988,13 +980,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     dataColumnSidecarManager.subscribeToValidDataColumnSidecars(
         (dataColumnSidecar, remoteOrigin) ->
             recoveringSidecarRetriever.onNewValidatedSidecar(dataColumnSidecar));
-    final DasCustodySync svc =
-        new DasCustodySync(
-            dataColumnSidecarRecoveringCustody,
-            recoveringSidecarRetriever,
-            minCustodyPeriodSlotCalculator);
-    dasCustodySync = Optional.of(svc);
-    eventChannels.subscribe(SlotEventsChannel.class, svc);
 
     final CurrentSlotProvider currentSlotProvider =
         CurrentSlotProvider.create(spec, recentChainData.getStore());
