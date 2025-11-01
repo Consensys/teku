@@ -195,8 +195,7 @@ public class ExecutionPayloadProcessorGloas extends AbstractExecutionPayloadProc
     if (payloadExecutor.isPresent()) {
       final NewPayloadRequest payloadToExecute = computeNewPayloadRequest(state, envelope);
       final boolean optimisticallyAccept =
-          // TODO-GLOAS: https://github.com/Consensys/teku/issues/9878
-          payloadExecutor.get().optimisticallyExecute(null, payloadToExecute);
+          payloadExecutor.get().optimisticallyExecute(Optional.empty(), payloadToExecute);
       if (!optimisticallyAccept) {
         throw new ExecutionPayloadProcessingException(
             "Execution payload was not optimistically accepted");

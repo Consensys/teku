@@ -17,6 +17,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class SignedExecutionPayloadEnvelope
@@ -45,6 +47,14 @@ public class SignedExecutionPayloadEnvelope
   @Override
   public SignedExecutionPayloadEnvelopeSchema getSchema() {
     return (SignedExecutionPayloadEnvelopeSchema) super.getSchema();
+  }
+
+  public UInt64 getSlot() {
+    return getMessage().getSlot();
+  }
+
+  public SlotAndBlockRoot getSlotAndBlockRoot() {
+    return getMessage().getSlotAndBlockRoot();
   }
 
   public String toLogString() {
