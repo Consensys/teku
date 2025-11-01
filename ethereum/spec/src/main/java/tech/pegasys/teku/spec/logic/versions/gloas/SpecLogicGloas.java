@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.logic.versions.gloas.operations.validation.Attesta
 import tech.pegasys.teku.spec.logic.versions.gloas.statetransition.epoch.EpochProcessorGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.AttestationUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.util.ForkChoiceUtilGloas;
+import tech.pegasys.teku.spec.logic.versions.gloas.util.ValidatorsUtilGloas;
 import tech.pegasys.teku.spec.logic.versions.gloas.withdrawals.WithdrawalsHelpersGloas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsGloas;
 
@@ -121,8 +122,8 @@ public class SpecLogicGloas extends AbstractSpecLogic {
         new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 
     // Util
-    final ValidatorsUtil validatorsUtil =
-        new ValidatorsUtil(config, miscHelpers, beaconStateAccessors);
+    final ValidatorsUtilGloas validatorsUtil =
+        new ValidatorsUtilGloas(config, miscHelpers, beaconStateAccessors);
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
