@@ -1248,9 +1248,9 @@ public final class DataStructureUtil {
   }
 
   public BlockContainerAndMetaData randomBlockContainerAndMetaData(
-      final BlockContainer blockContents, final UInt64 slotNum) {
+      final BlockContainer blockContainer, final UInt64 slotNum) {
     return new BlockContainerAndMetaData(
-        blockContents, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
+        blockContainer, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
   }
 
   public BeaconBlock randomBlindedBeaconBlock(final UInt64 slot) {

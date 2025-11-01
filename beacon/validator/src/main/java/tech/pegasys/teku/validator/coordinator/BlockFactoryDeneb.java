@@ -67,7 +67,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
     return operationSelector.createBlobSidecarsSelector().apply(blockContainer);
   }
 
-  protected SafeFuture<BlockContainer> createBlockContents(final BeaconBlock block) {
+  private SafeFuture<BlockContainer> createBlockContents(final BeaconBlock block) {
     // The execution BlobsBundle has been cached as part of the block creation
     return operationSelector
         .createBlobsBundleSelector()
