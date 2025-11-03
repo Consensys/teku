@@ -261,6 +261,7 @@ public class DasSamplerBasicTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void checkDataAvailability_shouldRPCFetchImmediatelyIfNotPreviouslyScheduled() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
