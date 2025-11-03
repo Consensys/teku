@@ -13,16 +13,17 @@
 
 package tech.pegasys.teku.statetransition.datacolumns;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
+import tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChannel {
@@ -46,20 +48,24 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   private final CustodyGroupCountManager custodyGroupCountManager;
   private final Map<Bytes32, DataColumnSamplingTracker> recentlySampledColumnsByRoot =
       new ConcurrentHashMap<>();
+
+  private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
+  private final RPCFetchDelayProvider rpcFetchDelayProvider;
 
   public DasSamplerBasic(
       final Spec spec,
+      final AsyncRunner asyncRunner,
       final CurrentSlotProvider currentSlotProvider,
+      final RPCFetchDelayProvider rpcFetchDelayProvider,
       final DataColumnSidecarCustody custody,
       final DataColumnSidecarRetriever retriever,
       final CustodyGroupCountManager custodyGroupCountManager,
       final RecentChainData recentChainData) {
     this.currentSlotProvider = currentSlotProvider;
-    checkNotNull(spec);
-    checkNotNull(custody);
-    checkNotNull(retriever);
+    this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.spec = spec;
+    this.asyncRunner = asyncRunner;
     this.custody = custody;
     this.retriever = retriever;
     this.custodyGroupCountManager = custodyGroupCountManager;
@@ -71,6 +77,11 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
     return recentlySampledColumnsByRoot;
   }
 
+  /**
+   * When syncing or backfilling always make sure to call this method with known DataColumn *before*
+   * calling {@link DasSamplerBasic#checkDataAvailability(UInt64, Bytes32)} so that RPC fetch won't
+   * be executed on those columns.
+   */
   @Override
   public void onAlreadyKnownDataColumn(
       final DataColumnSlotAndIdentifier columnId, final RemoteOrigin remoteOrigin) {
@@ -91,6 +102,31 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
 
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
+    if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {
+      fetchMissingColumnsViaRPC(slot, blockRoot, tracker);
+    }
+
+    return tracker.completionFuture();
+  }
+
+  private void onFirstSeen(
+      final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
+    final Duration delay = rpcFetchDelayProvider.calculate(slot);
+    if (delay.isZero()) {
+      // in case of immediate RPC fetch, let's postpone the actual fetch when checkDataAvailability
+      // is called.
+      // this is needed because 0 delay means we are syncing\backfilling this slot, so we want to
+      // wait eventual known columns to be added via onAlreadyKnownDataColumn before fetching.
+      return;
+    }
+    tracker.rpcFetchScheduled().set(true);
+    asyncRunner
+        .getDelayedFuture(delay)
+        .always(() -> fetchMissingColumnsViaRPC(slot, blockRoot, tracker));
+  }
+
+  private void fetchMissingColumnsViaRPC(
+      final UInt64 slot, final Bytes32 blockRoot, final DataColumnSamplingTracker tracker) {
     final List<DataColumnSlotAndIdentifier> missingColumns = tracker.getMissingColumnIdentifiers();
     LOG.debug(
         "checkDataAvailability(): missing columns for slot {} root {}: {}",
@@ -121,14 +157,23 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
               }
             })
         .finishError(LOG);
-
-    return tracker.completionFuture();
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
-    return recentlySampledColumnsByRoot.computeIfAbsent(
-        blockRoot,
-        k -> DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager));
+    final AtomicBoolean firstSeen = new AtomicBoolean(false);
+    final DataColumnSamplingTracker tracker =
+        recentlySampledColumnsByRoot.computeIfAbsent(
+            blockRoot,
+            k -> {
+              firstSeen.set(true);
+              return DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+            });
+
+    if (firstSeen.get()) {
+      onFirstSeen(slot, blockRoot, tracker);
+    }
+
+    return tracker;
   }
 
   private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
