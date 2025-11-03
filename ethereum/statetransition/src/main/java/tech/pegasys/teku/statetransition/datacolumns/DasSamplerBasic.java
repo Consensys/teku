@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -160,20 +159,14 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   }
 
   private DataColumnSamplingTracker getOrCreateTracker(final UInt64 slot, final Bytes32 blockRoot) {
-    final AtomicBoolean firstSeen = new AtomicBoolean(false);
-    final DataColumnSamplingTracker tracker =
-        recentlySampledColumnsByRoot.computeIfAbsent(
-            blockRoot,
-            k -> {
-              firstSeen.set(true);
-              return DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
-            });
-
-    if (firstSeen.get()) {
-      onFirstSeen(slot, blockRoot, tracker);
-    }
-
-    return tracker;
+    return recentlySampledColumnsByRoot.computeIfAbsent(
+        blockRoot,
+        k -> {
+          final DataColumnSamplingTracker tracker =
+              DataColumnSamplingTracker.create(slot, blockRoot, custodyGroupCountManager);
+          onFirstSeen(slot, blockRoot, tracker);
+          return tracker;
+        });
   }
 
   private SafeFuture<DataColumnSidecar> retrieveColumnWithSamplingAndCustody(
