@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.retriever.DataColumnSidecarRetriever;
 
 public class SidecarRetriever implements DataColumnSidecarRetriever {
@@ -41,7 +41,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
 
   private final DataColumnSidecarRetriever delegate;
   private final MiscHelpersFulu miscHelpersFulu;
-  private final DataColumnSidecarDB sidecarDB;
+  private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final Duration recoveryTimeout;
@@ -65,7 +65,7 @@ public class SidecarRetriever implements DataColumnSidecarRetriever {
   public SidecarRetriever(
       final DataColumnSidecarRetriever delegate,
       final MiscHelpersFulu miscHelpersFulu,
-      final DataColumnSidecarDB sidecarDB,
+      final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
       final Duration recoveryTimeout,
       final Duration downloadTimeout,

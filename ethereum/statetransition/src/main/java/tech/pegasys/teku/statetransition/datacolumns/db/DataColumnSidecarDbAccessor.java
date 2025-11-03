@@ -13,37 +13,19 @@
 
 package tech.pegasys.teku.statetransition.datacolumns.db;
 
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
-import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
-import tech.pegasys.teku.storage.api.SidecarUpdateChannel;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-public interface DataColumnSidecarDB extends DataColumnSidecarCoreDB {
+/** Higher level {@link DataColumnSidecarDB} accessor */
+public interface DataColumnSidecarDbAccessor extends DataColumnSidecarCoreDB {
 
-  static DataColumnSidecarDB create(
-      final CombinedChainDataClient combinedChainDataClient,
-      final SidecarUpdateChannel sidecarUpdateChannel) {
-    return new DataColumnSidecarDBImpl(combinedChainDataClient, sidecarUpdateChannel);
+  static DataColumnSidecarDbAccessorBuilder builder(final DataColumnSidecarDB db) {
+    return new DataColumnSidecarDbAccessorBuilder(db);
   }
-
-  // read
 
   SafeFuture<Optional<UInt64>> getFirstCustodyIncompleteSlot();
 
-  @Override
-  SafeFuture<Optional<DataColumnSidecar>> getSidecar(DataColumnSlotAndIdentifier identifier);
-
-  @Override
-  SafeFuture<List<DataColumnSlotAndIdentifier>> getColumnIdentifiers(UInt64 slot);
-
   // update
-
   SafeFuture<Void> setFirstCustodyIncompleteSlot(UInt64 slot);
-
-  @Override
-  SafeFuture<Void> addSidecar(DataColumnSidecar sidecar);
 }

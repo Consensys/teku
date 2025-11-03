@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigFulu;
 
-public class DataColumnSidecarDbBuilder {
+public class DataColumnSidecarDbAccessorBuilder {
 
   // is roughly 600Kb (cache entry for one slot is about 60 bytes)
   private static final int DEFAULT_COLUMN_ID_READ_CACHE_MAX_SLOT_COUNT = 10 * 1024;
@@ -28,21 +28,23 @@ public class DataColumnSidecarDbBuilder {
   private int columnIdReadCacheSlotCount = DEFAULT_COLUMN_ID_READ_CACHE_MAX_SLOT_COUNT;
   private int columnIdWriteCacheCount = DEFAULT_COLUMN_ID_WRITE_CACHE_MAX_COUNT;
 
-  DataColumnSidecarDbBuilder(final DataColumnSidecarDB db) {
+  DataColumnSidecarDbAccessorBuilder(final DataColumnSidecarDB db) {
     this.db = db;
   }
 
-  public DataColumnSidecarDbBuilder spec(final Spec spec) {
+  public DataColumnSidecarDbAccessorBuilder spec(final Spec spec) {
     this.spec = spec;
     return this;
   }
 
-  public DataColumnSidecarDbBuilder columnIdCacheSlotCount(final int columnIdCacheSlotCount) {
+  public DataColumnSidecarDbAccessorBuilder columnIdCacheSlotCount(
+      final int columnIdCacheSlotCount) {
     this.columnIdReadCacheSlotCount = columnIdCacheSlotCount;
     return this;
   }
 
-  public DataColumnSidecarDbBuilder columnIdWriteCacheCount(final int columnIdWriteCacheCount) {
+  public DataColumnSidecarDbAccessorBuilder columnIdWriteCacheCount(
+      final int columnIdWriteCacheCount) {
     this.columnIdWriteCacheCount = columnIdWriteCacheCount;
     return this;
   }

@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolver;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 /**
  * This class helps to recover sidecars which took a consider amount of time to retrieve by {@link
@@ -54,7 +54,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
   private final DataColumnSidecarRetriever delegate;
   private final MiscHelpersFulu miscHelpersFulu;
   private final CanonicalBlockResolver blockResolver;
-  private final DataColumnSidecarDB sidecarDB;
+  private final DataColumnSidecarDbAccessor sidecarDB;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final Duration recoveryInitiationTimeout;
@@ -80,7 +80,7 @@ public class RecoveringSidecarRetriever implements DataColumnSidecarRetriever {
       final DataColumnSidecarRetriever delegate,
       final MiscHelpersFulu miscHelpersFulu,
       final CanonicalBlockResolver blockResolver,
-      final DataColumnSidecarDB sidecarDB,
+      final DataColumnSidecarDbAccessor sidecarDB,
       final AsyncRunner asyncRunner,
       final Duration recoveryInitiationTimeout,
       final Duration recoveryInitiationCheckInterval,

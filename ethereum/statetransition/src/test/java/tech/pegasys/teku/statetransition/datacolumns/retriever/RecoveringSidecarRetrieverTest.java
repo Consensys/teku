@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.CanonicalBlockResolverStub;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 @SuppressWarnings({"JavaCase"})
 public class RecoveringSidecarRetrieverTest {
@@ -53,6 +54,8 @@ public class RecoveringSidecarRetrieverTest {
   final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner(stubTimeProvider);
   final Spec spec = TestSpecFactory.createMinimalFulu();
   final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
+  final DataColumnSidecarDbAccessor dbAccessor =
+      DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   final CanonicalBlockResolverStub blockResolver = new CanonicalBlockResolverStub(spec);
 
   final SpecConfigFulu config =
@@ -88,7 +91,7 @@ public class RecoveringSidecarRetrieverTest {
             delegateRetriever,
             miscHelpers,
             blockResolver,
-            db,
+            dbAccessor,
             stubAsyncRunner,
             RECOVERY_INITIATION_TIMEOUT,
             RECOVERY_INITIATION_CHECK_INTERVAL,

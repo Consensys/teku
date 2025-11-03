@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.DataColumnSlotAndIdentifier;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
-import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, SlotEventsChannel {
 
@@ -80,7 +80,7 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
   }
 
   private final Spec spec;
-  private final DataColumnSidecarDB db;
+  private final DataColumnSidecarDbAccessor db;
   private final CanonicalBlockResolver blockResolver;
   private final AtomicInteger totalCustodyGroupCount;
   private final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator;
@@ -90,7 +90,7 @@ public class DataColumnSidecarCustodyImpl implements DataColumnSidecarCustody, S
   public DataColumnSidecarCustodyImpl(
       final Spec spec,
       final CanonicalBlockResolver blockResolver,
-      final DataColumnSidecarDB db,
+      final DataColumnSidecarDbAccessor db,
       final MinCustodyPeriodSlotCalculator minCustodyPeriodSlotCalculator,
       final CustodyGroupCountManager custodyGroupCountManager) {
     checkNotNull(spec);

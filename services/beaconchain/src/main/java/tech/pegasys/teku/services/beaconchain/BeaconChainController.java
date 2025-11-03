@@ -176,6 +176,7 @@ import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecovering
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarRecoveringCustodyImpl;
 import tech.pegasys.teku.statetransition.datacolumns.MinCustodyPeriodSlotCalculator;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipBatchLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.gossip.DasGossipLogger;
 import tech.pegasys.teku.statetransition.datacolumns.log.rpc.DasReqRespLogger;
@@ -857,6 +858,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
         DataColumnSidecarDB.create(
             combinedChainDataClient,
             eventChannels.getPublisher(SidecarUpdateChannel.class, beaconAsyncRunner));
+    final DataColumnSidecarDbAccessor dbAccessor =
+        DataColumnSidecarDbAccessor.builder(sidecarDB).spec(spec).build();
     final CanonicalBlockResolver canonicalBlockResolver =
         slot ->
             combinedChainDataClient
@@ -873,7 +876,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new DataColumnSidecarCustodyImpl(
             spec,
             canonicalBlockResolver,
-            sidecarDB,
+            dbAccessor,
             minCustodyPeriodSlotCalculator,
             custodyGroupCountManager);
     eventChannels.subscribe(SlotEventsChannel.class, dataColumnSidecarCustodyImpl);
@@ -955,7 +958,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new SidecarRetriever(
               sidecarRetriever,
               miscHelpersFulu,
-              sidecarDB,
+              dbAccessor,
               dasAsyncRunner,
               Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarRecoveryTimeout()),
               Duration.ofMillis(beaconConfig.p2pConfig().getReworkedSidecarDownloadTimeout()),
@@ -970,7 +973,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               sidecarRetriever,
               miscHelpersFulu,
               canonicalBlockResolver,
-              sidecarDB,
+              dbAccessor,
               dasAsyncRunner,
               Duration.ofMinutes(5),
               Duration.ofSeconds(30),

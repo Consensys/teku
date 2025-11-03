@@ -43,13 +43,16 @@ import tech.pegasys.teku.spec.logic.versions.fulu.helpers.MiscHelpersFulu;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarDBStub;
 import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDB;
+import tech.pegasys.teku.statetransition.datacolumns.db.DataColumnSidecarDbAccessor;
 
 class RebuildColumnsTaskTest {
 
   private final Spec spec = TestSpecFactory.createMinimalFulu();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(1_000_000);
-  private final DataColumnSidecarDB dataColumnSidecarDB = new DataColumnSidecarDBStub();
+  private final DataColumnSidecarDB db = new DataColumnSidecarDBStub();
+  private final DataColumnSidecarDbAccessor dbAccessor =
+      DataColumnSidecarDbAccessor.builder(db).spec(spec).build();
   private final PendingRecoveryRequest request = mock(PendingRecoveryRequest.class);
   private final SafeFuture<DataColumnSidecar> future = new SafeFuture<>();
   private static final StubMetricsSystem METRICS = new StubMetricsSystem();
@@ -66,7 +69,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
@@ -87,7 +90,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
@@ -107,7 +110,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
@@ -127,7 +130,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
@@ -149,7 +152,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             2,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final DataColumnSidecar sidecar = mock(DataColumnSidecar.class);
@@ -177,7 +180,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     // when done and sidecar present
@@ -204,7 +207,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final PendingRecoveryRequestTestArticle pendingRequest =
@@ -229,7 +232,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, true);
@@ -251,7 +254,7 @@ class RebuildColumnsTaskTest {
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDB,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
     final PendingRecoveryRequestTestArticle pendingRequest =
         createPendingRecovery(slotAndBlockRoot, UInt64.ONE, true);
@@ -267,19 +270,19 @@ class RebuildColumnsTaskTest {
   void checkQueryResult_readyToRebuild() {
     final UInt64 timestampMillis = timeProvider.getTimeInMillis();
     final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot(UInt64.ZERO);
-    final DataColumnSidecarDB dataColumnSidecarDBMock = mock(DataColumnSidecarDB.class);
+    final DataColumnSidecarDbAccessor dbAccessor = mock(DataColumnSidecarDbAccessor.class);
     final RebuildColumnsTaskTestArticle task =
         new RebuildColumnsTaskTestArticle(
             slotAndBlockRoot,
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDBMock,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final SafeFuture<List<DataColumnSlotAndIdentifier>> future = new SafeFuture<>();
-    when(dataColumnSidecarDBMock.getColumnIdentifiers(slotAndBlockRoot)).thenReturn(future);
-    when(dataColumnSidecarDBMock.getSidecar(any()))
+    when(dbAccessor.getColumnIdentifiers(slotAndBlockRoot)).thenReturn(future);
+    when(dbAccessor.getSidecar(any()))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomDataColumnSidecar())));
     final List<DataColumnSlotAndIdentifier> data =
@@ -306,18 +309,18 @@ class RebuildColumnsTaskTest {
   void checkQueryResult_notReadyToRebuild() {
     final UInt64 timestampMillis = timeProvider.getTimeInMillis();
     final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot(UInt64.ZERO);
-    final DataColumnSidecarDB dataColumnSidecarDBMock = mock(DataColumnSidecarDB.class);
+    final DataColumnSidecarDbAccessor dbAccessor = mock(DataColumnSidecarDbAccessor.class);
     final RebuildColumnsTaskTestArticle task =
         new RebuildColumnsTaskTestArticle(
             slotAndBlockRoot,
             timestampMillis,
             RECOVERY_TIMEOUT,
             1,
-            dataColumnSidecarDBMock,
+            dbAccessor,
             spec.getGenesisSpec().miscHelpers().toVersionFulu().orElseThrow());
 
     final SafeFuture<List<DataColumnSlotAndIdentifier>> future = new SafeFuture<>();
-    when(dataColumnSidecarDBMock.getColumnIdentifiers(slotAndBlockRoot))
+    when(dbAccessor.getColumnIdentifiers(slotAndBlockRoot))
         .thenReturn(future)
         .thenReturn(new SafeFuture<>());
     final List<DataColumnSlotAndIdentifier> data =
@@ -384,7 +387,7 @@ class RebuildColumnsTaskTest {
         final UInt64 timestampMillis,
         final Duration timeout,
         final int minimumColumnsForRebuild,
-        final DataColumnSidecarDB dataColumnSidecarDB,
+        final DataColumnSidecarDbAccessor dataColumnSidecarDB,
         final MiscHelpersFulu miscHelpers) {
       super(
           slotAndBlockRoot,
