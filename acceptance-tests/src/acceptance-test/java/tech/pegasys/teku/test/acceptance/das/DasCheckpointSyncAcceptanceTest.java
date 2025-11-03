@@ -43,7 +43,7 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     primaryNode.start();
     final UInt64 genesisTime = primaryNode.getGenesisTime();
     primaryNode.waitForNewFinalization();
-    final SignedBeaconBlock finalizedBlock = primaryNode.getFinalizedBlock();
+    final SignedBeaconBlock checkpointFinalizedBlock = primaryNode.getFinalizedBlock();
 
     // late joining full node without validators
     final TekuBeaconNode secondaryNode =
@@ -59,9 +59,7 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.start();
     secondaryNode.waitUntilInSyncWith(primaryNode);
 
-    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
-
-    final int firstFuluSlot =
+    final UInt64 firstFuluSlot =
         primaryNode
             .getSpec()
             .computeStartSlotAtEpoch(
@@ -69,23 +67,26 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
                     .getSpec()
                     .forMilestone(SpecMilestone.FULU)
                     .getConfig()
-                    .getFuluForkEpoch())
-            .intValue();
-    final int checkpointSlot = finalizedBlock.getSlot().intValue();
+                    .getFuluForkEpoch());
+    // Wait until block backfill is completed, it starts after forward sync
+    secondaryNode.waitForBlockAtSlot(firstFuluSlot);
+
+    final SignedBeaconBlock blockAtHead = secondaryNode.getHeadBlock();
+    final int checkpointSlot = checkpointFinalizedBlock.getSlot().intValue();
     final int endSlot = blockAtHead.getSlot().intValue();
 
     // after checkpoint is synced with sidecars
     final int afterCheckpointSidecars =
-        IntStream.range(checkpointSlot, endSlot)
+        IntStream.range(checkpointSlot + 1, endSlot)
             .mapToObj(UInt64::valueOf)
             .map(slot -> getAndAssertDasCustody(secondaryNode, slot))
             .mapToInt(i -> i)
             .sum();
     assertThat(afterCheckpointSidecars).isGreaterThan(0);
 
-    // before checkpoint sidecars are backfilled
+    // checkpoint + before checkpoint sidecars are backfilled
     final int beforeCheckpointSidecars =
-        IntStream.range(firstFuluSlot, checkpointSlot)
+        IntStream.rangeClosed(firstFuluSlot.intValue(), checkpointSlot)
             .mapToObj(UInt64::valueOf)
             .map(slot -> getAndAssertDasCustody(secondaryNode, slot))
             .mapToInt(i -> i)
