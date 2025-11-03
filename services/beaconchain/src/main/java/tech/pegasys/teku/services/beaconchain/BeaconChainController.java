@@ -332,7 +332,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
   protected volatile BlockImporter blockImporter;
-
   protected volatile DataProvider dataProvider;
   protected volatile RecentChainData recentChainData;
   protected volatile Eth2P2PNetwork p2pNetwork;
