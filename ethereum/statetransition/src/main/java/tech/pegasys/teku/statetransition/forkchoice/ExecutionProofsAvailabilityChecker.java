@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
@@ -27,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndV
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 
 public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<ExecutionProof> {
+  private static final Logger LOG = LogManager.getLogger();
   private final ExecutionProofManager executionProofManager;
   private final SafeFuture<DataAndValidationResult<ExecutionProof>> validationResult =
       new SafeFuture<>();
@@ -62,6 +65,7 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
   public SafeFuture<DataAndValidationResult<ExecutionProof>> getAvailabilityCheckResult() {
       return delegate.getAvailabilityCheckResult().thenCompose(daResult ->{
           if(daResult.isSuccess()){
+              LOG.debug("Blob/DataColumn availability valid, proceeding to execution proofs validation");
                 return validationResult;
           }
           else {

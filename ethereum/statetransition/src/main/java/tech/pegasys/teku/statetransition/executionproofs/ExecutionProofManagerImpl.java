@@ -124,11 +124,12 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     for (int attempt = 0; attempt < attemptsToGetProof; attempt++) {
       final DataAndValidationResult<ExecutionProof> result = checkForValidProofs(block);
       if (result.isValid()) {
+          LOG.debug("Found valid proofs for block {} on attempt {}", block.getRoot(), attempt + 1);
         return SafeFuture.completedFuture(result);
       }
       try {
           //TODO validate this is not blocking the thread pool
-        Thread.sleep(100L);
+        Thread.sleep(2000L);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
