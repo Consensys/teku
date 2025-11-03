@@ -387,14 +387,14 @@ class RebuildColumnsTaskTest {
         final UInt64 timestampMillis,
         final Duration timeout,
         final int minimumColumnsForRebuild,
-        final DataColumnSidecarDbAccessor dataColumnSidecarDB,
+        final DataColumnSidecarDbAccessor sidecarDB,
         final MiscHelpersFulu miscHelpers) {
       super(
           slotAndBlockRoot,
           timestampMillis,
           timeout,
           minimumColumnsForRebuild,
-          dataColumnSidecarDB,
+          sidecarDB,
           miscHelpers);
     }
 

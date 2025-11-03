@@ -97,7 +97,6 @@ public class DasCustodyStand {
             .orElse(this.db);
 
     this.dbAccessor = DataColumnSidecarDbAccessor.builder(asyncDb).spec(spec).build();
-
     this.custodyGroupCountManager =
         createCustodyGroupCountManager(totalCustodyGroupCount, samplingGroupCount);
     this.custody =
