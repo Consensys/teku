@@ -59,7 +59,7 @@ public class RPCFetchDelayProviderTest {
 
     when(recentChainData.computeTimeAtSlot(currentSlot)).thenReturn(startSlotInSeconds);
 
-    // blocks arrives at slot start
+    // first block\dataSidecar arrives at slot start
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.longValue());
 
     final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
@@ -75,12 +75,12 @@ public class RPCFetchDelayProviderTest {
 
     when(recentChainData.computeTimeAtSlot(currentSlot)).thenReturn(startSlotInSeconds);
 
-    // blocks arrives 200ms before attestation due
+    // first block\dataSidecar arrives 200ms before attestation due
     timeProvider.advanceTimeByMillis(startSlotInMillis.plus(3_800).longValue());
 
     final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
 
-    // we can wait the full target
+    // we can't wait less than min
     assertThat(fetchDelay).isEqualTo(Duration.ofMillis(DEFAULT_MIN_WAIT_MILLIS.longValue()));
   }
 
@@ -90,7 +90,7 @@ public class RPCFetchDelayProviderTest {
 
     when(recentChainData.computeTimeAtSlot(currentSlot)).thenReturn(startSlotInSeconds);
 
-    // blocks arrives 1s after attestation due
+    // first block\dataSidecar arrives 1s after attestation due
     timeProvider.advanceTimeBySeconds(startSlotInSeconds.plus(5).longValue());
 
     final Duration fetchDelay = rpcFetchDelayProvider.calculate(currentSlot);
@@ -108,7 +108,7 @@ public class RPCFetchDelayProviderTest {
 
     final UInt64 millisecondsIntoAttDueLimit = UInt64.valueOf(200);
 
-    // block arrival is 200ms over the max wait relative to the attestation due
+    // first block\dataSidecar arrival is 200ms over the max wait relative to the attestation due
     final UInt64 blockArrivalTimeMillis =
         startSlotInMillis
             .plus(4_000)

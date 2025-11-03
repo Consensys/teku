@@ -41,8 +41,11 @@ public interface RPCFetchDelayProvider {
       final UInt64 targetWaitMillis) {
 
     return (slot) -> {
+      // this logic is supposed to run on "firstSeen" block\dataSidecar.
+      // The slot param is the block\dataSidecar's slot.
+
       if (slot.isLessThan(currentSlotProvider.getCurrentSlot())) {
-        // old slot
+        // old slot, we are in syncing\backfilling, we don't need to wait
         return Duration.ZERO;
       }
 
@@ -52,10 +55,16 @@ public interface RPCFetchDelayProvider {
           slotStartTimeMillis.plus(spec.getAttestationDueMillis(slot));
 
       if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
-        // late block, we already produced attestations on previous head,
+        // late block\sidecar, we already produced attestations voting for previous head,
         // so let's wait our target delay before trying to fetch
         return Duration.ofMillis(targetWaitMillis.intValue());
       }
+
+      // The idea is to wait the target delay (targetWaitMillis) if we are far
+      // enough from our deadline (maxWaitRelativeToAttDueMillis).
+      // If there is not enough time left, let's reduce the target delay so that
+      // distance from our deadline remains unchanged.
+      // The target delay reduction is capped so that we guarantee to wait at least "minWaitMillis".
 
       final UInt64 upperLimitRelativeToAttDue =
           attestationDueMillis.minus(maxWaitRelativeToAttDueMillis);
