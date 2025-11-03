@@ -66,7 +66,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
       final boolean isProofGenerationEnabled,
       final int minProofsRequired,
       final Duration proofGenerationDelay,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner){
     this.executionProofGossipValidator = executionProofGossipValidator;
     this.onCreatedProof = onCreatedProof;
     this.isProofGenerationEnabled = isProofGenerationEnabled;
@@ -119,18 +119,19 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   }
 
   @Override
-  public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
-      final SignedBeaconBlock block) {
-    return new ExecutionProofsAvailabilityChecker(this, block);
-  }
-
-  @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> validateBlockWithExecutionProofs(
       final SignedBeaconBlock block) {
     for (int attempt = 0; attempt < attemptsToGetProof; attempt++) {
       final DataAndValidationResult<ExecutionProof> result = checkForValidProofs(block);
       if (result.isValid()) {
         return SafeFuture.completedFuture(result);
+      }
+      try {
+          //TODO validate this is not blocking the thread pool
+        Thread.sleep(100L);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
       }
     }
     LOG.debug("Checking proofs for block {}", block.getRoot());
@@ -198,4 +199,5 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
 
     return SafeFuture.completedFuture(null);
   }
+
 }

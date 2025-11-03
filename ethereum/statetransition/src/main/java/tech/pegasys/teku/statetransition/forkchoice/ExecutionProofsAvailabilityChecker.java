@@ -14,10 +14,15 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
+import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
 
@@ -25,18 +30,29 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
   private final ExecutionProofManager executionProofManager;
   private final SafeFuture<DataAndValidationResult<ExecutionProof>> validationResult =
       new SafeFuture<>();
-  private final SignedBeaconBlock block;
+  private SignedBeaconBlock block;
+  private AvailabilityChecker<?> delegate;
 
   public ExecutionProofsAvailabilityChecker(
-      final ExecutionProofManager executionProofManager, final SignedBeaconBlock block) {
+      final ExecutionProofManager executionProofManager) {
     this.executionProofManager = executionProofManager;
-    this.block = block;
+
   }
+
+  public void setDelegate(final AvailabilityChecker<?> delegate){
+        this.delegate = delegate;
+    }
+
+    public void setBlock(final SignedBeaconBlock block) {
+        this.block = block;
+    }
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
+      delegate.initiateDataAvailabilityCheck();
     executionProofManager
         .validateBlockWithExecutionProofs(block)
+        // should probably use a timeout based on slot time
         .orTimeout(Duration.ofSeconds(10))
         .propagateTo(validationResult);
     return true;
@@ -44,6 +60,21 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
 
   @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> getAvailabilityCheckResult() {
-    return validationResult;
+      return delegate.getAvailabilityCheckResult().thenCompose(daResult ->{
+          if(daResult.isSuccess()){
+                return validationResult;
+          }
+          else {
+              List<ExecutionProof> emptyList = Collections.emptyList();
+                return SafeFuture.completedFuture(new DataAndValidationResult<>(
+                        AvailabilityValidationResult.INVALID,
+                        emptyList,
+                        daResult.cause()
+                ));
+          }
+      });
+
+
   }
+
 }

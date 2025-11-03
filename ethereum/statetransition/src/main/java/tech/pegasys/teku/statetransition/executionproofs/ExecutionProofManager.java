@@ -25,18 +25,13 @@ import tech.pegasys.teku.spec.logic.common.statetransition.availability.Availabi
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
+import tech.pegasys.teku.statetransition.forkchoice.ExecutionProofsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public interface ExecutionProofManager extends AvailabilityCheckerFactory<ExecutionProof> {
+public interface ExecutionProofManager {
 
   ExecutionProofManager NOOP =
       new ExecutionProofManager() {
-
-        @Override
-        public AvailabilityChecker<ExecutionProof> createAvailabilityChecker(
-            final SignedBeaconBlock block) {
-          return NOOP_EXECUTION_PROOF;
-        }
 
         @Override
         public SafeFuture<InternalValidationResult> onReceivedExecutionProofGossip(
@@ -62,6 +57,7 @@ public interface ExecutionProofManager extends AvailabilityCheckerFactory<Execut
         public SafeFuture<Void> generateProofs(SignedBlockContainer blockContainer) {
           return SafeFuture.COMPLETE;
         }
+
       };
 
   void onExecutionProofPublish(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
@@ -80,4 +76,5 @@ public interface ExecutionProofManager extends AvailabilityCheckerFactory<Execut
   }
 
   SafeFuture<Void> generateProofs(SignedBlockContainer blockContainer);
+
 }
