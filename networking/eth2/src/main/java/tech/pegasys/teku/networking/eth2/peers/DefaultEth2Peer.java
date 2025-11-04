@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -157,11 +156,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     requestObjectsTrackers.put(RequestObject.DATA_COLUMN_SIDECAR, dataColumnSidecarsRequestTracker);
     requestObjectsTrackers.put(
         RequestObject.EXECUTION_PAYLOAD_ENVELOPE, executionPayloadEnvelopesRequestTracker);
-    Preconditions.checkState(
+    checkState(
         requestObjectsTrackers.size() == RequestObject.values().length,
-        "Some request objects trackers haven't been configured. Configured: %s, Required: %s",
-        requestObjectsTrackers.keySet(),
-        Arrays.toString(RequestObject.values()));
+        "NOT all request objects trackers have been configured");
     this.requestTracker = requestTracker;
     this.metricsSystem = metricsSystem;
     this.timeProvider = timeProvider;
