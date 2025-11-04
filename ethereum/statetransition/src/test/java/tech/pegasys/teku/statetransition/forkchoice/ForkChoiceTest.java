@@ -107,8 +107,6 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-import javax.swing.text.html.Option;
-
 class ForkChoiceTest {
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
