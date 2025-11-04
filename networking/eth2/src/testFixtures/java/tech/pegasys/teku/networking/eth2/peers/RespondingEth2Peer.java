@@ -390,38 +390,23 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestKey> approveBlocksRequest(
-      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
+  public <T> Optional<RequestKey> approveObjectsRequest(
+      final RequestObject requestObject,
+      final ResponseCallback<T> callback,
+      final long objectsCount) {
     return Optional.of(new RequestKey(ZERO, 0));
   }
 
   @Override
-  public void adjustBlocksRequest(final RequestKey blockRequests, final long objectCount) {}
-
-  @Override
-  public Optional<RequestKey> approveBlobSidecarsRequest(
-      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return Optional.of(new RequestKey(ZERO, 0));
-  }
-
-  @Override
-  public void adjustBlobSidecarsRequest(
-      final RequestKey blobSidecarRequests, final long returnedBlobSidecarsCount) {}
+  public void adjustObjectsRequest(
+      final RequestObject requestObject,
+      final RequestKey requestKey,
+      final long returnedObjectsCount) {}
 
   @Override
   public long getAvailableDataColumnSidecarsRequestCount() {
     return 0;
   }
-
-  @Override
-  public Optional<RequestKey> approveDataColumnSidecarsRequest(
-      final ResponseCallback<DataColumnSidecar> callback, final long dataColumnSidecarsCount) {
-    return Optional.of(new RequestKey(ZERO, 0));
-  }
-
-  @Override
-  public void adjustDataColumnSidecarsRequest(
-      final RequestKey dataColumnSidecarRequests, final long objectCount) {}
 
   @Override
   public boolean approveRequest() {
