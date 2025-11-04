@@ -121,8 +121,16 @@
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
       search: "BLOB_SCHEDULE:"
   spec: |
-    <spec config_var="BLOB_SCHEDULE" fork="fulu" hash="f3f1064a">
+    <spec config_var="BLOB_SCHEDULE" fork="fulu" hash="07879110">
     BLOB_SCHEDULE: tuple[frozendict[str, Any], ...] = (
+        frozendict({
+            "EPOCH": 412672,
+            "MAX_BLOBS_PER_BLOCK": 15,
+        }),
+        frozendict({
+            "EPOCH": 419072,
+            "MAX_BLOBS_PER_BLOCK": 21,
+        }),
     )
     </spec>
 
@@ -276,8 +284,8 @@
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
       search: "FULU_FORK_EPOCH:"
   spec: |
-    <spec config_var="FULU_FORK_EPOCH" fork="fulu" hash="673334be">
-    FULU_FORK_EPOCH: Epoch = 18446744073709551615
+    <spec config_var="FULU_FORK_EPOCH" fork="fulu" hash="af10fa3c">
+    FULU_FORK_EPOCH: Epoch = 411392
     </spec>
 
 - name: FULU_FORK_VERSION
@@ -355,7 +363,8 @@
 - name: MAX_BLOBS_PER_BLOCK
   sources:
     - file: ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml
-      search: "MAX_BLOBS_PER_BLOCK:"
+      search: "^MAX_BLOBS_PER_BLOCK:"
+      regex: true
   spec: |
     <spec config_var="MAX_BLOBS_PER_BLOCK" fork="deneb" hash="3e0b5383">
     MAX_BLOBS_PER_BLOCK: uint64 = 6

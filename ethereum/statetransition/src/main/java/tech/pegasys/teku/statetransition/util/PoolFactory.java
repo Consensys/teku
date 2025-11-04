@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_MIN_WAIT_MILLIS;
+import static tech.pegasys.teku.statetransition.util.RPCFetchDelayProvider.DEFAULT_TARGET_WAIT_MILLIS;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collections;
@@ -38,6 +42,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.datacolumns.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.datacolumns.CustodyGroupCountManager;
 import tech.pegasys.teku.statetransition.datacolumns.DataColumnSidecarELRecoveryManager;
 import tech.pegasys.teku.statetransition.datacolumns.util.DataColumnSidecarELRecoveryManagerImpl;
@@ -152,7 +157,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final BiConsumer<List<DataColumnSidecar>, RemoteOrigin> dataColumnSidecarPublisher,
-      final Supplier<CustodyGroupCountManager> custodyGroupCountManagerSupplier,
+      final CustodyGroupCountManager custodyGroupCountManager,
       final MetricsSystem metricsSystem,
       final TimeProvider timeProvider) {
     return new DataColumnSidecarELRecoveryManagerImpl(
@@ -164,7 +169,7 @@ public class PoolFactory {
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         EL_RECOVERY_TASKS_LIMIT,
         dataColumnSidecarPublisher,
-        custodyGroupCountManagerSupplier,
+        custodyGroupCountManager,
         metricsSystem,
         timeProvider,
         EL_BLOBS_FETCHING_DELAY,
@@ -183,17 +188,28 @@ public class PoolFactory {
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxTrackers) {
+
+    final RPCFetchDelayProvider rpcFetchDelayProvider =
+        RPCFetchDelayProvider.create(
+            spec,
+            timeProvider,
+            recentChainData,
+            CurrentSlotProvider.create(spec, recentChainData.getStore()),
+            DEFAULT_MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS,
+            DEFAULT_MIN_WAIT_MILLIS,
+            DEFAULT_TARGET_WAIT_MILLIS);
+
     return new BlockBlobSidecarsTrackersPoolImpl(
         blockImportChannel,
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
-        timeProvider,
         asyncRunner,
         recentChainData,
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
+        rpcFetchDelayProvider,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxTrackers);
@@ -203,12 +219,12 @@ public class PoolFactory {
   BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
       final BlockImportChannel blockImportChannel,
       final Spec spec,
-      final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
+      final RPCFetchDelayProvider rpcFetchDelayProvider,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,
@@ -218,12 +234,12 @@ public class PoolFactory {
         blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
-        timeProvider,
         asyncRunner,
         recentChainData,
         executionLayer,
         gossipValidatorSupplier,
         blobSidecarGossipPublisher,
+        rpcFetchDelayProvider,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,
