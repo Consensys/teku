@@ -107,6 +107,8 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
+import javax.swing.text.html.Option;
+
 class ForkChoiceTest {
 
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
@@ -172,7 +174,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             debugDataDumper,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -422,7 +425,8 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             DebugDataDumper.NOOP,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
