@@ -13,19 +13,14 @@
 
 package tech.pegasys.teku.statetransition.executionproofs;
 
-import static tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker.NOOP_EXECUTION_PROOF;
-
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
-import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityChecker;
-import tech.pegasys.teku.spec.logic.common.statetransition.availability.AvailabilityCheckerFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.availability.DataAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
-import tech.pegasys.teku.statetransition.forkchoice.ExecutionProofsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface ExecutionProofManager {
@@ -57,7 +52,6 @@ public interface ExecutionProofManager {
         public SafeFuture<Void> generateProofs(SignedBlockContainer blockContainer) {
           return SafeFuture.COMPLETE;
         }
-
       };
 
   void onExecutionProofPublish(ExecutionProof executionProof, RemoteOrigin remoteOrigin);
@@ -76,5 +70,4 @@ public interface ExecutionProofManager {
   }
 
   SafeFuture<Void> generateProofs(SignedBlockContainer blockContainer);
-
 }

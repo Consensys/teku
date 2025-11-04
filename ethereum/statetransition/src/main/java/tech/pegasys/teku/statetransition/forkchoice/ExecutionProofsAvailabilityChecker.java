@@ -16,8 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -36,23 +34,21 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
   private SignedBeaconBlock block;
   private AvailabilityChecker<?> delegate;
 
-  public ExecutionProofsAvailabilityChecker(
-      final ExecutionProofManager executionProofManager) {
+  public ExecutionProofsAvailabilityChecker(final ExecutionProofManager executionProofManager) {
     this.executionProofManager = executionProofManager;
-
   }
 
-  public void setDelegate(final AvailabilityChecker<?> delegate){
-        this.delegate = delegate;
-    }
+  public void setDelegate(final AvailabilityChecker<?> delegate) {
+    this.delegate = delegate;
+  }
 
-    public void setBlock(final SignedBeaconBlock block) {
-        this.block = block;
-    }
+  public void setBlock(final SignedBeaconBlock block) {
+    this.block = block;
+  }
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-      delegate.initiateDataAvailabilityCheck();
+    delegate.initiateDataAvailabilityCheck();
     executionProofManager
         .validateBlockWithExecutionProofs(block)
         // should probably use a timeout based on slot time
@@ -63,23 +59,21 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
 
   @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> getAvailabilityCheckResult() {
-      return delegate.getAvailabilityCheckResult().thenCompose(daResult ->{
-          LOG.debug("Delegate Availability result: {}", daResult.validationResult());
-          if(daResult.isSuccess()){
-              LOG.debug("Blob/DataColumn availability valid, proceeding to execution proofs validation");
+    return delegate
+        .getAvailabilityCheckResult()
+        .thenCompose(
+            daResult -> {
+              LOG.debug("Delegate Availability result: {}", daResult.validationResult());
+              if (daResult.isSuccess()) {
+                LOG.debug(
+                    "Blob/DataColumn availability valid, proceeding to execution proofs validation");
                 return validationResult;
-          }
-          else {
-              List<ExecutionProof> emptyList = Collections.emptyList();
-                return SafeFuture.completedFuture(new DataAndValidationResult<>(
-                        AvailabilityValidationResult.INVALID,
-                        emptyList,
-                        daResult.cause()
-                ));
-          }
-      });
-
-
+              } else {
+                List<ExecutionProof> emptyList = Collections.emptyList();
+                return SafeFuture.completedFuture(
+                    new DataAndValidationResult<>(
+                        AvailabilityValidationResult.INVALID, emptyList, daResult.cause()));
+              }
+            });
   }
-
 }

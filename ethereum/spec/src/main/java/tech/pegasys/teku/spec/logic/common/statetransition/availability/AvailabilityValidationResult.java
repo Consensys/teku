@@ -18,5 +18,5 @@ public enum AvailabilityValidationResult {
   NOT_AVAILABLE,
   INVALID,
   VALID,
-  OPTIMISTIC //used only with execution proofs
+  OPTIMISTIC // used only with execution proofs
 }

@@ -58,11 +58,11 @@ public record DataAndValidationResult<Data>(
         AvailabilityValidationResult.NOT_AVAILABLE, Collections.emptyList(), Optional.of(cause));
   }
 
-  //this should only be used with execution proofs
-    public static <Data> DataAndValidationResult<Data> optimisticValidResult() {
-        return new DataAndValidationResult<>(
-                AvailabilityValidationResult.OPTIMISTIC, Collections.emptyList(), Optional.empty());
-    }
+  // this should only be used with execution proofs
+  public static <Data> DataAndValidationResult<Data> optimisticValidResult() {
+    return new DataAndValidationResult<>(
+        AvailabilityValidationResult.OPTIMISTIC, Collections.emptyList(), Optional.empty());
+  }
 
   public boolean isValid() {
     return validationResult.equals(AvailabilityValidationResult.VALID);
@@ -89,7 +89,7 @@ public record DataAndValidationResult<Data>(
   }
 
   public boolean isOptimistic() {
-      return validationResult.equals(AvailabilityValidationResult.OPTIMISTIC);
+    return validationResult.equals(AvailabilityValidationResult.OPTIMISTIC);
   }
 
   public Optional<List<BlobSidecar>> getDataAsBlobSidecars() {

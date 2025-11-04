@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.epbs.versions.gloas.SignedExecutionPayloadEnvelope;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -75,8 +74,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.ExecutionPayl
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
-import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManager;
-import tech.pegasys.teku.statetransition.executionproofs.ExecutionProofManagerImpl;
 import tech.pegasys.teku.statetransition.util.DebugDataDumper;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
@@ -457,18 +454,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
-      final AvailabilityChecker<?> originalAvailabilityChecker =
-              forkChoiceUtil.createAvailabilityChecker(block);
+    final AvailabilityChecker<?> originalAvailabilityChecker =
+        forkChoiceUtil.createAvailabilityChecker(block);
 
-      final AvailabilityChecker<?> availabilityChecker;
-      if(executionProofsAvailabilityChecker.isPresent()){
-          availabilityChecker = executionProofsAvailabilityChecker.get();
-          ((ExecutionProofsAvailabilityChecker)availabilityChecker).setDelegate(originalAvailabilityChecker);
-          ((ExecutionProofsAvailabilityChecker) availabilityChecker).setBlock(block);
-      }
-      else{
-        availabilityChecker = originalAvailabilityChecker;
-      }
+    final AvailabilityChecker<?> availabilityChecker;
+    if (executionProofsAvailabilityChecker.isPresent()) {
+      availabilityChecker = executionProofsAvailabilityChecker.get();
+      ((ExecutionProofsAvailabilityChecker) availabilityChecker)
+          .setDelegate(originalAvailabilityChecker);
+      ((ExecutionProofsAvailabilityChecker) availabilityChecker).setBlock(block);
+    } else {
+      availabilityChecker = originalAvailabilityChecker;
+    }
 
     availabilityChecker.initiateDataAvailabilityCheck();
 

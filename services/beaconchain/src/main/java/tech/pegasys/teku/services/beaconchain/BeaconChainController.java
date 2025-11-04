@@ -376,7 +376,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionPayloadBidManager executionPayloadBidManager;
   protected volatile ExecutionPayloadManager executionPayloadManager;
   protected volatile ExecutionProofManager executionProofManager;
-  protected volatile Optional<ExecutionProofsAvailabilityChecker> executionProofsAvailabilityChecker;
+  protected volatile Optional<ExecutionProofsAvailabilityChecker>
+      executionProofsAvailabilityChecker;
   protected volatile Optional<DasCustodySync> dasCustodySync = Optional.empty();
   protected volatile Optional<DataColumnSidecarRetriever> recoveringSidecarRetriever =
       Optional.empty();
@@ -726,10 +727,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
               zkConfig.statelessMinProofsRequired(),
               zkConfig.proofDelayDurationInMs(),
               executionProofAsyncRunner.get());
-        executionProofsAvailabilityChecker = Optional.of(new ExecutionProofsAvailabilityChecker(executionProofManager));
+      executionProofsAvailabilityChecker =
+          Optional.of(new ExecutionProofsAvailabilityChecker(executionProofManager));
     } else {
       executionProofManager = ExecutionProofManager.NOOP;
-        executionProofsAvailabilityChecker = Optional.empty();
+      executionProofsAvailabilityChecker = Optional.empty();
     }
   }
 
