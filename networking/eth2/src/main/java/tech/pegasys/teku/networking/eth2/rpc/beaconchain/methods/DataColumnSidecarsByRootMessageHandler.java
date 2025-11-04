@@ -29,6 +29,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -103,8 +104,16 @@ public class DataColumnSidecarsByRootMessageHandler
         .thenCompose(
             __ ->
                 maybeSidecar
-                    .map(sideCar -> callback.respond(sideCar).thenApply(___ -> true))
-                    .orElse(SafeFuture.completedFuture(false)));
+                    .map(
+                        sideCar -> {
+                          LOG.info("validateAndMaybeRespond FOUND: {}", identifier);
+                          return callback.respond(sideCar).thenApply(___ -> true);
+                        })
+                    .orElseGet(
+                        () -> {
+                          LOG.info("validateAndMaybeRespond NOT FOUND: {}", identifier);
+                          return SafeFuture.completedFuture(false);
+                        }));
   }
 
   @Override
@@ -140,6 +149,7 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
+    LOG.info("my CustodyColumns = {}", myCustodyColumns.size());
     final Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
             .flatMap(
@@ -251,7 +261,9 @@ public class DataColumnSidecarsByRootMessageHandler
           || rootCause instanceof ClosedChannelException) {
         LOG.trace("Stream closed while sending requested data column sidecars", error);
       } else {
-        LOG.error("Failed to process data column sidecars by root request", error);
+        LOG.error(
+            "Failed to process data column sidecars by root request: {}",
+            ExceptionUtil.getMessageOrSimpleName(error));
       }
       callback.completeWithUnexpectedError(error);
     }

@@ -59,7 +59,6 @@ public class DasSamplerBasicTest {
   private final RPCFetchDelayProvider rpcFetchDelayProvider = mock(RPCFetchDelayProvider.class);
 
   private RecentChainData recentChainData;
-  private CustodyGroupCountManager custodyGroupCountManager;
   private DataColumnSidecarCustody custody;
   private DataColumnSidecarRetriever retriever;
   private CurrentSlotProvider currentSlotProvider;
@@ -69,7 +68,7 @@ public class DasSamplerBasicTest {
 
   @BeforeEach
   public void setUp() {
-    custodyGroupCountManager = mock(CustodyGroupCountManager.class);
+    final CustodyGroupCountManager custodyGroupCountManager = mock(CustodyGroupCountManager.class);
     when(custodyGroupCountManager.getSamplingColumnIndices()).thenReturn(SAMPLING_INDICES);
     recentChainData = mock(RecentChainData.class);
     custody = mock(DataColumnSidecarCustody.class);
@@ -92,19 +91,6 @@ public class DasSamplerBasicTest {
             retriever,
             custodyGroupCountManager,
             recentChainData);
-  }
-
-  @Test
-  void onAlreadyKnownDataColumn_shouldAddToTracker() {
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-
-    final DataColumnSlotAndIdentifier columnId =
-        new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, SAMPLING_INDICES.getFirst());
-    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
-
-    sampler.onAlreadyKnownDataColumn(columnId, RemoteOrigin.CUSTODY);
-
-    assertSamplerTracker(blockRoot, UInt64.ZERO, remainingColumns);
   }
 
   @Test
@@ -137,21 +123,6 @@ public class DasSamplerBasicTest {
   }
 
   @Test
-  void onAlreadyKnownDataColumn_shouldScheduleRPCFetchWhenDelayIsNonZero() {
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-
-    final DataColumnSlotAndIdentifier columnId =
-        new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, SAMPLING_INDICES.getFirst());
-    final List<UInt64> remainingColumns = SAMPLING_INDICES.subList(1, SAMPLING_INDICES.size());
-
-    when(rpcFetchDelayProvider.calculate(columnId.slot())).thenReturn(Duration.ofSeconds(1));
-
-    sampler.onAlreadyKnownDataColumn(columnId, RemoteOrigin.CUSTODY);
-
-    assertRPCFetchInMillis(columnId.slot(), columnId.blockRoot(), remainingColumns, 1_000);
-  }
-
-  @Test
   void onNewValidatedDataColumnSidecar_shouldScheduleRPCFetchWhenDelayIsZero() {
     final DataColumnSidecar sidecar =
         dataStructureUtil.randomDataColumnSidecar(
@@ -160,20 +131,6 @@ public class DasSamplerBasicTest {
     when(rpcFetchDelayProvider.calculate(sidecar.getSlot())).thenReturn(Duration.ZERO);
 
     sampler.onNewValidatedDataColumnSidecar(sidecar, RemoteOrigin.RPC);
-
-    assertThat(asyncRunner.countDelayedActions()).isZero();
-  }
-
-  @Test
-  void onAlreadyKnownDataColumn_shouldScheduleRPCFetchWhenDelayIsZero() {
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-
-    final DataColumnSlotAndIdentifier columnId =
-        new DataColumnSlotAndIdentifier(UInt64.ZERO, blockRoot, SAMPLING_INDICES.getFirst());
-
-    when(rpcFetchDelayProvider.calculate(columnId.slot())).thenReturn(Duration.ZERO);
-
-    sampler.onAlreadyKnownDataColumn(columnId, RemoteOrigin.CUSTODY);
 
     assertThat(asyncRunner.countDelayedActions()).isZero();
   }
@@ -290,7 +247,7 @@ public class DasSamplerBasicTest {
     final SlotAndBlockRoot source3 =
         new SlotAndBlockRoot(dataStructureUtil.randomSlot(), dataStructureUtil.randomBytes32());
 
-    sampler.onAlreadyKnownDataColumn(source1, RemoteOrigin.CUSTODY);
+    sampler.onNewValidatedDataColumnSidecar(source1, RemoteOrigin.CUSTODY);
     sampler.onNewValidatedDataColumnSidecar(source2, RemoteOrigin.RPC);
     sampler.checkDataAvailability(source3.getSlot(), source3.getBlockRoot());
 
