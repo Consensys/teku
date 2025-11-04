@@ -29,7 +29,9 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.StateTooOldException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil.SlotInclusionGossipValidationResult;
+import tech.pegasys.teku.spec.logic.common.util.AttestationValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationValidator {
@@ -112,13 +114,24 @@ public class AttestationValidator {
       }
     }
 
-    if (attestation.isSingleAttestation() || attestation.requiresCommitteeBits()) {
-      // [REJECT] attestation.data.index == 0
-      if (!attestation.getData().getIndex().isZero()) {
-        return SafeFuture.completedFuture(
-            InternalValidationResultWithState.reject(
-                "Rejecting attestation because attestation data index must be 0"));
-      }
+    final AttestationUtil attestationUtil = spec.atSlot(data.getSlot()).getAttestationUtil();
+
+    final AttestationValidationResult attestationIndexValidationResult =
+        attestationUtil.validateIndexValue(attestation.getData().getIndex());
+    if (!attestationIndexValidationResult.isValid()) {
+      return SafeFuture.completedFuture(
+          InternalValidationResultWithState.reject(
+              attestationIndexValidationResult.getReason().orElse("Invalid attestation data")));
+    }
+
+    final AttestationValidationResult payloadStatusValidationResult =
+        attestationUtil.validatePayloadStatus(
+            attestation.getData(),
+            recentChainData.getSlotForBlockRoot(attestation.getData().getBeaconBlockRoot()));
+    if (!payloadStatusValidationResult.isValid()) {
+      return SafeFuture.completedFuture(
+          InternalValidationResultWithState.reject(
+              payloadStatusValidationResult.getReason().orElse("Invalid payload status")));
     }
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();

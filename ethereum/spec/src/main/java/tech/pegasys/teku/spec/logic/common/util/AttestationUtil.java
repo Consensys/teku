@@ -329,6 +329,11 @@ public abstract class AttestationUtil {
   public abstract Attestation convertSingleAttestationToAggregated(
       final BeaconState state, final SingleAttestation singleAttestation);
 
+  public abstract AttestationValidationResult validateIndexValue(final UInt64 index);
+
+  public abstract AttestationValidationResult validatePayloadStatus(
+      final AttestationData attestationData, final Optional<UInt64> maybeBlockSlot);
+
   public enum SlotInclusionGossipValidationResult {
     IGNORE,
     SAVE_FOR_FUTURE
