@@ -64,6 +64,7 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
   @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> getAvailabilityCheckResult() {
       return delegate.getAvailabilityCheckResult().thenCompose(daResult ->{
+          LOG.debug("Delegate Availability result: {}", daResult.validationResult());
           if(daResult.isSuccess()){
               LOG.debug("Blob/DataColumn availability valid, proceeding to execution proofs validation");
                 return validationResult;

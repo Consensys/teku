@@ -121,23 +121,35 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   @Override
   public SafeFuture<DataAndValidationResult<ExecutionProof>> validateBlockWithExecutionProofs(
       final SignedBeaconBlock block) {
-    for (int attempt = 0; attempt < attemptsToGetProof; attempt++) {
-      final DataAndValidationResult<ExecutionProof> result = checkForValidProofs(block);
-      if (result.isValid()) {
-          LOG.debug("Found valid proofs for block {} on attempt {}", block.getRoot(), attempt + 1);
-        return SafeFuture.completedFuture(result);
-      }
-      try {
-          //TODO validate this is not blocking the thread pool
-        Thread.sleep(2000L);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
-      }
-    }
-    LOG.debug("Checking proofs for block {}", block.getRoot());
 
-    return SafeFuture.completedFuture(DataAndValidationResult.notAvailable());
+      return asyncRunner
+              .runAsync(
+                      () -> {
+                          SafeFuture<DataAndValidationResult<ExecutionProof>> validationResult = new SafeFuture<>();
+                          LOG.debug("starting validation of execution proofs for block {}", block.getRoot());
+                          for (int attempt = 0; attempt < attemptsToGetProof; attempt++) {
+                              final DataAndValidationResult<ExecutionProof> result = checkForValidProofs(block);
+                              if (result.isValid()) {
+                                  LOG.debug("Found valid proofs for block {} on attempt {}", block.getRoot(), attempt + 1);
+                                  validationResult =  SafeFuture.completedFuture(result);
+                              }
+                              else {
+                                  if(attempt == attemptsToGetProof - 1) {
+                                      validationResult = SafeFuture.completedFuture(DataAndValidationResult.notAvailable(new RuntimeException("No valid execution proofs found for block " + block.getRoot())));
+                                  }
+                              }
+                              try {
+                                  //TODO validate this is not blocking the thread pool
+                                  Thread.sleep(2000L);
+                              } catch (InterruptedException e) {
+                                  Thread.currentThread().interrupt();
+                                  LOG.debug("Interrupted while waiting for validation of proofs");}
+                          }
+                          LOG.debug("Checking proofs for block {}", block.getRoot());
+
+                          return validationResult;
+                      });
+
   }
 
   private DataAndValidationResult<ExecutionProof> checkForValidProofs(
