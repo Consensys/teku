@@ -20,10 +20,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.DataColumnSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.RemoteOrigin;
 
-public interface DataColumnSidecarELRecoveryManager extends SlotEventsChannel {
+public interface DataColumnSidecarELManager extends SlotEventsChannel {
 
-  DataColumnSidecarELRecoveryManager NOOP =
-      new DataColumnSidecarELRecoveryManager() {
+  DataColumnSidecarELManager NOOP =
+      new DataColumnSidecarELManager() {
         @Override
         public void onSlot(final UInt64 slot) {}
 
@@ -34,9 +34,19 @@ public interface DataColumnSidecarELRecoveryManager extends SlotEventsChannel {
         @Override
         public void onNewDataColumnSidecar(
             final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {}
+
+        @Override
+        public void onSyncingStatusChanged(boolean inSync) {}
+
+        @Override
+        public void subscribeToRecoveredColumnSidecar(ValidDataColumnSidecarsListener subscriber) {}
       };
 
   void onNewDataColumnSidecar(DataColumnSidecar dataColumnSidecar, RemoteOrigin remoteOrigin);
 
   void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
+
+  void onSyncingStatusChanged(boolean inSync);
+
+  void subscribeToRecoveredColumnSidecar(ValidDataColumnSidecarsListener subscriber);
 }

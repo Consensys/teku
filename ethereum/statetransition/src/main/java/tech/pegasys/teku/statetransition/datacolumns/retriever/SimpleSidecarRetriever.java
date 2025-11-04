@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -92,6 +93,7 @@ public class SimpleSidecarRetriever
 
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
+    LOG.info("SimpleSidecarRetriever.Retrieving column {}", columnId);
     final RetrieveRequest request =
         pendingRequests.computeIfAbsent(columnId, __ -> new RetrieveRequest(columnId));
     startIfNecessary();
@@ -142,10 +144,27 @@ public class SimpleSidecarRetriever
     final SafeFuture<DataColumnSidecar> reqRespPromise =
         reqResp.requestDataColumnSidecar(match.peer.nodeId, match.request.columnId);
     match.request.onPeerRequest(match.peer().nodeId);
-    match.request.activeRpcRequest =
-        new ActiveRequest(
-            reqRespPromise.whenComplete((sidecar, err) -> reqRespCompleted(match.request, sidecar)),
-            match.peer);
+
+    final SafeFuture<Void> activeRpcRequest =
+        reqRespPromise.handle(
+            (sidecar, err) -> {
+              reqRespCompleted(match.request, sidecar);
+
+              if (err != null) {
+                LOG.debug(
+                    "SimpleSidecarRetriever.Request failed for {} due to: {}",
+                     () -> sidecar != null ? sidecar.toLogString() : "N/A",
+                    () -> ExceptionUtil.getMessageOrSimpleName(err));
+              }
+
+              return null;
+            });
+
+    // here we make sure that if something goes wrong in the handle call we
+    // log all the info to fix the bug
+    activeRpcRequest.finishStackTrace();
+
+    match.request.activeRpcRequest = new ActiveRequest(activeRpcRequest, match.peer);
     return true;
   }
 
@@ -195,18 +214,18 @@ public class SimpleSidecarRetriever
             .filter(activated -> activated)
             .count();
 
-    if (LOG.isTraceEnabled()) {
-      final long activeRequestCount =
-          pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
-      LOG.trace(
-          "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
-          retrieveCounter,
-          errorCounter,
-          pendingRequests.size(),
-          activeRequestCount,
-          activatedMatches,
-          gatherAvailableCustodiesInfo());
-    }
+    //    if (LOG.isTraceEnabled()) {
+    final long activeRequestCount =
+        pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
+    LOG.debug(
+        "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
+        retrieveCounter,
+        errorCounter,
+        pendingRequests.size(),
+        activeRequestCount,
+        activatedMatches,
+        gatherAvailableCustodiesInfo());
+    //    }
 
     reqResp.flush();
   }
@@ -214,6 +233,7 @@ public class SimpleSidecarRetriever
   private void reqRespCompleted(
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
     if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
+      LOG.info("SimpleSidecarRetriever.respRespCompleted: {}", maybeResult.toLogString());
       request.result.completeAsync(maybeResult, asyncRunner);
       retrieveCounter.incrementAndGet();
     } else if (request.activeRpcRequestSet.compareAndSet(true, false)) {
@@ -262,7 +282,7 @@ public class SimpleSidecarRetriever
     connectedPeers.remove(nodeId);
   }
 
-  private record ActiveRequest(SafeFuture<DataColumnSidecar> promise, ConnectedPeer peer) {}
+  private record ActiveRequest(SafeFuture<Void> promise, ConnectedPeer peer) {}
 
   private static class RetrieveRequest {
     final DataColumnSlotAndIdentifier columnId;

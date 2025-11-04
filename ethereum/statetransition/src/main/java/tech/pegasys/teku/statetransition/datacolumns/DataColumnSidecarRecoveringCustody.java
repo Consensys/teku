@@ -58,5 +58,16 @@ public interface DataColumnSidecarRecoveringCustody
             DataColumnSlotAndIdentifier columnId) {
           return SafeFuture.completedFuture(false);
         }
+
+        @Override
+        public void onSyncingStatusChanged(boolean inSync) {}
+
+        @Override
+        public void subscribeToRecoveredColumnSidecar(
+            final ValidDataColumnSidecarsListener subscriber) {}
       };
+
+  void onSyncingStatusChanged(boolean inSync);
+
+  void subscribeToRecoveredColumnSidecar(ValidDataColumnSidecarsListener subscriber);
 }

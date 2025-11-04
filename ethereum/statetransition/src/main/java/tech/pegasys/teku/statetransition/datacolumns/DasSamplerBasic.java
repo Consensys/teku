@@ -82,22 +82,17 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
    * be executed on those columns.
    */
   @Override
-  public void onAlreadyKnownDataColumn(
+  public void onNewValidatedDataColumnSidecar(
       final DataColumnSlotAndIdentifier columnId, final RemoteOrigin remoteOrigin) {
     LOG.debug("Sampler received data column {} - origin: {}", columnId, remoteOrigin);
 
     getOrCreateTracker(columnId.slot(), columnId.blockRoot()).add(columnId, remoteOrigin);
   }
 
-  public void onNewValidatedDataColumnSidecar(
-      final DataColumnSidecar dataColumnSidecar, final RemoteOrigin remoteOrigin) {
-    onAlreadyKnownDataColumn(
-        DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar), remoteOrigin);
-  }
-
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(
       final UInt64 slot, final Bytes32 blockRoot) {
+    LOG.info("checkDataAvailability called for block {}", blockRoot);
 
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
