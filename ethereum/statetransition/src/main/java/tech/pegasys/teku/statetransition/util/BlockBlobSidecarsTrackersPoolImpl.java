@@ -15,12 +15,10 @@ package tech.pegasys.teku.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_EL;
 import static tech.pegasys.teku.statetransition.blobs.RemoteOrigin.LOCAL_PROPOSAL;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -92,17 +89,11 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
 
-  // RPC fetching delay timings
-  static final long MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = 1500L;
-  static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
-  static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
-
   private final SettableLabelledGauge sizeGauge;
   private final LabelledMetric<Counter> poolStatsCounters;
   private final Map<Bytes32, BlockBlobSidecarsTracker> blockBlobSidecarsTrackers = new HashMap<>();
   private final NavigableSet<SlotAndBlockRoot> orderedBlobSidecarsTrackers = new TreeSet<>();
   private final Spec spec;
-  private final TimeProvider timeProvider;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayer;
@@ -129,29 +120,31 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
 
   private final BlockImportChannel blockImportChannel;
 
+  private final RPCFetchDelayProvider rpcFetchDelayProvider;
+
   BlockBlobSidecarsTrackersPoolImpl(
       final BlockImportChannel blockImportChannel,
       final SettableLabelledGauge sizeGauge,
       final LabelledMetric<Counter> poolStatsCounters,
       final Spec spec,
-      final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
+      final RPCFetchDelayProvider rpcFetchDelayProvider,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.blockImportChannel = blockImportChannel;
     this.spec = spec;
-    this.timeProvider = timeProvider;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.executionLayer = executionLayer;
     this.gossipValidatorSupplier = gossipValidatorSupplier;
     this.blobSidecarGossipPublisher = blobSidecarGossipPublisher;
+    this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
     this.poolStatsCounters = poolStatsCounters;
@@ -166,12 +159,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
       final SettableLabelledGauge sizeGauge,
       final LabelledMetric<Counter> poolStatsCounters,
       final Spec spec,
-      final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final ExecutionLayerChannel executionLayer,
       final Supplier<BlobSidecarGossipValidator> gossipValidatorSupplier,
       final Function<BlobSidecar, SafeFuture<Void>> blobSidecarGossipPublisher,
+      final RPCFetchDelayProvider rpcFetchDelayProvider,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers,
@@ -179,12 +172,12 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.blockImportChannel = blockImportChannel;
     this.spec = spec;
-    this.timeProvider = timeProvider;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.executionLayer = executionLayer;
     this.gossipValidatorSupplier = gossipValidatorSupplier;
     this.blobSidecarGossipPublisher = blobSidecarGossipPublisher;
+    this.rpcFetchDelayProvider = rpcFetchDelayProvider;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
     this.poolStatsCounters = poolStatsCounters;
@@ -620,7 +613,7 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
     }
     // delay RPC fetching
     final SafeFuture<Void> rpcFetchDelay =
-        asyncRunner.getDelayedFuture(calculateRpcFetchDelay(slotAndBlockRoot));
+        asyncRunner.getDelayedFuture(rpcFetchDelayProvider.calculate(slotAndBlockRoot.getSlot()));
 
     asyncRunner
         .runAsync(
@@ -632,37 +625,6 @@ public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHis
                     .thenRun(() -> fetchMissingBlockOrBlobsFromRPC(slotAndBlockRoot))
                     .handleException(this::logBlockOrBlobsRPCFailure))
         .finishStackTrace();
-  }
-
-  @VisibleForTesting
-  Duration calculateRpcFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
-    final UInt64 slot = slotAndBlockRoot.getSlot();
-
-    if (slot.isLessThan(getCurrentSlot())) {
-      // old slot
-      return Duration.ZERO;
-    }
-
-    final UInt64 nowMillis = timeProvider.getTimeInMillis();
-    final UInt64 slotStartTimeMillis = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
-    final UInt64 attestationDueMillis =
-        slotStartTimeMillis.plus(spec.getAttestationDueMillis(slot));
-
-    if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
-      // late block, we already produced attestations on previous head,
-      // so let's wait our target delay before trying to fetch
-      return Duration.ofMillis(TARGET_WAIT_MILLIS.intValue());
-    }
-
-    final UInt64 upperLimitRelativeToAttDue =
-        attestationDueMillis.minus(MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS);
-
-    final UInt64 targetMillis = nowMillis.plus(TARGET_WAIT_MILLIS);
-
-    final UInt64 finalTime =
-        targetMillis.min(upperLimitRelativeToAttDue).max(nowMillis.plus(MIN_WAIT_MILLIS));
-
-    return Duration.ofMillis(finalTime.minus(nowMillis).intValue());
   }
 
   private synchronized SafeFuture<Void> fetchMissingBlobsFromLocalEL(
