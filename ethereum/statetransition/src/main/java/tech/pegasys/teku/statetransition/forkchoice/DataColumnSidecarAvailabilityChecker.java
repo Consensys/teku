@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -29,7 +28,6 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
 
   private final DataAvailabilitySampler dataAvailabilitySampler;
   private final SafeFuture<DataAndValidationResult<UInt64>> validationResult = new SafeFuture<>();
-  private final AtomicBoolean dataAvailabilityCheckExecuted = new AtomicBoolean(false);
   final Spec spec;
 
   private final SignedBeaconBlock block;
@@ -60,29 +58,23 @@ public class DataColumnSidecarAvailabilityChecker implements AvailabilityChecker
         LOG.debug(
             "Availability check for slot {} NOT_REQUIRED, kzg commitments empty", block.getSlot());
       }
-      default -> {}
+      default -> {
+        dataAvailabilitySampler
+            .checkDataAvailability(block.getSlot(), block.getRoot())
+            .finish(
+                sampleIndices -> {
+                  validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
+                },
+                throwable ->
+                    validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
+        dataAvailabilitySampler.flush();
+      }
     }
     return true;
   }
 
   @Override
   public SafeFuture<DataAndValidationResult<UInt64>> getAvailabilityCheckResult() {
-    if (validationResult.isDone()) {
-      return validationResult;
-    }
-
-    if (dataAvailabilityCheckExecuted.compareAndSet(false, true)) {
-      dataAvailabilitySampler
-          .checkDataAvailability(block.getSlot(), block.getRoot())
-          .finish(
-              sampleIndices -> {
-                validationResult.complete(DataAndValidationResult.validResult(sampleIndices));
-              },
-              throwable ->
-                  validationResult.complete(DataAndValidationResult.notAvailable(throwable)));
-      dataAvailabilitySampler.flush();
-    }
-
     return validationResult;
   }
 }
