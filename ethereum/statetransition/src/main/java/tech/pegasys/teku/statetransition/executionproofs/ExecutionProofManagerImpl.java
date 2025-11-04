@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionProof;
@@ -56,15 +57,18 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private final AsyncRunner asyncRunner;
   private final boolean isProofGenerationEnabled;
   private final int minProofsRequired;
+  private final Spec spec;
+
 
   public ExecutionProofManagerImpl(
-      final ExecutionProofGossipValidator executionProofGossipValidator,
-      final ExecutionProofGenerator executionProofGenerator,
-      final Consumer<ExecutionProof> onCreatedProof,
-      final boolean isProofGenerationEnabled,
-      final int minProofsRequired,
-      final Duration proofGenerationDelay,
-      final AsyncRunner asyncRunner) {
+          final ExecutionProofGossipValidator executionProofGossipValidator,
+          final ExecutionProofGenerator executionProofGenerator,
+          final Consumer<ExecutionProof> onCreatedProof,
+          final boolean isProofGenerationEnabled,
+          final int minProofsRequired,
+          final Duration proofGenerationDelay,
+          final AsyncRunner asyncRunner,
+          final Spec spec) {
     this.executionProofGossipValidator = executionProofGossipValidator;
     this.onCreatedProof = onCreatedProof;
     this.isProofGenerationEnabled = isProofGenerationEnabled;
@@ -72,6 +76,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     this.executionProofGenerator = executionProofGenerator;
     this.proofGenerationDelay = proofGenerationDelay;
     this.asyncRunner = asyncRunner;
+      this.spec = spec;
   }
 
   @Override
@@ -140,8 +145,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
               }
             }
             try {
-              // TODO validate this is not blocking the thread pool
-              Thread.sleep(2000L);
+                //sleep for a 1/4 of the slot time based
+              Thread.sleep(spec.getSlotDurationMillis(block.getSlot())/4);
             } catch (InterruptedException e) {
               Thread.currentThread().interrupt();
               LOG.debug("Interrupted while waiting for validation of proofs");
