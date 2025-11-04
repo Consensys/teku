@@ -727,8 +727,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               zkConfig.statelessMinProofsRequired(),
               zkConfig.proofDelayDurationInMs(),
               executionProofAsyncRunner.get(),
-              spec
-          );
+              spec);
       executionProofsAvailabilityChecker =
           Optional.of(new ExecutionProofsAvailabilityChecker(executionProofManager));
     } else {

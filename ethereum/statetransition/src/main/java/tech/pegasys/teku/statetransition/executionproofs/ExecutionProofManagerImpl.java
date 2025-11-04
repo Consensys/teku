@@ -59,16 +59,15 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
   private final int minProofsRequired;
   private final Spec spec;
 
-
   public ExecutionProofManagerImpl(
-          final ExecutionProofGossipValidator executionProofGossipValidator,
-          final ExecutionProofGenerator executionProofGenerator,
-          final Consumer<ExecutionProof> onCreatedProof,
-          final boolean isProofGenerationEnabled,
-          final int minProofsRequired,
-          final Duration proofGenerationDelay,
-          final AsyncRunner asyncRunner,
-          final Spec spec) {
+      final ExecutionProofGossipValidator executionProofGossipValidator,
+      final ExecutionProofGenerator executionProofGenerator,
+      final Consumer<ExecutionProof> onCreatedProof,
+      final boolean isProofGenerationEnabled,
+      final int minProofsRequired,
+      final Duration proofGenerationDelay,
+      final AsyncRunner asyncRunner,
+      final Spec spec) {
     this.executionProofGossipValidator = executionProofGossipValidator;
     this.onCreatedProof = onCreatedProof;
     this.isProofGenerationEnabled = isProofGenerationEnabled;
@@ -76,7 +75,7 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
     this.executionProofGenerator = executionProofGenerator;
     this.proofGenerationDelay = proofGenerationDelay;
     this.asyncRunner = asyncRunner;
-      this.spec = spec;
+    this.spec = spec;
   }
 
   @Override
@@ -145,8 +144,8 @@ public class ExecutionProofManagerImpl implements ExecutionProofManager {
               }
             }
             try {
-                //sleep for a 1/4 of the slot time based
-              Thread.sleep(spec.getSlotDurationMillis(block.getSlot())/4);
+              // sleep for a 1/4 of the slot time based
+              Thread.sleep(spec.getSlotDurationMillis(block.getSlot()) / 4);
             } catch (InterruptedException e) {
               Thread.currentThread().interrupt();
               LOG.debug("Interrupted while waiting for validation of proofs");
