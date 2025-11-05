@@ -92,8 +92,6 @@ public class DasSamplerBasic implements DataAvailabilitySampler, SlotEventsChann
   @Override
   public SafeFuture<List<UInt64>> checkDataAvailability(
       final UInt64 slot, final Bytes32 blockRoot) {
-    LOG.info("checkDataAvailability called for block {}", blockRoot);
-
     final DataColumnSamplingTracker tracker = getOrCreateTracker(slot, blockRoot);
 
     if (tracker.rpcFetchScheduled().compareAndSet(false, true)) {

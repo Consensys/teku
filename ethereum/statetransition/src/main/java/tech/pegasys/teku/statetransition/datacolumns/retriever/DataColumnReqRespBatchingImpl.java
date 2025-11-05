@@ -98,10 +98,7 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
   private record ByRootRequest(Bytes32 root, Set<UInt64> columns) {}
 
   private void flushForNode(final UInt256 nodeId, final List<RequestEntry> nodeRequests) {
-    LOG.debug(
-        "DataColumnReqRespBatchingImpl Flushing requests for node {}: {} total",
-        nodeId,
-        nodeRequests.size());
+    LOG.debug("Flushing requests for node {}: {} total", nodeId, nodeRequests.size());
     if (nodeRequests.isEmpty()) {
       return;
     }
@@ -112,8 +109,8 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
         generateByRangeRequests(nodeRequests, firstNonFinalizedSlot);
     final List<ByRootRequest> byRootRequests =
         generateByRootRequests(nodeRequests, firstNonFinalizedSlot);
-    LOG.debug(
-        "DataColumnReqRespBatchingImpl Processing prepared requests for node {}: byRoot({}), byRange({})",
+    LOG.trace(
+        "Processing prepared requests for node {}: byRoot({}), byRange({})",
         nodeId,
         byRootRequests,
         byRangeRequests);
@@ -219,8 +216,6 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
       public SafeFuture<Boolean> onNext(final DataColumnSidecar dataColumnSidecar) {
         final DataColumnSlotAndIdentifier dataColumnIdentifier =
             DataColumnSlotAndIdentifier.fromDataColumn(dataColumnSidecar);
-        LOG.info(
-            "DataColumnReqRespBatchingImpl Received request for column {}", dataColumnIdentifier);
         final RequestEntry request = requestsByColumnId.get(dataColumnIdentifier);
         if (request == null) {
           return SafeFuture.failedFuture(
@@ -234,14 +229,10 @@ public class DataColumnReqRespBatchingImpl implements DataColumnReqResp {
 
       @Override
       public void onComplete() {
-        LOG.info("DataColumnReqRespBatchingImpl onComplete");
         nodeRequests.stream()
             .filter(req -> !req.promise().isDone())
             .forEach(
-                req -> {
-                  LOG.info("DataColumnReqRespBatchingImpl not available");
-                  req.promise().completeExceptionally(new DasColumnNotAvailableException());
-                });
+                req -> req.promise().completeExceptionally(new DasColumnNotAvailableException()));
       }
 
       @Override
