@@ -69,5 +69,5 @@ public class Constants {
   public static final int EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION = 1;
 
   // ZkChain prototype
-  public static final long MAX_EXECUTION_PROOF_SUBNETS = 1;
+  public static final long MAX_EXECUTION_PROOF_SUBNETS = 8;
 }
