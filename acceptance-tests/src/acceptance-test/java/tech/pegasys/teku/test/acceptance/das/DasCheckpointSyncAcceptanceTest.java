@@ -44,14 +44,15 @@ public class DasCheckpointSyncAcceptanceTest extends AcceptanceTestBase {
     final UInt64 genesisTime = primaryNode.getGenesisTime();
     primaryNode.waitForNewFinalization();
     final SignedBeaconBlock checkpointFinalizedBlock = primaryNode.getFinalizedBlock();
-    // We expect at least 1 full epoch in Fulu, so it's greater without equal
+    // We expect at least 1 full epoch in Fulu before checkpoint, so it's greater without equal
     final SpecConfigFulu specConfigFulu =
         SpecConfigFulu.required(primaryNode.getSpec().forMilestone(SpecMilestone.FULU).getConfig());
     assertThat(
-        primaryNode
-            .getSpec()
-            .computeEpochAtSlot(checkpointFinalizedBlock.getSlot())
-            .isGreaterThan(specConfigFulu.getFuluForkEpoch()));
+            primaryNode
+                .getSpec()
+                .computeEpochAtSlot(checkpointFinalizedBlock.getSlot())
+                .isGreaterThan(specConfigFulu.getFuluForkEpoch()))
+        .isTrue();
 
     // late joining full node without validators
     final TekuBeaconNode secondaryNode =
