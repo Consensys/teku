@@ -72,7 +72,7 @@ public class ExecutionProofsAvailabilityChecker implements AvailabilityChecker<E
                 List<ExecutionProof> emptyList = Collections.emptyList();
                 return SafeFuture.completedFuture(
                     new DataAndValidationResult<>(
-                        AvailabilityValidationResult.INVALID, emptyList, daResult.cause()));
+                        AvailabilityValidationResult.NOT_AVAILABLE, emptyList, daResult.cause()));
               }
             });
   }
