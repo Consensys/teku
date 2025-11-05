@@ -93,7 +93,6 @@ public class SimpleSidecarRetriever
 
   @Override
   public SafeFuture<DataColumnSidecar> retrieve(final DataColumnSlotAndIdentifier columnId) {
-    LOG.info("SimpleSidecarRetriever.Retrieving column {}", columnId);
     final RetrieveRequest request =
         pendingRequests.computeIfAbsent(columnId, __ -> new RetrieveRequest(columnId));
     startIfNecessary();
@@ -153,7 +152,7 @@ public class SimpleSidecarRetriever
               if (err != null) {
                 LOG.debug(
                     "SimpleSidecarRetriever.Request failed for {} due to: {}",
-                     () -> sidecar != null ? sidecar.toLogString() : "N/A",
+                    () -> sidecar != null ? sidecar.toLogString() : "N/A",
                     () -> ExceptionUtil.getMessageOrSimpleName(err));
               }
 
@@ -214,18 +213,18 @@ public class SimpleSidecarRetriever
             .filter(activated -> activated)
             .count();
 
-    //    if (LOG.isTraceEnabled()) {
-    final long activeRequestCount =
-        pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
-    LOG.debug(
-        "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
-        retrieveCounter,
-        errorCounter,
-        pendingRequests.size(),
-        activeRequestCount,
-        activatedMatches,
-        gatherAvailableCustodiesInfo());
-    //    }
+    if (LOG.isTraceEnabled()) {
+      final long activeRequestCount =
+          pendingRequests.values().stream().filter(r -> r.activeRpcRequest != null).count();
+      LOG.trace(
+          "SimpleSidecarRetriever.nextRound: completed: {}, errored: {},  total pending: {}, active pending: {}, new active: {}, number of custody peers: {}",
+          retrieveCounter,
+          errorCounter,
+          pendingRequests.size(),
+          activeRequestCount,
+          activatedMatches,
+          gatherAvailableCustodiesInfo());
+    }
 
     reqResp.flush();
   }
@@ -233,7 +232,6 @@ public class SimpleSidecarRetriever
   private void reqRespCompleted(
       final RetrieveRequest request, final DataColumnSidecar maybeResult) {
     if (maybeResult != null && pendingRequests.remove(request.columnId) != null) {
-      LOG.info("SimpleSidecarRetriever.respRespCompleted: {}", maybeResult.toLogString());
       request.result.completeAsync(maybeResult, asyncRunner);
       retrieveCounter.incrementAndGet();
     } else if (request.activeRpcRequestSet.compareAndSet(true, false)) {
@@ -270,15 +268,15 @@ public class SimpleSidecarRetriever
   @Override
   public void peerConnected(final UInt256 nodeId) {
     LOG.trace(
-        "SimpleSidecarRetriever.peerConnected: {}", "0x..." + nodeId.toHexString().substring(58));
+        "SimpleSidecarRetriever.peerConnected: 0x...{}", () -> nodeId.toHexString().substring(58));
     connectedPeers.computeIfAbsent(nodeId, __ -> new ConnectedPeer(nodeId));
   }
 
   @Override
   public void peerDisconnected(final UInt256 nodeId) {
     LOG.trace(
-        "SimpleSidecarRetriever.peerDisconnected: {}",
-        "0x..." + nodeId.toHexString().substring(58));
+        "SimpleSidecarRetriever.peerDisconnected: 0x...{}",
+        () -> nodeId.toHexString().substring(58));
     connectedPeers.remove(nodeId);
   }
 

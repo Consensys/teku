@@ -104,16 +104,8 @@ public class DataColumnSidecarsByRootMessageHandler
         .thenCompose(
             __ ->
                 maybeSidecar
-                    .map(
-                        sideCar -> {
-                          LOG.info("validateAndMaybeRespond FOUND: {}", identifier);
-                          return callback.respond(sideCar).thenApply(___ -> true);
-                        })
-                    .orElseGet(
-                        () -> {
-                          LOG.info("validateAndMaybeRespond NOT FOUND: {}", identifier);
-                          return SafeFuture.completedFuture(false);
-                        }));
+                    .map(sideCar -> callback.respond(sideCar).thenApply(___ -> true))
+                    .orElse(SafeFuture.completedFuture(false)));
   }
 
   @Override
@@ -149,7 +141,6 @@ public class DataColumnSidecarsByRootMessageHandler
 
     final Set<UInt64> myCustodyColumns =
         new HashSet<>(custodyGroupCountManagerSupplier.get().getCustodyColumnIndices());
-    LOG.info("my CustodyColumns = {}", myCustodyColumns.size());
     final Stream<SafeFuture<Boolean>> responseStream =
         message.stream()
             .flatMap(
